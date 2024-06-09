@@ -510,8 +510,9 @@ static void GLSL_PrepareHeader(GLenum shaderType, const GLchar *extra, char *des
 					 va("#ifndef colorGen_t\n"
 						"#define colorGen_t\n"
 						"#define CGEN_LIGHTING_DIFFUSE %i\n"
+                        "#define CGEN_VERTEX %i\n"
 						"#endif\n",
-						CGEN_LIGHTING_DIFFUSE));
+						CGEN_LIGHTING_DIFFUSE, CGEN_VERTEX ) );
 
 	N_strcat(dest, size,
 							 va("#ifndef alphaGen_t\n"
@@ -1027,9 +1028,9 @@ void GLSL_InitGPUShaders( void )
             N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_TCGEN\n" );
         }
 
-        if ( i & GENERICDEF_USE_RGBAGEN ) {
-            N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_RGBGEN\n" );
-        }
+//        if ( i & GENERICDEF_USE_RGBAGEN ) {
+            N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_RGBAGEN\n" );
+//        }
         if ( r_bloom->i ) {
             N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_BLOOM\n" );
         }

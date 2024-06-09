@@ -80,6 +80,7 @@ extern cvar_t *ui_language;
 extern cvar_t *ui_printStrings;
 extern cvar_t *ui_active;
 extern cvar_t *ui_maxLangStrings;
+extern cvar_t *ui_menuStyle;
 
 extern const char *UI_LangToString( int32_t lang );
 

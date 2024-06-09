@@ -86,7 +86,7 @@ OS_INCLUDE=-I/usr/include/ -I/usr/local/include/
 COMPILER  =distcc g++
 LIB_PREFIX=dependencies/libs/linux
 DLL_EXT   =so
-ifdef release
+ifeq ($(release),1)
 EXE		  =TheNomad.x64
 else
 EXE       =TheNomad.x64.debug

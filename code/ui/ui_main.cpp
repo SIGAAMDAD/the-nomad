@@ -47,6 +47,7 @@ cvar_t *ui_diagnostics;
 cvar_t *r_gpuDiagnostics;
 cvar_t *ui_debugOverlay;
 cvar_t *ui_maxLangStrings;
+cvar_t *ui_menuStyle;
 dif_t difficultyTable[NUMDIFS];
 
 static cvar_t *com_drawFPS;
@@ -379,6 +380,10 @@ static void UI_RegisterCvars( void )
 	
 	ui_maxLangStrings = Cvar_Get( "ui_maxLangStrings", "1024", CVAR_TEMP | CVAR_LATCH );
 	Cvar_CheckRange( ui_maxLangStrings, "528", "8192", CVT_INT );
+
+	ui_menuStyle = Cvar_Get( "ui_menuStyle", "0", CVAR_SAVE );
+	Cvar_CheckRange( ui_menuStyle, "0", "5", CVT_INT );
+	Cvar_SetDescription( ui_menuStyle, "Sets the ui's generate layout." );
 }
 
 extern "C" void UI_Shutdown( void )
@@ -974,10 +979,10 @@ void Menu_Cache( void )
     ui->whiteShader = re.RegisterShader( "white" );
 	ui->back_0 = re.RegisterShader( "menu/backbutton0" );
 	ui->back_1 = re.RegisterShader( "menu/backbutton1" );
-	ui->sfx_select = Snd_RegisterSfx( "sfx/menu1.wav" );
-//	ui->sfx_move = Snd_RegisterSfx( "sfx/menu2.wav" );
-	ui->sfx_back = Snd_RegisterSfx( "sfx/menu3.wav" );
-	ui->sfx_null = Snd_RegisterSfx( "sfx/menu4.wav" );
+	ui->sfx_select = Snd_RegisterSfx( "sfx/menu1.ogg" );
+//	ui->sfx_move = Snd_RegisterSfx( "sfx/menu2.ogg" );
+	ui->sfx_back = Snd_RegisterSfx( "sfx/menu3.ogg" );
+	ui->sfx_null = Snd_RegisterSfx( "sfx/menu4.ogg" );
 
 	ui->controller_start = re.RegisterShader( "menu/xbox_start" );
 	ui->controller_back = re.RegisterShader( "menu/xbox_back" );

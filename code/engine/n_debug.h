@@ -4,6 +4,7 @@
 #pragma once
 
 #include "n_shared.h"
+#include "n_common.h"
 
 typedef enum {
     ERR_OUT_OF_MEMORY,
@@ -16,6 +17,7 @@ typedef enum {
 
 #define MAX_STACKTRACE_FRAMES 1024
 extern void Sys_DebugStacktrace( uint32_t frames );
+extern void Sys_DebugStacktraceFile( uint32_t frames, FILE *fp );
 extern bool Sys_IsInDebugSession( void );
 extern void Sys_SetError( errorReason_t reason );
 extern void Sys_AssertionFailure( const char *expr, const char *file, const char *func, unsigned line );

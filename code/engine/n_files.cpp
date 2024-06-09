@@ -649,6 +649,21 @@ static void FS_CheckFilenameIsNotAllowed( const char *filename, const char *func
 	}
 }
 
+FILE *FS_Handle( fileHandle_t f )
+{
+	if ( f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES ) {
+		N_Error( ERR_DROP, "FS_Handle: out of range" );
+	}
+	if ( handles[f].bffFile ) {
+		N_Error( ERR_DROP, "FS_Handle: can't get FILE on bff file" );
+	}
+	if ( !handles[f].data.fp ) {
+		N_Error( ERR_DROP, "FS_Handle: invalid handle" );
+	}
+
+	return handles[f].data.fp;
+}
+
 /*
 ===========
 FS_Remove

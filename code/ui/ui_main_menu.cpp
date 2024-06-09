@@ -30,6 +30,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define ID_EXIT             5
 #define ID_TABLE            6
 
+//#define UI_FAST_EDIT
+
+#ifdef UI_FAST_EDIT
+#include "rendercommon/imgui_internal.h"
+#endif
+
 typedef struct {
     menuframework_t menu;
     const CModuleCrashData *crashData;
@@ -52,15 +58,7 @@ typedef struct {
     nhandle_t background;
     sfxHandle_t ambience;
 
-    const stringHash_t *logoString;
-    const stringHash_t *spString;
-    const stringHash_t *modsString;
-    const stringHash_t *settingsString;
-    const stringHash_t *exitString;
-
-    int32_t menuWidth;
-    int32_t menuHeight;
-
+    qboolean noSaves;
     qboolean noMenu; // do we just want the scenery?
 } mainmenu_t;
 
@@ -120,43 +118,11 @@ static void MainMenu_DrawCrashWindow( void )
     ImGui::EndPopup();
 }
 
-void MainMenu_Draw( void )
-{
-    uint64_t i;
+static void DrawMenu_Text( void ) {
     const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
                             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoBackground;
 
-    ui->menubackShader = s_main->background;
-
-    if ( s_main->font ) {
-        FontCache()->SetActiveFont( s_main->font );
-    }
-
-    if ( s_main->noMenu ) {
-        return; // just the scenery & the music
-    }
-
-    // show the user WTF just happened
-    if ( s_errorMenu->message[0] || ui->activemenu == &s_errorMenu->menu ) {
-        ImGui::Begin( "Game Error", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize
-            | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoMove );
-        ImGui::SetWindowPos( ImVec2( 450 * ui->scale, 360 * ui->scale ) );
-//        Sys_MessageBox( "Game Error", s_errorMenu->message, false );
-        ui->menubackShader = re.RegisterShader( "menu/mainbackground" );
-        ImGui::TextUnformatted( s_errorMenu->message );
-        if ( Key_AnyDown() ) {
-            Snd_PlaySfx( ui->sfx_null );
-            Cvar_Set( "com_errorMessage", "" );
-            UI_PopMenu();
-            UI_MainMenu();
-            ImGui::End();
-            return;
-        }
-        ImGui::End();
-        return;
-    } else {
-        Menu_Draw( &s_main->menu );
-    }
+    Menu_Draw( &s_main->menu );
 
     //
 	// draw the version
@@ -173,6 +139,98 @@ void MainMenu_Draw( void )
     }
 	ImGui::TextUnformatted( GLN_VERSION " (C) 2020-2024, GDR Games, All Rights Reserved" );
 	ImGui::End();
+}
+
+static void DrawMenu_Blocks( void )
+{
+    const int windowFlags = MENU_DEFAULT_FLAGS & ~( ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize );
+
+    ImGui::Begin( "##MainMenuCampaignWidget", NULL, windowFlags );
+    if ( s_main->noSaves ) {
+        ImGui::TextUnformatted( "start a new game" );
+    }
+#ifdef UI_FAST_EDIT
+    ImGui::InputFloat2( "Position##MainMenuCampaignPositionWidget", (float *)&ImGui::GetCurrentWindow()->Pos );
+    ImGui::InputFloat2( "Size##MainMenuCampaignSizeWidget", (float *)&ImGui::GetCurrentWindow()->Size );
+#endif
+    ImGui::End();
+
+    ImGui::Begin( "##MainMenuModsWidget", NULL, windowFlags );
+    ImGui::TextUnformatted( "additional content" );
+#ifdef UI_FAST_EDIT
+    ImGui::InputFloat2( "Position##MainMenuModsPositionWidget", (float *)&ImGui::GetCurrentWindow()->Pos );
+    ImGui::InputFloat2( "Size##MainMenuModsSizeWidget", (float *)&ImGui::GetCurrentWindow()->Size );
+#endif
+    ImGui::End();
+
+    ImGui::Begin( "##MainMenuPlayerWidget", NULL, windowFlags );
+    ImGui::TextUnformatted( "Player" );
+    ImGui::End();
+
+    ImGui::Begin( "##MainMenuSettingsWidget", NULL, windowFlags );
+    ImGui::TextUnformatted( "Settings" );
+    ImGui::End();
+
+    ImGui::Begin( "##MainMenuExitWidget", NULL, windowFlags );
+    ImGui::PushStyleColor( ImGuiCol_Button, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+    ImGui::PushStyleColor( ImGuiCol_ButtonActive, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+    ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+#ifdef UI_FAST_EDIT
+    ImGui::InputFloat2( "Position##MainMenuExitPositionWidget", (float *)&ImGui::GetCurrentWindow()->Pos );
+    ImGui::InputFloat2( "Size##MainMenuExitSizeWidget", (float *)&ImGui::GetCurrentWindow()->Size );
+#endif
+    if ( ImGui::Button( "exit", ImVec2( 150 * ui->scale, 100 * ui->scale ) ) ) {
+        Cbuf_ExecuteText( EXEC_APPEND, "quit\n" );
+    }
+    ImGui::PopStyleColor( 3 );
+    ImGui::End();
+}
+
+void MainMenu_Draw( void )
+{
+    ui->menubackShader = s_main->background;
+
+    if ( s_main->font ) {
+        FontCache()->SetActiveFont( s_main->font );
+    }
+
+    if ( s_main->noMenu ) {
+        return; // just the scenery & the music
+    }
+
+    // show the user WTF just happened
+    if ( s_errorMenu->message[0] || ui->activemenu == &s_errorMenu->menu ) {
+        ImGui::Begin( "Game Error", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize
+            | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoMove );
+        ImGui::SetWindowPos( ImVec2( 450 * ui->scale, 370 * ui->scale ) );
+        FontCache()->SetActiveFont( RobotoMono );
+        ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * 1.5f );
+        ui->menubackShader = re.RegisterShader( "menu/mainbackground" );
+        ImGui::TextUnformatted( s_errorMenu->message );
+        if ( Key_AnyDown() ) {
+            Snd_PlaySfx( ui->sfx_null );
+            Cvar_Set( "com_errorMessage", "" );
+            UI_PopMenu();
+            UI_MainMenu();
+            ImGui::End();
+            return;
+        }
+        ImGui::End();
+        return;
+    } else {
+        switch ( ui_menuStyle->i ) {
+        case 0:
+            DrawMenu_Text();
+            break;
+        case 1:
+            DrawMenu_Blocks();
+            break;
+        default:
+            Con_Printf( COLOR_YELLOW "WARNING: bad ui_menuStyle %li\n", ui_menuStyle->i );
+            Cvar_Set( "ui_menuStyle", "0" );
+            break;
+        };
+    }
 }
 
 void MainMenu_Cache( void )
@@ -202,15 +260,9 @@ void MainMenu_Cache( void )
     s_main->font = FontCache()->AddFontToCache( "AlegreyaSC-Bold" );
     RobotoMono = FontCache()->AddFontToCache( "RobotoMono-Bold" );
 
-    s_main->logoString = strManager->ValueForKey( "MENU_LOGO_STRING" );
-    s_main->settingsString = strManager->ValueForKey( "MENU_MAIN_SETTINGS" );
-    s_main->spString = strManager->ValueForKey( "MENU_MAIN_SINGLEPLAYER" );
-    s_main->modsString = strManager->ValueForKey( "MENU_MAIN_MODS" );
-    s_main->exitString = strManager->ValueForKey( "MENU_MAIN_EXIT" );
-
     s_main->menu.titleFontScale = 6.5f;
     s_main->menu.textFontScale = 1.5f;
-    s_main->menu.name = s_main->logoString->value;
+    s_main->menu.name = strManager->ValueForKey( "MENU_LOGO_STRING" )->value;
     s_main->menu.x = 0;
     s_main->menu.y = 0;
     s_main->menu.width = ui->gpuConfig.vidWidth;
@@ -228,36 +280,38 @@ void MainMenu_Cache( void )
     s_main->singleplayer.generic.id = ID_SINGEPLAYER;
     s_main->singleplayer.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
     s_main->singleplayer.generic.eventcallback = MainMenu_EventCallback;
-    s_main->singleplayer.text = s_main->spString->value;
+    s_main->singleplayer.text = strManager->ValueForKey( "MENU_MAIN_SINGLEPLAYER" )->value;
     s_main->singleplayer.color = color_white;
 
     s_main->mods.generic.type = MTYPE_TEXT;
     s_main->mods.generic.id = ID_MODS;
     s_main->mods.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
     s_main->mods.generic.eventcallback = MainMenu_EventCallback;
-    s_main->mods.text = s_main->modsString->value;
+    s_main->mods.text = strManager->ValueForKey( "MENU_MAIN_MODS" )->value;
     s_main->mods.color = color_white;
 
     s_main->settings.generic.type = MTYPE_TEXT;
     s_main->settings.generic.id = ID_SETTINGS;
     s_main->settings.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
     s_main->settings.generic.eventcallback = MainMenu_EventCallback;
-    s_main->settings.text = s_main->settingsString->value;
+    s_main->settings.text = strManager->ValueForKey( "MENU_MAIN_SETTINGS" )->value;
     s_main->settings.color = color_white;
 
     s_main->credits.generic.type = MTYPE_TEXT;
     s_main->credits.generic.id = ID_CREDITS;
     s_main->credits.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
     s_main->credits.generic.eventcallback = MainMenu_EventCallback;
-    s_main->credits.text = "Credits";
+    s_main->credits.text = strManager->ValueForKey( "MENU_MAIN_CREDITS" )->value;
     s_main->credits.color = color_white;
 
     s_main->exitGame.generic.type = MTYPE_TEXT;
     s_main->exitGame.generic.id = ID_EXIT;
     s_main->exitGame.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
     s_main->exitGame.generic.eventcallback = MainMenu_EventCallback;
-    s_main->exitGame.text = s_main->exitString->value;
+    s_main->exitGame.text = strManager->ValueForKey( "MENU_MAIN_EXIT" )->value;
     s_main->exitGame.color = color_white;
+
+    s_main->noSaves = Cvar_VariableInteger( "sgame_NumSaves" ) == 0;
 
     /*
     s_main->spArrow.generic.name = "##CampaignMainMenuArrowRight";

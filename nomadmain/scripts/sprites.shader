@@ -4,7 +4,7 @@ sprites/players/raio_base
     nomipmaps
     {
         texFilter nearest
-        map textures/sprites/raio_base.tga
+        map textures/sprites/players/raio_base.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
@@ -16,7 +16,19 @@ sprites/players/raio_legs
     nomipmaps
     {
         texFilter nearest
-        map textures/sprites/raio_base.png
+        map textures/sprites/players/raio_legs.tga
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        rgbGen vertex
+    }
+}
+
+sprites/players/raio_legs
+{
+    nopicmip
+    nomipmaps
+    {
+        texFilter nearest
+        map textures/sprites/players/raio_arms.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
@@ -28,7 +40,7 @@ sprites/mobs/grunt
     nomipmaps
     {
         texFilter nearest
-        map textures/sprites/grunt.png
+        map textures/sprites/mobs/grunt.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
@@ -40,7 +52,7 @@ sprites/mobs/mercenary
     nomipmaps
     {
         texFilter nearest
-        map textures/sprites/mercenary.png
+        map textures/sprites/mobs/mercenary.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }

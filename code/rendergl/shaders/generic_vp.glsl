@@ -30,7 +30,7 @@ uniform vec3 u_TCGen0Vector1;
 uniform vec3 u_WorldPos;
 #endif
 
-#if defined(USE_RGBAGEN)
+#if defined(USE_RGBAGEN) && 0
 vec4 CalcColor(vec3 position, vec3 normal)
 {
 	vec4 color = u_VertColor * a_Color + u_BaseColor;
@@ -115,7 +115,12 @@ vec2 GenTexCoords( int TCGen, vec3 position, vec3 normal, vec3 TCGenVector0, vec
 
 void main()
 {
-	v_Color = u_VertColor * a_Color + u_BaseColor;
+	if ( u_ColorGen == CGEN_VERTEX ) {
+		v_Color = vec4( 1.0 );
+	}
+	else {
+		v_Color = u_VertColor * a_Color + u_BaseColor;
+	}
 
 #if defined(USE_TCGEN)
 	vec2 texCoords = GenTexCoords( u_TCGen0, a_Position, vec3( 0.0 ), u_TCGen0Vector0, u_TCGen0Vector1 );

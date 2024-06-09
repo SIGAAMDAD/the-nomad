@@ -25,7 +25,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "n_common.h"
 #include "n_cvar.h"
 
-static cvar_t *cvar_vars = NULL;
+cvar_t *cvar_vars = NULL;
 static cvar_t *c_cheatsAllowed;
 uint32_t cvar_modifiedFlags;
 

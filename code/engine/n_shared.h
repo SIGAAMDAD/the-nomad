@@ -153,6 +153,12 @@ Platform Specific Preprocessors
 	#define DLL_PREFIX "./"
 	#define POSIX
 
+	#if defined(__clang__)
+		#define COMPILER_STRING "clang++"
+	#elif defined(__GNUG__)
+		#define COMPILER_STRING "GNU G++"
+	#endif
+
 	#if defined(__i386__)
 		#define ARCH_STRING "i386"
 		#define GDR_LITTLE_ENDIAN

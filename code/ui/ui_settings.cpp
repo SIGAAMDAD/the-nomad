@@ -514,7 +514,7 @@ static void SettingsMenu_MultiAdjustable( const char *name, const char *label, c
 	ImGui::TableNextColumn();
 	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigLeft", label ), ImGuiDir_Left ) ) {
 		if ( enabled ) {
-			Snd_PlaySfx( ui->sfx_move );
+			Snd_PlaySfx( ui->sfx_select);
 			( *curitem )--;
 			if ( *curitem < 0 ) {
 				*curitem = 0;
@@ -526,7 +526,7 @@ static void SettingsMenu_MultiAdjustable( const char *name, const char *label, c
 	SettingsMenu_List( label, itemnames, numitems, curitem, enabled );
 	ImGui::SameLine();
 	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigRight", label ), ImGuiDir_Right ) ) {
-		Snd_PlaySfx( ui->sfx_move );
+		Snd_PlaySfx( ui->sfx_select );
 		( *curitem )++;
 		if ( *curitem > numitems - 1 ) {
 			*curitem = numitems - 1;
@@ -546,7 +546,7 @@ static void SettingsMenu_MultiSliderFloat( const char *name, const char *label, 
 	SettingsMenu_Text( name, hint );
 	ImGui::TableNextColumn();
 	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigLeft", label ), ImGuiDir_Left ) ) {
-		Snd_PlaySfx( ui->sfx_move );
+		Snd_PlaySfx( ui->sfx_select );
 		( *curvalue ) -= delta;
 		if ( *curvalue < minvalue ) {
 			*curvalue = minvalue;
@@ -560,7 +560,7 @@ static void SettingsMenu_MultiSliderFloat( const char *name, const char *label, 
 	SfxFocused( curvalue );
 	ImGui::SameLine();
 	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigRight", label ), ImGuiDir_Right ) ) {
-		Snd_PlaySfx( ui->sfx_move );
+		Snd_PlaySfx( ui->sfx_select );
 		( *curvalue ) += delta;
 		if ( *curvalue > maxvalue ) {
 			*curvalue = maxvalue;
@@ -584,7 +584,7 @@ static void SettingsMenu_MultiSliderInt( const char *name, const char *label, co
 	ImGui::TableNextColumn();
 	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigLeft", label ), ImGuiDir_Left ) ) {
 		if ( enabled ) {
-			Snd_PlaySfx( ui->sfx_move );
+			Snd_PlaySfx( ui->sfx_select );
 			( *curvalue ) -= delta;
 			if ( *curvalue < minvalue ) {
 				*curvalue = minvalue;
@@ -602,7 +602,7 @@ static void SettingsMenu_MultiSliderInt( const char *name, const char *label, co
 	ImGui::SameLine();
 	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigRight", label ), ImGuiDir_Right ) ) {
 		if ( enabled ) {
-			Snd_PlaySfx( ui->sfx_move );
+			Snd_PlaySfx( ui->sfx_select );
 			( *curvalue ) += delta;
 			if ( *curvalue > maxvalue ) {
 				*curvalue = maxvalue;
@@ -1171,20 +1171,41 @@ static void GameplayMenu_Draw( void )
 
 static void VideoMenu_Save( void )
 {
+	extern SDL_Window *SDL_window;
+
 	Cvar_SetIntegerValue( "r_fullscreen", s_settingsMenu->video.fullscreen );
 	Cvar_SetIntegerValue( "r_noborder", s_settingsMenu->video.noborder );
 	Cvar_SetIntegerValue( "r_customWidth", s_settingsMenu->video.windowWidth );
 	Cvar_SetIntegerValue( "r_customHeight", s_settingsMenu->video.windowHeight );
 	Cvar_SetIntegerValue( "r_mode", s_settingsMenu->video.windowResolution - 2 );
+	Cvar_SetIntegerValue( "r_swapInterval", s_settingsMenu->video.vsync - 2 );
 	Cvar_SetFloatValue( "r_imageSharpenAmount", s_settingsMenu->video.sharpening );
 	Cvar_SetFloatValue( "r_autoExposure", s_settingsMenu->video.exposure );
 	Cvar_SetFloatValue( "r_gammaAmount", s_settingsMenu->video.gamma );
 
-	Cbuf_ExecuteText( EXEC_APPEND, "vid_restart\n" );
+	if ( !N_stricmp( g_renderer->s, "opengl" ) ) {
+		SDL_GL_SetSwapInterval( s_settingsMenu->video.vsync - 2 );
+	}
+	SDL_SetWindowFullscreen( SDL_window, s_settingsMenu->video.fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0 );
+	SDL_SetWindowSize( SDL_window, r_vidModes[ s_settingsMenu->video.windowResolution - 2 ].width,
+		r_vidModes[ s_settingsMenu->video.windowResolution - 2 ].height );
+	SDL_SetWindowBordered( SDL_window, (SDL_bool)!s_settingsMenu->video.noborder );
 }
 
 static void PerformanceMenu_Save( void )
 {
+	bool needRestart = false;
+
+	if ( s_settingsMenu->performance.normalMapping != s_initial->performance.normalMapping ) {
+		needRestart = true;
+	}
+	if ( s_settingsMenu->performance.specularMapping != s_initial->performance.specularMapping ) {
+		needRestart = true;
+	}
+	if ( s_settingsMenu->performance.textureDetail != s_initial->performance.textureDetail ) {
+		needRestart = true;
+	}
+
 	Cvar_SetIntegerValue( "r_multisampleType", s_settingsMenu->performance.multisampleType );
 	switch ( s_settingsMenu->performance.multisampleType ) {
 	case AntiAlias_None:
@@ -1213,6 +1234,27 @@ static void PerformanceMenu_Save( void )
 		break;
 	};
 
+	switch ( s_settingsMenu->performance.anisotropicFilter ) {
+	case 0:
+		Cvar_Set( "r_arb_texture_max_anisotropy", "0" );
+		break;
+	case 1:
+		Cvar_Set( "r_arb_texture_max_anisotropy", "2" );
+		break;
+	case 2:
+		Cvar_Set( "r_arb_texture_max_anisotropy", "4" );
+		break;
+	case 3:
+		Cvar_Set( "r_arb_texture_max_anisotropy", "8" );
+		break;
+	case 4:
+		Cvar_Set( "r_arb_texture_max_anisotropy", "16" );
+		break;
+	case 5:
+		Cvar_Set( "r_arb_texture_max_anisotropy", "32" );
+		break;
+	};
+
 	Cvar_Set( "r_textureMode", s_settingsMenu->performance.textureFilters[ s_settingsMenu->performance.textureFilter ] );
 	Cvar_SetIntegerValue( "r_textureDetail", s_settingsMenu->performance.textureDetail );
 	Cvar_SetIntegerValue( "r_normalMapping", s_settingsMenu->performance.normalMapping );
@@ -1224,7 +1266,9 @@ static void PerformanceMenu_Save( void )
 	Cvar_SetIntegerValue( "r_toneMap", s_settingsMenu->performance.toneMapping );
 	Cvar_SetIntegerValue( "r_toneMapType", s_settingsMenu->performance.toneMappingType );
 
-	Cbuf_ExecuteText( EXEC_APPEND, "vid_restart\n" );
+	if ( needRestart ) {
+		Cbuf_ExecuteText( EXEC_APPEND, "vid_restart\n" );
+	}
 }
 
 static void AudioMenu_Save( void )

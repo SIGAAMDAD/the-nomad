@@ -2516,21 +2516,21 @@ texture_t *R_FindImageFile( const char *name, imgType_t type, imgFlags_t flags )
 
 	checkFlagsTrue = IMGFLAG_GENNORMALMAP;
 	checkFlagsFalse = IMGFLAG_CUBEMAP;
-	if (r_normalMapping->i && (picFormat == GL_RGBA8) && (type == IMGTYPE_COLORALPHA) &&
-		((flags & checkFlagsTrue) == checkFlagsTrue) && !(flags & checkFlagsFalse))
+	if ( r_normalMapping->i && ( picFormat == GL_RGBA8 ) && ( type == IMGTYPE_COLORALPHA ) &&
+		( ( flags & checkFlagsTrue ) == checkFlagsTrue ) && !( flags & checkFlagsFalse ) )
 	{
 		char normalName[MAX_NPATH];
 		texture_t *normalImage;
 		uint32_t normalWidth, normalHeight;
 		imgFlags_t normalFlags;
 
-		normalFlags = (flags & ~IMGFLAG_GENNORMALMAP) | IMGFLAG_NOLIGHTSCALE;
+		normalFlags = ( flags & ~IMGFLAG_GENNORMALMAP ) | IMGFLAG_NOLIGHTSCALE;
 
-		COM_StripExtension(name, normalName, MAX_NPATH);
-		N_strcat(normalName, MAX_NPATH, "_n");
+		COM_StripExtension( name, normalName, MAX_NPATH );
+		N_strcat( normalName, MAX_NPATH, "_n" );
 
 		// find normalmap in case it's there
-		normalImage = R_FindImageFile(normalName, IMGTYPE_NORMAL, normalFlags);
+		normalImage = R_FindImageFile( normalName, IMGTYPE_NORMAL, normalFlags );
 
 		// if not, generate it
 		if ( normalImage == NULL && r_genNormalMaps->i ) {
@@ -2540,11 +2540,11 @@ texture_t *R_FindImageFile( const char *name, imgType_t type, imgFlags_t flags )
 			normalWidth = width;
 			normalHeight = height;
 			normalPic = ri.Hunk_AllocateTempMemory( width * height * 4 );
-			RGBAtoNormal(pic, normalPic, width, height, flags & IMGFLAG_CLAMPTOEDGE);
+			RGBAtoNormal( pic, normalPic, width, height, flags & IMGFLAG_CLAMPTOEDGE );
 
 #if 1
 			// Brighten up the original image to work with the normal map
-			RGBAtoYCoCgA(pic, pic, width, height);
+			RGBAtoYCoCgA( pic, pic, width, height );
 			for (y = 0; y < height; y++)
 			{
 				byte *picbyte  = pic       + y * width * 4;
@@ -2759,15 +2759,14 @@ static void R_CreateBuiltinTextures( void )
 			rg.fixedLevelsImage =  R_CreateImage( "*fixedLevels",   p, 1, 1, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
 		}
 
-		for (x = 0; x < 2; x++) {
+		for ( x = 0; x < 2; x++ ) {
 			rg.textureScratchImage[x] = R_CreateImage( va( "*textureScratch%d", x), NULL, 256, 256, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8 );
 		}
-		for (x = 0; x < 2; x++) {
+		for ( x = 0; x < 2; x++ ) {
 			rg.quarterImage[x] = R_CreateImage( va( "*quarter%d", x ), NULL, width / 2, height / 2, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8 );
 		}
 
-		if (r_ssao->i)
-		{
+		if ( r_ssao->i ) {
 			rg.screenSsaoImage = R_CreateImage( "*screenSsao", NULL, width / 2, height / 2, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8 );
 		}
 		/*
@@ -2837,9 +2836,9 @@ void R_SetColorMappings( void )
 		s_gammatable[i] = inf;
 	}
 
-	for (i=0 ; i<256 ; i++) {
+	for ( i = 0; i < 256; i++ ) {
 		j = i * r_intensity->f;
-		if (j > 255) {
+		if ( j > 255 ) {
 			j = 255;
 		}
 		s_intensitytable[i] = j;
@@ -2870,10 +2869,10 @@ void R_DeleteTextures( void )
 {
 	uint64_t i;
 
-	for (i = 0; i < rg.numTextures; i++) {
+	for ( i = 0; i < rg.numTextures; i++ ) {
 		nglDeleteTextures( 1, &rg.textures[i]->id );
 	}
-	memset( rg.textures, 0, sizeof(rg.textures) );
+	memset( rg.textures, 0, sizeof( rg.textures ) );
 
 	GL_BindNullTextures();
 }

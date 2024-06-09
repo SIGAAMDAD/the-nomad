@@ -74,6 +74,32 @@ gfx/hud/blood_screen
 }
 
 //
+// powerup icons
+//
+icons/iconpw_pewpew
+{
+    nopicmip
+    nomipmaps
+    {
+        map textures/icons/iconpw_pewpew.tga
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        rgbGen wave triangle 0.8 0.5 0.3 1.0
+    }
+}
+
+icons/iconpw_angry
+{
+    nopicmip
+    nomipmaps
+    {
+        map textures/icons/iconpw_pewpew.tga
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        rgbGen const ( 1.0 0.0 0.0 )
+//        rgbGen wave sin 1.0 0.1 1.0 0.2 0.1 0.7
+    }
+}
+
+//
 // weapon icons
 //
 icons/iconw_murstar
@@ -81,7 +107,7 @@ icons/iconw_murstar
     nopicmip
     nomipmaps
     {
-        map icons/iconw_murstar.tga
+        map textures/icons/iconw_murstar.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
     }
 }
@@ -92,7 +118,7 @@ icons/iconw_db
     nomipmaps
     {
         texFilter nearest
-        map icons/iconw_db.tga
+        map textures/icons/iconw_db.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
     }
 }
@@ -102,7 +128,7 @@ icons/iconw_fab
     nopicmip
     nomipmaps
     {
-        map icons/iconw_fullauto_shotty.tga
+        map textures/icons/iconw_fullauto_shotty.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
     }
 }
@@ -112,7 +138,7 @@ icons/iconw_plasma
     nopicmip
     nomipmaps
     {
-        map icons/iconw_plasma.tga
+        map textures/icons/iconw_plasma.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
     }
 }
@@ -122,7 +148,7 @@ icons/iconw_frag
     nopicmip
     nomipmaps
     {
-        map icons/iconw_frag.tga
+        map textures/icons/iconw_frag.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
     }
 }
@@ -132,7 +158,7 @@ icons/iconw_incendiary
     nopicmip
     nomipmaps
     {
-        map icons/iconw_incendiary.tga
+        map textures/icons/iconw_incendiary.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
     }
 }
@@ -142,7 +168,7 @@ icons/iconw_smoke
     nopicmip
     nomipmaps
     {
-        map icons/iconw_smoke.tga
+        map textures/icons/iconw_smoke.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
     }
 }
@@ -156,7 +182,7 @@ icons/icona_bullets
     nopicmip
     nomipmaps
     {
-        map icons/icona_bullets.tga
+        map textures/icons/icona_bullets.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
     }
 }
@@ -166,7 +192,7 @@ icons/icona_shells
     nopicmip
     nomipmaps
     {
-        map icons/icona_shells.tga
+        map textures/icons/icona_shells.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
     }
 }
@@ -176,7 +202,7 @@ icons/icona_rockets
     nopicmip
     nomipmaps
     {
-        map icons/icona_rockets.tga
+        map textures/icons/icona_rockets.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
     }
 }
@@ -186,7 +212,7 @@ icons/icona_frag
     nopicmip
     nomipmaps
     {
-        map icons/icona_frag.tga
+        map textures/icons/icona_frag.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
     }
 }
@@ -196,7 +222,7 @@ icons/icona_incendiary
     nopicmip
     nomipmaps
     {
-        map icons/icona_incendiary.tga
+        map textures/icons/icona_incendiary.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
     }
 }
@@ -206,7 +232,7 @@ icons/icona_smoke
     nopicmip
     nomipmaps
     {
-        map icons/icona_smoke.tga
+        map textures/icons/icona_smoke.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
     }
 }

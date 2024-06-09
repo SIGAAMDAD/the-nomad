@@ -1488,7 +1488,7 @@ static void G_InitRenderer_Cvars( void )
                             " 10: FXAA\n"
                             "requires \\vid_restart." );
     r_multisampleAmount = Cvar_Get( "r_multisampleAmount", "8", CVAR_SAVE );
-    Cvar_CheckRange( r_multisampleAmount, 0, "32", CVT_INT );
+    Cvar_CheckRange( r_multisampleAmount, "0", "32", CVT_INT );
 
 	r_noborder = Cvar_Get( "r_noborder", "0", CVAR_ARCHIVE_ND );
 	Cvar_CheckRange( r_noborder, "0", "1", CVT_INT );
@@ -1506,7 +1506,7 @@ static void G_InitRenderer_Cvars( void )
     r_debugCamera = Cvar_Get( "r_debugCamera", "0", CVAR_TEMP | CVAR_PRIVATE );
 
 	r_fullscreen = Cvar_Get( "r_fullscreen", "1", CVAR_SAVE );
-    Cvar_CheckRange(r_fullscreen, "0", "1", CVT_INT);
+    Cvar_CheckRange( r_fullscreen, "0", "1", CVT_INT );
 	Cvar_SetDescription( r_fullscreen, "Fullscreen mode. Set to 0 for windowed mode." );
 
 	r_customPixelAspect = Cvar_Get( "r_customPixelAspect", "1", CVAR_ARCHIVE_ND | CVAR_LATCH );
@@ -1695,8 +1695,6 @@ void G_ShutdownVMs( qboolean quit ) {
 void G_StartHunkUsers( void )
 {
     G_InitArchiveHandler();
-
-    g_pRenderThread = new ( Hunk_Alloc( sizeof( *g_pRenderThread ), h_low ) ) CRenderThread();
 
     // cache all maps
     G_InitMapCache();

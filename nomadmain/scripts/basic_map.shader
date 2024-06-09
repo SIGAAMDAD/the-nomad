@@ -2,7 +2,7 @@
 {
     nomipmaps
     nopicmip
-    if ( $r_textureDetail >= 2 ) {
+    if ( $r_textureDetail >= 2 && $r_genNormalMaps == 0 ) {
         texFilter nearest
         map textures/desert_tilesets/DesertTilemap16x16_n.jpg
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA

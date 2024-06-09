@@ -40,6 +40,10 @@ namespace TheNomad::SGame {
 				@m_PlayerData[3] = cast<PlayrObject@>( @EntityManager.Spawn( TheNomad::GameSystem::EntityType::Playr, 0, pos,
 					vec2( sgame_PlayerWidth.GetFloat(), sgame_PlayerHeight.GetFloat() ) ) );
 			}
+
+			for ( uint i = 0; i < m_nPlayerCount; i++ ) {
+				m_PlayerData[i].SetPlayerIndex( i );
+			}
 		}
 		void Init() {
 			//

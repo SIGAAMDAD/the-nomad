@@ -5,6 +5,8 @@
 #include "../rendercommon/imgui_impl_sdl2.h"
 #include "vm_local.h"
 #include <setjmp.h>
+#include "../game/g_game.h"
+#include "../ui/ui_lib.h"
 
 #define MAX_EVENT_QUEUE 256
 #define MASK_QUEUED_EVENTS (MAX_EVENT_QUEUE - 1)
@@ -196,6 +198,137 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Con_DPrintf( const char *fmt
 	Con_Printf( COLOR_CYAN "%s", msg );
 }
 
+void Com_WriteCrashReport( void )
+{
+    char msg[MAX_CVAR_VALUE];
+    char path[MAX_OSPATH];
+    char timestr[32];
+    struct tm *t;
+    time_t ctime;
+	cvar_t *var;
+	const char *match;
+	fileHandle_t f;
+	FILE *fp;
+	
+	extern cvar_t *cvar_vars;
+
+    ctime = time( NULL );
+    t = localtime( &ctime );
+    strftime( timestr, sizeof( timestr ) - 1, "%d%m%Y_%S%M%H", t );
+
+    Cvar_VariableStringBuffer( "com_errorMessage", msg, sizeof( msg ) - 1 );
+    Com_snprintf( path, sizeof( path ) - 1, LOG_DIR "/CrashReports/crashreport_%s.txt", timestr );
+
+	f = FS_FOpenWrite( path );
+	if ( f == FS_INVALID_HANDLE ) {
+	    N_Error( ERR_FATAL, "Error creating file %s in write-only mode", path );
+	}
+	fp = FS_Handle( f );
+
+    fprintf( fp, "[ERROR INFO]\n" );
+    fprintf( fp, "Message: %s\n", msg );
+    if ( gi.state == GS_LEVEL ) {
+        fprintf( fp, "MapName: %s\n", gi.mapCache.info.name );
+        fprintf( fp, "SaveName: %s\n", Cvar_VariableString( "sgame_SaveName" ) );
+    }
+    else if ( gi.state == GS_MENU ) {
+        fprintf( fp, "ActiveMenu: %i\n", ui->menustate );
+    }
+    fprintf( fp, "StackTrace:\n" );
+    Sys_DebugStacktraceFile( MAX_STACKTRACE_FRAMES, fp );
+	fprintf( fp, "\n" );
+
+    fprintf( fp, "[ENGINE INFO]\n" );
+	fprintf( fp, "Version String: " GLN_VERSION "\n" );
+	if ( FS_Initialized() && ui ) {
+		fprintf( fp, "Demo: %i\n", ui->demoVersion );
+	}
+    fprintf( fp, "Architecture: " ARCH_STRING "\n" );
+    fprintf( fp, "Operating System: " OS_STRING "\n" );
+    fprintf( fp, "CPU: %s\n", sys_cpuString->s );
+    fprintf( fp, "Build Information:\n" );
+	fprintf( fp, "\tC++ Version: %li\n", __cplusplus );
+	fprintf( fp, "\tCompiler: " COMPILER_STRING "\n" );
+	fprintf( fp, "\tCompiler Version: %lu", (uint64_t)EA_COMPILER_VERSION );
+#ifdef USE_CPU_AFFINITY
+    fprintf( fp, "\tUSE_CPU_AFFINITY\n" );
+#endif
+#ifdef USE_OPENGL_API
+	fprintf( fp, "\tUSE_OPENGL_API\n" );
+#endif
+#ifdef USE_VULKAN_API
+	fprintf( fp, "\tUSE_VULKAN_API\n" );
+#endif
+	fprintf( fp, "\n" );
+
+    fprintf( fp, "[CVAR INFO]\n" );
+	for ( var = cvar_vars; var; var = var->next ) {
+        if ( !var->name || ( match && !Com_Filter( match, var->name ) ) ) {
+			continue;
+		}
+		else if ( var->name && !N_stricmp( var->name, "com_errorMessage" ) ) {
+			continue; // don't print this redundantly
+		}
+
+		if ( var->flags & CVAR_SERVERINFO ) {
+			fprintf( fp, "S" );
+		} else {
+			fprintf( fp, " " );
+		}
+		if ( var->flags & CVAR_SYSTEMINFO ) {
+			fprintf( fp, "s" );
+		} else {
+			fprintf( fp, " " );
+		}
+		if ( var->flags & CVAR_USERINFO ) {
+			fprintf( fp, "U" );
+		} else {
+			fprintf( fp, " " );
+		}
+		if ( var->flags & CVAR_ROM ) {
+			fprintf( fp, "R" );
+		} else {
+			fprintf( fp, " " );
+		}
+		if ( var->flags & CVAR_INIT ) {
+			FS_Printf( f, "I" );
+		} else {
+			FS_Printf( f, " ");
+		}
+		if ( var->flags & CVAR_SAVE ) {
+			FS_Printf( f, "A" );
+		} else {
+			FS_Printf( f, " " );
+		}
+		if ( var->flags & CVAR_LATCH ) {
+			FS_Printf( f, "L" );
+		} else {
+			FS_Printf( f, " " );
+		}
+		if ( var->flags & CVAR_CHEAT ) {
+			FS_Printf( f, "C" );
+		} else {
+			FS_Printf( f, " " );
+		}
+		if ( var->flags & CVAR_USER_CREATED ) {
+			fprintf( fp, "?" );
+		} else {
+			fprintf( fp, " " );
+		}
+
+		fprintf( fp, " %s \"%s\"\n", var->name, var->s );
+    }
+
+    fprintf( fp, "\n" );
+    fprintf( fp, "[FILESYSTEM INFO]\n" );
+    fprintf( fp, "Referenced BFFs: %s\n", FS_ReferencedBFFNames() );
+    fprintf( fp, "Loaded BFFs: %s\n", FS_LoadedBFFNames() );
+
+	FS_FClose( f );
+
+	Con_Printf( "CrashReport data written to '%s'\n", path );
+}
+
 void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL N_Error( errorCode_t code, const char *err, ... )
 {
 	va_list argptr;
@@ -237,6 +370,7 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL N_Error( errorC
 		Con_Printf( "********************\nERROR: %s\n********************\n",
 			com_errorMessage );
 //		VM_Forced_Unload_Start();
+		Com_WriteCrashReport();
 		Com_EndRedirect();
 		G_FlushMemory();
 //		VM_Forced_Unload_Done();
@@ -246,6 +380,7 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL N_Error( errorC
 		Q_longjmp( abortframe, 1 );
 	} else { // ERR_FATAL
 //		VM_Forced_Unload_Start();
+		Com_WriteCrashReport();
 		G_ShutdownVMs( qtrue );
 		G_ShutdownRenderer( REF_UNLOAD_DLL );
 		Com_EndRedirect();
@@ -763,7 +898,7 @@ static void Com_Freeze_f( void ) {
 //
 void Com_LoadConfig( void )
 {
-    Cbuf_ExecuteText( EXEC_APPEND, "exec " LOG_DIR "/default.cfg\n" );
+    Cbuf_ExecuteText( EXEC_APPEND, "exec default.cfg\n" );
     Cbuf_Execute();  // Always execute after exec to prevent text buffer overflowing
 
 	if ( !Com_SafeMode() ) {

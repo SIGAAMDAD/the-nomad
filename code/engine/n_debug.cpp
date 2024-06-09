@@ -71,6 +71,7 @@ public:
 #ifdef POSIX
     struct backtrace_state *m_pBTState;
 	bool m_bBacktraceError;
+	FILE *m_hBackTraceOutput;
 #endif
 
     const char *m_pExePath;
@@ -114,11 +115,13 @@ static void bt_syminfo_callback( void *data, uintptr_t pc, const char *symname,
 		if ( logfile != FS_INVALID_HANDLE && FS_Initialized() ) {
 			FS_Printf( logfile, "  %-8zu %s\n", pc, symname );
 		}
+		fprintf( g_debugSession.m_hBackTraceOutput, "  %-8zu %s\n", pc, symname );
 		fprintf( stdout, "  %-8zu %s\n", pc, symname );
 	} else {
 		if ( logfile != FS_INVALID_HANDLE && FS_Initialized() ) {
 			FS_Printf( logfile, "%-8zu (unknown symbol)\n", pc );
 		}
+		fprintf( g_debugSession.m_hBackTraceOutput, "%-8zu (unknown symbol)\n", pc );
 		fprintf( stdout, "  %-8zu (unknown symbol)\n", pc );
 	}
 }
@@ -152,6 +155,7 @@ static int bt_pcinfo_callback( void *data, uintptr_t pc, const char *filename, i
 		if (logfile != FS_INVALID_HANDLE) {
 			FS_Printf( logfile,  "  %-8zu %-16s:%-8d %s\n", pc, filename, lineno, function );
 		}
+		fprintf( g_debugSession.m_hBackTraceOutput, "  %-8zu %-16s:%-8d %s\n", pc, filename, lineno, function );
 		fprintf( stdout, "  %-8zu %-16s:%-8d %s\n", pc, filename, lineno, function );
 	}
 
@@ -169,12 +173,12 @@ static int bt_simple_callback(void *data, uintptr_t pc)
 
     pcInfoWorked = 0;
 	// if this fails, the executable doesn't have debug info, that's ok (=> use bt_error_dummy())
-	backtrace_pcinfo(g_debugSession.m_pBTState, pc, bt_pcinfo_callback, bt_error_dummy, &pcInfoWorked);
-	if (!pcInfoWorked) { // no debug info? use normal symbols instead
+	backtrace_pcinfo( g_debugSession.m_pBTState, pc, bt_pcinfo_callback, bt_error_dummy, &pcInfoWorked );
+	if ( !pcInfoWorked ) { // no debug info? use normal symbols instead
 		// yes, it would be easier to call backtrace_syminfo() in bt_pcinfo_callback() if function == NULL,
 		// but some libbacktrace versions (e.g. in Ubuntu 18.04's g++-7) don't call bt_pcinfo_callback
 		// at all if no debug info was available - which is also the reason backtrace_full() can't be used..
-		backtrace_syminfo(g_debugSession.m_pBTState, pc, bt_syminfo_callback, bt_error_callback, NULL);
+		backtrace_syminfo( g_debugSession.m_pBTState, pc, bt_syminfo_callback, bt_error_callback, NULL );
 	}
 
 	return 0;
@@ -195,7 +199,7 @@ static GDR_INLINE size_t MemSize( void *ptr )
 
 CDebugSession::CDebugSession( void )
 {
-    m_pExePath = "glnomad";
+    m_pExePath = "TheNomad.x64";
 
 #ifdef POSIX
     m_pBTState = backtrace_create_state( m_pExePath, 0, bt_error_callback, NULL );
@@ -373,11 +377,8 @@ void Sys_DebugString( const char *str )
 #endif
 }
 
-void Sys_DebugStacktrace( uint32_t frames )
+void Sys_DebugStacktraceFile( uint32_t frames, FILE *fp )
 {
-	if ( com_errorEntered && g_debugSession.m_iErrorReason != ERR_NONE ) {
-        g_debugSession.m_bDoneErrorStackdump = true;
-    }
 #ifdef _WIN32
 	DWORD i;
 	USHORT nFrames;
@@ -448,9 +449,16 @@ void Sys_DebugStacktrace( uint32_t frames )
 			Con_Printf( "[Frame %i] %s\n"
 						"(0x%04lx) %s:%i:%i -> %s\n"
 				, i, ModuleInfo.ModuleName, symbol->Address, SymLine.FileName, SymLine.LineNumber, dwDisplacement, (const char *)symbol->Name );
+			
+			fprintf( fp, "[Frame %i] %s\n"
+						"(0x%04lx) %s:%i:%i -> %s\n"
+				, i, ModuleInfo.ModuleName, symbol->Address, SymLine.FileName, SymLine.LineNumber, dwDisplacement, (const char *)symbol->Name );
 		} else {
 			Con_Printf( "SymFromAddr failed: %s\n", Sys_GetError() );
 			Con_Printf( "[Frame %i] (unknown symbol) ???\n", i );
+
+			fprintf( fp, "SymFromAddr failed: %s\n", Sys_GetError() );
+			fprintf( fp, "[Frame %i] (unknown symbol) ???\n", i );
 		}
 	}
 
@@ -486,7 +494,9 @@ void Sys_DebugStacktrace( uint32_t frames )
     int numframes;
     uint64_t fileLength;
 
-    if (g_debugSession.m_pBTState) {
+	g_debugSession.m_hBackTraceOutput = fp;
+
+    if ( g_debugSession.m_pBTState ) {
         int skip = 2; // skip this function in backtrace
 		backtrace_simple( g_debugSession.m_pBTState, skip, bt_simple_callback, bt_error_callback, NULL );
     }
@@ -502,8 +512,8 @@ void Sys_DebugStacktrace( uint32_t frames )
         fileLength = ftell( g_debugSession.m_pBacktraceFile );
         fseek( g_debugSession.m_pBacktraceFile, 0L, SEEK_SET );
 
-        if (fileLength >= MAX_STACKTRACE_FILESIZE) {
-			if (!FS_Initialized()) {
+        if ( fileLength >= MAX_STACKTRACE_FILESIZE ) {
+			if ( !FS_Initialized() ) {
 				fprintf( stderr, "WARNING: stacktrace file size is %lu\n", fileLength );
 			}
 	        else {
@@ -521,7 +531,16 @@ void Sys_DebugStacktrace( uint32_t frames )
             buffer = p;
         }
 
-        fread( buffer, fileLength, 1, g_debugSession.m_pBacktraceFile );
+	    fread( buffer, fileLength, 1, g_debugSession.m_pBacktraceFile );
+		fwrite( buffer, fileLength, 1, fp );
     }
 #endif
+}
+
+void Sys_DebugStacktrace( uint32_t frames )
+{
+	if ( com_errorEntered && g_debugSession.m_iErrorReason != ERR_NONE ) {
+        g_debugSession.m_bDoneErrorStackdump = true;
+    }
+	Sys_DebugStacktraceFile( frames, FS_Handle( logfile ) );
 }

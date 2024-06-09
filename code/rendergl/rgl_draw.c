@@ -193,11 +193,16 @@ static void ComputeShaderColors( const shaderStage_t *pStage, vec4_t baseColor, 
 		vertColor[2] = overbright;
 		vertColor[3] = 1.0f;
 		break;
+	case CGEN_WAVEFORM:
+		baseColor[0] =
+		baseColor[1] =
+		baseColor[2] = RB_CalcWaveColorSingle( &pStage->rgbWave );
+		break;
 	case CGEN_CONST:
-		baseColor[0] = pStage->constantColor[0] / 255.0f;
-		baseColor[1] = pStage->constantColor[1] / 255.0f;
-		baseColor[2] = pStage->constantColor[2] / 255.0f;
-		baseColor[3] = pStage->constantColor[3] / 255.0f;
+		baseColor[0] = pStage->constantColor[0] /*/ 255.0f */;
+		baseColor[1] = pStage->constantColor[1] /*/ 255.0f */;
+		baseColor[2] = pStage->constantColor[2] /*/ 255.0f */;
+		baseColor[3] = pStage->constantColor[3] /*/ 255.0f */;
 		break;
 	case CGEN_VERTEX:
 	case CGEN_VERTEX_LIT:

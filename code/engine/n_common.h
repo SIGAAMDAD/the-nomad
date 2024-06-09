@@ -420,6 +420,7 @@ void FS_SetFilenameCallback( fnamecallback_f func );
 
 uint64_t FS_GetModList( char *listbuf, uint64_t bufsize );
 
+FILE *FS_Handle( fileHandle_t fh );
 void FS_Startup(void);
 void FS_InitFilesystem(void);
 void FS_Shutdown(qboolean closeFiles);

@@ -141,6 +141,13 @@ namespace TheNomad::SGame {
 			};
 			return InfoSystem::WeaponProperty::None;
 		}
+
+		void SetPlayerIndex( uint nIndex ) {
+			m_nControllerIndex = nIndex;
+		}
+		uint GetPlayerIndex() const {
+			return m_nControllerIndex;
+		}
 		
 		void DrawEmoteWheel() {
 //			if ( !m_bEmoteWheelActive ) {
@@ -385,8 +392,11 @@ namespace TheNomad::SGame {
 			m_EmptyInfo.damage = 100.0f; // this is the god of war
 			m_EmptyInfo.range = 1.5f;
 			m_EmptyInfo.magSize = 0;
-			m_EmptyInfo.weaponProps = InfoSystem::WeaponProperty::OneHandedBlunt;
+			m_EmptyInfo.weaponProps = InfoSystem::WeaponProperty( uint( InfoSystem::WeaponProperty::OneHandedBlunt ) );
 			m_EmptyInfo.weaponType = InfoSystem::WeaponType::LeftArm;
+
+			m_LeftHandMode = InfoSystem::WeaponProperty( uint( InfoSystem::WeaponProperty::OneHandedBlunt ) );
+			m_RightHandMode = InfoSystem::WeaponProperty( uint( InfoSystem::WeaponProperty::OneHandedBlunt ) );
 
 			InfoSystem::InfoManager.GetWeaponTypes()[ "weapon_fist" ] = ENTITYNUM_INVALID - 2;
 			InfoSystem::InfoManager.AddWeaponInfo( @m_EmptyInfo );
@@ -417,7 +427,20 @@ namespace TheNomad::SGame {
 		// custom draw because of adaptive weapons and leg sprites
 		void Draw() override {
 			int hLegSprite = FS_INVALID_HANDLE;
+			TheNomad::Engine::Renderer::PolyVert[] verts( 4 );
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
+
+			refEntity.origin = vec3( 0.0f );
+			refEntity.sheetNum = TheNomad::Engine::ResourceCache.GetSpriteSheet( "icons/icona_bullets", 640, 480, 640, 480 ).GetShader();
+			refEntity.spriteId = 0;
+			refEntity.scale = 1.0f;
+			refEntity.Draw();
+
+			refEntity.origin = vec3( 1.0f, 0.0f, 0.0f );
+			refEntity.sheetNum = TheNomad::Engine::ResourceCache.GetSpriteSheet( "icons/iconpw_pewpew", 360, 360, 360, 360 ).GetShader();
+			refEntity.spriteId = 0;
+			refEntity.scale = 1.0f;
+			refEntity.Draw();
 
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.sheetNum = m_SpriteSheet.GetShader();
@@ -553,5 +576,8 @@ namespace TheNomad::SGame {
 		
 		private PlayerDisplayUI m_HudData;
 		PMoveData Pmove( @this );
+
+		// used for various things but mostly just haptic feedback
+		private uint m_nControllerIndex;
 	};
 };

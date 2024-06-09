@@ -1080,7 +1080,12 @@ static qboolean ParseStage(shaderStage_t *stage, const char **text)
 				ri.Printf( PRINT_WARNING, "missing parameters for rgbGen in shader '%s'\n", shader.name );
 				continue;
 			}
-			if ( !N_stricmp( tok, "const" ) )
+			if ( !N_stricmp( tok, "wave" ) )
+			{
+				ParseWaveForm( text, &stage->rgbWave );
+				stage->rgbGen = CGEN_WAVEFORM;
+			}
+			else if ( !N_stricmp( tok, "const" ) )
 			{
 				vec3_t	color;
 

@@ -1226,6 +1226,8 @@ void HandleEvents( void )
 	SDL_Event e;
 	keynum_t key = 0;
 	static keynum_t lastKeyDown = 0;
+	int windowWidth;
+	int windowHeight;
 
 	if ( !SDL_WasInit( SDL_INIT_VIDEO ) ) {
 		return;

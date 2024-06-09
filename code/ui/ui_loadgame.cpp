@@ -178,7 +178,7 @@ static void LoadGameMenu_InitSaveFiles( void )
     fileList = g_pArchiveHandler->GetSaveFiles( &s_loadGame->numSaves );
 
     if ( s_loadGame->numSaves ) {
-        Cvar_Set( "sg_numSaves", va( "%li", (int64_t)s_loadGame->numSaves ) );
+        Cvar_Set( "sgame_NumSaves", va( "%li", (int64_t)s_loadGame->numSaves ) );
 
         s_loadGame->saveList = (saveinfo_t *)Hunk_Alloc( sizeof( saveinfo_t ) * s_loadGame->numSaves, h_high );
         info = s_loadGame->saveList;

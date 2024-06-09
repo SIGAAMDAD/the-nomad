@@ -134,7 +134,7 @@ void main()
 #else
 	v_TexCoords = texCoords;
 #endif
-    v_Color = a_Color;
+    v_Color = u_VertColor * a_Color + u_BaseColor;
 	v_WorldPos = a_WorldPos;
 
 	v_FragPos = vec4( u_ModelViewProjection * vec4( a_Position, 1.0 ) ).xyz;

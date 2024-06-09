@@ -74,6 +74,7 @@ namespace TheNomad::SGame {
 				accel.x += 5.5f * side;
 				m_EntityData.dashSfx.Play( m_EntityData.GetOrigin() );
 				m_EntityData.m_bDashing = false;
+				TheNomad::Util::HapticRumble( m_EntityData.GetPlayerIndex(), 0.5f, 400 );
 			}
 
 			const uint tile = LevelManager.GetMapData().GetTile( m_EntityData.GetOrigin(), m_EntityData.GetBounds() );
