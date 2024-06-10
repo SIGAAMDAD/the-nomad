@@ -214,7 +214,7 @@ namespace TheNomad::SGame {
 				};
 				EntityManager.KillEntity( @attacker, @this );
 				
-				Util::HapticRumble( ScreenData.GetPlayerIndex( @this ), 0.80f, 4000 );
+				Util::HapticRumble( m_nControllerIndex, 0.80f, 4000 );
 			} else {
 				switch ( Util::PRandom() & 3 ) {
 				case 0:
@@ -228,7 +228,7 @@ namespace TheNomad::SGame {
 					break;
 				};
 				
-				Util::HapticRumble( ScreenData.GetPlayerIndex( @this ), 0.50f, 300 );
+				Util::HapticRumble( m_nControllerIndex, 0.50f, 300 );
 			}
 		}
 		
@@ -427,20 +427,10 @@ namespace TheNomad::SGame {
 		// custom draw because of adaptive weapons and leg sprites
 		void Draw() override {
 			int hLegSprite = FS_INVALID_HANDLE;
-			TheNomad::Engine::Renderer::PolyVert[] verts( 4 );
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 
-			refEntity.origin = vec3( 0.0f );
-			refEntity.sheetNum = TheNomad::Engine::ResourceCache.GetSpriteSheet( "icons/icona_bullets", 640, 480, 640, 480 ).GetShader();
-			refEntity.spriteId = 0;
-			refEntity.scale = 1.0f;
-			refEntity.Draw();
-
-			refEntity.origin = vec3( 1.0f, 0.0f, 0.0f );
-			refEntity.sheetNum = TheNomad::Engine::ResourceCache.GetSpriteSheet( "icons/iconpw_pewpew", 360, 360, 360, 360 ).GetShader();
-			refEntity.spriteId = 0;
-			refEntity.scale = 1.0f;
-			refEntity.Draw();
+//			TheNomad::Engine::Renderer::AddSpriteToScene( vec3( 0, 0, 0 ),
+//				TheNomad::Engine::Renderer::RegisterShader( "icons/iconpw_pewpew" ), 0, true );
 
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.sheetNum = m_SpriteSheet.GetShader();

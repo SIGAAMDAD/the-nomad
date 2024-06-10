@@ -56,10 +56,10 @@ namespace TheNomad::SGame {
 				if ( Util::BoundsIntersectPoint( bounds, entList[i].GetOrigin() ) ) {
 					const float dist = Util::Distance( m_Link.m_Origin, entList[i].GetOrigin() );
 					if ( dist < 1.0f ) { // immediate impact range means death
-//						EntityManager.KillEntity( @ent, @entList[i] );
+						EntityManager.KillEntity( @ent, @entList[i] );
 						damage += m_Info.damage;
 					} else if ( dist <= m_Info.range ) {
-//						EntityManager.DamageEntity( @ent, @entList[i], m_Info.damage + ( m_Info.range + ( dist * 0.1f ) ) );
+						EntityManager.DamageEntity( @ent, @entList[i], m_Info.damage + ( m_Info.range + ( dist * 0.1f ) ) );
 						damage += m_Info.damage;
 					}
 				}
@@ -111,7 +111,7 @@ namespace TheNomad::SGame {
 				return 0.0f; // hit nothing or a wall
 			}
 			
-//			EntityManager.DamageEntity( @ent, @ray );
+			EntityManager.DamageEntity( @ent, @ray );
 			
 			// health mult doesn't matter on harder difficulties if the player is attacking with a firearm,
 			// that is, unless, the player is very close to the enemy
@@ -178,6 +178,8 @@ namespace TheNomad::SGame {
 			}
 
 			m_Link.m_Origin = origin;
+			m_Link.m_Bounds.m_nWidth = m_Info.width;
+			m_Link.m_Bounds.m_nHeight = m_Info.height;
 			m_Link.m_Bounds.MakeBounds( origin );
 		}
 

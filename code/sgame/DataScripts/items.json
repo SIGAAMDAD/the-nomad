@@ -4,69 +4,76 @@
 			"Type": "Powerup",
 			"Id": "powerup_a",
 			"Name": "Trigger Happy",
-			"Effect": "toggle_powerup 0",
+			"Effect": "sgame.toggle_powerup 0",
 			"Duration": 50,
-			"Cost": 0,
 			"Icon": "icons/iconpw_pewpew",
 			"SpriteOffsetX": 0,
-			"SpriteOffsetY": 0
+			"SpriteOffsetY": 0,
+			"Width": 0.9,
+			"Height": 0.9
 		},
 		{
 			"Type": "Powerup",
 			"Id": "powerup_b",
 			"Name": "Endless Anger",
-			"Effect": "toggle_powerup 1",
+			"Effect": "sgame.toggle_powerup 1",
 			"Duration": 5,
-			"Cost": 0,
 			"Icon": "icons/iconpw_angry",
 			"SpriteOffsetX": 0,
-			"SpriteOffsetY": 0
+			"SpriteOffsetY": 0,
+			"Width": 0.9,
+			"Height": 0.9
 		},
 		{
 			"Type": "Consumable",
 			"Id": "item_stimpack",
 			"Name": "Stim Pack",
-			"Cost": 10,
-			"Effect": "add_health_mult 5.0",
+			"Effect": "sgame.add_health_mult 5.0",
 			"Icon": "icons/icon_healthpack",
 			"SpriteOffsetX": 0,
-			"SpriteOffsetY": 0
+			"SpriteOffsetY": 0,
+			"Width": 0.9,
+			"Height": 0.9
 		},
 		{
 			"Type": "Consumable",
 			"Id": "item_ammopack",
 			"Name": "Bullets",
 			"Effect": "add_player_ammo bullet 15",
-			"Cost": 20,
 			"SpriteOffsetX": 0,
-			"SpriteOffsetY": 0
+			"SpriteOffsetY": 0,
+			"Width": 0.9,
+			"Height": 0.9
 		},
 		{
 			"Type": "Consumable",
 			"Id": "item_shellpack",
 			"Name": "Shells",
-			"Effect": "add_player_ammo shell 12",
-			"Cost": 20,
+			"Effect": "sgame.add_player_ammo shell 12",
 			"SpriteOffsetX": 0,
-			"SpriteOffsetY": 0
+			"SpriteOffsetY": 0,
+			"Width": 0.9,
+			"Height": 0.9
 		},
 		{
 			"Type": "Consumable",
 			"Id": "item_rocketpack",
 			"Name": "Rockets",
-			"Effect": "add_player_ammo rocket 5",
-			"Cost": 15,
+			"Effect": "sgame.add_player_ammo rocket 5",
 			"SpriteOffsetX": 0,
-			"SpriteOffsetY": 0
+			"SpriteOffsetY": 0,
+			"Width": 0.9,
+			"Height": 0.9
 		},
 		{
 			"Type": "Consumable",
 			"Id": "item_grenadepack",
 			"Name": "Grenades",
-			"Effect": "add_playet_ammo grenade 5",
-			"Cost": 20,
+			"Effect": "sgame.add_player_ammo grenade 5",
 			"SpriteOffsetX": 0,
-			"SpriteOffsetY": 0
+			"SpriteOffsetY": 0,
+			"Width": 0.9,
+			"Height": 0.9
 		}
 	]
 }

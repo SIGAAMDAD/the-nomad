@@ -12,6 +12,8 @@
 			"AmmoType": "Bullet",
 			"Range": 55.0,
 			"Damage": 78.0,
+			"Width": 0.9,
+			"Height": 0.9,
 			"WeaponProperties": [
 				"OneHandedSidearmFirearm",
 				"OneHandedBlunt"
@@ -29,6 +31,8 @@
 			"AmmoType": "Bullet",
 			"Range": 42.0,
 			"Damage": 23.5,
+			"Width": 0.9,
+			"Height": 0.9,
 			"WeaponProperties": [
 				"OneHandedPrimaryFirearm",
 				"OneHandedSidearmFirearm",
@@ -48,6 +52,8 @@
 			"AmmoType": "Shell",
 			"Range": 55.0,
 			"Damage": 81.9,
+			"Width": 0.9,
+			"Height": 0.9,
 			"WeaponProperties": [ "TwoHandedPrimaryFirearm", "TwoHandedBlunt" ]
 		}
 	]

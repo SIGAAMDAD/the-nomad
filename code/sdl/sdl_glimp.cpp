@@ -183,25 +183,17 @@ static int GLimp_CreateBaseWindow( gpuConfig_t *config )
         // set the recommended version, this is not mandatory,
         // however if your driver isn't >= 3.3, that'll be
         // deprecated stuff
-        SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 3 );
-        SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 3 );
+        SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 4 );
+        SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 5 );
         SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY );
 
         if ( contextFlags ) {
             SDL_GL_SetAttribute( SDL_GL_CONTEXT_FLAGS, contextFlags );
         }
-
-        if ( r_stereoEnabled->i ) {
-            SDL_GL_SetAttribute( SDL_GL_STEREO, 1 );
-        } else {
-            SDL_GL_SetAttribute( SDL_GL_STEREO, 0 );
-        }
-
+        
+        SDL_GL_SetAttribute( SDL_GL_STEREO, r_stereoEnabled->i );
+        SDL_GL_SetAttribute( SDL_GL_ACCELERATED_VISUAL, !r_allowSoftwareGL->i );
         SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
-
-        if ( !r_allowSoftwareGL->i ) {
-            SDL_GL_SetAttribute( SDL_GL_ACCELERATED_VISUAL, 1 );
-        }
 
         // [the-nomad] make sure we only create ONE window
         if ( !SDL_window ) {

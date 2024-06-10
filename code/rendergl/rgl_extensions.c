@@ -104,7 +104,7 @@ void R_InitExtensions(void)
 
         NGL_ARB_map_buffer_range
         
-        if ( !nglMapBufferRange || !nglFlushMappedBufferRange ) {
+        if ( !nglMapBufferRange || !nglFlushMappedBufferRange || !nglInvalidateBufferData ) {
             ri.Printf(PRINT_INFO, result[EXT_FAILED], ext);
             glContext.ARB_map_buffer_range = qfalse;
         } else {

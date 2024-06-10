@@ -378,7 +378,6 @@ void SCR_UpdateScreen( void )
     }
     recursive = 1;
 
-	UI_Refresh( gi.realtime );
 	// if there is no VM, there are also no rendering comamnds. Stop the renderer in
     // that case
 	// we're in a level
@@ -412,10 +411,12 @@ void SCR_UpdateScreen( void )
     // console draws next
     Con_DrawConsole();
 
+	UI_Refresh( gi.realtime );
+
 	if ( ui_debugOverlay->i ) {
-		re.EndFrame( &time_frontend, &time_backend );
+		re.EndFrame( &time_frontend, &time_backend, &gi.pc );
 	} else {
-		re.EndFrame( NULL, NULL );
+		re.EndFrame( NULL, NULL, &gi.pc );
 	}
 
 	// draw it all

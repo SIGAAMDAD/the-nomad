@@ -4,16 +4,16 @@ renderBackendData_t *backendData;
 
 static void R_PerformanceCounters(void)
 {
-	if (!r_speeds->i) {
+	if ( !r_speeds->i ) {
 		// clear the counters even if we aren't printing
-		memset(&backend.pc, 0, sizeof(backend.pc));
+		memset( &backend.pc, 0, sizeof( backend.pc ) );
 		return;
 	}
 
-	if (r_speeds->i == 1) {
-		ri.Printf(PRINT_INFO, "%u/%u/%u binds/indices/vertices %u dynamic buffers %u static buffers %u IBOs %u VBOs %u VAOs\n",
+	if ( r_speeds->i == 1 ) {
+		ri.Printf( PRINT_INFO, "%u/%u/%u binds/indices/vertices %u dynamic buffers %u static buffers %u IBOs %u VBOs %u VAOs\n",
 			backend.pc.c_bufferBinds, backend.pc.c_bufferIndices, backend.pc.c_bufferVertices, backend.pc.c_dynamicBufferDraws,
-			backend.pc.c_staticBufferDraws, backend.pc.c_iboBinds, backend.pc.c_vboBinds, backend.pc.c_vaoBinds);
+			backend.pc.c_staticBufferDraws, backend.pc.c_iboBinds, backend.pc.c_vboBinds, backend.pc.c_vaoBinds );
 	}
 	else if (r_speeds->i == 2) {
 	}
@@ -345,7 +345,7 @@ RE_EndFrame
 Returns the number of msec spent in the back end
 =============
 */
-void RE_EndFrame(uint64_t *frontEndMsec, uint64_t *backEndMsec)
+void RE_EndFrame( uint64_t *frontEndMsec, uint64_t *backEndMsec, backendCounters_t *pc )
 {
 	swapBuffersCmd_t *cmd;
 
@@ -355,14 +355,18 @@ void RE_EndFrame(uint64_t *frontEndMsec, uint64_t *backEndMsec)
 	}
 	cmd->commandId = RC_SWAP_BUFFERS;
 
+	if ( pc ) {
+		*pc = backend.pc;
+	}
+
 	R_IssueRenderCommands( qtrue );
 	R_InitNextFrame();
 
-	if (frontEndMsec) {
+	if ( frontEndMsec ) {
 		*frontEndMsec = rg.frontEndMsec;
 	}
 	rg.frontEndMsec = 0;
-	if (backEndMsec) {
+	if ( backEndMsec ) {
 		*backEndMsec = backend.pc.msec;
 	}
 	backend.pc.msec = 0;

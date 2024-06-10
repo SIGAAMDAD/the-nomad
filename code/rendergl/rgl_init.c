@@ -1575,6 +1575,11 @@ void R_VertexLighting( qboolean allowed )
     rg.vertexLightingAllowed = allowed;
 }
 
+void RE_GetGPUMemStats( gpuMemory_t *memstats )
+{
+    *memstats = glState.memstats;
+}
+
 GDR_EXPORT renderExport_t *GDR_DECL GetRenderAPI( uint32_t version, refimport_t *import )
 {
     static renderExport_t re;

@@ -144,20 +144,21 @@ R_ImageList_f
 void R_ImageList_f( void )
 {
 	uint32_t i;
-	uint64_t estTotalSize = 0;
 
 	ri.Printf( PRINT_INFO, "\n     --w-- --h-- -type-- -size- --name-------\n" );
 
+	glState.memstats.numTextures = 0;
+	glState.memstats.estTextureMemUsed = 0;
 	for ( i = 0 ; i < rg.numTextures ; i++ ) {
 		texture_t *image = rg.textures[i];
 		const char *format = "????   ";
 		const char *sizeSuffix;
-		uint32_t estSize;
 		uint32_t displaySize;
+		uint32_t estSize = 0;
 
-		estSize = image->uploadWidth * image->uploadHeight;
+		glState.memstats.estTextureMemUsed = image->uploadWidth * image->uploadHeight;
 
-		switch(image->internalFormat) {
+		switch ( image->internalFormat ) {
 		case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT:
 			format = "sDXT1  ";
 			// 64 bits per 16 pixels, so 4 bits per pixel
@@ -293,26 +294,27 @@ void R_ImageList_f( void )
 		sizeSuffix = "b ";
 		displaySize = estSize;
 
-		if (displaySize > 1024) {
+		if ( displaySize > 1024 ) {
 			displaySize /= 1024;
 			sizeSuffix = "kb";
 		}
-		if (displaySize > 1024) {
+		if ( displaySize > 1024 ) {
 			displaySize /= 1024;
 			sizeSuffix = "Mb";
 		}
-		if (displaySize > 1024) {
+		if ( displaySize > 1024 ) {
 			displaySize /= 1024;
 			sizeSuffix = "Gb";
 		}
 
 		ri.Printf(PRINT_INFO, "%u:   %5u %5u %s %4u%s %s\n", i, image->width, image->height, format, displaySize, sizeSuffix, image->imgName);
-		estTotalSize += estSize;
+		glState.memstats.estTextureMemUsed += estSize;
+		glState.memstats.numTextures++;
 	}
 
-	ri.Printf(PRINT_INFO, " ---------\n");
-	ri.Printf(PRINT_INFO, " approx %lu bytes\n", estTotalSize);
-	ri.Printf(PRINT_INFO, " %u total images\n\n", rg.numTextures );
+	ri.Printf( PRINT_INFO, " ---------\n" );
+	ri.Printf( PRINT_INFO, " approx %lu bytes\n", glState.memstats.estTextureMemUsed );
+	ri.Printf( PRINT_INFO, " %u total images\n\n", rg.numTextures );
 }
 
 //=======================================================================
@@ -2139,6 +2141,7 @@ static texture_t *R_CreateImage2( const char *name, byte *pic, int width, int he
 	byte *resampledBuffer = NULL;
 	int lastMip, mipWidth, mipHeight, miplevel;
 	qboolean mipmap = !!( flags & IMGFLAG_MIPMAP );
+	uint32_t estSize = 0;
 
 	namelen = strlen( name );
 	if ( namelen >= MAX_NPATH ) {
@@ -2258,6 +2261,115 @@ static texture_t *R_CreateImage2( const char *name, byte *pic, int width, int he
 	GL_BindTexture( TB_COLORMAP, NULL );
 
 	GL_CheckErrors();
+	
+	estSize += image->uploadWidth * image->uploadHeight;
+	switch ( image->internalFormat ) {
+	case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT:
+		// 64 bits per 16 pixels, so 4 bits per pixel
+		estSize /= 2;
+		break;
+	case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT:
+		// 128 bits per 16 pixels, so 1 byte per pixel
+		break;
+	case GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM_ARB:
+		// 128 bits per 16 pixels, so 1 byte per pixel
+		break;
+	case GL_COMPRESSED_RG_RGTC2:
+		// 128 bits per 16 pixels, so 1 byte per pixel
+		break;
+	case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
+		// 64 bits per 16 pixels, so 4 bits per pixel
+		estSize /= 2;
+		break;
+	case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
+		// 64 bits per 16 pixels, so 4 bits per pixel
+		estSize /= 2;
+		break;
+	case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
+		// 128 bits per 16 pixels, so 1 byte per pixel
+		break;
+	case GL_COMPRESSED_RGBA_BPTC_UNORM_ARB:
+		// 128 bits per 16 pixels, so 1 byte per pixel
+		break;
+	case GL_RGB4_S3TC:
+		// same as DXT1?
+		estSize /= 2;
+		break;
+	case GL_RGBA16F_ARB:
+		// 8 bytes per pixel
+		estSize *= 16;
+		break;
+	case GL_RGBA16:
+		// 8 bytes per pixel
+		estSize *= 8;
+		break;
+	case GL_RGBA2:
+	case GL_RGBA4:
+	case GL_RGBA8:
+	case GL_RGBA12:
+	case GL_RGBA:
+	case GL_RGB12:
+		// 4 bytes per pixel
+		estSize *= 4;
+		break;
+	case GL_RGBA32F_ARB:
+	case GL_RGB32F_ARB:
+		// 16 bytes per pixel?
+		estSize *= 16;
+		break;
+	case GL_LUMINANCE8:
+	case GL_LUMINANCE:
+		// 1 byte per pixel?
+		break;
+	case GL_RGB5:
+	case GL_RGB8:
+	case GL_RGB2_EXT:
+	case GL_RGB:
+		// 3 bytes per pixel?
+		estSize *= 3;
+		break;
+	case GL_LUMINANCE8_ALPHA8:
+	case GL_LUMINANCE_ALPHA:
+		// 2 bytes per pixel?
+		estSize *= 2;
+		break;
+	case GL_SRGB_EXT:
+	case GL_SRGB8_EXT:
+		// 3 bytes per pixel?
+		estSize *= 3;
+		break;
+	case GL_SRGB_ALPHA_EXT:
+	case GL_SRGB8_ALPHA8_EXT:
+		// 4 bytes per pixel?
+		estSize *= 4;
+		break;
+	case GL_SLUMINANCE_EXT:
+	case GL_SLUMINANCE8_EXT:
+		// 1 byte per pixel?
+		break;
+	case GL_SLUMINANCE_ALPHA_EXT:
+	case GL_SLUMINANCE8_ALPHA8_EXT:
+		// 2 byte per pixel?
+		estSize *= 2;
+		break;
+	case GL_DEPTH_COMPONENT16:
+		// 2 bytes per pixel
+		estSize *= 2;
+		break;
+	case GL_DEPTH_COMPONENT24:
+		// 3 bytes per pixel
+		estSize *= 3;
+		break;
+	case GL_DEPTH_COMPONENT:
+	case GL_DEPTH_COMPONENT32:
+		// 4 bytes per pixel
+		estSize *= 4;
+		break;
+	default:
+		ri.Printf( PRINT_WARNING, "unknown texture format 0x%04i\n", image->internalFormat );
+	};
+	glState.memstats.estTextureMemUsed += estSize;
+	glState.memstats.numTextures++;
 
 	hash = generateHashValue(name);
 
@@ -2406,7 +2518,7 @@ static void R_LoadImage( const char *name, byte **pic, int *width, int *height, 
 		char ddsName[MAX_NPATH];
 
 		COM_StripExtension( name, ddsName, MAX_NPATH );
-		N_strcat( ddsName, MAX_NPATH, ".dds" );
+		N_strcat( ddsName, MAX_NPATH, "dds" );
 
 		R_LoadDDS( ddsName, pic, width, height, picFormat, numMips );
 
@@ -2849,7 +2961,7 @@ void R_SetColorMappings( void )
 	}
 }
 
-void R_InitTextures(void)
+void R_InitTextures( void )
 {
 	memset( hashTable, 0, sizeof( hashTable ) );
 

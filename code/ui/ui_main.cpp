@@ -728,74 +728,74 @@ static void UI_DrawDebugOverlay( void )
 		ImGui::TextUnformatted( "Extensions Used:" );
 		if ( Cvar_VariableInteger( "r_arb_shader_storage_buffer_object" ) ) {
 			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
-			ImGui::TextUnformatted( "  GL_ARB_shader_storage_buffer_object" );
+			ImGui::TextUnformatted( "GL_ARB_shader_storage_buffer_object" );
 			ImGui::PopStyleColor();
 		} else {
 			ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
-			ImGui::TextUnformatted( "  GL_ARB_shader_storage_buffer_object" );
+			ImGui::TextUnformatted( "GL_ARB_shader_storage_buffer_object" );
 			ImGui::PopStyleColor();
 		}
 		if ( Cvar_VariableInteger( "r_arb_map_buffer_range" ) ) {
 			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
-			ImGui::TextUnformatted( "  GL_ARB_map_buffer_range" );
+			ImGui::TextUnformatted( "GL_ARB_map_buffer_range" );
 			ImGui::PopStyleColor();
 		} else {
 			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
-			ImGui::TextUnformatted( "  GL_ARB_map_buffer_range" );
+			ImGui::TextUnformatted( "GL_ARB_map_buffer_range" );
 			ImGui::PopStyleColor();
 		}
 		if ( Cvar_VariableInteger( "r_arb_framebuffer_object" ) ) {
 			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
-			ImGui::TextUnformatted( "  GL_ARB_framebuffer_object" );
+			ImGui::TextUnformatted( "GL_ARB_framebuffer_object" );
 			ImGui::PopStyleColor();
 		} else {
 			ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
-			ImGui::TextUnformatted( "  GL_ARB_framebuffer_object" );
+			ImGui::TextUnformatted( "GL_ARB_framebuffer_object" );
 			ImGui::PopStyleColor();
 		}
 		if ( Cvar_VariableInteger( "r_arb_vertex_buffer_object" ) ) {
 			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
-			ImGui::TextUnformatted( "  GL_ARB_vertex_buffer_object" );
+			ImGui::TextUnformatted( "GL_ARB_vertex_buffer_object" );
 			ImGui::PopStyleColor();
 		} else {
 			ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
-			ImGui::TextUnformatted( "  GL_ARB_vertex_buffer_object" );
+			ImGui::TextUnformatted( "GL_ARB_vertex_buffer_object" );
 			ImGui::PopStyleColor();
 		}
 		if ( Cvar_VariableInteger( "r_arb_vertex_array_object" ) ) {
 			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
-			ImGui::TextUnformatted( "  GL_ARB_vertex_array_object" );
+			ImGui::TextUnformatted( "GL_ARB_vertex_array_object" );
 			ImGui::PopStyleColor();
 		} else {
 			ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
-			ImGui::TextUnformatted( "  GL_ARB_vertex_array_object" );
+			ImGui::TextUnformatted( "GL_ARB_vertex_array_object" );
 			ImGui::PopStyleColor();
 		}
 		if ( Cvar_VariableInteger( "r_arb_sync" ) ) {
 			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
-			ImGui::TextUnformatted( "  GL_ARB_sync" );
+			ImGui::TextUnformatted( "GL_ARB_sync" );
 			ImGui::PopStyleColor();
 		} else {
 			ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
-			ImGui::TextUnformatted( "  GL_ARB_sync" );
+			ImGui::TextUnformatted( "GL_ARB_sync" );
 			ImGui::PopStyleColor();
 		}
 		if ( Cvar_VariableInteger( "r_arb_texture_float" ) ) {
 			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
-			ImGui::TextUnformatted( "  GL_ARB_texture_float" );
+			ImGui::TextUnformatted( "GL_ARB_texture_float" );
 			ImGui::PopStyleColor();
 		} else {
 			ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
-			ImGui::TextUnformatted( "  GL_ARB_texture_float" );
+			ImGui::TextUnformatted( "GL_ARB_texture_float" );
 			ImGui::PopStyleColor();
 		}
 		if ( Cvar_VariableInteger( "r_arb_texture_filter_anisotropic" ) ) {
 			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
-			ImGui::TextUnformatted( "  GL_ARB_texture_filter_anisotropic" );
+			ImGui::TextUnformatted( "GL_ARB_texture_filter_anisotropic" );
 			ImGui::PopStyleColor();
 		} else {
 			ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
-			ImGui::TextUnformatted( "  GL_ARB_texture_filter_anisotropic" );
+			ImGui::TextUnformatted( "GL_ARB_texture_filter_anisotropic" );
 			ImGui::PopStyleColor();
 		}
 
@@ -1050,6 +1050,136 @@ extern "C" void UI_AddJoystickKeyEvents( void )
 	io.AddKeyEvent( ImGuiKey_RightArrow, Key_IsDown( KEY_PAD0_LEFTSTICK_RIGHT ) );
 }
 
+static void UI_DrawGPUStats( void )
+{
+	char str[MAXPRINTMSG];
+	char *p;
+	int i;
+	gpuMemory_t memstats;
+
+	ImGui::Begin( "##RendererInformation", NULL );
+
+	if ( ImGui::TreeNodeEx( (void *)(uintptr_t)"##GPUExtensions", ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen,
+		"GPU Extensions" ) )
+	{
+		ImGui::TextUnformatted( "Extensions Used:" );
+		ImGui::Indent();
+		if ( Cvar_VariableInteger( "r_arb_shader_storage_buffer_object" ) ) {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
+			ImGui::TextUnformatted( "GL_ARB_shader_storage_buffer_object" );
+			ImGui::PopStyleColor();
+		} else {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
+			ImGui::TextUnformatted( "GL_ARB_shader_storage_buffer_object" );
+			ImGui::PopStyleColor();
+		}
+		if ( Cvar_VariableInteger( "r_arb_map_buffer_range" ) ) {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
+			ImGui::TextUnformatted( "GL_ARB_map_buffer_range" );
+			ImGui::PopStyleColor();
+		} else {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
+			ImGui::TextUnformatted( "GL_ARB_map_buffer_range" );
+			ImGui::PopStyleColor();
+		}
+		if ( Cvar_VariableInteger( "r_arb_framebuffer_object" ) ) {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
+			ImGui::TextUnformatted( "GL_ARB_framebuffer_object" );
+			ImGui::PopStyleColor();
+		} else {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
+			ImGui::TextUnformatted( "GL_ARB_framebuffer_object" );
+			ImGui::PopStyleColor();
+		}
+		if ( Cvar_VariableInteger( "r_arb_vertex_buffer_object" ) ) {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
+			ImGui::TextUnformatted( "GL_ARB_vertex_buffer_object" );
+			ImGui::PopStyleColor();
+		} else {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
+			ImGui::TextUnformatted( "GL_ARB_vertex_buffer_object" );
+			ImGui::PopStyleColor();
+		}
+		if ( Cvar_VariableInteger( "r_arb_vertex_array_object" ) ) {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
+			ImGui::TextUnformatted( "GL_ARB_vertex_array_object" );
+			ImGui::PopStyleColor();
+		} else {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
+			ImGui::TextUnformatted( "GL_ARB_vertex_array_object" );
+			ImGui::PopStyleColor();
+		}
+		if ( Cvar_VariableInteger( "r_arb_sync" ) ) {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
+			ImGui::TextUnformatted( "GL_ARB_sync" );
+			ImGui::PopStyleColor();
+		} else {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
+			ImGui::TextUnformatted( "GL_ARB_sync" );
+			ImGui::PopStyleColor();
+		}
+		if ( Cvar_VariableInteger( "r_arb_texture_float" ) ) {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
+			ImGui::TextUnformatted( "GL_ARB_texture_float" );
+			ImGui::PopStyleColor();
+		} else {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
+			ImGui::TextUnformatted( "GL_ARB_texture_float" );
+			ImGui::PopStyleColor();
+		}
+		if ( Cvar_VariableInteger( "r_arb_texture_filter_anisotropic" ) ) {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
+			ImGui::TextUnformatted( "GL_ARB_texture_filter_anisotropic" );
+			ImGui::PopStyleColor();
+		} else {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
+			ImGui::TextUnformatted( "GL_ARB_texture_filter_anisotropic" );
+			ImGui::PopStyleColor();
+		}
+		ImGui::Unindent();
+
+		ImGui::TextUnformatted( "Extensions Found:" );
+		p = str;
+		for ( i = 0; i < sizeof( ui->gpuConfig.extensions_string ); i++ ) {
+			if ( !ui->gpuConfig.extensions_string[i] ) {
+				break;
+			} else if ( ui->gpuConfig.extensions_string[i] == ' ' ) {
+				*p = '\0';
+				ImGui::Text( "  %s", str );
+				p = str;
+			} else {
+				*p++ = ui->gpuConfig.extensions_string[i];
+			}
+		}
+		ImGui::TreePop();
+	}
+	if ( ImGui::TreeNodeEx( (void *)(uintptr_t)"##GPUStatistics", ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen,
+		"Statistics" ) )
+	{
+		re.GetGPUMemStats( &memstats );
+
+		ImGui::Text( "FrameNumber: %lu", com_frameNumber );
+		ImGui::Text( "FrameTime: %i", gi.frametime );
+		ImGui::Separator();
+		ImGui::Text( "FrontEnd Time: %lu milliseconds", time_frontend );
+		ImGui::Text( "BackEnd Time: %lu milliseconds", time_backend );
+		ImGui::Separator();
+		ImGui::Text( "Draw Calls: %lu", gi.pc.c_drawCalls );
+		ImGui::Text( "Buffer Binds: %u", gi.pc.c_bufferBinds );
+		ImGui::Text( "Processed Indices: %u", gi.pc.c_bufferIndices );
+		ImGui::Text( "Processed Vertices: %u", gi.pc.c_bufferVertices );
+		ImGui::Text( "Generic Shader Draws: %u", gi.pc.c_genericDraws );
+		ImGui::Text( "Lightall Shader Draws: %u", gi.pc.c_lightallDraws );
+		ImGui::Text( "Overdraw: %u", gi.pc.c_overDraw );
+		ImGui::Separator();
+		ImGui::Text( "(EST) Texture Memory Used: %u", memstats.estTextureMemUsed );
+		ImGui::Text( "(EST) Buffer Memory Used: %u", memstats.estBufferMemUsed );
+		ImGui::TreePop();
+	}
+
+	ImGui::End();
+}
+
 extern "C" void UI_Refresh( int32_t realtime )
 {
 	extern cvar_t *in_joystick;
@@ -1084,6 +1214,10 @@ extern "C" void UI_Refresh( int32_t realtime )
 //        re.DrawImage( 0, 0, refdef.width, refdef.height, 0, 0, 1, 1, ui->backdrop );
 //		re.RenderScene( &refdef );
     }
+
+	if ( r_gpuDiagnostics->i ) {
+		UI_DrawGPUStats();
+	}
 
 	if ( !( Key_GetCatcher() & KEYCATCH_UI ) ) {
 		return;

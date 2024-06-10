@@ -974,21 +974,6 @@ typedef struct {
     nhandle_t tileset;
 } world_t;
 
-typedef struct {
-    uint64_t msec;
-
-    uint32_t c_glslShaderBinds;
-    uint32_t c_bufferIndices, c_bufferVertices;
-    uint32_t c_iboBinds, c_vboBinds, c_vaoBinds;
-    uint32_t c_dynamicBufferDraws;
-    uint32_t c_staticBufferDraws;
-    uint32_t c_bufferBinds;
-    uint32_t c_surfaces;
-    uint32_t c_overDraw;
-    uint32_t c_lightallDraws;
-    uint32_t c_genericDraws;
-} backendCounters_t;
-
 
 typedef struct {
     uintptr_t vtxOffset;        // current offset in vertex buffer
@@ -1058,6 +1043,8 @@ typedef struct {
     uint32_t    rboId;
     uint32_t    shaderId;
     uint32_t    uboId;
+
+    gpuMemory_t memstats;
 
     fbo_t *currentFbo;
     vertexBuffer_t *currentVao;
@@ -1518,7 +1505,7 @@ void GL_BindNullRenderbuffer(void);
 void GL_State(unsigned stateBits);
 void GL_ClientState( int unit, unsigned stateBits );
 void RE_BeginFrame(stereoFrame_t stereoFrame);
-void RE_EndFrame(uint64_t *frontEndMsec, uint64_t *backEndMsec);
+void RE_EndFrame(uint64_t *frontEndMsec, uint64_t *backEndMsec, backendCounters_t *pc);
 void RB_ExecuteRenderCommands(const void *data);
 const char *GL_ErrorString( GLenum error );
 
@@ -1606,7 +1593,7 @@ qboolean R_CalcTangentVectors(drawVert_t dv[3]);
 // rgl_scene.c
 //
 void RB_InstantQuad( vec4_t quadVerts[4] );
-void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t hSprite );
+void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t hSprite, qboolean bNoSpriteSheet );
 void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts );
 void RE_AddPolyListToScene( const poly_t *polys, uint32_t numPolys );
 void RE_RenderScene( const renderSceneRef_t *fd );
@@ -1662,7 +1649,7 @@ void RB_CommitDrawData( const void *verts, uint32_t numVerts, const void *indice
 
 
 void RE_BeginFrame(stereoFrame_t stereoFrame);
-void RE_EndFrame(uint64_t *frontEndMsec, uint64_t *backEndMsec);
+void RE_EndFrame(uint64_t *frontEndMsec, uint64_t *backEndMsec, backendCounters_t *pc);
 
 void R_LoadWebp( const char *name, byte **pic, int *width, int *height, int *channels );
 void R_LoadBMP( const char *name, byte **pic, int *width, int *height, int *channels );

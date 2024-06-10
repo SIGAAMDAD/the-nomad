@@ -24,15 +24,10 @@ namespace TheNomad::SGame::InfoSystem {
 				ConsoleWarning( "invalid item info, missing variable 'Effect'\n" );
 				return false;
 			}
-			if ( !json.get( "Cost", cost ) ) {
-				ConsoleWarning( "invalid item info, missing variable 'Cost'\n" );
-				return false;
-			}
-			if ( !json.get( "Icon", str ) ) {
+			json.get( "Cost", cost );
+			if ( !json.get( "Icon", iconShader ) ) {
 				ConsoleWarning( "invalid item info, missing variable 'Icon'\n" );
 				return false;
-			} else {
-				hIconShader = TheNomad::Engine::Renderer::RegisterShader( str );
 			}
 			if ( !json.get( "SpriteOffsetX", spriteOffsetX ) ) {
 				ConsoleWarning( "invalid item info, missing variable 'SpriteOffsetX'\n" );
@@ -54,6 +49,14 @@ namespace TheNomad::SGame::InfoSystem {
 			} else {
 				useSfx.Set( str );
 			}
+			if ( !json.get( "Width", width ) ) {
+				ConsoleWarning( "invalid item info, missing variable 'Width'\n" );
+				return false;
+			}
+			if ( !json.get( "Height", height ) ) {
+				ConsoleWarning( "invalid item info, missing variable 'Height'\n" );
+				return false;
+			}
 
 			TheNomad::GameSystem::GetString( name + "_DESC", description );
 
@@ -65,13 +68,15 @@ namespace TheNomad::SGame::InfoSystem {
 		string name;
 		string description;
 		string effect;
+		string iconShader;
 		uint type = 0;
 		int cost = 0;
 		uint spriteOffsetX = 0;
 		uint spriteOffsetY = 0;
 		uint maxStackSize = 0;
+		float width = 0.0f;
+		float height = 0.0f;
 
-		int hIconShader = FS_INVALID_HANDLE;
 		TheNomad::Engine::SoundSystem::SoundEffect pickupSfx;
 		TheNomad::Engine::SoundSystem::SoundEffect useSfx;
 	};

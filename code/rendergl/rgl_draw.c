@@ -1,13 +1,11 @@
 #include "rgl_local.h"
 
 void R_DrawElements( uint32_t numElements, uintptr_t nOffset ) {
-	if ( !glState.currentVao ) {
-		VBO_Bind( backend.drawBuffer );
-		return;
-	}
+	backend.pc.c_drawCalls++;
 
 	switch ( r_drawMode->i ) {
 	case DRAWMODE_GPU:
+	case DRAWMODE_MAPPED:
 		nglDrawElements( GL_TRIANGLES, numElements, GLN_INDEX_TYPE, BUFFER_OFFSET( nOffset ) );
 		break;
 	case DRAWMODE_IMMEDIATE: {
@@ -241,8 +239,7 @@ static void ComputeShaderColors( const shaderStage_t *pStage, vec4_t baseColor, 
 		}
 		break; }
 	case CGEN_ONE_MINUS_ENTITY: {
-		if (backend.currentEntity)
-		{
+		if ( backend.currentEntity ) {
 			baseColor[0] = 1.0f - backend.currentEntity->e.shader.rgba[0] / 255.0f;
 			baseColor[1] = 1.0f - backend.currentEntity->e.shader.rgba[1] / 255.0f;
 			baseColor[2] = 1.0f - backend.currentEntity->e.shader.rgba[2] / 255.0f;
@@ -275,15 +272,13 @@ static void ComputeShaderColors( const shaderStage_t *pStage, vec4_t baseColor, 
 		vertColor[3] = 0.0f;
 		break;
 	case AGEN_ENTITY: {
-		if (backend.currentEntity)
-		{
+		if ( backend.currentEntity ) {
 			baseColor[3] = backend.currentEntity->e.shader.rgba[3] / 255.0f;
 		}
 		vertColor[3] = 0.0f;
 		break; }
 	case AGEN_ONE_MINUS_ENTITY: {
-		if (backend.currentEntity)
-		{
+		if ( backend.currentEntity ) {
 			baseColor[3] = 1.0f - backend.currentEntity->e.shader.rgba[3] / 255.0f;
 		}
 		vertColor[3] = 0.0f;
@@ -328,31 +323,28 @@ static void ComputeDeformValues(int *deformGen, float deformParams[5])
 		// only support the first one
 		ds = &backend.drawBatch.shader->deforms[0];
 
-		switch (ds->deformation)
-		{
-			case DEFORM_WAVE:
-				*deformGen = ds->deformationWave.func;
+		switch ( ds->deformation ) {
+		case DEFORM_WAVE:
+			*deformGen = ds->deformationWave.func;
 
-				deformParams[0] = ds->deformationWave.base;
-				deformParams[1] = ds->deformationWave.amplitude;
-				deformParams[2] = ds->deformationWave.phase;
-				deformParams[3] = ds->deformationWave.frequency;
-				deformParams[4] = ds->deformationSpread;
-				break;
+			deformParams[0] = ds->deformationWave.base;
+			deformParams[1] = ds->deformationWave.amplitude;
+			deformParams[2] = ds->deformationWave.phase;
+			deformParams[3] = ds->deformationWave.frequency;
+			deformParams[4] = ds->deformationSpread;
+			break;
+		case DEFORM_BULGE:
+			*deformGen = DGEN_BULGE;
 
-			case DEFORM_BULGE:
-				*deformGen = DGEN_BULGE;
-
-				deformParams[0] = 0;
-				deformParams[1] = ds->bulgeHeight; // amplitude
-				deformParams[2] = ds->bulgeWidth;  // phase
-				deformParams[3] = ds->bulgeSpeed;  // frequency
-				deformParams[4] = 0;
-				break;
-
-			default:
-				break;
-		}
+			deformParams[0] = 0;
+			deformParams[1] = ds->bulgeHeight; // amplitude
+			deformParams[2] = ds->bulgeWidth;  // phase
+			deformParams[3] = ds->bulgeSpeed;  // frequency
+			deformParams[4] = 0;
+			break;
+		default:
+			break;
+		};
 	}
 }
 
@@ -444,11 +436,17 @@ void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, con
         //
         // draw
         //
+		backend.pc.c_bufferBinds += 2;
+		backend.pc.c_bufferIndices += nElems;
+		backend.pc.c_bufferVertices += baseVertex;
+		backend.pc.c_dynamicBufferDraws++;
+		backend.pc.c_genericDraws++;
 		if ( baseVertex == -1 ) {
 			nglDrawElements( GL_TRIANGLES, nElems, type, offset );
 		} else {
 			nglDrawElementsBaseVertex( GL_TRIANGLES, nElems, type, offset, baseVertex );
 		}
+		backend.pc.c_drawCalls++;
 
 		// reset to default filter
 		if ( stageP->bundle[0].filter != -1 ) {

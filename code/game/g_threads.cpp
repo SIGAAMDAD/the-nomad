@@ -30,7 +30,7 @@ bool CRenderThread::Init( void ) {
 }
 
 void CRenderThread::OnExit( void ) {
-    re.EndFrame( NULL, NULL );
+    re.EndFrame( NULL, NULL, NULL );
 
     PROFILE_BLOCK_END;
 }

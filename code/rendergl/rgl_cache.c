@@ -254,9 +254,40 @@ static void R_ShutdownRingbuffer( GLenum target, glRingbuffer_t *rb ) {
 }
 #endif
 
-static void R_InitBufferStorage( GLuint bufferId, GLenum usage )
+static GLuint R_InitBufferStorage( GLenum target, GLsizei size, const GLvoid *data, GLenum usage, qboolean newBuffer, GLuint buffer )
 {
 	bufferMemType_t memType;
+	GLenum err;
+	GLuint bufferId = buffer;
+
+	if ( newBuffer ) {
+		if ( NGL_VERSION_ATLEAST( 4, 5 ) ) {
+			nglCreateBuffers( 1, &bufferId );
+		} else {
+			nglGenBuffers( 1, &bufferId );
+		}
+	}
+	if ( ( err = nglGetError() ) != GL_NO_ERROR ) {
+		ri.Error( ERR_DROP, "Error generating OpenGL hardware buffer: %s", GL_ErrorString( err ) );
+	}
+
+	nglBindBufferARB( target, bufferId );
+	if ( r_drawMode->i == DRAWMODE_MAPPED && NGL_VERSION_ATLEAST( 4, 5 ) ) {
+		if ( !newBuffer ) {
+			nglDeleteBuffers( 1, &bufferId );
+			nglCreateBuffers( 1, &bufferId );
+			nglBindBuffer( target, bufferId );
+		}
+		nglBufferStorage( target, size, data, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT );
+	} else if ( r_drawMode->i == DRAWMODE_GPU ) {
+		nglBufferDataARB( target, size, data, usage );
+	}
+	if ( ( err = nglGetError() ) != GL_NO_ERROR ) {
+		ri.Error( ERR_DROP, "Error allocating data for OpenGL hardware buffer: %s", GL_ErrorString( err ) );
+	}
+	nglBindBufferARB( target, 0 );
+
+	return bufferId;
 }
 
 vertexBuffer_t *R_AllocateBuffer( const char *name, void *vertices, uint32_t verticesSize, void *indices, uint32_t indicesSize,
@@ -266,6 +297,7 @@ vertexBuffer_t *R_AllocateBuffer( const char *name, void *vertices, uint32_t ver
 	GLenum usage;
 	uint32_t namelen;
 	uint64_t i;
+	GLenum err;
 
 	switch ( type ) {
 	case BUFFER_STATIC:
@@ -287,10 +319,16 @@ vertexBuffer_t *R_AllocateBuffer( const char *name, void *vertices, uint32_t ver
 			// resize buffers if necessary
 			VBO_Bind( rg.buffers[i] );
 			if ( rg.buffers[i]->vertex.size != verticesSize ) {
-				nglBufferData( GL_ARRAY_BUFFER, verticesSize, vertices, usage );
+				glState.memstats.estBufferMemUsed -= rg.buffers[i]->vertex.size;
+				R_InitBufferStorage( GL_ARRAY_BUFFER_ARB, verticesSize, vertices, usage, qfalse, rg.buffers[i]->vertex.id );
+				rg.buffers[i]->vertex.size = verticesSize;
+				glState.memstats.estBufferMemUsed += verticesSize;
 			}
 			if ( rg.buffers[i]->index.size != indicesSize ) {
-				nglBufferData( GL_ELEMENT_ARRAY_BUFFER, indicesSize, indices, usage );
+				glState.memstats.estBufferMemUsed -= rg.buffers[i]->index.size;
+				R_InitBufferStorage( GL_ELEMENT_ARRAY_BUFFER_ARB, indicesSize, indices, usage, qfalse, rg.buffers[i]->index.id );
+				rg.buffers[i]->index.size = indicesSize;
+				glState.memstats.estBufferMemUsed += indicesSize;
 			}
 			return rg.buffers[i];
 		}
@@ -308,6 +346,10 @@ vertexBuffer_t *R_AllocateBuffer( const char *name, void *vertices, uint32_t ver
 	N_strncpyz( buf->name, name, sizeof( buf->name ) );
 
 	nglGenVertexArrays( 1, &buf->vaoId );
+	if ( ( err = nglGetError() ) != GL_NO_ERROR ) {
+		ri.Error( ERR_DROP, "%s: Error generating OpenGL Vertex Array (0x%04x)", GL_ErrorString( err ), err );
+	}
+
 	nglBindVertexArray( buf->vaoId );
 
 	buf->vertex.usage = BUF_GL_BUFFER;
@@ -319,17 +361,15 @@ vertexBuffer_t *R_AllocateBuffer( const char *name, void *vertices, uint32_t ver
 	buf->vertex.size = verticesSize;
 	buf->index.size = indicesSize;
 
-	nglGenBuffers( 1, &buf->vertex.id );
-	nglBindBuffer( GL_ARRAY_BUFFER, buf->vertex.id );
-	nglBufferData( GL_ARRAY_BUFFER, verticesSize, vertices, usage );
-
-	nglGenBuffers( 1, &buf->index.id );
-	nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, buf->index.id );
-	nglBufferData( GL_ELEMENT_ARRAY_BUFFER, indicesSize, indices, usage );
+	buf->vertex.id = R_InitBufferStorage( GL_ARRAY_BUFFER_ARB, verticesSize, vertices, usage, qtrue, 0 );
+	buf->index.id = R_InitBufferStorage( GL_ELEMENT_ARRAY_BUFFER_ARB, indicesSize, indices, usage, qtrue, 0 );
 
 	GL_SetObjectDebugName( GL_VERTEX_ARRAY, buf->vaoId, name, "_vao" );
 	GL_SetObjectDebugName( GL_BUFFER, buf->vertex.id, name, "_vbo" );
 	GL_SetObjectDebugName( GL_BUFFER, buf->index.id, name, "_ibo" );
+
+	glState.memstats.estBufferMemUsed += ( indicesSize + verticesSize );
+	glState.memstats.numBuffers++;
 
     return buf;
 }
@@ -360,11 +400,14 @@ void VBO_Bind( vertexBuffer_t *vbo )
 			nglEnableClientState( GL_NORMAL_ARRAY );
 		} else if ( r_drawMode->i >= DRAWMODE_GPU ) {
 			nglBindVertexArray( vbo->vaoId );
+			nglBindBuffer( GL_ARRAY_BUFFER, vbo->vertex.id );
+			nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, vbo->index.id );
 
 			// Intel Graphics doesn't save GL_ELEMENT_ARRAY_BUFFER binding with VAO binding.
-			if ( glContext.intelGraphics ) {
-				nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, vbo->index.id );
-			}
+			// [TheNomad] 6/10/24 you've gotta bind it, nothing saves the binding
+//			if ( glContext.intelGraphics ) {
+//				nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, vbo->index.id );
+//			}
 		}
 	}
 }
@@ -389,11 +432,13 @@ void VBO_BindNull( void )
 			nglDisableClientState( GL_NORMAL_ARRAY );
 		} else if ( r_drawMode->i >= DRAWMODE_GPU ) {
 	        nglBindVertexArray( 0 );
+			nglBindBuffer( GL_ARRAY_BUFFER, 0 );
+			nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
 
 	        // why you no save GL_ELEMENT_ARRAY_BUFFER binding, Intel?
-	        if ( glContext.intelGraphics ) {
-				nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
-			}
+//	        if ( glContext.intelGraphics ) {
+//				nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
+//			}
 		}
 	}
 
@@ -425,6 +470,8 @@ void R_ShutdownBuffer( vertexBuffer_t *vbo )
 		nglDeleteVertexArrays( 1, &vbo->vaoId );
 	}
 
+	glState.memstats.numBuffers--;
+	glState.memstats.estBufferMemUsed -= ( vbo->vertex.size + vbo->index.size );
 	memset( vbo, 0, sizeof( *vbo ) );
 
 	VBO_BindNull();
@@ -470,6 +517,7 @@ void RB_SetBatchBuffer( vertexBuffer_t *buffer, void *vertexBuffer, uintptr_t vt
 void RB_FlushBatchBuffer( void )
 {
 	vertexBuffer_t *buf;
+	void *data;
 
     if ( !backend.drawBatch.buffer ) {
         return;
@@ -489,12 +537,32 @@ void RB_FlushBatchBuffer( void )
 	buf = backend.drawBatch.buffer;
 
 	// orphan the old index buffer so that we don't stall on it
-	nglBufferData( GL_ELEMENT_ARRAY_BUFFER, backend.drawBatch.maxIndices, NULL, backend.drawBatch.buffer->index.glUsage );
-	nglBufferSubData( GL_ELEMENT_ARRAY_BUFFER, 0, backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize, backend.drawBatch.indices );
+	if ( r_drawMode->i == DRAWMODE_MAPPED ) {
+		nglInvalidateBufferData( backend.drawBuffer->index.id );
+		data = nglMapBufferRange( GL_ELEMENT_ARRAY_BUFFER_ARB, 0, backend.drawBatch.maxIndices, GL_MAP_WRITE_BIT
+			| GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT );
+		if ( data ) {
+			memcpy( data, backend.drawBatch.indices, backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize );
+		}
+		nglUnmapBuffer( GL_ELEMENT_ARRAY_BUFFER );
+	} else if ( r_drawMode->i == DRAWMODE_GPU ) {
+		nglBufferData( GL_ELEMENT_ARRAY_BUFFER, backend.drawBatch.maxIndices, NULL, backend.drawBatch.buffer->index.glUsage );
+		nglBufferSubData( GL_ELEMENT_ARRAY_BUFFER, 0, backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize, backend.drawBatch.indices );
+	}
 
 	// orphan the old index buffer so that we don't stall on it
-	nglBufferData( GL_ARRAY_BUFFER, backend.drawBatch.maxVertices, NULL, backend.drawBatch.buffer->vertex.glUsage );
-	nglBufferSubData( GL_ARRAY_BUFFER, 0, backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize, backend.drawBatch.vertices );
+	if ( r_drawMode->i == DRAWMODE_MAPPED ) {
+		nglInvalidateBufferData( backend.drawBuffer->vertex.id );
+		data = nglMapBufferRange( GL_ARRAY_BUFFER_ARB, 0, backend.drawBatch.maxVertices, GL_MAP_WRITE_BIT
+			| GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT );
+		if ( data ) {
+			memcpy( data, backend.drawBatch.vertices, backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize );
+		}
+		nglUnmapBuffer( GL_ARRAY_BUFFER );
+	} else if ( r_drawMode->i == DRAWMODE_GPU ) {
+		nglBufferData( GL_ARRAY_BUFFER, backend.drawBatch.maxVertices, NULL, backend.drawBatch.buffer->vertex.glUsage );
+		nglBufferSubData( GL_ARRAY_BUFFER, 0, backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize, backend.drawBatch.vertices );
+	}
 
 	RB_IterateShaderStages( backend.drawBatch.shader );
 

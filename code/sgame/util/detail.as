@@ -119,12 +119,12 @@ namespace TheNomad::Util {
 
 	// Which one is deterministic?
 	int PRandom() {
-	    prndindex = ( prndindex + 1 ) & 0xff;
+	    prndindex = ( prndindex + 1 ) & ( 0xff - 1 );
 	    return rndtable[prndindex];
 	}
 
 	int MRandom() {
-	    rndindex = ( rndindex + 1 ) & 0xff;
+	    rndindex = ( rndindex + 1 ) & ( 0xff - 1 );
 	    return rndtable[rndindex];
 	}
 

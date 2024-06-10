@@ -224,9 +224,8 @@ void R_LoadDDS ( const char *filename, byte **pic, int *width, int *height, GLen
 	ddsHeaderDxt10_t *ddsHeaderDxt10 = NULL;
 	byte *data;
 
-	if (!picFormat)
-	{
-		ri.Printf(PRINT_ERROR, "R_LoadDDS() called without picFormat parameter!");
+	if (!picFormat) {
+		ri.Printf( PRINT_ERROR, "R_LoadDDS() called without picFormat parameter!\n" );
 		return;
 	}
 

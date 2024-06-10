@@ -176,6 +176,18 @@ namespace TheNomad::Engine::Physics {
 			if ( m_Velocity.z > 0.0f ) {
 				m_Velocity.z -= TheNomad::SGame::sgame_Gravity.GetFloat() * gameTic;
 			}
+
+			TheNomad::GameSystem::BBox bounds;
+			bounds.m_nWidth = m_EntityData.GetBounds().m_nWidth;
+			bounds.m_nHeight = m_EntityData.GetBounds().m_nHeight;
+			bounds.MakeBounds( origin + m_Velocity );
+			const array<TheNomad::SGame::EntityObject@>@ entList = @TheNomad::SGame::EntityManager.GetEntities();
+			for ( uint i = 0; i < entList.Count(); i++ ) {
+				if ( Util::BoundsIntersect( bounds, entList[i].GetBounds() ) ) {
+					m_Acceleration = 0.0f;
+					return; // clip
+				}
+			}
 			
 			origin.x += m_Velocity.x;
 			origin.y += m_Velocity.y;

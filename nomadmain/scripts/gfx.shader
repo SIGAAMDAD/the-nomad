@@ -68,7 +68,19 @@ gfx/hud/blood_screen
     nopicmip
     nomipmaps
     {
-        map textures/
+        map textures/hud/PAIN1.png
+        rgbGen vertex
+    }
+    {
+        map textures/hud/ARBLS1.png
+        rgbGen vertex
+    }
+    {
+        map textures/hud/ARBLS2.png
+        rgbGen vertex
+    }
+    {
+        map textures/hud/ARBLS3.png
         rgbGen vertex
     }
 }
@@ -83,7 +95,7 @@ icons/iconpw_pewpew
     {
         map textures/icons/iconpw_pewpew.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-        rgbGen wave triangle 0.8 0.5 0.3 1.0
+        rgbGen wave sin 0.3 5.0 0.0 0.4
     }
 }
 
@@ -92,10 +104,9 @@ icons/iconpw_angry
     nopicmip
     nomipmaps
     {
-        map textures/icons/iconpw_pewpew.tga
+        map textures/icons/iconpw_angry.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-        rgbGen const ( 1.0 0.0 0.0 )
-//        rgbGen wave sin 1.0 0.1 1.0 0.2 0.1 0.7
+        rgbGen wave sin 0.3 5.0 0.0 0.4
     }
 }
 
@@ -173,6 +184,18 @@ icons/iconw_smoke
     }
 }
 
+//
+// misc
+//
+icons/icon_healthpack
+{
+    nopicmip
+    nomipmaps
+    {
+        map textures/icons/icon_health.tga
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+    }
+}
 
 //
 // ammo icons

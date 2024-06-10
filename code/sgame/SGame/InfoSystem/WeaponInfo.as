@@ -28,6 +28,14 @@ namespace TheNomad::SGame::InfoSystem {
 				ConsoleWarning( "invalid weapon info, missing variable 'MagSize'\n" );
 				return false;
 			}
+			if ( !json.get( "Width", width ) ) {
+				ConsoleWarning( "invalid weapon info, missing variable 'Width'\n" );
+				return false;
+			}
+			if ( !json.get( "Height", height ) ) {
+				ConsoleWarning( "invalid weapon info, missing variable 'Height'\n" );
+				return false;
+			}
 			if ( !json.get( "Damage", damage ) ) {
 				ConsoleWarning( "invalid weapon info, missing variable 'Damage'\n" );
 				return false;
@@ -104,6 +112,8 @@ namespace TheNomad::SGame::InfoSystem {
 		WeaponType weaponType = WeaponType::NumWeaponTypes;
 		uint spriteOffsetX = 0;
 		uint spriteOffsetY = 0;
+		float width = 0.0f;
+		float height = 0.0f;
 
 		int hIconShader = FS_INVALID_HANDLE;
 		TheNomad::Engine::SoundSystem::SoundEffect useSfx;

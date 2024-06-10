@@ -2,9 +2,6 @@ namespace TheNomad::SGame {
     class ItemObject : EntityObject {
 		ItemObject() {
 		}
-		ItemObject( uint type ) {
-			m_nType = type;
-		}
 
 		void Pickup( EntityObject@ ent ) {
 			switch ( ent.GetType() ) {
@@ -25,26 +22,28 @@ namespace TheNomad::SGame {
 			m_Info.useSfx.Play();
 			Engine::CmdExecuteCommand( m_Info.effect + " " + m_Owner.GetEntityNum() );
 		}
-		
-		uint GetItemType() const {
-			return m_nType;
-		}
-		void SetItemType( uint id ) {
-			m_nType = id;
-		}
 
 		bool Load( const TheNomad::GameSystem::SaveSystem::LoadSection& in section ) {
             return true;
 		}
 
-		void Think() {
+		void Think() const {
+			if ( @m_Owner !is null ) {
+				return;
+			}
 		}
 		void Spawn( uint id, const vec3& in origin ) override {
-			@m_InfoData = cast<InfoSystem::InfoLoader>( @InfoSystem::InfoManager.GetItemInfo( id ) );
-			m_nType = id;
+			@m_Info = @InfoSystem::InfoManager.GetItemInfo( id );
+			if ( @m_Info is null ) {
+				GameError( "ItemObject::Spawn: invalid item id " + id );
+			}
+
+			m_Link.m_Origin = origin;
+			m_Link.m_Bounds.m_nWidth = m_Info.width;
+			m_Link.m_Bounds.m_nHeight = m_Info.height;
+			m_Link.m_Bounds.MakeBounds( origin );
 		}
 
-		private uint m_nType = 0;
 		private InfoSystem::ItemInfo@ m_Info = null;
 		private EntityObject@ m_Owner = null; // for applying effects
 	};

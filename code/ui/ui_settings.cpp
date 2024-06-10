@@ -32,6 +32,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../rendercommon/imgui_impl_opengl3.h"
 #include "../rendercommon/imgui.h"
 
+
+#define DRAWMODE_IMMEDIATE 0
+#define DRAWMODE_CLIENT    1
+#define DRAWMODE_GPU       2
+#define DRAWMODE_MAPPED    3
+
 #define ID_VIDEO        0
 #define ID_PERFORMANCE  1
 #define ID_AUDIO        2
@@ -130,6 +136,10 @@ typedef struct {
 	int specularMapping;
 	int depthMapping;
 	int toneMapping;
+
+	qboolean advancedSettings;
+
+	int bufferMode;
 } performanceSettings_t;
 
 typedef struct {
@@ -1347,6 +1357,10 @@ static void PerformanceMenu_SetDefault( void )
 	s_settingsMenu->performance.bloom = Cvar_VariableInteger( "r_bloom" );
 	s_settingsMenu->performance.hdr = Cvar_VariableInteger( "r_hdr" );
 	s_settingsMenu->performance.pbr = Cvar_VariableInteger( "r_pbr" );
+
+	s_settingsMenu->performance.bufferMode = Cvar_VariableInteger( "r_drawMode" );
+
+	s_settingsMenu->performance.advancedSettings = qfalse;
 	
 	textureMode = Cvar_VariableString( "r_textureMode" );
 	for ( i = 0; i < s_settingsMenu->performance.numTextureDetails; i++ ) {
@@ -1612,6 +1626,12 @@ void SettingsMenu_Cache( void )
 		"circle & dot",
 		"full crosshair",
 		"filled crosshair"
+	};
+	static const char *s_bufferModeOptions[] = {
+		"Immediate (Legacy, Untested)",
+		"Client (Legacy, Untested)",
+		"GPU Buffered (OpenGL 3.3)",
+		"GPU To Client Mapping (OpenGL 4.5)"
 	};
 	static const char *s_hudOptions[] = {
 		strManager->ValueForKey( "MENU_HUD" )->value,

@@ -1,5 +1,5 @@
 #include "SGame/DisplayNotification.as"
-#include "SGame/HudOverlay.as"
+#include "SGame/PlayerSystem/HudOverlay.as"
 
 namespace TheNomad::SGame {
 	class PlayerDisplayUI {

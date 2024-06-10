@@ -50,6 +50,9 @@ namespace TheNomad::SGame {
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.SetPlayerPosition_f ), "sgame.set_player_position", true
 			);
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.DamagePlayer_f ), "sgame.damage_player", true
+			);
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.PrintPlayerState_f ), "sgame.player_state", true
 			);
 		}
@@ -353,6 +356,11 @@ namespace TheNomad::SGame {
 			const float y = Convert().ToFloat( TheNomad::Engine::CmdArgv( 2 ) );
 
 			m_PlayrObject.GetLink().m_Origin = vec3( x, y, 0.0f );
+		}
+		void DamagePlayer_f() {
+			const float damage = Convert().ToFloat( TheNomad::Engine::CmdArgv( 1 ) );
+
+			m_PlayrObject.Damage( cast<EntityObject@>( @m_PlayrObject ), damage );
 		}
 
 		private bool BoundsIntersectLine( const vec3& in start, const vec3& in end, const TheNomad::GameSystem::BBox& in bounds ) {

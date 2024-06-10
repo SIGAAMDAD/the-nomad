@@ -34,7 +34,7 @@ void R_InitNextFrame( void )
     r_numPolyVerts = 0;
 }
 
-void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t hSprite )
+void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t hSprite, qboolean bNoSpriteSheet )
 {
     srfPoly_t *poly;
     polyVert_t *vtx;
@@ -49,15 +49,10 @@ void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t
         ri.Error( ERR_DROP, "RE_AddSpriteToScene: no world loaded\n" );
     }
 
-    if ( !rg.sheets[ hSpriteSheet ] ) {
-        ri.Printf( PRINT_DEVELOPER, "RE_AddSpriteToScene: invalid sprite sheet %i\n", hSpriteSheet );
-        return;
-    }
     if ( r_numPolyVerts + 4 >= r_maxPolys->i * 4 ) {
         ri.Printf( PRINT_DEVELOPER, "RE_AddSpriteToScene: r_maxPolyVerts hit, dropping %i vertices\n", 4 );
         return;
     }
-//    ri.Printf( PRINT_INFO, "Drawing sprite at [ %f, %f, %f ] with sprite sheet %i\n", origin[0], origin[1], origin[2], hSpriteSheet );
 
     poly = &backendData->polys[r_numPolys];
     vtx = &backendData->polyVerts[r_numPolyVerts];
@@ -68,14 +63,30 @@ void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t
 
     poly->verts = vtx;
     poly->numVerts = 4;
-    poly->hShader = rg.sheets[hSpriteSheet]->hShader;
+    if ( !bNoSpriteSheet ) {
+        poly->hShader = rg.sheets[hSpriteSheet]->hShader;
+    } else {
+        // singular shader
+        poly->hShader = hSpriteSheet;
+    }
     poly->scale = 1.0f;
     poly->rotation = 0.0f;
 
-    for ( i = 0; i < 4; i++ ) {
-        VectorCopy2( vtx[i].uv, rg.sheets[ hSpriteSheet ]->sprites[ hSprite ].texCoords[i] );
-        VectorCopy( vtx[i].worldPos, pos );
+    if ( !bNoSpriteSheet ) {
+        VectorCopy2( vtx[0].uv, rg.sheets[ hSpriteSheet ]->sprites[ hSprite ].texCoords[0] );
+        VectorCopy2( vtx[1].uv, rg.sheets[ hSpriteSheet ]->sprites[ hSprite ].texCoords[1] );
+        VectorCopy2( vtx[2].uv, rg.sheets[ hSpriteSheet ]->sprites[ hSprite ].texCoords[2] );
+        VectorCopy2( vtx[3].uv, rg.sheets[ hSpriteSheet ]->sprites[ hSprite ].texCoords[3] );
+    } else {
+        VectorSet2( vtx[0].uv, 1, 0 );
+        VectorSet2( vtx[1].uv, 1, 1 );
+        VectorSet2( vtx[2].uv, 0, 1 );
+        VectorSet2( vtx[3].uv, 0, 0 );
     }
+    VectorCopy( vtx[0].worldPos, pos );
+    VectorCopy( vtx[1].worldPos, pos );
+    VectorCopy( vtx[2].worldPos, pos );
+    VectorCopy( vtx[3].worldPos, pos );
 
     r_numPolyVerts += 4;
     r_numPolys++;

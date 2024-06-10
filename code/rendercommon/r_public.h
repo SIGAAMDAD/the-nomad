@@ -13,6 +13,37 @@ typedef enum {
     REF_UNLOAD_DLL
 } refShutdownCode_t;
 
+typedef struct {
+    uint64_t msec;
+    uint64_t postprocessMsec;
+    uint64_t c_drawCalls;
+
+    uint32_t c_glslShaderBinds;
+    uint32_t c_bufferIndices, c_bufferVertices;
+    uint32_t c_iboBinds, c_vboBinds, c_vaoBinds;
+    uint32_t c_dynamicBufferDraws;
+    uint32_t c_staticBufferDraws;
+    uint32_t c_bufferBinds;
+    uint32_t c_surfaces;
+    uint32_t c_overDraw;
+    uint32_t c_lightallDraws;
+    uint32_t c_genericDraws;
+} backendCounters_t;
+
+typedef struct {
+    // in bytes
+    uint32_t estTotalMemUsed;
+    uint32_t estBufferMemUsed;
+    uint32_t estTextureMemUsed;
+
+    uint32_t numBuffers;
+    uint32_t numTextures;
+
+    // polled from glGetIntegerv
+    uint32_t dedicatedMem;
+    uint32_t totalMem;
+} gpuMemory_t;
+
 //
 // refimport_t: for use with external engine system libraries
 //
@@ -134,7 +165,7 @@ typedef struct {
 	void (*ClearScene)( void );
     void (*BeginScene)( const renderSceneRef_t *fd );
     void (*EndScene)( void );
-    void (*AddSpriteToScene)( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t hSprite );
+    void (*AddSpriteToScene)( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t hSprite, qboolean bNoSpriteSheet );
     void (*AddPolyToScene)( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts );
     void (*AddPolyListToScene)( const poly_t *polys, uint32_t numPolys );
     void (*AddEntityToScene)( const renderEntityRef_t *ent );
@@ -150,7 +181,7 @@ typedef struct {
 	void (*SetColor)( const float *rgba );	// NULL = 1,1,1,1
 
 	void	(*BeginFrame)( stereoFrame_t stereoFrame );
-	void	(*EndFrame)( uint64_t *frontEndMsec, uint64_t *backEndMsec );
+	void	(*EndFrame)( uint64_t *frontEndMsec, uint64_t *backEndMsec, backendCounters_t *pc );
 
 //	void	(*RegisterFont)(const char *fontName, int pointSize, fontInfo_t *font);
 	void	(*TakeVideoFrame)( int32_t h, int32_t w, byte* captureBuffer, byte *encodeBuffer, qboolean motionJpeg );
@@ -166,6 +197,8 @@ typedef struct {
 
 	void	(*VertexLighting)( qboolean allowed );
 	void	(*SyncRender)( void );
+
+    void    (*GetGPUMemStats)( gpuMemory_t *memstats );
 } renderExport_t;
 
 extern refimport_t ri;

@@ -235,6 +235,8 @@ typedef struct {
 
     char gameconfigStrings[BIG_INFO_STRING];
 
+    backendCounters_t pc;
+
 #ifdef __cplusplus
     glm::vec3 cameraPos;
     glm::vec3 cameraWorldPos;

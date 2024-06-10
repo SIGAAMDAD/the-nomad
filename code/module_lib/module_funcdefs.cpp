@@ -826,9 +826,9 @@ static void AddPolyToScene( nhandle_t hShader, const CScriptArray *pPolyList ) {
     re.AddPolyToScene( hShader, (const polyVert_t *)pPolyList->GetBuffer(), pPolyList->GetSize() );
 }
 
-static void AddSpriteToScene( const vec3 *origin, nhandle_t hSpriteSheet, nhandle_t hSprite ) {
+static void AddSpriteToScene( const vec3 *origin, nhandle_t hSpriteSheet, nhandle_t hSprite, bool bNoSpriteSheet ) {
     CThreadAutoLock<CThreadMutex> lock( g_hRenderLock );
-    re.AddSpriteToScene( (vec_t *)origin, hSpriteSheet, hSprite );
+    re.AddSpriteToScene( (vec_t *)origin, hSpriteSheet, hSprite, bNoSpriteSheet );
 }
 
 static nhandle_t RegisterShader( const string_t *npath ) {
@@ -2278,7 +2278,7 @@ void ModuleLib_Register_Engine( void )
                 " uint32, uint32, const vec2& in, float, float, float )",
                 asFUNCTION( AddEntityToScene ), asCALL_GENERIC );
             REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddPolyToScene( int, const TheNomad::Engine::Renderer::PolyVert[]& in )", WRAP_FN_PR( AddPolyToScene, ( nhandle_t, const CScriptArray * ), void ) );
-            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddSpriteToScene( const vec3& in, int, int )", WRAP_FN( AddSpriteToScene ) );
+            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddSpriteToScene( const vec3& in, int, int, bool )", WRAP_FN( AddSpriteToScene ) );
             REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::Renderer::RegisterShader( const string& in )", WRAP_FN( RegisterShader ) );
             g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "int TheNomad::Engine::Renderer::RegisterSpriteSheet( const string& in, uint, uint, uint, uint )", asFUNCTION( ModuleLib_RegisterSpriteSheet ), asCALL_GENERIC );
             REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::Renderer::RegisterSprite( int, uint )", WRAP_FN( RegisterSprite ) );

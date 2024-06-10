@@ -444,6 +444,7 @@ void RB_ShowImages( void ) {
 static const void *RB_SwapBuffers(const void *data)
 {
     const swapBuffersCmd_t *cmd;
+	uint64_t start, end;
     
     // texture swapping test
     if (r_showImages->i)
@@ -488,6 +489,7 @@ static const void *RB_SwapBuffers(const void *data)
 	
 	if ( glContext.ARB_framebuffer_object && r_arb_framebuffer_object->i ) {
 		if ( !backend.framePostProcessed ) {
+			start = ri.Milliseconds();
 			if ( rg.msaaResolveFbo && r_hdr->i ) {
 				// Resolving an RGB16F MSAA FBO to the screen messes with the brightness, so resolve to an RGB16F FBO first
 				FBO_FastBlit( rg.renderFbo, NULL, rg.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
@@ -503,6 +505,8 @@ static const void *RB_SwapBuffers(const void *data)
 					FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 				}
 			}
+			end = ri.Milliseconds();
+			backend.pc.postprocessMsec = end - start;
 		}
 	}
 
@@ -534,6 +538,9 @@ static const void *RB_PostProcess(const void *data)
 	fbo_t *srcFbo;
 	ivec4_t srcBox, dstBox;
 	qboolean autoExposure;
+	uint64_t start, end;
+
+	start = ri.Milliseconds();
 
 	backend.refdef.blurFactor = 0.0f;
 	backend.drawBatch.shader = rg.defaultShader;
@@ -727,6 +734,9 @@ static const void *RB_PostProcess(const void *data)
 		}
 	}
 #endif
+
+	end = ri.Milliseconds();
+	backend.pc.postprocessMsec = end - start;
 
 	backend.framePostProcessed = qtrue;
 
