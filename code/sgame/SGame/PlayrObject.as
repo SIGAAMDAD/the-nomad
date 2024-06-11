@@ -429,8 +429,8 @@ namespace TheNomad::SGame {
 			int hLegSprite = FS_INVALID_HANDLE;
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 
-//			TheNomad::Engine::Renderer::AddSpriteToScene( vec3( 0, 0, 0 ),
-//				TheNomad::Engine::Renderer::RegisterShader( "icons/iconpw_pewpew" ), 0, true );
+			TheNomad::Engine::Renderer::AddSpriteToScene( vec3( 0, 0, 0 ),
+				TheNomad::Engine::Renderer::RegisterShader( "icons/iconpw_pewpew" ), 0, true );
 
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.sheetNum = m_SpriteSheet.GetShader();

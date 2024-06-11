@@ -1681,6 +1681,7 @@ typedef enum
     RC_DRAW_BUFFER,
     RC_COLORMASK,
     RC_SCREENSHOT,
+    RC_CLEARDEPTH,
 
     // mainly called from the vm
     RC_DRAW_IMAGE,
@@ -1698,6 +1699,10 @@ typedef struct {
     renderCmdType_t commandId;
     uint32_t rgba[4];
 } colorMaskCmd_t;
+
+typedef struct {
+    renderCmdType_t commandId;
+} clearDepthCommand_t;
 
 typedef struct {
     renderCmdType_t commandId;

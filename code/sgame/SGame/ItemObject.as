@@ -64,6 +64,5 @@ namespace TheNomad::SGame {
 
 		private InfoSystem::ItemInfo@ m_Info = null;
 		private EntityObject@ m_Owner = null; // for applying effects
-		private int m_hShader = FS_INVALID_HANDLE;
 	};
 };

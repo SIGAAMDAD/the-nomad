@@ -1196,6 +1196,8 @@ void GLSL_InitGPUShaders( void )
     if ( r_multisampleType->i == AntiAlias_FXAA ) {
         N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_FXAA\n" );
     }
+    N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_TCGEN\n" );
+    N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_TCMOD\n" );
     if ( !GLSL_InitGPUShader( &rg.imguiShader, "imgui", attribs, qtrue, extradefines, qtrue, fallbackShader_imgui_vp, fallbackShader_imgui_fp ) ) {
         ri.Error( ERR_FATAL, "Could not load imgui shader!" );
     }

@@ -1027,6 +1027,7 @@ extern "C" void UI_DrawMenuBackground( void )
 	refdef.y = 0;
 	refdef.width = ui->gpuConfig.vidWidth;
 	refdef.height = ui->gpuConfig.vidHeight;
+	refdef.time = gi.realtime * 0.1f;
 	refdef.flags = RSF_NOWORLDMODEL | RSF_ORTHO_TYPE_SCREENSPACE;
 
 	//
@@ -1157,14 +1158,18 @@ static void UI_DrawGPUStats( void )
 	if ( ImGui::TreeNodeEx( (void *)(uintptr_t)"##GPUStatistics", ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen,
 		"Statistics" ) )
 	{
+		uint32_t gpuFrameTime, gpuSamples, gpuPrimitives;
+
 		re.GetGPUMemStats( &memstats );
+		re.GetGPUFrameStats( &gpuFrameTime, &gpuSamples, &gpuPrimitives );
 
 		ImGui::Text( "FrameNumber: %lu", com_frameNumber );
 		ImGui::Text( "FrameTime: %i", gi.frametime );
 		ImGui::Separator();
-		ImGui::Text( "FrontEnd Time: %lu milliseconds", time_frontend );
-		ImGui::Text( "BackEnd Time: %lu milliseconds", gi.pc.msec );
-		ImGui::Text( "PostProcessing Time: %lu milliseconds", gi.pc.postprocessMsec );
+		ImGui::Text( "FrontEnd Time: %0.04f milliseconds", time_frontend * 0.0001f );
+		ImGui::Text( "BackEnd Time: %0.04f milliseconds", time_backend * 0.0001f );
+		ImGui::Text( "PostProcessing Time: %0.04f milliseconds", gi.pc.postprocessMsec * 0.0001f );
+		ImGui::Text( "GPU Time: %0.04f milliseconds", gpuFrameTime * 0.0001f );
 		ImGui::Separator();
 		ImGui::Text( "Draw Calls: %lu", gi.pc.c_drawCalls );
 		ImGui::Text( "Buffer Binds: %u", gi.pc.c_bufferBinds );

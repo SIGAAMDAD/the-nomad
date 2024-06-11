@@ -175,6 +175,8 @@ namespace TheNomad::SGame {
 			}
 
 			Spawn( m_Link.m_nEntityId, m_Link.m_Origin );
+
+			return true;
 		}
 		void Think() {
 			if ( @m_Owner !is null ) {

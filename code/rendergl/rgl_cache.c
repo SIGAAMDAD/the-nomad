@@ -485,10 +485,11 @@ void R_ShutdownBuffer( vertexBuffer_t *vbo )
 void RB_SetBatchBuffer( vertexBuffer_t *buffer, void *vertexBuffer, uintptr_t vtxSize, void *indexBuffer, uintptr_t idxSize )
 {
     // is it already bound?
-    if ( backend.drawBatch.buffer == buffer ) {
-        return;
-    } else if ( backend.drawBatch.buffer != buffer ) {
+    if ( backend.drawBatch.buffer != buffer ) {
 		VBO_BindNull();
+	} else if ( backend.drawBatch.buffer == buffer ) {
+		VBO_Bind( buffer );
+		return;
 	}
 
     // clear anything currently queued
@@ -497,9 +498,6 @@ void RB_SetBatchBuffer( vertexBuffer_t *buffer, void *vertexBuffer, uintptr_t vt
     }
 
     backend.drawBatch.buffer = buffer;
-
-    backend.drawBatch.vtxOffset = 0;
-    backend.drawBatch.idxOffset = 0;
 
     backend.drawBatch.vtxDataSize = vtxSize;
     backend.drawBatch.idxDataSize = idxSize;
@@ -511,11 +509,10 @@ void RB_SetBatchBuffer( vertexBuffer_t *buffer, void *vertexBuffer, uintptr_t vt
     backend.drawBatch.indices = indexBuffer;
 
     // bind the new cache
-    VBO_Bind( buffer );
-
+	VBO_Bind( buffer );
 	R_ClearVertexPointers();
 
-    // set the new vertex attrib array state
+	// set the new vertex attrib array state
 	R_SetVertexPointers( buffer->attribs );
 }
 
@@ -529,7 +526,7 @@ void RB_FlushBatchBuffer( void )
     }
 
     // do we actually have something there?
-    if ( backend.drawBatch.vtxOffset == 0 && backend.drawBatch.idxOffset == 0 ) {
+    if ( backend.drawBatch.vtxOffset == 0 || backend.drawBatch.idxOffset == 0 ) {
         return;
     }
 
@@ -555,7 +552,7 @@ void RB_FlushBatchBuffer( void )
 		nglBufferSubData( GL_ELEMENT_ARRAY_BUFFER, 0, backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize, backend.drawBatch.indices );
 	}
 
-	// orphan the old index buffer so that we don't stall on it
+	// orphan the old vertex buffer so that we don't stall on it
 	if ( r_drawMode->i == DRAWMODE_MAPPED ) {
 		nglInvalidateBufferData( backend.drawBuffer->vertex.id );
 		data = nglMapBufferRange( GL_ARRAY_BUFFER_ARB, 0, backend.drawBatch.maxVertices, GL_MAP_WRITE_BIT
@@ -574,8 +571,8 @@ void RB_FlushBatchBuffer( void )
 	backend.pc.c_bufferIndices += backend.drawBatch.idxOffset;
 	backend.pc.c_bufferVertices += backend.drawBatch.vtxOffset;
 
-    backend.drawBatch.idxOffset = 0;
-    backend.drawBatch.vtxOffset = 0;
+	backend.drawBatch.vtxOffset = 0;
+	backend.drawBatch.idxOffset = 0;
 }
 
 void RB_CommitDrawData( const void *verts, uint32_t numVerts, const void *indices, uint32_t numIndices )

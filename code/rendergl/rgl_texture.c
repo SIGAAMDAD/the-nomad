@@ -156,7 +156,7 @@ void R_ImageList_f( void )
 		uint32_t displaySize;
 		uint32_t estSize = 0;
 
-		glState.memstats.estTextureMemUsed = image->uploadWidth * image->uploadHeight;
+		estSize = image->uploadWidth * image->uploadHeight;
 
 		switch ( image->internalFormat ) {
 		case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT:

@@ -832,13 +832,6 @@ static void Con_DrawSolidConsole( float frac, qboolean open )
 	}
 
 	// draw the background
-
-	ImGui::Begin( "CommandConsole", NULL, windowFlags | ImGuiWindowFlags_NoBackground );
-	ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-	ImGui::SetWindowSize( ImVec2( refdef.width, height ) );
-	ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * con_scale->f );
-//	ImGui::PushTextWrapPos( refdef.width );
-
 	re.SetColor( colorWhite );
 	// custom console background color
 	if ( con_color->s[0] ) {
@@ -860,8 +853,18 @@ static void Con_DrawSolidConsole( float frac, qboolean open )
 		ImGui::Image( (ImTextureID)(uintptr_t)gi.whiteShader, ImVec2( (float)refdef.width, height ) );
 		customColor = qtrue;
 	} else {
-		re.DrawImage( 0, 0, refdef.width, height, 0, 0, 1, 1, gi.consoleShader );
+		ImGui::Begin( "##ConsoleWindowBackground", NULL, windowFlags | ImGuiWindowFlags_NoBackground );
+		ImGui::SetWindowPos( ImVec2( 0, 0 ) );
+		ImGui::SetWindowSize( ImVec2( refdef.width, height ) );
+		ImGui::Image( (ImTextureID)(uintptr_t)gi.consoleShader, ImVec2( (float)refdef.width, height ) );
+		ImGui::End();
 	}
+
+	ImGui::Begin( "CommandConsole", NULL, windowFlags | ImGuiWindowFlags_NoBackground );
+	ImGui::SetWindowPos( ImVec2( 0, 0 ) );
+	ImGui::SetWindowSize( ImVec2( refdef.width, height ) );
+	ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * con_scale->f );
+//	ImGui::PushTextWrapPos( refdef.width );
 
 	// draw from the bottom up
 	{
