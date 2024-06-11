@@ -1696,6 +1696,8 @@ void G_StartHunkUsers( void )
 {
     G_InitArchiveHandler();
 
+//    g_pRenderThread = new ( Hunk_Alloc( sizeof( *g_pRenderThread ), h_low ) ) CRenderThread();
+
     // cache all maps
     G_InitMapCache();
 

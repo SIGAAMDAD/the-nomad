@@ -117,16 +117,8 @@ namespace TheNomad::SGame {
 				if ( !data.Found() ) {
 					GameError( "EntitySystem::OnLoad: save section \"EntityData_" + i + "\" not found" );
 				}
-
-				// be more efficient with our memory
-				if ( @m_EntityList[i] is null ) {
-					@ent = EntityObject();
-					@m_EntityList[i] = @ent;
-				} else {
-					@ent = @m_EntityList[i];
-				}
-
-				@ent = EntityObject();
+				@ent = @m_EntityList[i];
+				ent = EntityObject();
 
 				switch ( TheNomad::GameSystem::EntityType( data.LoadUInt( "type" ) ) ) {
 				case TheNomad::GameSystem::EntityType::Playr: {
@@ -142,6 +134,11 @@ namespace TheNomad::SGame {
 				case TheNomad::GameSystem::EntityType::Item: {
 					if ( !cast<ItemObject@>( @ent ).Load( data ) ) {
 						GameError( "EntitySystem::OnLoad: failed to load item data" );
+					}
+					break; }
+				case TheNomad::GameSystem::EntityType::Weapon: {
+					if ( !cast<WeaponObject@>( @ent ).Load( data ) ) {
+						GameError( "EntitySystem::OnLoad: failed to weapon data" );
 					}
 					break; }
 				default:
@@ -216,7 +213,8 @@ namespace TheNomad::SGame {
 					cast<ItemObject@>( @ent ).Think();
 					break;
 				case TheNomad::GameSystem::EntityType::Weapon:
-					break; // thinking happens in owner entity
+					cast<WeaponObject@>( @ent ).Think();
+					break;
 				case TheNomad::GameSystem::EntityType::Wall:
 					GameError( "WALLS DON'T THINK, THEY ACT" );
 					break;

@@ -563,7 +563,7 @@ typedef struct {
 	unsigned int oldhats;
 } stick_state;
 
-static stick_state *stick_states;
+static stick_state stick_states[MAX_COOP_PLAYERS];
 
 static void IN_HapticRumble( void )
 {
@@ -687,8 +687,7 @@ static void IN_InitJoystick( void )
 		}
 	}
 	if ( stick_states ) {
-		Z_Free( stick_states );
-		stick_states = NULL;
+		memset( stick_states, 0, sizeof( stick_states ) );
 	}
 
 	// SDL 2.0.4 requires SDL_INIT_JOYSTICK to be initialized separately from
@@ -750,7 +749,6 @@ static void IN_InitJoystick( void )
 	Cvar_CheckRange( cv, "0", "4", CVT_INT );
 	Cvar_SetDescription( cv, "Sets the number of input devices that are handled by the engine.\nNOTE: only used for split-screen co-op." );
 
-	stick_states = (stick_state *)S_Malloc( sizeof( stick_state ) * numInputDevices );
 	for ( i = 0; i < numInputDevices; i++ ) {
 		sticks[i] = SDL_JoystickOpen( i );
 		if ( !sticks[i] ) {

@@ -168,8 +168,18 @@ namespace TheNomad::SGame {
 			return damage;
 		}
 
+		bool Load( const TheNomad::GameSystem::SaveSystem::LoadSection& in section ) {
+			LoadBase( section );
+			if ( section.LoadBool( "hasOwner" ) ) {
+				@m_Owner = @EntityManager.GetEntityForNum( section.LoadUInt( "owner" ) );
+			}
+
+			Spawn( m_Link.m_nEntityId, m_Link.m_Origin );
+		}
 		void Think() {
-			GameError( "WeaponObject::Think: called" );
+			if ( @m_Owner !is null ) {
+				return;
+			}
 		}
 		void Spawn( uint id, const vec3& in origin ) override {
 			@m_Info = @InfoSystem::InfoManager.GetWeaponInfo( id );

@@ -1597,6 +1597,7 @@ GDR_EXPORT renderExport_t *GDR_DECL GetRenderAPI( uint32_t version, refimport_t 
     re.GetConfig = RE_GetConfig;
     re.ImGui_TextureData = RE_GetImGuiTextureData;
     re.GetGPUFrameStats = RE_GetGPUFrameStats;
+    re.GetGPUMemStats = RE_GetGPUMemStats;
 
     re.ClearScene = RE_ClearScene;
     re.BeginScene = RE_BeginScene;
@@ -1654,7 +1655,7 @@ void R_GLDebug_Callback_ARB(GLenum source, GLenum type, GLuint id, GLenum severi
     }
 
     len = strlen(message) + 1;
-    cachedGLMessages[numCachedGLMessages] = (char *)ri.Malloc( len );
+    cachedGLMessages[numCachedGLMessages] = (char *)ri.Hunk_Alloc( len, h_low );
     cachedGLMessages[numCachedGLMessages][len - 1] = '\0';
     strcpy(cachedGLMessages[numCachedGLMessages], message);
     numCachedGLMessages++;

@@ -28,6 +28,8 @@ namespace TheNomad::SGame::InfoSystem {
 			if ( !json.get( "Icon", iconShader ) ) {
 				ConsoleWarning( "invalid item info, missing variable 'Icon'\n" );
 				return false;
+			} else {
+				TheNomad::Engine::ResourceCache.GetShader( iconShader );
 			}
 			if ( !json.get( "SpriteOffsetX", spriteOffsetX ) ) {
 				ConsoleWarning( "invalid item info, missing variable 'SpriteOffsetX'\n" );

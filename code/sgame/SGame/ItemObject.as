@@ -23,7 +23,21 @@ namespace TheNomad::SGame {
 			Engine::CmdExecuteCommand( m_Info.effect + " " + m_Owner.GetEntityNum() );
 		}
 
+		void Save( const TheNomad::GameSystem::SaveSystem::SaveSection& in section ) const {
+			SaveBase( section );
+			section.SaveBool( "hasOwner", m_Owner !is null );
+			if ( @m_Owner !is null ) {
+				section.SaveUInt( "owner", m_Owner.GetEntityNum() );
+			}
+		}
 		bool Load( const TheNomad::GameSystem::SaveSystem::LoadSection& in section ) {
+			LoadBase( section );
+			if ( section.LoadBool( "hasOwner" ) ) {
+				@m_Owner = @EntityManager.GetEntityForNum( section.LoadUInt( "owner" ) );
+			}
+
+			Spawn( m_Link.m_nEntityId, m_Link.m_Origin );
+
             return true;
 		}
 
@@ -31,6 +45,8 @@ namespace TheNomad::SGame {
 			if ( @m_Owner !is null ) {
 				return;
 			}
+
+			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, m_hShader, 0, true );
 		}
 		void Spawn( uint id, const vec3& in origin ) override {
 			@m_Info = @InfoSystem::InfoManager.GetItemInfo( id );
@@ -38,6 +54,8 @@ namespace TheNomad::SGame {
 				GameError( "ItemObject::Spawn: invalid item id " + id );
 			}
 
+			m_hShader = TheNomad::Engine::ResourceCache.GetShader( m_Info.iconShader );
+			m_Link.m_nEntityId = id;
 			m_Link.m_Origin = origin;
 			m_Link.m_Bounds.m_nWidth = m_Info.width;
 			m_Link.m_Bounds.m_nHeight = m_Info.height;
@@ -46,5 +64,6 @@ namespace TheNomad::SGame {
 
 		private InfoSystem::ItemInfo@ m_Info = null;
 		private EntityObject@ m_Owner = null; // for applying effects
+		private int m_hShader = FS_INVALID_HANDLE;
 	};
 };

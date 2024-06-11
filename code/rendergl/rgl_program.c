@@ -135,7 +135,7 @@ static shaderCacheEntry_t *cacheHashTable;
 //
 static void R_InitShaderCache( void )
 {
-    cacheHashTable = (shaderCacheEntry_t *)ri.Malloc( sizeof(*cacheHashTable) * rg.numPrograms );
+    cacheHashTable = (shaderCacheEntry_t *)ri.Hunk_Alloc( sizeof(*cacheHashTable) * rg.numPrograms, h_low );
     memset(cacheHashTable, 0, sizeof(cacheHashTable));
 
     for (uint64_t i = 0; i < rg.numPrograms; i++) {
@@ -169,7 +169,7 @@ static void R_LoadShaderCache(void)
         ri.Error(ERR_DROP, "R_LoadShaderCache: numEntries is a funny number");
     }
 
-    cacheHashTable = ri.Malloc( sizeof(*cacheHashTable) * numEntries );
+    cacheHashTable = ri.Hunk_Alloc( sizeof(*cacheHashTable) * numEntries, h_low );
 
     for (i = 0; i < numEntries; i++) {
         if (!ri.FS_Read(name, sizeof(name), f)) {
@@ -186,7 +186,7 @@ static void R_LoadShaderCache(void)
             ri.Printf(PRINT_DEVELOPER, "Error reading shader cache entry size at %lu\n", i);
         }
 
-        entry->data = ri.Malloc( entry->size );
+        entry->data = ri.Hunk_Alloc( entry->size, h_low );
         if (!ri.FS_Read(entry->data, entry->size, f)) {
             ri.FS_FClose(f);
             ri.Printf(PRINT_DEVELOPER, "Error reading shader cache entry buffer at %lu\n", i);
@@ -237,7 +237,7 @@ typedef enum {
 
 static void GLSL_PrintLog(GLuint programOrShader, glslPrintLog_t type, qboolean developerOnly)
 {
-    char            *msg;
+    static char     *msg;
 	static char     msgPart[8192];
 	GLsizei         maxLength = 0;
 	uint32_t        i;
@@ -263,10 +263,11 @@ static void GLSL_PrintLog(GLuint programOrShader, glslPrintLog_t type, qboolean 
 		return;
 	}
 
-	if (maxLength < 1023)
+	if ( maxLength < 1023 ) {
 		msg = msgPart;
-	else
-		msg = ri.Malloc(maxLength);
+    } else {
+		msg = alloca( maxLength );
+    }
 
 	switch (type) {
 	case GLSL_PRINTLOG_PROGRAM_INFO:
@@ -295,7 +296,6 @@ static void GLSL_PrintLog(GLuint programOrShader, glslPrintLog_t type, qboolean 
 		}
 
 		ri.Printf(printLevel, "\n");
-		ri.Free(msg);
     }
 }
 
@@ -726,9 +726,6 @@ static void GLSL_DeleteGPUShader(shaderProgram_t *program)
         if ( program->fragmentId ) {
             nglDetachShader( program->programId, program->fragmentId );
             nglDeleteShader( program->fragmentId );
-        }
-        if ( program->uniformBuffer ) {
-            ri.Free( program->uniformBuffer );
         }
 
         nglDeleteProgram( program->programId );
@@ -1316,9 +1313,6 @@ void GLSL_ShutdownGPUShaders(void)
 
     for ( i = 0; i < rg.numUniformBuffers; i++ ) {
         nglDeleteBuffersARB( 1, &rg.uniformBuffers[i]->id );
-        if ( !rg.uniformBuffers[i]->externalBuffer ) {
-            ri.Free( rg.uniformBuffers[i]->data );
-        }
     }
     for ( i = 0; i < GENERICDEF_COUNT; i++ ) {
         GLSL_DeleteGPUShader( &rg.genericShader[i] );
