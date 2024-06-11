@@ -1,15 +1,15 @@
 #include "rgl_local.h"
 #include <ctype.h>
 
-static void *Image_Malloc(size_t size) {
-	return ri.Malloc(size);
+static void *Image_Malloc( size_t size ) {
+	return ri.Malloc( size );
 }
-static void *Image_Realloc(void *ptr, size_t nsize) {
-	return ri.Realloc(ptr, nsize);
+static void *Image_Realloc( void *ptr, size_t nsize ) {
+	return ri.Realloc( ptr, nsize );
 }
-static void Image_Free(void *ptr) {
+static void Image_Free( void *ptr ) {
 	if ( ptr ) {
-		ri.Free(ptr);
+		ri.Free( ptr );
 	}
 }
 
@@ -313,7 +313,7 @@ void R_ImageList_f( void )
 	}
 
 	ri.Printf( PRINT_INFO, " ---------\n" );
-	ri.Printf( PRINT_INFO, " approx %lu bytes\n", glState.memstats.estTextureMemUsed );
+	ri.Printf( PRINT_INFO, " approx %u bytes\n", glState.memstats.estTextureMemUsed );
 	ri.Printf( PRINT_INFO, " %u total images\n\n", rg.numTextures );
 }
 

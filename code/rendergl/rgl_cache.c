@@ -369,6 +369,11 @@ vertexBuffer_t *R_AllocateBuffer( const char *name, void *vertices, uint32_t ver
 	GL_SetObjectDebugName( GL_BUFFER, buf->index.id, name, "_ibo" );
 
 	glState.memstats.estBufferMemUsed += ( indicesSize + verticesSize );
+	glState.memstats.estVertexMemUsed += verticesSize;
+	glState.memstats.estIndexMemUsed += indicesSize;
+	glState.memstats.numIndexBufers++;
+	glState.memstats.numVertexBuffers++;
+	glState.memstats.numVertexArrays++;
 	glState.memstats.numBuffers++;
 
     return buf;

@@ -1655,7 +1655,7 @@ void R_GLDebug_Callback_ARB(GLenum source, GLenum type, GLuint id, GLenum severi
     }
 
     len = strlen(message) + 1;
-    cachedGLMessages[numCachedGLMessages] = (char *)ri.Malloc( len );
+    cachedGLMessages[numCachedGLMessages] = (char *)ri.Hunk_Alloc( len, h_low );
     cachedGLMessages[numCachedGLMessages][len - 1] = '\0';
     strcpy(cachedGLMessages[numCachedGLMessages], message);
     numCachedGLMessages++;

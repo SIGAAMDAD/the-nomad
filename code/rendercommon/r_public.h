@@ -35,7 +35,12 @@ typedef struct {
     uint32_t estTotalMemUsed;
     uint32_t estBufferMemUsed;
     uint32_t estTextureMemUsed;
+    uint32_t estVertexMemUsed;
+    uint32_t estIndexMemUsed;
 
+    uint32_t numVertexArrays;
+    uint32_t numVertexBuffers;
+    uint32_t numIndexBufers;
     uint32_t numBuffers;
     uint32_t numTextures;
 

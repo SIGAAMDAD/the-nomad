@@ -1033,6 +1033,7 @@ extern "C" void UI_DrawMenuBackground( void )
 	// draw the background
 	//
     re.ClearScene();
+	re.SetColor( colorWhite );
     re.DrawImage( 0, 0, refdef.width, refdef.height, 0, 0, 1, 1, ui->menubackShader );
     re.RenderScene( &refdef );
 }
@@ -1057,7 +1058,7 @@ static void UI_DrawGPUStats( void )
 	int i;
 	gpuMemory_t memstats;
 
-	ImGui::Begin( "##RendererInformation", NULL );
+	ImGui::Begin( "##RendererInformation", NULL, ImGuiWindowFlags_NoCollapse );
 
 	if ( ImGui::TreeNodeEx( (void *)(uintptr_t)"##GPUExtensions", ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen,
 		"GPU Extensions" ) )
@@ -1162,7 +1163,8 @@ static void UI_DrawGPUStats( void )
 		ImGui::Text( "FrameTime: %i", gi.frametime );
 		ImGui::Separator();
 		ImGui::Text( "FrontEnd Time: %lu milliseconds", time_frontend );
-		ImGui::Text( "BackEnd Time: %lu milliseconds", time_backend );
+		ImGui::Text( "BackEnd Time: %lu milliseconds", gi.pc.msec );
+		ImGui::Text( "PostProcessing Time: %lu milliseconds", gi.pc.postprocessMsec );
 		ImGui::Separator();
 		ImGui::Text( "Draw Calls: %lu", gi.pc.c_drawCalls );
 		ImGui::Text( "Buffer Binds: %u", gi.pc.c_bufferBinds );
@@ -1173,7 +1175,10 @@ static void UI_DrawGPUStats( void )
 		ImGui::Text( "Overdraw: %u", gi.pc.c_overDraw );
 		ImGui::Separator();
 		ImGui::Text( "(EST) Texture Memory Used: %u", memstats.estTextureMemUsed );
-		ImGui::Text( "(EST) Buffer Memory Used: %u", memstats.estBufferMemUsed );
+		ImGui::Text( "(EST) Total Buffer Memory Used: %u", memstats.estBufferMemUsed );
+		ImGui::Text( "(EST) Vertex Buffer Memory: %u", memstats.estVertexMemUsed );
+		ImGui::Text( "(EST) Index Buffer Memory: %u", memstats.estIndexMemUsed );
+		ImGui::Text( "Total Buffers Generated: %u", memstats.numBuffers );
 		ImGui::TreePop();
 	}
 

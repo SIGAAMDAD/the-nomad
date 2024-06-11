@@ -832,7 +832,6 @@ static void Con_DrawSolidConsole( float frac, qboolean open )
 	}
 
 	// draw the background
-	re.ClearScene();
 
 	ImGui::Begin( "CommandConsole", NULL, windowFlags | ImGuiWindowFlags_NoBackground );
 	ImGui::SetWindowPos( ImVec2( 0, 0 ) );
@@ -840,6 +839,7 @@ static void Con_DrawSolidConsole( float frac, qboolean open )
 	ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * con_scale->f );
 //	ImGui::PushTextWrapPos( refdef.width );
 
+	re.SetColor( colorWhite );
 	// custom console background color
 	if ( con_color->s[0] ) {
 		// track changes
@@ -897,7 +897,7 @@ static void Con_DrawSolidConsole( float frac, qboolean open )
 	ImGui::SetWindowPos( ImVec2( refdef.width - ( 200 * gi.scale ), height - 48 ) );
 	ImGui::TextUnformatted( GLN_VERSION );
 	ImGui::End();
-	re.RenderScene( &refdef );
+//	re.RenderScene( &refdef );
 }
 
 static void Con_DrawNotify( void ) {

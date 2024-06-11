@@ -2580,6 +2580,9 @@ Frees a bff structure and releases all associated resources
 */
 static void FS_FreeBFF( bffFile_t *bff )
 {
+	fileInBFF_t *file;
+	uint64_t i;
+
 	if ( !bff ) {
 		N_Error( ERR_FATAL, "FS_FreeBFF(NULL)" );
 	}
@@ -2596,6 +2599,12 @@ static void FS_FreeBFF( bffFile_t *bff )
 		fclose( bff->handle );
 	#endif
 		bff->handle = NULL;
+
+		for ( file = bff->buildBuffer; i < bff->numfiles; file = bff->buildBuffer->next, i++ ) {
+			if ( file->buf ) {
+				Z_Free( file->buf );
+			}
+		}
 	}
 
 	Z_Free( bff );
@@ -4378,7 +4387,7 @@ static void FS_Touch_f(void)
 
 }
 
-void FS_Shutdown(qboolean closeFiles)
+void FS_Shutdown( qboolean closeFiles )
 {
 	searchpath_t *p, *next;
 	uint64_t i;
@@ -4411,6 +4420,11 @@ void FS_Shutdown(qboolean closeFiles)
 
 		Z_Free( p );
 	}
+	fs_searchpaths = NULL;
+
+	Z_FreeTags( TAG_SEARCH_PATH );
+	Z_FreeTags( TAG_SEARCH_DIR );
+	Z_FreeTags( TAG_BFF );
 
 	fs_searchpaths = NULL;
 	fs_bffCount = 0;
@@ -4816,7 +4830,7 @@ static char** Sys_ConcatenateFileLists( char **list0, char **list1 )
 	totalLength += Sys_CountFileList( list1 );
 
 	/* Create new list. */
-	dst = cat = (char **)Z_Malloc( ( totalLength + 1 ) * sizeof( char* ), TAG_STATIC);
+	dst = cat = (char **)Z_Malloc( ( totalLength + 1 ) * sizeof( char* ), TAG_STATIC );
 
 	/* Copy over lists. */
 	if ( list0 ) {

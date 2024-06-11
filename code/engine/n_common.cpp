@@ -354,7 +354,11 @@ void Com_WriteCrashReport( void )
     FPrintf( "Referenced BFFs: %s\n", FS_ReferencedBFFNames() );
     FPrintf( "Loaded BFFs: %s\n", FS_LoadedBFFNames() );
 
-	fclose( fp );
+	if ( FS_Initialized() ) {
+		FS_FClose( f );
+	} else {
+		fclose( fp );
+	}
 
 	Con_Printf( "CrashReport data written to '%s'\n", path );
 	Cvar_SetIntegerValue( "com_crashReportCount", Cvar_VariableInteger( "com_crashReportCount" ) + 1 );
@@ -363,17 +367,14 @@ void Com_WriteCrashReport( void )
 void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL N_Error( errorCode_t code, const char *err, ... )
 {
 	va_list argptr;
-	static uint64_t lastErrorTime;
-	static uint64_t errorCount;
-	uint64_t currentTime;
+	static int64_t lastErrorTime;
+	static int64_t errorCount;
+	int64_t currentTime;
 	static qboolean calledSystemError = qfalse;
 
 	if ( com_errorEntered ) {
 		if ( !calledSystemError ) {
 			calledSystemError = qtrue;
-			if ( com_fullyInitialized ) {
-				Com_WriteCrashReport(); // we most likely won't crash from the crash report
-			}
 			Sys_Error( "recursive error after: %s", com_errorMessage );
 		}
 	}
@@ -1704,22 +1705,22 @@ static void Com_PrintVersionStrings( const char *commandLine )
 	}
 
 	SDL_GetVersion( &sdl_version );
-	Com_snprintf( version_str, sizeof(version_str), "%i.%i.%i", sdl_version.major, sdl_version.minor, sdl_version.patch );
+	Com_snprintf( version_str, sizeof( version_str ), "%i.%i.%i", sdl_version.major, sdl_version.minor, sdl_version.patch );
 
 #ifdef _NOMAD_DEBUG
-	Com_snprintf( gamedesc, sizeof(gamedesc), "The Nomad (Debug)" );
+	Com_snprintf( gamedesc, sizeof( gamedesc ), "The Nomad (Debug)" );
 #elif defined(_NOMAD_EXPERIMENTAL)
-	Com_snprintf( gamedesc, sizeof(gamedesc), "The Nomad (Experimental)" ):
+	Com_snprintf( gamedesc, sizeof( gamedesc ), "The Nomad (Experimental)" ):
 #elif defined(_NOMAD_DEMO)
-	Com_snprintf( gamedesc, sizeof(gamedesc), "The Nomad (Demo)" );
+	Com_snprintf( gamedesc, sizeof( gamedesc ), "The Nomad (Demo)" );
 #elif _NOMAD_VERSION_UPDATE == 1
-	Com_snprintf( gamedesc, sizeof(gamedesc), "The Nomad (Alpha Test)" );
+	Com_snprintf( gamedesc, sizeof( gamedesc ), "The Nomad (Alpha Test)" );
 #elif _NOMAD_VERSION_UPDATE == 2
-	Com_snprintf( gamedesc, sizeof(gamedesc), "The Nomad (Beta Test)" );
+	Com_snprintf( gamedesc, sizeof( gamedesc ), "The Nomad (Beta Test)" );
 #elif _NOMAD_VERSION == 3
-	Com_snprintf( gamedesc, sizeof(gamedesc), "The Nomad (Early Access)" );
+	Com_snprintf( gamedesc, sizeof( gamedesc ), "The Nomad (Early Access)" );
 #else
-	Com_snprintf( gamedesc, sizeof(gamedesc), "The Nomad" );
+	Com_snprintf( gamedesc, sizeof( gamedesc ), "The Nomad" );
 #endif
 	
 	Com_PrintDivider();
@@ -1749,6 +1750,7 @@ static void Com_CheckCrash( void )
 {
 	FILE *fp;
 	int ret;
+	static char safeString[32];
 
 	// shut up compiler
 	ret = 0;
@@ -1762,7 +1764,8 @@ static void Com_CheckCrash( void )
 			if ( Com_SafeMode() ) {
 				return; // already set
 			}
-			com_consoleLines[ com_numConsoleLines ] = CopyString( "safe" );
+			strcpy( safeString, "safe" );
+			com_consoleLines[ com_numConsoleLines ] = safeString;
 			com_numConsoleLines++;
 		}
 	} else {

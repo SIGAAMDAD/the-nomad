@@ -163,9 +163,10 @@ namespace TheNomad::SGame {
 		}
 
 		protected void SaveBase( const TheNomad::GameSystem::SaveSystem::SaveSection& in section ) const {
-			section.SaveUInt( "flags", uint( m_Flags ) );
-			section.SaveUInt( "type", uint( m_Link.m_nEntityType ) );
+			section.SaveVec3( "origin", m_Link.m_Origin );
 			section.SaveUInt( "id",  m_Link.m_nEntityId );
+			section.SaveUInt( "type", uint( m_Link.m_nEntityType ) );
+			section.SaveUInt( "flags", uint( m_Flags ) );
 			section.SaveBool( "isProjectile", m_bProjectile );
 		}
 		
