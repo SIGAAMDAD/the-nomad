@@ -1597,6 +1597,7 @@ GDR_EXPORT renderExport_t *GDR_DECL GetRenderAPI( uint32_t version, refimport_t 
     re.GetConfig = RE_GetConfig;
     re.ImGui_TextureData = RE_GetImGuiTextureData;
     re.GetGPUFrameStats = RE_GetGPUFrameStats;
+    re.GetGPUMemStats = RE_GetGPUMemStats;
 
     re.ClearScene = RE_ClearScene;
     re.BeginScene = RE_BeginScene;
