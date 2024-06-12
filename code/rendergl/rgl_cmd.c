@@ -181,7 +181,7 @@ void RE_BeginFrame(stereoFrame_t stereoFrame)
 		return;
 	}
 
-	if ( glContext.ARB_framebuffer_object && r_arb_framebuffer_object->i ) {
+	if ( glContext.ARB_framebuffer_object && r_arb_framebuffer_object->i && rg.renderFbo ) {
 		GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo->frameBuffer );
 	}
 

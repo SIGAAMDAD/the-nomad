@@ -33,6 +33,8 @@ cvar_t *com_demo;
 cvar_t *com_journal;
 cvar_t *com_logfile;
 cvar_t *com_maxfps;
+cvar_t*com_maxfpsUnfocused;
+cvar_t*com_yieldCPU;
 errorCode_t com_errorCode;
 #ifdef USE_AFFINITY_MASK
 cvar_t *com_affinityMask;
@@ -45,6 +47,7 @@ cvar_t *com_viewlog;
 cvar_t *com_timescale;
 cvar_t *com_fixedtime;
 cvar_t *com_timedemo;
+cvar_t *com_pauseUnfocused;
 static int lastTime;
 int com_frameTime;
 uint64_t com_frameNumber = 0;
@@ -235,14 +238,14 @@ void Com_WriteCrashReport( void )
     strftime( timestr, sizeof( timestr ) - 1, "%d%m%Y_%S%M%H", t );
 
     Cvar_VariableStringBuffer( "com_errorMessage", msg, sizeof( msg ) - 1 );
-    Com_snprintf( path, sizeof( path ) - 1, "crashreport_%i.txt", Cvar_VariableInteger( "com_crashReportCount" ) );
+    Com_snprintf( path, sizeof( path ) - 1, "crashreport_%s.txt", timestr );
 
 	if ( FS_Initialized() ) {
 		f = FS_FOpenWrite( va( LOG_DIR "/CrashReports/%s", path ) );
 		if ( f == FS_INVALID_HANDLE ) {
 			Con_Printf( COLOR_RED "Error creating file %s in write-only mode!\n", path );
+			return;
 		}
-		return;
 	} else {
 		fp = fopen( path, "w" );
 		if ( !fp ) {
@@ -254,6 +257,7 @@ void Com_WriteCrashReport( void )
 		}
 	}
 
+	strftime( timestr, sizeof( timestr ) - 1, "%d/%m/%Y %S:%M:%H", t );
     FPrintf( "[ERROR INFO]\n" );
 	FPrintf( "Time: %s\n", timestr );
     FPrintf( "Message: %s\n", msg );
@@ -265,7 +269,11 @@ void Com_WriteCrashReport( void )
         FPrintf( "ActiveMenu: %i\n", ui->menustate );
     }
     FPrintf( "StackTrace:\n" );
-    Sys_DebugStacktraceFile( MAX_STACKTRACE_FRAMES, fp );
+	if ( f && FS_Initialized() ) {
+	    Sys_DebugStacktraceFile( MAX_STACKTRACE_FRAMES, FS_Handle( f ) );
+	} else {
+		Sys_DebugStacktraceFile( MAX_STACKTRACE_FRAMES, fp );
+	}
 	FPrintf( "\n" );
 
     FPrintf( "[ENGINE INFO]\n" );
@@ -1012,7 +1020,9 @@ void Com_RestartGame( void )
 
 		// shutdown FS early so Cvar_Restart will not reset old game cvars
 		FS_Shutdown( qtrue );
-		
+
+		Z_FreeTags( TAG_STATIC );	
+
 		// clean out any user an VM created cvars
 		Cvar_Restart( qtrue );
 
@@ -1877,7 +1887,16 @@ void Com_Init( char *commandLine )
 	}
 
 	com_maxfps = Cvar_Get( "com_maxfps", "60", CVAR_LATCH | CVAR_SAVE | CVAR_PROTECTED );
+	Cvar_CheckRange( com_maxfps, "0", "1000", CVT_INT );
 	Cvar_SetDescription( com_maxfps, "Sets the maximum amount frames that can be drawn per second." );
+	com_maxfpsUnfocused = Cvar_Get( "com_maxfpsUnfocused", "60", CVAR_ARCHIVE_ND );
+	Cvar_CheckRange( com_maxfpsUnfocused, "0", "1000", CVT_INT );
+	Cvar_SetDescription( com_maxfpsUnfocused, "Sets maximum frames per second in unfocused game window." );
+	com_yieldCPU = Cvar_Get( "com_yieldCPU", "1", CVAR_ARCHIVE_ND );
+	Cvar_CheckRange( com_yieldCPU, "0", "16", CVT_INT );
+	Cvar_SetDescription( com_yieldCPU, "Attempt to sleep specified amount of time between rendered frames when game is active, this will greatly reduce CPU load. Use 0 only if you're experiencing some lag." );
+	com_pauseUnfocused = Cvar_Get( "com_pauseUnfocused", "1", CVAR_SAVE );
+	Cvar_SetDescription( com_pauseUnfocused, "Forces pause menu when game window is unfocused." );
 #ifdef USE_AFFINITY_MASK
 	Com_StartupVariable( "com_affinityMask" );
 	com_affinityMask = Cvar_Get( "com_affinityMask", "0x6", CVAR_SAVE | CVAR_LATCH );
@@ -1945,13 +1964,13 @@ void Com_Init( char *commandLine )
 
 	{
 		char **fileList;
-		uint64_t nFiles;
+		uint64_t nFiles, i;
 
 		fileList = FS_ListFiles( "Config/CrashReports", ".txt", &nFiles );
-		if ( nFiles > 10 ) {
-			FS_Remove( "Config/CrashReports/crashreport_0.txt" );
+		if ( nFiles >= 10 ) {
+			FS_HomeRemove( va( "Config/CrashReports/%s", fileList[0] ) );
+			FS_Remove( va( "Config/CrashReports/%s", fileList[0] ) );
 		}
-		Cvar_Set( "com_crashReportCount", va( "%i", (int)nFiles ) );
 		FS_FreeFileList( fileList );
 	}
 
@@ -2279,25 +2298,25 @@ Com_Frame: runs a single frame for the game
 */
 void Com_Frame( qboolean noDelay )
 {
-	static int32_t bias = 0;
-	static int32_t lastTime;
-	int32_t msec, minMsec;
-	int32_t key;
+	static int bias = 0;
+	int msec, realMsec, minMsec;
+	int sleepMsec;
+	int timeVal;
 
-	eastl::chrono::system_clock::time_point startCap, endCap;
-	eastl::chrono::duration<double, eastl::milli> workTime, deltaCap;
-	clock_t start, end, delta;
-	double frameRate = 0, avg = 0;
-
-	if (Q_setjmp(abortframe)) {
+	if ( Q_setjmp( abortframe ) ) {
 		return; // an ERR_DROP was thrown
 	}
 
 	// silence compiler warning
 	minMsec = 0;
 
+	// write config file if anything changed
+#ifndef DELAY_WRITECONFIG
+	Com_WriteConfiguration();
+#endif
+
 #ifdef USE_AFFINITY_MASK
-	if (com_affinityMask->modified) {
+	if ( com_affinityMask->modified ) {
 		Con_DPrintf( "Resetting com_affinityMask...\n" );
 		Com_SetAffinityMask( com_affinityMask->s );
 		com_affinityMask->modified = qfalse;
@@ -2305,43 +2324,64 @@ void Com_Frame( qboolean noDelay )
 #endif
 
 	// we may want to spin here if things are going too fast
-	if ( com_maxfps->i > 0 ) {
-		minMsec = 1000 / com_maxfps->i;
+	if ( noDelay ) {
+		minMsec = 0;
+		bias = 0;
 	} else {
-		minMsec = 1;
+		if ( !gw_active && com_maxfpsUnfocused->i > 0 ) {
+			minMsec = 1000 / com_maxfpsUnfocused->i;
+			if ( com_pauseUnfocused->i && !Cvar_VariableInteger( "g_paused" ) ) {
+				Cbuf_ExecuteText( EXEC_APPEND, "togglepausemenu\n" );
+			}
+		} else if ( com_maxfps->i > 0 ) {
+			minMsec = 1000 / com_maxfps->i;
+		} else {
+			minMsec = 1;
+		}
+
+		timeVal = com_frameTime - lastTime;
+		bias += timeVal - minMsec;
+		if ( bias > minMsec ) {
+			bias = minMsec;
+		}
+		// Adjust minMsec if previous frame took too long to render so
+		// that framerate is stable at the requested value.
+		minMsec -= bias;
 	}
 	do {
-		com_frameTime = Com_EventLoop();
-		if ( lastTime > com_frameTime ) {
-			lastTime = com_frameTime;		// possible on first frame
+		timeVal = Com_TimeVal( minMsec );
+		sleepMsec = timeVal;
+		if ( !gw_minimized && timeVal > com_yieldCPU->i ) {
+			sleepMsec = com_yieldCPU->i;
 		}
-		msec = com_frameTime - lastTime;
-	} while ( msec < minMsec );
-	Cbuf_Execute ();
+		if ( timeVal > sleepMsec ) {
+			Com_EventLoop();
+		}
+	} while ( Com_TimeVal( minMsec ) );
 
 	// mess with msec if needed
-	com_frameMsec = msec;
-	msec = Com_ModifyMsec( msec );
+	lastTime = com_frameTime;
+	com_frameTime = Com_EventLoop();
+	realMsec = com_frameTime - lastTime;
+
+	Cbuf_Execute();
+
+	// mess with msec if needed
+	msec = Com_ModifyMsec( realMsec );
 
 	//
 	// run the game loop
 	//
 	Com_EventLoop();
-	Cbuf_Execute();
 
-	G_Frame( msec, com_frameTime );
+	if ( !Cbuf_Wait() ) {
+		Cbuf_Execute();
+	}
+
+	G_Frame( msec, realMsec );
 
 	// run framerate diagnostics
-
 	com_frameNumber++;
-	/*
-	end = clock();
-	delta = end - start;
-
-	if (delta > 0) {
-		com_fps = CLOCKS_PER_SEC / delta;
-	}
-	*/
 }
 
 /*

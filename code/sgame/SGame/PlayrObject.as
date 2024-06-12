@@ -172,12 +172,64 @@ namespace TheNomad::SGame {
 		}
 
 		bool Load( const TheNomad::GameSystem::SaveSystem::LoadSection& in section ) override {
+			string skin;
+
 			LoadBase( section );
+
+			section.LoadString( "playerSkin", skin );
+			TheNomad::Engine::CvarSet( "skin", skin );
+			m_nHealth = section.LoadFloat( "health" );
+			m_nRage = section.LoadFloat( "rage" );
+
+			@m_LegState = @StateManager.GetStateForNum( section.LoadUInt( "legsStateId" ) );
+			@m_ArmState = @StateManager.GetStateForNum( section.LoadUInt( "armsStateId" ) );
+			@m_State = @StateManager.GetStateForNum( section.LoadUInt( "torsoStateId" ) );
+			m_CurrentWeapon = section.LoadInt( "currentWeapon" );
+			@m_LeftHandWeapon = @m_WeaponSlots[ section.LoadUInt( "leftHandSlot" ) ];
+			@m_RightHandWeapon = @m_WeaponSlots[ section.LoadUInt( "rightHandSlot" ) ];
+			m_LeftHandMode = InfoSystem::WeaponProperty( section.LoadUInt( "leftHandMode" ) );
+			m_RightHandMode = InfoSystem::WeaponProperty( section.LoadUInt( "rightHandMode" ) );
+			m_nHandsUsed = section.LoadInt( "handsUsed" );
+
+			for ( uint i = 0; i < m_WeaponSlots.Count(); i++ ) {
+				m_WeaponSlots[i].Load( section );
+			}
 
 			return true;
 		}
 		void Save( const TheNomad::GameSystem::SaveSystem::SaveSection& in section ) const {
+			uint index;
+
 			SaveBase( section );
+
+			section.SaveString( "playerSkin", TheNomad::Engine::CvarVariableString( "skin" ) );
+			section.SaveFloat( "health", m_nHealth );
+			section.SaveFloat( "rage", m_nRage );
+
+			section.SaveUInt( "legsStateId", m_ArmState.GetID() );
+			section.SaveUInt( "armsStateId", m_LegState.GetID() );
+			section.SaveUInt( "torsoStateId", m_State.GetID() );
+			section.SaveInt( "currentWeapon", m_CurrentWeapon );
+
+			for ( index = 0; index < m_WeaponSlots.Count(); index++ ) {
+				if ( @m_LeftHandWeapon is @m_WeaponSlots[ index ] ) {
+					section.SaveUInt( "leftHandSlot", index );
+					break;
+				}
+			}
+			for ( index = 0; index < m_WeaponSlots.Count(); index++ ) {
+				if ( @m_RightHandWeapon is @m_WeaponSlots[ index ] ) {
+					section.SaveUInt( "rightHandSlot", index );
+					break;
+				}
+			}
+			section.SaveUInt( "leftHandMode", uint( m_LeftHandMode ) );
+			section.SaveUInt( "rightHandMode", uint( m_RightHandMode ) );
+			section.SaveInt( "handsUsed", m_nHandsUsed );
+
+			for ( uint i = 0; i < m_WeaponSlots.Count(); i++ ) {
+				m_WeaponSlots[i].Save( section );
+			}
 		}
 		
 		float GetHealthMult() const {
@@ -251,7 +303,10 @@ namespace TheNomad::SGame {
 			} else if ( m_bAltUseWeapon ) {
 				m_nFrameDamage += GetCurrentWeapon().UseAlt( cast<EntityObject@>( @this ), GetCurrentWeaponMode() );
 			}
-		
+
+			m_Link.m_Bounds.m_nWidth = sgame_PlayerWidth.GetFloat();
+			m_Link.m_Bounds.m_nHeight = sgame_PlayerHeight.GetFloat();
+			m_Link.m_Bounds.MakeBounds( m_Link.m_Origin );
 			
 			// run a movement frame
 			Pmove.RunTic();
@@ -317,7 +372,7 @@ namespace TheNomad::SGame {
 			}
 			
 			// add in the haptic
-			Util::HapticRumble( ScreenData.GetPlayerIndex( @this ), 0.80f, 500 );
+			Util::HapticRumble( m_nControllerIndex, 0.80f, 500 );
 			
 			// add the fireball
 			GfxManager.AddExplosionGfx( vec3( m_Link.m_Origin.x + GetGfxDirection(), m_Link.m_Origin.y, m_Link.m_Origin.z ) );
@@ -423,25 +478,18 @@ namespace TheNomad::SGame {
 			m_nHealMult = 0.0f;
 			m_nHealMultDecay = LevelManager.GetDifficultyScale();
 		}
-		
-		// custom draw because of adaptive weapons and leg sprites
-		void Draw() override {
-			int hLegSprite = FS_INVALID_HANDLE;
+
+		uint GetSpriteId( SpriteSheet@ sheet, EntityState@ state ) const {
+			return state.GetSpriteOffset().y * sheet.GetSpriteCountX() + state.GetSpriteOffset().x
+				+ state.GetAnimation().GetFrame();
+		}
+
+		private void DrawLegs() {
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 
-			TheNomad::Engine::Renderer::AddSpriteToScene( vec3( 0, 0, 0 ),
-				TheNomad::Engine::Renderer::RegisterShader( "icons/iconpw_pewpew" ), 0, true );
-
-			refEntity.origin = m_Link.m_Origin;
-			refEntity.sheetNum = m_SpriteSheet.GetShader();
-			refEntity.spriteId = 0 + m_Facing;
-			refEntity.scale = 2.0f;
-			refEntity.Draw();
-			
 			//
 			// draw the legs
 			//
-			hLegSprite = m_LegsFacing;
 			if ( m_PhysicsObject.GetVelocity() == Vec3Origin ) {
 				// not moving at all, just draw idle legs
 				if ( !Pmove.groundPlane ) {
@@ -477,10 +525,34 @@ namespace TheNomad::SGame {
 			}
 
 			refEntity.origin = m_Link.m_Origin;
-			refEntity.sheetNum = m_SpriteSheet.GetShader();
-			refEntity.spriteId = 29 + m_LegsFacing;
+			refEntity.sheetNum = m_LegSpriteSheet.GetShader();
+			refEntity.spriteId = GetSpriteId( @m_LegSpriteSheet, @m_LegState ) + m_LegsFacing;
 			refEntity.scale = 2.0f;
 			refEntity.Draw();
+		}
+
+		private void DrawArms() {
+			TheNomad::Engine::Renderer::RenderEntity refEntity;
+
+			refEntity.origin = m_Link.m_Origin;
+			refEntity.sheetNum = m_ArmSpriteSheet.GetShader();
+			refEntity.spriteId = GetSpriteId( @m_ArmSpriteSheet, @m_ArmState ) + m_ArmsFacing;
+			refEntity.scale = 2.0f;
+			refEntity.Draw();
+		}
+		
+		// custom draw because of adaptive weapons and leg sprites
+		void Draw() override {
+			TheNomad::Engine::Renderer::RenderEntity refEntity;
+
+			refEntity.origin = m_Link.m_Origin;
+			refEntity.sheetNum = m_SpriteSheet.GetShader();
+			refEntity.spriteId = GetSpriteId( @m_SpriteSheet, @m_State ) + m_Facing;
+			refEntity.scale = 2.0f;
+			refEntity.Draw();
+			
+			DrawLegs();
+			DrawArms();
 		}
 		
 		KeyBind key_MoveNorth, key_MoveSouth, key_MoveEast, key_MoveWest;
@@ -491,8 +563,6 @@ namespace TheNomad::SGame {
 		
 		// toggled with "sgame_SaveLastUsedWeaponModes"
 		private InfoSystem::WeaponProperty[] m_WeaponModes( 9 );
-
-		TheNomad::Engine::Renderer::PolyVert[] verts( 4 );
 		
 		// 9 weapons in total
 		WeaponObject@[] m_WeaponSlots( 9 );

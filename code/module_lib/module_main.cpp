@@ -271,7 +271,7 @@ void CModuleLib::RunModules( EModuleFuncId nCallId, uint32_t nArgs, ... )
         g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_DETECT_GARBAGE | asGC_DESTROY_GARBAGE
             | asGC_FULL_CYCLE, (uint32_t)ml_garbageCollectionIterations->i );
         time.Stop();
-        Con_DPrintf( "Garbage collection: %llims, %li iterations\n", time.ElapsedMilliseconds().count(), ml_garbageCollectionIterations->i );
+        Con_DPrintf( "Garbage collection: %lims, %li iterations\n", time.ElapsedMilliseconds(), ml_garbageCollectionIterations->i );
         break; }
     };
 
@@ -333,7 +333,7 @@ int CModuleLib::ModuleCall( CModuleInfo *pModule, EModuleFuncId nCallId, uint32_
         g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_DETECT_GARBAGE | asGC_DESTROY_GARBAGE
             | asGC_FULL_CYCLE, (uint32_t)ml_garbageCollectionIterations->i );
         time.Stop();
-        Con_DPrintf( "Garbage collection: %llims, %li iterations\n", time.ElapsedMilliseconds().count(), ml_garbageCollectionIterations->i );
+        Con_DPrintf( "Garbage collection: %lims, %li iterations\n", time.ElapsedMilliseconds(), ml_garbageCollectionIterations->i );
         break; }
     };
 

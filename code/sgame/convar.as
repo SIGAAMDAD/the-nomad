@@ -24,7 +24,7 @@ namespace TheNomad {
 		const string& GetValue() const {
 			return m_Value;
 		}
-		int64 GetInt() const {
+		int32 GetInt() const {
 			return m_IntValue;
 		}
 		float GetFloat() const {
@@ -44,15 +44,17 @@ namespace TheNomad {
 			Engine::CvarSet( m_Name, value );
 		}
 		void Update() {
+			int64 intValue;
 			if ( m_nCvarHandle == FS_INVALID_HANDLE ) {
-				Engine::CvarRegister( m_Name, m_Value, m_Flags, m_IntValue, m_FloatValue, m_nModificationCount, m_nCvarHandle );
+				Engine::CvarRegister( m_Name, m_Value, m_Flags, intValue, m_FloatValue, m_nModificationCount, m_nCvarHandle );
 			}
-			Engine::CvarUpdate( m_Value, m_IntValue, m_FloatValue, m_nModificationCount, m_nCvarHandle );
+			Engine::CvarUpdate( m_Value, intValue, m_FloatValue, m_nModificationCount, m_nCvarHandle );
+			m_IntValue = intValue;
 		}
 		
 		private string m_Name = "";
 		private string m_Value = "";
-		private int64 m_IntValue = 0;
+		private int m_IntValue = 0;
 		private float m_FloatValue = 0.0f;
 		private uint m_Flags = 0;
 		private int m_nModificationCount = 0;

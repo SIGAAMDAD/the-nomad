@@ -92,8 +92,8 @@ static bool IsRequiredMod( const char *pName ) {
 }
 
 static void ModsMenu_ClearLoadList_f( void ) {
-    FS_Remove( "_cache/loadlist.json" );
-    FS_HomeRemove( "_cache/loadlist.json" );
+    FS_Remove( CACHE_DIR "/loadlist.json" );
+    FS_HomeRemove( CACHE_DIR "/loadlist.json" );
 }
 
 static const module_t *GetModuleFromName( const char *pName )
@@ -306,7 +306,7 @@ static void ModsMenu_DrawListing( module_t *mod, qboolean dimColor )
 			ImGui::BeginTooltip();
 			ImGui::TextUnformatted( "this module has been built with an outdated/unsupported game version" );
 			// not really my fault if the modder hasn't update their shit
-			ImGui::TextUnformatted( "NOTE: GDR Software is not responsible for any unstable experiences when using this mod" );
+			ImGui::TextUnformatted( "NOTE: GDR Games is not responsible for any unstable experiences when using this mod" );
 			ImGui::EndTooltip();
 		}
 		ImGui::SameLine();

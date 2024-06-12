@@ -24,6 +24,7 @@ cvar_t *snd_musicOn;
 cvar_t *snd_effectsOn;
 cvar_t *snd_masterVolume;
 cvar_t *snd_debugPrint;
+cvar_t *snd_muteUnfocused;
 
 class CSoundThread : public CThread
 {
@@ -198,6 +199,34 @@ public:
     void Update( int64_t msec );
 
     inline CSoundSource **GetSources( void ) { return m_pSources; }
+    inline void Mute( bool bMute ) {
+        uint64_t i;
+
+        if ( !snd_musicOn->i && !snd_effectsOn->i ) {
+            return;
+        }
+        if ( bMute && !m_bMuted ) {
+            for ( i = 0; i < MAX_SOUND_SOURCES; i++ ) {
+                if ( m_pSources[i] ) {
+                    alSourcef( m_pSources[i]->GetSource(), AL_GAIN, 0.0f );
+                }
+            }
+            Con_Printf( "Muted sounds\n" );
+        } else if ( !bMute && m_bMuted ) {
+            for ( i = 0; i < MAX_SOUND_SOURCES; i++ ) {
+                if ( m_pSources[i] ) {
+                    switch ( m_pSources[i]->GetTag() ) {
+                    case TAG_MUSIC:
+                        alSourcef( m_pSources[i]->GetSource(), AL_GAIN, snd_musicVolume->f / 100.0f );
+                    case TAG_SFX:
+                        alSourcef( m_pSources[i]->GetSource(), AL_GAIN, snd_effectsVolume->f / 100.0f );
+                        break;
+                    };
+                }
+            }
+        }
+        m_bMuted = bMute;
+    }
 
     void UpdateParm( int64_t tag );
     uint32_t GetMusicSource( void ) const { return m_iMusicSource; }
@@ -229,6 +258,8 @@ private:
 
     qboolean m_bClearedQueue;
     qboolean m_bRegistered;
+
+    qboolean m_bMuted;
 };
 
 static CSoundManager *sndManager;
@@ -1042,6 +1073,9 @@ void Snd_Update( int32_t msec )
     CSoundSource *source;
     ALfloat v;
 
+//    if ( snd_muteUnfocused->i ) {
+//        sndManager->Mute( !gw_active );
+//    }
     if ( snd_masterVolume->modified ) {
         snd_effectsVolume->modified = qtrue;
         snd_musicVolume->modified = qtrue;
@@ -1076,7 +1110,7 @@ static void Snd_ListFiles_f( void )
     const CSoundSource *source;
 
     Con_Printf( "\n---------- Snd_ListFiles_f ----------\n" );
-    Con_Printf( "----name---- --channels-- ---samplerate--- ----cache size----\n" );
+    Con_Printf( "                  --channels-- ---samplerate--- ----cache size----\n" );
 
     numFiles = 0;
     for ( i = 0; i < MAX_SOUND_SOURCES; i++ ) {
@@ -1086,7 +1120,7 @@ static void Snd_ListFiles_f( void )
             continue;
         }
         numFiles++;
-        Con_Printf( "%10s: %4i %4i %8lu\n", source->GetName(), source->GetInfo().channels, source->GetInfo().samplerate,
+        Con_Printf( "%20s: %4i %4i %8lu\n", source->GetName(), source->GetInfo().channels, source->GetInfo().samplerate,
             source->GetInfo().channels * source->GetInfo().frames );
     }
     Con_Printf( "Total sound files loaded: %lu\n", numFiles );
@@ -1153,6 +1187,9 @@ void Snd_Init( void )
     snd_debugPrint = Cvar_Get( "snd_debugPrint", "0", CVAR_CHEAT | CVAR_TEMP );
     Cvar_CheckRange( snd_debugPrint, "0", "1", CVT_INT );
     Cvar_SetDescription( snd_debugPrint, "Toggles OpenAL-soft debug messages." );
+
+//    snd_muteUnfocused = Cvar_Get( "snd_muteUnfocused", "1", CVAR_SAVE );
+//    Cvar_SetDescription( snd_muteUnfocused, "Toggles muting sounds when the game's window isn't focused." );
 
     Con_Printf( "---------- Snd_Init ----------\n" );
 

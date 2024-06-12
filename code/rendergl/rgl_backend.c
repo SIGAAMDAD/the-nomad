@@ -494,13 +494,13 @@ static const void *RB_SwapBuffers(const void *data)
 				// Resolving an RGB16F MSAA FBO to the screen messes with the brightness, so resolve to an RGB16F FBO first
 				FBO_FastBlit( rg.renderFbo, NULL, rg.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
 				if ( r_multisampleType->i == AntiAlias_2xSSAA || r_multisampleType->i == AntiAlias_4xSSAA ) {
-					FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_LINEAR );
+					FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 				} else {
 					FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 				}
 			} else {
 				if ( r_multisampleType->i == AntiAlias_2xSSAA || r_multisampleType->i == AntiAlias_4xSSAA ) {
-					FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_LINEAR );
+					FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 				} else {
 					FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 				}
@@ -861,11 +861,9 @@ static const void *RB_DrawImage( const void *data ) {
 	if ( backend.drawBatch.shader != shader ) {
 		if ( backend.drawBatch.idxOffset ) {
 			RB_FlushBatchBuffer();
-//			Con_Printf( "Flushing buffers with shader '%s'\n", shader->name );
 		}
 		RB_SetBatchBuffer( backend.drawBuffer, backendData->verts, sizeof( srfVert_t ),
 			backendData->indices, sizeof( glIndex_t ) );
-//		Con_Printf( "Swapping buffers with shader '%s'\n", shader->name );
 		backend.drawBatch.shader = shader;
 	}
 	verts = ( (srfVert_t *)backend.drawBatch.vertices ) + backend.drawBatch.vtxOffset;
@@ -970,9 +968,9 @@ void RB_ExecuteRenderCommands( const void *data )
 		case RC_COLORMASK:
 			data = RB_ColorMask( data );
 			break;
-//		case RC_CLEARDEPTH:
-//			data = RB_ClearDepth( data );
-//			break;
+		case RC_CLEARDEPTH:
+			data = RB_ClearDepth( data );
+			break;
 		case RC_POSTPROCESS:
 			data = RB_PostProcess( data );
 			break;

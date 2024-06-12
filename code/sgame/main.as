@@ -91,8 +91,11 @@ namespace ImGui {
 //
 void InitResources() {
 	string str;
+	TheNomad::Engine::Timer timer;
 
 	ConsolePrint( "Initializing SGame Resources...\n" );
+
+	timer.Run();
 
 	//
 	// init shaders
@@ -121,7 +124,7 @@ void InitResources() {
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/slide1.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/dash.ogg" );
 
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/misc/pass_checkpoint.ogg" );
+	TheNomad::Engine::ResourceCache.GetSfx( "sfx/misc/passCheckpoint.ogg" );
 
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveGravel0.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveGravel1.ogg" );
@@ -167,6 +170,9 @@ void InitResources() {
 		TheNomad::GameSystem::GetString( "SP_RANK_U_COLOR", str );
 		TheNomad::SGame::sgame_RankStringColors[ TheNomad::SGame::LevelRank::RankWereUBotting ] = TheNomad::Util::StringToColor( str );
 	}
+
+	timer.Stop();
+	ConsolePrint( "SGame_InitResources: " + timer.ElapsedMilliseconds() + "ms\n" );
 }
 
 void InitCvars() {

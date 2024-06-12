@@ -204,6 +204,7 @@ typedef void*(*NGLloadproc)(const char *name);
     NGL( void, glUniformBlockBinding, GLuint program, GLuint uniformBlockIndex, GLuint uniformBlockBinding ) \
     NGL( void, glGetShaderSource, GLuint shader, GLsizei bufSize, GLsizei *length, GLchar *source ) \
     NGL( void, glGetActiveUniform, GLuint program, GLuint index, GLsizei bufSize, GLsizei *length, GLint *size, GLenum *type, GLchar *name ) \
+    NGL( void, glMinSampleShadingARB, GLclampf value )
 
 #define NGL_Texture_Procs \
     NGL( void, glTexImage2DMultisample, GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations ) \
@@ -236,7 +237,8 @@ typedef void*(*NGLloadproc)(const char *name);
     NGL( void, glBlitFramebuffer, GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter ) \
     NGL( void, glFramebufferRenderbuffer, GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer ) \
     NGL( void, glFramebufferTexture2D, GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level ) \
-    NGL( GLenum, glCheckFramebufferStatus, GLenum target )
+    NGL( GLenum, glCheckFramebufferStatus, GLenum target ) \
+    NGL( void, glRenderBufferStorageMultisampleCoverageNV, GLenum target, GLsizei coverageSamples, GLsizei colorSamples, GLenum internalformat, GLsizei width, GLsizei height ) \
 
 #define NGL_VertexArrayARB_Procs \
     NGL( void, glEnableVertexArrayAttribARB, GLuint vao, GLuint index ) \

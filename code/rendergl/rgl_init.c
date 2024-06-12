@@ -166,6 +166,8 @@ cvar_t *r_imageUpsampleType;
 cvar_t *r_imageUpsample;
 cvar_t *r_imageUpsampleMaxSize;
 
+cvar_t *r_useShaderCache;
+
 // OpenGL extensions
 cvar_t *r_arb_texture_compression;
 cvar_t *r_arb_framebuffer_object;
@@ -837,7 +839,7 @@ static void R_Register( void )
     r_multisampleAmount = ri.Cvar_Get( "r_multisampleAmount", "2", CVAR_SAVE );
     ri.Cvar_CheckRange( r_multisampleAmount, "0", "32", CVT_INT );
     r_multisampleType = ri.Cvar_Get( "r_multisampleType", "1", CVAR_SAVE );
-    ri.Cvar_CheckRange( r_multisampleType, va( "%i", AntiAlias_None ), va( "%i", AntiAlias_FXAA ), CVT_INT );
+    ri.Cvar_CheckRange( r_multisampleType, va( "%i", AntiAlias_None ), va( "%i", AntiAlias_CSAA ), CVT_INT );
     ri.Cvar_SetDescription( r_multisampleType, "Sets the desired anti-aliasing technique. Requires \\r_postProcess" );
 
     r_overBrightBits = ri.Cvar_Get( "r_overBrightBits", "1", CVAR_SAVE | CVAR_LATCH );
@@ -885,6 +887,9 @@ static void R_Register( void )
 	r_forceSunAmbientScale = ri.Cvar_Get( "r_forceSunAmbientScale", "0.5", CVAR_CHEAT );
 	r_drawSunRays = ri.Cvar_Get( "r_drawSunRays", "0", CVAR_SAVE | CVAR_LATCH );
 	r_sunlightMode = ri.Cvar_Get( "r_sunlightMode", "1", CVAR_SAVE | CVAR_LATCH );
+
+    r_useShaderCache = ri.Cvar_Get( "r_useShaderCache", "1", CVAR_LATCH | CVAR_SAVE );
+    ri.Cvar_SetDescription( r_useShaderCache, "Caches GLSL shader objects for faster loading, requires GL_ARB_gl_spirv extension." );
 
     r_drawMode = ri.Cvar_Get( "r_drawMode", "2", CVAR_SAVE | CVAR_LATCH );
     ri.Cvar_SetDescription( r_drawMode,
@@ -1210,11 +1215,11 @@ static void R_InitGLContext( void )
 
     if ( NGL_VERSION_ATLEAST( 3, 0 ) ) { // force the loading of specific procs
 #ifdef _NOMAD_DEBUG
-#define NGL( ret, name, ... ) n ## name = (PFN ## name) ri.GL_GetProcAddress(#name); \
-                            if (!n ## name) ri.Error(ERR_FATAL, "Failed to load OpenGL proc '" #name "'");
+#define NGL( ret, name, ... ) n ## name = (PFN ## name) ri.GL_GetProcAddress( #name ); \
+                            if (!n ## name) ri.Error( ERR_FATAL, "Failed to load OpenGL proc '" #name "'" );
 #elif defined(_NOMAD_EXPERIMENTAL)
-#define NGL( ret, name, ... ) n ## name = (PFN ## name) ri.GL_GetProcAddress(#name); \
-                            if (!n ## name) ri.Printf(PRINT_INFO, COLOR_YELLOW "Failed to load OpenGL proc '" #name "'\n");
+#define NGL( ret, name, ... ) n ## name = (PFN ## name) ri.GL_GetProcAddress( #name ); \
+                            if (!n ## name) ri.Printf( PRINT_INFO, COLOR_YELLOW "Failed to load OpenGL proc '" #name "'\n" );
 #else
 #define NGL( ret, name, ... ) n ## name = (PFN ## name) ri.GL_GetProcAddress(#name);
 #endif
@@ -1231,6 +1236,11 @@ static void R_InitGLContext( void )
     }
     
     R_InitExtensions();
+
+    if ( glContext.ARB_sample_shading && glContext.ARB_framebuffer_object ) {
+        nglEnable( GL_SAMPLE_SHADING_ARB );
+        nglMinSampleShadingARB( 1.0f );
+    }
 }
 
 static void RE_GetTextureId( nhandle_t hShader, uint32_t stageNum, uint32_t *id )
@@ -1473,14 +1483,13 @@ void R_Init( void )
     // init imgui
     R_InitImGui();
 
-    ri.Cmd_AddCommand( "camerainfo", R_CameraInfo_f );
-    ri.Cmd_AddCommand( "unloadworld", R_UnloadWorld_f );
-
     error = nglGetError();
     if ( error != GL_NO_ERROR )
         ri.Printf(PRINT_INFO, COLOR_RED "glGetError() = 0x%x\n", error);
     
     R_InitWorldBuffer();
+    
+    ri.Cmd_AddCommand( "unloadworld", R_UnloadWorld_f );
 
     // print info
     GpuInfo_f();
@@ -1504,6 +1513,8 @@ void RE_Shutdown( refShutdownCode_t code )
     ri.Cmd_RemoveCommand( "screenshot" );
     ri.Cmd_RemoveCommand( "gpuinfo" );
     ri.Cmd_RemoveCommand( "gpumeminfo" );
+    ri.Cmd_RemoveCommand( "camerainfo" );
+    ri.Cmd_RemoveCommand( "unloadworld" );
 
     if ( rg.registered ) {
         R_IssuePendingRenderCommands();

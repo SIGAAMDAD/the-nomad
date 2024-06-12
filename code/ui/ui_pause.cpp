@@ -300,6 +300,8 @@ void UI_PauseMenu( void )
     if ( !ui_active->i ) {
         Key_SetCatcher( Key_GetCatcher() | KEYCATCH_UI );
         UI_PushMenu( &s_pauseMenu->menu );
+    } else {
+        FontCache()->SetActiveFont( RobotoMono );
     }
     Key_SetCatcher( Key_GetCatcher() | KEYCATCH_SGAME );
     Snd_PlaySfx( ui->sfx_select );

@@ -1332,7 +1332,7 @@ uint64_t Com_TouchMemory( void ) {
 	timer.Stop();
 //	end = Sys_Milliseconds();
 
-	Con_Printf( "Com_TouchMemory: %5.5lf msec\n", (double)timer.ElapsedMilliseconds().count() );
+	Con_Printf( "Com_TouchMemory: %5.5lf msec\n", (double)timer.ElapsedMilliseconds() );
 
 	return sum; // just to silent compiler warning
 }

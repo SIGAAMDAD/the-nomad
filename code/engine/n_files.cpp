@@ -652,13 +652,16 @@ static void FS_CheckFilenameIsNotAllowed( const char *filename, const char *func
 FILE *FS_Handle( fileHandle_t f )
 {
 	if ( f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES ) {
-		N_Error( ERR_DROP, "FS_Handle: out of range" );
+		Con_Printf( COLOR_RED "FS_Handle: out of range\n" );
+		return NULL;
 	}
 	if ( handles[f].bffFile ) {
-		N_Error( ERR_DROP, "FS_Handle: can't get FILE on bff file" );
+		Con_Printf( COLOR_RED "FS_Handle: can't get FILE on bff file\n" );
+		return NULL;
 	}
 	if ( !handles[f].data.fp ) {
-		N_Error( ERR_DROP, "FS_Handle: invalid handle" );
+		Con_Printf( COLOR_RED "FS_Handle: invalid handle\n" );
+		return NULL;
 	}
 
 	return handles[f].data.fp;
@@ -2436,7 +2439,7 @@ static bffFile_t *FS_LoadBFF( const char *bffpath )
 #ifdef USE_BFF_CACHE
 	fs_headerLongs = (uint32_t *)( bff->bffBasename + PAD( baseNameLen, sizeof( uintptr_t ) ) );
 #else
-	fs_headerLongs = (uint32_t *)Z_Malloc( ( filecount + 1 ) * sizeof( fs_headerLongs[0] ), TAG_STATIC );
+	fs_headerLongs = (uint32_t *)Z_Malloc( ( filecount + 1 ) * sizeof( fs_headerLongs[0] ), TAG_BFF );
 #endif
 
 	fs_numHeaderLongs = 0;
@@ -4054,7 +4057,7 @@ static void FS_AddGameDirectory( const char *path, const char *dir )
 	dir_len = PAD( strlen( dir ) + 1, sizeof( uintptr_t ) );
 	size = sizeof( *search ) + sizeof( *search->dir ) + path_len + dir_len;
 
-	search = (searchpath_t *)Z_Malloc( size, TAG_SEARCH_PATH );
+	search = (searchpath_t *)Z_Malloc( size, TAG_SEARCH_DIR );
 	memset(search, 0, size);
 	search->dir = (directory_t *)( search + 1 );
 	search->dir->path = (char *)( search->dir + 1 );
@@ -4086,68 +4089,6 @@ static void FS_AddGameDirectory( const char *path, const char *dir )
 
 	Con_DPrintf( "Adding game directory '%s'...\n", curpath );
 
-#if 0
-	for (bffFilesI = 0; bffFilesI < numfiles; bffFilesI++) {
-		len = strlen( bffFiles[bffFilesI] );
-		if (!FS_IsExt( bffFiles[bffFilesI], ".bff", len )) {
-			// not a bff file
-			bffFilesI++;
-			continue;
-		}
-
-		// the next .bff file is before the next directory
-		bffFile = FS_BuildOSPath( path, dir, bffFiles[bffFilesI] );
-		bff = FS_LoadBFF( bffFile );
-		if (bff == NULL) {
-			// this isn't a .bff file! NeXT!
-			bffFilesI++;
-			continue;
-		}
-
-		// store the game name
-		N_strncpyz(bff->bffGamename, gamedir, sizeof(bff->bffGamename));
-
-		bff->index = fs_bffCount;
-		bff->referenced = 0;
-
-		fs_bffChunks += bff->numfiles;
-		fs_bffCount++;
-
-		search = (searchpath_t *)Z_Malloc( sizeof(*search), TAG_SEARCH_PATH );
-		memset( search, 0, sizeof(*search) );
-		search->bff = bff;
-
-		search->next = fs_searchpaths;
-		fs_searchpaths = search;
-	}
-
-	for (bffDirsI = 0; bffDirsI < numdirs; bffDirsI++) {
-		len = strlen( bffDirs[bffDirsI] );
-
-		//
-		// the next directory is before the next .bff file
-		//
-
-		// add the directory to the search path
-		path_len = strlen( curpath ) + 2;
-		path_len = PAD(path_len, sizeof(uintptr_t));
-		dir_len = PAD(len + 1, sizeof(uintptr_t));
-		len = sizeof(*search) + sizeof(*search->dir) + path_len + dir_len;
-
-		search = (searchpath_t *)Z_Malloc( len, TAG_SEARCH_DIR );
-		memset( search, 0, sizeof(*search) );
-		search->dir = (directory_t *)(search  + 1);
-		search->dir->path = (char *)(search->dir + 1);
-		search->dir->gamedir = (char *)(search->dir->path + path_len);
-
-		strcpy( search->dir->path, curpath ); // /home/user/glnomad/gamedata
-		strcpy( search->dir->gamedir, bffDirs[ bffDirsI ] ); // mydir
-			
-		search->next = fs_searchpaths;
-		fs_searchpaths = search;
-		fs_dirCount++;
-	}
-#endif
 	while (( bffFilesI < numfiles ) || ( bffDirsI < numdirs )) {
 		// check if a bff or directory comes next
 		if (bffFilesI >= numfiles) {
@@ -4198,7 +4139,6 @@ static void FS_AddGameDirectory( const char *path, const char *dir )
 
 			bffFilesI++;
 		} else {
-
 			len = strlen( bffDirs[bffDirsI] );
 
 			// the next directory is before the next .bff file
@@ -4705,7 +4645,7 @@ void FS_Startup( void )
 		"fs_basegame: %s\n"
 	, fs_gamedirvar->s, fs_basepath->s, fs_basegame->s );
 
-	Con_Printf( "...loaded in %5.5lf milliseconds\n", (double)timer.ElapsedMilliseconds().count() );
+	Con_Printf( "...loaded in %5.5lf milliseconds\n", (double)timer.ElapsedMilliseconds() );
 
 	Con_Printf( "----------------------\n" );
 	Con_Printf( "%lu chunks in %lu bff files\n", fs_bffChunks, fs_bffCount );
@@ -4830,7 +4770,7 @@ static char** Sys_ConcatenateFileLists( char **list0, char **list1 )
 	totalLength += Sys_CountFileList( list1 );
 
 	/* Create new list. */
-	dst = cat = (char **)Z_Malloc( ( totalLength + 1 ) * sizeof( char* ), TAG_STATIC );
+	dst = cat = (char **)Z_Malloc( ( totalLength + 1 ) * sizeof( char * ), TAG_STATIC );
 
 	/* Copy over lists. */
 	if ( list0 ) {

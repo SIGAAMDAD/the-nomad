@@ -2128,12 +2128,14 @@ void ModuleLib_Register_Engine( void )
         REGISTER_OBJECT_TYPE( "Timer", CTimer, asOBJ_VALUE );
         REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Engine::Timer", asBEHAVE_CONSTRUCT, "void f()", WRAP_CON( CTimer, ( void ) ) );
         REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Engine::Timer", asBEHAVE_DESTRUCT, "void f()", WRAP_DES( CTimer ) );
+        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Engine::Timer", asBEHAVE_CONSTRUCT, "void f( int64, int64, int32 )", WRAP_CON( CTimer, ( int64_t, int64_t, int32_t ) ) );
 
+        REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Timer", "const TheNomad::Engine::Timer& opAssign( const TheNomad::Engine::Timer& in )", CTimer, operator=, ( const CTimer& ), const CTimer& );
         REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Timer", "void Run()", CTimer, Run, ( void ), void );
         REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Timer", "void Stop()", CTimer, Stop, ( void ), void );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Timer", "int64 ElapsedMilliseconds() const", CTimer, ElapsedMilliseconds_ML, ( void ) const, int64_t );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Timer", "int64 ElapsedSeconds() const", CTimer, ElapsedSeconds_ML, ( void ) const, int64_t );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Timer", "int32 ElapsedMinutes() const", CTimer, ElapsedMinutes_ML, ( void ) const, int32_t );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Timer", "int64 ElapsedMilliseconds() const", CTimer, ElapsedMilliseconds, ( void ) const, int64_t );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Timer", "int64 ElapsedSeconds() const", CTimer, ElapsedSeconds, ( void ) const, int64_t );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Timer", "int32 ElapsedMinutes() const", CTimer, ElapsedMinutes, ( void ) const, int32_t );
 
 		{ // SoundSystem
 			SET_NAMESPACE( "TheNomad::Engine::SoundSystem" );

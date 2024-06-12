@@ -56,6 +56,20 @@ in vec4      v_TexCoords;
 in vec4      v_Color;
 #if (defined(USE_LIGHT) && !defined(USE_FAST_LIGHT))
 in vec4      v_ColorAmbient;
+
+struct Light {
+    vec4 color;
+    uvec2 origin;
+    float brightness;
+    float range;
+    float linear;
+    float quadratic;
+    float constant;
+    int type;
+};
+layout( std140, binding = 0 ) uniform u_LightBuffer {
+    Light u_LightData[MAX_MAP_LIGHTS];
+};
 #endif
 
 #if (defined(USE_LIGHT) && !defined(USE_FAST_LIGHT))

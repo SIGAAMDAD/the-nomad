@@ -1409,6 +1409,9 @@ void HandleEvents( void )
 				if ( gi.state == GS_LEVEL && gi.mapLoaded && !Cvar_VariableInteger( "g_paused" ) ) {
 					Cbuf_ExecuteText( EXEC_APPEND, "togglepausemenu\n" );
 				}
+				if ( Cvar_VariableInteger( "snd_muteUnfocused" ) ) {
+					Cbuf_ExecuteText( EXEC_APPEND, "snd.mute 1\n" );
+				}
 				lastKeyDown = 0;
 				Key_ClearStates();
 				gw_active = qfalse; break;
@@ -1417,6 +1420,9 @@ void HandleEvents( void )
 				Key_ClearStates();
 				gw_active = qtrue;
 				gw_minimized = qfalse;
+				if ( Cvar_VariableInteger( "snd_muteUnfocused" ) ) {
+					Cbuf_ExecuteText( EXEC_APPEND, "snd.mute 0\n" );
+				}
 				if ( re.SetColorMappings ) {
 					re.SetColorMappings();
 				}

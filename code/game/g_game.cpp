@@ -102,6 +102,7 @@ static void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL G_RefPrintf( int leve
         break;
     case PRINT_ERROR:
         Con_Printf( COLOR_RED "ERROR: %s", msg );
+        break;
     default:
         N_Error( ERR_FATAL, "G_RefPrintf: Bad print level" );
     };
@@ -473,6 +474,10 @@ static void G_InitRenderRef(void)
     import.FS_FOpenRead = FS_FOpenRead;
     import.FS_FOpenWrite = FS_FOpenWrite;
     import.FS_FClose = FS_FClose;
+    import.FS_Read = FS_Read;
+    import.FS_Write = FS_Write;
+    import.FS_Remove = FS_Remove;
+    import.FS_HomeRemove = FS_HomeRemove;
 
     import.Cvar_Get = Cvar_Get;
     import.Cvar_Set = Cvar_Set;
@@ -1472,7 +1477,7 @@ static void G_InitRenderer_Cvars( void )
 	Cvar_SetDescription( vid_ypos, "Saves/sets window Y-coordinate when windowed, requires \\vid_restart." );
 
     r_multisampleType = Cvar_Get( "r_multisampleType", "1", CVAR_SAVE );
-    Cvar_CheckRange( r_multisampleType, va( "%i", AntiAlias_None ), va( "%i", AntiAlias_FXAA ), CVT_INT );
+    Cvar_CheckRange( r_multisampleType, va( "%i", AntiAlias_None ), va( "%i", AntiAlias_CSAA ), CVT_INT );
     Cvar_SetDescription( r_multisampleType,
                             "Sets the anti-aliasing type to the desired:\n"
                             " 0: None\n"
@@ -1486,6 +1491,7 @@ static void G_InitRenderer_Cvars( void )
                             " 8: TAA\n"
                             " 9: SMAA\n"
                             " 10: FXAA\n"
+                            " 11: CSAA\n"
                             "requires \\vid_restart." );
     r_multisampleAmount = Cvar_Get( "r_multisampleAmount", "8", CVAR_SAVE );
     Cvar_CheckRange( r_multisampleAmount, "0", "32", CVT_INT );
@@ -1646,11 +1652,15 @@ void G_Shutdown( qboolean quit )
 
     SteamApp_Shutdown();
 
-    remove( "nomad.pid" );
+    if ( quit ) {
+        remove( "nomad.pid" );
+        PROFILE_STOP_LISTEN
+    }
 
-    PROFILE_STOP_LISTEN
-
+    Cmd_RemoveCommand( "gameinfo" );
     Cmd_RemoveCommand( "demo" );
+    Cmd_RemoveCommand( "record" );
+    Cmd_RemoveCommand( "stoprecord" );
     Cmd_RemoveCommand( "vid_restart" );
     Cmd_RemoveCommand( "snd_restart" );
     Cmd_RemoveCommand( "modelist" );
@@ -1659,6 +1669,8 @@ void G_Shutdown( qboolean quit )
     Cmd_RemoveCommand( "togglephotomode" );
     Cmd_RemoveCommand( "viewmemory" );
     Cmd_RemoveCommand( "gamestate" );
+    Cmd_RemoveCommand( "setmap" );
+    Cmd_RemoveCommand( "mapinfo" );
     Cmd_RemoveCommand( "setcamerapos" );
     Cmd_RemoveCommand( "referenced_bffs" );
     Cmd_RemoveCommand( "opened_bffs" );
@@ -1738,6 +1750,24 @@ void G_ShutdownAll( void )
     // shutdown VMs
     G_ShutdownVMs( qfalse );
 
+    Cmd_RemoveCommand( "gameinfo" );
+    Cmd_RemoveCommand( "demo" );
+    Cmd_RemoveCommand( "record" );
+    Cmd_RemoveCommand( "stoprecord" );
+    Cmd_RemoveCommand( "vid_restart" );
+    Cmd_RemoveCommand( "snd_restart" );
+    Cmd_RemoveCommand( "modelist" );
+    Cmd_RemoveCommand( "maplist" );
+    Cmd_RemoveCommand( "vm_restart" );
+    Cmd_RemoveCommand( "togglephotomode" );
+    Cmd_RemoveCommand( "viewmemory" );
+    Cmd_RemoveCommand( "gamestate" );
+    Cmd_RemoveCommand( "setmap" );
+    Cmd_RemoveCommand( "mapinfo" );
+    Cmd_RemoveCommand( "setcamerapos" );
+    Cmd_RemoveCommand( "referenced_bffs" );
+    Cmd_RemoveCommand( "opened_bffs" );
+
     // shutdown the renderer
     if ( re.Shutdown ) {
         if ( !com_errorEntered ) {
@@ -1781,6 +1811,8 @@ void G_Restart( void ) {
 void G_ClearMem( void )
 {
     Z_FreeTags( TAG_GAME );
+    Z_FreeTags( TAG_SAVEFILE );
+    Z_FreeTags( TAG_MODULES );
     // if not in a level, clear the whole hunk
     if ( !gi.mapLoaded ) {
         // clear the whole hunk
@@ -1869,8 +1901,6 @@ void G_Frame( int msec, int realMsec )
     // decide the simulation time
     gi.frametime = msec;
     gi.realtime += msec;
-//    gi.frametime = gi.frametime - msec;
-//    gi.realtime += gi.frametime;
 
     G_MoveCamera_f();
     G_PhotoMode();

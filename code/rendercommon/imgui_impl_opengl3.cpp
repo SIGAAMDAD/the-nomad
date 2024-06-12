@@ -849,7 +849,7 @@ void ImGui_ImplOpenGL3_DestroyFontsTexture(void)
     ImGui_ImplOpenGL3_Data *bd = ImGui_ImplOpenGL3_GetBackendData();
     if (bd->FontTexture)
     {
-//        renderImport.glDeleteTextures(1, &bd->FontTexture);
+        renderImport.glDeleteTextures(1, &bd->FontTexture);
         io.Fonts->SetTexID(0);
         bd->FontTexture = 0;
     }

@@ -142,8 +142,8 @@ namespace TheNomad::SGame {
 					continue;
 				}
 
-				m_States.Add( @state );
-				m_StateCache.Add( state.GetName(), @state );
+				m_States.Add( state );
+				m_StateCache.Add( state.GetName(), state );
 			}
 
 			ConsolePrint( "Loading animation data...\n" );
@@ -160,8 +160,8 @@ namespace TheNomad::SGame {
 					continue;
 				}
 
-				m_Animations.Add( @anim );
-				m_AnimationCache.Add( anim.GetName(), @anim );
+				m_Animations.Add( anim );
+				m_AnimationCache.Add( anim.GetName(), anim );
 			}
 		}
 		void OnShutdown() {
@@ -230,8 +230,8 @@ namespace TheNomad::SGame {
 		private array<json@> m_AnimationInfos;
 		private dictionary m_StateCache;
 		private dictionary m_AnimationCache;
-		private array<EntityState@> m_States;
-		private array<Animation@> m_Animations;
+		private array<EntityState> m_States;
+		private array<Animation> m_Animations;
 
 		// technically const
 		private dictionary m_BaseStateCache;

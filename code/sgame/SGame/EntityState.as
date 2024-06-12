@@ -111,7 +111,9 @@ namespace TheNomad::SGame {
 			if ( m_nTicker >= m_nTics ) {
 				return @m_NextState !is null ? @m_NextState : @StateManager.GetStateForNum( ( m_nStateNum + m_nStateOffset ) + 1 );
 			}
-			m_Animation.Run();
+			if ( @m_Animation !is null ) {
+				m_Animation.Run();
+			}
 			return @this;
 		}
 		EntityState@ Cycle() {
