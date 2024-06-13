@@ -1,10 +1,12 @@
 in vec3 a_Position;
+in vec3 a_WorldPos;
 in vec2 a_TexCoords;
 in vec4 a_Color;
 
 out vec2 v_TexCoords;
 out vec3 v_FragPos;
 out vec4 v_Color;
+out vec3 v_WorldPos;
 
 uniform mat4 u_ModelViewProjection;
 uniform vec4 u_BaseColor;
@@ -133,6 +135,8 @@ void main()
 #else
 	v_TexCoords = texCoords;
 #endif
+
+	v_WorldPos = a_WorldPos;
 
 	v_FragPos = vec4( u_ModelViewProjection * vec4( a_Position, 1.0 ) ).xyz;
 

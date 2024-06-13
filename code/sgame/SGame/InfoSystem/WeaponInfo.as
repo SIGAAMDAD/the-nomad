@@ -7,7 +7,6 @@ namespace TheNomad::SGame::InfoSystem {
 		
 		bool Load( json@ json ) {
 			string type;
-			string shader;
 			uint i;
 			array<json@> props;
 			string ammo;
@@ -56,11 +55,11 @@ namespace TheNomad::SGame::InfoSystem {
 				ConsoleWarning( "invalid weapon info, missing variable 'AmmoType'\n" );
 				return false;
 			}
-			if ( !json.get( "Icon", shader ) ) {
+			if ( !json.get( "Icon", iconShader ) ) {
 				ConsoleWarning( "invalid weapon info, missing variable 'Icon'\n" );
 				return false;
 			} else {
-				hIconShader = Engine::Renderer::RegisterShader( shader );
+				TheNomad::Engine::ResourceCache.GetShader( iconShader );
 			}
 
 			ConsolePrint( "Processing AmmoType for WeaponInfo '" + name + "'...\n" );
@@ -103,6 +102,7 @@ namespace TheNomad::SGame::InfoSystem {
 		}
 
 		string name;
+		string iconShader;
 		uint type = 0;
 		float damage = 0.0f;
 		float range = 0.0f;
@@ -115,7 +115,6 @@ namespace TheNomad::SGame::InfoSystem {
 		float width = 0.0f;
 		float height = 0.0f;
 
-		int hIconShader = FS_INVALID_HANDLE;
 		TheNomad::Engine::SoundSystem::SoundEffect useSfx;
 		TheNomad::Engine::SoundSystem::SoundEffect pickupSfx;
 		TheNomad::Engine::SoundSystem::SoundEffect equipSfx;

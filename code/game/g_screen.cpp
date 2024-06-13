@@ -349,9 +349,9 @@ text to the screen.
 */
 void SCR_UpdateScreen( void )
 {
-    static uint32_t recursive;
-    static uint64_t framecount;
-    static int64_t next_frametime;
+    static int recursive;
+    static int framecount;
+    static int next_frametime;
 	extern cvar_t *ui_debugOverlay;
 
 //	Assert( !g_pRenderThread->IsAlive() );
@@ -359,7 +359,7 @@ void SCR_UpdateScreen( void )
 	re.BeginFrame( STEREO_CENTER );
 
     if ( framecount == gi.framecount ) {
-        int64_t ms = Sys_Milliseconds();
+        int ms = Sys_Milliseconds();
 
         if ( next_frametime && ms - next_frametime < 0 ) {
             re.ThrottleBackend();
@@ -384,7 +384,7 @@ void SCR_UpdateScreen( void )
 	// if the user is ending a level through the pause menu,
 	// we let the ui handle the sgame call
 	if ( gi.mapLoaded && ( gi.state == GS_LEVEL || gi.state == GS_STATS_MENU ) && !( Key_GetCatcher() & KEYCATCH_CONSOLE ) ) {
-		switch ( g_pModuleLib->ModuleCall( sgvm, ModuleOnRunTic, 1, gi.realFrameTime ) ) {
+		switch ( g_pModuleLib->ModuleCall( sgvm, ModuleOnRunTic, 1, gi.realtime ) ) {
 		case 0:
 		default:
 			break;

@@ -44,6 +44,8 @@ static qboolean R_CheckFBO( const fbo_t * fbo )
 static fbo_t *FBO_Create( const char *name, int width, int height )
 {
     fbo_t *fbo;
+	int i;
+	qboolean exists = qfalse;
 
     if ( strlen( name ) >= MAX_NPATH ) {
         ri.Error( ERR_DROP, "FBO_Create: \"%s\" too long", name );
@@ -59,7 +61,15 @@ static fbo_t *FBO_Create( const char *name, int width, int height )
         ri.Error( ERR_DROP, "FBO_Create: MAX_RENDER_FBOs hit" );
     }
 
-    fbo = rg.fbos[rg.numFBOs] = ri.Hunk_Alloc( sizeof( *fbo ), h_low );
+	for ( i = 0; i < rg.numFBOs; i++ ) {
+		if ( !N_stricmp( name, rg.fbos[i]->name ) ) {
+			exists = qtrue;
+			break;
+		}
+	}
+	if ( !exists ) {
+    	fbo = rg.fbos[rg.numFBOs] = ri.Hunk_Alloc( sizeof( *fbo ), h_low );
+	}
     N_strncpyz( fbo->name, name, sizeof( fbo->name ) );
     fbo->width = width;
     fbo->height = height;
@@ -124,7 +134,11 @@ static void FBO_CreateBuffer( fbo_t *fbo, int format, int32_t index, int multisa
 	GL_BindFramebuffer( GL_FRAMEBUFFER, fbo->frameBuffer );
     nglBindRenderbuffer( GL_RENDERBUFFER, *pRenderBuffer );
 	if ( multisample && glContext.ARB_framebuffer_multisample ) {
-        nglRenderbufferStorageMultisample( GL_RENDERBUFFER, multisample, format, fbo->width, fbo->height );
+//		if ( glContext.NV_framebuffer_multisample_coverage && r_multisampleType->i == AntiAlias_CSAA ) {
+//			nglRenderBufferStorageMultisampleCoverageNV( GL_RENDERBUFFER, multisample, 8, format, fbo->width, fbo->height );
+//		} else {
+	        nglRenderbufferStorageMultisample( GL_RENDERBUFFER, multisample, format, fbo->width, fbo->height );
+//		}
     } else {
 		nglRenderbufferStorage( GL_RENDERBUFFER, format, fbo->width, fbo->height );
     }
@@ -250,9 +264,8 @@ static void FBO_Restart_f( void )
 			FBO_Clear( rg.renderFbo );
 			rg.renderFbo->width = width;
 			rg.renderFbo->height = height;
-		} else {
-			rg.renderFbo = FBO_Create( "_render", width, height );
 		}
+		rg.renderFbo = FBO_Create( "_render", width, height );
 		FBO_CreateBuffer( rg.renderFbo, hdrFormat, 0, multisample );
 		FBO_CreateBuffer( rg.renderFbo, GL_DEPTH24_STENCIL8, 0, multisample );
 		if ( r_bloom->i ) {
@@ -266,13 +279,16 @@ static void FBO_Restart_f( void )
 			FBO_Clear( rg.msaaResolveFbo );
 			rg.msaaResolveFbo->width = width;
 			rg.msaaResolveFbo->height = height;
-		} else {
-		    rg.msaaResolveFbo = FBO_Create( "_msaaResolve", width, height );
 		}
-//		FBO_CreateBuffer( rg.msaaResolveFbo, hdrFormat, 0, 0 );
-//		FBO_CreateBuffer( rg.msaaResolveFbo, GL_DEPTH24_STENCIL8, 0, 0 );
-		FBO_AttachImage( rg.msaaResolveFbo, rg.renderImage, GL_COLOR_ATTACHMENT0 );
+		if ( r_multisampleType->i == AntiAlias_2xSSAA || r_multisampleType->i == AntiAlias_4xSSAA ) {
+			rg.msaaResolveFbo->width = glConfig.vidWidth;
+			rg.msaaResolveFbo->height = glConfig.vidHeight;
+		}
+	    rg.msaaResolveFbo = FBO_Create( "_msaaResolve", width, height );
+		FBO_CreateBuffer( rg.msaaResolveFbo, hdrFormat, 0, 0 );
 		FBO_CreateBuffer( rg.msaaResolveFbo, GL_DEPTH24_STENCIL8, 0, 0 );
+//		FBO_AttachImage( rg.msaaResolveFbo, rg.renderImage, GL_COLOR_ATTACHMENT0 );
+//		FBO_CreateBuffer( rg.msaaResolveFbo, GL_DEPTH24_STENCIL8, 0, 0 );
 		R_CheckFBO( rg.msaaResolveFbo );
 	}
 	else if ( r_hdr->i ) {
@@ -280,9 +296,8 @@ static void FBO_Restart_f( void )
 			FBO_Clear( rg.renderFbo );
 			rg.renderFbo->width = width;
 			rg.renderFbo->height = height;
-		} else {
-			rg.renderFbo = FBO_Create( "_render", width, height );
 		}
+		rg.renderFbo = FBO_Create( "_render", width, height );
 		FBO_CreateBuffer( rg.renderFbo, hdrFormat, 0, 0 );
 		FBO_CreateBuffer( rg.renderFbo, GL_DEPTH24_STENCIL8, 0, 0 );
 		R_CheckFBO( rg.renderFbo );
@@ -300,9 +315,8 @@ static void FBO_Restart_f( void )
 			FBO_Clear( rg.hdrDepthFbo );
 			rg.hdrDepthFbo->width = width;
 			rg.hdrDepthFbo->height = height;
-		} else {
-			rg.hdrDepthFbo = FBO_Create( "_hdrDepth", rg.hdrDepthImage->width, rg.hdrDepthImage->height );
 		}
+		rg.hdrDepthFbo = FBO_Create( "_hdrDepth", rg.hdrDepthImage->width, rg.hdrDepthImage->height );
 		FBO_CreateBuffer( rg.hdrDepthFbo, GL_RGBA16F, 0, multisample );
 		R_CheckFBO( rg.hdrDepthFbo );
 	}
@@ -310,9 +324,8 @@ static void FBO_Restart_f( void )
 	if ( rg.screenSsaoImage ) {
 		if ( rg.screenSsaoFbo ) {
 			FBO_Clear( rg.screenSsaoFbo );
-		} else {
-			rg.screenSsaoFbo = FBO_Create( "_screenSsao", rg.screenSsaoImage->width, rg.screenSsaoImage->height );
 		}
+		rg.screenSsaoFbo = FBO_Create( "_screenSsao", rg.screenSsaoImage->width, rg.screenSsaoImage->height );
 		FBO_AttachImage( rg.screenSsaoFbo, rg.screenSsaoImage, GL_COLOR_ATTACHMENT0 );
 	}
 
@@ -321,9 +334,8 @@ static void FBO_Restart_f( void )
 			FBO_Clear( rg.targetLevelsFbo );
 			rg.targetLevelsFbo->width = rg.targetLevelsImage->width;
 			rg.targetLevelsFbo->height = rg.targetLevelsImage->height;
-		} else {
-			rg.targetLevelsFbo = FBO_Create( "_targetlevels", rg.targetLevelsImage->width, rg.targetLevelsImage->height );
 		}
+		rg.targetLevelsFbo = FBO_Create( "_targetlevels", rg.targetLevelsImage->width, rg.targetLevelsImage->height );
 		FBO_AttachImage( rg.targetLevelsFbo, rg.targetLevelsImage, GL_COLOR_ATTACHMENT0 );
 		R_CheckFBO( rg.targetLevelsFbo );
 	}
@@ -334,9 +346,8 @@ static void FBO_Restart_f( void )
 				FBO_Clear( rg.quarterFbo[i] );
 				rg.quarterFbo[i]->width = rg.quarterImage[i]->width;
 				rg.quarterFbo[i]->height = rg.quarterImage[i]->height;
-			} else {
-				rg.quarterFbo[i] = FBO_Create( va( "_quarter%d", i ), rg.quarterImage[i]->width, rg.quarterImage[i]->height );
 			}
+			rg.quarterFbo[i] = FBO_Create( va( "_quarter%d", i ), rg.quarterImage[i]->width, rg.quarterImage[i]->height );
 			FBO_CreateBuffer( rg.quarterFbo[i], GL_RGBA8, i, 0 );
 //			FBO_AttachImage( rg.quarterFbo[i], rg.quarterImage[i], GL_COLOR_ATTACHMENT0 );
 			R_CheckFBO( rg.quarterFbo[i] );
@@ -372,9 +383,12 @@ void FBO_Init( void )
 	height = glConfig.vidHeight;
 	switch ( r_multisampleType->i ) {
 	case AntiAlias_2xSSAA:
-	case AntiAlias_4xSSAA:
 		width *= 2;
 		height *= 2;
+		break;
+	case AntiAlias_4xSSAA:
+		width *= 4;
+		height *= 4;
 		break;
 	};
 
@@ -411,7 +425,7 @@ void FBO_Init( void )
 		}
 		R_CheckFBO( rg.renderFbo );
 
-	    rg.msaaResolveFbo = FBO_Create( "_msaaResolve", width, height );
+		rg.msaaResolveFbo = FBO_Create( "_msaaResolve", width, height );
 		FBO_CreateBuffer( rg.msaaResolveFbo, hdrFormat, 0, 0 );
 		FBO_CreateBuffer( rg.msaaResolveFbo, GL_DEPTH24_STENCIL8, 0, 0 );
 		R_CheckFBO( rg.msaaResolveFbo );

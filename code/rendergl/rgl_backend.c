@@ -494,13 +494,13 @@ static const void *RB_SwapBuffers(const void *data)
 				// Resolving an RGB16F MSAA FBO to the screen messes with the brightness, so resolve to an RGB16F FBO first
 				FBO_FastBlit( rg.renderFbo, NULL, rg.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
 				if ( r_multisampleType->i == AntiAlias_2xSSAA || r_multisampleType->i == AntiAlias_4xSSAA ) {
-					FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_LINEAR );
+					FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 				} else {
 					FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 				}
 			} else {
 				if ( r_multisampleType->i == AntiAlias_2xSSAA || r_multisampleType->i == AntiAlias_4xSSAA ) {
-					FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_LINEAR );
+					FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 				} else {
 					FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 				}
@@ -806,26 +806,68 @@ static const void *RB_ColorMask(const void *data) {
 	return (const void *)( cmd + 1 );
 }
 
+/*
+=============
+RB_ClearDepth
+
+=============
+*/
+static const void *RB_ClearDepth( const void *data )
+{
+	const clearDepthCommand_t *cmd = data;
+	
+	// finish any 2D drawing if needed
+	if ( backend.drawBatch.vtxOffset ) {
+		RB_FlushBatchBuffer();
+	}
+
+	// texture swapping test
+	if ( r_showImages->i ) {
+		RB_ShowImages();
+	}
+
+	if ( glContext.ARB_framebuffer_object ) {
+		if ( !rg.renderFbo || backend.framePostProcessed ) {
+			FBO_Bind( NULL );
+		} else {
+			FBO_Bind( rg.renderFbo );
+		}
+	}
+
+	nglClear( GL_DEPTH_BUFFER_BIT );
+
+	// if we're doing MSAA, clear the depth texture for the resolve buffer
+	if ( rg.msaaResolveFbo ) {
+		FBO_Bind( rg.msaaResolveFbo );
+		nglClear( GL_DEPTH_BUFFER_BIT );
+	}
+
+	
+	return (const void *)( cmd + 1 );
+}
+
 static const void *RB_DrawImage( const void *data ) {
 	const drawImageCmd_t *cmd;
 	shader_t *shader;
-	srfVert_t verts[4];
+	srfVert_t *verts;
 	polyVert_t vtx[4];
-	uint32_t indices[6];
+	uint32_t *indices;
 	int i;
 	vec3_t origin;
 
 	cmd = (const drawImageCmd_t *)data;
 
 	shader = cmd->shader;
-	if ( backend.drawBatch.shader != shader || backend.drawBuffer != backend.drawBatch.buffer ) {
+	if ( backend.drawBatch.shader != shader ) {
 		if ( backend.drawBatch.idxOffset ) {
 			RB_FlushBatchBuffer();
 		}
 		RB_SetBatchBuffer( backend.drawBuffer, backendData->verts, sizeof( srfVert_t ),
 			backendData->indices, sizeof( glIndex_t ) );
+		backend.drawBatch.shader = shader;
 	}
-	backend.drawBatch.shader = shader;
+	verts = ( (srfVert_t *)backend.drawBatch.vertices ) + backend.drawBatch.vtxOffset;
+	indices = ( (uint32_t *)backend.drawBatch.indices ) + backend.drawBatch.idxOffset;
 
 	R_VaoPackColor( verts[0].color, backend.color2D );
 	R_VaoPackColor( verts[1].color, backend.color2D );
@@ -889,7 +931,9 @@ static const void *RB_DrawImage( const void *data ) {
 		}
 	}
 
-	RB_CommitDrawData( verts, 4, indices, 6 );
+	backend.drawBatch.vtxOffset += 4;
+	backend.drawBatch.idxOffset += 6;
+//	RB_CommitDrawData( verts, 4, indices, 6 );
 
 	return (const void *)( cmd + 1 );
 }
@@ -922,13 +966,13 @@ void RB_ExecuteRenderCommands( const void *data )
 			data = (const void *)( (const screenshotCommand_t *)data + 1 );
 			break;
 		case RC_COLORMASK:
-			data = RB_ColorMask(data);
+			data = RB_ColorMask( data );
 			break;
-//		case RC_CLEARDEPTH:
-//			data = RB_ClearDepth(data);
-//			break;
+		case RC_CLEARDEPTH:
+			data = RB_ClearDepth( data );
+			break;
 		case RC_POSTPROCESS:
-			data = RB_PostProcess(data);
+			data = RB_PostProcess( data );
 			break;
 		case RC_END_OF_LIST:
 		default:

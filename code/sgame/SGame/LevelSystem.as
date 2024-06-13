@@ -39,7 +39,7 @@ namespace TheNomad::SGame {
 
     class LevelSystem : TheNomad::GameSystem::GameObject {
 		LevelSystem() {
-			m_PassedCheckpointSfx.Set( "sfx/misc/pass_checkpoint.ogg" );
+			m_PassedCheckpointSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/misc/passCheckpoint.ogg" );
 		}
 		
 		void OnInit() {
@@ -48,6 +48,7 @@ namespace TheNomad::SGame {
 			uint i;
 			string mapname;
 			string levelName;
+			string music;
 
 			ConsolePrint( "Loading level infos...\n" );
 
@@ -87,6 +88,21 @@ namespace TheNomad::SGame {
 					}
 					data.m_MapHandles.Add( MapData );
 				}
+
+				if ( info.get( "SoundTrack_Ambient", music ) ) {
+					data.m_hAmbientTheme = TheNomad::Engine::ResourceCache.GetSfx( music );
+					if ( data.m_hAmbientTheme == -1 ) {
+						ConsoleWarning( "SoundTrack_Ambient for LevelData \"" + data.m_Name + "\" not found.\n" );
+					}
+				}
+				if ( info.get( "SoundTrack_Combat", music ) ) {
+					data.m_hCombatTheme = TheNomad::Engine::ResourceCache.GetSfx( music );
+					if ( data.m_hCombatTheme == -1 ) {
+						ConsoleWarning( "SoundTrack_Combat for LevelData \"" + data.m_Name + "\" not found.\n" );
+					}
+				}
+				info.get( "BeginLevelScript", data.m_StartLevelScript );
+				info.get( "EndLevelScript", data.m_EndLevelScript );
 
 				data.m_nIndex = i;
 
@@ -208,6 +224,15 @@ namespace TheNomad::SGame {
 			return false;
 		}
 		void OnLevelEnd() {
+			if ( m_Current.m_EndLevelScript.size() != 0 ) {
+				string script;
+				if ( TheNomad::Engine::FileSystem::LoadFile( m_Current.m_EndLevelScript, script ) == 0 ) {
+					ConsoleWarning( "Error loading EndOfLevel script\n" );
+				} else {
+					TheNomad::Engine::CmdExecuteCommand( script );
+				}
+			}
+
 			@m_MapData = null;
 			@m_Current = null;
 		}
@@ -258,6 +283,11 @@ namespace TheNomad::SGame {
 					save.SaveUInt( "NumDeaths", stats.numDeaths );
 				}
 			}
+
+			section.SaveUInt( "CurrentCheckpoint", m_CurrentCheckpoint );
+			section.SaveUInt( "TimeMilliseconds", m_LevelTimer.ElapsedMilliseconds() );
+			section.SaveUInt( "TimeSeconds", m_LevelTimer.ElapsedSeconds() );
+			section.SaveUInt( "TimeMinutes", m_LevelTimer.ElapsedMinutes() );
 		}
 		void OnLoad() {
 			LevelStats@ stats;
@@ -312,6 +342,10 @@ namespace TheNomad::SGame {
 					stats.numDeaths = section.LoadUInt( "NumDeaths" );
 				}
 			}
+
+			m_CurrentCheckpoint = load.LoadUInt( "CurrentCheckpoint" );
+			m_LevelTimer = TheNomad::Engine::Timer( load.LoadUInt( "TimeMilliseconds" ), load.LoadUInt( "TimeSeconds" ),
+				load.LoadUInt( "TimeMinutes" ) );
 		}
 		const string& GetName() const {
 			return "LevelSystem";
@@ -367,6 +401,15 @@ namespace TheNomad::SGame {
 				const MapSpawn@ spawn = @m_MapData.GetSpawns()[ 0 ];
 				if ( spawn.m_nEntityType != TheNomad::GameSystem::EntityType::Playr ) {
 					ForcePlayerSpawn();
+				}
+			}
+
+			if ( m_Current.m_StartLevelScript.size() != 0 ) {
+				string script;
+				if ( TheNomad::Engine::FileSystem::LoadFile( m_Current.m_StartLevelScript, script ) == 0 ) {
+					ConsoleWarning( "Error loading StartOfLevel script\n" );
+				} else {
+					TheNomad::Engine::CmdExecuteCommand( script );
 				}
 			}
 			

@@ -30,6 +30,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../rendercommon/imgui_internal.h"
 #include "../game/imgui_memory_editor.h"
 #include "../rendercommon/implot.h"
+//#include "RobotoMono-Bold.h"
 #define FPS_FRAMES 60
 
 uiGlobals_t *ui;
@@ -168,7 +169,6 @@ void CUIFontCache::SetActiveFont( ImFont *font )
 	}
 
 	m_pCurrentFont = font;
-
 	if ( !ImGui::GetFont()->ContainerAtlas ) {
 		return;
 	}
@@ -972,6 +972,15 @@ extern "C" void UI_Init( void )
     Cmd_AddCommand( "ui.cache", UI_Cache_f );
 	Cmd_AddCommand( "ui.fontinfo", CUIFontCache::ListFonts_f );
 	Cmd_AddCommand( "togglepausemenu", UI_PauseMenu_f );
+
+//	ImGuiIO& io = ImGui::GetIO();
+//	ImFontConfig config;
+//
+//	memset( &config, 0, sizeof( config ) );
+//	config.FontDataOwnedByAtlas = false;
+//
+//	ImFont *font = io.Fonts->AddFontFromMemoryTTF( (void *)g_RobotoMono_Bold, sizeof( g_RobotoMono_Bold ), 16.0f, &config );
+//	io.FontDefault = font;
 }
 
 void Menu_Cache( void )
@@ -1027,12 +1036,14 @@ extern "C" void UI_DrawMenuBackground( void )
 	refdef.y = 0;
 	refdef.width = ui->gpuConfig.vidWidth;
 	refdef.height = ui->gpuConfig.vidHeight;
+	refdef.time = gi.realtime * 0.1f;
 	refdef.flags = RSF_NOWORLDMODEL | RSF_ORTHO_TYPE_SCREENSPACE;
 
 	//
 	// draw the background
 	//
     re.ClearScene();
+	re.SetColor( colorWhite );
     re.DrawImage( 0, 0, refdef.width, refdef.height, 0, 0, 1, 1, ui->menubackShader );
     re.RenderScene( &refdef );
 }
@@ -1057,112 +1068,58 @@ static void UI_DrawGPUStats( void )
 	int i;
 	gpuMemory_t memstats;
 
-	ImGui::Begin( "##RendererInformation", NULL );
+	ImGui::Begin( "##RendererInformation", NULL, ImGuiWindowFlags_NoCollapse );
 
 	if ( ImGui::TreeNodeEx( (void *)(uintptr_t)"##GPUExtensions", ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen,
 		"GPU Extensions" ) )
 	{
 		ImGui::TextUnformatted( "Extensions Used:" );
+
+		auto extensionPrint = [&]( const char *extensionString, const char *GLstring ) -> void {
+			if ( Cvar_VariableInteger( extensionString ) ) {
+				ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
+			} else {
+				ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
+			}
+			ImGui::TextUnformatted( GLstring );
+			ImGui::PopStyleColor();
+		};
+
 		ImGui::Indent();
-		if ( Cvar_VariableInteger( "r_arb_shader_storage_buffer_object" ) ) {
-			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
-			ImGui::TextUnformatted( "GL_ARB_shader_storage_buffer_object" );
-			ImGui::PopStyleColor();
-		} else {
-			ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
-			ImGui::TextUnformatted( "GL_ARB_shader_storage_buffer_object" );
-			ImGui::PopStyleColor();
-		}
-		if ( Cvar_VariableInteger( "r_arb_map_buffer_range" ) ) {
-			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
-			ImGui::TextUnformatted( "GL_ARB_map_buffer_range" );
-			ImGui::PopStyleColor();
-		} else {
-			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
-			ImGui::TextUnformatted( "GL_ARB_map_buffer_range" );
-			ImGui::PopStyleColor();
-		}
-		if ( Cvar_VariableInteger( "r_arb_framebuffer_object" ) ) {
-			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
-			ImGui::TextUnformatted( "GL_ARB_framebuffer_object" );
-			ImGui::PopStyleColor();
-		} else {
-			ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
-			ImGui::TextUnformatted( "GL_ARB_framebuffer_object" );
-			ImGui::PopStyleColor();
-		}
-		if ( Cvar_VariableInteger( "r_arb_vertex_buffer_object" ) ) {
-			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
-			ImGui::TextUnformatted( "GL_ARB_vertex_buffer_object" );
-			ImGui::PopStyleColor();
-		} else {
-			ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
-			ImGui::TextUnformatted( "GL_ARB_vertex_buffer_object" );
-			ImGui::PopStyleColor();
-		}
-		if ( Cvar_VariableInteger( "r_arb_vertex_array_object" ) ) {
-			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
-			ImGui::TextUnformatted( "GL_ARB_vertex_array_object" );
-			ImGui::PopStyleColor();
-		} else {
-			ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
-			ImGui::TextUnformatted( "GL_ARB_vertex_array_object" );
-			ImGui::PopStyleColor();
-		}
-		if ( Cvar_VariableInteger( "r_arb_sync" ) ) {
-			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
-			ImGui::TextUnformatted( "GL_ARB_sync" );
-			ImGui::PopStyleColor();
-		} else {
-			ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
-			ImGui::TextUnformatted( "GL_ARB_sync" );
-			ImGui::PopStyleColor();
-		}
-		if ( Cvar_VariableInteger( "r_arb_texture_float" ) ) {
-			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
-			ImGui::TextUnformatted( "GL_ARB_texture_float" );
-			ImGui::PopStyleColor();
-		} else {
-			ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
-			ImGui::TextUnformatted( "GL_ARB_texture_float" );
-			ImGui::PopStyleColor();
-		}
-		if ( Cvar_VariableInteger( "r_arb_texture_filter_anisotropic" ) ) {
-			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
-			ImGui::TextUnformatted( "GL_ARB_texture_filter_anisotropic" );
-			ImGui::PopStyleColor();
-		} else {
-			ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
-			ImGui::TextUnformatted( "GL_ARB_texture_filter_anisotropic" );
-			ImGui::PopStyleColor();
-		}
+		extensionPrint( "r_arb_shader_storage_buffer_object", "GL_ARB_shader_storage_buffer_object" );
+		extensionPrint( "r_arb_map_buffer_range", "GL_ARB_map_buffer_range" );
+		extensionPrint( "r_arb_framebuffer_object", "GL_ARB_framebuffer_object" );
+		extensionPrint( "r_arb_framebuffer_blit", "GL_ARB_framebuffer_blit" );
+		extensionPrint( "r_arb_framebuffer_multisample", "GL_ARB_framebuffer_multisample" );
+		extensionPrint( "r_arb_framebuffer_srgb", "GL_ARB_framebuffer_sRGB" );
+		extensionPrint( "r_arb_texture_compression", "GL_ARB_texture_compression" );
+		extensionPrint( "r_arb_vertex_buffer_object", "GL_ARB_vertex_buffer_object" );
+		extensionPrint( "r_arb_vertex_array_object", "GL_ARB_vertex_array_object" );
+		extensionPrint( "r_arb_sync", "GL_ARB_sync" );
+		extensionPrint( "r_arb_texture_float", "GL_ARB_texture_float" );
+		extensionPrint( "r_arb_texture_filter_anisotropic", "GL_ARB_texture_filter_anisotropic" );
+		extensionPrint( "r_arb_color_buffer_float", "GL_ARB_color_buffer_float" );
+		extensionPrint( "r_arb_multisample", "GL_ARB_multisample" );
+		extensionPrint( "r_arb_multitexture", "GL_ARB_multitexture" );
 		ImGui::Unindent();
 
-		ImGui::TextUnformatted( "Extensions Found:" );
-		p = str;
-		for ( i = 0; i < sizeof( ui->gpuConfig.extensions_string ); i++ ) {
-			if ( !ui->gpuConfig.extensions_string[i] ) {
-				break;
-			} else if ( ui->gpuConfig.extensions_string[i] == ' ' ) {
-				*p = '\0';
-				ImGui::Text( "  %s", str );
-				p = str;
-			} else {
-				*p++ = ui->gpuConfig.extensions_string[i];
-			}
-		}
 		ImGui::TreePop();
 	}
 	if ( ImGui::TreeNodeEx( (void *)(uintptr_t)"##GPUStatistics", ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen,
 		"Statistics" ) )
 	{
+		uint32_t gpuFrameTime, gpuSamples, gpuPrimitives;
+
 		re.GetGPUMemStats( &memstats );
+		re.GetGPUFrameStats( &gpuFrameTime, &gpuSamples, &gpuPrimitives );
 
 		ImGui::Text( "FrameNumber: %lu", com_frameNumber );
 		ImGui::Text( "FrameTime: %i", gi.frametime );
 		ImGui::Separator();
-		ImGui::Text( "FrontEnd Time: %lu milliseconds", time_frontend );
-		ImGui::Text( "BackEnd Time: %lu milliseconds", time_backend );
+		ImGui::Text( "FrontEnd Time: %0.04f milliseconds", time_frontend * 0.0001f );
+		ImGui::Text( "BackEnd Time: %0.04f milliseconds", time_backend * 0.0001f );
+		ImGui::Text( "PostProcessing Time: %0.04f milliseconds", gi.pc.postprocessMsec * 0.0001f );
+		ImGui::Text( "GPU Time: %0.04f milliseconds", gpuFrameTime * 0.0001f );
 		ImGui::Separator();
 		ImGui::Text( "Draw Calls: %lu", gi.pc.c_drawCalls );
 		ImGui::Text( "Buffer Binds: %u", gi.pc.c_bufferBinds );
@@ -1173,7 +1130,10 @@ static void UI_DrawGPUStats( void )
 		ImGui::Text( "Overdraw: %u", gi.pc.c_overDraw );
 		ImGui::Separator();
 		ImGui::Text( "(EST) Texture Memory Used: %u", memstats.estTextureMemUsed );
-		ImGui::Text( "(EST) Buffer Memory Used: %u", memstats.estBufferMemUsed );
+		ImGui::Text( "(EST) Total Buffer Memory Used: %u", memstats.estBufferMemUsed );
+		ImGui::Text( "(EST) Vertex Buffer Memory: %u", memstats.estVertexMemUsed );
+		ImGui::Text( "(EST) Index Buffer Memory: %u", memstats.estIndexMemUsed );
+		ImGui::Text( "Total Buffers Generated: %u", memstats.numBuffers );
 		ImGui::TreePop();
 	}
 
@@ -1240,13 +1200,13 @@ extern "C" void UI_Refresh( int32_t realtime )
 			Snd_SetLoopingTrack( ui->activemenu->track );
 		}
 
-		if ( !( Key_GetCatcher() & KEYCATCH_CONSOLE ) ) {
+///		if ( !( Key_GetCatcher() & KEYCATCH_CONSOLE ) ) {
 			if ( ui->activemenu->draw ) {
 				ui->activemenu->draw();
 			} else {
 				Menu_Draw( ui->activemenu );
 			}
-		}
+	//	}
 
 //		if( ui->GetFirstDraw() ) {
 //			ui->MouseEvent( 0, 0 );

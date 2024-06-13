@@ -152,6 +152,8 @@ typedef struct
     qboolean ARB_texture_compression;
     qboolean ARB_sync;
     qboolean ARB_shader_storage_buffer_object;
+    qboolean NV_framebuffer_multisample_coverage;
+    qboolean ARB_sample_shading;
 } glContext_t;
 
 typedef struct {
@@ -951,6 +953,9 @@ typedef struct {
 
     vec3_t ambientLightColor;
 
+    uint32_t levelTextures;
+    uint32_t levelShaders;
+
     uint32_t width;
     uint32_t height;
 
@@ -960,7 +965,10 @@ typedef struct {
     maptile_t *tiles;
     uint32_t numTiles;
 
+    glIndex_t *indices;
     uint64_t numIndices;
+
+    drawVert_t *vertices;
     uint64_t numVertices;
 
     spriteCoord_t *sprites;
@@ -968,8 +976,6 @@ typedef struct {
 
     // frame based draw data
     shader_t *shader;
-    drawVert_t *vertices;
-    glIndex_t *indices;
     vertexBuffer_t *buffer;
     nhandle_t tileset;
 } world_t;
@@ -1428,6 +1434,8 @@ extern cvar_t *r_maxPolys;
 extern cvar_t *r_maxEntities;
 extern cvar_t *r_maxDLights;
 
+extern cvar_t *r_useShaderCache;
+
 extern cvar_t *r_imageUpsampleType;
 extern cvar_t *r_imageUpsample;
 extern cvar_t *r_imageUpsampleMaxSize;
@@ -1516,23 +1524,24 @@ void R_InitWorldBuffer( void );
 //
 // rgl_extensions.c
 //
-void R_InitExtensions(void);
+void R_InitExtensions( void );
 
 //
 // rgl_program.c
 //
-void GLSL_UseProgram(shaderProgram_t *program);
-void GLSL_InitGPUShaders(void);
-void GLSL_ShutdownGPUShaders(void);
-void GLSL_SetUniformInt(shaderProgram_t *program, uint32_t uniformNum, GLint value);
-void GLSL_SetUniformFloat(shaderProgram_t *program, uint32_t uniformNum, GLfloat value);
-void GLSL_SetUniformVec2(shaderProgram_t *program, uint32_t uniformNum, const vec2_t v);
-void GLSL_SetUniformVec3(shaderProgram_t *program, uint32_t uniformNum, const vec3_t v);
-void GLSL_SetUniformVec4(shaderProgram_t *program, uint32_t uniformNum, const vec4_t v);
-void GLSL_SetUniformMatrix4(shaderProgram_t *program, uint32_t uniformNum, const mat4_t m);
+void GLSL_UseProgram( shaderProgram_t *program );
+void GLSL_InitGPUShaders( void );
+void GLSL_ShutdownGPUShaders( void );
+void GLSL_SetUniformInt( shaderProgram_t *program, uint32_t uniformNum, GLint value );
+void GLSL_SetUniformFloat( shaderProgram_t *program, uint32_t uniformNum, GLfloat value );
+void GLSL_SetUniformVec2( shaderProgram_t *program, uint32_t uniformNum, const vec2_t v );
+void GLSL_SetUniformVec3( shaderProgram_t *program, uint32_t uniformNum, const vec3_t v );
+void GLSL_SetUniformVec4( shaderProgram_t *program, uint32_t uniformNum, const vec4_t v );
+void GLSL_SetUniformMatrix4( shaderProgram_t *program, uint32_t uniformNum, const mat4_t m );
 void GLSL_ShaderBufferData( shaderProgram_t *shader, uint32_t uniformNum, uniformBuffer_t *buffer );
 uniformBuffer_t *GLSL_InitUniformBuffer( const char *name, byte *buffer, uint64_t bufSize );
-shaderProgram_t *GLSL_GetGenericShaderProgram(int stage);
+shaderProgram_t *GLSL_GetGenericShaderProgram( int stage );
+void GLSL_LinkUniformToShader( shaderProgram_t *program, uint32_t uniformNum, uniformBuffer_t *buffer );
 
 //
 // rgl_math.c
@@ -1681,6 +1690,7 @@ typedef enum
     RC_DRAW_BUFFER,
     RC_COLORMASK,
     RC_SCREENSHOT,
+    RC_CLEARDEPTH,
 
     // mainly called from the vm
     RC_DRAW_IMAGE,
@@ -1698,6 +1708,10 @@ typedef struct {
     renderCmdType_t commandId;
     uint32_t rgba[4];
 } colorMaskCmd_t;
+
+typedef struct {
+    renderCmdType_t commandId;
+} clearDepthCommand_t;
 
 typedef struct {
     renderCmdType_t commandId;

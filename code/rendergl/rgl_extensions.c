@@ -131,8 +131,9 @@ void R_InitExtensions(void)
         }
 
         NGL_VertexArrayARB_Procs
-        if (!nglVertexAttribPointerARB || !nglEnableVertexArrayAttribARB || !nglDisableVertexArrayAttribARB
-        || !nglEnableVertexAttribArrayARB || !nglDisableVertexAttribArrayARB) {
+        if ( !nglVertexAttribPointerARB || !nglEnableVertexArrayAttribARB || !nglDisableVertexArrayAttribARB
+            || !nglEnableVertexAttribArrayARB || !nglDisableVertexAttribArrayARB )
+        {
             ri.Printf(PRINT_INFO, result[EXT_FAILED], ext);
             glContext.ARB_vertex_array_object = qfalse;
         }
@@ -151,12 +152,22 @@ void R_InitExtensions(void)
     //
     ext = "GL_ARB_gl_spirv";
     glContext.ARB_gl_spirv = qfalse;
-    if ( NGL_VERSION_ATLEAST( 4, 0 ) || R_HasExtension( ext ) ) {
+    if ( NGL_VERSION_ATLEAST( 4, 0 ) || R_HasExtension( ext ) && r_useShaderCache->i ) {
+        glContext.ARB_gl_spirv = qtrue;
         NGL_GLSL_SPIRV_Procs
+
+        if ( !nglShaderBinary || !nglGetProgramBinary ) {
+            ri.Printf( PRINT_INFO, result[EXT_FAILED], ext );
+            glContext.ARB_gl_spirv = qfalse;
+        } else {
+            ri.Printf( PRINT_INFO, result[EXT_USING], ext );
+        }
     }
     else {
         ri.Printf(PRINT_INFO, result[EXT_NOTFOUND], ext);
     }
+
+    ri.Cvar_Set( "r_useShaderCache", va( "%i", glContext.ARB_gl_spirv ) );
 
     //
     // ARB_vertex_buffer_object
@@ -223,6 +234,40 @@ void R_InitExtensions(void)
     }
 
     //
+    // ARB_sample_shading
+    //
+    ext = "GL_ARB_sample_shading";
+    glContext.ARB_sample_shading = qfalse;
+    if ( R_HasExtension( ext ) ) {
+        glContext.ARB_sample_shading = qtrue;
+        if ( !nglMinSampleShadingARB ) {
+            ri.Printf( PRINT_INFO, result[ EXT_FAILED ], ext );
+            glContext.ARB_sample_shading = qfalse;
+        } else {
+            ri.Printf( PRINT_INFO, result[ EXT_USING ], ext );
+        }
+    } else {
+        ri.Printf( PRINT_INFO, result[ EXT_NOTFOUND ], ext );
+    }
+
+    //
+    // NV_framebuffer_multisample_coverage
+    //
+    ext = "GL_NV_framebuffer_multisample_coverage";
+    glContext.NV_framebuffer_multisample_coverage = qfalse;
+    if ( R_HasExtension( ext ) ) {
+        glContext.NV_framebuffer_multisample_coverage = qtrue;
+        if ( !nglRenderBufferStorageMultisampleCoverageNV ) {
+            ri.Printf( PRINT_INFO, result[ EXT_FAILED ], ext );
+            glContext.NV_framebuffer_multisample_coverage = qfalse;
+        } else {
+            ri.Printf( PRINT_INFO, result[ EXT_USING ], ext );
+        }
+    } else {
+        ri.Printf( PRINT_INFO, result[ EXT_NOTFOUND ], ext );
+    }
+
+    //
     // gpu memory info diangostics extensions
     //
 
@@ -266,7 +311,7 @@ void R_InitExtensions(void)
     if (R_HasExtension(ext)) {
         qboolean useRgtc = r_arb_texture_compression->i >= 1;
         if (useRgtc)
-            glContext.textureCompressionRef|= TCR_RGTC;
+            glContext.textureCompressionRef |= TCR_RGTC;
         
         ri.Printf(PRINT_INFO, result[useRgtc], ext);
     }
@@ -305,8 +350,13 @@ void R_InitExtensions(void)
         glContext.ARB_framebuffer_multisample = qtrue;
         glContext.ARB_framebuffer_sRGB = qtrue;
 
-        nglGetIntegerv(GL_MAX_RENDERBUFFER_SIZE, &glContext.maxRenderBufferSize);
-        nglGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &glContext.maxColorAttachments);
+        ri.Cvar_Set( "r_arb_framebuffer_blit", "1" );
+        ri.Cvar_Set( "r_arb_framebuffer_object", "1" );
+        ri.Cvar_Set( "r_arb_framebuffer_srgb", "1" );
+        ri.Cvar_Set( "r_arb_framebuffer_multisample", "1" );
+
+        nglGetIntegerv( GL_MAX_RENDERBUFFER_SIZE, &glContext.maxRenderBufferSize );
+        nglGetIntegerv( GL_MAX_COLOR_ATTACHMENTS, &glContext.maxColorAttachments );
 
         NGL_FBO_Procs
 
@@ -314,6 +364,11 @@ void R_InitExtensions(void)
     }
     else {
         ri.Printf(PRINT_INFO, result[EXT_NOTFOUND], ext);
+
+        ri.Cvar_Set( "r_arb_framebuffer_blit", "0" );
+        ri.Cvar_Set( "r_arb_framebuffer_object", "0" );
+        ri.Cvar_Set( "r_arb_framebuffer_srgb", "0" );
+        ri.Cvar_Set( "r_arb_framebuffer_multisample", "0" );
     }
     
     //
@@ -330,22 +385,58 @@ void R_InitExtensions(void)
         else {
             ri.Printf(PRINT_INFO, result[EXT_USING], ext);
 
-            nglEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
-            nglEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-            nglEnable(GL_DEBUG_OUTPUT);
+            nglEnable( GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB );
+            nglEnable( GL_DEBUG_OUTPUT_SYNCHRONOUS );
+            nglEnable( GL_DEBUG_OUTPUT );
 
-            nglDebugMessageControlARB(GL_DEBUG_SOURCE_API_ARB, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
-            nglDebugMessageControlARB(GL_DEBUG_SOURCE_APPLICATION_ARB, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
-            nglDebugMessageControlARB(GL_DEBUG_SOURCE_SHADER_COMPILER_ARB, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
-            nglDebugMessageControlARB(GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
-            nglDebugMessageControlARB(GL_DEBUG_SOURCE_OTHER_ARB, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
-            nglDebugMessageControlARB(GL_DEBUG_SOURCE_THIRD_PARTY_ARB, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
+            nglDebugMessageControlARB( GL_DEBUG_SOURCE_API_ARB, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE );
+            nglDebugMessageControlARB( GL_DEBUG_SOURCE_APPLICATION_ARB, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE );
+            nglDebugMessageControlARB( GL_DEBUG_SOURCE_SHADER_COMPILER_ARB, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE );
+            nglDebugMessageControlARB( GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE );
+            nglDebugMessageControlARB( GL_DEBUG_SOURCE_OTHER_ARB, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE );
+            nglDebugMessageControlARB( GL_DEBUG_SOURCE_THIRD_PARTY_ARB, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE );
 
             nglDebugMessageCallbackARB(R_GLDebug_Callback_ARB, NULL);
         }
     }
     else {
         ri.Printf(PRINT_INFO, result[EXT_NOTFOUND], ext);
+    }
+
+    //
+    // ARB_multisample
+    //
+    ext = "GL_ARB_multisample";
+    if ( R_HasExtension( ext ) ) {
+        ri.Printf( PRINT_INFO, result[EXT_USING], ext );
+        ri.Cvar_Set( "r_arb_multisample", "1" );
+    } else {
+        ri.Printf( PRINT_INFO, result[EXT_NOTFOUND], ext );
+        ri.Cvar_Set( "r_arb_multisample", "0" );
+    }
+
+    //
+    // ARB_multitexture
+    //
+    ext = "GL_ARB_multitexture";
+    if ( R_HasExtension( ext ) ) {
+        ri.Printf( PRINT_INFO, result[EXT_USING], ext );
+        ri.Cvar_Set( "r_arb_multitexture", "1" );
+    } else {
+        ri.Printf( PRINT_INFO, result[EXT_NOTFOUND], ext );
+        ri.Cvar_Set( "r_arb_multitexture", "0" );
+    }
+
+    //
+    // ARB_color_buffer_float
+    //
+    ext = "GL_ARB_color_buffer_float";
+    if ( R_HasExtension( ext ) ) {
+        ri.Printf( PRINT_INFO, result[EXT_USING], ext );
+        ri.Cvar_Set( "r_arb_color_buffer_float", "1" );
+    } else {
+        ri.Printf( PRINT_INFO, result[EXT_NOTFOUND], ext );
+        ri.Cvar_Set( "r_arb_color_buffer_float", "0" );
     }
 
     // determine GLSL version

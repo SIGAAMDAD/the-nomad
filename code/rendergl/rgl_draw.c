@@ -424,6 +424,12 @@ void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, con
 
         GLSL_SetUniformInt( sp, UNIFORM_COLORGEN, stageP->rgbGen );
         GLSL_SetUniformInt( sp, UNIFORM_ALPHAGEN, stageP->alphaGen );
+		
+		{
+			vec2_t screenSize;
+			VectorSet2( screenSize, glConfig.vidWidth, glConfig.vidHeight );
+			GLSL_SetUniformVec2( sp, UNIFORM_SCREEN_SIZE, screenSize );
+		}
 
         GL_BindTexture( TB_DIFFUSEMAP, stageP->bundle[0].image );
         GLSL_SetUniformInt( sp, UNIFORM_DIFFUSE_MAP, 0 );
@@ -637,7 +643,7 @@ void RB_IterateShaderStages( shader_t *shader )
 					GL_BindTexture( 2, stageP->bundle[TB_SPECULARMAP].image );
 					GLSL_SetUniformInt( sp, UNIFORM_SPECULAR_MAP, 2 );
 				} else if ( r_specularMapping->i ) {
-					GL_BindTexture( 1, rg.whiteImage );
+					GL_BindTexture( 2, rg.whiteImage );
 					GLSL_SetUniformInt( sp, UNIFORM_SPECULAR_MAP, 2 );
 				}
 			}
@@ -715,6 +721,7 @@ void RB_InstantQuad( vec4_t quadVerts[4] )
 	backend.refdef.flags = RSF_ORTHO_TYPE_SCREENSPACE | RSF_NOWORLDMODEL;
 	
 	glState.viewData.flags = backend.refdef.flags;
+	backend.drawBatch.shader = rg.defaultShader;
 
 	VectorSet2( texCoords[0], 0.0f, 0.0f );
 	VectorSet2( texCoords[1], 1.0f, 0.0f );

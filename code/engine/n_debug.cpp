@@ -115,13 +115,17 @@ static void bt_syminfo_callback( void *data, uintptr_t pc, const char *symname,
 		if ( logfile != FS_INVALID_HANDLE && FS_Initialized() ) {
 			FS_Printf( logfile, "  %-8zu %s\n", pc, symname );
 		}
-		fprintf( g_debugSession.m_hBackTraceOutput, "  %-8zu %s\n", pc, symname );
+		if ( g_debugSession.m_hBackTraceOutput ) {
+			fprintf( g_debugSession.m_hBackTraceOutput, "  %-8zu %s\n", pc, symname );
+		}
 		fprintf( stdout, "  %-8zu %s\n", pc, symname );
 	} else {
 		if ( logfile != FS_INVALID_HANDLE && FS_Initialized() ) {
 			FS_Printf( logfile, "%-8zu (unknown symbol)\n", pc );
 		}
-		fprintf( g_debugSession.m_hBackTraceOutput, "%-8zu (unknown symbol)\n", pc );
+		if ( g_debugSession.m_hBackTraceOutput ) {
+			fprintf( g_debugSession.m_hBackTraceOutput, "%-8zu (unknown symbol)\n", pc );
+		}
 		fprintf( stdout, "  %-8zu (unknown symbol)\n", pc );
 	}
 }
@@ -155,7 +159,9 @@ static int bt_pcinfo_callback( void *data, uintptr_t pc, const char *filename, i
 		if (logfile != FS_INVALID_HANDLE) {
 			FS_Printf( logfile,  "  %-8zu %-16s:%-8d %s\n", pc, filename, lineno, function );
 		}
-		fprintf( g_debugSession.m_hBackTraceOutput, "  %-8zu %-16s:%-8d %s\n", pc, filename, lineno, function );
+		if ( g_debugSession.m_hBackTraceOutput ) {
+			fprintf( g_debugSession.m_hBackTraceOutput, "  %-8zu %-16s:%-8d %s\n", pc, filename, lineno, function );
+		}
 		fprintf( stdout, "  %-8zu %-16s:%-8d %s\n", pc, filename, lineno, function );
 	}
 

@@ -11,6 +11,10 @@ namespace TheNomad::SGame {
 		int m_hAmbientTheme = FS_INVALID_HANDLE;
 		int m_hCombatTheme = FS_INVALID_HANDLE;
 
+		// .cfg script files
+		string m_StartLevelScript;
+		string m_EndLevelScript;
+
 		uint m_nIndex = 0;
 		LevelRankData m_RankS;
 		LevelRankData m_RankA;

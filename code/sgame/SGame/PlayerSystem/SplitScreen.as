@@ -49,34 +49,6 @@ namespace TheNomad::SGame {
 			//
 			// add keybind commands
 			//
-
-			/*
-			TheNomad::SGame::sgame_KeyBindTable.Add( KeyBinding(
-				TheNomad::Engine::KeyGetKey( "+north" ),
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_Down_f ),
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_Up_f )
-			) );
-			TheNomad::SGame::sgame_KeyBindTable.Add( KeyBinding(
-				TheNomad::Engine::KeyGetKey( "+south" ),
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveSouth_Down_f ),
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveSouth_Up_f )
-			) );
-			TheNomad::SGame::sgame_KeyBindTable.Add( KeyBinding(
-				TheNomad::Engine::KeyGetKey( "+east" ),
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveEast_Down_f ),
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveEast_Up_f )
-			) );
-			TheNomad::SGame::sgame_KeyBindTable.Add( KeyBinding(
-				TheNomad::Engine::KeyGetKey( "+west" ),
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveWest_Down_f ),
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveWest_Up_f )
-			) );
-			TheNomad::SGame::sgame_KeyBindTable.Add( KeyBinding(
-				TheNomad::Engine::KeyGetKey( "+jump" ),
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Jump_Down_f ),
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Jump_Up_f )
-			) );
-			*/
 			
 			// these specific movement commands MUST NOT CHANGE as they are hardcoded into the engine
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
@@ -217,16 +189,6 @@ namespace TheNomad::SGame {
 		void UseWeapon_Up_f() { GetPlayerIndex().m_bUseWeapon = false; }
 		void AltUseWeapon_Down_f() { GetPlayerIndex().m_bAltUseWeapon = true; }
 		void AltUseWeapon_Up_f() { GetPlayerIndex().m_bAltUseWeapon = false; }
-		void MoveNorth_Down_f() { GetPlayerIndex().key_MoveNorth.Down(); }
-		void MoveNorth_Up_f() { GetPlayerIndex().key_MoveNorth.Up(); }
-		void MoveSouth_Down_f() { GetPlayerIndex().key_MoveSouth.Down(); }
-		void MoveSouth_Up_f() { GetPlayerIndex().key_MoveSouth.Up(); }
-		void MoveEast_Down_f() { GetPlayerIndex().key_MoveEast.Down(); }
-		void MoveEast_Up_f() { GetPlayerIndex().key_MoveEast.Up(); }
-		void MoveWest_Down_f() { GetPlayerIndex().key_MoveWest.Down(); }
-		void MoveWest_Up_f() { GetPlayerIndex().key_MoveWest.Up(); }
-		void Jump_Down_f() { GetPlayerIndex().key_Jump.Down(); }
-		void Jump_Up_f() { GetPlayerIndex().key_Jump.Up(); }
 		void Quickshot_Down_f() {
 			PlayrObject@ obj = GetPlayerIndex();
 			
@@ -364,7 +326,7 @@ namespace TheNomad::SGame {
 				TheNomad::GameSystem::GameSystems[i].OnRenderScene();
 			}
 			TheNomad::Engine::Renderer::RenderScene( scenePos.x, scenePos.y, sceneSize.x, sceneSize.y, flags, 
-				TheNomad::GameSystem::GameManager.GetGameTic() );
+				TheNomad::GameSystem::GameManager.GetGameTic() * 0.1f );
 		}
 
 		uint GetPlayerIndex( PlayrObject@ obj ) {

@@ -7,6 +7,7 @@ layout( location = 1 ) out vec4 a_BrightColor;
 
 in vec2 v_TexCoords;
 in vec3 v_FragPos;
+in vec3 v_WorldPos;
 in vec4 v_Color;
 
 uniform sampler2D u_DiffuseMap;
@@ -138,7 +139,7 @@ void ApplyLighting() {
 #endif
 #if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
     for ( int i = 0; i < u_NumLights; i++ ) {
-        switch ( lights[i].type ) {
+        switch ( u_LightData[i].type ) {
         case POINT_LIGHT:
             a_Color.rgb += CalcPointLight( u_LightData[i] );
             break;

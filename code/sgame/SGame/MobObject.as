@@ -2,14 +2,6 @@
 #include "SGame/EntitySystem.as"
 
 namespace TheNomad::SGame {
-	import void GetMobFuncIndexes( uint mobType, array<uint>@ indexes ) from "BotLib";
-	import void Mob_IdleThink( uint entityNumber ) from "BotLib";
-	import void Mob_FightThink( uint entityNumber ) from "BotLib";
-	import void Mob_DeadThink( uint entityNumber ) from "BotLib";
-	import void Mob_ChaseThink( uint entityNumber ) from "BotLib";
-	
-	bool sgame_BotLibLoaded = false;
-	
 	class MobObject : EntityObject {
 		MobObject() {
 		}
@@ -34,14 +26,25 @@ namespace TheNomad::SGame {
 		
 		bool Load( const TheNomad::GameSystem::SaveSystem::LoadSection& in section ) override {
 			LoadBase( section );
+			m_nHealth = section.LoadFloat( "health" );
 			m_MFlags = InfoSystem::MobFlags( section.LoadUInt( "mobFlags" ) );
+			if ( section.LoadBool( "hasTarget" ) ) {
+				@m_Target = @EntityManager.GetEntityForNum( section.LoadUInt( "target" ) );
+			}
+
+			Spawn( m_Link.m_nEntityId, m_Link.m_Origin );
 			
 			return true;
 		}
 		
 		void Save( const TheNomad::GameSystem::SaveSystem::SaveSection& in section ) const {
 			SaveBase( section );
+			section.SaveFloat( "health", m_nHealth );
 			section.SaveUInt( "mobFlags", uint( m_MFlags ) );
+			section.SaveBool( "hasTarget", @m_Target !is null );
+			if ( @m_Target !is null ) {
+				section.SaveUInt( "target", m_Target.GetEntityNum() );
+			}
 		}
 
 		InfoSystem::MobFlags GetMFlags() const {
@@ -99,7 +102,6 @@ namespace TheNomad::SGame {
 			m_Flags = m_Info.flags;
 			m_MFlags = m_Info.mobFlags;
 			m_hShader = m_Info.hShader;
-//			m_hSpriteSheet = m_Info.hSpriteSheet;
 			@m_State = @StateManager.GetStateForNum( m_Info.type + StateNum::ST_MOB_IDLE );
 		}
 		
@@ -459,63 +461,4 @@ namespace TheNomad::SGame {
 		private uint m_nAttackTime = 0;
 		private uint m_nLastAttackTime = 0;
 	};
-	
-	//
-	// BotLib interface
-	//
-	
-	MobObject@ CheckValidMobIndex( uint entityNumber ) {
-		MobObject@ mob;
-		array<EntityObject@>@ entList = @EntityManager.GetEntities();
-		if ( entityNumber >= entityNumber ) {
-			GameError( "invalid mob index" );
-		}
-		
-		@mob = cast<MobObject@>( @entList[ entityNumber ] );
-		if ( mob.GetType() != TheNomad::GameSystem::EntityType::Mob ) {
-			GameError( "entityNumber provided is not a mob" );
-		}
-		
-		return @mob;
-	}
-	
-	void Mob_SetOrigin( uint entityNumber, vec3 origin ) {
-		array<EntityObject@>@ entList = @EntityManager.GetEntities();
-		if ( entityNumber >= entList.Count() ) {
-			GameError( "Mob_GetOrigin: invalid entityNumber" );
-		}
-		
-		MobObject@ mob = cast<MobObject@>( @entList[ entityNumber ] );
-		if ( mob.GetType() != TheNomad::GameSystem::EntityType::Mob ) {
-			GameError( "Mob_GetOrigin: not a mob" );
-		}
-		
-		mob.SetOrigin( origin );
-	}
-	
-	void Mob_SetHealth( uint entityNumber, float health ) {
-		array<EntityObject@>@ entList = @EntityManager.GetEntities();
-		if ( entityNumber >= entList.Count() ) {
-			GameError( "Mob_GetOrigin: invalid entityNumber" );
-		}
-		
-		MobObject@ mob = cast<MobObject@>( @entList[ entityNumber ] );
-		if ( mob.GetType() != TheNomad::GameSystem::EntityType::Mob ) {
-			GameError( "Mob_GetOrigin: not a mob" );
-		}
-		
-		mob.SetHealth( health );
-	}
-	
-	uint Mob_GetStateId( uint entityNumber ) {
-		return CheckValidMobIndex( entityNumber ).GetState().GetID();
-	}
-	
-	vec3 Mob_GetOrigin( uint entityNumber ) {
-		return CheckValidMobIndex( entityNumber ).GetOrigin();
-	}
-	
-	float Mob_GetHealth( uint entityNumber ) {
-		return CheckValidMobIndex( entityNumber ).GetHealth();
-	}
 };

@@ -1,15 +1,15 @@
 #include "rgl_local.h"
 #include <ctype.h>
 
-static void *Image_Malloc(size_t size) {
-	return ri.Malloc(size);
+static void *Image_Malloc( size_t size ) {
+	return ri.Malloc( size );
 }
-static void *Image_Realloc(void *ptr, size_t nsize) {
-	return ri.Realloc(ptr, nsize);
+static void *Image_Realloc( void *ptr, size_t nsize ) {
+	return ri.Realloc( ptr, nsize );
 }
-static void Image_Free(void *ptr) {
+static void Image_Free( void *ptr ) {
 	if ( ptr ) {
-		ri.Free(ptr);
+		ri.Free( ptr );
 	}
 }
 
@@ -156,7 +156,7 @@ void R_ImageList_f( void )
 		uint32_t displaySize;
 		uint32_t estSize = 0;
 
-		glState.memstats.estTextureMemUsed = image->uploadWidth * image->uploadHeight;
+		estSize = image->uploadWidth * image->uploadHeight;
 
 		switch ( image->internalFormat ) {
 		case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT:
@@ -313,7 +313,7 @@ void R_ImageList_f( void )
 	}
 
 	ri.Printf( PRINT_INFO, " ---------\n" );
-	ri.Printf( PRINT_INFO, " approx %lu bytes\n", glState.memstats.estTextureMemUsed );
+	ri.Printf( PRINT_INFO, " approx %u bytes\n", glState.memstats.estTextureMemUsed );
 	ri.Printf( PRINT_INFO, " %u total images\n\n", rg.numTextures );
 }
 
@@ -2247,7 +2247,7 @@ static texture_t *R_CreateImage2( const char *name, byte *pic, int width, int he
 	case GL_DEPTH_COMPONENT24_ARB:
 	case GL_DEPTH_COMPONENT32_ARB:
 		// Fix for sampling depth buffer on old nVidia cards.
-			// from http://www.idevgames.com/forums/thread-4141-post-34844.html#pid34844
+		// from http://www.idevgames.com/forums/thread-4141-post-34844.html#pid34844
 		nglTexParameterf( GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_LUMINANCE );
 		nglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 		nglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
@@ -2854,7 +2854,16 @@ static void R_CreateBuiltinTextures( void )
 			rg.bloomImage = R_CreateImage( "*bloom", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA16F );
 		}
 
-		rg.renderDepthImage  = R_CreateImage( "*renderdepth",  NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24 );
+		if ( r_multisampleType->i == AntiAlias_2xSSAA || r_multisampleType->i == AntiAlias_4xSSAA ) {
+			int max = gl_filter_max;
+			gl_filter_max = GL_NEAREST;
+
+			rg.renderDepthImage  = R_CreateImage( "*renderdepth",  NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24 );
+
+			gl_filter_max = max;
+		} else {
+			rg.renderDepthImage  = R_CreateImage( "*renderdepth",  NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24 );
+		}
 		rg.textureDepthImage = R_CreateImage( "*texturedepth", NULL, PSHADOW_MAP_SIZE, PSHADOW_MAP_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24 );
 
 		{

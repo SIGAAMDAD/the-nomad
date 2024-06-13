@@ -257,6 +257,16 @@ void Cbuf_ExecuteText( cbufExec_t exec_when, const char *text )
 
 /*
 ============
+Cbuf_Wait
+============
+*/
+qboolean Cbuf_Wait( void )
+{
+	return ( cmd_wait > 0 ) ? qtrue : qfalse;
+}
+
+/*
+============
 Cbuf_Execute
 ============
 */

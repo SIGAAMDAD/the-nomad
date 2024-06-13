@@ -133,7 +133,7 @@ static const char* ImGui_ImplSDL2_GetClipboardText(void*)
 {
     ImGui_ImplSDL2_Data* bd = ImGui_ImplSDL2_GetBackendData();
     if (bd->ClipboardTextData)
-        Z_Free(bd->ClipboardTextData);
+        Z_Free( bd->ClipboardTextData );
     
     bd->ClipboardTextData = Sys_GetClipboardData();
     return bd->ClipboardTextData;

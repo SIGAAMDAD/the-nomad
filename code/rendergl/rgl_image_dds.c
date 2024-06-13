@@ -389,7 +389,7 @@ void R_LoadDDS ( const char *filename, byte **pic, int *width, int *height, GLen
 				break;
 
 			default:
-				ri.Printf(PRINT_INFO, "DDS File %s has unsupported DXGI format %d.", filename, ddsHeaderDxt10->dxgiFormat);
+				ri.Printf(PRINT_INFO, "DDS File %s has unsupported DXGI format %d.\n", filename, ddsHeaderDxt10->dxgiFormat);
 				ri.FS_FreeFile(buffer.v);
 				return;
 				break;
@@ -423,7 +423,7 @@ void R_LoadDDS ( const char *filename, byte **pic, int *width, int *height, GLen
 				*picFormat = GL_COMPRESSED_SIGNED_RG_RGTC2;
 			else
 			{
-				ri.Printf(PRINT_INFO, "DDS File %s has unsupported FourCC.", filename);
+				ri.Printf(PRINT_INFO, "DDS File %s has unsupported FourCC.\n", filename);
 				ri.FS_FreeFile(buffer.v);
 				return;
 			}
@@ -439,7 +439,7 @@ void R_LoadDDS ( const char *filename, byte **pic, int *width, int *height, GLen
 		}
 		else
 		{
-			ri.Printf(PRINT_INFO, "DDS File %s has unsupported RGBA format.", filename);
+			ri.Printf(PRINT_INFO, "DDS File %s has unsupported RGBA format.\n", filename);
 			ri.FS_FreeFile(buffer.v);
 			return;
 		}

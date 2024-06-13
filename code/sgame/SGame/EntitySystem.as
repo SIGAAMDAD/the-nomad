@@ -55,6 +55,12 @@ namespace TheNomad::SGame {
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.PrintPlayerState_f ), "sgame.player_state", true
 			);
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.GivePlayerWeapon_f ), "sgame.give_player_weapon", true
+			);
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.GivePlayerItem_f ), "sgame.give_player_item", true
+			);
 		}
 		
 		void OnInit() {
@@ -117,16 +123,8 @@ namespace TheNomad::SGame {
 				if ( !data.Found() ) {
 					GameError( "EntitySystem::OnLoad: save section \"EntityData_" + i + "\" not found" );
 				}
-
-				// be more efficient with our memory
-				if ( @m_EntityList[i] is null ) {
-					@ent = EntityObject();
-					@m_EntityList[i] = @ent;
-				} else {
-					@ent = @m_EntityList[i];
-				}
-
-				@ent = EntityObject();
+				@ent = @m_EntityList[i];
+				ent = EntityObject();
 
 				switch ( TheNomad::GameSystem::EntityType( data.LoadUInt( "type" ) ) ) {
 				case TheNomad::GameSystem::EntityType::Playr: {
@@ -142,6 +140,11 @@ namespace TheNomad::SGame {
 				case TheNomad::GameSystem::EntityType::Item: {
 					if ( !cast<ItemObject@>( @ent ).Load( data ) ) {
 						GameError( "EntitySystem::OnLoad: failed to load item data" );
+					}
+					break; }
+				case TheNomad::GameSystem::EntityType::Weapon: {
+					if ( !cast<WeaponObject@>( @ent ).Load( data ) ) {
+						GameError( "EntitySystem::OnLoad: failed to weapon data" );
 					}
 					break; }
 				default:
@@ -216,7 +219,8 @@ namespace TheNomad::SGame {
 					cast<ItemObject@>( @ent ).Think();
 					break;
 				case TheNomad::GameSystem::EntityType::Weapon:
-					break; // thinking happens in owner entity
+					cast<WeaponObject@>( @ent ).Think();
+					break;
 				case TheNomad::GameSystem::EntityType::Wall:
 					GameError( "WALLS DON'T THINK, THEY ACT" );
 					break;
@@ -344,23 +348,6 @@ namespace TheNomad::SGame {
 		}
 		uint NumEntities() const {
 			return m_EntityList.Count();
-		}
-
-		void PrintPlayerState_f() {
-			ConsolePrint( "\n" );
-			ConsolePrint( "[PLAYER STATE]\n" );
-			ConsolePrint( "Origin: [ " + m_PlayrObject.GetOrigin().x + ", " + m_PlayrObject.GetOrigin().y + " ]\n" );
-		}
-		void SetPlayerPosition_f() {
-			const float x = Convert().ToFloat( TheNomad::Engine::CmdArgv( 1 ) );
-			const float y = Convert().ToFloat( TheNomad::Engine::CmdArgv( 2 ) );
-
-			m_PlayrObject.GetLink().m_Origin = vec3( x, y, 0.0f );
-		}
-		void DamagePlayer_f() {
-			const float damage = Convert().ToFloat( TheNomad::Engine::CmdArgv( 1 ) );
-
-			m_PlayrObject.Damage( cast<EntityObject@>( @m_PlayrObject ), damage );
 		}
 
 		private bool BoundsIntersectLine( const vec3& in start, const vec3& in end, const TheNomad::GameSystem::BBox& in bounds ) {
@@ -615,6 +602,29 @@ namespace TheNomad::SGame {
 			}
 
 			ApplyEntityEffect( attacker, target, AttackEffect::Stunned );
+		}
+
+		void PrintPlayerState_f() {
+			ConsolePrint( "\n" );
+			ConsolePrint( "[PLAYER STATE]\n" );
+			ConsolePrint( "Origin: [ " + m_PlayrObject.GetOrigin().x + ", " + m_PlayrObject.GetOrigin().y + " ]\n" );
+		}
+		void GivePlayerItem_f() {
+
+		}
+		void GivePlayerWeapon_f() {
+			
+		}
+		void SetPlayerPosition_f() {
+			const float x = Convert().ToFloat( TheNomad::Engine::CmdArgv( 1 ) );
+			const float y = Convert().ToFloat( TheNomad::Engine::CmdArgv( 2 ) );
+
+			m_PlayrObject.GetLink().m_Origin = vec3( x, y, 0.0f );
+		}
+		void DamagePlayer_f() {
+			const float damage = Convert().ToFloat( TheNomad::Engine::CmdArgv( 1 ) );
+
+			m_PlayrObject.Damage( cast<EntityObject@>( @m_PlayrObject ), damage );
 		}
 	};
 

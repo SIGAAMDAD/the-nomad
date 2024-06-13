@@ -73,14 +73,16 @@ namespace TheNomad::SGame {
 
 		uint GetLevel( const TheNomad::GameSystem::BBox& in bounds ) const {
 			const uint level = uint( floor( bounds.m_Mins.z + bounds.m_Maxs.z ) );
-			return level;
+			return 0;
 		}
 		uint GetTile( const vec3& in origin, const TheNomad::GameSystem::BBox& in bounds ) const {
 			const uint level = GetLevel( bounds );
-			if ( level > m_TileData.Count() || origin.x < 0.0f || origin.y < 0.0f || origin.x > m_nWidth || origin.y > m_nHeight ) {
+			const int x = int( ceil( origin.x ) );
+			const int y = int( ceil( origin.y ) );
+			if ( level >= m_TileData.Count() || x < 0 || y < 0 || x >= m_nWidth || y >= m_nHeight ) {
 				return 0;
 			}
-			return m_TileData[ GetLevel( bounds ) ][ uint( origin.y ) * m_nWidth + uint( origin.x ) ];
+			return m_TileData[ level ][ y * m_nWidth + x ];
 		}
 		const array<MapSpawn>@ GetSpawns() const {
 			return @m_Spawns;

@@ -22,7 +22,7 @@ sprites/players/raio_legs
     }
 }
 
-sprites/players/raio_legs
+sprites/players/raio_arms
 {
     nopicmip
     nomipmaps

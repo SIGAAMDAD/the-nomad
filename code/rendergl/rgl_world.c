@@ -320,7 +320,7 @@ void RE_LoadWorldMap(const char *filename)
     R_LoadTiles(&mheader->lumps[LUMP_TILES]);
     R_LoadLights(&mheader->lumps[LUMP_LIGHTS]);
 
-//    R_ProcessLights();
+    R_ProcessLights();
     R_InitWorldBuffer();
     R_GenerateTexCoords( &theader->info );
 

@@ -13,66 +13,6 @@ typedef struct {
 
 static loadMenu_t *s_loadMenu;
 
-static void LoadMenu_UpdateThread( void )
-{
-    CThread *pThread;
-
-    pThread = gi.m_LoadStack.top();
-
-    // 10 KiB stack should be plenty
-    if ( !pThread->IsAlive() ) {
-        if ( !pThread->Start() ) {
-            N_Error( ERR_FATAL, "G_RunLoaderThread: failed to start thread '%s'", pThread->GetName() );
-        }
-    } else {
-        if ( !pThread->Join( 100 ) ) {
-            return;
-            N_Error( ERR_FATAL, "LoadMenu_UpdateThread: failed to join thread '%s'", pThread->GetName() );
-        }
-        gi.m_LoadStack.pop();
-    }
-}
-
-static void LoadMenu_ProgressBar( void *ptr ) {
-    if ( !gi.m_LoadStack.size() ) {
-        UI_ForceMenuOff();
-        ui->menusp = NULL;
-        UI_SetActiveMenu( UI_MENU_MAIN );
-        return;
-    }
-    static uint64_t dotTime = 0;
-    uint64_t dotDeltaTime;
-    int i;
-    float progress;
-
-    LoadMenu_UpdateThread();
-
-    ImGui::SetCursorScreenPos( ImVec2( 64 * ui->scale, 600 * ui->scale ) );
-
-    progress = ( gi.m_nLoadStackMaxSize - gi.m_LoadStack.size() ) / 100.0f;
-    ImGui::Text( "%s (%0.02f/100.0%%)", gi.m_LoadStack.top()->GetName(), progress );
-
-    ImGui::SameLine();
-
-    ImGui::TextUnformatted( "  LOADING" );
-    dotTime = Sys_Milliseconds();
-    dotDeltaTime = s_loadMenu->lastDotTime - dotTime;
-    if ( dotDeltaTime > 500 ) {
-        for ( i = 0; i < s_loadMenu->dotCounter; i++ ) {
-            ImGui::SameLine();
-            ImGui::TextUnformatted( "." );
-        }
-        s_loadMenu->dotCounter++;
-        if ( s_loadMenu->dotCounter >= 3 ) {
-            s_loadMenu->dotCounter = 0;
-        }
-    }
-    s_loadMenu->lastDotTime = dotTime;
-    ImGui::NewLine();
-
-    ImGui::ProgressBar( progress, ImVec2( 900 * ui->scale, 72 * ui->scale ) );
-}
-
 static void LoadMenu_Cache( void )
 {
     if ( !ui->uiAllocated ) {
@@ -99,6 +39,11 @@ static void LoadMenu_Cache( void )
     ui->menubackShader = s_loadMenu->background;
 
     Menu_AddItem( &s_loadMenu->menu, &s_loadMenu->progressbar );
+}
+
+void UI_LoadAsset()
+{
+    
 }
 
 void UI_LoadMenu( void )

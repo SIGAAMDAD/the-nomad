@@ -334,6 +334,7 @@ SRC=\
 	$(O)/rendercommon/implot.o \
 	$(O)/rendercommon/implot_items.o \
 	\
+	$(O)/ui/ui_confirm.o \
 	$(O)/ui/ui_main.o \
 	$(O)/ui/ui_lib.o \
 	$(O)/ui/ui_menu.o \

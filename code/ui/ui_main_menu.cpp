@@ -202,13 +202,13 @@ void MainMenu_Draw( void )
     if ( s_errorMenu->message[0] || ui->activemenu == &s_errorMenu->menu ) {
         ImGui::Begin( "Game Error", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize
             | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoMove );
-        ImGui::SetWindowPos( ImVec2( 450 * ui->scale, 370 * ui->scale ) );
+        ImGui::SetWindowPos( ImVec2( s_errorMenu->menu.x * ui->scale, s_errorMenu->menu.y * ui->scale ) );
         FontCache()->SetActiveFont( RobotoMono );
         ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * 1.5f );
         ui->menubackShader = re.RegisterShader( "menu/mainbackground" );
         ImGui::TextUnformatted( s_errorMenu->message );
-        if ( Key_AnyDown() ) {
-            Snd_PlaySfx( ui->sfx_null );
+        if ( Key_IsDown( KEY_ESCAPE ) || ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
+            Snd_PlaySfx( ui->sfx_select );
             Cvar_Set( "com_errorMessage", "" );
             UI_PopMenu();
             UI_MainMenu();
@@ -249,6 +249,9 @@ void MainMenu_Cache( void )
 
         s_errorMenu->menu.draw = MainMenu_Draw;
         s_errorMenu->menu.fullscreen = qtrue;
+
+        s_errorMenu->menu.x = 528 - ( strlen( s_errorMenu->message ) * 2 );
+        s_errorMenu->menu.y = 268;
 
         UI_ForceMenuOff();
         UI_PushMenu( &s_errorMenu->menu );

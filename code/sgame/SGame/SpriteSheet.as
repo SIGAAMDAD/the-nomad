@@ -60,9 +60,9 @@ namespace TheNomad::SGame {
 			return m_nSpriteCountY;
 		}
 
-		private vec2 m_SpriteSize;
-		private vec2 m_SheetSize;
 		private array<Sprite> m_SpriteData;
+		private vec2 m_SpriteSize = vec2( 0.0f );
+		private vec2 m_SheetSize = vec2( 0.0f );
 		private uint m_nSpriteCountX = 0;
 		private uint m_nSpriteCountY = 0;
 		private int m_hShader = FS_INVALID_HANDLE;

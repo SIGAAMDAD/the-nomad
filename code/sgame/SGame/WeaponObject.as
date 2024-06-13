@@ -66,7 +66,7 @@ namespace TheNomad::SGame {
 			}
 			// let's be real here, if the player is standing in the middle of an explosion,
 			// they should taking damage as well
-			return sgame_Difficulty.GetInt() < int64( GameSystem::GameDifficulty::Hard ) ? damage : 0.0f;
+			return sgame_Difficulty.GetInt() < GameSystem::GameDifficulty::Hard ? damage : 0.0f;
 		}
 		
 		private float UseBlade( EntityObject@ ent, float damage, uint weaponMode ) const {
@@ -115,7 +115,7 @@ namespace TheNomad::SGame {
 			
 			// health mult doesn't matter on harder difficulties if the player is attacking with a firearm,
 			// that is, unless, the player is very close to the enemy
-			if ( sgame_Difficulty.GetInt() < int64( TheNomad::GameSystem::GameDifficulty::Hard ) ) {
+			if ( sgame_Difficulty.GetInt() < TheNomad::GameSystem::GameDifficulty::Hard ) {
 				return damage;
 			} else {
 				if ( Util::Distance( ray.m_End, ent.GetOrigin() ) <= 2.75f ) {
@@ -168,8 +168,27 @@ namespace TheNomad::SGame {
 			return damage;
 		}
 
+		bool Load( const TheNomad::GameSystem::SaveSystem::LoadSection& in section ) {
+			LoadBase( section );
+			if ( section.LoadBool( "hasOwner" ) ) {
+				@m_Owner = @EntityManager.GetEntityForNum( section.LoadUInt( "owner" ) );
+			}
+
+			Spawn( m_Link.m_nEntityId, m_Link.m_Origin );
+
+			return true;
+		}
+		void Save( const TheNomad::GameSystem::SaveSystem::SaveSection& in section ) {
+			SaveBase( section );
+			section.SaveBool( "hasOwner", @m_Owner !is null );
+			if ( @m_Owner !is null ) {
+				section.SaveUInt( "owner", m_Owner.GetEntityNum() );
+			}
+		}
 		void Think() {
-			GameError( "WeaponObject::Think: called" );
+			if ( @m_Owner !is null ) {
+				return;
+			}
 		}
 		void Spawn( uint id, const vec3& in origin ) override {
 			@m_Info = @InfoSystem::InfoManager.GetWeaponInfo( id );

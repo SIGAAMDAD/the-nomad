@@ -37,7 +37,7 @@ void G_InitSGame( void )
     g_pModuleLib->ModuleCall( sgvm, ModuleInit, 0 );
 
     timer.Stop();
-    Con_Printf( "G_InitSGame: %5.5lf milliseconds\n", (double)timer.ElapsedMilliseconds().count() );
+    Con_Printf( "G_InitSGame: %5.5lf milliseconds\n", (double)timer.ElapsedMilliseconds() );
 
     // have the renderer touch all its images, so they are present
     // on the card even if the driver does deferred loading

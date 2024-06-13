@@ -287,6 +287,8 @@ void Cmd_CommandCompletion( void(*callback)( const char *s ) );
 qboolean Cmd_CompleteArgument( const char *command, const char *args, uint32_t argnum );
 void Cmd_CompleteWriteCfgName( const char *args, uint32_t argNum );
 
+qboolean Cbuf_Wait( void );
+
 const char* GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL va( const char *format, ... );
 
 typedef enum {

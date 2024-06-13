@@ -521,7 +521,7 @@ GDR_INLINE CThread::CThread( void ) :
 	pthread_attr_init( &m_ThreadAttribs );
 #endif
 	memset( m_szName, 0, sizeof( m_szName ) );
-	m_pThreadInit = (ThreadInit_t *)Z_Malloc( sizeof( *m_pThreadInit ), TAG_STATIC );
+	m_pThreadInit = (ThreadInit_t *)Hunk_Alloc( sizeof( *m_pThreadInit ), h_low );
 }
 
 GDR_INLINE CThread::~CThread()
@@ -541,7 +541,6 @@ GDR_INLINE CThread::~CThread()
 	}
 #endif
 	if ( m_pThreadInit ) {
-		Z_Free( m_pThreadInit );
 		m_pThreadInit = NULL;
 	}
 }
@@ -1264,7 +1263,7 @@ GDR_INLINE const T& CThreadAtomic<T>::load( MemoryOrder order ) const
 #ifdef _WIN32
 	InterlockedExchangeAdd( &m_hValue, 0 );
 #else
-	__sync_fetch_and_add( const_cast<volatile T *>( &m_hValue ), 0 );
+	__sync_fetch_and_add( const_cast<T *>( &m_hValue ), 0 );
 #endif
 	return m_hValue;
 }
@@ -1275,7 +1274,7 @@ GDR_INLINE T CThreadAtomic<T>::load( MemoryOrder order )
 #ifdef _WIN32
 	return InterlockedExchangeAdd( &m_hValue, 0 );
 #else
-	return __sync_fetch_and_add( const_cast<T *>( &m_hValue ), 0 );
+	return __sync_fetch_and_add( &m_hValue, 0 );
 #endif
 }
 

@@ -24,32 +24,8 @@ cvar_t *snd_musicOn;
 cvar_t *snd_effectsOn;
 cvar_t *snd_masterVolume;
 cvar_t *snd_debugPrint;
+cvar_t *snd_muteUnfocused;
 
-class CSoundThread : public CThread
-{
-public:
-    CSoundThread( void );
-	virtual ~CSoundThread() override;
-
-    bool LoadSound( const char *npath, sfxHandle_t *hSfx );
-
-	const char *GetName( void ) { return "SoundThread"; }
-private:
-	// Optional pre-run call, with ability to fail-create. Note Init()
-	// is forced synchronous with Start()
-	virtual bool Init( void ) override;
-
-	// Thread will run this function on startup, must be supplied by
-	// derived class, performs the intended action of the thread.
-	virtual int Run( void ) override;
-
-	// Called when the thread exits
-	virtual void OnExit( void ) override;
-
-    eastl::vector<eastl::pair<const char *, sfxHandle_t *>> m_LoadQueue;
-};
-
-//static CSoundThread m_hSoundThread;
 //static idDynamicBlockAlloc<byte, 1<<20, 1<<10> soundCacheAllocator;
 
 #define Snd_HashFileName(x) Com_GenerateHashValue((x),MAX_SOUND_SOURCES)
@@ -198,6 +174,34 @@ public:
     void Update( int64_t msec );
 
     inline CSoundSource **GetSources( void ) { return m_pSources; }
+    inline void Mute( bool bMute ) {
+        uint64_t i;
+
+        if ( !snd_musicOn->i && !snd_effectsOn->i ) {
+            return;
+        }
+        if ( bMute && !m_bMuted ) {
+            for ( i = 0; i < MAX_SOUND_SOURCES; i++ ) {
+                if ( m_pSources[i] ) {
+                    alSourcef( m_pSources[i]->GetSource(), AL_GAIN, 0.0f );
+                }
+            }
+            Con_Printf( "Muted sounds\n" );
+        } else if ( !bMute && m_bMuted ) {
+            for ( i = 0; i < MAX_SOUND_SOURCES; i++ ) {
+                if ( m_pSources[i] ) {
+                    switch ( m_pSources[i]->GetTag() ) {
+                    case TAG_MUSIC:
+                        alSourcef( m_pSources[i]->GetSource(), AL_GAIN, snd_musicVolume->f / 100.0f );
+                    case TAG_SFX:
+                        alSourcef( m_pSources[i]->GetSource(), AL_GAIN, snd_effectsVolume->f / 100.0f );
+                        break;
+                    };
+                }
+            }
+        }
+        m_bMuted = bMute;
+    }
 
     void UpdateParm( int64_t tag );
     uint32_t GetMusicSource( void ) const { return m_iMusicSource; }
@@ -229,6 +233,8 @@ private:
 
     qboolean m_bClearedQueue;
     qboolean m_bRegistered;
+
+    qboolean m_bMuted;
 };
 
 static CSoundManager *sndManager;
@@ -1042,6 +1048,9 @@ void Snd_Update( int32_t msec )
     CSoundSource *source;
     ALfloat v;
 
+//    if ( snd_muteUnfocused->i ) {
+//        sndManager->Mute( !gw_active );
+//    }
     if ( snd_masterVolume->modified ) {
         snd_effectsVolume->modified = qtrue;
         snd_musicVolume->modified = qtrue;
@@ -1076,7 +1085,7 @@ static void Snd_ListFiles_f( void )
     const CSoundSource *source;
 
     Con_Printf( "\n---------- Snd_ListFiles_f ----------\n" );
-    Con_Printf( "----name---- --channels-- ---samplerate--- ----cache size----\n" );
+    Con_Printf( "                  --channels-- ---samplerate--- ----cache size----\n" );
 
     numFiles = 0;
     for ( i = 0; i < MAX_SOUND_SOURCES; i++ ) {
@@ -1086,47 +1095,55 @@ static void Snd_ListFiles_f( void )
             continue;
         }
         numFiles++;
-        Con_Printf( "%10s: %4i %4i %8lu\n", source->GetName(), source->GetInfo().channels, source->GetInfo().samplerate,
+        Con_Printf( "%20s: %4i %4i %8lu\n", source->GetName(), source->GetInfo().channels, source->GetInfo().samplerate,
             source->GetInfo().channels * source->GetInfo().frames );
     }
     Con_Printf( "Total sound files loaded: %lu\n", numFiles );
 }
 
-/*
-bool CSoundThread::Init( void ) {
-    m_LoadQueue.reserve( MAX_SOUND_SOURCES );
-    return true;
-}
+static void Snd_QueueTrack_f( void ) {
+    sfxHandle_t hSfx;
+    const char *music;
 
-int CSoundThread::Run( void ) {
-    sfxHandle_t hSound;
-
-    while ( 1 ) {
-        if ( !m_LoadQueue.size() ) {
-            // nothing to load, wait a little bit
-            CThread::Sleep( 1000 );
-        }
-        for ( const auto& it : m_LoadQueue ) {
-            m_hLock.Lock();
-            *it.second = Snd_RegisterSfx( it.first );
-            m_LoadQueue.erase( &it );
-            m_hLock.Unlock();
-        }
+    if ( Cmd_Argc() != 2 ) {
+        Con_Printf( "usage: snd.queuetrack <music>\n" );
+        return;
     }
+
+    music = Cmd_Argv( 1 );
+    hSfx = Com_GenerateHashValue( music, MAX_SOUND_SOURCES );
+    
+    if ( sndManager->GetSource( hSfx ) == NULL ) {
+        Con_Printf( "invalid track '%s'\n", music );
+        return;
+    }
+
+    Snd_AddLoopingTrack( hSfx );
 }
 
-void CSoundThread::OnExit( void ) {
+static void Snd_ClearTracks_f( void ) {
+    Snd_ClearLoopingTracks();
 }
 
-bool CSoundThread::LoadSound( const char *npath, sfxHandle_t *hSfx )
-{
-    m_hLock.Lock();
-    m_LoadQueue.emplace_back( eastl::pair<const char *, sfxHandle_t *>( npath, hSfx ) );
-    m_hLock.Unlock();
+static void Snd_PlaySfx_f( void ) {
+    sfxHandle_t hSfx;
+    const char *sound;
 
-    return true;
+    if ( Cmd_Argc() != 2 ) {
+        Con_Printf( "usage: snd.play_sfx <music>\n" );
+        return;
+    }
+
+    sound = Cmd_Argv( 1 );
+    hSfx = Com_GenerateHashValue( sound, MAX_SOUND_SOURCES );
+    
+    if ( sndManager->GetSource( hSfx ) == NULL ) {
+        Con_Printf( "invalid sfx '%s'\n", sound );
+        return;
+    }
+
+    Snd_PlaySfx( hSfx );
 }
-*/
 
 void Snd_Init( void )
 {
@@ -1154,6 +1171,9 @@ void Snd_Init( void )
     Cvar_CheckRange( snd_debugPrint, "0", "1", CVT_INT );
     Cvar_SetDescription( snd_debugPrint, "Toggles OpenAL-soft debug messages." );
 
+//    snd_muteUnfocused = Cvar_Get( "snd_muteUnfocused", "1", CVAR_SAVE );
+//    Cvar_SetDescription( snd_muteUnfocused, "Toggles muting sounds when the game's window isn't focused." );
+
     Con_Printf( "---------- Snd_Init ----------\n" );
 
     // init sound manager
@@ -1164,6 +1184,10 @@ void Snd_Init( void )
     Cmd_AddCommand( "snd.toggle", Snd_Toggle_f );
     Cmd_AddCommand( "snd.updatevolume", Snd_UpdateVolume_f );
     Cmd_AddCommand( "snd.list_files", Snd_ListFiles_f );
+    Cmd_AddCommand( "snd.clear_tracks", Snd_ClearTracks_f );
+    Cmd_AddCommand( "snd.play_sfx", Snd_PlaySfx_f );
+    Cmd_AddCommand( "snd.queue_track", Snd_QueueTrack_f );
+    Cmd_AddCommand( "snd.audio_info", Snd_AudioInfo_f );
 
     alDistanceModel( AL_EXPONENT_DISTANCE_CLAMPED );
 

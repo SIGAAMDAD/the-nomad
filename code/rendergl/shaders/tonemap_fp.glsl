@@ -1,5 +1,5 @@
 #if !defined(GLSL_LEGACY)
-out vec4 a_Color;
+layout(location = 0) out vec4 a_Color;
 #endif
 
 uniform sampler2D u_TextureMap;

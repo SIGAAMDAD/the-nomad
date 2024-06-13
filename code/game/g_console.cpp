@@ -822,7 +822,6 @@ static void Con_DrawSolidConsole( float frac, qboolean open )
 	refdef.y = 0;
 	refdef.width = gi.gpuConfig.vidWidth;
 	refdef.height = gi.gpuConfig.vidHeight;
-//	refdef.time = gi.frametime * 0.001f;
 	refdef.time = gi.realtime * 0.1f;
 	refdef.flags = RSF_NOWORLDMODEL | RSF_ORTHO_TYPE_SCREENSPACE;
 
@@ -832,14 +831,7 @@ static void Con_DrawSolidConsole( float frac, qboolean open )
 	}
 
 	// draw the background
-	re.ClearScene();
-
-	ImGui::Begin( "CommandConsole", NULL, windowFlags | ImGuiWindowFlags_NoBackground );
-	ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-	ImGui::SetWindowSize( ImVec2( refdef.width, height ) );
-	ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * con_scale->f );
-//	ImGui::PushTextWrapPos( refdef.width );
-
+	re.SetColor( colorWhite );
 	// custom console background color
 	if ( con_color->s[0] ) {
 		// track changes
@@ -857,11 +849,21 @@ static void Con_DrawSolidConsole( float frac, qboolean open )
 			}
 		}
 		ImGui::PushStyleColor( ImGuiCol_WindowBg, ImVec4( conColorValue ) );
-		ImGui::Image( (ImTextureID)(uintptr_t)gi.whiteShader, ImVec2( (float)refdef.width, height ) );
+		ImGui::Image( (ImTextureID)(uintptr_t)gi.whiteShader, ImVec2( (float)gi.gpuConfig.vidWidth, height ) );
 		customColor = qtrue;
 	} else {
-		re.DrawImage( 0, 0, refdef.width, height, 0, 0, 1, 1, gi.consoleShader );
+		ImGui::Begin( "##ConsoleWindowBackground", NULL, windowFlags | ImGuiWindowFlags_NoBackground );
+		ImGui::SetWindowPos( ImVec2( 0, 0 ) );
+		ImGui::SetWindowSize( ImVec2( gi.gpuConfig.vidWidth, height ) );
+		ImGui::Image( (ImTextureID)(uintptr_t)gi.consoleShader, ImVec2( (float)gi.gpuConfig.vidWidth, height ) );
+		ImGui::End();
 	}
+
+	ImGui::Begin( "CommandConsole", NULL, windowFlags | ImGuiWindowFlags_NoBackground );
+	ImGui::SetWindowPos( ImVec2( 0, 0 ) );
+	ImGui::SetWindowSize( ImVec2( refdef.width, height ) );
+	ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * con_scale->f );
+//	ImGui::PushTextWrapPos( refdef.width );
 
 	// draw from the bottom up
 	{

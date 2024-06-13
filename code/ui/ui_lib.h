@@ -224,6 +224,8 @@ extern int UI_VirtualKeyboard( const char *pName, char *pBuffer, size_t nBufSize
 // ui_confirm.cpp
 //
 extern void         UI_ConfirmMenu( const char *question, void (*draw)( void ), void (*action)( qboolean result ) );
+extern void         UI_Message( const char **lines );
+extern void         ConfirmMenu_Cache( void );
 
 //
 // ui_loadgame.cpp

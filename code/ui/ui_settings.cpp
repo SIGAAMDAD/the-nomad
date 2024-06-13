@@ -38,6 +38,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define DRAWMODE_GPU       2
 #define DRAWMODE_MAPPED    3
 
+#define GPU_MEMINFO_NVX  0
+#define GPU_MEMINFO_ATI  1
+#define GPU_MEMINFO_NONE 2
+
 #define ID_VIDEO        0
 #define ID_PERFORMANCE  1
 #define ID_AUDIO        2
@@ -49,10 +53,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #define PRESET_LOW         0
 #define PRESET_NORMAL      1
-#define PRESET_PERFORMANCE 2
-#define PRESET_QUALITY     3
-#define PRESET_CUSTOM      4
-#define NUM_PRESETS        5
+#define PRESET_HIGH        2
+#define PRESET_PERFORMANCE 3
+#define PRESET_QUALITY     4
+#define PRESET_CUSTOM      5
+#define NUM_PRESETS        6
 
 #define ID_MOVENORTH       0
 #define ID_MOVEWEST        1
@@ -100,6 +105,7 @@ typedef struct {
 	int windowResolution;
 	int windowWidth;
 	int windowHeight;
+	int maxFPS;
 
 	float gamma;
 	float exposure;
@@ -174,12 +180,19 @@ typedef struct {
 	int difficulty;
 	int debugPrint;
 	int toggleHUD;
+
+	int pauseUnfocused;
 } gameplaySettings_t;
 
 typedef struct settingsMenu_s {
 	menuframework_t menu;
 
-	struct settingsMenu_s *presets;
+	const char **presetNames;
+
+	performanceSettings_t *presets;
+	int preset;
+
+	int gpuMemInfoType;
 
 	nhandle_t save_0;
 	nhandle_t save_1;
@@ -198,9 +211,9 @@ typedef struct settingsMenu_s {
 	controlsSettings_t controls;
 	gameplaySettings_t gameplay;
 
-	char availableGPUMemory[64];
-	char dedicatedGPUMemory[64];
-	char totalGPUMemory[64];
+	char gpuMem0[64];
+	char gpuMem1[64];
+	char gpuMem2[64];
 
 	const char *hintLabel;
 	const char *hintMessage;
@@ -245,10 +258,86 @@ static void SettingsMenu_GetInitial( void )
 
 static void SettingsMenu_CheckModified( void )
 {
+	s_settingsMenu->modified = qfalse;
+
+	if ( s_settingsMenu->controls.mouseAcceleration != s_initial->controls.mouseAcceleration ) {
+		s_settingsMenu->modified = qtrue;
+	}
+
 	if ( s_settingsMenu->performance.multisampleType != s_initial->performance.multisampleType ) {
 		s_settingsMenu->modified = qtrue;
 	}
 	if ( s_settingsMenu->performance.anisotropicFilter != s_initial->performance.anisotropicFilter ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->performance.bloom != s_initial->performance.bloom ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->performance.textureDetail != s_initial->performance.textureDetail ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->performance.textureFilter != s_initial->performance.textureFilter ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->performance.depthMapping != s_initial->performance.depthMapping ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->performance.specularMapping != s_initial->performance.specularMapping ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->performance.normalMapping != s_initial->performance.normalMapping ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->performance.dynamicLighting != s_initial->performance.dynamicLighting ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->performance.vertexLighting != s_initial->performance.vertexLighting ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->performance.hdr != s_initial->performance.hdr ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->performance.postProcessing != s_initial->performance.postProcessing ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->performance.toneMapping != s_initial->performance.toneMapping ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->performance.bloom != s_initial->performance.bloom ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->performance.toneMappingType != s_initial->performance.toneMappingType ) {
+		s_settingsMenu->modified = qtrue;
+	}
+
+	if ( s_settingsMenu->video.exposure != s_initial->video.exposure ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->video.vsync != s_initial->video.vsync ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->video.fullscreen != s_initial->video.fullscreen ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->video.gamma != s_initial->video.gamma ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->video.windowWidth != s_initial->video.windowWidth ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->video.windowHeight != s_initial->video.windowHeight ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->video.windowResolution != s_initial->video.windowResolution ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->video.noborder != s_initial->video.noborder ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->video.sharpening != s_initial->video.sharpening ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->video.maxFPS != s_initial->video.maxFPS ) {
 		s_settingsMenu->modified = qtrue;
 	}
 }
@@ -345,7 +434,112 @@ static void SettingsMenu_LoadBindings( void )
 }
 
 static void SettingsMenu_InitPresets( void ) {
-	s_settingsMenu->presets = (settingsMenu_t *)Hunk_Alloc( sizeof( *s_settingsMenu->presets ) * NUM_PRESETS, h_high );
+	s_settingsMenu->presets = (performanceSettings_t *)Hunk_Alloc( sizeof( *s_settingsMenu->presets ) * NUM_PRESETS, h_high );
+	s_settingsMenu->preset = PRESET_NORMAL;
+
+	memset( &s_settingsMenu->presets[ PRESET_CUSTOM ], 0, sizeof( performanceSettings_t ) );
+
+	// some quality but more optimized just for playability
+	s_settingsMenu->presets[ PRESET_LOW ].multisampleType = AntiAlias_2xMSAA;
+	s_settingsMenu->presets[ PRESET_LOW ].anisotropicFilter = 0;
+	s_settingsMenu->presets[ PRESET_LOW ].textureDetail = TexDetail_IntegratedGPU;
+	s_settingsMenu->presets[ PRESET_LOW ].textureFilter = TexFilter_LinearNearest;
+	s_settingsMenu->presets[ PRESET_LOW ].toneMappingType = 0; // Reinhard
+	s_settingsMenu->presets[ PRESET_LOW ].vertexLighting = qtrue;
+	s_settingsMenu->presets[ PRESET_LOW ].dynamicLighting = qfalse;
+	s_settingsMenu->presets[ PRESET_LOW ].bloom = qfalse;
+	s_settingsMenu->presets[ PRESET_LOW ].pbr = qfalse;
+	s_settingsMenu->presets[ PRESET_LOW ].hdr = qfalse;
+	s_settingsMenu->presets[ PRESET_LOW ].postProcessing = qfalse;
+	s_settingsMenu->presets[ PRESET_LOW ].normalMapping = qfalse;
+	s_settingsMenu->presets[ PRESET_LOW ].specularMapping = qfalse;
+	s_settingsMenu->presets[ PRESET_LOW ].depthMapping = qfalse;
+	s_settingsMenu->presets[ PRESET_LOW ].toneMapping = qfalse;
+
+	s_settingsMenu->presets[ PRESET_NORMAL ].multisampleType = AntiAlias_4xMSAA;
+	s_settingsMenu->presets[ PRESET_NORMAL ].anisotropicFilter = 4;
+	s_settingsMenu->presets[ PRESET_NORMAL ].textureDetail = TexDetail_Normie;
+	s_settingsMenu->presets[ PRESET_NORMAL ].textureFilter = TexFilter_LinearNearest;
+	s_settingsMenu->presets[ PRESET_NORMAL ].toneMappingType = 0; // Reinhard
+	s_settingsMenu->presets[ PRESET_NORMAL ].vertexLighting = qtrue;
+	s_settingsMenu->presets[ PRESET_NORMAL ].dynamicLighting = qfalse;
+	s_settingsMenu->presets[ PRESET_NORMAL ].bloom = qtrue;
+	s_settingsMenu->presets[ PRESET_NORMAL ].pbr = qtrue;
+	s_settingsMenu->presets[ PRESET_NORMAL ].hdr = qtrue;
+	s_settingsMenu->presets[ PRESET_NORMAL ].postProcessing = qtrue;
+	s_settingsMenu->presets[ PRESET_NORMAL ].normalMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_NORMAL ].specularMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_NORMAL ].depthMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_NORMAL ].toneMapping = qtrue;
+
+	s_settingsMenu->presets[ PRESET_HIGH ].multisampleType = AntiAlias_16xMSAA;
+	s_settingsMenu->presets[ PRESET_HIGH ].anisotropicFilter = 16;
+	s_settingsMenu->presets[ PRESET_HIGH ].textureDetail = TexDetail_ExpensiveShitWeveGotHere;
+	s_settingsMenu->presets[ PRESET_HIGH ].textureFilter = TexFilter_LinearNearest;
+	s_settingsMenu->presets[ PRESET_HIGH ].toneMappingType = 1; // Reinhard
+	s_settingsMenu->presets[ PRESET_HIGH ].vertexLighting = qtrue;
+	s_settingsMenu->presets[ PRESET_HIGH ].dynamicLighting = qtrue;
+	s_settingsMenu->presets[ PRESET_HIGH ].bloom = qtrue;
+	s_settingsMenu->presets[ PRESET_HIGH ].pbr = qfalse;
+	s_settingsMenu->presets[ PRESET_HIGH ].hdr = qtrue;
+	s_settingsMenu->presets[ PRESET_HIGH ].postProcessing = qtrue;
+	s_settingsMenu->presets[ PRESET_HIGH ].normalMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_HIGH ].specularMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_HIGH ].depthMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_HIGH ].toneMapping = qtrue;
+
+	// highest quality rendering, no care for performance
+	s_settingsMenu->presets[ PRESET_QUALITY ].multisampleType = AntiAlias_32xMSAA;
+	s_settingsMenu->presets[ PRESET_QUALITY ].anisotropicFilter = 32;
+	s_settingsMenu->presets[ PRESET_QUALITY ].textureDetail = TexDetail_GPUvsGod;
+	s_settingsMenu->presets[ PRESET_QUALITY ].textureFilter = TexFilter_LinearNearest;
+	s_settingsMenu->presets[ PRESET_QUALITY ].toneMappingType = 1; // Reinhard
+	s_settingsMenu->presets[ PRESET_QUALITY ].vertexLighting = qtrue;
+	s_settingsMenu->presets[ PRESET_QUALITY ].dynamicLighting = qtrue;
+	s_settingsMenu->presets[ PRESET_QUALITY ].bloom = qtrue;
+	s_settingsMenu->presets[ PRESET_QUALITY ].pbr = qtrue;
+	s_settingsMenu->presets[ PRESET_QUALITY ].hdr = qtrue;
+	s_settingsMenu->presets[ PRESET_QUALITY ].postProcessing = qtrue;
+	s_settingsMenu->presets[ PRESET_QUALITY ].normalMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_QUALITY ].specularMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_QUALITY ].depthMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_QUALITY ].toneMapping = qtrue;
+
+	// looks the worst but gets the best stuff
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].multisampleType = AntiAlias_None;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].anisotropicFilter = 0;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].textureDetail = TexDetail_MSDOS;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].textureFilter = TexFilter_LinearNearest;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].toneMappingType = 0; // Reinhard
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].vertexLighting = qfalse;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].dynamicLighting = qfalse;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].bloom = qfalse;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].pbr = qfalse;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].hdr = qfalse;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].postProcessing = qfalse;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].normalMapping = qfalse;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].specularMapping = qfalse;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].depthMapping = qfalse;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].toneMapping = qfalse;
+}
+
+static void SettingsMenu_SetPreset( const performanceSettings_t *preset )
+{
+	s_settingsMenu->performance.multisampleType = preset->multisampleType;
+	s_settingsMenu->performance.anisotropicFilter = preset->anisotropicFilter;
+	s_settingsMenu->performance.textureDetail = preset->textureDetail;
+	s_settingsMenu->performance.textureFilter = preset->textureFilter;
+	s_settingsMenu->performance.toneMappingType = preset->toneMappingType;
+	s_settingsMenu->performance.vertexLighting = preset->vertexLighting;
+	s_settingsMenu->performance.dynamicLighting = preset->dynamicLighting;
+	s_settingsMenu->performance.bloom = preset->bloom;
+	s_settingsMenu->performance.pbr = preset->pbr;
+	s_settingsMenu->performance.hdr = preset->hdr;
+	s_settingsMenu->performance.postProcessing = preset->postProcessing;
+	s_settingsMenu->performance.normalMapping = preset->normalMapping;
+	s_settingsMenu->performance.specularMapping = preset->specularMapping;
+	s_settingsMenu->performance.depthMapping = preset->depthMapping;
+	s_settingsMenu->performance.toneMapping = preset->toneMapping;
 }
 
 static inline void SfxFocused( const void *item ) {
@@ -359,56 +553,66 @@ static inline void SfxFocused( const void *item ) {
 
 static void SettingsMenu_GetGPUMemoryInfo( void )
 {
-	GLint v;
 	const char *memSuffix;
+	auto getMemSuffix = [&]( GLint mem, float& real ) -> void {
+		real = mem;
+		if ( real > 1000 ) {
+			real /= 1000;
+			memSuffix = "Mb";
+		}
+		if ( real > 1000 ) {
+			real /= 1000;
+			memSuffix = "Gb";
+		}
+	};
 
-	renderImport.glGetIntegerv( GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX, &v );
-	if ( v > 1000 ) {
-		v /= 1000;
-		memSuffix = "Kb";
-	}
-	if ( v > 1000 ) {
-		v /= 1000;
-		memSuffix = "Mb";
-	}
-	if ( v > 1000 ) {
-		v /= 1000;
-		memSuffix = "Gb";
-	}
-	Com_snprintf( s_settingsMenu->dedicatedGPUMemory, sizeof( s_settingsMenu->dedicatedGPUMemory ) - 1,
-		"%i%s", v, memSuffix );
+	switch ( s_settingsMenu->gpuMemInfoType ) {
+	case GPU_MEMINFO_NVX: {
+		GLint dedicatedMemory, availableMemory, totalMemory;
+		float realDedicated, realAvailable, realTotal;
 
-	renderImport.glGetIntegerv( GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &v );
-	if ( v > 1000 ) {
-		v /= 1000;
-		memSuffix = "Kb";
-	}
-	if ( v > 1000 ) {
-		v /= 1000;
-		memSuffix = "Mb";
-	}
-	if ( v > 1000 ) {
-		v /= 1000;
-		memSuffix = "Gb";
-	}
-	Com_snprintf( s_settingsMenu->availableGPUMemory, sizeof( s_settingsMenu->availableGPUMemory ) - 1,
-		"%i%s", v, memSuffix );
-	
-	renderImport.glGetIntegerv( GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &v );
-	if ( v > 1000 ) {
-		v /= 1000;
-		memSuffix = "Kb";
-	}
-	if ( v > 1000 ) {
-		v /= 1000;
-		memSuffix = "Mb";
-	}
-	if ( v > 1000 ) {
-		v /= 1000;
-		memSuffix = "Gb";
-	}
-	Com_snprintf( s_settingsMenu->totalGPUMemory, sizeof( s_settingsMenu->totalGPUMemory ) - 1,
-		"%i%s", v, memSuffix );
+		renderImport.glGetIntegerv( GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX, &dedicatedMemory );
+		renderImport.glGetIntegerv( GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &availableMemory );
+		renderImport.glGetIntegerv( GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &totalMemory );
+
+		getMemSuffix( dedicatedMemory, realDedicated );
+		Com_snprintf( s_settingsMenu->gpuMem0, sizeof( s_settingsMenu->gpuMem0 ) - 1,
+			"Dedicated GPU Memory: %0.04f%s", realDedicated, memSuffix );
+
+		getMemSuffix( availableMemory, realAvailable );
+		Com_snprintf( s_settingsMenu->gpuMem1, sizeof( s_settingsMenu->gpuMem1 ) - 1,
+			"Available GPU Memory: %0.04f%s", realAvailable, memSuffix );
+
+		getMemSuffix( totalMemory, realTotal );
+		Com_snprintf( s_settingsMenu->gpuMem2, sizeof( s_settingsMenu->gpuMem2 ) - 1,
+			"Total GPU Memory: %0.04f%s", realTotal, memSuffix );
+		break; }
+	case GPU_MEMINFO_ATI: {
+		GLint vboMemory, textureMemory, renderbufferMemory;
+		float realVbo, realTexture, realRenderbuffer;
+
+		renderImport.glGetIntegerv( GL_VBO_FREE_MEMORY_ATI, &vboMemory );
+		renderImport.glGetIntegerv( GL_TEXTURE_FREE_MEMORY_ATI, &textureMemory );
+		renderImport.glGetIntegerv( GL_RENDERBUFFER_FREE_MEMORY_ATI, &renderbufferMemory );
+
+		getMemSuffix( vboMemory, realVbo );
+		Com_snprintf( s_settingsMenu->gpuMem0, sizeof( s_settingsMenu->gpuMem0 ) - 1,
+			"Available Vertex Buffer Memory: %0.04f%s", realVbo, memSuffix );
+
+		getMemSuffix( textureMemory, realTexture );
+		Com_snprintf( s_settingsMenu->gpuMem1, sizeof( s_settingsMenu->gpuMem1 ) - 1,
+			"Available Texture Buffer Memory: %0.04f%s", realTexture, memSuffix );
+
+		getMemSuffix( renderbufferMemory, realRenderbuffer );
+		Com_snprintf( s_settingsMenu->gpuMem2, sizeof( s_settingsMenu->gpuMem2 ) - 1,\
+			"Available Render Buffer Memory: %0.04f%s", realRenderbuffer, memSuffix );
+		break; }
+	case GPU_MEMINFO_NONE: {
+		memset( s_settingsMenu->gpuMem0, 0, sizeof( s_settingsMenu->gpuMem0 ) );
+		memset( s_settingsMenu->gpuMem1, 0, sizeof( s_settingsMenu->gpuMem1 ) );
+		memset( s_settingsMenu->gpuMem2, 0, sizeof( s_settingsMenu->gpuMem2 ) );
+		break; }
+	};
 }
 
 static void SettingsMenu_TabBar( void ) {
@@ -954,10 +1158,24 @@ static void ControlsMenu_Draw( void )
 
 static void PerformanceMenu_Draw( void )
 {
+	int preset;
+
 	FontCache()->SetActiveFont( RobotoMono );
 
 	ImGui::BeginTable( "##PerformanceSettingsMenuConfigTable", 2 );
 	{
+		preset = s_settingsMenu->preset;
+		SettingsMenu_MultiAdjustable( "Preset", "GraphicsPresets",
+			"",
+			s_settingsMenu->presetNames, NUM_PRESETS, &preset, true );
+		
+		if ( preset != s_settingsMenu->preset ) {
+			SettingsMenu_SetPreset( &s_settingsMenu->presets[ preset ] );
+			s_settingsMenu->preset = preset;
+		}
+
+		ImGui::TableNextRow();
+
 		SettingsMenu_MultiAdjustable( strManager->ValueForKey( "GAMEUI_ANTIALIASING" )->value, "AntiAliasing",
 			"Sets anti-aliasing technique used by the engine",
 			s_settingsMenu->performance.multisampleTypes, s_settingsMenu->performance.numMultisampleTypes,
@@ -1059,9 +1277,9 @@ static void PerformanceMenu_Draw( void )
 	ImGui::Begin( "##GPUMemoryInfo", NULL, MENU_DEFAULT_FLAGS | ImGuiWindowFlags_AlwaysAutoResize & ~( ImGuiWindowFlags_NoBackground ) );
 	ImGui::SetWindowPos( ImVec2( 900 * ui->scale, 600 * ui->scale ) );
 	ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * 2.5f );
-	ImGui::Text( "Available GPU Memory: %s", s_settingsMenu->availableGPUMemory );
-	ImGui::Text( "Total GPU Memory: %s", s_settingsMenu->totalGPUMemory );
-	ImGui::Text( "Dedicated GPU Memory: %s", s_settingsMenu->dedicatedGPUMemory );
+	ImGui::TextUnformatted( s_settingsMenu->gpuMem0 );
+	ImGui::TextUnformatted( s_settingsMenu->gpuMem1 );
+	ImGui::TextUnformatted( s_settingsMenu->gpuMem2 );
 	ImGui::End();
 }
 
@@ -1175,6 +1393,12 @@ static void GameplayMenu_Draw( void )
 		SettingsMenu_RadioButton( "Debug Mode", "Debug Mode",
 			"Toggles debug messages from SGame",
 			&s_settingsMenu->gameplay.debugPrint, true );
+		
+		ImGui::TableNextRow();
+
+		SettingsMenu_RadioButton( "Stop Game on Focus Lost", "Stop Game on Focus Lost",
+			"If on the game will pause when the window is unfocused",
+			&s_settingsMenu->gameplay.pauseUnfocused, true );
 	}
 	ImGui::EndTable();
 }
@@ -1188,13 +1412,13 @@ static void VideoMenu_Save( void )
 	Cvar_SetIntegerValue( "r_customWidth", s_settingsMenu->video.windowWidth );
 	Cvar_SetIntegerValue( "r_customHeight", s_settingsMenu->video.windowHeight );
 	Cvar_SetIntegerValue( "r_mode", s_settingsMenu->video.windowResolution - 2 );
-	Cvar_SetIntegerValue( "r_swapInterval", s_settingsMenu->video.vsync - 2 );
+	Cvar_SetIntegerValue( "r_swapInterval", s_settingsMenu->video.vsync - 1 );
 	Cvar_SetFloatValue( "r_imageSharpenAmount", s_settingsMenu->video.sharpening );
 	Cvar_SetFloatValue( "r_autoExposure", s_settingsMenu->video.exposure );
 	Cvar_SetFloatValue( "r_gammaAmount", s_settingsMenu->video.gamma );
 
 	if ( !N_stricmp( g_renderer->s, "opengl" ) ) {
-		SDL_GL_SetSwapInterval( s_settingsMenu->video.vsync - 2 );
+		SDL_GL_SetSwapInterval( s_settingsMenu->video.vsync - 1 );
 	}
 	SDL_SetWindowFullscreen( SDL_window, s_settingsMenu->video.fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0 );
 	SDL_SetWindowSize( SDL_window, r_vidModes[ s_settingsMenu->video.windowResolution - 2 ].width,
@@ -1204,7 +1428,7 @@ static void VideoMenu_Save( void )
 
 static void PerformanceMenu_Save( void )
 {
-	bool needRestart = false;
+	bool needRestart = false, restartFBO = false;
 
 	if ( s_settingsMenu->performance.normalMapping != s_initial->performance.normalMapping ) {
 		needRestart = true;
@@ -1224,25 +1448,55 @@ static void PerformanceMenu_Save( void )
 	case AntiAlias_TAA:
 	case AntiAlias_SMAA:
 	case AntiAlias_FXAA:
+	case AntiAlias_CSAA:
+		Cvar_Set( "r_multisampleAmount", "8" );
+		restartFBO = true;
 		break;
-	case AntiAlias_2xMSAA:
 	case AntiAlias_2xSSAA:
 		Cvar_Set( "r_multisampleAmount", "2" );
+		needRestart = true;
 		break;
-	case AntiAlias_4xMSAA:
 	case AntiAlias_4xSSAA:
 		Cvar_Set( "r_multisampleAmount", "4" );
+		needRestart = true;
+		break;
+	case AntiAlias_2xMSAA:
+		Cvar_Set( "r_multisampleAmount", "2" );
+		restartFBO = true;
+		break;
+	case AntiAlias_4xMSAA:
+		Cvar_Set( "r_multisampleAmount", "4" );
+		restartFBO = true;
 		break;
 	case AntiAlias_8xMSAA:
 		Cvar_Set( "r_multisampleAmount", "8" );
+		restartFBO = true;
 		break;
 	case AntiAlias_16xMSAA:
 		Cvar_Set( "r_multisampleAmount", "16" );
+		restartFBO = true;
 		break;
 	case AntiAlias_32xMSAA:
 		Cvar_Set( "r_multisampleAmount", "32" );
+		restartFBO = true;
 		break;
 	};
+
+	if ( s_settingsMenu->performance.bloom != s_initial->performance.bloom ) {
+		restartFBO = true;
+	}
+	if ( s_settingsMenu->performance.postProcessing != s_initial->performance.postProcessing ) {
+		restartFBO = true;
+	}
+	if ( s_settingsMenu->performance.textureDetail != s_initial->performance.textureDetail ) {
+		needRestart = true;
+	}
+	if ( s_settingsMenu->performance.normalMapping != s_initial->performance.normalMapping ) {
+		needRestart = true;
+	}
+	if ( s_settingsMenu->performance.specularMapping != s_initial->performance.specularMapping ) {
+		needRestart = true;
+	}
 
 	switch ( s_settingsMenu->performance.anisotropicFilter ) {
 	case 0:
@@ -1276,6 +1530,9 @@ static void PerformanceMenu_Save( void )
 	Cvar_SetIntegerValue( "r_toneMap", s_settingsMenu->performance.toneMapping );
 	Cvar_SetIntegerValue( "r_toneMapType", s_settingsMenu->performance.toneMappingType );
 
+	if ( !needRestart && restartFBO ) {
+		Cbuf_ExecuteText( EXEC_APPEND, "vid_restart_fbo\n" );
+	}
 	if ( needRestart ) {
 		Cbuf_ExecuteText( EXEC_APPEND, "vid_restart\n" );
 	}
@@ -1418,6 +1675,8 @@ static void GameplayMenu_SetDefault( void )
 	s_settingsMenu->gameplay.mouseCursor = Cvar_VariableInteger( "sgame_CursorType" );
 	s_settingsMenu->gameplay.debugPrint = Cvar_VariableInteger( "sgame_DebugMode" );
 	s_settingsMenu->gameplay.toggleHUD = Cvar_VariableInteger( "sgame_ToggleHUD" );
+
+	s_settingsMenu->gameplay.pauseUnfocused = Cvar_VariableInteger( "com_pauseUnfocused" );
 }
 
 static void SettingsMenu_Draw( void )
@@ -1477,64 +1736,73 @@ static void SettingsMenu_Draw( void )
 		break;
 	};
 
+	SettingsMenu_CheckModified();
+
+	if ( s_settingsMenu->modified ) {
+		s_settingsMenu->preset = PRESET_CUSTOM;
+	}
+
 	//
 	// draw the other widgets (save/setdefaults)
 	//
-	ImGui::SetCursorScreenPos( ImVec2( 256 * ui->scale, 680 * ui->scale ) );
-	ImGui::Image( (ImTextureID)(uintptr_t)( s_settingsMenu->saveHovered ? s_settingsMenu->save_1 : s_settingsMenu->save_0 ),
-		ImVec2( 256 * ui->scale, 72 * ui->scale ) );
-	if ( !s_settingsMenu->saveHovered && ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone ) ) {
-		Snd_PlaySfx( ui->sfx_move );
-	}
-	s_settingsMenu->saveHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
-	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
-		Snd_PlaySfx( ui->sfx_select );
-		Cbuf_ExecuteText( EXEC_APPEND, "writecfg " NOMAD_CONFIG "\n" );
-		switch ( s_settingsMenu->lastChild ) {
-		case ID_VIDEO:
-			VideoMenu_Save();
-			break;
-		case ID_PERFORMANCE:
-			PerformanceMenu_Save();
-			break;
-		case ID_AUDIO:
-			AudioMenu_Save();
-			break;
-		case ID_CONTROLS:
-			ControlsMenu_Save();
-			break;
-		case ID_GAMEPLAY:
-			GameplayMenu_Save();
-			break;
-		};
-	}
+	if ( s_settingsMenu->modified ) {
+		ImGui::SetCursorScreenPos( ImVec2( 256 * ui->scale, 680 * ui->scale ) );
+		ImGui::Image( (ImTextureID)(uintptr_t)( s_settingsMenu->saveHovered ? s_settingsMenu->save_1 : s_settingsMenu->save_0 ),
+			ImVec2( 256 * ui->scale, 72 * ui->scale ) );
+		if ( !s_settingsMenu->saveHovered && ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone ) ) {
+			Snd_PlaySfx( ui->sfx_move );
+		}
+		s_settingsMenu->saveHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
+		if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
+			Snd_PlaySfx( ui->sfx_select );
+			Cbuf_ExecuteText( EXEC_APPEND, "writecfg " LOG_DIR "/" NOMAD_CONFIG "\n" );
+			switch ( s_settingsMenu->lastChild ) {
+			case ID_VIDEO:
+				VideoMenu_Save();
+				break;
+			case ID_PERFORMANCE:
+				PerformanceMenu_Save();
+				break;
+			case ID_AUDIO:
+				AudioMenu_Save();
+				break;
+			case ID_CONTROLS:
+				ControlsMenu_Save();
+				break;
+			case ID_GAMEPLAY:
+				GameplayMenu_Save();
+				break;
+			};
+			SettingsMenu_GetInitial();
+		}
 
-	ImGui::SetCursorScreenPos( ImVec2( 528 * ui->scale, 680 * ui->scale ) );
-	ImGui::Image( (ImTextureID)(uintptr_t)( s_settingsMenu->setDefaultsHovered ? s_settingsMenu->reset_1 : s_settingsMenu->reset_0 ),
-		ImVec2( 256 * ui->scale, 72 * ui->scale ) );
-	if ( !s_settingsMenu->setDefaultsHovered && ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone ) ) {
-		Snd_PlaySfx( ui->sfx_move );
-	}
-	s_settingsMenu->setDefaultsHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
-	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
-		Snd_PlaySfx( ui->sfx_select );
-		switch ( s_settingsMenu->lastChild ) {
-		case ID_VIDEO:
-			VideoMenu_SetDefault();
-			break;
-		case ID_PERFORMANCE:
-			PerformanceMenu_SetDefault();
-			break;
-		case ID_AUDIO:
-			AudioMenu_SetDefault();
-			break;
-		case ID_CONTROLS:
-			ControlsMenu_SetDefault();
-			break;
-		case ID_GAMEPLAY:
-			GameplayMenu_SetDefault();
-			break;
-		};
+		ImGui::SetCursorScreenPos( ImVec2( 528 * ui->scale, 680 * ui->scale ) );
+		ImGui::Image( (ImTextureID)(uintptr_t)( s_settingsMenu->setDefaultsHovered ? s_settingsMenu->reset_1 : s_settingsMenu->reset_0 ),
+			ImVec2( 256 * ui->scale, 72 * ui->scale ) );
+		if ( !s_settingsMenu->setDefaultsHovered && ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone ) ) {
+			Snd_PlaySfx( ui->sfx_move );
+		}
+		s_settingsMenu->setDefaultsHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
+		if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
+			Snd_PlaySfx( ui->sfx_select );
+			switch ( s_settingsMenu->lastChild ) {
+			case ID_VIDEO:
+				VideoMenu_SetDefault();
+				break;
+			case ID_PERFORMANCE:
+				PerformanceMenu_SetDefault();
+				break;
+			case ID_AUDIO:
+				AudioMenu_SetDefault();
+				break;
+			case ID_CONTROLS:
+				ControlsMenu_SetDefault();
+				break;
+			case ID_GAMEPLAY:
+				GameplayMenu_SetDefault();
+				break;
+			};
+		}
 	}
 
 	if ( !ImGui::IsAnyItemHovered() ) {
@@ -1546,8 +1814,22 @@ static void SettingsMenu_Draw( void )
 	ImGui::End();
 }
 
+qboolean R_HasExtension( const char *ext )
+{
+    const char *ptr = N_stristr( gi.gpuConfig.extensions_string, ext );
+	if ( ptr == NULL ) {
+		return qfalse;
+	}
+	ptr += strlen( ext );
+	return ( ( *ptr == ' ' ) || ( *ptr == '\0' ) );  // verify its complete string.
+}
+
 void SettingsMenu_Cache( void )
 {
+	char str[MAXPRINTMSG];
+	char *p;
+	int i;
+
 	static const char *s_multisampleTypes[] = {
 		strManager->ValueForKey( "GAMEUI_NONE" )->value,
 	    strManager->ValueForKey( "GAMEUI_2X_MSAA" )->value,
@@ -1557,9 +1839,10 @@ void SettingsMenu_Cache( void )
 	    strManager->ValueForKey( "GAMEUI_32X_MSAA" )->value,
 	    strManager->ValueForKey( "GAMEUI_2X_SSAA" )->value,
 	    strManager->ValueForKey( "GAMEUI_4X_SSAA" )->value,
-//		"TAA",
-//		"SMAA",
-//		"FXAA"
+		"TAA",
+		"SMAA",
+		"FXAA",
+		"CSAA (NVidia Exclusive)"
 	};
 	static const char *s_anisotropyTypes[] = {
 	    strManager->ValueForKey( "GAMEUI_ANISOTROPIC2X" )->value,
@@ -1637,8 +1920,15 @@ void SettingsMenu_Cache( void )
 		strManager->ValueForKey( "MENU_HUD" )->value,
 		strManager->ValueForKey( "MENU_ADVANCED_HUD" )->value,
 		strManager->ValueForKey( "MENU_HUD_STYLE" )->value,
-		strManager->ValueForKey( "MENU_HUD_PSTATS" )->value,
-		
+		strManager->ValueForKey( "MENU_HUD_PSTATS" )->value
+	};
+	static const char *s_presetLabels[] = {
+		"Low",
+		"Normal",
+		"High",
+		"Performance",
+		"Quality",
+		"Custom"
 	};
 
 	if ( !ui->uiAllocated ) {
@@ -1664,6 +1954,7 @@ void SettingsMenu_Cache( void )
 	s_settingsMenu->performance.anisotropyTypes = s_anisotropyTypes;
 	s_settingsMenu->performance.textureDetails = s_textureDetail;
 	s_settingsMenu->performance.textureFilters = s_textureFilters;
+	s_settingsMenu->presetNames = s_presetLabels;
 
 	s_settingsMenu->gameplay.difficultyNames = difficulties;
 
@@ -1681,6 +1972,7 @@ void SettingsMenu_Cache( void )
 
 	s_settingsMenu->gameplay.numDifficultyTypes = arraylen( difficulties );
 
+	s_settingsMenu->gpuMemInfoType = GPU_MEMINFO_NVX;
 	SettingsMenu_GetInitial();
 
 	PerformanceMenu_SetDefault();

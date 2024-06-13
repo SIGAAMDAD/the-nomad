@@ -35,7 +35,12 @@ typedef struct {
     uint32_t estTotalMemUsed;
     uint32_t estBufferMemUsed;
     uint32_t estTextureMemUsed;
+    uint32_t estVertexMemUsed;
+    uint32_t estIndexMemUsed;
 
+    uint32_t numVertexArrays;
+    uint32_t numVertexBuffers;
+    uint32_t numIndexBufers;
     uint32_t numBuffers;
     uint32_t numTextures;
 
@@ -109,6 +114,8 @@ typedef struct {
     uint64_t (*FS_LoadFile)(const char *path, void **buffer);
     char **(*FS_ListFiles)(const char *path, const char *extension, uint64_t *numfiles);
     void (*FS_WriteFile)(const char *npath, const void *buffer, uint64_t size);
+    void (*FS_Remove)( const char *npath );
+    void (*FS_HomeRemove)( const char *npath );
 
     void (*G_SetScaling)(float factor, uint32_t captureWidth, uint32_t captureHeight);
     size_t (*G_SaveJPGToBuffer)( byte *buffer, size_t bufSize, int32_t quality, int32_t imageWidth, int32_t imageHeight, byte *imageBuffer, int32_t padding );

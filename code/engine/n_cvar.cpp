@@ -4,9 +4,9 @@ Copyright (C) 2023-2024 GDR Games
 
 This file is part of The Nomad source code.
 
-The Nomad source code is free software; you can redistribute it
+The Nomad source code is Z_Free software; you can redistribute it
 and/or modify it under the terms of the GNU General Public License as
-published by the Free Software Foundation; either version 2 of the License,
+published by the Z_Free Software Foundation; either version 2 of the License,
 or (at your option) any later version.
 
 The Nomad source code is distributed in the hope that it will be
@@ -15,7 +15,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with Foobar; if not, write to the Free Software
+along with Foobar; if not, write to the Z_Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
@@ -457,7 +457,7 @@ cvar_t *Cvar_Get(const char *var_name, const char *var_value, uint32_t flags)
     // allocate a new cvar
     //
 
-    // find a free cvar
+    // find a Z_Free cvar
     for (index = 0; index < MAX_CVARS; index++) {
         if (!cvar_indexes[index].name) {
             break;
