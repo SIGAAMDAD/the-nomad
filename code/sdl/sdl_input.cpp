@@ -449,7 +449,7 @@ static void IN_ActivateMouse( void )
 		return;
 	}
 
-	SDL_ShowCursor( in_mode->i == 0 ? SDL_ENABLE : SDL_DISABLE );
+	SDL_ShowCursor( in_mode->i != 1 );
 	if ( in_mode->i == 0 && mouse_cursor_active && keys[KEY_MOUSE_LEFT].down ) {
 		SDL_SetCursor( mouse_cursor_active );
 	} else if ( in_mode->i == 0 && mouse_cursor && !keys[KEY_MOUSE_LEFT].down ) {
@@ -515,6 +515,8 @@ static void IN_DeactivateMouse( void )
 		} else {
 			if ( glw_state.isFullscreen && in_mode->i == 0 ) {
 				SDL_ShowCursor( SDL_TRUE );
+			} else {
+				SDL_ShowCursor( SDL_FALSE );
 			}
 
 //			SDL_WarpMouseGlobal( glw_state.desktop_width / 2, glw_state.desktop_height / 2 );
@@ -527,6 +529,8 @@ static void IN_DeactivateMouse( void )
 	// but not when fullscreen
 	if ( !glw_state.isFullscreen && in_mode->i == 0 ) {
 		SDL_ShowCursor( SDL_TRUE );
+	} else {
+		SDL_ShowCursor( SDL_FALSE );
 	}
 }
 
@@ -1013,6 +1017,7 @@ static void IN_JoyMove( void )
 	SDL_JoystickUpdate();
 
 	IN_GamepadMove();
+	SDL_ShowCursor( SDL_DISABLE );
 
 	for ( index = 0; index < numInputDevices; index++ ) {
 		if ( gamepads[index] ) {
@@ -1240,13 +1245,15 @@ void HandleEvents( void )
 			ImGui_ImplSDL2_ProcessEvent( &e );
 		}
 
-		switch( e.type ) {
+		switch ( e.type ) {
 		case SDL_KEYDOWN:
-			if ( e.key.repeat && Key_GetCatcher() == 0 )
+			if ( e.key.repeat && Key_GetCatcher() == 0 ) {
 				break;
+			}
 			key = IN_TranslateSDLToQ3Key( &e.key.keysym, qtrue );
 
 			if ( in_mode->i == 1 ) {
+				SDL_ShowCursor( SDL_ENABLE );
 				Cvar_Set( "in_mode", "0" );
 			}
 
@@ -1322,6 +1329,7 @@ void HandleEvents( void )
 			break;
 		case SDL_MOUSEMOTION:
 			if ( in_mode->i == 1 ) {
+				SDL_ShowCursor( SDL_ENABLE );
 //				Cvar_Set( "in_mode", "0" );
 			}
 
@@ -1334,6 +1342,7 @@ void HandleEvents( void )
 		case SDL_MOUSEBUTTONDOWN:
 		case SDL_MOUSEBUTTONUP: {
 			int b;
+			SDL_ShowCursor( SDL_ENABLE );
 			Cvar_Set( "in_mode", "0" );
 
 			switch ( e.button.button ) {
@@ -1349,6 +1358,7 @@ void HandleEvents( void )
 			break; }
 		case SDL_MOUSEWHEEL:
 			if ( in_mode->i == 1 ) {
+				SDL_ShowCursor( SDL_ENABLE );
 				Cvar_Set( "in_mode", "0" );
 			}
 			if ( e.wheel.y > 0 ) {
@@ -1362,12 +1372,14 @@ void HandleEvents( void )
 			break;
 		case SDL_CONTROLLERDEVICEADDED: {
 			Cvar_Set( "in_mode", "1" );
+			SDL_ShowCursor( SDL_DISABLE );
 			if ( in_joystick->i ) {
 				numInputDevices++;
 				IN_InitJoystick();
 			}
 			break; }
 		case SDL_CONTROLLERDEVICEREMOVED: {
+			SDL_ShowCursor( SDL_DISABLE );
 			if ( in_joystick->i ) {
 				numInputDevices--;
 				if ( numInputDevices < 0 ) {
@@ -1394,7 +1406,9 @@ void HandleEvents( void )
 			// window states:
 			case SDL_WINDOWEVENT_HIDDEN:
 			case SDL_WINDOWEVENT_MINIMIZED:
-				if ( gi.state == GS_LEVEL && gi.mapLoaded && !Cvar_VariableInteger( "g_paused" ) ) {
+				if ( gi.state == GS_LEVEL && gi.mapLoaded && !Cvar_VariableInteger( "g_paused" )
+					&& Cvar_VariableInteger( "com_pauseUnfocused" ) )
+				{
 					Cbuf_ExecuteText( EXEC_APPEND, "togglepausemenu\n" );
 				}
 				Key_ClearStates();
@@ -1408,7 +1422,9 @@ void HandleEvents( void )
 				break;
 			// keyboard focus:
 			case SDL_WINDOWEVENT_FOCUS_LOST:
-				if ( gi.state == GS_LEVEL && gi.mapLoaded && !Cvar_VariableInteger( "g_paused" ) ) {
+				if ( gi.state == GS_LEVEL && gi.mapLoaded && !Cvar_VariableInteger( "g_paused" )
+				 	&& Cvar_VariableInteger( "com_pauseUnfocused" ) )
+				{
 					Cbuf_ExecuteText( EXEC_APPEND, "togglepausemenu\n" );
 				}
 				lastKeyDown = 0;
@@ -1472,7 +1488,7 @@ void IN_Init( void )
 
 	Con_DPrintf( "\n------- Input Initialization -------\n" );
 
-	in_mode = Cvar_Get( "in_mode", "0", CVAR_SAVE );
+	in_mode = Cvar_Get( "in_mode", "0", 0 );
 	Cvar_SetDescription( in_mode,
 		"Sets how the game recieves user input:\n"
 		" 0 - keyboard & mouse\n"
@@ -1549,9 +1565,10 @@ void IN_Init( void )
 
 	// FIXME: dont load mouse icons on console
 	IN_LoadMouseIcons();
-	if ( in_mode->i == 0 && mouse_cursor ) {
+	if ( mouse_cursor ) {
 		SDL_SetCursor( mouse_cursor );
 	}
+	SDL_ShowCursor( in_mode->i != 1 );
 
 	Con_DPrintf( "------------------------------------\n" );
 }

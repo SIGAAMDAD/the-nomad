@@ -343,6 +343,10 @@ void Cbuf_Execute( void )
 	}
 }
 
+qboolean Cbuf_Wait( void )
+{
+	return ( cmd_wait > 0 ) ? qtrue : qfalse;
+}
 
 /*
 ==============================================================================

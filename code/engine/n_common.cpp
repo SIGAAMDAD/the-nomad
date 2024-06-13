@@ -33,6 +33,8 @@ cvar_t *com_demo;
 cvar_t *com_journal;
 cvar_t *com_logfile;
 cvar_t *com_maxfps;
+cvar_t *com_maxfpsUnfocused;
+cvar_t *com_yieldCPU;
 errorCode_t com_errorCode;
 #ifdef USE_AFFINITY_MASK
 cvar_t *com_affinityMask;
@@ -736,12 +738,12 @@ static sysEvent_t Com_GetSystemEvent(void)
 
 	// check for console commands
 	s = Sys_ConsoleInput();
-	if (s) {
+	if ( s ) {
 		char *b;
 		uint64_t len;
 
 		len = strlen(s) + 1;
-		b = (char *)Z_Malloc(len, TAG_STATIC);
+		b = (char *)Z_Malloc( len, TAG_STATIC );
 		strcpy(b, s);
 		Com_QueueEvent( evTime, SE_CONSOLE, 0, 0, len, b );
 	}
@@ -1873,8 +1875,15 @@ void Com_Init( char *commandLine )
 		Cmd_AddCommand( "crash", Com_Crash_f );
 	}
 
-	com_maxfps = Cvar_Get( "com_maxfps", "60", CVAR_LATCH | CVAR_SAVE | CVAR_PROTECTED );
-	Cvar_SetDescription( com_maxfps, "Sets the maximum amount frames that can be drawn per second." );
+	com_maxfps = Cvar_Get( "com_maxfps", "60", CVAR_SAVE );
+	Cvar_CheckRange( com_maxfps, "0", "1000", CVT_INT );
+	Cvar_SetDescription( com_maxfps, "Sets maximum frames per second." );
+	com_maxfpsUnfocused = Cvar_Get( "com_maxfpsUnfocused", "60", CVAR_ARCHIVE_ND );
+	Cvar_CheckRange( com_maxfpsUnfocused, "0", "1000", CVT_INT );
+	Cvar_SetDescription( com_maxfpsUnfocused, "Sets maximum frames per second in unfocused game window." );
+	com_yieldCPU = Cvar_Get( "com_yieldCPU", "1", CVAR_ARCHIVE_ND );
+	Cvar_CheckRange( com_yieldCPU, "0", "16", CVT_INT );
+	Cvar_SetDescription( com_yieldCPU, "Attempt to sleep specified amount of time between rendered frames when game is active, this will greatly reduce CPU load. Use 0 only if you're experiencing some lag." );
 #ifdef USE_AFFINITY_MASK
 	Com_StartupVariable( "com_affinityMask" );
 	com_affinityMask = Cvar_Get( "com_affinityMask", "0x6", CVAR_SAVE | CVAR_LATCH );
@@ -2269,40 +2278,46 @@ static double Com_ClockToMilliseconds( clock_t ticks ) {
 	return (ticks / (double)CLOCKS_PER_SEC) * 1000.0f;
 }
 
-static int32_t com_frameMsec;
+static int com_frameMsec;
 
 /*
-Com_Frame: runs a single frame for the game
+* Com_Frame: runs a single frame for the game
 */
 void Com_Frame( qboolean noDelay )
 {
-	static int32_t bias = 0;
-	static int32_t lastTime;
-	int32_t msec, minMsec;
-	int32_t key;
+	static int bias = 0;
+	int msec, realMsec, minMsec;
+	int sleepMsec;
+	int timeVal;
 
-	eastl::chrono::system_clock::time_point startCap, endCap;
-	eastl::chrono::duration<double, eastl::milli> workTime, deltaCap;
-	clock_t start, end, delta;
-	double frameRate = 0, avg = 0;
-
-	if (Q_setjmp(abortframe)) {
+	if ( Q_setjmp( abortframe ) ) {
 		return; // an ERR_DROP was thrown
 	}
 
 	// silence compiler warning
 	minMsec = 0;
 
+	// write config file if anything changed
+#ifndef DELAY_WRITECONFIG
+	Com_WriteConfiguration();
+#endif
+
 #ifdef USE_AFFINITY_MASK
-	if (com_affinityMask->modified) {
+	if ( com_affinityMask->modified ) {
 		Con_DPrintf( "Resetting com_affinityMask...\n" );
 		Com_SetAffinityMask( com_affinityMask->s );
 		com_affinityMask->modified = qfalse;
 	}
 #endif
 
+	//
+	// main event loop
+	//
+
 	// we may want to spin here if things are going too fast
-	if ( com_maxfps->i > 0 ) {
+	if ( !gw_active && com_maxfpsUnfocused->i > 0 ) {
+		minMsec = 1000 / com_maxfpsUnfocused->i;
+	} else if ( com_maxfps->i > 0 ) {
 		minMsec = 1000 / com_maxfps->i;
 	} else {
 		minMsec = 1;
@@ -2314,7 +2329,9 @@ void Com_Frame( qboolean noDelay )
 		}
 		msec = com_frameTime - lastTime;
 	} while ( msec < minMsec );
-	Cbuf_Execute ();
+	Cbuf_Execute();
+
+	lastTime = com_frameTime;
 
 	// mess with msec if needed
 	com_frameMsec = msec;
@@ -2331,14 +2348,6 @@ void Com_Frame( qboolean noDelay )
 	// run framerate diagnostics
 
 	com_frameNumber++;
-	/*
-	end = clock();
-	delta = end - start;
-
-	if (delta > 0) {
-		com_fps = CLOCKS_PER_SEC / delta;
-	}
-	*/
 }
 
 /*

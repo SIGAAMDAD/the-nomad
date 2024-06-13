@@ -297,10 +297,11 @@ typedef enum {
 
 void Cbuf_ExecuteText( cbufExec_t exec_when, const char *text );
 void Cbuf_InsertText( const char *text );
-void Cbuf_Execute(void);
+void Cbuf_Execute( void );
 void Cbuf_AddText( const char *text );
-void Cbuf_Clear(void);
-void Cbuf_Init(void);
+void Cbuf_Clear( void );
+void Cbuf_Init( void );
+qboolean Cbuf_Wait( void );
 
 /*
 
