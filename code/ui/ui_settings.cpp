@@ -180,6 +180,8 @@ typedef struct {
 	int difficulty;
 	int debugPrint;
 	int toggleHUD;
+
+	int pauseUnfocused;
 } gameplaySettings_t;
 
 typedef struct settingsMenu_s {
@@ -1391,6 +1393,12 @@ static void GameplayMenu_Draw( void )
 		SettingsMenu_RadioButton( "Debug Mode", "Debug Mode",
 			"Toggles debug messages from SGame",
 			&s_settingsMenu->gameplay.debugPrint, true );
+		
+		ImGui::TableNextRow();
+
+		SettingsMenu_RadioButton( "Stop Game on Focus Lost", "Stop Game on Focus Lost",
+			"If on the game will pause when the window is unfocused",
+			&s_settingsMenu->gameplay.pauseUnfocused, true );
 	}
 	ImGui::EndTable();
 }
@@ -1667,6 +1675,8 @@ static void GameplayMenu_SetDefault( void )
 	s_settingsMenu->gameplay.mouseCursor = Cvar_VariableInteger( "sgame_CursorType" );
 	s_settingsMenu->gameplay.debugPrint = Cvar_VariableInteger( "sgame_DebugMode" );
 	s_settingsMenu->gameplay.toggleHUD = Cvar_VariableInteger( "sgame_ToggleHUD" );
+
+	s_settingsMenu->gameplay.pauseUnfocused = Cvar_VariableInteger( "com_pauseUnfocused" );
 }
 
 static void SettingsMenu_Draw( void )
@@ -1802,6 +1812,16 @@ static void SettingsMenu_Draw( void )
 	ImGui::GetStyle().ItemSpacing = itemSpacing;
 
 	ImGui::End();
+}
+
+qboolean R_HasExtension( const char *ext )
+{
+    const char *ptr = N_stristr( gi.gpuConfig.extensions_string, ext );
+	if ( ptr == NULL ) {
+		return qfalse;
+	}
+	ptr += strlen( ext );
+	return ( ( *ptr == ' ' ) || ( *ptr == '\0' ) );  // verify its complete string.
 }
 
 void SettingsMenu_Cache( void )
@@ -1952,26 +1972,7 @@ void SettingsMenu_Cache( void )
 
 	s_settingsMenu->gameplay.numDifficultyTypes = arraylen( difficulties );
 
-//	s_settingsMenu->gpuMemInfoType = GPU_MEMINFO_NONE;
-	p = str;
-	for ( i = 0; i < sizeof( ui->gpuConfig.extensions_string ); i++ ) {
-		if ( !ui->gpuConfig.extensions_string[i] ) {
-			break;
-		} else if ( ui->gpuConfig.extensions_string[i] == ' ' ) {
-			*p = '\0';
-			if ( !N_stricmp( str, "GL_NVX_gpu_memory_info" ) ) {
-				s_settingsMenu->gpuMemInfoType = GPU_MEMINFO_NVX;
-				break;
-			} else if ( !N_stricmp( str, "GL_ATI_meminfo" ) ) {
-				s_settingsMenu->gpuMemInfoType = GPU_MEMINFO_ATI;
-				break;
-			}
-			p = str;
-		} else {
-			*p++ = ui->gpuConfig.extensions_string[i];
-		}
-	}
-
+	s_settingsMenu->gpuMemInfoType = GPU_MEMINFO_NVX;
 	SettingsMenu_GetInitial();
 
 	PerformanceMenu_SetDefault();

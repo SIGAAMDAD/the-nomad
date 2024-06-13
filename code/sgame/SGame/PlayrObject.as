@@ -468,12 +468,34 @@ namespace TheNomad::SGame {
 			@m_SpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/"
 				+ TheNomad::Engine::CvarVariableString( "skin" ) + "_base", 32, 32, 512, 512 );
 			if ( @m_SpriteSheet is null ) {
-				GameError( "PlayrObject::Spawn: failed to initialize sprite sheet" );
+				GameError( "PlayrObject::Spawn: failed to load torso sprite sheet" );
 			}
 			@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE );
 			if ( @m_State is null ) {
-				GameError( "PlayrObject::Spawn: failed to initialize idle state" );
+				GameError( "PlayrObject::Spawn: failed to load idle torso state" );
 			}
+			m_Facing = FACING_RIGHT;
+
+			/*
+
+			@m_LegSpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/"
+				+ TheNomad::Engine::CvarVariableString( "skin" ) + "_legs", 32, 32, 512, 512 );
+			if ( @m_LegSpriteSheet is null ) {
+				GameError( "PlayrObject::Spawn: failed to load leg sprite sheet" );
+			}
+			@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_GROUND );
+			if ( @m_LegState is null ) {
+				GameError( "PlayrObject::Spawn: failed to load idle leg state" );
+			}
+			m_LegsFacing = FACING_RIGHT;
+
+			@m_ArmSpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/"
+				+ TheNomad::Engine::CvarVariableString( "skin" ) + "_arms", 32, 32, 512, 512 );
+			if ( @m_ArmSpriteSheet is null ) {
+				GameError( "PlayrObject::Spawn: failed to load arm sprite sheet" );
+			}
+			@m_ArmState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_IDLE );
+			*/
 
 			m_nHealMult = 0.0f;
 			m_nHealMultDecay = LevelManager.GetDifficultyScale();
@@ -547,12 +569,12 @@ namespace TheNomad::SGame {
 
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.sheetNum = m_SpriteSheet.GetShader();
-			refEntity.spriteId = GetSpriteId( @m_SpriteSheet, @m_State ) + m_Facing;
+			refEntity.spriteId = 0 + m_Facing;
 			refEntity.scale = 2.0f;
 			refEntity.Draw();
-			
-			DrawLegs();
-			DrawArms();
+
+//			DrawLegs();
+//			DrawArms();
 		}
 		
 		KeyBind key_MoveNorth, key_MoveSouth, key_MoveEast, key_MoveWest;

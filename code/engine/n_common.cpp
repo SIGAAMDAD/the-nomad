@@ -2330,9 +2330,9 @@ void Com_Frame( qboolean noDelay )
 	} else {
 		if ( !gw_active && com_maxfpsUnfocused->i > 0 ) {
 			minMsec = 1000 / com_maxfpsUnfocused->i;
-			if ( com_pauseUnfocused->i && !Cvar_VariableInteger( "g_paused" ) ) {
-				Cbuf_ExecuteText( EXEC_APPEND, "togglepausemenu\n" );
-			}
+//			if ( com_pauseUnfocused->i && !Cvar_VariableInteger( "g_paused" ) ) {
+//				Cbuf_ExecuteText( EXEC_APPEND, "togglepausemenu\n" );
+//			}
 		} else if ( com_maxfps->i > 0 ) {
 			minMsec = 1000 / com_maxfps->i;
 		} else {
@@ -2355,7 +2355,7 @@ void Com_Frame( qboolean noDelay )
 			sleepMsec = com_yieldCPU->i;
 		}
 		if ( timeVal > sleepMsec ) {
-			Com_EventLoop();
+//			Com_EventLoop();
 		}
 	} while ( Com_TimeVal( minMsec ) );
 
@@ -2364,7 +2364,7 @@ void Com_Frame( qboolean noDelay )
 	com_frameTime = Com_EventLoop();
 	realMsec = com_frameTime - lastTime;
 
-	Cbuf_Execute();
+//	Cbuf_Execute();
 
 	// mess with msec if needed
 	msec = Com_ModifyMsec( realMsec );

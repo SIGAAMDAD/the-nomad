@@ -26,31 +26,6 @@ cvar_t *snd_masterVolume;
 cvar_t *snd_debugPrint;
 cvar_t *snd_muteUnfocused;
 
-class CSoundThread : public CThread
-{
-public:
-    CSoundThread( void );
-	virtual ~CSoundThread() override;
-
-    bool LoadSound( const char *npath, sfxHandle_t *hSfx );
-
-	const char *GetName( void ) { return "SoundThread"; }
-private:
-	// Optional pre-run call, with ability to fail-create. Note Init()
-	// is forced synchronous with Start()
-	virtual bool Init( void ) override;
-
-	// Thread will run this function on startup, must be supplied by
-	// derived class, performs the intended action of the thread.
-	virtual int Run( void ) override;
-
-	// Called when the thread exits
-	virtual void OnExit( void ) override;
-
-    eastl::vector<eastl::pair<const char *, sfxHandle_t *>> m_LoadQueue;
-};
-
-//static CSoundThread m_hSoundThread;
 //static idDynamicBlockAlloc<byte, 1<<20, 1<<10> soundCacheAllocator;
 
 #define Snd_HashFileName(x) Com_GenerateHashValue((x),MAX_SOUND_SOURCES)
@@ -1126,41 +1101,49 @@ static void Snd_ListFiles_f( void )
     Con_Printf( "Total sound files loaded: %lu\n", numFiles );
 }
 
-/*
-bool CSoundThread::Init( void ) {
-    m_LoadQueue.reserve( MAX_SOUND_SOURCES );
-    return true;
-}
+static void Snd_QueueTrack_f( void ) {
+    sfxHandle_t hSfx;
+    const char *music;
 
-int CSoundThread::Run( void ) {
-    sfxHandle_t hSound;
-
-    while ( 1 ) {
-        if ( !m_LoadQueue.size() ) {
-            // nothing to load, wait a little bit
-            CThread::Sleep( 1000 );
-        }
-        for ( const auto& it : m_LoadQueue ) {
-            m_hLock.Lock();
-            *it.second = Snd_RegisterSfx( it.first );
-            m_LoadQueue.erase( &it );
-            m_hLock.Unlock();
-        }
+    if ( Cmd_Argc() != 2 ) {
+        Con_Printf( "usage: snd.queuetrack <music>\n" );
+        return;
     }
+
+    music = Cmd_Argv( 1 );
+    hSfx = Com_GenerateHashValue( music, MAX_SOUND_SOURCES );
+    
+    if ( sndManager->GetSource( hSfx ) == NULL ) {
+        Con_Printf( "invalid track '%s'\n", music );
+        return;
+    }
+
+    Snd_AddLoopingTrack( hSfx );
 }
 
-void CSoundThread::OnExit( void ) {
+static void Snd_ClearTracks_f( void ) {
+    Snd_ClearLoopingTracks();
 }
 
-bool CSoundThread::LoadSound( const char *npath, sfxHandle_t *hSfx )
-{
-    m_hLock.Lock();
-    m_LoadQueue.emplace_back( eastl::pair<const char *, sfxHandle_t *>( npath, hSfx ) );
-    m_hLock.Unlock();
+static void Snd_PlaySfx_f( void ) {
+    sfxHandle_t hSfx;
+    const char *sound;
 
-    return true;
+    if ( Cmd_Argc() != 2 ) {
+        Con_Printf( "usage: snd.play_sfx <music>\n" );
+        return;
+    }
+
+    sound = Cmd_Argv( 1 );
+    hSfx = Com_GenerateHashValue( sound, MAX_SOUND_SOURCES );
+    
+    if ( sndManager->GetSource( hSfx ) == NULL ) {
+        Con_Printf( "invalid sfx '%s'\n", sound );
+        return;
+    }
+
+    Snd_PlaySfx( hSfx );
 }
-*/
 
 void Snd_Init( void )
 {
@@ -1201,6 +1184,10 @@ void Snd_Init( void )
     Cmd_AddCommand( "snd.toggle", Snd_Toggle_f );
     Cmd_AddCommand( "snd.updatevolume", Snd_UpdateVolume_f );
     Cmd_AddCommand( "snd.list_files", Snd_ListFiles_f );
+    Cmd_AddCommand( "snd.clear_tracks", Snd_ClearTracks_f );
+    Cmd_AddCommand( "snd.play_sfx", Snd_PlaySfx_f );
+    Cmd_AddCommand( "snd.queue_track", Snd_QueueTrack_f );
+    Cmd_AddCommand( "snd.audio_info", Snd_AudioInfo_f );
 
     alDistanceModel( AL_EXPONENT_DISTANCE_CLAMPED );
 
