@@ -33,8 +33,9 @@ cvar_t *com_demo;
 cvar_t *com_journal;
 cvar_t *com_logfile;
 cvar_t *com_maxfps;
-cvar_t*com_maxfpsUnfocused;
-cvar_t*com_yieldCPU;
+cvar_t *com_maxfpsUnfocused;
+cvar_t *com_yieldCPU;
+cvar_t *com_pauseUnfocused;
 errorCode_t com_errorCode;
 #ifdef USE_AFFINITY_MASK
 cvar_t *com_affinityMask;
@@ -653,82 +654,6 @@ static keynum_t Com_TranslateSDL2ToQ3Key( SDL_Keysym *keysym, qboolean down )
 	return key;
 }
 
-/*
-static void Com_PumpKeyEvents(void)
-{
-	SDL_Event event;
-	uint32_t in_eventTime;
-
-	SDL_PumpEvents();
-
-	in_eventTime = Sys_Milliseconds();
-
-	while (SDL_PollEvent(&event)) {
-		if ( Key_GetCatcher() & KEYCATCH_CONSOLE || Key_GetCatcher() & KEYCATCH_UI ) {
-			ImGui_ImplSDL2_ProcessEvent(&event);
-		}
-
-		switch ( event.type ) {
-		case SDL_KEYDOWN:
-			Com_QueueEvent( in_eventTime, SE_KEY, Com_TranslateSDL2ToQ3Key( &event.key.keysym, qtrue ), qtrue, 0, NULL );
-			break;
-		case SDL_KEYUP:
-			Com_QueueEvent( in_eventTime, SE_KEY, Com_TranslateSDL2ToQ3Key( &event.key.keysym, qfalse ), qfalse, 0, NULL );
-			break;
-		case SDL_WINDOWEVENT:
-			switch (event.window.event) {
-			case SDL_WINDOWEVENT_MOVED: {
-				if (!((SDL_GetWindowFlags(G_GetSDLWindow()) & SDL_WINDOW_FULLSCREEN) && (SDL_GetWindowFlags(G_GetSDLWindow()) & SDL_WINDOW_FULLSCREEN_DESKTOP))
-				&& G_GetSDLWindow() && !(SDL_GetWindowFlags(G_GetSDLWindow()) & SDL_WINDOW_MINIMIZED)) {
-//					Cvar_SetIntegerValue( "vid_xpos", event.window.data1 );
-//					Cvar_SetIntegerValue( "vid_ypos", event.window.data2 );
-				}
-				break; }
-			case SDL_WINDOWEVENT_MINIMIZED:
-			case SDL_WINDOWEVENT_FOCUS_LOST: {
-				if ( gi.state == GS_LEVEL && gi.mapLoaded && !Cvar_VariableInteger( "g_paused" ) ) {
-					Cbuf_ExecuteText( EXEC_APPEND, "togglepausemenu\n" );
-				}
-				Key_ClearStates();
-				break; }
-			};
-			break;
-		case SDL_QUIT:
-			Cbuf_ExecuteText( EXEC_NOW, "quit\n" );
-			break;
-		case SDL_MOUSEMOTION:
-			if ( !event.motion.xrel && !event.motion.yrel ) {
-				break;
-			}
-			Com_QueueEvent( com_frameTime, SE_MOUSE, event.motion.xrel, event.motion.yrel, 0, NULL );
-			break;
-		case SDL_MOUSEBUTTONUP:
-		case SDL_MOUSEBUTTONDOWN: {
-			if ( event.button.button == SDL_BUTTON_LEFT ) {
-				Com_QueueEvent( com_frameTime, SE_KEY, KEY_MOUSE_LEFT, (event.type == SDL_MOUSEBUTTONDOWN ? qtrue : qfalse), 0, NULL );
-			} else if ( event.button.button == SDL_BUTTON_RIGHT ) {
-				Com_QueueEvent( com_frameTime, SE_KEY, KEY_MOUSE_RIGHT, (event.type == SDL_MOUSEBUTTONDOWN ? qtrue : qfalse), 0, NULL );
-			} else if ( event.button.button == SDL_BUTTON_MIDDLE ) {
-				Com_QueueEvent( com_frameTime, SE_KEY, KEY_MOUSE_MIDDLE, (event.type == SDL_MOUSEBUTTONDOWN ? qtrue : qfalse), 0, NULL );
-			}
-			break; }
-		case SDL_MOUSEWHEEL: {
-			if ( event.wheel.y > 0 ) {
-				Com_QueueEvent( com_frameTime, SE_KEY, KEY_WHEEL_UP, qtrue, 0, NULL );
-				Com_QueueEvent( com_frameTime, SE_KEY, KEY_WHEEL_UP, qfalse, 0, NULL );
-			}
-			else if ( event.wheel.y < 0 ) {
-				Com_QueueEvent( com_frameTime, SE_KEY, KEY_WHEEL_DOWN, qtrue, 0, NULL );
-				Com_QueueEvent( com_frameTime, SE_KEY, KEY_WHEEL_DOWN, qtrue, 0, NULL );
-			}
-			break; }
-		default:
-			break;
-		};
-	}
-}
-*/
-
 static sysEvent_t Com_GetSystemEvent(void)
 {
 	sysEvent_t ev;
@@ -745,12 +670,12 @@ static sysEvent_t Com_GetSystemEvent(void)
 
 	// check for console commands
 	s = Sys_ConsoleInput();
-	if (s) {
+	if ( s ) {
 		char *b;
 		uint64_t len;
 
 		len = strlen(s) + 1;
-		b = (char *)Z_Malloc(len, TAG_STATIC);
+		b = (char *)Z_Malloc( len, TAG_STATIC );
 		strcpy(b, s);
 		Com_QueueEvent( evTime, SE_CONSOLE, 0, 0, len, b );
 	}
@@ -2291,10 +2216,10 @@ static double Com_ClockToMilliseconds( clock_t ticks ) {
 	return (ticks / (double)CLOCKS_PER_SEC) * 1000.0f;
 }
 
-static int32_t com_frameMsec;
+static int com_frameMsec;
 
 /*
-Com_Frame: runs a single frame for the game
+* Com_Frame: runs a single frame for the game
 */
 void Com_Frame( qboolean noDelay )
 {
@@ -2322,6 +2247,10 @@ void Com_Frame( qboolean noDelay )
 		com_affinityMask->modified = qfalse;
 	}
 #endif
+
+	//
+	// main event loop
+	//
 
 	// we may want to spin here if things are going too fast
 	if ( noDelay ) {
@@ -2363,8 +2292,6 @@ void Com_Frame( qboolean noDelay )
 	lastTime = com_frameTime;
 	com_frameTime = Com_EventLoop();
 	realMsec = com_frameTime - lastTime;
-
-//	Cbuf_Execute();
 
 	// mess with msec if needed
 	msec = Com_ModifyMsec( realMsec );
