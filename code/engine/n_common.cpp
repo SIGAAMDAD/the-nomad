@@ -33,13 +33,8 @@ cvar_t *com_demo;
 cvar_t *com_journal;
 cvar_t *com_logfile;
 cvar_t *com_maxfps;
-<<<<<<< HEAD
 cvar_t *com_maxfpsUnfocused;
 cvar_t *com_yieldCPU;
-=======
-cvar_t*com_maxfpsUnfocused;
-cvar_t*com_yieldCPU;
->>>>>>> main
 errorCode_t com_errorCode;
 #ifdef USE_AFFINITY_MASK
 cvar_t *com_affinityMask;
@@ -1891,26 +1886,17 @@ void Com_Init( char *commandLine )
 		Cmd_AddCommand( "crash", Com_Crash_f );
 	}
 
-<<<<<<< HEAD
 	com_maxfps = Cvar_Get( "com_maxfps", "60", CVAR_SAVE );
 	Cvar_CheckRange( com_maxfps, "0", "1000", CVT_INT );
 	Cvar_SetDescription( com_maxfps, "Sets maximum frames per second." );
-=======
-	com_maxfps = Cvar_Get( "com_maxfps", "60", CVAR_LATCH | CVAR_SAVE | CVAR_PROTECTED );
-	Cvar_CheckRange( com_maxfps, "0", "1000", CVT_INT );
-	Cvar_SetDescription( com_maxfps, "Sets the maximum amount frames that can be drawn per second." );
->>>>>>> main
 	com_maxfpsUnfocused = Cvar_Get( "com_maxfpsUnfocused", "60", CVAR_ARCHIVE_ND );
 	Cvar_CheckRange( com_maxfpsUnfocused, "0", "1000", CVT_INT );
 	Cvar_SetDescription( com_maxfpsUnfocused, "Sets maximum frames per second in unfocused game window." );
 	com_yieldCPU = Cvar_Get( "com_yieldCPU", "1", CVAR_ARCHIVE_ND );
 	Cvar_CheckRange( com_yieldCPU, "0", "16", CVT_INT );
 	Cvar_SetDescription( com_yieldCPU, "Attempt to sleep specified amount of time between rendered frames when game is active, this will greatly reduce CPU load. Use 0 only if you're experiencing some lag." );
-<<<<<<< HEAD
-=======
 	com_pauseUnfocused = Cvar_Get( "com_pauseUnfocused", "1", CVAR_SAVE );
 	Cvar_SetDescription( com_pauseUnfocused, "Forces pause menu when game window is unfocused." );
->>>>>>> main
 #ifdef USE_AFFINITY_MASK
 	Com_StartupVariable( "com_affinityMask" );
 	com_affinityMask = Cvar_Get( "com_affinityMask", "0x6", CVAR_SAVE | CVAR_LATCH );
@@ -2342,28 +2328,18 @@ void Com_Frame( qboolean noDelay )
 	//
 
 	// we may want to spin here if things are going too fast
-<<<<<<< HEAD
 	if ( !gw_active && com_maxfpsUnfocused->i > 0 ) {
 		minMsec = 1000 / com_maxfpsUnfocused->i;
 	} else if ( com_maxfps->i > 0 ) {
 		minMsec = 1000 / com_maxfps->i;
-=======
+	} else {
+		minMsec = 1;
+	}
+	/*
 	if ( noDelay ) {
 		minMsec = 0;
 		bias = 0;
->>>>>>> main
 	} else {
-		if ( !gw_active && com_maxfpsUnfocused->i > 0 ) {
-			minMsec = 1000 / com_maxfpsUnfocused->i;
-//			if ( com_pauseUnfocused->i && !Cvar_VariableInteger( "g_paused" ) ) {
-//				Cbuf_ExecuteText( EXEC_APPEND, "togglepausemenu\n" );
-//			}
-		} else if ( com_maxfps->i > 0 ) {
-			minMsec = 1000 / com_maxfps->i;
-		} else {
-			minMsec = 1;
-		}
-
 		timeVal = com_frameTime - lastTime;
 		bias += timeVal - minMsec;
 		if ( bias > minMsec ) {
@@ -2373,31 +2349,21 @@ void Com_Frame( qboolean noDelay )
 		// that framerate is stable at the requested value.
 		minMsec -= bias;
 	}
+	*/
 	do {
-		timeVal = Com_TimeVal( minMsec );
+//		timeVal = Com_TimeVal( minMsec );
+		com_frameTime = ;
 		sleepMsec = timeVal;
 		if ( !gw_minimized && timeVal > com_yieldCPU->i ) {
 			sleepMsec = com_yieldCPU->i;
 		}
-<<<<<<< HEAD
 		msec = com_frameTime - lastTime;
-	} while ( msec < minMsec );
+	} while ( msec - minMsec );
 	Cbuf_Execute();
 
 	lastTime = com_frameTime;
-=======
-		if ( timeVal > sleepMsec ) {
-//			Com_EventLoop();
-		}
-	} while ( Com_TimeVal( minMsec ) );
->>>>>>> main
-
-	// mess with msec if needed
-	lastTime = com_frameTime;
 	com_frameTime = Com_EventLoop();
 	realMsec = com_frameTime - lastTime;
-
-//	Cbuf_Execute();
 
 	// mess with msec if needed
 	msec = Com_ModifyMsec( realMsec );
@@ -2406,10 +2372,7 @@ void Com_Frame( qboolean noDelay )
 	// run the game loop
 	//
 	Com_EventLoop();
-
-	if ( !Cbuf_Wait() ) {
-		Cbuf_Execute();
-	}
+	Cbuf_Execute();
 
 	G_Frame( msec, realMsec );
 
