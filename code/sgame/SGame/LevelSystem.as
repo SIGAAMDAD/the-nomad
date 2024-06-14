@@ -187,7 +187,7 @@ namespace TheNomad::SGame {
 			MapCheckpoint@ cp = null;
 
 			if ( GlobalState == GameState::StatsMenu ) {
-				m_RankData.Draw( true, m_LevelTimer );
+				m_RankData.Draw( true, m_nLevelTimer );
 				return;
 			}
 			
@@ -204,7 +204,7 @@ namespace TheNomad::SGame {
 
 				// done with the level?
 				if ( @cp is @m_MapData.GetCheckpoints()[ m_MapData.GetCheckpoints().Count() - 1 ] ) {
-					m_LevelTimer.Stop(); // kill the timer
+					m_nEndTime = TheNomad::Engine::System::Milliseconds(); // kill the timer
 					GlobalState = GameState::LevelFinish;
 					return;
 				}
@@ -218,7 +218,7 @@ namespace TheNomad::SGame {
 				TheNomad::Engine::CmdExecuteCommand( "sgame.save_game\n" );
 			}
 			
-			m_RankData.Draw( false, m_LevelTimer );
+			m_RankData.Draw( false, m_nLevelTimer );
 		}
 		bool OnConsoleCommand( const string& in cmd ) {
 			return false;
@@ -249,9 +249,9 @@ namespace TheNomad::SGame {
 					section.SaveString( "LevelNames" + i, m_LevelInfoDatas[i].m_Name );
 				}
 				section.SaveUInt( "CurrentCheckpoint", m_CurrentCheckpoint );
-				section.SaveUInt( "TimeMilliseconds", m_LevelTimer.ElapsedMilliseconds() );
-				section.SaveUInt( "TimeSeconds", m_LevelTimer.ElapsedSeconds() );
-				section.SaveUInt( "TimeMinutes", m_LevelTimer.ElapsedMinutes() );
+				section.SaveUInt( "TimeMilliseconds", m_nLevelTimer );
+				section.SaveUInt( "TimeSeconds", m_nLevelTimer / 1000 );
+				section.SaveUInt( "TimeMinutes", m_nLevelTimer / 60000 );
 			}
 			
 			// save individual stats for each level
@@ -412,7 +412,7 @@ namespace TheNomad::SGame {
 				}
 			}
 			
-			m_LevelTimer.Run();
+			m_nLevelTimer = TheNomad::Engine::System::Milliseconds();
 		}
 		
 		private void ForcePlayerSpawn() {
@@ -544,6 +544,27 @@ namespace TheNomad::SGame {
 			return null;
 		}
 
+		void Pause() {
+			if ( m_bPaused ) {
+				return;
+			}
+			m_bPaused = true;
+			m_nPauseTimer = TheNomad::Engine::System::Milliseconds();
+		}
+		void Resume() {
+			if ( !m_bPaused ) {
+				return;
+			}
+			m_bPaused = false;
+
+			/*
+			* ===========] pause [================================
+			* level time | delta | level time = level time + delta
+			*/
+			const uint64 delta = TheNomad::Engine::System::Milliseconds() - m_nPauseTimer;
+			m_nLevelTimer += delta;
+		}
+
 		float GetDifficultyScale() const {
 			return m_nDifficultyScale;
 		}
@@ -573,12 +594,15 @@ namespace TheNomad::SGame {
 			return @m_Current;
 		}
 		
-		private TheNomad::Engine::Timer m_LevelTimer;
+		private uint64 m_nEndTime = 0;
+		private uint64 m_nPauseTimer = 0;
+		private uint64 m_nLevelTimer = 0;
 		private uint m_CurrentCheckpoint = 0;
 		private array<json@> m_LevelInfos;
 		private array<LevelInfoData@> m_LevelInfoDatas;
 		private uint m_nIndex = 0;
 		private uint m_nLevels = 0;
+		private bool m_bPaused = false;
 		
 		private bool m_bNewCheckpoint = true;
 		private TheNomad::Engine::SoundSystem::SoundEffect m_PassedCheckpointSfx;

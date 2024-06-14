@@ -241,8 +241,22 @@ SCRIPT_CALLBACK_DEF( GetGPUConfig )
 SCRIPT_CALLBACK_DEF( CastRay )
 SCRIPT_CALLBACK_DEF( CheckWallHit )
 
-SCRIPT_CALLBACK_DEF( LoadMap )
-SCRIPT_CALLBACK_DEF( SetActiveMap )
+SCRIPT_CALLBACK_DEF( LoadMap ) {
+
+}
+
+SCRIPT_CALLBACK_DEF( SetActiveMap ) {
+    CALLBACK_BEGIN( 6 )
+    CALLBACK_PARAM_I32( hMap )
+    CALLBACK_PARAM_PTR( uint32_t, nCheckpoints )
+    CALLBACK_PARAM_PTR( uint32_t, nSpawns )
+    CALLBACK_PARAM_PTR( uint32_t, nTiles )
+    CALLBACK_PARAM_PTR( int32_t, nWidth )
+    CALLBACK_PARAM_PTR( int32_t, nHeight )
+
+    G_SetActiveMap( hMap, nCheckpoints, nSpawns, nTiles, nWidth, nHeight );
+}
+
 SCRIPT_CALLBACK_DEF( GetSpawnData )
 SCRIPT_CALLBACK_DEF( GetCheckpointData )
 SCRIPT_CALLBACK_DEF( GetTileData )

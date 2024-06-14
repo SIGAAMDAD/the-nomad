@@ -1301,7 +1301,7 @@ uint64_t Com_TouchMemory( void ) {
 	Z_CheckHeap();
 
 //	start = Sys_Milliseconds();
-	timer.Run();
+	timer.Start();
 
 	sum = 0;
 
@@ -1332,7 +1332,7 @@ uint64_t Com_TouchMemory( void ) {
 	timer.Stop();
 //	end = Sys_Milliseconds();
 
-	Con_Printf( "Com_TouchMemory: %5.5lf msec\n", (double)timer.ElapsedMilliseconds() );
+	Con_Printf( "Com_TouchMemory: %5.5lf msec\n", (double)timer.Milliseconds() );
 
 	return sum; // just to silent compiler warning
 }

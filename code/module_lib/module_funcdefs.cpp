@@ -695,6 +695,20 @@ DEFINE_CALLBACK( CmpUVec2Generic ) {
     pGeneric->SetReturnDWord( (asDWORD)cmp );
 }
 
+DEFINE_CALLBACK( OpAddTimer ) {
+    const CTimer& a = *(const CTimer *)pGeneric->GetObjectData();
+    const CTimer& b = *(const CTimer *)pGeneric->GetArgObject( 0 );
+
+    new ( pGeneric->GetAddressOfReturnLocation() ) CTimer( a + b );
+}
+
+DEFINE_CALLBACK( OpSubTimer ) {
+    const CTimer& a = *(const CTimer *)pGeneric->GetObjectData();
+    const CTimer& b = *(const CTimer *)pGeneric->GetArgObject( 0 );
+
+    new ( pGeneric->GetAddressOfReturnLocation() ) CTimer( a - b );
+}
+
 static void ConsolePrint( const string_t *msg ) {
     Con_Printf( "%s", msg->c_str() );
 }
@@ -2123,15 +2137,25 @@ void ModuleLib_Register_Engine( void )
 
         REGISTER_OBJECT_TYPE( "Timer", CTimer, asOBJ_VALUE );
         REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Engine::Timer", asBEHAVE_CONSTRUCT, "void f()", WRAP_CON( CTimer, ( void ) ) );
+        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Engine::Timer", asBEHAVE_CONSTRUCT, "void f( uint32 )", WRAP_CON( CTimer, ( uint32_t ) ) );
         REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Engine::Timer", asBEHAVE_DESTRUCT, "void f()", WRAP_DES( CTimer ) );
-        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Engine::Timer", asBEHAVE_CONSTRUCT, "void f( int64, int64, int32 )", WRAP_CON( CTimer, ( int64_t, int64_t, int32_t ) ) );
 
+        g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "TheNomad::Engine::Timer",
+            "const TheNomad::Engine::Timer opAdd( const TheNomad::Engine::Timer& in )", asFUNCTION( ModuleLib_OpAddTimer ), asCALL_GENERIC );
+        g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "TheNomad::Engine::Timer",
+            "const TheNomad::Engine::Timer opSub( const TheNomad::Engine::Timer& in )", asFUNCTION( ModuleLib_OpAddTimer ), asCALL_GENERIC );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Timer", "const TheNomad::Engine::Timer& opAddAssign( const TheNomad::Engine::Timer& in )", CTimer, operator+=, ( const CTimer& ), CTimer& );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Timer", "const TheNomad::Engine::Timer& opSubAssign( const TheNomad::Engine::Timer& in )", CTimer, operator-=, ( const CTimer& ), CTimer& );
         REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Timer", "const TheNomad::Engine::Timer& opAssign( const TheNomad::Engine::Timer& in )", CTimer, operator=, ( const CTimer& ), const CTimer& );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Timer", "void Run()", CTimer, Run, ( void ), void );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Timer", "void Start()", CTimer, Start, ( void ), void );
         REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Timer", "void Stop()", CTimer, Stop, ( void ), void );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Timer", "int64 ElapsedMilliseconds() const", CTimer, ElapsedMilliseconds, ( void ) const, int64_t );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Timer", "int64 ElapsedSeconds() const", CTimer, ElapsedSeconds, ( void ) const, int64_t );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Timer", "int32 ElapsedMinutes() const", CTimer, ElapsedMinutes, ( void ) const, int32_t );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Timer", "void Clear()", CTimer, Stop, ( void ), void );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Timer", "uint64 Milliseconds() const", CTimer, Milliseconds, ( void ) const, uint64_t );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Timer", "uint64 Seconds() const", CTimer, Seconds, ( void ) const, uint64_t );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Timer", "uint32 Minutes() const", CTimer, Minutes, ( void ) const, uint32_t );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Timer", "uint64 ElapsedMilliseconds() const", CTimer, ElapsedMilliseconds, ( void ) const, uint64_t );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Timer", "uint64 ElapsedSeconds() const", CTimer, ElapsedSeconds, ( void ) const, uint64_t );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Timer", "uint32 ElapsedMinutes() const", CTimer, ElapsedMinutes, ( void ) const, uint32_t );
 
 		{ // SoundSystem
 			SET_NAMESPACE( "TheNomad::Engine::SoundSystem" );

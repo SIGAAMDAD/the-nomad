@@ -254,7 +254,7 @@ namespace TheNomad::SGame {
 			ImGui::End();
 		}
 		
-		void Draw( bool endOfLevel, const TheNomad::Engine::Timer& in timer ) {
+		void Draw( bool endOfLevel, uint64 timer ) {
 			ImGuiWindowFlags windowFlags = ImGui::MakeWindowFlags( ImGuiWindowFlags::NoTitleBar | ImGuiWindowFlags::NoMove
 				| ImGuiWindowFlags::NoResize );
 			const float scale = TheNomad::GameSystem::GameManager.GetUIScale();
@@ -266,9 +266,11 @@ namespace TheNomad::SGame {
 				return;
 			}
 
-			m_TimeMilliseconds = timer.ElapsedMilliseconds();
-			m_TimeSeconds = timer.ElapsedSeconds();
-			m_TimeMinutes = timer.ElapsedMinutes();
+			const uint64 now = TheNomad::Engine::System::Milliseconds();
+
+			m_TimeMilliseconds = now - timer;
+			m_TimeSeconds = m_TimeMilliseconds / 1000;
+			m_TimeMinutes = m_TimeMilliseconds / 60000;
 			
 			if ( endOfLevel ) {
 				DrawEndOfLevelStats();
@@ -288,7 +290,7 @@ namespace TheNomad::SGame {
 			ImGui::Text( "TIME:" );
 			ImGui::TableNextColumn();
 
-			ImGui::Text( formatUInt( m_TimeMinutes ) + ":" + m_TimeSeconds + "." + m_TimeMilliseconds );
+			ImGui::Text( formatUInt( m_TimeMinutes ) + ":" + formatUInt( m_TimeSeconds ) + "." + formatUInt( m_TimeMilliseconds ) );
 			ImGui::SameLine();
 			ImGui::TextColored( sgame_RankStringColors[ time_Rank ], sgame_RankStrings[ time_Rank ] );
 			
@@ -388,9 +390,9 @@ namespace TheNomad::SGame {
 			return rank;
 		}
 
-		uint m_TimeMilliseconds = 0;
-		uint m_TimeSeconds = 0;
-		uint m_TimeMinutes = 0;
+		int m_TimeMilliseconds = 0;
+		int64 m_TimeSeconds = 0;
+		int64 m_TimeMinutes = 0;
 
 		uint stylePoints = 0;
 		uint numKills = 0;

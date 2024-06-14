@@ -4562,7 +4562,7 @@ void FS_Startup( void )
 		Cvar_ForceReset( "fs_gamedir" );
 	}
 
-	timer.Run();
+	timer.Start();
 
 #ifdef USE_BFF_CACHE
 #ifdef USE_BFF_CACHE_FILE
@@ -4645,7 +4645,7 @@ void FS_Startup( void )
 		"fs_basegame: %s\n"
 	, fs_gamedirvar->s, fs_basepath->s, fs_basegame->s );
 
-	Con_Printf( "...loaded in %5.5lf milliseconds\n", (double)timer.ElapsedMilliseconds() );
+	Con_Printf( "...loaded in %5.5lf milliseconds\n", (double)timer.Milliseconds() );
 
 	Con_Printf( "----------------------\n" );
 	Con_Printf( "%lu chunks in %lu bff files\n", fs_bffChunks, fs_bffCount );

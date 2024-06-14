@@ -352,7 +352,7 @@ void MainMenu_Cache( void )
     s_main->exitArrow.direction = ImGuiDir_Right;
     */
 
-    s_main->menu.track = Snd_RegisterTrack( "music/title.ogg" );
+    s_main->menu.track = Snd_RegisterTrack( "music/menu/title.ogg" );
     s_main->background = re.RegisterShader( "menu/mainbackground" );
 
     s_main->noMenu = qfalse;

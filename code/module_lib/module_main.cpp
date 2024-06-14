@@ -266,12 +266,12 @@ void CModuleLib::RunModules( EModuleFuncId nCallId, uint32_t nArgs, ... )
     case ModuleOnSaveGame:
         CTimer time;
 
-        time.Run();
+        time.Start();
         Con_DPrintf( "Garbage collection started...\n" );
         g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_DETECT_GARBAGE | asGC_DESTROY_GARBAGE
             | asGC_FULL_CYCLE, (uint32_t)ml_garbageCollectionIterations->i );
         time.Stop();
-        Con_DPrintf( "Garbage collection: %lims, %li iterations\n", time.ElapsedMilliseconds(), ml_garbageCollectionIterations->i );
+        Con_DPrintf( "Garbage collection: %lims, %li iterations\n", time.Milliseconds(), ml_garbageCollectionIterations->i );
         break; }
     };
 
@@ -328,12 +328,12 @@ int CModuleLib::ModuleCall( CModuleInfo *pModule, EModuleFuncId nCallId, uint32_
     case ModuleOnSaveGame: {
         CTimer time;
 
-        time.Run();
+        time.Start();
         Con_DPrintf( "Garbage collection started (%s)...\n", name );
         g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_DETECT_GARBAGE | asGC_DESTROY_GARBAGE
             | asGC_FULL_CYCLE, (uint32_t)ml_garbageCollectionIterations->i );
         time.Stop();
-        Con_DPrintf( "Garbage collection: %lims, %li iterations\n", time.ElapsedMilliseconds(), ml_garbageCollectionIterations->i );
+        Con_DPrintf( "Garbage collection: %lims, %li iterations\n", time.Milliseconds(), ml_garbageCollectionIterations->i );
         break; }
     };
 

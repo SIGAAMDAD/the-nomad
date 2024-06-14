@@ -475,14 +475,14 @@ static uint64_t sys_timeBase = 0;
      (which would affect the wrap period) */
 
 // [glnomad] changed unsigned long to a uint64_t
-uint64_t Sys_Milliseconds(void)
+uint64_t Sys_Milliseconds( void )
 {
     struct timeval tp;
     uint64_t curtime;
 
     gettimeofday(&tp, NULL);
 
-    if (!sys_timeBase) {
+    if ( !sys_timeBase ) {
         sys_timeBase = tp.tv_sec;
         return tp.tv_sec / 1000;
     }

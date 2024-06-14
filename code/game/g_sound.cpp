@@ -290,6 +290,7 @@ void CSoundSource::Init( void )
 void CSoundSource::Shutdown( void )
 {
     ALint state;
+    ALenum err;
 
     if ( alIsBuffer( m_iBuffer ) ) {
         if ( alIsSource( m_iSource ) ) {
@@ -300,9 +301,15 @@ void CSoundSource::Shutdown( void )
             alSourcei( m_iSource, AL_BUFFER, AL_NONE );
         }
         alDeleteBuffers( 1, &m_iBuffer );
+        if ( ( err = alGetError() ) != AL_NO_ERROR ) {
+            Con_Printf( COLOR_YELLOW "WARNING: Error deallocating OpenAL hardware buffer: 0x%04x\n", err );
+        }
     }
     if ( alIsSource( m_iSource ) && m_iTag != TAG_MUSIC ) {
         alDeleteSources( 1, &m_iSource );
+        if ( ( err = alGetError() ) != AL_NO_ERROR ) {
+            Con_Printf( COLOR_YELLOW "WARNING: Error deallocating OpenAL hardware source: 0x%04x\n", err );
+        }
     }
 
     m_iBuffer = 0;
@@ -697,6 +704,12 @@ void CSoundManager::Shutdown( void )
     Cmd_RemoveCommand( "snd.toggle" );
     Cmd_RemoveCommand( "snd.updatevolume" );
     Cmd_RemoveCommand( "snd.list_files" );
+    Cmd_RemoveCommand( "snd.clear_tracks" );
+    Cmd_RemoveCommand( "snd.play_sfx" );
+    Cmd_RemoveCommand( "snd.queue_track" );
+    Cmd_RemoveCommand( "snd.audio_info" );
+    Cmd_RemoveCommand( "snd.startup_level" );
+    Cmd_RemoveCommand( "snd.unload_level" );
 
     alcMakeContextCurrent( NULL );
     alcDestroyContext( m_pContext );
@@ -1091,7 +1104,7 @@ static void Snd_ListFiles_f( void )
     const CSoundSource *source;
 
     Con_Printf( "\n---------- Snd_ListFiles_f ----------\n" );
-    Con_Printf( "                  --channels-- ---samplerate--- ----cache size----\n" );
+    Con_Printf( "                      --channels-- ---samplerate--- ----cache size----\n" );
 
     numFiles = 0;
     for ( i = 0; i < MAX_SOUND_SOURCES; i++ ) {
@@ -1101,7 +1114,7 @@ static void Snd_ListFiles_f( void )
             continue;
         }
         numFiles++;
-        Con_Printf( "%20s: %4i %4i %8lu\n", source->GetName(), source->GetInfo().channels, source->GetInfo().samplerate,
+        Con_Printf( "%10s: %4i %4i %8lu\n", source->GetName(), source->GetInfo().channels, source->GetInfo().samplerate,
             source->GetInfo().channels * source->GetInfo().frames );
     }
     Con_Printf( "Total sound files loaded: %lu\n", numFiles );

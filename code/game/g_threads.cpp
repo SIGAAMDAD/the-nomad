@@ -22,7 +22,7 @@ int CRenderThread::Run( void ) {
         return -1;
     }
 
-    m_Timer.Run();
+    m_Timer.Start();
 
     re.BeginFrame( STEREO_CENTER );
 
