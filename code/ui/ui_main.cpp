@@ -70,6 +70,7 @@ static void UI_Cache_f( void ) {
 	NewGameMenu_Cache();
 	PauseMenu_Cache();
 	CreditsMenu_Cache();
+	ConfirmMenu_Cache();
 }
 
 CUIFontCache::CUIFontCache( void ) {
@@ -164,14 +165,13 @@ void CUIFontCache::SetActiveFont( ImFont *font )
 		Finalize();
 	}
 
-	if ( m_pCurrentFont ) {
-		ImGui::PopFont();
-	}
-
-	m_pCurrentFont = font;
 	if ( !ImGui::GetFont()->ContainerAtlas ) {
 		return;
 	}
+	if ( m_pCurrentFont ) {
+		ImGui::PopFont();
+	}
+	m_pCurrentFont = font;
 	ImGui::PushFont( font );
 }
 

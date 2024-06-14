@@ -38,6 +38,8 @@ namespace TheNomad::SGame {
 		ST_PLAYR_LEGS_IDLE_AIR,
 		ST_PLAYR_LEGS_FALL_AIR,
 		ST_PLAYR_LEGS_STUN_AIR,
+
+		ST_NULL,
 		
 		NumStates
 	};
@@ -227,7 +229,7 @@ namespace TheNomad::SGame {
 					return @m_States[i];
 				}
 			}
-			return null;
+			return @m_NullState;
 		}
 
 		dictionary@ GetBaseStateCache() {
@@ -240,6 +242,7 @@ namespace TheNomad::SGame {
 		private dictionary m_AnimationCache;
 		private array<EntityState> m_States;
 		private array<Animation> m_Animations;
+		private EntityState m_NullState;
 
 		// technically const
 		private dictionary m_BaseStateCache;

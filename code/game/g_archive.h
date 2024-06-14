@@ -111,7 +111,7 @@ typedef struct ngdsection_read_s
 	int32_t size;
 	int32_t numFields;
 	
-    ArchiveCache<const char *, ngdfield_t *> m_FieldCache;
+   ngdfield_t **m_pFieldCache;
 } ngdsection_read_t;
 
 typedef struct {

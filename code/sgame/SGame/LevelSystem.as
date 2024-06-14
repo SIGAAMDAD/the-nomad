@@ -242,10 +242,16 @@ namespace TheNomad::SGame {
 			
 			DebugPrint( "Archiving level stats...\n" );
 			
-			TheNomad::GameSystem::SaveSystem::SaveSection section( GetName() );
-			section.SaveUInt( "NumLevels", m_LevelInfoDatas.Count() );
-			for ( i = 0; i < m_LevelInfoDatas.Count(); i++ ) {
-				section.SaveString( "LevelNames" + i, m_LevelInfoDatas[i].m_Name );
+			{
+				TheNomad::GameSystem::SaveSystem::SaveSection section( GetName() );
+				section.SaveUInt( "NumLevels", m_LevelInfoDatas.Count() );
+				for ( i = 0; i < m_LevelInfoDatas.Count(); i++ ) {
+					section.SaveString( "LevelNames" + i, m_LevelInfoDatas[i].m_Name );
+				}
+				section.SaveUInt( "CurrentCheckpoint", m_CurrentCheckpoint );
+				section.SaveUInt( "TimeMilliseconds", m_LevelTimer.ElapsedMilliseconds() );
+				section.SaveUInt( "TimeSeconds", m_LevelTimer.ElapsedSeconds() );
+				section.SaveUInt( "TimeMinutes", m_LevelTimer.ElapsedMinutes() );
 			}
 			
 			// save individual stats for each level
@@ -283,36 +289,33 @@ namespace TheNomad::SGame {
 					save.SaveUInt( "NumDeaths", stats.numDeaths );
 				}
 			}
-
-			section.SaveUInt( "CurrentCheckpoint", m_CurrentCheckpoint );
-			section.SaveUInt( "TimeMilliseconds", m_LevelTimer.ElapsedMilliseconds() );
-			section.SaveUInt( "TimeSeconds", m_LevelTimer.ElapsedSeconds() );
-			section.SaveUInt( "TimeMinutes", m_LevelTimer.ElapsedMinutes() );
 		}
 		void OnLoad() {
 			LevelStats@ stats;
 			LevelInfoData@ data;
 			uint i, a;
-			string name;
+			array<string> names;
+
 			TheNomad::GameSystem::SaveSystem::LoadSection load( GetName() );
-			
 			DebugPrint( "Loading level stats...\n" );
 			if ( !load.Found() ) {
 				GameError( "LevelSystem::OnLoad: save file corruption, section 'LevelStats' not found!" );
 			}
-			
+
 			const uint numLevels = load.LoadUInt( "NumLevels" );
-			if ( numLevels != m_LevelInfoDatas.Count() ) {
-				m_LevelInfoDatas.Clear();
-				m_LevelInfoDatas.Resize( numLevels );
+			ConsolePrint( "Got " + numLevels + " levels\n" );
+			m_LevelInfoDatas.Resize( numLevels );
+			names.Resize( numLevels );
+			for ( i = 0; i < m_LevelInfoDatas.Count(); i++ ) {
+				load.LoadString( "LevelNames" + i, names[i] );
 			}
-			for ( i = 0; i < numLevels; i++ ) {
-				load.LoadString( "LevelNames" + i, name );
-				
+
+			for ( i = 0; i < m_LevelInfoDatas.Count(); i++ ) {
 				@data = @m_LevelInfoDatas[i];
-				TheNomad::GameSystem::SaveSystem::LoadSection section( name + "_RankData" );
+				ConsolePrint( "Loading level stats for " + names[i] + "\n" );
+				TheNomad::GameSystem::SaveSystem::LoadSection section( names[i] + "_RankData" );
 				if ( !section.Found() ) {
-					GameError( "LevelSystem::OnLoad: save file corruption, section '" + name + "_RankData' not found!" );
+					GameError( "LevelSystem::OnLoad: save file corruption, section '" + names[i] + "_RankData' not found!" );
 				}
 				
 				// there might be some levels in the save that just aren't present with the mods loaded
@@ -342,10 +345,6 @@ namespace TheNomad::SGame {
 					stats.numDeaths = section.LoadUInt( "NumDeaths" );
 				}
 			}
-
-			m_CurrentCheckpoint = load.LoadUInt( "CurrentCheckpoint" );
-			m_LevelTimer = TheNomad::Engine::Timer( load.LoadUInt( "TimeMilliseconds" ), load.LoadUInt( "TimeSeconds" ),
-				load.LoadUInt( "TimeMinutes" ) );
 		}
 		const string& GetName() const {
 			return "LevelSystem";

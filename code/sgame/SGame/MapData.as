@@ -56,7 +56,7 @@ namespace TheNomad::SGame {
 			}
 
 			DebugPrint( "Map \"" + m_Name + "\" loaded with " + m_Checkpoints.Count() + " checkpoints, " +
-				m_Spawns.Count() + " spawns, and " + m_Secrets.Count() + " secrets."
+				m_Spawns.Count() + " spawns, and " + m_Secrets.Count() + " secrets. "
 				+ "Width is " + m_nWidth + " and Height is " + m_nHeight + "\n" );
 		}
 		

@@ -1388,11 +1388,26 @@ static void R_CameraInfo_f( void ) {
 }
 
 static void R_UnloadWorld_f( void ) {
+    int i;
+
     ri.Printf( PRINT_INFO, "Unloading world...\n" );
 
     if ( !rg.world ) {
+        ri.Printf( PRINT_WARNING, "No world loaded.\n" );
         return;
     }
+
+    ri.Printf( PRINT_INFO, "Clearing level assets...\n" );
+    for ( i = 0; i < rg.world->levelTextures; i++ ) {
+		nglDeleteTextures( 1, &rg.textures[ rg.world->firstLevelTexture + i ]->id );
+    }
+
+    rg.numTextures = rg.world->firstLevelTexture;
+    rg.numSpriteSheets = rg.world->firstLevelSpriteSheet;
+
+    R_UnloadLevelShaders();
+
+    ri.Cmd_ExecuteCommand( "snd.unload_level" );
 
     rg.world = NULL;
     rg.worldMapLoaded = qfalse;

@@ -11,39 +11,27 @@ namespace TheNomad::GameSystem::SaveSystem {
 		vec2 LoadVec2( const string& in name ) const {
 			vec2 value;
 
-			LoadSection section( name );
-			if ( !section.Found() ) {
-				return vec2( 0.0f );
-			}
-			value.x = section.LoadFloat( name + ".x" );
-			value.y = section.LoadFloat( name + ".y" );
+			value.x = LoadFloat( "vec2_" + name + ".x" );
+			value.y = LoadFloat( "vec2_" + name + ".y" );
 
 			return value;
 		}
 		vec3 LoadVec3( const string& in name ) const {
 			vec3 value;
 
-			LoadSection section( name );
-			if ( !section.Found() ) {
-				return vec3( 0.0f );
-			}
-			value.x = section.LoadFloat( name + ".x" );
-			value.y = section.LoadFloat( name + ".y" );
-			value.z = section.LoadFloat( name + ".z" );
+			value.x = LoadFloat( "vec3_" + name + ".x" );
+			value.y = LoadFloat( "vec3_" + name + ".y" );
+			value.z = LoadFloat( "vec3_" + name + ".z" );
 
 			return value;
 		}
         vec4 LoadVec4( const string& in name ) const {
             vec4 value;
 
-			LoadSection section( name );
-			if ( !section.Found() ) {
-				return vec4( 0.0f );
-			}
-			value.r = section.LoadFloat( name + ".r" );
-			value.g = section.LoadFloat( name + ".g" );
-			value.b = section.LoadFloat( name + ".b" );
-            value.a = section.LoadFloat( name + ".a" );
+			value.r = LoadFloat( "vec4_" + name + ".r" );
+			value.g = LoadFloat( "vec4_" + name + ".g" );
+			value.b = LoadFloat( "vec4_" + name + ".b" );
+            value.a = LoadFloat( "vec4_" + name + ".a" );
 
 			return value;
         }

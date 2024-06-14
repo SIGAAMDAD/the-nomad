@@ -259,7 +259,6 @@ void MainMenu_Cache( void )
         return;
     }
 
-    PressStart2P = FontCache()->AddFontToCache( "PressStart2P-Regular" );
     s_main->font = FontCache()->AddFontToCache( "AlegreyaSC-Bold" );
     RobotoMono = FontCache()->AddFontToCache( "RobotoMono-Bold" );
 
@@ -283,6 +282,7 @@ void MainMenu_Cache( void )
     s_main->singleplayer.generic.id = ID_SINGEPLAYER;
     s_main->singleplayer.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
     s_main->singleplayer.generic.eventcallback = MainMenu_EventCallback;
+    s_main->singleplayer.generic.font = AlegreyaSC;
     s_main->singleplayer.text = strManager->ValueForKey( "MENU_MAIN_SINGLEPLAYER" )->value;
     s_main->singleplayer.color = color_white;
 
@@ -290,6 +290,7 @@ void MainMenu_Cache( void )
     s_main->mods.generic.id = ID_MODS;
     s_main->mods.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
     s_main->mods.generic.eventcallback = MainMenu_EventCallback;
+    s_main->mods.generic.font = AlegreyaSC;
     s_main->mods.text = strManager->ValueForKey( "MENU_MAIN_MODS" )->value;
     s_main->mods.color = color_white;
 
@@ -297,6 +298,7 @@ void MainMenu_Cache( void )
     s_main->settings.generic.id = ID_SETTINGS;
     s_main->settings.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
     s_main->settings.generic.eventcallback = MainMenu_EventCallback;
+    s_main->settings.generic.font = AlegreyaSC;
     s_main->settings.text = strManager->ValueForKey( "MENU_MAIN_SETTINGS" )->value;
     s_main->settings.color = color_white;
 
@@ -304,6 +306,7 @@ void MainMenu_Cache( void )
     s_main->credits.generic.id = ID_CREDITS;
     s_main->credits.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
     s_main->credits.generic.eventcallback = MainMenu_EventCallback;
+    s_main->credits.generic.font = AlegreyaSC;
     s_main->credits.text = strManager->ValueForKey( "MENU_MAIN_CREDITS" )->value;
     s_main->credits.color = color_white;
 
@@ -311,6 +314,7 @@ void MainMenu_Cache( void )
     s_main->exitGame.generic.id = ID_EXIT;
     s_main->exitGame.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
     s_main->exitGame.generic.eventcallback = MainMenu_EventCallback;
+    s_main->exitGame.generic.font = AlegreyaSC;
     s_main->exitGame.text = strManager->ValueForKey( "MENU_MAIN_EXIT" )->value;
     s_main->exitGame.color = color_white;
 

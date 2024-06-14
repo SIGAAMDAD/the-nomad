@@ -955,6 +955,11 @@ typedef struct {
 
     uint32_t levelTextures;
     uint32_t levelShaders;
+    uint32_t levelSpriteSheets;
+
+    uint32_t firstLevelTexture;
+    uint32_t firstLevelShader;
+    uint32_t firstLevelSpriteSheet;
 
     uint32_t width;
     uint32_t height;
@@ -1617,12 +1622,13 @@ void RE_ProcessEntities( void );
 // rgl_shader.c
 //
 void R_ShaderList_f( void );
-nhandle_t RE_RegisterShaderFromTexture(const char *name, int32_t lightmapIndex, texture_t *image);
-nhandle_t RE_RegisterShader(const char *name);
-shader_t *R_GetShaderByHandle(nhandle_t hShader);
+nhandle_t RE_RegisterShaderFromTexture( const char *name, int32_t lightmapIndex, texture_t *image );
+nhandle_t RE_RegisterShader( const char *name );
+shader_t *R_GetShaderByHandle( nhandle_t hShader );
 shader_t *R_FindShaderByName( const char *name );
-shader_t *R_FindShader(const char *name);
+shader_t *R_FindShader( const char *name );
 void R_InitShaders( void );
+void R_UnloadLevelShaders( void );
 
 //
 // rgl_draw.c

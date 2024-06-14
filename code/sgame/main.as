@@ -102,7 +102,7 @@ void InitResources() {
 	//
 	str = TheNomad::Engine::CvarVariableString( "skin" );
 
-	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_base" );
+	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_torso" );
 	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_legs" );
 	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_arms" );
 
@@ -114,9 +114,9 @@ void InitResources() {
 	//
 	// init sfx
 	//
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die0.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die1.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die2.ogg" );
+	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die3.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain0.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain1.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain2.ogg" );
@@ -125,6 +125,8 @@ void InitResources() {
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/dash.ogg" );
 
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/misc/passCheckpoint.ogg" );
+
+	TheNomad::Engine::ResourceCache.GetSfx( "sfx/mobs/detect.ogg" );
 
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveGravel0.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveGravel1.ogg" );
@@ -298,6 +300,7 @@ int ModuleOnSaveGame() {
 }
 
 int ModuleOnLoadGame() {
+	TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::InLevel;
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnLoad();
 	}

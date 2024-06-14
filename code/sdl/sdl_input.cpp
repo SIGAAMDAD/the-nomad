@@ -264,13 +264,13 @@ static keynum_t IN_TranslateSDLToQ3Key( SDL_Keysym *keysym, qboolean down )
 		case SDLK_KP_1:         key = KEY_KP_END;        break;
 		case SDLK_END:          key = KEY_END;           break;
 		case SDLK_KP_4:         key = KEY_KP_LEFT;       break;
-		case SDLK_LEFT:         key = KEY_LEFT;          break;
+		case SDLK_LEFT:         key = KEY_LEFTARROW;     break;
 		case SDLK_KP_6:         key = KEY_KP_RIGHT;      break;
-		case SDLK_RIGHT:        key = KEY_RIGHT;         break;
+		case SDLK_RIGHT:        key = KEY_RIGHTARROW;    break;
 		case SDLK_KP_2:         key = KEY_KP_DOWN;       break;
-		case SDLK_DOWN:         key = KEY_DOWN;          break;
+		case SDLK_DOWN:         key = KEY_DOWNARROW;     break;
 		case SDLK_KP_8:         key = KEY_KP_UP;         break;
-		case SDLK_UP:           key = KEY_UP;            break;
+		case SDLK_UP:           key = KEY_UPARROW;       break;
 		case SDLK_ESCAPE:       key = KEY_ESCAPE;        break;
 		case SDLK_KP_ENTER:     key = KEY_KP_ENTER;      break;
 		case SDLK_RETURN:       key = KEY_ENTER;         break;
@@ -532,8 +532,8 @@ static void IN_DeactivateMouse( void )
 
 // We translate axes movement into keypresses
 static const int32_t joy_keys[16] = {
-	KEY_LEFT, KEY_RIGHT,
-	KEY_UP, KEY_DOWN,
+	KEY_LEFTARROW, KEY_RIGHTARROW,
+	KEY_UPARROW, KEY_DOWNARROW,
 	KEY_JOY17, KEY_JOY18,
 	KEY_JOY19, KEY_JOY20,
 	KEY_JOY21, KEY_JOY22,

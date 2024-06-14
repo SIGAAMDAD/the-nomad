@@ -3,7 +3,7 @@
 static world_t r_worldData;
 static byte *fileBase;
 
-static void R_LoadLights(const lump_t *lights)
+static void R_LoadLights( const lump_t *lights )
 {
     uint32_t count;
     maplight_t *in, *out;
@@ -24,7 +24,7 @@ static void R_LoadLights(const lump_t *lights)
     memcpy(out, in, count*sizeof(*out));
 }
 
-static void R_LoadTiles(const lump_t *tiles)
+static void R_LoadTiles( const lump_t *tiles )
 {
     uint32_t count;
     maptile_t *in, *out;
@@ -42,7 +42,7 @@ static void R_LoadTiles(const lump_t *tiles)
     memcpy(out, in, count*sizeof(*out));
 }
 
-static void R_LoadTileset(const lump_t *sprites, const tile2d_header_t *theader)
+static void R_LoadTileset( const lump_t *sprites, const tile2d_header_t *theader )
 {
     uint32_t count, i;
     spriteCoord_t *in,*out;
@@ -254,31 +254,32 @@ static void R_ProcessLights( void )
     memcpy( rg.lightData->data, lights, sizeof( *lights ) * r_worldData.numLights );
 }
 
-void RE_LoadWorldMap(const char *filename)
+void RE_LoadWorldMap( const char *filename )
 {
     bmf_t *header;
     mapheader_t *mheader;
     tile2d_header_t *theader;
+    int i;
     char texture[MAX_NPATH];
     union {
         byte *b;
         void *v;
     } buffer;
 
-    ri.Printf(PRINT_INFO, "------ RE_LoadWorldMap( %s ) ------\n", filename);
+    ri.Printf( PRINT_INFO, "------ RE_LoadWorldMap( %s ) ------\n", filename );
 
-    if (strlen(filename) >= MAX_NPATH) {
-        ri.Error(ERR_DROP, "RE_LoadWorldMap: name '%s' too long", filename);
+    if ( strlen( filename ) >= MAX_NPATH ) {
+        ri.Error(ERR_DROP, "RE_LoadWorldMap: name '%s' too long", filename );
     }
 
-    if (rg.worldMapLoaded) {
-        ri.Error(ERR_DROP, "attempted to reduntantly load world map");
+    if ( rg.worldMapLoaded ) {
+        ri.Error( ERR_DROP, "attempted to reduntantly load world map" );
     }
 
     // load it
-    ri.FS_LoadFile(filename, &buffer.v);
-    if (!buffer.v) {
-        ri.Error(ERR_DROP, "RE_LoadWorldMap: %s not found", filename);
+    ri.FS_LoadFile( filename, &buffer.v );
+    if ( !buffer.v ) {
+        ri.Error( ERR_DROP, "RE_LoadWorldMap: %s not found", filename );
     }
 
     // clear rg.world so if the level fails to load, the next
@@ -287,16 +288,16 @@ void RE_LoadWorldMap(const char *filename)
 
     rg.worldMapLoaded = qtrue;
 
-    memset(&r_worldData, 0, sizeof(r_worldData));
-    N_strncpyz(r_worldData.name, filename, sizeof(r_worldData.name));
-    N_strncpyz(r_worldData.baseName, COM_SkipPath(filename), sizeof(r_worldData.baseName));
+    memset( &r_worldData, 0, sizeof( r_worldData ) );
+    N_strncpyz( r_worldData.name, filename, sizeof( r_worldData.name ) );
+    N_strncpyz( r_worldData.baseName, COM_SkipPath( r_worldData.name ), sizeof( r_worldData.baseName ) );
 
-    COM_StripExtension(r_worldData.baseName, r_worldData.baseName, sizeof(r_worldData.baseName));
+    COM_StripExtension( r_worldData.baseName, r_worldData.baseName, sizeof( r_worldData.baseName ) );
 
     header = (bmf_t *)buffer.b;
-    if (LittleInt(header->version) != LEVEL_VERSION) {
-        ri.Error(ERR_DROP, "RE_LoadWorldMap: %s has the wrong version number (%i should be %i)",
-            filename, LittleInt(header->version), LEVEL_VERSION);
+    if ( LittleInt( header->version ) != LEVEL_VERSION ) {
+        ri.Error( ERR_DROP, "RE_LoadWorldMap: %s has the wrong version number (%i should be %i)",
+            filename, LittleInt( header->version ), LEVEL_VERSION );
     }
 
     fileBase = (byte *)header;
@@ -305,7 +306,7 @@ void RE_LoadWorldMap(const char *filename)
     theader = &header->tileset;
 
     // swap all the lumps
-    for (uint32_t i = 0; i < ( sizeof(bmf_t)/4 ); i++) {
+    for ( i = 0; i < ( sizeof( bmf_t ) / 4 ); i++ ) {
         ((int32_t *)header)[i] = LittleInt( ((int32_t *)header)[i] );
     }
 
@@ -315,16 +316,25 @@ void RE_LoadWorldMap(const char *filename)
     r_worldData.height = mheader->mapHeight;
     r_worldData.numTiles = r_worldData.width * r_worldData.height;
 
+    r_worldData.firstLevelTexture = rg.numTextures;
+    r_worldData.firstLevelShader = rg.numShaders;
+    r_worldData.firstLevelSpriteSheet = rg.numSpriteSheets;
+    r_worldData.levelShaders = 0;
+    r_worldData.levelTextures = 0;
+    r_worldData.levelSpriteSheets = 0;
+
     // load into heap
-    R_LoadTileset(&mheader->lumps[LUMP_SPRITES], theader);
-    R_LoadTiles(&mheader->lumps[LUMP_TILES]);
-    R_LoadLights(&mheader->lumps[LUMP_LIGHTS]);
+    R_LoadTileset( &mheader->lumps[LUMP_SPRITES], theader );
+    R_LoadTiles( &mheader->lumps[LUMP_TILES] );
+    R_LoadLights( &mheader->lumps[LUMP_LIGHTS] );
+
+    rg.world = &r_worldData;
 
     R_ProcessLights();
     R_InitWorldBuffer();
     R_GenerateTexCoords( &theader->info );
 
-    rg.world = &r_worldData;
+    ri.Cmd_ExecuteCommand( "snd.startup_level" );
 
     ri.FS_FreeFile( buffer.v );
 }

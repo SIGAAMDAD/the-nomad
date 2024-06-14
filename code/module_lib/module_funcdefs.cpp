@@ -2072,14 +2072,10 @@ void ModuleLib_Register_Engine( void )
         REGISTER_ENUM_VALUE( "KeyNum", "Space", KEY_SPACE );
         REGISTER_ENUM_VALUE( "KeyNum", "BackSpace", KEY_BACKSPACE );
         REGISTER_ENUM_VALUE( "KeyNum", "Alt", KEY_ALT );
-        REGISTER_ENUM_VALUE( "KeyNum", "UpArrow", KEY_UP );
-        REGISTER_ENUM_VALUE( "KeyNum", "LeftArrow", KEY_LEFT );
-        REGISTER_ENUM_VALUE( "KeyNum", "DownArrow", KEY_DOWN );
-        REGISTER_ENUM_VALUE( "KeyNum", "RightArrow", KEY_RIGHT );
-        REGISTER_ENUM_VALUE( "KeyNum", "Up", KEY_UP );
-        REGISTER_ENUM_VALUE( "KeyNum", "Left", KEY_LEFT );
-        REGISTER_ENUM_VALUE( "KeyNum", "Down", KEY_DOWN );
-        REGISTER_ENUM_VALUE( "KeyNum", "Right", KEY_RIGHT );
+        REGISTER_ENUM_VALUE( "KeyNum", "UpArrow", KEY_UPARROW );
+        REGISTER_ENUM_VALUE( "KeyNum", "LeftArrow", KEY_LEFTARROW );
+        REGISTER_ENUM_VALUE( "KeyNum", "DownArrow", KEY_DOWNARROW );
+        REGISTER_ENUM_VALUE( "KeyNum", "RightArrow", KEY_RIGHTARROW );
         REGISTER_ENUM_VALUE( "KeyNum", "BackSlash", KEY_BACKSLASH );
         REGISTER_ENUM_VALUE( "KeyNum", "Slash", KEY_SLASH );
         REGISTER_ENUM_VALUE( "KeyNum", "GamePad_A", KEY_PAD0_A );

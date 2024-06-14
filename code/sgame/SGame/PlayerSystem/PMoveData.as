@@ -86,7 +86,7 @@ namespace TheNomad::SGame {
 			}
 			
 			if ( accel.x != 0.0f || accel.y != 0.0f ) {
-				if ( ( move_toggle % 16 ) == 0 ) {
+				if ( ( move_toggle % ( 16 * TheNomad::Engine::CvarVariableInteger( "com_maxfps" ) ) ) == 0 ) {
 					// it sound like a machine gun if it isn't spaced out
 					moveGravel0.Play();
 				}

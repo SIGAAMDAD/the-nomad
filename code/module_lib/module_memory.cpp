@@ -1785,7 +1785,6 @@ void Mem_Shutdown( void ) {
 	}
 
 	idHeap *m = mem_heap;
-	mem_heap = NULL;
 	m->~idHeap();
 
 	Cmd_RemoveCommand( "memoryDumpCompressed" );

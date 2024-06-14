@@ -442,6 +442,10 @@ void Text_Draw( menutext_t *text )
 	ImGui::PushStyleColor( ImGuiCol_ButtonActive, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
 	ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
 
+	if ( text->generic.font ) {
+		FontCache()->SetActiveFont( text->generic.font );
+	}
+
 	colorChanged = qfalse;
 	if ( text->generic.flags & QMF_GRAYED ) {
 		ImGui::PushStyleColor( ImGuiCol_Text, colorMdGrey );

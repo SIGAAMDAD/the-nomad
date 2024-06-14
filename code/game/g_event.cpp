@@ -59,10 +59,10 @@ static const keyname_t keynames[] = {
 	{ "CONSOLE", KEY_CONSOLE },
 	{ "PRINTSCREEN", KEY_SCREENSHOT },
 
-	{ "Up Arrow", KEY_UP },
-	{ "Down Arrow", KEY_DOWN },
-	{ "Right Arrow", KEY_RIGHT },
-	{ "Left Arrow", KEY_LEFT },
+	{ "Up Arrow", KEY_UPARROW },
+	{ "Down Arrow", KEY_DOWNARROW },
+	{ "Right Arrow", KEY_RIGHTARROW },
+	{ "Left Arrow", KEY_LEFTARROW },
 
 	{ "F1", KEY_F1 },
 	{ "F2", KEY_F2 },
@@ -311,10 +311,11 @@ const char *Key_KeynumToString(uint32_t keynum)
 	static char tinystr[5];
 	uint32_t i, j;
 
-	if (keynum >= NUMKEYS) {
+	if ( keynum >= NUMKEYS ) {
 		return "<OUT OF RANGE>";
 	}
 
+	/*
 	// manual overrides for keys that show up as ASCII but really shouldn't show up as ASCII
 	switch ( keynum ) {
 	case KEY_MOUSE_BUTTON_4:
@@ -371,17 +372,18 @@ const char *Key_KeynumToString(uint32_t keynum)
     default:
         break;
 	};
+	*/
 
 	// check for printable ascii (don't use quote)
-	if (keynum > ' ' && keynum < '~' && keynum != '"' && keynum != ';') {
+	if ( keynum > ' ' && keynum < '~' && keynum != '"' && keynum != ';' ) {
 		tinystr[0] = keynum;
 		tinystr[1] = '\0';
 		return tinystr;
 	}
 
 	// check for a key string
-	for (kn = keynames; kn->name; kn++) {
-		if (keynum == kn->keynum) {
+	for ( kn = keynames; kn->name; kn++ ) {
+		if ( keynum == kn->keynum ) {
 			return kn->name;
 		}
 	}
@@ -767,48 +769,42 @@ static void Field_KeyDownEvent( field_t *edit, int key ) {
 	len = strlen( edit->buffer );
 
 	switch ( key ) {
-		case KEY_DELETE:
-			if ( edit->cursor < len ) {
-				memmove( edit->buffer + edit->cursor,
-					edit->buffer + edit->cursor + 1, len - edit->cursor );
+	case KEY_DELETE:
+		if ( edit->cursor < len ) {
+			memmove( edit->buffer + edit->cursor,
+				edit->buffer + edit->cursor + 1, len - edit->cursor );
+		}
+		break;
+	case KEY_RIGHTARROW:
+		if ( edit->cursor < len ) {
+			if ( keys[ KEY_CTRL ].down ) {
+				Field_SeekWord( edit, 1 );
+			} else {
+				edit->cursor++;
 			}
-			break;
-
-		case KEY_RIGHT:
-			if ( edit->cursor < len ) {
-				if ( keys[ KEY_CTRL ].down ) {
-					Field_SeekWord( edit, 1 );
-				} else {
-					edit->cursor++;
-				}
+		}
+		break;
+		case KEY_LEFTARROW:
+		if ( edit->cursor > 0 ) {
+			if ( keys[ KEY_CTRL ].down ) {
+				Field_SeekWord( edit, -1 );
+			} else {
+				edit->cursor--;
 			}
-			break;
-
-		case KEY_LEFT:
-			if ( edit->cursor > 0 ) {
-				if ( keys[ KEY_CTRL ].down ) {
-					Field_SeekWord( edit, -1 );
-				} else {
-					edit->cursor--;
-				}
-			}
-			break;
-
-		case KEY_HOME:
-			edit->cursor = 0;
-			break;
-
-		case KEY_END:
-			edit->cursor = len;
-			break;
-
-		case KEY_INSERT:
-			key_overstrikeMode = !key_overstrikeMode;
-			break;
-
-		default:
-			break;
-	}
+		}
+		break;
+	case KEY_HOME:
+		edit->cursor = 0;
+		break;
+	case KEY_END:
+		edit->cursor = len;
+		break;
+	case KEY_INSERT:
+		key_overstrikeMode = !key_overstrikeMode;
+		break;
+	default:
+		break;
+	};
 
 	// Change scroll if cursor is no longer visible
 	if ( edit->cursor < edit->scroll ) {
@@ -1335,10 +1331,10 @@ static ImGuiKey EngineKeyToImGuiKey( uint32_t key )
     case KEY_DELETE: return ImGuiKey_Delete;
     case KEY_END: return ImGuiKey_End;
     case KEY_PAGEDOWN: return ImGuiKey_PageDown;
-    case KEY_RIGHT: return ImGuiKey_RightArrow;
-    case KEY_LEFT: return ImGuiKey_LeftArrow;
-    case KEY_DOWN: return ImGuiKey_DownArrow;
-    case KEY_UP: return ImGuiKey_UpArrow;
+    case KEY_RIGHTARROW: return ImGuiKey_RightArrow;
+    case KEY_LEFTARROW: return ImGuiKey_LeftArrow;
+    case KEY_DOWNARROW: return ImGuiKey_DownArrow;
+    case KEY_UPARROW: return ImGuiKey_UpArrow;
     case KEY_KP_MINUS: return ImGuiKey_KeypadSubtract;
     case KEY_KP_PLUS: return ImGuiKey_KeypadAdd;
     case KEY_KP_ENTER: return ImGuiKey_KeypadEnter;

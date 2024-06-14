@@ -309,3 +309,37 @@ menu/play_1
         rgbGen vertex
     }
 }
+
+menu/load_0
+{
+    nomipmaps
+    if ( $r_textureDetail < 2 ) {
+        texFilter bilinear
+        map textures/menu/low/load_0.tga
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        rgbGen vertex
+    }
+    else {
+        texFilter bilinear
+        map textures/menu/standard/load_0.tga
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        rgbGen vertex
+    }
+}
+
+menu/load_1
+{
+    nomipmaps
+    if ( $r_textureDetail < 2 ) {
+        texFilter bilinear
+        map textures/menu/low/load_1.tga
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        rgbGen vertex
+    }
+    else {
+        texFilter bilinear
+        map textures/menu/standard/load_1.tga
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        rgbGen vertex
+    }
+}

@@ -423,13 +423,14 @@ void R_ScreenToGL(vec3_t *xyz)
     xyz[3][0] = 2.0f * xyz[3][0] / glConfig.vidWidth - 1.0f;
 	xyz[3][1] = 1.0f - 2.0f * xyz[3][1] / glConfig.vidHeight;
 }
-
 */
+
 nhandle_t RE_RegisterSpriteSheet( const char *npath, uint32_t sheetWidth, uint32_t sheetHeight, uint32_t spriteWidth, uint32_t spriteHeight )
 {
     spriteSheet_t *sheet;
     uint64_t len;
     uint64_t size;
+    uint64_t i;
     nhandle_t handle;
     uint32_t numSprites, spriteCountY, spriteCountX;
     sprite_t *sprite;
@@ -448,7 +449,7 @@ nhandle_t RE_RegisterSpriteSheet( const char *npath, uint32_t sheetWidth, uint32
     //
     // check if we already have it
     //
-    for ( uint64_t i = 0; i < rg.numSpriteSheets; i++ ) {
+    for ( i = 0; i < rg.numSpriteSheets; i++ ) {
         if ( !N_stricmp( npath, rg.sheets[i]->name ) ) {
             return (nhandle_t)i;
         }
@@ -459,9 +460,9 @@ nhandle_t RE_RegisterSpriteSheet( const char *npath, uint32_t sheetWidth, uint32
     numSprites = ( sheetWidth / spriteWidth ) * ( sheetHeight / spriteHeight );
 
     size = 0;
-    size += PAD( sizeof(*sheet), sizeof(uintptr_t) );
-    size += PAD( sizeof(*sheet->sprites) * numSprites, sizeof(uintptr_t) );
-    size += PAD( len, sizeof(uintptr_t) );
+    size += PAD( sizeof( *sheet ), sizeof( uintptr_t ) );
+    size += PAD( sizeof( *sheet->sprites ) * numSprites, sizeof( uintptr_t ) );
+    size += PAD( len, sizeof( uintptr_t ) );
 
     handle = rg.numSpriteSheets;
     sheet = rg.sheets[rg.numSpriteSheets] = (spriteSheet_t *)ri.Hunk_Alloc( size, h_low );
@@ -496,6 +497,9 @@ nhandle_t RE_RegisterSpriteSheet( const char *npath, uint32_t sheetWidth, uint32
     }
 
     rg.numSpriteSheets++;
+    if ( rg.world && rg.worldMapLoaded ) {
+        rg.world->levelSpriteSheets++;
+    }
 
     return handle;
 }

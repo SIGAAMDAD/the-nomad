@@ -592,7 +592,7 @@ static int Con_TextCallback( ImGuiInputTextCallbackData *data )
 
 	// command history (ctrl-p ctrl-n for unix style)
 
-	if ( ( keys[KEY_WHEEL_UP].down && keys[KEY_SHIFT].down ) || keys[KEY_UP].down
+	if ( ( keys[KEY_WHEEL_UP].down && keys[KEY_SHIFT].down ) || keys[KEY_UPARROW].down
 		|| ( keys[KEY_P].down && keys[KEY_CTRL].down ) )
 	{
 		if ( Con_HistoryGetPrev( &g_consoleField ) ) {
@@ -620,7 +620,7 @@ static int Con_TextCallback( ImGuiInputTextCallbackData *data )
 		Z_Free( buf );
 	}
 */
-	if ( ( keys[KEY_WHEEL_DOWN].down && keys[KEY_SHIFT].down ) || keys[KEY_DOWN].down
+	if ( ( keys[KEY_WHEEL_DOWN].down && keys[KEY_SHIFT].down ) || keys[KEY_DOWNARROW].down
 		|| ( keys[KEY_N].down && keys[KEY_CTRL].down ) )
 	{
 		if ( Con_HistoryGetNext( &g_consoleField ) ) {

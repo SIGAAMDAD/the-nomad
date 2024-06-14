@@ -353,9 +353,7 @@ void SCR_UpdateScreen( void )
     static int framecount;
     static int next_frametime;
 	extern cvar_t *ui_debugOverlay;
-
-//	Assert( !g_pRenderThread->IsAlive() );
-//	g_pRenderThread->Start();
+	
 	re.BeginFrame( STEREO_CENTER );
 
     if ( framecount == gi.framecount ) {
@@ -418,11 +416,6 @@ void SCR_UpdateScreen( void )
 	} else {
 		re.EndFrame( NULL, NULL, &gi.pc );
 	}
-
-	// draw it all
-//	if ( !g_pRenderThread->Join() ) {
-//		N_Error( ERR_FATAL, "SCR_UpdateScreen: render thread join timed out, aborting process" );
-//	}
 
     recursive = 0;
 }

@@ -1658,6 +1658,7 @@ static shader_t *GeneratePermanentShader( void )
 {
     shader_t *newShader;
     uint64_t size, hash;
+	uint32_t i;
 
     newShader = ri.Hunk_Alloc( sizeof(shader_t), h_low );
 
@@ -1671,7 +1672,7 @@ static shader_t *GeneratePermanentShader( void )
 
     rg.numShaders++;
 
-	for (uint32_t i = 0; i < MAX_SHADER_STAGES; i++) {
+	for ( i = 0; i < MAX_SHADER_STAGES; i++ ) {
 		if (!stages[i].active) {
 			break;
 		}
@@ -2200,6 +2201,10 @@ static shader_t *FinishShader(void)
 
 	// determine which vertex attributes this shader needs
 	ComputeVertexAttribs();
+
+	if ( rg.world && rg.worldMapLoaded ) {
+		rg.world->levelShaders++;
+	}
 
     return GeneratePermanentShader();
 }
@@ -2738,8 +2743,8 @@ static void ScanAndLoadShaderFiles( void )
 	const char *p, *oldp;
 	uint64_t shaderTextHashTableSizes[MAX_SHADERTEXT_HASH], hash, size;
 
-	memset(buffers, 0, sizeof(buffers));
-	memset(shaderTextHashTableSizes, 0, sizeof(shaderTextHashTableSizes));
+	memset( buffers, 0, sizeof( buffers ) );
+	memset( shaderTextHashTableSizes, 0, sizeof( shaderTextHashTableSizes ) );
 
     uint64_t sum = 0;
 
@@ -2818,7 +2823,7 @@ static void ScanAndLoadShaderFiles( void )
 			break;
 		}
 
-		hash = Com_GenerateHashValue(tok, MAX_SHADERTEXT_HASH);
+		hash = Com_GenerateHashValue( tok, MAX_SHADERTEXT_HASH );
 		shaderTextHashTable[hash][--shaderTextHashTableSizes[hash]] = (char*)oldp;
 
 		SkipBracedSection(&p, 0);
@@ -2852,10 +2857,23 @@ void R_InitShaders( void )
 {
 	ri.Printf( PRINT_INFO, "Initializing Shaders\n" );
 
-    memset( hashTable, 0, sizeof(hashTable) );
+    memset( hashTable, 0, sizeof( hashTable ) );
 
 	CreateInternalShaders();
 
 	ScanAndLoadShaderFiles();
 }
 
+void R_UnloadLevelShaders( void )
+{
+	int i;
+
+	ri.Printf( PRINT_INFO, "Clearing level shaders...\n" );
+
+	for ( i = 0; i < MAX_RENDER_SHADERS; i++ ) {
+		if ( hashTable[i] && hashTable[i]->index >= rg.world->firstLevelShader ) {
+			hashTable[i] = NULL;
+		}
+	}
+	rg.numShaders = rg.world->firstLevelShader;
+}

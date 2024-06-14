@@ -43,6 +43,4 @@ private:
     CTimer m_Timer;
 };
 
-extern CRenderThread *g_pRenderThread;
-
 #endif

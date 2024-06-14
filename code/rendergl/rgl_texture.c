@@ -2370,6 +2370,10 @@ static texture_t *R_CreateImage2( const char *name, byte *pic, int width, int he
 	};
 	glState.memstats.estTextureMemUsed += estSize;
 	glState.memstats.numTextures++;
+	
+	if ( rg.world && rg.worldMapLoaded ) {
+		rg.world->levelTextures++;
+	}
 
 	hash = generateHashValue(name);
 

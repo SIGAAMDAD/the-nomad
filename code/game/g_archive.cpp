@@ -6,6 +6,7 @@
 
 #define NGD_MAGIC 0xff5ad1120
 #define XOR_MAGIC 0xff
+#define EMBEDDED_SECTION_MAGIC 0xffade21
 
 #define IDENT (('d'<<24)+('g'<<16)+('n'<<8)+'!')
 
@@ -86,7 +87,9 @@ static void G_ListMods( const char *pSaveFile, uint64_t nMods, fileHandle_t hFil
 	}
 }
 
-static ngdfield_t *G_LoadArchiveField( const char *pSaveFile, fileHandle_t hFile )
+static void G_LoadArchiveSection( ngdsection_read_t *section, fileHandle_t hFile );
+
+static ngdfield_t *G_LoadArchiveField( ngdsection_read_t *section, const char *pSaveFile, fileHandle_t hFile )
 {
 	uint64_t size;
 	int32_t nameLength;
@@ -96,6 +99,10 @@ static ngdfield_t *G_LoadArchiveField( const char *pSaveFile, fileHandle_t hFile
 	ngdfield_t *field;
 
 	memset( szName, 0, sizeof( szName ) );
+
+	dataSize = 0;
+	nameLength = 0;
+	type = 0;
 
 	FS_Read( &nameLength, sizeof( nameLength ), hFile );
 	nameLength = LittleInt( nameLength );
@@ -155,6 +162,9 @@ static ngdfield_t *G_LoadArchiveField( const char *pSaveFile, fileHandle_t hFile
 			, pSaveFile, szName );
 		}
 		break; }
+	default:
+		N_Error( ERR_DROP, "CGameArchive::LoadArchiveFile: failed to load save '%s', field '%s' has a bad dataType",
+			pSaveFile, szName );
 	};
 	dataSize = LittleInt( dataSize );
 
@@ -169,6 +179,7 @@ static ngdfield_t *G_LoadArchiveField( const char *pSaveFile, fileHandle_t hFile
 	field->dataSize = dataSize;
 	field->type = type;
 	field->nameLength = nameLength;
+	field->dataOffset = FS_FileTell( hFile );
 	strcpy( field->name, szName );
 
 	return field;
@@ -177,7 +188,7 @@ static ngdfield_t *G_LoadArchiveField( const char *pSaveFile, fileHandle_t hFile
 qboolean CGameArchive::LoadArchiveFile( const char *filename, uint64_t index )
 {
 	ngdheader_t header;
-    int64_t i, j;
+    int i, j;
 	int32_t nameLength, numFields;
 	uint64_t size;
 	uint64_t bufSize;
@@ -233,27 +244,28 @@ qboolean CGameArchive::LoadArchiveFile( const char *filename, uint64_t index )
 	for ( i = 0; i < header.numSections; i++ ) {		
 		FS_Read( &nameLength, sizeof( nameLength ), hFile );
 		nameLength = LittleInt( nameLength );
+
 		if ( !nameLength || nameLength >= MAX_SAVE_SECTION_NAME ) {
-			N_Error( ERR_DROP, "CGameArchive::LoadArchiveFile: failed to load save file '%s', section %li nameLength is invalid"
+			N_Error( ERR_DROP, "CGameArchive::LoadArchiveFile: failed to load save file '%s', section %i nameLength is invalid"
 				, name, i );
 		}
 		FS_Read( name, nameLength, hFile );
 		if ( nameLength != strlen( name ) + 1 ) {
-			N_Error( ERR_DROP, "CGameArchive::LoadArchiveFile: failed to load save file '%s', section %li nameLength != strlen( name )"
+			N_Error( ERR_DROP, "CGameArchive::LoadArchiveFile: failed to load save file '%s', section %i nameLength != strlen( name )"
 				, name, i );
 		}
 		FS_Read( &numFields, sizeof( numFields ), hFile );
 		numFields = LittleInt( numFields );
 
 		memset( section, 0, sizeof( *section ) );
-		section->m_FieldCache.reserve( numFields );
+		section->m_pFieldCache = (ngdfield_t **)Hunk_Alloc( sizeof( *section->m_pFieldCache ) * numFields, h_low );
 		section->numFields = numFields;
 		strcpy( section->name, name );
 		section->nameLength = nameLength;
 
 		for ( j = 0; j < section->numFields; j++ ) {
-			field = G_LoadArchiveField( name, hFile );
-			section->m_FieldCache.try_emplace( field->name, field );
+			field = G_LoadArchiveField( section, name, hFile );
+			section->m_pFieldCache[ j ] = field;
 			FS_FileSeek( hFile, field->dataSize, FS_SEEK_CUR );
 		}
 		section++;
@@ -352,11 +364,14 @@ void CGameArchive::BeginSaveSection( const char *moduleName, const char *name )
 	m_pSection->nameLength = strlen( name ) + 1;
 	N_strncpyz( m_pSection->name, name, sizeof( m_pSection->name ) );
 
+	if ( m_nSectionDepth > 1 ) {
+		N_Error( ERR_DROP, "CGameArchive::BeginSaveSection: cannot write embedded save sections" );
+	}
 	FS_Write( &m_pSection->nameLength, sizeof( m_pSection->nameLength ), m_hFile );
 	FS_Write( m_pSection->name, m_pSection->nameLength, m_hFile );
 	FS_Write( &m_pSection->numFields, sizeof( m_pSection->numFields ), m_hFile );
 #ifdef SAVEFILE_MOD_SAFETY
-	path = va( "SaveData/%s/%s.prt", moduleName, name );
+	path = va( "SaveData/%s/%s/%s.prt", moduleName, Cvar_VariableString( "sgame_SaveName" ), name );
 	m_pSection->hFile = FS_FOpenWrite( path );
 	if ( m_pSection->hFile == FS_INVALID_HANDLE ) {
 		N_Error( ERR_DROP, "CGameArchive::BeginSaveSection: failed to create file '%s' in write-only mode", path );
@@ -537,7 +552,7 @@ void CGameArchive::SaveCString( const char *name, const char *data ) {
 	FS_Write( &field.nameLength, sizeof( field.nameLength ), m_hFile );
 	FS_Write( name, field.nameLength, m_hFile );
 	FS_Write( &field.type, sizeof( field.type ), m_hFile );
-	FS_Write( &field.dataSize, sizeof(field.dataSize), m_hFile );
+	FS_Write( &field.dataSize, sizeof( field.dataSize ), m_hFile );
 	FS_Write( data, field.dataSize, m_hFile );
 #ifdef SAVEFILE_MOD_SAFETY
 	FS_Write( &field.nameLength, sizeof( field.nameLength ), m_pSection->hFile );
@@ -623,22 +638,23 @@ void CGameArchive::SaveArray( const char *func, const char *name, const void *pD
 const ngdfield_t *CGameArchive::FindField( const char *name, int32_t type, nhandle_t hSection ) const
 {
 	const ngdsection_read_t *section;
+	int i;
 
 	section = &m_pArchiveCache[ m_nCurrentArchive ]->m_pSectionList[ hSection ];
-	const auto it = section->m_FieldCache.find( name );
 
-	if ( it == section->m_FieldCache.end() ) {
-		// we'll let the modder handle this
-		Con_Printf( COLOR_YELLOW "WARNING: incompatible mod with save file, couldn't find field '%s'\n", name );
-		return NULL;
+	for ( i = 0; i < section->numFields; i++ ) {
+		if ( !N_stricmp( section->m_pFieldCache[i]->name, name ) ) {
+			if ( section->m_pFieldCache[i]->type != type ) {
+				N_Error( ERR_DROP, "CGameArchive::FindField: save file corrupt or incompatible mod, field type doesn't match type given for '%s'", name );
+			}
+			FS_FileSeek( m_hFile, section->m_pFieldCache[i]->dataOffset, FS_SEEK_SET );
+			return section->m_pFieldCache[i];
+		}
 	}
-	if ( it->second->type != type ) {
-		N_Error( ERR_DROP, "CGameArchive::FindField: save file corrupt or incompatible mod, field type doesn't match type given for '%s'", name );
-	}
 
-	FS_FileSeek( m_hFile, it->second->dataOffset, FS_SEEK_SET );
-
-	return it->second;
+	// we'll let the modder handle this
+	Con_Printf( COLOR_YELLOW "WARNING: incompatible mod with save file, couldn't find field '%s'\n", name );
+	return NULL;
 }
 
 float CGameArchive::LoadFloat( const char *name, nhandle_t hSection ) {
@@ -871,6 +887,9 @@ void CGameArchive::LoadCString( const char *name, char *pBuffer, int32_t maxLeng
 	}
 	
 	field = FindField( name, FT_STRING, hSection );
+	if ( !field ) {
+		return;
+	}
 
 	// FIXME:
 	
@@ -888,11 +907,11 @@ void CGameArchive::LoadString( const char *name, string_t *pString, nhandle_t hS
 	}
 	
 	field = FindField( name, FT_STRING, hSection );
-	
-	if ( pString->size() < field->dataSize ) {
-		pString->resize( field->dataSize );
+	if ( !field ) {
+		return;
 	}
-	memset( pString->data(), 0, pString->size() );
+	
+	pString->resize( field->dataSize );
 	if ( !FS_Read( pString->data(), field->dataSize, m_hFile ) ) {
 		N_Error( ERR_DROP, "%s: failed to read field '%s'", __func__, name );
 	}
@@ -1039,7 +1058,7 @@ nhandle_t CGameArchive::GetSection( const char *name )
 
 	section = NULL;
 	for ( i = 0; i < m_pArchiveCache[ m_nCurrentArchive ]->m_nSections; i++ ) {
-		if ( !N_strcmp( m_pArchiveCache[ m_nCurrentArchive ]->m_pSectionList[i].name, name ) ) {
+		if ( !N_stricmp( m_pArchiveCache[ m_nCurrentArchive ]->m_pSectionList[i].name, name ) ) {
 			section = &m_pArchiveCache[ m_nCurrentArchive ]->m_pSectionList[i];
 			break;
 		}
@@ -1123,7 +1142,7 @@ bool CGameArchive::Load( const char *name )
 	N_strncpyz( szName, name, sizeof( szName ) );
 	COM_DefaultExtension( szName, sizeof( szName ), ".ngd" );
 
-	Con_Printf( "Loading save file '%s', please do not close out of the game...\n", szName );
+	Con_Printf( "Loading save file '%s', please do not close out of the game...\n", name );
 
 	m_nCurrentArchive = m_nArchiveFiles;
 	found = false;

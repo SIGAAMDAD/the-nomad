@@ -101,24 +101,25 @@ namespace TheNomad::SGame {
 		}
 		void OnLoad() {
 			EntityObject@ ent;
-			TheNomad::GameSystem::SaveSystem::LoadSection section( GetName() );
 
-			if ( !section.Found() ) {
-				ConsoleWarning( "EntitySystem::OnLoad: no save section for entity data found\n" );
-				return;
+			{
+				TheNomad::GameSystem::SaveSystem::LoadSection section( GetName() );
+
+				if ( !section.Found() ) {
+					ConsoleWarning( "EntitySystem::OnLoad: no save section for entity data found\n" );
+					return;
+				}
+
+				const uint numEntities = section.LoadUInt( "NumEntities" );
+				DebugPrint( "Loading entity data from save file...\n" );
+
+				if ( numEntities == 0 ) {
+					return;
+				}
+				m_EntityList.Resize( numEntities );
 			}
 
-			const uint numEntities = section.LoadUInt( "NumEntities" );
-
-			DebugPrint( "Loading entity data from save file...\n" );
-
-			if ( numEntities == 0 ) {
-				return;
-			}
-
-			m_EntityList.Resize( numEntities );
-
-			for ( uint i = 0; i < numEntities; i++ ) {
+			for ( uint i = 0; i < m_EntityList.Count(); i++ ) {
 				TheNomad::GameSystem::SaveSystem::LoadSection data( "EntityData_" + i );
 				if ( !data.Found() ) {
 					GameError( "EntitySystem::OnLoad: save section \"EntityData_" + i + "\" not found" );
@@ -156,9 +157,12 @@ namespace TheNomad::SGame {
 			DebugPrint( "Loaded " + m_EntityList.Count() + " entities.\n" );
 		}
 		void OnSave() const {
-			TheNomad::GameSystem::SaveSystem::SaveSection section( GetName() );
-
 			DebugPrint( "Saving entity data...\n" );
+
+			{
+				TheNomad::GameSystem::SaveSystem::SaveSection section( GetName() );
+				section.SaveUInt( "NumEntities", m_EntityList.Count() );
+			}
 
 			for ( uint i = 0; i < m_EntityList.Count(); i++ ) {
 				TheNomad::GameSystem::SaveSystem::SaveSection data( "EntityData_" + i );

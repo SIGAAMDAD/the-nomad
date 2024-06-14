@@ -27,9 +27,9 @@ namespace TheNomad::SGame {
 			@m_WeaponSlots[7] = @m_LeftArm;
 			@m_WeaponSlots[8] = @m_Ordnance;
 
-			dieSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die0.ogg" );
-			dieSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die1.ogg" );
-			dieSfx2 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die2.ogg" );
+			dieSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die1.ogg" );
+			dieSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die2.ogg" );
+			dieSfx2 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die3.ogg" );
 
 			painSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain0.ogg" );
 			painSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain1.ogg" );
@@ -206,6 +206,7 @@ namespace TheNomad::SGame {
 			section.SaveFloat( "health", m_nHealth );
 			section.SaveFloat( "rage", m_nRage );
 
+			
 			section.SaveUInt( "legsStateId", m_ArmState.GetID() );
 			section.SaveUInt( "armsStateId", m_LegState.GetID() );
 			section.SaveUInt( "torsoStateId", m_State.GetID() );
@@ -466,7 +467,7 @@ namespace TheNomad::SGame {
 			m_Direction = Util::Angle2Dir( m_PhysicsObject.GetAngle() );
 
 			@m_SpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/"
-				+ TheNomad::Engine::CvarVariableString( "skin" ) + "_base", 32, 32, 512, 512 );
+				+ TheNomad::Engine::CvarVariableString( "skin" ) + "_torso", 32, 32, 512, 512 );
 			if ( @m_SpriteSheet is null ) {
 				GameError( "PlayrObject::Spawn: failed to load torso sprite sheet" );
 			}
@@ -477,7 +478,6 @@ namespace TheNomad::SGame {
 			m_Facing = FACING_RIGHT;
 
 			/*
-
 			@m_LegSpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/"
 				+ TheNomad::Engine::CvarVariableString( "skin" ) + "_legs", 32, 32, 512, 512 );
 			if ( @m_LegSpriteSheet is null ) {
@@ -495,6 +495,7 @@ namespace TheNomad::SGame {
 				GameError( "PlayrObject::Spawn: failed to load arm sprite sheet" );
 			}
 			@m_ArmState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_IDLE );
+			m_ArmsFacing = FACING_RIGHT;
 			*/
 
 			m_nHealMult = 0.0f;

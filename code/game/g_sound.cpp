@@ -210,7 +210,7 @@ public:
     CSoundSource *InitSource( const char *filename, int64_t tag );
 
     inline uint64_t NumSources( void ) const { return m_nSources; }
-    inline CSoundSource *GetSource( sfxHandle_t handle ) { return m_pSources[handle]; }
+    inline CSoundSource *&GetSource( sfxHandle_t handle ) { return m_pSources[handle]; }
     inline const CSoundSource *GetSource( sfxHandle_t handle ) const { return m_pSources[handle]; }
     inline void SetListenerPos( const vec3_t origin ) { VectorCopy( m_ListenerPosition, origin ); }
 
@@ -218,6 +218,9 @@ public:
 
     CThreadMutex m_hAllocLock;
     CThreadMutex m_hQueueLock;
+
+    uint32_t m_nFirstLevelSource;
+    uint32_t m_nLevelSources;
 
     eastl::fixed_vector<CSoundSource *, 10> m_LoopingTracks;
 private:
@@ -290,16 +293,16 @@ void CSoundSource::Shutdown( void )
 
     if ( alIsBuffer( m_iBuffer ) ) {
         if ( alIsSource( m_iSource ) ) {
-            ALCall( alGetSourcei( m_iSource, AL_SOURCE_STATE, &state ) );
+            alGetSourcei( m_iSource, AL_SOURCE_STATE, &state );
             if ( state == AL_PLAYING ) {
-                ALCall( alSourceStop( m_iSource ) );
+                alSourceStop( m_iSource );
             }
-            ALCall( alSourcei( m_iSource, AL_BUFFER, AL_NONE ) );
+            alSourcei( m_iSource, AL_BUFFER, AL_NONE );
         }
-        ALCall( alDeleteBuffers( 1, &m_iBuffer ) );
+        alDeleteBuffers( 1, &m_iBuffer );
     }
     if ( alIsSource( m_iSource ) && m_iTag != TAG_MUSIC ) {
-        ALCall( alDeleteSources( 1, &m_iSource ) );
+        alDeleteSources( 1, &m_iSource );
     }
 
     m_iBuffer = 0;
@@ -620,6 +623,9 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
     }
 
     Hunk_FreeTempMemory( data );
+    if ( gi.mapLoaded && gi.state == GS_LEVEL ) {
+        sndManager->m_nLevelSources++;
+    }
 
     return true;
 }
@@ -1145,6 +1151,20 @@ static void Snd_PlaySfx_f( void ) {
     Snd_PlaySfx( hSfx );
 }
 
+void Snd_UnloadLevel_f( void ) {
+    int i;
+    
+    for ( i = 0; i < sndManager->m_nLevelSources; i++ ) {
+        sndManager->GetSource( sndManager->m_nFirstLevelSource + i )->Shutdown();
+        sndManager->GetSource( sndManager->m_nFirstLevelSource + i ) = NULL;
+    }
+}
+
+void Snd_StartupLevel_f( void ) {
+    sndManager->m_nFirstLevelSource = sndManager->NumSources();
+    sndManager->m_nLevelSources = 0;
+}
+
 void Snd_Init( void )
 {
     snd_effectsOn = Cvar_Get( "snd_effectsOn", "1", CVAR_SAVE );
@@ -1188,6 +1208,8 @@ void Snd_Init( void )
     Cmd_AddCommand( "snd.play_sfx", Snd_PlaySfx_f );
     Cmd_AddCommand( "snd.queue_track", Snd_QueueTrack_f );
     Cmd_AddCommand( "snd.audio_info", Snd_AudioInfo_f );
+    Cmd_AddCommand( "snd.startup_level", Snd_StartupLevel_f );
+    Cmd_AddCommand( "snd.unload_level", Snd_UnloadLevel_f );
 
     alDistanceModel( AL_EXPONENT_DISTANCE_CLAMPED );
 

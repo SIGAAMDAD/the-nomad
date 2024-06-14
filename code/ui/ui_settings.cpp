@@ -258,9 +258,49 @@ static void SettingsMenu_GetInitial( void )
 
 static void SettingsMenu_CheckModified( void )
 {
+	int i;
+
 	s_settingsMenu->modified = qfalse;
 
+	if ( s_settingsMenu->gameplay.debugPrint != s_initial->gameplay.debugPrint ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->gameplay.difficulty != s_initial->gameplay.difficulty ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->gameplay.mouseCursor != s_initial->gameplay.mouseCursor ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->gameplay.pauseUnfocused != s_initial->gameplay.pauseUnfocused ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->gameplay.toggleHUD != s_initial->gameplay.toggleHUD ) {
+		s_settingsMenu->modified = qtrue;	
+	}
+
 	if ( s_settingsMenu->controls.mouseAcceleration != s_initial->controls.mouseAcceleration ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->controls.mouseSensitivity != s_initial->controls.mouseSensitivity ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( !memcmp( s_settingsMenu->controls.keybinds, s_initial->controls.keybinds, sizeof( s_settingsMenu->controls.keybinds ) ) ) {
+		s_settingsMenu->modified = qtrue;
+	}
+
+	if ( s_settingsMenu->audio.masterVolume != s_initial->audio.masterVolume ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->audio.sfxVolume != s_initial->audio.sfxVolume ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->audio.musicVolume != s_initial->audio.musicVolume ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->audio.sfxOn != s_initial->audio.sfxOn ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->audio.musicOn != s_initial->audio.musicOn ) {
 		s_settingsMenu->modified = qtrue;
 	}
 
@@ -1100,7 +1140,7 @@ static void ControlsMenu_Draw( void )
 
 		ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 2.5f ) * ui->scale );
 		
-		FontCache()->SetActiveFont( PressStart2P );
+		FontCache()->SetActiveFont( AlegreyaSC );
 
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted( "Binding" );

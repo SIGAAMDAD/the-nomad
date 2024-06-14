@@ -1,6 +1,7 @@
 #include "../engine/n_shared.h"
 #include "../engine/n_common.h"
 #include "../game/g_game.h"
+#include "../game/g_threads.h"
 #include "unix_local.h"
 
 #define SYS_BACKTRACE_MAX 1024

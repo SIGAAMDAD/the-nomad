@@ -8,25 +8,19 @@ namespace TheNomad::GameSystem::SaveSystem {
 		}
 		
 		void SaveVec2( const string& in name, const vec2& in value ) const {
-			TheNomad::GameSystem::BeginSaveSection( name );
-			this.SaveFloat( name + ".x", value.x );
-			this.SaveFloat( name + ".y", value.y );
-			TheNomad::GameSystem::EndSaveSection();
+			this.SaveFloat( "vec2_" + name + ".x", value.x );
+			this.SaveFloat( "vec2_" + name + ".y", value.y );
 		}
 		void SaveVec3( const string& in name, const vec3& in value ) const {
-			TheNomad::GameSystem::BeginSaveSection( name );
-			this.SaveFloat( name + ".x", value.x );
-			this.SaveFloat( name + ".y", value.y );
-			this.SaveFloat( name + ".z", value.z );
-			TheNomad::GameSystem::EndSaveSection();
+			this.SaveFloat( "vec3_" + name + ".x", value.x );
+			this.SaveFloat( "vec3_" + name + ".y", value.y );
+			this.SaveFloat( "vec3_" + name + ".z", value.z );
 		}
         void SaveVec4( const string& in name, const vec4& in value ) const {
-            TheNomad::GameSystem::BeginSaveSection( name );
-            this.SaveFloat( name + ".r", value.r );
-            this.SaveFloat( name + ".g", value.g );
-            this.SaveFloat( name + ".b", value.b );
-            this.SaveFloat( name + ".a", value.a );
-            TheNomad::GameSystem::EndSaveSection();
+            this.SaveFloat( "vec4_" + name + ".r", value.r );
+            this.SaveFloat( "vec4_" + name + ".g", value.g );
+            this.SaveFloat( "vec4_" + name + ".b", value.b );
+            this.SaveFloat( "vec4_" + name + ".a", value.a );
         }
 
 		void SaveBool( const string& in name, bool value ) const {

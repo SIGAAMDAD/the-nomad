@@ -35,7 +35,6 @@ cvar_t *com_logfile;
 cvar_t *com_maxfps;
 cvar_t *com_maxfpsUnfocused;
 cvar_t *com_yieldCPU;
-cvar_t *com_pauseUnfocused;
 errorCode_t com_errorCode;
 #ifdef USE_AFFINITY_MASK
 cvar_t *com_affinityMask;
@@ -48,7 +47,6 @@ cvar_t *com_viewlog;
 cvar_t *com_timescale;
 cvar_t *com_fixedtime;
 cvar_t *com_timedemo;
-cvar_t *com_pauseUnfocused;
 static int lastTime;
 int com_frameTime;
 uint64_t com_frameNumber = 0;
@@ -245,8 +243,8 @@ void Com_WriteCrashReport( void )
 		f = FS_FOpenWrite( va( LOG_DIR "/CrashReports/%s", path ) );
 		if ( f == FS_INVALID_HANDLE ) {
 			Con_Printf( COLOR_RED "Error creating file %s in write-only mode!\n", path );
-			return;
 		}
+		return;
 	} else {
 		fp = fopen( path, "w" );
 		if ( !fp ) {
@@ -259,6 +257,7 @@ void Com_WriteCrashReport( void )
 	}
 
 	strftime( timestr, sizeof( timestr ) - 1, "%d/%m/%Y %S:%M:%H", t );
+
     FPrintf( "[ERROR INFO]\n" );
 	FPrintf( "Time: %s\n", timestr );
     FPrintf( "Message: %s\n", msg );
@@ -270,11 +269,7 @@ void Com_WriteCrashReport( void )
         FPrintf( "ActiveMenu: %i\n", ui->menustate );
     }
     FPrintf( "StackTrace:\n" );
-	if ( f && FS_Initialized() ) {
-	    Sys_DebugStacktraceFile( MAX_STACKTRACE_FRAMES, FS_Handle( f ) );
-	} else {
-		Sys_DebugStacktraceFile( MAX_STACKTRACE_FRAMES, fp );
-	}
+    Sys_DebugStacktraceFile( MAX_STACKTRACE_FRAMES, fp );
 	FPrintf( "\n" );
 
     FPrintf( "[ENGINE INFO]\n" );
@@ -363,11 +358,7 @@ void Com_WriteCrashReport( void )
     FPrintf( "Referenced BFFs: %s\n", FS_ReferencedBFFNames() );
     FPrintf( "Loaded BFFs: %s\n", FS_LoadedBFFNames() );
 
-	if ( FS_Initialized() ) {
-		FS_FClose( f );
-	} else {
-		fclose( fp );
-	}
+	fclose( fp );
 
 	Con_Printf( "CrashReport data written to '%s'\n", path );
 	Cvar_SetIntegerValue( "com_crashReportCount", Cvar_VariableInteger( "com_crashReportCount" ) + 1 );
@@ -376,14 +367,17 @@ void Com_WriteCrashReport( void )
 void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL N_Error( errorCode_t code, const char *err, ... )
 {
 	va_list argptr;
-	static int64_t lastErrorTime;
-	static int64_t errorCount;
-	int64_t currentTime;
+	static uint64_t lastErrorTime;
+	static uint64_t errorCount;
+	uint64_t currentTime;
 	static qboolean calledSystemError = qfalse;
 
 	if ( com_errorEntered ) {
 		if ( !calledSystemError ) {
 			calledSystemError = qtrue;
+			if ( com_fullyInitialized ) {
+				Com_WriteCrashReport(); // we most likely won't crash from the crash report
+			}
 			Sys_Error( "recursive error after: %s", com_errorMessage );
 		}
 	}
@@ -558,13 +552,13 @@ static keynum_t Com_TranslateSDL2ToQ3Key( SDL_Keysym *keysym, qboolean down )
 			case SDLK_KP_1:         key = KEY_KP_END;        	break;
 			case SDLK_END:          key = KEY_END;           	break;
 			case SDLK_KP_4:         key = KEY_KP_LEFT;  		break;
-			case SDLK_LEFT:         key = KEY_LEFT;     		break;
+			case SDLK_LEFT:         key = KEY_LEFTARROW;     	break;
 			case SDLK_KP_6:         key = KEY_KP_RIGHT; 		break;
-			case SDLK_RIGHT:        key = KEY_RIGHT;    		break;
+			case SDLK_RIGHT:        key = KEY_RIGHTARROW;    	break;
 			case SDLK_KP_2:         key = KEY_KP_DOWN;  		break;
-			case SDLK_DOWN:         key = KEY_DOWN;     		break;
+			case SDLK_DOWN:         key = KEY_DOWNARROW;     	break;
 			case SDLK_KP_8:         key = KEY_KP_UP;    		break;
-			case SDLK_UP:           key = KEY_UP;       		break;
+			case SDLK_UP:           key = KEY_UPARROW;       	break;
 			case SDLK_ESCAPE:       key = KEY_ESCAPE;        	break;
 			case SDLK_KP_ENTER:     key = KEY_KP_ENTER;      	break;
 			case SDLK_RETURN:       key = KEY_ENTER;         	break;
@@ -653,6 +647,82 @@ static keynum_t Com_TranslateSDL2ToQ3Key( SDL_Keysym *keysym, qboolean down )
 
 	return key;
 }
+
+/*
+static void Com_PumpKeyEvents(void)
+{
+	SDL_Event event;
+	uint32_t in_eventTime;
+
+	SDL_PumpEvents();
+
+	in_eventTime = Sys_Milliseconds();
+
+	while (SDL_PollEvent(&event)) {
+		if ( Key_GetCatcher() & KEYCATCH_CONSOLE || Key_GetCatcher() & KEYCATCH_UI ) {
+			ImGui_ImplSDL2_ProcessEvent(&event);
+		}
+
+		switch ( event.type ) {
+		case SDL_KEYDOWN:
+			Com_QueueEvent( in_eventTime, SE_KEY, Com_TranslateSDL2ToQ3Key( &event.key.keysym, qtrue ), qtrue, 0, NULL );
+			break;
+		case SDL_KEYUP:
+			Com_QueueEvent( in_eventTime, SE_KEY, Com_TranslateSDL2ToQ3Key( &event.key.keysym, qfalse ), qfalse, 0, NULL );
+			break;
+		case SDL_WINDOWEVENT:
+			switch (event.window.event) {
+			case SDL_WINDOWEVENT_MOVED: {
+				if (!((SDL_GetWindowFlags(G_GetSDLWindow()) & SDL_WINDOW_FULLSCREEN) && (SDL_GetWindowFlags(G_GetSDLWindow()) & SDL_WINDOW_FULLSCREEN_DESKTOP))
+				&& G_GetSDLWindow() && !(SDL_GetWindowFlags(G_GetSDLWindow()) & SDL_WINDOW_MINIMIZED)) {
+//					Cvar_SetIntegerValue( "vid_xpos", event.window.data1 );
+//					Cvar_SetIntegerValue( "vid_ypos", event.window.data2 );
+				}
+				break; }
+			case SDL_WINDOWEVENT_MINIMIZED:
+			case SDL_WINDOWEVENT_FOCUS_LOST: {
+				if ( gi.state == GS_LEVEL && gi.mapLoaded && !Cvar_VariableInteger( "g_paused" ) ) {
+					Cbuf_ExecuteText( EXEC_APPEND, "togglepausemenu\n" );
+				}
+				Key_ClearStates();
+				break; }
+			};
+			break;
+		case SDL_QUIT:
+			Cbuf_ExecuteText( EXEC_NOW, "quit\n" );
+			break;
+		case SDL_MOUSEMOTION:
+			if ( !event.motion.xrel && !event.motion.yrel ) {
+				break;
+			}
+			Com_QueueEvent( com_frameTime, SE_MOUSE, event.motion.xrel, event.motion.yrel, 0, NULL );
+			break;
+		case SDL_MOUSEBUTTONUP:
+		case SDL_MOUSEBUTTONDOWN: {
+			if ( event.button.button == SDL_BUTTON_LEFT ) {
+				Com_QueueEvent( com_frameTime, SE_KEY, KEY_MOUSE_LEFT, (event.type == SDL_MOUSEBUTTONDOWN ? qtrue : qfalse), 0, NULL );
+			} else if ( event.button.button == SDL_BUTTON_RIGHT ) {
+				Com_QueueEvent( com_frameTime, SE_KEY, KEY_MOUSE_RIGHT, (event.type == SDL_MOUSEBUTTONDOWN ? qtrue : qfalse), 0, NULL );
+			} else if ( event.button.button == SDL_BUTTON_MIDDLE ) {
+				Com_QueueEvent( com_frameTime, SE_KEY, KEY_MOUSE_MIDDLE, (event.type == SDL_MOUSEBUTTONDOWN ? qtrue : qfalse), 0, NULL );
+			}
+			break; }
+		case SDL_MOUSEWHEEL: {
+			if ( event.wheel.y > 0 ) {
+				Com_QueueEvent( com_frameTime, SE_KEY, KEY_WHEEL_UP, qtrue, 0, NULL );
+				Com_QueueEvent( com_frameTime, SE_KEY, KEY_WHEEL_UP, qfalse, 0, NULL );
+			}
+			else if ( event.wheel.y < 0 ) {
+				Com_QueueEvent( com_frameTime, SE_KEY, KEY_WHEEL_DOWN, qtrue, 0, NULL );
+				Com_QueueEvent( com_frameTime, SE_KEY, KEY_WHEEL_DOWN, qtrue, 0, NULL );
+			}
+			break; }
+		default:
+			break;
+		};
+	}
+}
+*/
 
 static sysEvent_t Com_GetSystemEvent(void)
 {
@@ -945,9 +1015,7 @@ void Com_RestartGame( void )
 
 		// shutdown FS early so Cvar_Restart will not reset old game cvars
 		FS_Shutdown( qtrue );
-
-		Z_FreeTags( TAG_STATIC );	
-
+		
 		// clean out any user an VM created cvars
 		Cvar_Restart( qtrue );
 
@@ -1640,22 +1708,22 @@ static void Com_PrintVersionStrings( const char *commandLine )
 	}
 
 	SDL_GetVersion( &sdl_version );
-	Com_snprintf( version_str, sizeof( version_str ), "%i.%i.%i", sdl_version.major, sdl_version.minor, sdl_version.patch );
+	Com_snprintf( version_str, sizeof(version_str), "%i.%i.%i", sdl_version.major, sdl_version.minor, sdl_version.patch );
 
 #ifdef _NOMAD_DEBUG
-	Com_snprintf( gamedesc, sizeof( gamedesc ), "The Nomad (Debug)" );
+	Com_snprintf( gamedesc, sizeof(gamedesc), "The Nomad (Debug)" );
 #elif defined(_NOMAD_EXPERIMENTAL)
-	Com_snprintf( gamedesc, sizeof( gamedesc ), "The Nomad (Experimental)" ):
+	Com_snprintf( gamedesc, sizeof(gamedesc), "The Nomad (Experimental)" ):
 #elif defined(_NOMAD_DEMO)
-	Com_snprintf( gamedesc, sizeof( gamedesc ), "The Nomad (Demo)" );
+	Com_snprintf( gamedesc, sizeof(gamedesc), "The Nomad (Demo)" );
 #elif _NOMAD_VERSION_UPDATE == 1
-	Com_snprintf( gamedesc, sizeof( gamedesc ), "The Nomad (Alpha Test)" );
+	Com_snprintf( gamedesc, sizeof(gamedesc), "The Nomad (Alpha Test)" );
 #elif _NOMAD_VERSION_UPDATE == 2
-	Com_snprintf( gamedesc, sizeof( gamedesc ), "The Nomad (Beta Test)" );
+	Com_snprintf( gamedesc, sizeof(gamedesc), "The Nomad (Beta Test)" );
 #elif _NOMAD_VERSION == 3
-	Com_snprintf( gamedesc, sizeof( gamedesc ), "The Nomad (Early Access)" );
+	Com_snprintf( gamedesc, sizeof(gamedesc), "The Nomad (Early Access)" );
 #else
-	Com_snprintf( gamedesc, sizeof( gamedesc ), "The Nomad" );
+	Com_snprintf( gamedesc, sizeof(gamedesc), "The Nomad" );
 #endif
 	
 	Com_PrintDivider();
@@ -1685,7 +1753,6 @@ static void Com_CheckCrash( void )
 {
 	FILE *fp;
 	int ret;
-	static char safeString[32];
 
 	// shut up compiler
 	ret = 0;
@@ -1699,8 +1766,7 @@ static void Com_CheckCrash( void )
 			if ( Com_SafeMode() ) {
 				return; // already set
 			}
-			strcpy( safeString, "safe" );
-			com_consoleLines[ com_numConsoleLines ] = safeString;
+			com_consoleLines[ com_numConsoleLines ] = CopyString( "safe" );
 			com_numConsoleLines++;
 		}
 	} else {
@@ -1811,17 +1877,15 @@ void Com_Init( char *commandLine )
 		Cmd_AddCommand( "crash", Com_Crash_f );
 	}
 
-	com_maxfps = Cvar_Get( "com_maxfps", "60", CVAR_LATCH | CVAR_SAVE | CVAR_PROTECTED );
+	com_maxfps = Cvar_Get( "com_maxfps", "60", CVAR_SAVE );
 	Cvar_CheckRange( com_maxfps, "0", "1000", CVT_INT );
-	Cvar_SetDescription( com_maxfps, "Sets the maximum amount frames that can be drawn per second." );
+	Cvar_SetDescription( com_maxfps, "Sets maximum frames per second." );
 	com_maxfpsUnfocused = Cvar_Get( "com_maxfpsUnfocused", "60", CVAR_ARCHIVE_ND );
 	Cvar_CheckRange( com_maxfpsUnfocused, "0", "1000", CVT_INT );
 	Cvar_SetDescription( com_maxfpsUnfocused, "Sets maximum frames per second in unfocused game window." );
 	com_yieldCPU = Cvar_Get( "com_yieldCPU", "1", CVAR_ARCHIVE_ND );
 	Cvar_CheckRange( com_yieldCPU, "0", "16", CVT_INT );
 	Cvar_SetDescription( com_yieldCPU, "Attempt to sleep specified amount of time between rendered frames when game is active, this will greatly reduce CPU load. Use 0 only if you're experiencing some lag." );
-	com_pauseUnfocused = Cvar_Get( "com_pauseUnfocused", "1", CVAR_SAVE );
-	Cvar_SetDescription( com_pauseUnfocused, "Forces pause menu when game window is unfocused." );
 #ifdef USE_AFFINITY_MASK
 	Com_StartupVariable( "com_affinityMask" );
 	com_affinityMask = Cvar_Get( "com_affinityMask", "0x6", CVAR_SAVE | CVAR_LATCH );
@@ -1889,13 +1953,14 @@ void Com_Init( char *commandLine )
 
 	{
 		char **fileList;
-		uint64_t nFiles, i;
+		uint64_t nFiles;
 
 		fileList = FS_ListFiles( "Config/CrashReports", ".txt", &nFiles );
-		if ( nFiles >= 10 ) {
+		if ( nFiles > 10 ) {
 			FS_HomeRemove( va( "Config/CrashReports/%s", fileList[0] ) );
 			FS_Remove( va( "Config/CrashReports/%s", fileList[0] ) );
 		}
+		Cvar_Set( "com_crashReportCount", va( "%i", (int)nFiles ) );
 		FS_FreeFileList( fileList );
 	}
 
@@ -2253,61 +2318,38 @@ void Com_Frame( qboolean noDelay )
 	//
 
 	// we may want to spin here if things are going too fast
-	if ( noDelay ) {
-		minMsec = 0;
-		bias = 0;
+	if ( !gw_active && com_maxfpsUnfocused->i > 0 ) {
+		minMsec = 1000 / com_maxfpsUnfocused->i;
+	} else if ( com_maxfps->i > 0 ) {
+		minMsec = 1000 / com_maxfps->i;
 	} else {
-		if ( !gw_active && com_maxfpsUnfocused->i > 0 ) {
-			minMsec = 1000 / com_maxfpsUnfocused->i;
-//			if ( com_pauseUnfocused->i && !Cvar_VariableInteger( "g_paused" ) ) {
-//				Cbuf_ExecuteText( EXEC_APPEND, "togglepausemenu\n" );
-//			}
-		} else if ( com_maxfps->i > 0 ) {
-			minMsec = 1000 / com_maxfps->i;
-		} else {
-			minMsec = 1;
-		}
-
-		timeVal = com_frameTime - lastTime;
-		bias += timeVal - minMsec;
-		if ( bias > minMsec ) {
-			bias = minMsec;
-		}
-		// Adjust minMsec if previous frame took too long to render so
-		// that framerate is stable at the requested value.
-		minMsec -= bias;
+		minMsec = 1;
 	}
 	do {
-		timeVal = Com_TimeVal( minMsec );
-		sleepMsec = timeVal;
-		if ( !gw_minimized && timeVal > com_yieldCPU->i ) {
-			sleepMsec = com_yieldCPU->i;
+		com_frameTime = Com_EventLoop();
+		if ( lastTime > com_frameTime ) {
+			lastTime = com_frameTime;		// possible on first frame
 		}
-		if ( timeVal > sleepMsec ) {
-//			Com_EventLoop();
-		}
-	} while ( Com_TimeVal( minMsec ) );
+		msec = com_frameTime - lastTime;
+	} while ( msec < minMsec );
+	Cbuf_Execute();
 
-	// mess with msec if needed
 	lastTime = com_frameTime;
-	com_frameTime = Com_EventLoop();
-	realMsec = com_frameTime - lastTime;
 
 	// mess with msec if needed
-	msec = Com_ModifyMsec( realMsec );
+	com_frameMsec = msec;
+	msec = Com_ModifyMsec( msec );
 
 	//
 	// run the game loop
 	//
-	Com_EventLoop();
+//	Com_EventLoop();
+//	Cbuf_Execute();
 
-	if ( !Cbuf_Wait() ) {
-		Cbuf_Execute();
-	}
-
-	G_Frame( msec, realMsec );
+	G_Frame( msec, com_frameTime );
 
 	// run framerate diagnostics
+
 	com_frameNumber++;
 }
 

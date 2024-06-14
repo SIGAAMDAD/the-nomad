@@ -1,10 +1,10 @@
-sprites/players/raio_base
+sprites/players/raio_torso
 {
     nopicmip
     nomipmaps
     {
         texFilter nearest
-        map textures/sprites/players/raio_base.tga
+        map textures/sprites/players/raio_torso.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }

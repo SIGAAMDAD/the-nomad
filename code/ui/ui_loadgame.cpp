@@ -42,10 +42,10 @@ typedef struct {
 
     uint64_t currentSave;
 
-    nhandle_t play_0;
-    nhandle_t play_1;
-    qboolean playHovered;
-    
+    nhandle_t load_0;
+    nhandle_t load_1;
+    qboolean loadGameHovered;
+
     qboolean saveOpen;
 
     const stringHash_t *title;
@@ -76,7 +76,8 @@ static void LoadGameMenu_Draw( void )
     if ( s_loadGame->numSaves ) {
         {
             ImGui::Begin( "##ModList", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove
-                | ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse );
+                | ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse
+                | ImGuiWindowFlags_NoScrollbar );
             ImGui::SetWindowPos( ImVec2( ui->gpuConfig.vidWidth * 0.75f, 64 * ui->scale ) );
             ImGui::SetWindowSize( ImVec2( ui->gpuConfig.vidWidth * 0.25f, ui->gpuConfig.vidHeight - 10 ) );
             ImGui::SeparatorText( "Loaded Modules" );
@@ -105,7 +106,7 @@ static void LoadGameMenu_Draw( void )
             }
             ImGui::End();
         }
-        FontCache()->SetActiveFont( PressStart2P );
+        FontCache()->SetActiveFont( RobotoMono );
         s_loadGame->saveOpen = qfalse;
         for ( i = 0; i < s_loadGame->numSaves; i++ ) {
             if ( ImGui::TreeNodeEx( (void *)(uintptr_t)s_loadGame->saveList[i].name, treeNodeFlags, s_loadGame->saveList[i].name ) ) {
@@ -140,24 +141,26 @@ static void LoadGameMenu_Draw( void )
                 }
                 ImGui::EndTable();
                 ImGui::TreePop();
-                
-                ImGui::SetCursorScreenPos( ImVec2( 528 * ui->scale, 680 * ui->scale ) );
-                ImGui::Image( (ImTextureID)(uintptr_t)( s_loadGame->playHovered ? s_loadGame->play_1 : s_loadGame->play_0 ),
-	            	ImVec2( 256 * ui->scale, 72 * ui->scale ) );
-	            s_loadGame->playHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
-	            if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
-	            	Snd_PlaySfx( ui->sfx_select );
-	            	Cvar_SetIntegerValue( "sgame_Difficulty", s_loadGame->saveList[i].gd.dif );
-                    Cvar_Set( "sgame_SaveName", s_loadGame->saveList[i].name );
-                    gi.state = GS_LEVEL;
-                    g_pArchiveHandler->Load( s_loadGame->saveList[i].name );
-                    Cbuf_ExecuteText( EXEC_APPEND, va( "setmap \"%s\"\n", s_loadGame->saveList[i].gd.mapname ) );
-	            }
             }
         }
     }
     else {
         ImGui::TextUnformatted( "No Saves" );
+    }
+
+    if ( s_loadGame->saveOpen ) {
+        ImGui::SetCursorScreenPos( ImVec2( 528 * ui->scale, 680 * ui->scale ) );
+        ImGui::Image( (ImTextureID)(uintptr_t)( s_loadGame->loadGameHovered ? s_loadGame->load_1 : s_loadGame->load_0 ),
+			ImVec2( 256 * ui->scale, 72 * ui->scale ) );
+        s_loadGame->loadGameHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
+        if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
+	    	Snd_PlaySfx( ui->sfx_select );
+	    	Cvar_SetIntegerValue( "sgame_Difficulty", s_loadGame->saveList[ s_loadGame->currentSave ].gd.dif );
+            Cvar_Set( "sgame_SaveName", s_loadGame->saveList[ s_loadGame->currentSave ].name );
+            gi.state = GS_LEVEL;
+            g_pArchiveHandler->Load( s_loadGame->saveList[ s_loadGame->currentSave ].name );
+            Cbuf_ExecuteText( EXEC_APPEND, va( "setmap \"%s\"\n", s_loadGame->saveList[ s_loadGame->currentSave ].gd.mapname ) );
+	    }
     }
     ImGui::End();
 }
@@ -169,6 +172,10 @@ static void LoadGameMenu_InitSaveFiles( void )
     const char **fileList;
     uint64_t i, j;
     const char *path;
+
+    if ( ui->uiAllocated ) {
+        return;
+    }
 
     //
     // init savefiles
@@ -213,6 +220,7 @@ static void LoadGameMenu_InitSaveFiles( void )
             if ( info->name[ strlen( info->name ) - 1 ] == '.' ) {
                 info->name[ strlen( info->name ) - 1 ] = 0;
             }
+            Con_Printf( "parsed saved game '%s'\n", info->name );
         }
     }
 }
@@ -234,13 +242,13 @@ void LoadGameMenu_Cache( void )
     s_loadGame->menu.x = 0;
     s_loadGame->menu.y = 0;
     s_loadGame->menu.width = ui->gpuConfig.vidWidth * 0.75f;
-    s_loadGame->menu.height = 680 * ui->scale;
+    s_loadGame->menu.height = ui->gpuConfig.vidHeight;
     s_loadGame->menu.fullscreen = qtrue;
     s_loadGame->menu.titleFontScale = 3.5f;
     s_loadGame->menu.textFontScale = 1.5f;
 
-    s_loadGame->play_0 = re.RegisterShader( "menu/play_0" );
-    s_loadGame->play_1 = re.RegisterShader( "menu/play_1" );
+    s_loadGame->load_0 = re.RegisterShader( "menu/load_0" );
+    s_loadGame->load_1 = re.RegisterShader( "menu/load_1" );
 
     LoadGameMenu_InitSaveFiles();
 }

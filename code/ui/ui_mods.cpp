@@ -395,7 +395,7 @@ void ModsMenu_Draw( void )
 	   		dimColor = qfalse;
 	   	}
    		
-   		if ( Key_IsDown( KEY_UP ) ) {
+   		if ( Key_IsDown( KEY_UPARROW ) ) {
 			Snd_PlaySfx( ui->sfx_select );
    			if ( mods->selectedMod == 0 ) {
    				mods->selectedMod = mods->numMods - 1;
@@ -403,7 +403,7 @@ void ModsMenu_Draw( void )
 	   			mods->selectedMod--;
 	   		}
 		}
-   		if ( Key_IsDown( KEY_DOWN ) ) {
+   		if ( Key_IsDown( KEY_DOWNARROW ) ) {
 			Snd_PlaySfx( ui->sfx_select );
    			mods->selectedMod++;
    			if ( mods->selectedMod >= mods->numMods ) {

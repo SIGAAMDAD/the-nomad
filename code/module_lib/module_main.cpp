@@ -486,7 +486,6 @@ bool CModuleLib::AddDefaultProcs( void ) const {
         "const string& GetName() const" ) );
     CheckASCall( g_pModuleLib->GetScriptEngine()->SetDefaultNamespace( "" ) );
 
-//    RegisterStdString( m_pEngine );
     RegisterScriptDictionary( m_pEngine );
     RegisterScriptMath( m_pEngine );
     RegisterScriptJson( m_pEngine );
@@ -630,9 +629,6 @@ CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *
     Cmd_AddCommand( "ml.garbage_collection_stats", ML_GarbageCollectionStats_f );
     Cmd_AddCommand( "ml_debug.print_string_cache", ML_PrintStringCache_f );
 
-    // init memory manager
-    Mem_Init();
-
     // FIXME: angelscript's thread manager is fucking broken on unix (stalls forever)
     asSetGlobalMemoryFunctions( AS_Alloc, AS_Free );
 
@@ -709,9 +705,6 @@ void CModuleLib::Shutdown( qboolean quit )
     Con_Printf( "Total Frees: %li\n", frees.num );
     Con_Printf( "Biggest Free: %li\n", frees.maxSize );
     Con_Printf( "Smallest Free: %li\n", frees.minSize );
-
-    // everything is automatically released when this is called
-    Mem_Shutdown();
 
     m_bRegistered = qfalse;
     m_bRecursiveShutdown = qfalse;

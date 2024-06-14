@@ -423,6 +423,7 @@ static void G_InitRenderRef(void)
 
     import.Cmd_AddCommand = Cmd_AddCommand;
     import.Cmd_RemoveCommand = Cmd_RemoveCommand;
+    import.Cmd_ExecuteCommand = Cmd_ExecuteString;
     import.Cmd_Argc = Cmd_Argc;
     import.Cmd_Argv = Cmd_Argv;
     import.Cmd_ArgsFrom = Cmd_ArgsFrom;
@@ -601,11 +602,7 @@ static void G_Vid_Restart( refShutdownCode_t code )
     PROFILE_FUNCTION();
 
     // clear and mute all sounds until next registration
-#ifdef USE_QUAKE3_SOUND
-//    Snd_DisableSounds();
-#else
     Snd_Shutdown();
-#endif
 
     // shutdown VMs
     G_ShutdownVMs( qfalse );
@@ -1570,6 +1567,8 @@ void G_Init( void )
     G_ClearState();
 
     G_InitRenderer_Cvars();
+
+    G_LoadSkins();
     
     // userinfo
     Cvar_Get( "name", "The Ultimate Lad", CVAR_USERINFO | CVAR_ARCHIVE_ND );
@@ -1579,6 +1578,9 @@ void G_Init( void )
     if ( !isValidRenderer( g_renderer->s ) ) {
         Cvar_ForceReset( "g_renderer" );
     }
+
+    // init memory manager
+    Mem_Init();
 
     // init sound
     Snd_Init();
@@ -1652,6 +1654,7 @@ void G_Shutdown( qboolean quit )
 
     SteamApp_Shutdown();
 
+    Mem_Shutdown();
     if ( quit ) {
         remove( "nomad.pid" );
         PROFILE_STOP_LISTEN
@@ -1707,8 +1710,6 @@ void G_ShutdownVMs( qboolean quit ) {
 void G_StartHunkUsers( void )
 {
     G_InitArchiveHandler();
-
-//    g_pRenderThread = new ( Hunk_Alloc( sizeof( *g_pRenderThread ), h_low ) ) CRenderThread();
 
     // cache all maps
     G_InitMapCache();
