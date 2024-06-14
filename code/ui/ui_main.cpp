@@ -350,9 +350,9 @@ static void UI_RegisterCvars( void )
     Cvar_SetDescription( ui_printStrings, "Print value strings set by the language ui file" );
 
 #ifdef _NOMAD_DEBUG
-	ui_debugOverlay = Cvar_Get( "ui_debugOverlay", "1", 0 );
+	ui_debugOverlay = Cvar_Get( "ui_debugOverlay", "1", CVAR_SAVE );
 #else
-	ui_debugOverlay = Cvar_Get( "ui_debugOverlay", "0", 0 );
+	ui_debugOverlay = Cvar_Get( "ui_debugOverlay", "0", CVAR_SAVE );
 #endif
 	Cvar_SetDescription( ui_debugOverlay, "Draws an overlay of various debugging statistics." );
 

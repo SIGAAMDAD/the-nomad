@@ -77,6 +77,8 @@ namespace TheNomad::SGame {
 				TheNomad::Util::HapticRumble( m_EntityData.GetPlayerIndex(), 0.5f, 400 );
 			}
 
+			m_EntityData.GetOrigin() += accel;
+
 			const uint tile = LevelManager.GetMapData().GetTile( m_EntityData.GetOrigin(), m_EntityData.GetBounds() );
 			if ( ( tile & SURFACEPARM_WATER ) != 0 ) {
 				
@@ -86,7 +88,7 @@ namespace TheNomad::SGame {
 			}
 			
 			if ( accel.x != 0.0f || accel.y != 0.0f ) {
-				if ( ( move_toggle % ( 16 * TheNomad::Engine::CvarVariableInteger( "com_maxfps" ) ) ) == 0 ) {
+				if ( ( move_toggle % 16 ) == 0 ) {
 					// it sound like a machine gun if it isn't spaced out
 					moveGravel0.Play();
 				}
@@ -290,6 +292,7 @@ namespace TheNomad::SGame {
 
 			SetMovementDir();
 
+			TheNomad::Engine::UserInterface::SetActiveFont( TheNomad::Engine::UserInterface::Font_RobotoMono );
 			ImGui::Begin( "Debug Player Movement" );
 			ImGui::Text( "Velocity: [ " + m_EntityData.GetVelocity().x + ", " + m_EntityData.GetVelocity().y + " ]" );
 			ImGui::Text( "CameraPos: [ " + Game_CameraPos.x + ", " + Game_CameraPos.y + " ]" );

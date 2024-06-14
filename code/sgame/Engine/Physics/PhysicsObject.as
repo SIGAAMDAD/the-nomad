@@ -184,8 +184,8 @@ namespace TheNomad::Engine::Physics {
 			const array<TheNomad::SGame::EntityObject@>@ entList = @TheNomad::SGame::EntityManager.GetEntities();
 			for ( uint i = 0; i < entList.Count(); i++ ) {
 				if ( Util::BoundsIntersect( bounds, entList[i].GetBounds() ) ) {
-					m_Acceleration = 0.0f;
-					return; // clip
+//					m_Acceleration = 0.0f;
+//					return; // clip
 				}
 			}
 			

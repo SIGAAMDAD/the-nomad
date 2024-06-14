@@ -2343,10 +2343,10 @@ void Com_Frame( qboolean noDelay )
 	//
 	// run the game loop
 	//
-//	Com_EventLoop();
-//	Cbuf_Execute();
+	Com_EventLoop();
+	Cbuf_Execute();
 
-	G_Frame( msec, com_frameTime );
+	G_Frame( msec, realMsec );
 
 	// run framerate diagnostics
 
