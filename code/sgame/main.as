@@ -344,7 +344,7 @@ int ModuleOnRunTic( uint msec ) {
 		return 3;
 	}
 
-	TheNomad::GameSystem::GameManager.SetMsec( msec );
+	TheNomad::GameSystem::GameManager.SetMsec( TheNomad::Engine::System::Milliseconds() );
 
 	// if we're paused, then just draw the stuff, don't run anything else
 	if ( TheNomad::Engine::CvarVariableInteger( "g_paused" ) == 0 ) {

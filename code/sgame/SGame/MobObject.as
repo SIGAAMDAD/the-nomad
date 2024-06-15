@@ -337,7 +337,15 @@ namespace TheNomad::SGame {
 			
 		}
 		private void ChaseThink() {
-			
+			if ( !SightCheck() ) {
+				if ( !SoundCheck() ) {
+					@m_Target = null;
+					SetState( StateNum::ST_MOB_IDLE );
+				}
+				m_State.Reset();
+			} else {
+
+			}
 		}
 		private void FightThink() {
 			if ( @m_Target is null ) {
@@ -447,6 +455,17 @@ namespace TheNomad::SGame {
 			}
 		}
 		
+		//
+		// SetState: custom for mobs
+		//
+		void SetState( StateNum state ) {
+			@m_State = @StateManager.GetStateForNum( m_Info.type + state );
+			if ( @m_State is null ) {
+				ConsoleWarning( "MobObject::SetState: bad state" );
+			}
+			m_State.Reset();
+		}
+
 		private InfoSystem::MobFlags m_MFlags = InfoSystem::MobFlags( 0 );
 		private InfoSystem::AttackInfo@ m_CurrentAttack = null;
 		private EntityObject@ m_Target = null;

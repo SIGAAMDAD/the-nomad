@@ -94,20 +94,20 @@ namespace TheNomad::SGame {
 		}
 
 		void Reset() {
-			m_nTicker = m_nTics;
+			m_nTicker = 0;
 		}
 		
 		const uvec2& GetSpriteOffset() const {
 			return m_SpriteOffset;
 		}
 		bool Done() const {
-			return m_nTicker == m_nTics;
+			return m_nTicker >= m_nTics;
 		}
 		uint GetTics() const {
 			return m_nTicker;
 		}
 		EntityState@ Run() {
-			m_nTicker += TheNomad::GameSystem::GameManager.GetDeltaTics();
+			m_nTicker += TheNomad::Engine::CvarVariableInteger( "com_maxfps" ) / 60;
 			if ( m_nTicker >= m_nTics ) {
 				return @m_NextState !is null ? @m_NextState : @StateManager.GetStateForNum( ( m_nStateNum + m_nStateOffset ) + 1 );
 			}
@@ -132,8 +132,8 @@ namespace TheNomad::SGame {
 		private EntityState@ m_NextState = null;
 		private Animation@ m_Animation = null;
 		private int m_nTics = 0;
-		private int m_nStateNum = 0;
-		private int m_nStateOffset = 0;
+		private uint m_nStateNum = 0;
+		private uint m_nStateOffset = 0;
 
 		// runtime data
 		private uint m_nTicker = 0;

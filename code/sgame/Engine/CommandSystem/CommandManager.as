@@ -49,7 +49,6 @@ namespace TheNomad::Engine::CommandSystem {
         void AddCommand( CommandFunc@ fn, const string& in name, bool levelCommand ) {
             m_CommandList.Add( Command( name, @fn, levelCommand ) );
             TheNomad::Engine::CmdAddCommand( name );
-            DebugPrint( "Added SGame command \"" + name + "\".\n" );
         }
 
         private array<Command> m_CommandList;

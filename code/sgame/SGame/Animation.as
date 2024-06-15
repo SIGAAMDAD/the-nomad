@@ -19,12 +19,12 @@ namespace TheNomad::SGame {
 		}
 		
 		void Run() {
-			if ( m_nOldTic + m_nNumFrames > TheNomad::GameSystem::GameManager.GetGameTic() ) {
+			if ( m_nOldTic + m_nNumFrames > TheNomad::GameSystem::GameManager.GetDeltaTics() ) {
 				return;
 			}
 			
 			m_nOldTic = TheNomad::GameSystem::GameManager.GetGameTic();
-			m_nCurrentFrame += m_nTicRate;
+			m_nCurrentFrame += m_nTicRate * TheNomad::GameSystem::GameManager.GetDeltaTics();
 			
 			if ( m_bOscillate ) {
 				if ( m_nTicRate > 0 ) {
