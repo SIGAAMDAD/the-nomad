@@ -269,7 +269,7 @@ namespace TheNomad::SGame {
 			const uint64 now = TheNomad::Engine::System::Milliseconds();
 
 			m_TimeMilliseconds = now - timer;
-			m_TimeSeconds = m_TimeMilliseconds / 1000;
+			m_TimeSeconds = m_TimeMilliseconds / 10000;
 			m_TimeMinutes = m_TimeMilliseconds / 60000;
 			
 			if ( endOfLevel ) {

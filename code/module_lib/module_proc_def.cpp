@@ -272,3 +272,11 @@ SCRIPT_CALLBACK_DEF( BoundsIntersect )
 
 SCRIPT_CALLBACK_DEF( ConsolePrint )
 SCRIPT_CALLBACK_DEF( GameError )
+
+//==============================================================
+// TheNomad::Engine
+//
+
+SCRIPT_CALLBACK_DEF( Lexer_Construct ) {
+    
+}

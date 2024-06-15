@@ -2285,3 +2285,69 @@ qboolean Info_SetValueForKey_s( char *s, uint32_t slen, const char *key, const c
 	strcpy( s + len1, newi );
 	return qtrue;
 }
+
+#if 0
+uint64_t *Memset64( void *pDest, uint64_t c, size_t count )
+{
+    Assert( ( (uintptr_t)pDest & 7 ) == 0 );
+
+    uint64_t *cur = (uint64_t *)pDest;
+    const uint64_t *const end = (uint64_t *)pDest + count;
+
+    while ( cur < end ) {
+        *cur++ = c;
+    }
+
+    return (uint64_t *)pDest;
+}
+
+
+uint32_t *Memset32( void* pDest, uint32_t c, size_t count )
+{
+	Assert( ( (uintptr_t)pDest & 3 ) == 0 );
+
+    // If we are using a 64 bit system...
+	#ifdef GDRx64
+		const uint32_t* const pEnd = (uint32_t *)pDest + count;
+		uint32_t* pDest32 = (uint32_t *)pDest;
+		uint64_t  c64;
+
+        // For small sizes, we simply do a little loop.
+		if ( count <= 16 ) {
+			while ( pDest32 < pEnd ) {
+				*pDest32++ = c;
+            }
+		}
+		else {
+            // If the address is not aligned on a 64 bit boundary.
+			if ( ( (uintptr_t)pDest32 ) & 7 ) {
+                // Align it on a 64 bit boundary.
+				*pDest32++ = c;
+				count--;
+			}
+
+            // From here on we copy in 64 bit chunks for speed.
+			uint64_t *pDest64 = (uint64_t *)pDest32;
+			count /= 2;
+			c64 = ( (uint64_t)c | ( (uint64_t)c << 32 ) );
+
+			while ( count ) {
+				*pDest64++ = c64;
+				count--;
+			}
+
+			if ( (uint32_t *)pDest64 < pEnd ) {
+				*( (uint32_t *)pDest64 ) = (uint32_t)c64;
+            }
+		}
+	#else
+		uint32_t*             cur = (uint32_t *)pDest;
+		const uint32_t* const end = (uint32_t *)pDest + count;
+		while ( cur < end ) {
+			*cur++ = c;
+        }
+	#endif
+
+	return (uint32_t *)pDest;
+}
+#endif

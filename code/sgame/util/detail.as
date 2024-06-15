@@ -83,7 +83,7 @@ namespace TheNomad::Util {
 		0xf8,0xf9,0xfa,0xfb,0xfc,0xfd,0xfe,0xff
 	};
 
-	uint64 Com_GenerateHashValue( const string& in fname, const uint64 size ) {
+	uint64 GenerateHashValue( const string& in fname, const uint64 size ) {
 		int s;
 		uint64 hash;
 		int c;
@@ -99,6 +99,56 @@ namespace TheNomad::Util {
 		hash &= ( size - 1 );
 
 		return hash;
+	}
+
+	int HashString( const string& in str ) {
+		int i, hash = 0;
+		int index = 0;
+		for ( i = 0; str[index] != '\0'; i++ ) {
+			hash += ( str[index++] ) * ( i + 119 );
+		}
+		return hash;
+	}
+
+	int HashString( const string& in str, int length ) {
+		int i, hash = 0;
+		int index = 0;
+		for ( i = 0; i < length; i++ ) {
+			hash += ( str[index++] ) * ( i + 119 );
+		}
+		return hash;
+	}
+
+	int IHashString( const string& in str ) {
+		int i, hash = 0;
+		int index = 0;
+		for( i = 0; str[index] != '\0'; i++ ) {
+			hash += ToLower( str[index++] ) * ( i + 119 );
+		}
+		return hash;
+	}
+
+	int IHashString( const string& in str, int length ) {
+		int i, hash = 0;
+		int index = 0;
+		for ( i = 0; i < length; i++ ) {
+			hash += ToLower( str[index++] ) * ( i + 119 );
+		}
+		return hash;
+	}
+
+	int8 ToLower( int8 c ) {
+		if ( IsUpper( c ) ) {
+			c += ( 'a' - 'A' );
+		}
+		return c;
+	}
+
+	int8 ToUpper( int8 c ) {
+		if ( IsLower( c ) ) {
+			c -= ( 'a' - 'A' );
+		}
+		return c;
 	}
 
 	uint32 ColorAsUInt32( const vec4& in color ) {

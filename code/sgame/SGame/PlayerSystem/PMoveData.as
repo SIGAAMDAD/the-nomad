@@ -77,37 +77,52 @@ namespace TheNomad::SGame {
 				TheNomad::Util::HapticRumble( m_EntityData.GetPlayerIndex(), 0.5f, 400 );
 			}
 
-			m_EntityData.GetOrigin() += accel;
-
 			const uint tile = LevelManager.GetMapData().GetTile( m_EntityData.GetOrigin(), m_EntityData.GetBounds() );
-			if ( ( tile & SURFACEPARM_WATER ) != 0 ) {
-				
-			}
-			if ( ( tile & SURFACEPARM_METAL ) != 0 ) {
-				
-			}
-			
-			if ( accel.x != 0.0f || accel.y != 0.0f ) {
-				if ( ( move_toggle % 16 ) == 0 ) {
-					// it sound like a machine gun if it isn't spaced out
-					moveGravel0.Play();
+			if ( accel.x != 0.0f || accel.y != 0.0f &&
+				( move_toggle % ( 16 + ( TheNomad::Engine::CvarVariableInteger( "com_maxfps" ) / 12 ) ) ) == 0 )
+			{
+				// it sound like a machine gun if it isn't spaced out
+				if ( ( tile & SURFACEPARM_WATER ) != 0 ) {
+					switch ( TheNomad::Util::PRandom() & 2 ) {
+					case 0:
+						moveWater0.Play();
+						break;
+					case 1:
+						moveWater1.Play();
+						break;
+					};
 				}
-				/*
-				switch ( move_toggle ) {
-				case 0:
-					moveGravel0.Play( m_EntityData.GetOrigin() );
-					break;
-				case 1:
-				case 2:
-					break;
-				case 3:
-					moveGravel3.Play( m_EntityData.GetOrigin() );
-					break;
-				default:
-					move_toggle = 0;
-					break;
-				};
-				*/
+				if ( ( tile & SURFACEPARM_METAL ) != 0 ) {
+					switch ( TheNomad::Util::PRandom() & 3 ) {
+					case 0:
+						moveMetal0.Play();
+						break;
+					case 1:
+						moveMetal1.Play();
+						break;
+					case 2:
+						moveMetal2.Play();
+						break;
+					case 3:
+						moveMetal3.Play();
+						break;
+					};
+				} else {
+					switch ( TheNomad::Util::PRandom() & 3 ) {
+					case 0:
+						moveGravel0.Play();
+						break;
+					case 1:
+						moveGravel1.Play();
+						break;
+					case 2:
+						moveGravel2.Play();
+						break;
+					case 3:
+						moveGravel3.Play();
+						break;
+					};
+				}
 				move_toggle++;
 			}
 			

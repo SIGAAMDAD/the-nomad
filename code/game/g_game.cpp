@@ -1722,12 +1722,6 @@ void G_StartHunkUsers( void )
         gi.soundStarted = qtrue;
         Snd_Init();
     }
-#ifdef USE_QUAKE3_SOUND
-    if ( !gi.soundRegistered ) {
-        gi.soundRegistered = qtrue;
-        Snd_BeginRegistration();
-    }
-#endif
     if ( !g_pModuleLib ) {
         G_InitModuleLib();
     }

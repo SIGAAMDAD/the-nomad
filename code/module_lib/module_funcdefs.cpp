@@ -766,7 +766,15 @@ static int StrICmp( const string_t *str1, const string_t *str2 ) {
 }
 
 static int StrCmp( const string_t *str1, const string_t *str2 ) {
-    return N_strcmp( str1->c_str(), str2->c_str() );
+    return strcmp( str1->c_str(), str2->c_str() );
+}
+
+static int StrICmpn( const string_t *str1, const string_t *str2, asDWORD count ) {
+    return N_stricmpn( str1->c_str(), str2->c_str(), count );
+}
+
+static int StrCmpn( const string_t *str1, const string_t *str2, asDWORD count ) {
+    return strncmp( str1->c_str(), str2->c_str(), count );
 }
 
 static void KeyGetBinding( asIScriptGeneric *pGeneric ) {
@@ -1146,6 +1154,26 @@ static void LoadFunctionFromSection( asIScriptGeneric *pGeneric )
     if ( !*pFunction ) {
         Con_Printf( COLOR_YELLOW "Failed to load dynamic function proc '%s'.\n", szName );
     }
+}
+
+static void CopyMemory( asIScriptGeneric *pGeneric )
+{
+    CScriptArray *pDest = (CScriptArray *)pGeneric->GetArgObject( 0 );
+    const CScriptArray *pSource = (const CScriptArray *)pGeneric->GetArgObject( 1 );
+    uint32_t nCount = pGeneric->GetArgDWord( 2 );
+
+    if ( pDest->GetElementTypeId() != pSource->GetElementTypeId() ) {
+        throw ModuleException( "TheNomad::Util::CopyMemory: elementTypeId not the same for both arrays" );
+    }
+    if ( nCount > pSource->GetSize() ) {
+        nCount = pSource->GetSize();
+    }
+    if ( nCount > pDest->GetSize() ) {
+        nCount = pDest->GetSize();
+    }
+
+    memcpy( pDest->GetBuffer(), pSource->GetBuffer(),
+        g_pModuleLib->GetScriptEngine()->GetTypeInfoById( pDest->GetElementTypeId() )->GetSize() * nCount );
 }
 
 static void GetModuleList( CScriptArray *modList ) {
@@ -2503,6 +2531,8 @@ void ModuleLib_Register_Engine( void )
 
         REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StrICmp( const string& in, const string& in )", WRAP_FN( StrICmp ) );
         REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StrCmp( const string& in, const string& in )", WRAP_FN( StrCmp ) );
+        REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StrICmpn( const string& in, const string& in, uint )", WRAP_FN( StrICmpn ) );
+        REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StrCmpn( const string& in, const string& in, uint )", WRAP_FN( StrCmpn ) );
         REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StringToInt( const string& in )", WRAP_FN( StringToInt ) );
         REGISTER_GLOBAL_FUNCTION( "uint TheNomad::Util::StringToUInt( const string& in )", WRAP_FN( StringToUInt ) );
         REGISTER_GLOBAL_FUNCTION( "float TheNomad::Util::StringToFloat( const string& in )", WRAP_FN( StringToFloat ) );

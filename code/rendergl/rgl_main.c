@@ -338,6 +338,10 @@ static void R_DrawWorld( void )
                 origin[1] = (int)( refEntity->e.origin[1] + 1 );
                 origin[2] = refEntity->e.origin[2];
 
+                if ( origin[0] < 0.0f || origin[1] < 0.0f || origin[0] >= rg.world->width || origin[1] >= rg.world->height ) {
+                    continue; // not in clipping range
+                }
+
                 if ( rg.world->tiles[ origin[1] * rg.world->width + origin[0] ].sides[DIR_SOUTH] ) {
                     color[3] = 0.10f;
                     break;

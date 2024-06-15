@@ -77,7 +77,7 @@ namespace TheNomad::Engine::Physics {
 			vec3 vec;
 			float speed, newspeed, control;
 			float drop;
-			const uint frameTime = TheNomad::GameSystem::GameManager.GetGameTic();
+			const uint frameTime = TheNomad::GameSystem::GameManager.GetGameTic() * 0.0001f;
 			
 			vec = m_Velocity;
 			speed = Util::VectorLength( vec );
@@ -92,9 +92,9 @@ namespace TheNomad::Engine::Physics {
 			
 			// apply water friction even if just wading
 			if ( m_nWaterLevel > 0 ) {
-				drop += speed * TheNomad::SGame::sgame_WaterFriction.GetFloat() * m_nWaterLevel * frameTime;
+				drop += speed * TheNomad::SGame::sgame_WaterFriction.GetFloat() * m_nWaterLevel;
 			} else {
-				drop += speed * TheNomad::SGame::sgame_Friction.GetFloat() * frameTime;
+				drop += speed * TheNomad::SGame::sgame_Friction.GetFloat();
 			}
 			
 			// scale the velocity
