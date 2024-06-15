@@ -149,11 +149,6 @@ uint32_t smallchar_width;
 uint32_t smallchar_height;
 
 typedef struct {
-	char msg[MAXPRINTMSG];
-	int lifeTime;
-} notify_t;
-
-typedef struct {
 	qboolean	initialized;
 
 	char text[CON_TEXTSIZE];
@@ -166,10 +161,10 @@ typedef struct {
 
 	float	displayFrac;	// aproaches finalFrac at scr_conspeed
 	float	finalFrac;		// 0.0 to 1.0 lines of console to display
-	
-//	notify_t contimes[NUM_CON_TIMES];
-	char contimes[NUM_CON_TIMES][MAXPRINTMSG];
-	uint32_t times[NUM_CON_TIMES];
+
+	char times[NUM_CON_TIMES][MAXPRINTMSG];	// gi.realtime time the line was generated
+								// for transparent notify lines
+	int32_t contimes[NUM_CON_TIMES];
 	vec4_t	color;
 } console_t;
 
@@ -303,6 +298,7 @@ void Con_ClearNotify( void ) {
 	//	con.contimes[i] = 0;
 	//}
 	con.current = 0;
+	memset( con.times, 0, sizeof( con.times ) );
 	memset( con.contimes, 0, sizeof( con.contimes ) );
 }
 
@@ -516,7 +512,7 @@ void G_ConsolePrint( const char *txt ) {
 		con.initialized = qtrue;
 	}
 	
-	buf = con.contimes[ con.contime % NUM_CON_TIMES ];
+	buf = con.times[con.contime % NUM_CON_TIMES];
 	startLine = buf;
 	len = strlen( txt );
 
@@ -531,12 +527,13 @@ void G_ConsolePrint( const char *txt ) {
 		txt++;
 		switch ( *txt ) {
 		case '\n':
+//			con.totallines++;
 			if ( skipnotify ) {
-				con.times[ con.contime % NUM_CON_TIMES ] = 0;
+				con.contimes[ con.contime % NUM_CON_TIMES ] = 0;
 			} else {
-				con.times[ con.contime % NUM_CON_TIMES ] = gi.realtime;
+				con.contimes[ con.contime % NUM_CON_TIMES ] = gi.realtime;
 			}
-			buf = con.contimes[ con.contime % NUM_CON_TIMES ];
+			buf = con.times[ con.contime % NUM_CON_TIMES ];
 			*buf++ = '\0';
 			con.contime++;
 			startLine = buf;
@@ -920,22 +917,23 @@ static void Con_DrawNotify( void ) {
 	ImGui::PushStyleColor( ImGuiCol_Text, g_color_table[ ColorIndex( S_COLOR_WHITE ) ] );
 
 	for ( i = 0; i < NUM_CON_TIMES; i++ ) {
-		time = gi.realtime - con.times[ i ];
+		time = gi.realtime - con.contimes[ i ];
 		if ( time >= con_notifytime->f * 1000 ) {
 			// clear it
-			*con.contimes[ i ] = '\0';
+			*con.times[ i ] = '\0';
 			continue;
 		}
-		text = con.contimes[ i ];
+		text = con.times[ i ];
 
 		Con_DrawText( text );
 	}
 
 	ImGui::PopStyleColor();
 
-	if ( Key_GetCatcher() & KEYCATCH_SGAME || Key_GetCatcher() & KEYCATCH_UI ) {
+	if ( Key_GetCatcher() & ( KEYCATCH_UI | KEYCATCH_SGAME ) ) {
 		return;
 	}
+
 	ImGui::End();
 }
 
