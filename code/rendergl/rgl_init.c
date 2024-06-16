@@ -1398,13 +1398,10 @@ static void R_UnloadWorld_f( void ) {
     }
 
     ri.Printf( PRINT_INFO, "Clearing level assets...\n" );
-    for ( i = 0; i < rg.world->levelTextures; i++ ) {
-		nglDeleteTextures( 1, &rg.textures[ rg.world->firstLevelTexture + i ]->id );
-    }
-
-    rg.numTextures = rg.world->firstLevelTexture;
+    
     rg.numSpriteSheets = rg.world->firstLevelSpriteSheet;
 
+    R_UnloadLevelTextures();
     R_UnloadLevelShaders();
 
     ri.Cmd_ExecuteCommand( "snd.unload_level" );

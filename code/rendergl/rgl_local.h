@@ -1564,12 +1564,13 @@ float HalfToFloat( uint16_t in );
 //
 // rgl_texture.c
 //
-void R_ImageList_f(void);
-void R_DeleteTextures(void);
+void R_UnloadLevelTextures( void );
+void R_ImageList_f( void );
+void R_DeleteTextures( void );
 texture_t *R_FindImageFile( const char *name, imgType_t type, imgFlags_t flags );
 void R_GammaCorrect( byte *buffer, uint64_t bufSize );
 void R_UpdateTextures( void );
-void R_InitTextures(void);
+void R_InitTextures( void );
 texture_t *R_CreateImage(  const char *name, byte *pic, int width, int height, imgType_t type, imgFlags_t flags, int internalFormat );
 
 extern int gl_filter_min, gl_filter_max;

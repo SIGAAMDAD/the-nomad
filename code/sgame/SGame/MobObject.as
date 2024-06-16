@@ -436,7 +436,7 @@ namespace TheNomad::SGame {
 				}
 			}
 			// increment the delta time
-			m_nAttackTime += TheNomad::GameSystem::GameManager.GetGameTic();
+			m_nAttackTime += TheNomad::Engine::CvarVariableInteger( "com_maxfps" ) / 60;
 		}
 		
 		private void IdleThink() {

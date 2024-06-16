@@ -49,9 +49,10 @@ namespace TheNomad::Engine::Physics {
 
         private void ClipBounds() {
             TheNomad::GameSystem::BBox mapBounds;
-            mapBounds.m_Mins = vec3( 0.0f, 0.0f, 0.0f );
-            mapBounds.m_Maxs = vec3( float( TheNomad::SGame::LevelManager.GetMapData().GetWidth() ),
-                float( TheNomad::SGame::LevelManager.GetMapData().GetHeight() ), 0 );
+			mapBounds.m_nWidth = TheNomad::SGame::LevelManager.GetMapData().GetWidth();
+			mapBounds.m_nHeight = TheNomad::SGame::LevelManager.GetMapData().GetHeight();
+			mapBounds.MakeBounds( vec3( float( TheNomad::SGame::LevelManager.GetMapData().GetWidth() ),
+				float( TheNomad::SGame::LevelManager.GetMapData().GetHeight() ), 0.0f ) );
 			vec3 origin = m_EntityData.GetOrigin();
 
             if ( !Util::BoundsIntersect( m_EntityData.GetBounds(), mapBounds ) ) {
@@ -184,8 +185,8 @@ namespace TheNomad::Engine::Physics {
 			const array<TheNomad::SGame::EntityObject@>@ entList = @TheNomad::SGame::EntityManager.GetEntities();
 			for ( uint i = 0; i < entList.Count(); i++ ) {
 				if ( Util::BoundsIntersect( bounds, entList[i].GetBounds() ) ) {
-//					m_Acceleration = 0.0f;
-//					return; // clip
+					m_Acceleration = 0.0f;
+					return; // clip
 				}
 			}
 			

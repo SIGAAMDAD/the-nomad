@@ -167,6 +167,85 @@ namespace TheNomad::SGame {
 			return m_State.GetID() == StateNum::ST_PLAYR_DOUBLEJUMP;
 		}
 
+		bool IsDashing() const {
+			return m_bDashing;
+		}
+		void SetDashing( bool bDashing ) {
+			m_bDashing = bDashing;
+		}
+
+		int GetTimeSinceLastDash() const {
+			return m_nTimeSinceDash;
+		}
+		void SetTimeSinceLastDash( int time ) {
+			m_nTimeSinceDash = time;
+		}
+		void ResetDash() {
+			m_nTimeSinceDash = 1000;
+		}
+
+		void SetUsingWeapon( bool bUseWeapon ) {
+			m_bUseWeapon = bUseWeapon;
+		}
+		void SetUsingWeaponAlt( bool bUseAltWeapon ) {
+			m_bAltUseWeapon = bUseAltWeapon;
+		}
+		void SetLeftHandMode( InfoSystem::WeaponProperty weaponProps ) {
+			m_LeftHandMode = weaponProps;
+		}
+		void SetRightHandMode( InfoSystem::WeaponProperty weaponProps ) {
+			m_RightHandMode = weaponProps;
+		}
+		void SetLeftHandWeapon( WeaponObject@ weapon ) {
+			@m_LeftHandWeapon = @weapon;
+		}
+		void SetRightHandWeapon( WeaponObject@ weapon ) {
+			@m_RightHandWeapon = @weapon;
+		}
+		void SetHandsUsed( int nHandsUsed ) {
+			m_nHandsUsed = nHandsUsed;
+		}
+		void SetParryBoxWidth( float nParryBoxWidth ) {
+			m_nParryBoxWidth = nParryBoxWidth;
+		}
+		void SetCurrentWeapon( int nCurrentWeapon ) {
+			m_CurrentWeapon = nCurrentWeapon;
+		}
+
+		bool UsingWeapon() const {
+			return m_bUseWeapon;
+		}
+		bool UsingWeaponAlt() const {
+			return m_bAltUseWeapon;
+		}
+		InfoSystem::WeaponProperty GetLeftHandMode() const {
+			return m_LeftHandMode;
+		}
+		InfoSystem::WeaponProperty GetRightHandMode() const {
+			return m_RightHandMode;
+		}
+		const WeaponObject@ GetLeftHandWeapon() const {
+			return @m_LeftHandWeapon;
+		}
+		const WeaponObject@ GetRightHandWeapon() const {
+			return @m_RightHandWeapon;
+		}
+		WeaponObject@ GetLeftHandWeapon() {
+			return @m_LeftHandWeapon;
+		}
+		WeaponObject@ GetRightHandWeapon() {
+			return @m_RightHandWeapon;
+		}
+		int GetHandsUsed() const {
+			return m_nHandsUsed;
+		}
+		float GetParryBoxWidth() const {
+			return m_nParryBoxWidth;
+		}
+		int GetCurrentWeaponIndex() const {
+			return m_CurrentWeapon;
+		}
+
 		void SetLegsFacing( int facing ) {
 			m_LegsFacing = facing;
 		}
@@ -577,29 +656,38 @@ namespace TheNomad::SGame {
 //			DrawLegs();
 //			DrawArms();
 		}
-		
-		KeyBind key_MoveNorth, key_MoveSouth, key_MoveEast, key_MoveWest;
-		KeyBind key_Jump, key_Melee;
-		
+
+		KeyBind key_MoveNorth;
+		KeyBind key_MoveSouth;
+		KeyBind key_MoveEast;
+		KeyBind key_MoveWest;
+		KeyBind key_Jump;
+		KeyBind key_Melee;
+
 		private TheNomad::GameSystem::BBox m_ParryBox;
-		float m_nParryBoxWidth;
-		
+		private float m_nParryBoxWidth = 0.0f;
+
+		InfoSystem::WeaponInfo m_EmptyInfo;
+
 		// toggled with "sgame_SaveLastUsedWeaponModes"
 		private InfoSystem::WeaponProperty[] m_WeaponModes( 9 );
-		
+
 		// 9 weapons in total
 		WeaponObject@[] m_WeaponSlots( 9 );
-		WeaponObject m_HeavyPrimary;
-		WeaponObject m_HeavySidearm;
-		WeaponObject m_LightPrimary;
-		WeaponObject m_LightSidearm;
-		WeaponObject m_Melee1;
-		WeaponObject m_Melee2;
-		WeaponObject m_RightArm;
-		WeaponObject m_LeftArm;
-		WeaponObject m_Ordnance;
-		InfoSystem::WeaponInfo m_EmptyInfo;
+		WeaponObject@ m_HeavyPrimary = null;
+		WeaponObject@ m_HeavySidearm = null;
+		WeaponObject@ m_LightPrimary = null;
+		WeaponObject@ m_LightSidearm = null;
+		WeaponObject@ m_Melee1 = null;
+		WeaponObject@ m_Melee2 = null;
+		WeaponObject@ m_RightArm = null;
+		WeaponObject@ m_LeftArm = null;
+		WeaponObject@ m_Ordnance = null;
+
 		int m_CurrentWeapon = 0;
+
+		// used for various things but mostly just haptic feedback
+		private uint m_nControllerIndex = 0;
 		
 		private QuickShot m_QuickShot;
 		
@@ -628,16 +716,16 @@ namespace TheNomad::SGame {
 		private float m_nFrameDamage = 0.0f;
 		
 		// what does the player have in their hands?
-		int m_nHandsUsed = 0; // 0 for left, 1 for right, 2 if two-handed
-		WeaponObject@ m_LeftHandWeapon = null;
-		WeaponObject@ m_RightHandWeapon = null;
-		InfoSystem::WeaponProperty m_LeftHandMode = InfoSystem::WeaponProperty::None;
-		InfoSystem::WeaponProperty m_RightHandMode = InfoSystem::WeaponProperty::None;
+		private int m_nHandsUsed = 0; // 0 for left, 1 for right, 2 if two-handed
+		private WeaponObject@ m_LeftHandWeapon = null;
+		private WeaponObject@ m_RightHandWeapon = null;
+		private InfoSystem::WeaponProperty m_LeftHandMode = InfoSystem::WeaponProperty::None;
+		private InfoSystem::WeaponProperty m_RightHandMode = InfoSystem::WeaponProperty::None;
 		
-		bool m_bUseWeapon = false;
-		bool m_bAltUseWeapon = false;
+		private bool m_bUseWeapon = false;
+		private bool m_bAltUseWeapon = false;
 
-		// the lore goes: the harder and faster you hit The Nomad, the harder and faster they hit back
+		// the lore goes: the harder and faster you hit The Nomad, the harder and faster he hits back
 		private float m_nDamageMult = 0.0f;
 		private float m_nRage = 0.0f;
 
@@ -652,15 +740,13 @@ namespace TheNomad::SGame {
 		private EntityState@ m_LegState = null;
 		private int m_LegsFacing = 0;
 
-		int m_nTimeSinceDash = 1000;
-		bool m_bDashing = false;
+		private int m_nTimeSinceDash = 1000;
+		private int m_nDashCounter = 0;
+		private bool m_bDashing = false;
 
-		bool m_bEmoting = false;
+		private bool m_bEmoting = false;
 		
 		private PlayerDisplayUI m_HudData;
 		PMoveData Pmove( @this );
-
-		// used for various things but mostly just haptic feedback
-		private uint m_nControllerIndex;
 	};
 };

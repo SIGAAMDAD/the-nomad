@@ -31,6 +31,9 @@ static void SignalHandle( int sig )
         Sys_Error( "An unrecoverable error has occured within the engine, please click OK and report this error.\n\n(FOR DEVELOPERS) Debug Assertion (SIGABRT)" );
         break;
     case SIGBUS:
+        exit_type = &signals[1];
+        Sys_SetError( ERR_BUS );
+        Sys_Error( "An unrecoverable error has occured within the engine, please click OK and report this error.\n\n(FOR DEVELOPERS) Memory Bus Error (SIGBUS)" );
         break;
     case SIGILL:
         break;

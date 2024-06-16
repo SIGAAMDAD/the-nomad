@@ -3002,3 +3002,20 @@ void R_DeleteTextures( void )
 	GL_BindNullTextures();
 }
 
+void R_UnloadLevelTextures( void )
+{
+	uint32_t i, j;
+	uint64_t hash;
+	texture_t *image;
+
+	for ( i = 0; i < rg.world->levelTextures; i++ ) {
+		for ( j = 0; j < FILE_HASH_SIZE; j++ ) {
+			if ( hashTable[ j ] == rg.textures[ rg.world->firstLevelTexture + i ] ) {
+				hashTable[ j ] = NULL;
+			}
+		}
+
+		nglDeleteTextures( 1, &rg.textures[ rg.world->firstLevelTexture + i ]->id );
+    }
+	rg.numTextures = rg.world->firstLevelTexture;
+}

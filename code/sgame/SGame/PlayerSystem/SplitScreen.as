@@ -127,21 +127,22 @@ namespace TheNomad::SGame {
 		
 		void Dash_Down_f() {
 			PlayrObject@ obj = GetPlayerIndex();
-			const int time = TheNomad::GameSystem::GameManager.GetGameTic();
+			const int time = TheNomad::Engine::System::Milliseconds();
+			const int lastDash = obj.GetTimeSinceLastDash();
 
 			// wait at little bit before launching another dash
-			if ( obj.m_nTimeSinceDash - time < 500 ) {
-				obj.m_nTimeSinceDash += time;
+			if ( time - lastDash < 500 ) {
+				obj.SetTimeSinceLastDash( lastDash + time );
 				return;
 			}
 
-			obj.m_nTimeSinceDash = 0;
-			obj.m_bDashing = true;
+			obj.SetTimeSinceLastDash( 0 );
+			obj.SetDashing( true );
 		}
 		void Dash_Up_f() {
 			PlayrObject@ obj = GetPlayerIndex();
 			
-			obj.m_bDashing = false;
+			obj.SetDashing( false );
 		}
 
 		void MoveNorth_f() {
@@ -185,10 +186,10 @@ namespace TheNomad::SGame {
 			}
 		}
 
-		void UseWeapon_Down_f() { GetPlayerIndex().m_bUseWeapon = true; }
-		void UseWeapon_Up_f() { GetPlayerIndex().m_bUseWeapon = false; }
-		void AltUseWeapon_Down_f() { GetPlayerIndex().m_bAltUseWeapon = true; }
-		void AltUseWeapon_Up_f() { GetPlayerIndex().m_bAltUseWeapon = false; }
+		void UseWeapon_Down_f() { GetPlayerIndex().SetUsingWeapon( true ); }
+		void UseWeapon_Up_f() { GetPlayerIndex().SetUsingWeapon( false ); }
+		void AltUseWeapon_Down_f() { GetPlayerIndex().SetUsingWeaponAlt( true ); }
+		void AltUseWeapon_Up_f() { GetPlayerIndex().SetUsingWeaponAlt( false ); }
 		void Quickshot_Down_f() {
 			PlayrObject@ obj = GetPlayerIndex();
 			
@@ -211,13 +212,15 @@ namespace TheNomad::SGame {
 			PlayrObject@ obj = GetPlayerIndex();
 
 			obj.weaponFancySfx.Play();
-			switch ( obj.m_nHandsUsed ) {
+			switch ( obj.GetHandsUsed() ) {
 			case 0:
-				obj.SwitchWeaponWielding( obj.m_LeftHandMode, obj.m_RightHandMode, @obj.m_LeftHandWeapon, @obj.m_RightHandWeapon );
+				obj.SwitchWeaponWielding( obj.GetLeftHandMode(), obj.GetRightHandMode(),
+					@obj.GetLeftHandWeapon(), @obj.GetRightHandWeapon() );
 				break;
 			case 1:
 			case 2:
-				obj.SwitchWeaponWielding( obj.m_RightHandMode, obj.m_LeftHandMode, @obj.m_RightHandWeapon, @obj.m_LeftHandWeapon );
+				obj.SwitchWeaponWielding( obj.GetRightHandMode(), obj.GetLeftHandMode(),
+					@obj.GetRightHandWeapon(), @obj.GetLeftHandWeapon() );
 				break;
 			};
 		}
@@ -225,18 +228,18 @@ namespace TheNomad::SGame {
 			PlayrObject@ obj = GetPlayerIndex();
 
 			obj.weaponFancySfx.Play();
-			switch ( obj.m_nHandsUsed ) {
+			switch ( obj.GetHandsUsed() ) {
 			case 0:
-				obj.SwitchWeaponMode( obj.m_LeftHandMode, @obj.m_LeftHandWeapon );
+				obj.SwitchWeaponMode( obj.GetLeftHandMode(), @obj.GetLeftHandWeapon() );
 				break;
 			case 1:
-				obj.SwitchWeaponMode( obj.m_RightHandMode, @obj.m_RightHandWeapon );
+				obj.SwitchWeaponMode( obj.GetRightHandMode(), @obj.GetRightHandWeapon() );
 				break;
 			case 2: {
-				const InfoSystem::WeaponProperty bits = obj.m_LeftHandMode;
-				obj.SwitchWeaponMode( obj.m_LeftHandMode, @obj.m_LeftHandWeapon );
-				if ( bits == obj.m_LeftHandMode ) {
-					obj.SwitchWeaponMode( obj.m_RightHandMode, @obj.m_RightHandWeapon );
+				const InfoSystem::WeaponProperty bits = obj.GetLeftHandMode();
+				obj.SwitchWeaponMode( obj.GetLeftHandMode(), @obj.GetLeftHandWeapon() );
+				if ( bits == obj.GetLeftHandMode() ) {
+					obj.SwitchWeaponMode( obj.GetRightHandMode(), @obj.GetRightHandWeapon() );
 				}
 				break; }
 			default:
@@ -246,12 +249,12 @@ namespace TheNomad::SGame {
 		void SwitchHand_Down_f() {
 			PlayrObject@ obj = GetPlayerIndex();
 			
-			switch ( obj.m_nHandsUsed ) {
+			switch ( obj.GetHandsUsed() ) {
 			case 0:
-				obj.m_nHandsUsed = 1;
+				obj.SetHandsUsed( 1 );
 				break;
 			case 1:
-				obj.m_nHandsUsed = 0;
+				obj.SetHandsUsed( 0 );
 				break;
 			case 2:
 			default:
@@ -280,7 +283,7 @@ namespace TheNomad::SGame {
 		void Melee_Down_f() {
 			PlayrObject@ obj = GetPlayerIndex();
 			
-			obj.m_nParryBoxWidth = 0.0f;
+			obj.SetParryBoxWidth( 0.0f );
 			obj.SetState( @StateManager.GetStateForNum( StateNum::ST_PLAYR_MELEE ) );
 		}
 		void Melee_Up_f() {
@@ -290,20 +293,20 @@ namespace TheNomad::SGame {
 		void NextWeapon_f() {
 			PlayrObject@ obj = GetPlayerIndex();
 			
-			obj.m_CurrentWeapon++;
-			if ( obj.m_CurrentWeapon >= int( obj.m_WeaponSlots.Count() ) ) {
-				obj.m_CurrentWeapon = 0;
+			obj.SetCurrentWeapon( obj.GetCurrentWeaponIndex() + 1 );
+			if ( obj.GetCurrentWeaponIndex() >= int( obj.m_WeaponSlots.Count() ) ) {
+				obj.SetCurrentWeapon( 0 );
 			}
-			cast<const InfoSystem::WeaponInfo@>( @obj.m_WeaponSlots[ obj.m_CurrentWeapon ].GetInfo() ).equipSfx.Play();
+			cast<const InfoSystem::WeaponInfo@>( @obj.m_WeaponSlots[ obj.GetCurrentWeaponIndex() ].GetInfo() ).equipSfx.Play();
 		}
 		void PrevWeapon_f() {
 			PlayrObject@ obj = GetPlayerIndex();
 			
-			obj.m_CurrentWeapon--;
-			if ( obj.m_CurrentWeapon < 0 ) {
-				obj.m_CurrentWeapon = obj.m_WeaponSlots.Count();
+			obj.SetCurrentWeapon( obj.GetCurrentWeaponIndex() - 1 );
+			if ( obj.GetCurrentWeaponIndex() < 0 ) {
+				obj.SetCurrentWeapon( obj.m_WeaponSlots.Count() - 1 );
 			}
-			cast<const InfoSystem::WeaponInfo@>( @obj.m_WeaponSlots[ obj.m_CurrentWeapon ].GetInfo() ).equipSfx.Play();
+			cast<const InfoSystem::WeaponInfo@>( @obj.m_WeaponSlots[ obj.GetCurrentWeaponIndex() ].GetInfo() ).equipSfx.Play();
 		}
 		
 		private void RenderScene( const uvec2& in scenePos, const uvec2& in sceneSize, const vec3& in origin ) {
@@ -390,7 +393,7 @@ namespace TheNomad::SGame {
 		}
 		
 		private PlayrObject@[] m_PlayerData( 4 );
-		private int m_nPlayerCount;
+		private int m_nPlayerCount = 0;
 	};
 	
 	SplitScreen ScreenData;

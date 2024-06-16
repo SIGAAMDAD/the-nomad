@@ -180,6 +180,8 @@ int Sys_MessageBox( const char *title, const char *text, bool ShowOkAndCancelBut
     return ( buttonid == 1 );
 }
 
+static qboolean errorCaught = qfalse;
+
 void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error( const char *fmt, ... )
 {
     va_list argptr;
@@ -206,7 +208,13 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error( cons
 
     Sys_DebugStacktrace( MAX_STACKTRACE_FRAMES );
     
-    Sys_MessageBox( "Engine Error", text, false );
+	if ( !errorCaught ) {
+		// [SIREngine] 16/5/2024
+		// this would recurse with the SDL2/X11 window stuff allocating and then we get
+		// a memory corruption error that goes unhandled
+		errorCaught = qtrue;
+    	Sys_MessageBox( "Engine Error", text, false );
+	}
 
     msg = va( "Sys_Error: %s\n", text );
     write( STDERR_FILENO, msg, strlen( msg ) );
