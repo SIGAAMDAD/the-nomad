@@ -362,6 +362,13 @@ void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, con
 	sp = &rg.imguiShader;
 	shader = R_GetShaderByHandle( hShader );
 
+	if ( backend.drawBatch.shader ) {
+		backend.drawBatch.shaderTime = backend.refdef.floatTime - backend.drawBatch.shader->timeOffset;
+		if ( backend.drawBatch.shader->clampTime && backend.drawBatch.shaderTime >= backend.drawBatch.shader->clampTime ) {
+			backend.drawBatch.shaderTime = backend.drawBatch.shader->clampTime;
+		}
+	}
+
 	for ( i = 0; i < MAX_SHADER_STAGES; i++ ) {
 		stageP = shader->stages[i];
 

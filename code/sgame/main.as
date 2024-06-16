@@ -86,21 +86,11 @@ namespace ImGui {
 	}
 };
 
-//
-// InitResources: caches all important SGame resources
-//
-void InitResources() {
-	string str;
+void LoadLevelAssets() {
 	TheNomad::Engine::Timer timer;
+	const string str = TheNomad::Engine::CvarVariableString( "skin" );
 
-	ConsolePrint( "Initializing SGame Resources...\n" );
-
-	timer.Run();
-
-	//
-	// init shaders
-	//
-	str = TheNomad::Engine::CvarVariableString( "skin" );
+	timer.Start();
 
 	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_torso" );
 	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_legs" );
@@ -111,9 +101,6 @@ void InitResources() {
 	TheNomad::SGame::InfoSystem::InfoManager.LoadAmmoInfos();
 	TheNomad::SGame::InfoSystem::InfoManager.LoadWeaponInfos();
 
-	//
-	// init sfx
-	//
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die1.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die2.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die3.ogg" );
@@ -127,6 +114,7 @@ void InitResources() {
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/misc/passCheckpoint.ogg" );
 
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/mobs/detect.ogg" );
+	TheNomad::Engine::ResourceCache.GetSfx( "sfx/mobs/detectMeme.ogg" );
 
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveGravel0.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveGravel1.ogg" );
@@ -139,6 +127,17 @@ void InitResources() {
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal2.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal3.ogg" );
 
+	timer.Stop();
+	ConsolePrint( "LoadLevelAssets: " + timer.ElapsedMilliseconds() + "ms\n" );
+}
+
+//
+// InitResources: caches all important SGame resources
+//
+void InitResources() {
+	string str;
+
+	ConsolePrint( "Initializing SGame Resources...\n" );
 	//
 	// register strings
 	//
@@ -172,9 +171,6 @@ void InitResources() {
 		TheNomad::GameSystem::GetString( "SP_RANK_U_COLOR", str );
 		TheNomad::SGame::sgame_RankStringColors[ TheNomad::SGame::LevelRank::RankWereUBotting ] = TheNomad::Util::StringToColor( str );
 	}
-
-	timer.Stop();
-	ConsolePrint( "SGame_InitResources: " + timer.ElapsedMilliseconds() + "ms\n" );
 }
 
 void InitCvars() {
@@ -300,6 +296,8 @@ int ModuleOnSaveGame() {
 }
 
 int ModuleOnLoadGame() {
+	LoadLevelAssets();
+
 	TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::InLevel;
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnLoad();
@@ -309,6 +307,8 @@ int ModuleOnLoadGame() {
 }
 
 int ModuleOnLevelStart() {
+	LoadLevelAssets();
+
 	TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::InLevel;
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnLevelStart();
@@ -344,13 +344,16 @@ int ModuleOnRunTic( uint msec ) {
 		return 3;
 	}
 
-	TheNomad::GameSystem::GameManager.SetMsec( msec );
+	TheNomad::GameSystem::GameManager.SetMsec( TheNomad::Engine::System::Milliseconds() );
 
 	// if we're paused, then just draw the stuff, don't run anything else
 	if ( TheNomad::Engine::CvarVariableInteger( "g_paused" ) == 0 ) {
+		TheNomad::SGame::LevelManager.Resume();
 		for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 			TheNomad::GameSystem::GameSystems[i].OnRunTic();
 		}
+	} else {
+		TheNomad::SGame::LevelManager.Pause();
 	}
 
 	TheNomad::SGame::ScreenData.Draw();

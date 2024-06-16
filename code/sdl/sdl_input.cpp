@@ -1406,7 +1406,9 @@ void HandleEvents( void )
 				break;
 			// keyboard focus:
 			case SDL_WINDOWEVENT_FOCUS_LOST:
-				if ( gi.state == GS_LEVEL && gi.mapLoaded && !Cvar_VariableInteger( "g_paused" ) ) {
+				if ( gi.state == GS_LEVEL && gi.mapLoaded && !Cvar_VariableInteger( "g_paused" )
+					&& Cvar_VariableInteger( "com_pauseUnfocused" ) )
+				{
 					Cbuf_ExecuteText( EXEC_APPEND, "togglepausemenu\n" );
 				}
 				if ( Cvar_VariableInteger( "snd_muteUnfocused" ) ) {

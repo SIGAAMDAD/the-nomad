@@ -988,10 +988,10 @@ void Menu_Cache( void )
     ui->whiteShader = re.RegisterShader( "white" );
 	ui->back_0 = re.RegisterShader( "menu/backbutton0" );
 	ui->back_1 = re.RegisterShader( "menu/backbutton1" );
-	ui->sfx_select = Snd_RegisterSfx( "sfx/menu1.ogg" );
-//	ui->sfx_move = Snd_RegisterSfx( "sfx/menu2.ogg" );
-	ui->sfx_back = Snd_RegisterSfx( "sfx/menu3.ogg" );
-	ui->sfx_null = Snd_RegisterSfx( "sfx/menu4.ogg" );
+	ui->sfx_select = Snd_RegisterSfx( "sfx/menu/menu1.ogg" );
+//	ui->sfx_move = Snd_RegisterSfx( "sfx/menu/menu2.ogg" );
+	ui->sfx_back = Snd_RegisterSfx( "sfx/menu/menu3.ogg" );
+	ui->sfx_null = Snd_RegisterSfx( "sfx/menu/menu4.ogg" );
 
 	ui->controller_start = re.RegisterShader( "menu/xbox_start" );
 	ui->controller_back = re.RegisterShader( "menu/xbox_back" );

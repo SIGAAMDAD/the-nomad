@@ -644,7 +644,7 @@ void ModsMenu_Cache( void )
 	mods->menu.width = ui->gpuConfig.vidWidth;
 	mods->menu.height = 680 * ui->scale;
 	mods->menu.name = mods->titleString->value;
-	mods->menu.track = Snd_RegisterTrack( "music/tales_around_the_campfire.ogg" );
+	mods->menu.track = Snd_RegisterTrack( "music/menu/campfire.ogg" );
 
     ModsMenu_Load();
 

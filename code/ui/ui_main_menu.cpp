@@ -319,46 +319,12 @@ void MainMenu_Cache( void )
     s_main->exitGame.color = color_white;
 
     s_main->noSaves = Cvar_VariableInteger( "sgame_NumSaves" ) == 0;
-
-    /*
-    s_main->spArrow.generic.name = "##CampaignMainMenuArrowRight";
-    s_main->spArrow.generic.type = MTYPE_ARROW;
-    s_main->spArrow.generic.id = ID_SINGEPLAYER;
-    s_main->spArrow.generic.eventcallback = MainMenu_EventCallback;
-    s_main->spArrow.direction = ImGuiDir_Right;
-
-    s_main->modsArrow.generic.name = "##ModsMainMenuArrowRight";
-    s_main->modsArrow.generic.type = MTYPE_ARROW;
-    s_main->modsArrow.generic.id = ID_MODS;
-    s_main->modsArrow.generic.eventcallback = MainMenu_EventCallback;
-    s_main->modsArrow.direction = ImGuiDir_Right;
-
-    s_main->settingsArrow.generic.name = "##SettingsMainMenuArrowRight";
-    s_main->settingsArrow.generic.type = MTYPE_ARROW;
-    s_main->settingsArrow.generic.id = ID_SETTINGS;
-    s_main->settingsArrow.generic.eventcallback = MainMenu_EventCallback;
-    s_main->settingsArrow.direction = ImGuiDir_Right;
-
-    s_main->creditsArrow.generic.name = "##CreditsMainMenuArrowRight";
-    s_main->creditsArrow.generic.type = MTYPE_ARROW;
-    s_main->creditsArrow.generic.id = ID_CREDITS;
-    s_main->creditsArrow.generic.eventcallback = MainMenu_EventCallback;
-    s_main->creditsArrow.direction = ImGuiDir_Right;
-
-    s_main->exitArrow.generic.name = "##ExitGameMainMenuArrowRight";
-    s_main->exitArrow.generic.type = MTYPE_ARROW;
-    s_main->exitArrow.generic.id = ID_EXIT;
-    s_main->exitArrow.generic.eventcallback = MainMenu_EventCallback;
-    s_main->exitArrow.direction = ImGuiDir_Right;
-    */
-
-    s_main->menu.track = Snd_RegisterTrack( "music/title.ogg" );
+    s_main->menu.track = Snd_RegisterTrack( "music/menu/title.ogg" );
     s_main->background = re.RegisterShader( "menu/mainbackground" );
 
     s_main->noMenu = qfalse;
     ui->menubackShader = s_main->background;
 
-//    Menu_AddItem( &s_main->menu, &s_main->table );
     Menu_AddItem( &s_main->menu, &s_main->singleplayer );
     Menu_AddItem( &s_main->menu, &s_main->mods );
     Menu_AddItem( &s_main->menu, &s_main->settings );

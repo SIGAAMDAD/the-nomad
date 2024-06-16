@@ -1787,10 +1787,24 @@ static void SettingsMenu_Draw( void )
 	//
 	if ( s_settingsMenu->modified ) {
 		ImGui::SetCursorScreenPos( ImVec2( 256 * ui->scale, 680 * ui->scale ) );
-		ImGui::Image( (ImTextureID)(uintptr_t)( s_settingsMenu->saveHovered ? s_settingsMenu->save_1 : s_settingsMenu->save_0 ),
-			ImVec2( 256 * ui->scale, 72 * ui->scale ) );
-		if ( !s_settingsMenu->saveHovered && ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone ) ) {
-			Snd_PlaySfx( ui->sfx_move );
+		if ( in_mode->i == 0 ) {
+			ImGui::Image( (ImTextureID)(uintptr_t)( s_settingsMenu->saveHovered ? s_settingsMenu->save_1 : s_settingsMenu->save_0 ),
+				ImVec2( 256 * ui->scale, 72 * ui->scale ) );
+			if ( !s_settingsMenu->saveHovered && ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone ) ) {
+				Snd_PlaySfx( ui->sfx_move );
+			}
+		} else {
+			ImGui::PushStyleColor( ImGuiCol_Button, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+			ImGui::PushStyleColor( ImGuiCol_ButtonActive, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+			ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+			if ( s_settingsMenu->saveHovered ) {
+				ImGui::PushStyleColor( ImGuiCol_Text, colorGold );
+			}
+			ImGui::Button( "Save Settings", ImVec2( 0, ( 32 * s_settingsMenu->menu.textFontScale ) * ui->scale ) );
+			ImGui::PopStyleColor( 3 );
+			if ( s_settingsMenu->saveHovered ) {
+				ImGui::PopStyleColor();
+			}
 		}
 		s_settingsMenu->saveHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
 		if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
@@ -1817,10 +1831,26 @@ static void SettingsMenu_Draw( void )
 		}
 
 		ImGui::SetCursorScreenPos( ImVec2( 528 * ui->scale, 680 * ui->scale ) );
-		ImGui::Image( (ImTextureID)(uintptr_t)( s_settingsMenu->setDefaultsHovered ? s_settingsMenu->reset_1 : s_settingsMenu->reset_0 ),
-			ImVec2( 256 * ui->scale, 72 * ui->scale ) );
-		if ( !s_settingsMenu->setDefaultsHovered && ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone ) ) {
-			Snd_PlaySfx( ui->sfx_move );
+		if ( in_mode->i == 0 ) {
+			ImGui::Image( (ImTextureID)(uintptr_t)( s_settingsMenu->setDefaultsHovered ? s_settingsMenu->reset_1 : s_settingsMenu->reset_0 ),
+				ImVec2( 256 * ui->scale, 72 * ui->scale ) );
+			if ( !s_settingsMenu->setDefaultsHovered && ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled
+				| ImGuiHoveredFlags_DelayNone ) )
+			{
+				Snd_PlaySfx( ui->sfx_move );
+			}
+		} else {
+			ImGui::PushStyleColor( ImGuiCol_Button, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+			ImGui::PushStyleColor( ImGuiCol_ButtonActive, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+			ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+			if ( s_settingsMenu->setDefaultsHovered ) {
+				ImGui::PushStyleColor( ImGuiCol_Text, colorGold );
+			}
+			ImGui::Button( "Set Default", ImVec2( 0, ( 32 * s_settingsMenu->menu.textFontScale ) * ui->scale ) );
+			ImGui::PopStyleColor( 3 );
+			if ( s_settingsMenu->setDefaultsHovered ) {
+				ImGui::PopStyleColor();
+			}
 		}
 		s_settingsMenu->setDefaultsHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
 		if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {

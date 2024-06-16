@@ -602,24 +602,6 @@ static int Con_TextCallback( ImGuiInputTextCallbackData *data )
 			edit->cursor = data->CursorPos = 0;
 		}
 	}
-
-/*
-	if ( keys[KEY_CTRL].down && keys[KEY_C].down ) {
-		if ( !data->HasSelection() ) {
-			SDL_SetClipboardText( " " );
-		} else {
-			SDL_SetClipboardText( data->Buf + data->SelectionStart );
-		}
-	}
-	if ( keys[KEY_CTRL].down && keys[KEY_V].down ) {
-		if ( data->HasSelection() ) {
-			data->DeleteChars( data->SelectionStart, data->SelectionEnd - data->SelectionStart );
-		}
-		data->InsertChars( data->CursorPos, buf );
-		edit->cursor = data->CursorPos;
-		Z_Free( buf );
-	}
-*/
 	if ( ( keys[KEY_WHEEL_DOWN].down && keys[KEY_SHIFT].down ) || keys[KEY_DOWNARROW].down
 		|| ( keys[KEY_N].down && keys[KEY_CTRL].down ) )
 	{
@@ -696,7 +678,7 @@ static void Con_DrawInput( void ) {
 	ImGui::TextUnformatted( "] " );
 	ImGui::SameLine();
 
-	if ( ImGui::InputText( "##ConsoleInputField", g_consoleField.buffer, sizeof(g_consoleField.buffer) - 1,
+	if ( ImGui::InputText( "##ConsoleInputField", g_consoleField.buffer, sizeof( g_consoleField.buffer ) - 1,
 		ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackCompletion |
 		ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CtrlEnterForNewLine |
 		( key_overstrikeMode ? ImGuiInputTextFlags_AlwaysOverwrite : 0 ),
@@ -726,11 +708,8 @@ static void Con_DrawInput( void ) {
 			if ( !g_consoleField.buffer[0] ) {
 				return;	// empty lines just scroll the console without adding to history
 			} else {
-				Cbuf_AddText( g_consoleField.buffer+1 );	// valid command
+				Cbuf_AddText( g_consoleField.buffer );
 				Cbuf_AddText( "\n" );
-	//			Cbuf_AddText( "cmd say " );
-	//			Cbuf_AddText( g_consoleField.buffer );
-	//			Cbuf_AddText( "\n" );
 			}
 		}
 		// copy line to history buffer
@@ -822,7 +801,7 @@ static void Con_DrawSolidConsole( float frac, qboolean open )
 	refdef.y = 0;
 	refdef.width = gi.gpuConfig.vidWidth;
 	refdef.height = gi.gpuConfig.vidHeight;
-	refdef.time = gi.realtime * 0.1f;
+	refdef.time = gi.realtime;
 	refdef.flags = RSF_NOWORLDMODEL | RSF_ORTHO_TYPE_SCREENSPACE;
 
 	height = gi.gpuConfig.vidHeight * frac;
@@ -853,8 +832,8 @@ static void Con_DrawSolidConsole( float frac, qboolean open )
 		customColor = qtrue;
 	} else {
 		ImGui::Begin( "##ConsoleWindowBackground", NULL, windowFlags | ImGuiWindowFlags_NoBackground );
-		ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-		ImGui::SetWindowSize( ImVec2( gi.gpuConfig.vidWidth, height ) );
+		ImGui::SetWindowPos( ImVec2( -16, -16 ) );
+		ImGui::SetWindowSize( ImVec2( gi.gpuConfig.vidWidth + 16, height + 16 ) );
 		ImGui::Image( (ImTextureID)(uintptr_t)gi.consoleShader, ImVec2( (float)gi.gpuConfig.vidWidth, height ) );
 		ImGui::End();
 	}
@@ -969,23 +948,22 @@ Scroll it up or down
 void Con_RunConsole( void ) 
 {
 	// decide on the destination height of the console
-	if ( Key_GetCatcher( ) & KEYCATCH_CONSOLE )
+	if ( Key_GetCatcher( ) & KEYCATCH_CONSOLE ) {
 		con.finalFrac = 0.75f;	// half screen
-	else
+	} else {
 		con.finalFrac = 0.0f;	// none visible
+	}
 	
 	// scroll towards the destination height
 	if ( con.finalFrac < con.displayFrac ) {
-//		con.displayFrac -= con_conspeed->f * gi.frametime * 0.001;
-		con.displayFrac -= con_conspeed->f * ( -( gi.frametime - gi.realFrameTime ) * 0.10f ) * 0.001f;
+		con.displayFrac -= con_conspeed->f * gi.realFrameTime * 0.001f;
 		if ( con.finalFrac > con.displayFrac ) {
 			con.displayFrac = con.finalFrac;
 		}
 
 	}
 	else if ( con.finalFrac > con.displayFrac ) {
-//		con.displayFrac += con_conspeed->f * gi.frametime * 0.001;
-		con.displayFrac += con_conspeed->f * ( -( gi.frametime - gi.realFrameTime ) * 0.10f ) * 0.001f;
+		con.displayFrac += con_conspeed->f * gi.realFrameTime * 0.001f;
 		if ( con.finalFrac < con.displayFrac ) {
 			con.displayFrac = con.finalFrac;
 		}

@@ -35,6 +35,7 @@ cvar_t *com_logfile;
 cvar_t *com_maxfps;
 cvar_t *com_maxfpsUnfocused;
 cvar_t *com_yieldCPU;
+cvar_t *com_pauseUnfocused;
 errorCode_t com_errorCode;
 #ifdef USE_AFFINITY_MASK
 cvar_t *com_affinityMask;
@@ -1886,6 +1887,8 @@ void Com_Init( char *commandLine )
 	com_yieldCPU = Cvar_Get( "com_yieldCPU", "1", CVAR_ARCHIVE_ND );
 	Cvar_CheckRange( com_yieldCPU, "0", "16", CVT_INT );
 	Cvar_SetDescription( com_yieldCPU, "Attempt to sleep specified amount of time between rendered frames when game is active, this will greatly reduce CPU load. Use 0 only if you're experiencing some lag." );
+	com_pauseUnfocused = Cvar_Get( "com_pauseUnfocused", "0", CVAR_SAVE );
+	Cvar_SetDescription( com_pauseUnfocused, "Pauses the game when set to \"1\" when game window is unfocused." );
 #ifdef USE_AFFINITY_MASK
 	Com_StartupVariable( "com_affinityMask" );
 	com_affinityMask = Cvar_Get( "com_affinityMask", "0x6", CVAR_SAVE | CVAR_LATCH );
@@ -2245,16 +2248,30 @@ static void Com_WriteConfig_f( void ) {
 	Com_WriteConfigToFile( filename );
 }
 
-static int32_t Com_ModifyMsec( int32_t msec )
+static int Com_ModifyMsec( int msec )
 {
-	int32_t clampTime;
+	int clampTime;
+
+	//
+	// modify time for debugging values
+	//
+	if ( com_fixedtime->i ) {
+		msec = com_fixedtime->i;
+	} else if ( com_timescale->f ) {
+		msec *= com_timescale->f;
+	}
+
+	// don't let it scale below 1 msec
+	if ( msec < 1 && com_timescale->f ) {
+		msec = 1;
+	}
 
 	// for local single player gaming
 	// we may want to clamp the time to prevent players from
 	// flying off edges when something hitches.
 	clampTime = 200;
 
-	if (msec > clampTime) {
+	if ( msec > clampTime ) {
 		msec = clampTime;
 	}
 
@@ -2267,21 +2284,14 @@ static int Com_TimeVal( int minMsec )
 
 	timeVal = Com_Milliseconds() - com_frameTime;
 
-	if (timeVal >= minMsec) {
+	if ( timeVal >= minMsec ) {
 		timeVal = 0;
-	}
-	else {
+	} else {
 		timeVal = minMsec - timeVal;
 	}
 
 	return timeVal;
 }
-
-static double Com_ClockToMilliseconds( clock_t ticks ) {
-	return (ticks / (double)CLOCKS_PER_SEC) * 1000.0f;
-}
-
-static int com_frameMsec;
 
 /*
 * Com_Frame: runs a single frame for the game
@@ -2317,6 +2327,49 @@ void Com_Frame( qboolean noDelay )
 	// main event loop
 	//
 
+#if 0 // broken
+	if ( noDelay ) {
+		minMsec = 0;
+		bias = 0;
+	} else {
+		if ( !gw_active && com_maxfpsUnfocused->i > 0 ) {
+			minMsec = 1000 / com_maxfpsUnfocused->i;
+		} else if ( com_maxfps->i > 0 ) {
+			minMsec = 1000 / com_maxfps->i;
+		} else {
+			minMsec = 1;
+		}
+
+		timeVal = com_frameTime - lastTime;
+		bias += timeVal - minMsec;
+
+		if ( bias > minMsec ) {
+			bias = minMsec;
+		}
+
+		// Adjust minMsec if previous frame took too long to render so
+		// that framerate is stable at the requested value.
+		minMsec -= bias;
+	}
+
+	// we may want to spin here if things are going too fast
+	do {
+		timeVal = Com_TimeVal( minMsec );
+		sleepMsec = timeVal;
+		if ( !gw_minimized && timeVal > com_yieldCPU->i ) {
+			sleepMsec = com_yieldCPU->i;
+		}
+		if ( timeVal > sleepMsec ) {
+			Com_EventLoop();
+		}
+	} while ( Com_TimeVal( minMsec ) );
+
+	lastTime = com_frameTime;
+	com_frameTime = Com_EventLoop();
+	realMsec = com_frameTime - lastTime;
+
+	Cbuf_Execute();
+#else // old fashioned Quake III method but without stabilizing the frames if it gets kinda stuffy
 	// we may want to spin here if things are going too fast
 	if ( !gw_active && com_maxfpsUnfocused->i > 0 ) {
 		minMsec = 1000 / com_maxfpsUnfocused->i;
@@ -2335,20 +2388,18 @@ void Com_Frame( qboolean noDelay )
 	Cbuf_Execute();
 
 	lastTime = com_frameTime;
-
+#endif
 	// mess with msec if needed
-	com_frameMsec = msec;
 	msec = Com_ModifyMsec( msec );
+	realMsec = com_frameTime - lastTime;
 
 	//
 	// run the game loop
 	//
-//	Com_EventLoop();
-//	Cbuf_Execute();
+	Com_EventLoop();
+	Cbuf_Execute();
 
-	G_Frame( msec, com_frameTime );
-
-	// run framerate diagnostics
+	G_Frame( msec, msec );
 
 	com_frameNumber++;
 }
