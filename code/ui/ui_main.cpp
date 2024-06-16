@@ -1036,13 +1036,13 @@ extern "C" void UI_DrawMenuBackground( void )
 	refdef.y = 0;
 	refdef.width = ui->gpuConfig.vidWidth;
 	refdef.height = ui->gpuConfig.vidHeight;
-	refdef.time = gi.realtime * 0.1f;
+	refdef.time = Sys_Milliseconds();
 	refdef.flags = RSF_NOWORLDMODEL | RSF_ORTHO_TYPE_SCREENSPACE;
 
 	//
 	// draw the background
 	//
-    re.ClearScene();
+	re.ClearScene();
 	re.SetColor( colorWhite );
     re.DrawImage( 0, 0, refdef.width, refdef.height, 0, 0, 1, 1, ui->menubackShader );
     re.RenderScene( &refdef );

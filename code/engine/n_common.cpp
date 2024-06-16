@@ -2391,7 +2391,7 @@ void Com_Frame( qboolean noDelay )
 #endif
 	// mess with msec if needed
 	msec = Com_ModifyMsec( msec );
-	realMsec = com_frameTime - lastTime;
+	realMsec = Sys_Milliseconds() - lastTime;
 
 	//
 	// run the game loop

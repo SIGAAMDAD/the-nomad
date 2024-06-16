@@ -849,11 +849,9 @@ static const void *RB_ClearDepth( const void *data )
 static const void *RB_DrawImage( const void *data ) {
 	const drawImageCmd_t *cmd;
 	shader_t *shader;
-	srfVert_t *verts;
-	polyVert_t vtx[4];
-	uint32_t *indices;
-	int i;
-	vec3_t origin;
+	srfVert_t verts[4];
+	uint32_t indices[6];
+	uint32_t numVerts, numIndices;
 
 	cmd = (const drawImageCmd_t *)data;
 
@@ -864,28 +862,22 @@ static const void *RB_DrawImage( const void *data ) {
 		}
 		RB_SetBatchBuffer( backend.drawBuffer, backendData->verts, sizeof( srfVert_t ),
 			backendData->indices, sizeof( glIndex_t ) );
-		backend.drawBatch.shader = shader;
 	}
-	verts = ( (srfVert_t *)backend.drawBatch.vertices ) + backend.drawBatch.vtxOffset;
-	indices = ( (uint32_t *)backend.drawBatch.indices ) + backend.drawBatch.idxOffset;
+	backend.drawBatch.shader = shader;
 
-	R_VaoPackColor( verts[0].color, backend.color2D );
-	R_VaoPackColor( verts[1].color, backend.color2D );
-	R_VaoPackColor( verts[2].color, backend.color2D );
-	R_VaoPackColor( verts[3].color, backend.color2D );
-	/*
+//	verts = ( (srfVert_t *)backend.drawBatch.vertices ) + backend.drawBatch.vtxOffset;
+//	indices = ( (uint32_t *)backend.drawBatch.indices ) + backend.drawBatch.idxOffset;
+
 	{
-
 		uint16_t color[4];
 
-		VectorScale4( backend.color2D, 257, color );
+//		VectorScale4( backend.color2D, 257, color );
 
-		VectorCopy4( verts[0].modulate.rgba, color );
-		VectorCopy4( verts[1].modulate.rgba, color );
-		VectorCopy4( verts[2].modulate.rgba, color );
-		VectorCopy4( verts[3].modulate.rgba, color );
+		R_VaoPackColor( verts[0].color, backend.color2D );
+		R_VaoPackColor( verts[1].color, backend.color2D );
+		R_VaoPackColor( verts[2].color, backend.color2D );
+		R_VaoPackColor( verts[3].color, backend.color2D );
 	}
-	*/
 
 	verts[ 0 ].xyz[0] = cmd->x;
 	verts[ 0 ].xyz[1] = cmd->y;
@@ -922,18 +914,9 @@ static const void *RB_DrawImage( const void *data ) {
 	indices[ 4 ] = 2;
 	indices[ 5 ] = 3;
 
-	if ( ( backend.refdef.flags & RSF_ORTHO_BITS ) == RSF_ORTHO_TYPE_WORLD ) {
-		VectorSet( origin, cmd->x, cmd->y, 0.0f );
-		R_WorldToGL2( vtx, origin, 4 );
-
-		for ( i = 0; i < 4; i++ ) {
-			VectorCopy( verts[i].xyz, vtx[i].xyz );
-		}
-	}
-
-	backend.drawBatch.vtxOffset += 4;
-	backend.drawBatch.idxOffset += 6;
-//	RB_CommitDrawData( verts, 4, indices, 6 );
+//	backend.drawBatch.vtxOffset += 4;
+//	backend.drawBatch.idxOffset += 6;
+	RB_CommitDrawData( verts, 4, indices, 6 );
 
 	return (const void *)( cmd + 1 );
 }

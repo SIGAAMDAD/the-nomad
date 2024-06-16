@@ -199,7 +199,7 @@ void R_DrawPolys( void )
     vec3_t xyz[4];
 	
 	// no polygon submissions this frame
-	if ( !r_numPolys && !r_numPolyVerts || ( backend.refdef.flags & RSF_ORTHO_BITS ) != RSF_ORTHO_TYPE_WORLD ) {
+	if ( !r_numPolys && !r_numPolyVerts ) {
 	    return;
 	}
 
