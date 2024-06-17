@@ -51,7 +51,7 @@ namespace TheNomad::SGame {
 				PopAction();
 			}
 			
-			if ( @m_LastUsedWeapon is @EntityManager.GetPlayerObject().GetCurrentWeapon() ) {
+			if ( @m_LastUsedWeapon is @EntityManager.GetActivePlayer().GetCurrentWeapon() ) {
 				if ( m_nFreshnessLevel > 0 ) {
 					m_nFreshnessLevel--;
 				}
@@ -62,7 +62,7 @@ namespace TheNomad::SGame {
 			}
 			
 			m_StyleStack.Add( type );
-			@m_LastUsedWeapon = @EntityManager.GetPlayerObject().GetCurrentWeapon();
+			@m_LastUsedWeapon = @EntityManager.GetActivePlayer().GetCurrentWeapon();
 			m_nTimeSinceLastPush = TheNomad::GameSystem::GameManager.GetGameTic();
 			
 			if ( m_nMultiplier >= 1.0f ) {
@@ -105,10 +105,10 @@ namespace TheNomad::SGame {
 			const float scale = TheNomad::GameSystem::GameManager.GetUIScale();
 			
 			// add up to the mult
-			if ( EntityManager.GetPlayerObject().IsSliding() ) {
+			if ( EntityManager.GetActivePlayer().IsSliding() ) {
 				m_nMultiplier += 0.5f;
 			}
-			if ( EntityManager.GetPlayerObject().IsDoubleJumping() ) {
+			if ( EntityManager.GetActivePlayer().IsDoubleJumping() ) {
 				m_nMultiplier += 0.5f;
 			}
 			if ( m_nMultiplier > 3.0f ) {

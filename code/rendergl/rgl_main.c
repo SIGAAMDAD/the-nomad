@@ -289,6 +289,7 @@ static void R_DrawWorld( void )
     vec4_t color;
     uint16_t color16[4];
     const renderEntityDef_t *refEntity;
+    int clipCount;
 
     if ( ( backend.refdef.flags & RSF_NOWORLDMODEL ) ) {
         // nothing to draw
@@ -316,6 +317,17 @@ static void R_DrawWorld( void )
 
             // convert the local world coordinates to OpenGL screen coordinates
             R_WorldToGL( vtx, pos );
+
+            // check if its outside drawing range
+            clipCount = 0;
+            for ( i = 0; i < 4; i++ ) {
+                if ( vtx[i].xyz[0] < -1.0f || vtx[i].xyz[1] < -1.0f ) {
+                    clipCount++;
+                }
+            }
+            if ( clipCount == 4 ) {
+                continue; // don't draw it
+            }
 
             // generate normals
             // FIXME: this is hideous

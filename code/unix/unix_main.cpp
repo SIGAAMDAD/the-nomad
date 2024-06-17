@@ -190,15 +190,13 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error( cons
 
 	// change stdin to non blocking
 	// NOTE TTimo not sure how well that goes with tty console mode
-	if ( stdin_active )
-	{
+	if ( stdin_active ) {
 //		fcntl( STDIN_FILENO, F_SETFL, fcntl( STDIN_FILENO, F_GETFL, 0) & ~FNDELAY );
 		fcntl( STDIN_FILENO, F_SETFL, stdin_flags );
 	}
 
 	// don't bother do a show on this one heh
-	if ( ttycon_on )
-	{
+	if ( ttycon_on ) {
 		tty_Hide();
 	}
 
@@ -229,16 +227,14 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error( cons
 // never exit without calling this, or your terminal will be left in a pretty bad state
 void Sys_ConsoleInputShutdown( void )
 {
-	if ( ttycon_on )
-	{
+	if ( ttycon_on ) {
 //		Com_Printf( "Shutdown tty console\n" ); // -EC-
 		tty_Back(); // delete "]" ? -EC-
 		tcsetattr( STDIN_FILENO, TCSADRAIN, &tty_tc );
 	}
 
 	// Restore blocking to stdin reads
-	if ( stdin_active )
-	{
+	if ( stdin_active ) {
 		fcntl( STDIN_FILENO, F_SETFL, stdin_flags );
 //		fcntl( STDIN_FILENO, F_SETFL, fcntl( STDIN_FILENO, F_GETFL, 0 ) & ~O_NONBLOCK );
 	}
@@ -346,8 +342,7 @@ void Sys_Sleep( int msec ) {
 #endif
 }
 
-static const struct Q3ToAnsiColorTable_s
-{
+static const struct Q3ToAnsiColorTable_s {
 	const char Q3color;
 	const char *ANSIcolor;
 } tty_colorTable[ ] = {
@@ -362,7 +357,8 @@ static const struct Q3ToAnsiColorTable_s
 };
 
 static const char *getANSIcolor( char Q3color ) {
-	uint32_t i;
+	int i;
+
 	for ( i = 0; i < arraylen( tty_colorTable ); i++ ) {
 		if ( Q3color == tty_colorTable[ i ].Q3color ) {
 			return tty_colorTable[ i ].ANSIcolor;
@@ -373,17 +369,17 @@ static const char *getANSIcolor( char Q3color ) {
 
 void Sys_ShutdownConsole( void )
 {
-    if (ttycon_on) {
+    if ( ttycon_on ) {
         tty_Back();
-        tcsetattr(STDIN_FILENO, TCSADRAIN, &tty_tc);
+        tcsetattr( STDIN_FILENO, TCSADRAIN, &tty_tc );
     }
 
     // restore stdin blocking mode
-    if (stdin_active) {
-        fcntl(STDIN_FILENO, F_SETFL, stdin_flags);
+    if ( stdin_active ) {
+        fcntl( STDIN_FILENO, F_SETFL, stdin_flags );
     }
 
-    memset(&tty_con, 0, sizeof(tty_con));
+    memset( &tty_con, 0, sizeof( tty_con ) );
 
     stdin_active = qfalse;
     ttycon_on = qfalse;
@@ -408,7 +404,7 @@ void CON_SigTStp( int signum )
 }
 
 
-void Sys_SigCont(int signum)
+void Sys_SigCont( int signum )
 {
     Sys_ConsoleInputInit();
 }
@@ -458,7 +454,7 @@ void Sys_ANSIColorMsg( const char *msg, char *buffer, uint64_t bufSize )
             i += 1;
         }
         else if ( msg[i] == Q_COLOR_ESCAPE && ( ANSIcolor = getANSIcolor( msg[i+1] ) ) != NULL ) {
-            snprintf( tmpbuf, sizeof(tmpbuf), "%c[%sm", 0x1B, ANSIcolor );
+            snprintf( tmpbuf, sizeof( tmpbuf ), "%c[%sm", 0x1B, ANSIcolor );
             strncat( buffer, tmpbuf, bufSize - 1 );
             i += 2;
         }
@@ -704,11 +700,13 @@ tty_err Sys_ConsoleInputInit( void )
     tty_Hide();
     tty_Show();
 
-	if ( getrlimit64( RLIMIT_CORE, &limit ) == -1 ) {
-		Con_Printf( COLOR_YELLOW "WARNING: getrlimit64( RLIMIT_CORE ) failed, %s\n", Sys_GetError() );
-	} else {
-		limit.rlim_cur = limit.rlim_max = UINT64_MAX;
-		setrlimit64( RLIMIT_CORE, &limit );
+	if ( 0 ) {
+		if ( getrlimit64( RLIMIT_CORE, &limit ) == -1 ) {
+			Con_Printf( COLOR_YELLOW "WARNING: getrlimit64( RLIMIT_CORE ) failed, %s\n", Sys_GetError() );
+		} else {
+			limit.rlim_cur = limit.rlim_max = UINT64_MAX;
+			setrlimit64( RLIMIT_CORE, &limit );
+		}
 	}
 
     return TTY_ENABLED;

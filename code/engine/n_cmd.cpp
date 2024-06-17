@@ -467,8 +467,8 @@ void Cmd_Clear( void ) {
 	cmd_argc = 0;
 
 	// exec command breaks if this isn't done
-	memset( cmd_cmd, 0, sizeof(cmd_cmd) );
-	memset( cmd_tokenized, 0, sizeof(cmd_tokenized) );
+	memset( cmd_cmd, 0, sizeof( cmd_cmd ) );
+	memset( cmd_tokenized, 0, sizeof( cmd_tokenized ) );
 }
 
 const char *Cmd_Argv( uint32_t index ) {

@@ -260,7 +260,7 @@ namespace TheNomad::SGame {
 		void OnLevelEnd() {
 			// clear all level locals
 			m_EntityList.Clear();
-			@m_PlayrObject = null;
+			@m_ActivePlayer = null;
 		}
 		bool OnConsoleCommand( const string& in cmd ) {
 			if ( Util::StrICmp( cmd, "sgame.list_items" ) == 0 ) {
@@ -502,11 +502,14 @@ namespace TheNomad::SGame {
 			DamageEntity( @attacker, @m_EntityList[ rayCast.m_nEntityNumber ], damage );
 		}
 
-		void SetPlayerObject( PlayrObject@ obj ) {
-			@m_PlayrObject = @obj;
+		void SetActivePlayer( PlayrObject@ player ) {
+			@m_ActivePlayer = @player;
 		}
-		PlayrObject@ GetPlayerObject() {
-			return @m_PlayrObject;
+		PlayrObject@ GetActivePlayer() {
+			return @m_ActivePlayer;
+		}
+		const PlayrObject@ GetActivePlayer() const {
+			return @m_ActivePlayer;
 		}
 
 		void RemoveItem( ItemObject@ item ) {
@@ -532,29 +535,14 @@ namespace TheNomad::SGame {
 
 			return item;
 		}
-
-		private void ListActiveItems() {
-//			ConsolePrint( "Active Game Items:\n" );
-//			for ( uint i = 0; i < m_ItemList.Count(); i++ ) {
-//				msg = "(";
-//				msg += i;
-//				msg += ") ";
-//				msg += cast<const ItemInfo@>( @m_ItemList[i].GetInfo() ).name;
-//				msg += " ";
-//				msg += "[ ";
-//				msg += m_ItemList[i].GetOrigin().x;
-//				msg += ", ";
-//				msg += m_ItemList[i].GetOrigin().y;
-//				msg += ", ";
-//				msg += m_ItemList[i].GetOrigin().z;
-//				msg += " ]\n";
-//				ConsolePrint( msg );
-//			}
-		}
 		
 		private array<EntityObject@> m_EntityList;
 		private ItemObject m_ActiveItems;
-		private PlayrObject@ m_PlayrObject;
+		private PlayrObject@ m_ActivePlayer = null;
+
+		//==============================================================================
+		// Commands
+		//
 		
 		//
 		// effects
@@ -608,13 +596,40 @@ namespace TheNomad::SGame {
 			ApplyEntityEffect( attacker, target, AttackEffect::Stunned );
 		}
 
+		//
+		// status logs
+		//
+
 		void PrintPlayerState_f() {
 			ConsolePrint( "\n" );
 			ConsolePrint( "[PLAYER STATE]\n" );
-			ConsolePrint( "Origin: [ " + m_PlayrObject.GetOrigin().x + ", " + m_PlayrObject.GetOrigin().y + " ]\n" );
+			ConsolePrint( "Origin: [ " + m_ActivePlayer.GetOrigin().x + ", " + m_ActivePlayer.GetOrigin().y + " ]\n" );
 		}
-		void GivePlayerItem_f() {
+		private void ListActiveItems() {
+//			ConsolePrint( "Active Game Items:\n" );
+//			for ( uint i = 0; i < m_ItemList.Count(); i++ ) {
+//				msg = "(";
+//				msg += i;
+//				msg += ") ";
+//				msg += cast<const ItemInfo@>( @m_ItemList[i].GetInfo() ).name;
+//				msg += " ";
+//				msg += "[ ";
+//				msg += m_ItemList[i].GetOrigin().x;
+//				msg += ", ";
+//				msg += m_ItemList[i].GetOrigin().y;
+//				msg += ", ";
+//				msg += m_ItemList[i].GetOrigin().z;
+//				msg += " ]\n";
+//				ConsolePrint( msg );
+//			}
+		}
 
+		//
+		// developer commands
+		//
+
+		void GivePlayerItem_f() {
+			
 		}
 		void GivePlayerWeapon_f() {
 			
@@ -623,12 +638,12 @@ namespace TheNomad::SGame {
 			const float x = Convert().ToFloat( TheNomad::Engine::CmdArgv( 1 ) );
 			const float y = Convert().ToFloat( TheNomad::Engine::CmdArgv( 2 ) );
 
-			m_PlayrObject.GetLink().m_Origin = vec3( x, y, 0.0f );
+			m_ActivePlayer.GetLink().m_Origin = vec3( x, y, 0.0f );
 		}
 		void DamagePlayer_f() {
 			const float damage = Convert().ToFloat( TheNomad::Engine::CmdArgv( 1 ) );
 
-			m_PlayrObject.Damage( cast<EntityObject@>( @m_PlayrObject ), damage );
+			m_ActivePlayer.Damage( cast<EntityObject@>( @m_ActivePlayer ), damage );
 		}
 	};
 

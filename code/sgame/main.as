@@ -349,6 +349,7 @@ int ModuleOnRunTic( uint msec ) {
 	// if we're paused, then just draw the stuff, don't run anything else
 	if ( TheNomad::Engine::CvarVariableInteger( "g_paused" ) == 0 ) {
 		TheNomad::SGame::LevelManager.Resume();
+		TheNomad::SGame::EntityManager.SetActivePlayer( @TheNomad::SGame::ScreenData.GetPlayerAt( 0 ) );
 		for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 			TheNomad::GameSystem::GameSystems[i].OnRunTic();
 		}

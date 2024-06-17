@@ -61,7 +61,7 @@ namespace TheNomad::SGame {
 		void OnSave() const {
 		}
 		void OnRunTic() {
-			for ( uint i = 0; i < m_PolyList.size(); i++ ) {
+			for ( uint i = 0; i < m_PolyList.Count(); i++ ) {
 				m_PolyList[i].RunTic();
 			}
 		}
@@ -71,7 +71,7 @@ namespace TheNomad::SGame {
 		void OnLevelStart() {
 			// ensure we have the correct amount of polygons allocated
 
-			while ( m_PolyList.Count() != uint( sgame_GfxDetail.GetInt() ) ) {
+			while ( m_PolyList.Count() != sgame_GfxDetail.GetInt() ) {
 				m_PolyList.RemoveLast();
 			}
 		}

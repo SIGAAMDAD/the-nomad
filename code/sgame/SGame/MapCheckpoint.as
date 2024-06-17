@@ -12,7 +12,7 @@ namespace TheNomad::SGame {
 			m_Spawns.Add( @spawn );
 		}
 		void Activate() {
-			for ( uint i = 0; i < m_Spawns.size(); i++ ) {
+			for ( uint i = 0; i < m_Spawns.Count(); i++ ) {
 				m_Spawns[i].Activate(); 
 			}
 			m_bPassed = true;

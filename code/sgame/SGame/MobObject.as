@@ -116,7 +116,7 @@ namespace TheNomad::SGame {
 				EntityManager.KillEntity( @source, cast<EntityObject@>( @this ) );
 				
 				// alert mobs within the vicinity
-				EntityManager.GetPlayerObject().MakeSound();
+				EntityManager.GetActivePlayer().MakeSound();
 				
 				return;
 			}
@@ -272,7 +272,7 @@ namespace TheNomad::SGame {
 			delta.y = sin( m_PhysicsObject.GetAngle() );
 			delta.z = 0.0f;
 			
-			pos = EntityManager.GetPlayerObject().GetOrigin() - m_Link.m_Origin;
+			pos = EntityManager.GetActivePlayer().GetOrigin() - m_Link.m_Origin;
 			
 			p = Util::VectorNormalize( pos );
 			
@@ -427,7 +427,7 @@ namespace TheNomad::SGame {
 					return;
 				} else if ( m_nAttackTime <= ( m_CurrentAttack.duration / 2 ) ) {
 					// parry it
-					if ( EntityManager.GetPlayerObject().CheckParry( @this, @m_CurrentAttack ) ) {
+					if ( EntityManager.GetActivePlayer().CheckParry( @this, @m_CurrentAttack ) ) {
 						m_nLastAttackTime = TheNomad::GameSystem::GameManager.GetGameTic();
 						m_nAttackTime = 0;
 						m_bIsAttacking = false;

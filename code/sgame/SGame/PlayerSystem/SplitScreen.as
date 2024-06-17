@@ -52,9 +52,9 @@ namespace TheNomad::SGame {
 			
 			// these specific movement commands MUST NOT CHANGE as they are hardcoded into the engine
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_f ), "+north", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_Down_f ), "+north", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_f ), "-north", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_Up_f ), "-north", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveSouth_f ), "+south", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
@@ -144,6 +144,11 @@ namespace TheNomad::SGame {
 			
 			obj.SetDashing( false );
 		}
+
+		void MoveNorth_Down_f() { GetPlayerIndex().key_MoveNorth.Down(); }
+		void MoveNorth_Up_f() { GetPlayerIndex().key_MoveNorth.Up(); }
+		void MoveEast_Down_f() { GetPlayerIndex().key_MoveEast.Down(); }
+		void MoveEast_Up_f() { GetPlayerIndex().key_MoveEast.Up(); }
 
 		void MoveNorth_f() {
 			PlayrObject@ obj = @GetPlayerIndex();
@@ -390,6 +395,16 @@ namespace TheNomad::SGame {
 			default:
 				GameError( "SplitScreen::Init: in_numInputDevices is greater than 4 or less than 0" );
 			};
+		}
+
+		int GetPlayerCount() const {
+			return m_nPlayerCount;
+		}
+		PlayrObject@ GetPlayerAt( int nIndex ) {
+			return @m_PlayerData[ nIndex ];
+		}
+		const PlayrObject@ GetPlayerAt( int nIndex ) const {
+			return @m_PlayerData[ nIndex ];
 		}
 		
 		private PlayrObject@[] m_PlayerData( 4 );

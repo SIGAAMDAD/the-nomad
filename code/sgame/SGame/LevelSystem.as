@@ -249,9 +249,9 @@ namespace TheNomad::SGame {
 					section.SaveString( "LevelNames" + i, m_LevelInfoDatas[i].m_Name );
 				}
 				section.SaveUInt( "CurrentCheckpoint", m_CurrentCheckpoint );
-				section.SaveUInt( "TimeMilliseconds", m_nLevelTimer );
-				section.SaveUInt( "TimeSeconds", m_nLevelTimer / 1000 );
-				section.SaveUInt( "TimeMinutes", m_nLevelTimer / 60000 );
+				section.SaveUInt( "Time", m_nLevelTimer );
+//				section.SaveUInt( "TimeSeconds", m_nLevelTimer / 1000 );
+//				section.SaveUInt( "TimeMinutes", m_nLevelTimer / 60000 );
 			}
 			
 			// save individual stats for each level
@@ -280,8 +280,6 @@ namespace TheNomad::SGame {
 					
 					save.SaveBool( "CleanRun", stats.isClean );
 					save.SaveUInt( "TimeMilliseconds", uint( stats.m_TimeMilliseconds ) );
-					save.SaveUInt( "TimeSeconds", uint( stats.m_TimeSeconds ) );
-					save.SaveUInt( "TimeMinutes", uint( stats.m_TimeMinutes ) );
 					
 					save.SaveUInt( "NumKills", stats.numKills );
 					save.SaveUInt( "StylePoints", stats.stylePoints );
@@ -309,6 +307,8 @@ namespace TheNomad::SGame {
 			for ( i = 0; i < m_LevelInfoDatas.Count(); i++ ) {
 				load.LoadString( "LevelNames" + i, names[i] );
 			}
+			m_nLevelTimer = load.LoadUInt( "Time" );
+			m_CurrentCheckpoint = load.LoadUInt( "CurrentCheckpoint" );
 
 			for ( i = 0; i < m_LevelInfoDatas.Count(); i++ ) {
 				@data = @m_LevelInfoDatas[i];
@@ -335,9 +335,9 @@ namespace TheNomad::SGame {
 					stats.deaths_Rank = LevelRank( section.LoadUInt( "DeathsRank" ) );
 
 					stats.isClean = section.LoadBool( "CleanRun" );
-					stats.m_TimeMilliseconds = section.LoadUInt( "TimeMilliseconds" );
-					stats.m_TimeSeconds = section.LoadUInt( "TimeSeconds" );
-					stats.m_TimeMinutes = section.LoadUInt( "TimeMinutes" );
+					stats.m_TimeMilliseconds = section.LoadUInt( "Time" );
+					stats.m_TimeSeconds = stats.m_TimeMilliseconds / 1000;
+					stats.m_TimeMinutes = stats.m_TimeMinutes / 60000;
 					
 					stats.numKills = section.LoadUInt( "NumKills" );
 					stats.stylePoints = section.LoadUInt( "StylePoints" );
@@ -394,6 +394,9 @@ namespace TheNomad::SGame {
 			// check if there's a player spawn at index 0, as that is required for all levels.
 			// Even if it's a cinematic where the camera will not be on the player, they must
 			// always be active and alive for the level to actually be running
+			//
+			// in the case we're in a split-screen co-op situation, then all the players after the
+			// first will be spawned around them
 			if ( m_MapData.GetSpawns().Count() < 1 || m_MapData.GetCheckpoints().Count() < 1 ) {
 				ForcePlayerSpawn();
 			} else {
@@ -532,7 +535,7 @@ namespace TheNomad::SGame {
 		}
 
 		private MapCheckpoint@ PlayerPassedCheckpoint() {
-			const vec3 origin = EntityManager.GetPlayerObject().GetOrigin();
+			const vec3 origin = EntityManager.GetActivePlayer().GetOrigin();
 			array<MapCheckpoint>@ checkpoints = @m_MapData.GetCheckpoints();
 			const uvec3 pos = uvec3( uint( origin.x ), uint( origin.y ), uint( origin.z ) );
 

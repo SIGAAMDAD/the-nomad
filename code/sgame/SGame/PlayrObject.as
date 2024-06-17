@@ -5,6 +5,7 @@
 #include "SGame/PlayerSystem/PlayerHud.as"
 #include "SGame/PlayerSystem/SplitScreen.as"
 #include "SGame/PlayerSystem/StyleTracker.as"
+#include "SGame/PlayerSystem/Inventory.as"
 
 namespace TheNomad::SGame {
 	const uint[] sgame_WeaponModeList = {
@@ -17,31 +18,6 @@ namespace TheNomad::SGame {
 	
     class PlayrObject : EntityObject {
 		PlayrObject() {
-			@m_WeaponSlots[0] = @m_HeavyPrimary;
-			@m_WeaponSlots[1] = @m_HeavySidearm;
-			@m_WeaponSlots[2] = @m_LightPrimary;
-			@m_WeaponSlots[3] = @m_LightSidearm;
-			@m_WeaponSlots[4] = @m_Melee1;
-			@m_WeaponSlots[5] = @m_Melee2;
-			@m_WeaponSlots[6] = @m_RightArm;
-			@m_WeaponSlots[7] = @m_LeftArm;
-			@m_WeaponSlots[8] = @m_Ordnance;
-
-			dieSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die1.ogg" );
-			dieSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die2.ogg" );
-			dieSfx2 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die3.ogg" );
-
-			painSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain0.ogg" );
-			painSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain1.ogg" );
-			painSfx2 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain2.ogg" );
-
-			slideSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/slide0.ogg" );
-			slideSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/slide1.ogg" );
-
-			dashSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/dash.ogg" );
-
-			EntityManager.SetPlayerObject( @this );
-			m_HudData.Init( @this );
 		}
 		
 		/*
@@ -147,6 +123,9 @@ namespace TheNomad::SGame {
 		}
 		uint GetPlayerIndex() const {
 			return m_nControllerIndex;
+		}
+
+		void AddItem( ItemObject@ item ) {
 		}
 		
 		void DrawEmoteWheel() {
@@ -510,18 +489,10 @@ namespace TheNomad::SGame {
 			m_nParryBoxWidth += 0.5f;
 		}
 
-		void Spawn( uint id, const vec3& in origin ) override {
-			//
-			// init all player data
-			//
-			m_Link.m_Origin = origin;
-			m_nHealth = 100.0f;
-			m_nRage = 100.0f;
-			@m_LeftHandWeapon = @m_LeftArm;
-			@m_RightHandWeapon = @m_RightArm;
-			m_CurrentWeapon = 0;
-			m_Link.m_nEntityType = TheNomad::GameSystem::EntityType::Playr;
-
+		//
+		// InitLoadout: initializes runtime player weapon data
+		//
+		private void InitLoadout() {
 			m_EmptyInfo.name = "Fist (Empty)";
 			m_EmptyInfo.type = ENTITYNUM_INVALID - 2;
 			m_EmptyInfo.damage = 100.0f; // this is the god of war
@@ -530,20 +501,78 @@ namespace TheNomad::SGame {
 			m_EmptyInfo.weaponProps = InfoSystem::WeaponProperty( uint( InfoSystem::WeaponProperty::OneHandedBlunt ) );
 			m_EmptyInfo.weaponType = InfoSystem::WeaponType::LeftArm;
 
-			m_LeftHandMode = InfoSystem::WeaponProperty( uint( InfoSystem::WeaponProperty::OneHandedBlunt ) );
-			m_RightHandMode = InfoSystem::WeaponProperty( uint( InfoSystem::WeaponProperty::OneHandedBlunt ) );
-
 			InfoSystem::InfoManager.GetWeaponTypes()[ "weapon_fist" ] = ENTITYNUM_INVALID - 2;
 			InfoSystem::InfoManager.AddWeaponInfo( @m_EmptyInfo );
+
+			@m_HeavyPrimary = WeaponObject();
+			@m_HeavySidearm = WeaponObject();
+			@m_LightPrimary = WeaponObject();
+			@m_LightSidearm = WeaponObject();
+			@m_Melee1 = WeaponObject();
+			@m_Melee2 = WeaponObject();
+			@m_RightArm = WeaponObject();
+			@m_LeftArm = WeaponObject();
+			@m_Ordnance = WeaponObject();
+
+			@m_WeaponSlots[0] = @m_HeavyPrimary;
+			@m_WeaponSlots[1] = @m_HeavySidearm;
+			@m_WeaponSlots[2] = @m_LightPrimary;
+			@m_WeaponSlots[3] = @m_LightSidearm;
+			@m_WeaponSlots[4] = @m_Melee1;
+			@m_WeaponSlots[5] = @m_Melee2;
+			@m_WeaponSlots[6] = @m_RightArm;
+			@m_WeaponSlots[7] = @m_LeftArm;
+			@m_WeaponSlots[8] = @m_Ordnance;
+
 			for ( uint i = 0; i < m_WeaponSlots.Count(); i++ ) {
 				m_WeaponSlots[i].SetOwner( cast<EntityObject@>( @this ) );
-				m_WeaponSlots[i].Spawn( ENTITYNUM_INVALID - 2, origin );
+				m_WeaponSlots[i].Spawn( m_EmptyInfo.type, m_Link.m_Origin );
 			}
+			
+			m_CurrentWeapon = 0;
+
+			@m_LeftHandWeapon = @m_LeftArm;
+			@m_RightHandWeapon = @m_RightArm;
+			m_LeftHandMode = InfoSystem::WeaponProperty( uint( InfoSystem::WeaponProperty::OneHandedBlunt ) );
+			m_RightHandMode = InfoSystem::WeaponProperty( uint( InfoSystem::WeaponProperty::OneHandedBlunt ) );
+		}
+
+		private void CacheSfx() {
+			dieSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die1.ogg" );
+			dieSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die2.ogg" );
+			dieSfx2 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die3.ogg" );
+
+			painSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain0.ogg" );
+			painSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain1.ogg" );
+			painSfx2 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain2.ogg" );
+
+			slideSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/slide0.ogg" );
+			slideSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/slide1.ogg" );
+
+			dashSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/dash.ogg" );
+		}
+
+		void Spawn( uint id, const vec3& in origin ) override {
+			//
+			// init all player data
+			//
+			m_Link.m_Origin = origin;
+			m_Link.m_nEntityType = TheNomad::GameSystem::EntityType::Playr;
+			m_Link.m_nEntityId = 0;
+			m_Link.m_nEntityNumber = m_nControllerIndex;
+			m_nHealth = 100.0f;
+			m_nRage = 100.0f;
+			m_Direction = Util::Angle2Dir( m_PhysicsObject.GetAngle() );
+			m_nHealMult = 0.0f;
+			m_nHealMultDecay = LevelManager.GetDifficultyScale();
+
+			InitLoadout();
+			CacheSfx();
+
+			m_HudData.Init( @this );
 
 			m_PhysicsObject.Init( cast<EntityObject@>( @this ) );
 			m_PhysicsObject.SetAngle( Util::Dir2Angle( TheNomad::GameSystem::DirType::East ) );
-
-			m_Direction = Util::Angle2Dir( m_PhysicsObject.GetAngle() );
 
 			@m_SpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/"
 				+ TheNomad::Engine::CvarVariableString( "skin" ) + "_torso", 32, 32, 512, 512 );
@@ -576,9 +605,6 @@ namespace TheNomad::SGame {
 			@m_ArmState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_IDLE );
 			m_ArmsFacing = FACING_RIGHT;
 			*/
-
-			m_nHealMult = 0.0f;
-			m_nHealMultDecay = LevelManager.GetDifficultyScale();
 		}
 
 		uint GetSpriteId( SpriteSheet@ sheet, EntityState@ state ) const {
@@ -748,5 +774,7 @@ namespace TheNomad::SGame {
 		
 		private PlayerDisplayUI m_HudData;
 		PMoveData Pmove( @this );
+
+		private InventoryManager m_Inventory;
 	};
 };
