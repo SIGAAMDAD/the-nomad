@@ -134,7 +134,7 @@ template<class type, uint32_t blockSize>
 type *idBlockAlloc<type,blockSize>::Alloc( void ) {
 	if ( !free ) {
 	#ifdef USE_IDHEAP
-		block_t *block = new block_t;
+		block_t *block = (block_t *)Mem_Alloc( sizeof( *block ));
 	#else
 		block_t *block = (block_t *)malloc( sizeof( *block ) );
 	#endif
@@ -167,7 +167,7 @@ void idBlockAlloc<type,blockSize>::Shutdown( void ) {
 		block_t *block = blocks;
 		blocks = blocks->next;
 	#ifdef USE_IDHEAP
-		delete block;
+		Mem_Free( block );
 	#else
 		::free( block );
 	#endif

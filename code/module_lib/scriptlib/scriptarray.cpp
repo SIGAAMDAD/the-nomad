@@ -63,7 +63,6 @@ static void CleanupTypeInfoArrayCache(asITypeInfo *type)
 
 CScriptArray* CScriptArray::Create(asITypeInfo *ti, asUINT length)
 {
-	// Allocate the memory
 	void *mem = Mem_ClearedAlloc( sizeof( CScriptArray ) );
 	if( mem == 0 ) {
 		asIScriptContext *ctx = asGetActiveContext();
@@ -73,7 +72,6 @@ CScriptArray* CScriptArray::Create(asITypeInfo *ti, asUINT length)
 		return 0;
 	}
 
-	// Initialize the object
 	CScriptArray *a = new(mem) CScriptArray(length, ti);
 
 	return a;
@@ -81,7 +79,6 @@ CScriptArray* CScriptArray::Create(asITypeInfo *ti, asUINT length)
 
 CScriptArray* CScriptArray::Create(asITypeInfo *ti, void *initList)
 {
-	// Allocate the memory
 	void *mem = Mem_ClearedAlloc( sizeof( CScriptArray ) );
 	if( mem == 0 ) {
 		asIScriptContext *ctx = asGetActiveContext();
@@ -91,7 +88,6 @@ CScriptArray* CScriptArray::Create(asITypeInfo *ti, void *initList)
 		return 0;
 	}
 
-	// Initialize the object
 	CScriptArray *a = new(mem) CScriptArray(ti, initList);
 
 	return a;
@@ -99,10 +95,8 @@ CScriptArray* CScriptArray::Create(asITypeInfo *ti, void *initList)
 
 CScriptArray* CScriptArray::Create(asITypeInfo *ti, asUINT length, void *defVal)
 {
-	// Allocate the memory
 	void *mem = Mem_ClearedAlloc( sizeof( CScriptArray ) );
-	if( mem == 0 )
-	{
+	if ( mem == 0 ) {
 		asIScriptContext *ctx = asGetActiveContext();
 		if( ctx )
 			ctx->SetException("out of memory");
@@ -110,7 +104,6 @@ CScriptArray* CScriptArray::Create(asITypeInfo *ti, asUINT length, void *defVal)
 		return 0;
 	}
 
-	// Initialize the object
 	CScriptArray *a = new(mem) CScriptArray(length, defVal, ti);
 
 	return a;
@@ -1971,12 +1964,11 @@ void CScriptArray::Release() const
 {
 	// Clearing the GC flag then descrease the counter
 	gcFlag = false;
-	if( refCount.fetch_sub() == 0 )
-	{
+	if( refCount.fetch_sub() == 0 ) {
 		// When reaching 0 no more references to this instance
 		// exists and the object should be destroyed
 		this->~CScriptArray();
-		Mem_Free(const_cast<CScriptArray*>(this));
+		Mem_Free( const_cast<CScriptArray *>( this ) );
 	}
 }
 

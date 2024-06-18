@@ -112,7 +112,7 @@ namespace TheNomad::SGame::InfoSystem {
 				return false;
 			}
 			
-			array<string>@ flagValues = @ParseCSV( str );
+			array<string>@ flagValues = TheNomad::Util::ParseCSV( str );
 			
 			ConsolePrint( "Processing MobFlags for '" + name + "'...\n" );
 			for ( i = 0; i < MobFlagStrings.Count(); i++ ) {

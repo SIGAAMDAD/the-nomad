@@ -224,7 +224,7 @@ namespace TheNomad::SGame {
 			return false;
 		}
 		void OnLevelEnd() {
-			if ( m_Current.m_EndLevelScript.size() != 0 ) {
+			if ( m_Current.m_EndLevelScript.Length() != 0 ) {
 				string script;
 				if ( TheNomad::Engine::FileSystem::LoadFile( m_Current.m_EndLevelScript, script ) == 0 ) {
 					ConsoleWarning( "Error loading EndOfLevel script\n" );
@@ -406,7 +406,7 @@ namespace TheNomad::SGame {
 				}
 			}
 
-			if ( m_Current.m_StartLevelScript.size() != 0 ) {
+			if ( m_Current.m_StartLevelScript.Length() != 0 ) {
 				string script;
 				if ( TheNomad::Engine::FileSystem::LoadFile( m_Current.m_StartLevelScript, script ) == 0 ) {
 					ConsoleWarning( "Error loading StartOfLevel script\n" );

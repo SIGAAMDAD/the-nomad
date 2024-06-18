@@ -6,18 +6,16 @@ namespace TheNomad::SGame {
 		void Spawn( const vec3& in org, uint lifeTime, const SpriteSheet@ spriteSheet, const ivec2& in spriteOffset ) {
 			origin = org;
 			startTime = TheNomad::GameSystem::GameManager.GetGameTic();
-			endTime = startTime + lifeTime;
+			this.lifeTime = lifeTime;
 			this.spriteOffset = spriteOffset;
 			@this.spriteSheet = @spriteSheet;
 		}
 		
 		void RunTic() {
-			lifeTime += TheNomad::GameSystem::GameManager.GetDeltaTics();
 			origin += vel;
-
-			DrawRect( origin, vec2( 1.0f, 1.0f ), @spriteSheet, spriteOffset );
-			
-			if ( lifeTime >= endTime ) {
+			TheNomad::Engine::Renderer::AddSpriteToScene( origin, spriteSheet.GetShader(),
+				spriteOffset.y * spriteSheet.GetSpriteCountX() + spriteOffset.x, false );
+			if ( TheNomad::GameSystem::GameManager.GetGameTic() - startTime >= lifeTime ) {
 				GfxManager.FreeMarkPoly( @this );
 			}
 		}
@@ -27,7 +25,6 @@ namespace TheNomad::SGame {
 		ivec2 spriteOffset = ivec2( 0 );
 		const SpriteSheet@ spriteSheet;
 		uint startTime;
-		uint endTime;
 		uint lifeTime;
 		MarkPoly@ next;
 		MarkPoly@ prev;

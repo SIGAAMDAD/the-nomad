@@ -1,4 +1,3 @@
-#include "util/csv.as"
 #include "SGame/InfoSystem/InfoLoader.as"
 #include "SGame/InfoSystem/AttackInfo.as"
 #include "SGame/InfoSystem/MobInfo.as"

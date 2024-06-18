@@ -211,7 +211,7 @@ void RegisterScriptHandle_Native(asIScriptEngine *engine)
 {
 	int r;
 
-#if AS_CAN_USE_CPP11
+#ifdef AS_CAN_USE_CPP11
 	// With C++11 it is possible to use asGetTypeTraits to automatically determine the flags that represent the C++ class
 	r = engine->RegisterObjectType("ref", sizeof(CScriptHandle), asOBJ_VALUE | asOBJ_ASHANDLE | asGetTypeTraits<CScriptHandle>()); assert( r >= 0 );
 #else

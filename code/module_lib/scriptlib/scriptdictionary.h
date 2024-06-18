@@ -9,27 +9,12 @@
 #include "scriptarray.h"
 typedef string_t dictKey_t;
 
-// Forward declare CScriptDictValue so we can typedef the internal map type
 class CScriptDictValue;
-
-// C++11 introduced the std::unordered_map which is a hash map which is
-// is generally more performatic for lookups than the std::map which is a
-// binary tree.
-// TODO: memory: The map allocator should use the asAllocMem and asFreeMem
 typedef UtlMap<dictKey_t, CScriptDictValue> dictMap_t;
 
 #ifdef _MSC_VER
-// Turn off annoying warnings about truncated symbol names
-#pragma warning (disable:4786)
+#pragma warning(disable:4786)
 #endif
-
-
-// Sometimes it may be desired to use the same method names as used by C++ STL.
-// This may for example reduce time when converting code from script to C++ or
-// back.
-//
-//  0 = off
-//  1 = on
 
 class CScriptArray;
 class CScriptDictionary;
@@ -188,7 +173,7 @@ protected:
 
 	// Our properties
 	asIScriptEngine *m_pEngine;
-	mutable int32_t  m_nRefCount;
+	mutable CThreadAtomic<int32_t>  m_nRefCount;
 	mutable bool     m_bGCFlag;
 	dictMap_t        m_Dict;
 };

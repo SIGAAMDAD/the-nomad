@@ -311,23 +311,10 @@ static void R_DrawWorld( void )
         for ( x = 0; x < rg.world->width; x++ ) {
             pos[0] = x;
             pos[1] = rg.world->height - y;
-//            pos[0] = x - (rg.world->width * 0.5f);
-//            pos[1] = rg.world->height - y;
             pos[2] = 0.0f;
 
             // convert the local world coordinates to OpenGL screen coordinates
             R_WorldToGL( vtx, pos );
-
-            // check if its outside drawing range
-            clipCount = 0;
-            for ( i = 0; i < 4; i++ ) {
-                if ( vtx[i].xyz[0] < -1.0f || vtx[i].xyz[1] < -1.0f ) {
-                    clipCount++;
-                }
-            }
-            if ( clipCount == 4 ) {
-                continue; // don't draw it
-            }
 
             // generate normals
             // FIXME: this is hideous

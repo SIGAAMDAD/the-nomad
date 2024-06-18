@@ -1490,38 +1490,33 @@ static void PerformanceMenu_Save( void )
 	case AntiAlias_FXAA:
 	case AntiAlias_CSAA:
 		Cvar_Set( "r_multisampleAmount", "8" );
-		restartFBO = true;
 		break;
 	case AntiAlias_2xSSAA:
 		Cvar_Set( "r_multisampleAmount", "2" );
-		needRestart = true;
 		break;
 	case AntiAlias_4xSSAA:
 		Cvar_Set( "r_multisampleAmount", "4" );
-		needRestart = true;
 		break;
 	case AntiAlias_2xMSAA:
 		Cvar_Set( "r_multisampleAmount", "2" );
-		restartFBO = true;
 		break;
 	case AntiAlias_4xMSAA:
 		Cvar_Set( "r_multisampleAmount", "4" );
-		restartFBO = true;
 		break;
 	case AntiAlias_8xMSAA:
 		Cvar_Set( "r_multisampleAmount", "8" );
-		restartFBO = true;
 		break;
 	case AntiAlias_16xMSAA:
 		Cvar_Set( "r_multisampleAmount", "16" );
-		restartFBO = true;
 		break;
 	case AntiAlias_32xMSAA:
 		Cvar_Set( "r_multisampleAmount", "32" );
-		restartFBO = true;
 		break;
 	};
 
+	if ( s_settingsMenu->performance.multisampleType != s_initial->performance.multisampleType ) {
+		restartFBO = true;
+	}
 	if ( s_settingsMenu->performance.bloom != s_initial->performance.bloom ) {
 		restartFBO = true;
 	}
@@ -1909,10 +1904,6 @@ void SettingsMenu_Cache( void )
 	    strManager->ValueForKey( "GAMEUI_32X_MSAA" )->value,
 	    strManager->ValueForKey( "GAMEUI_2X_SSAA" )->value,
 	    strManager->ValueForKey( "GAMEUI_4X_SSAA" )->value,
-		"TAA",
-		"SMAA",
-		"FXAA",
-		"CSAA (NVidia Exclusive)"
 	};
 	static const char *s_anisotropyTypes[] = {
 	    strManager->ValueForKey( "GAMEUI_ANISOTROPIC2X" )->value,

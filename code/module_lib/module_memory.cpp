@@ -1228,9 +1228,9 @@ Mem_Init
 ==================
 */
 void Mem_Init( void ) {
-//	if ( mem_heap != NULL ) {
-//		return;
-//	}
+	if ( mem_heap != NULL ) {
+		return;
+	}
 	mem_heap = new ( Hunk_Alloc( sizeof( *mem_heap ), h_high ) ) idHeap();
 	Mem_ClearFrameStats();
 }
@@ -1786,6 +1786,7 @@ void Mem_Shutdown( void ) {
 
 	idHeap *m = mem_heap;
 	m->~idHeap();
+	mem_heap = NULL;
 
 	Cmd_RemoveCommand( "memoryDumpCompressed" );
 	Cmd_RemoveCommand( "memoryDump" );

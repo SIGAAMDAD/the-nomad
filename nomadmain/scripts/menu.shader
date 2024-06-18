@@ -330,7 +330,7 @@ menu/load_0
 menu/load_1
 {
     nomipmaps
-    if ( $r_textureDetail < 2 ) {
+    if ( $r_textureDetail == 0 || $r_textureDetail == 1 ) {
         texFilter bilinear
         map textures/menu/low/load_1.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA

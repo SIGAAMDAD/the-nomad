@@ -1623,10 +1623,18 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 				internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 			}
 			else if ( r_textureBits->i == 16 ) {
-				internalFormat = GL_RGBA4;
+				if ( r_hdr->i ) {
+					internalFormat = GL_RGBA16F;
+				} else {
+					internalFormat = GL_RGBA4;
+				}
 			}
 			else if ( r_textureBits->i == 32 ) {
-				internalFormat = GL_RGBA8;
+				if ( r_hdr->i ) {
+					internalFormat = GL_RGBA32F;
+				} else {
+					internalFormat = GL_RGBA8;
+				}
 			}
 			else {
 				internalFormat = GL_RGBA;
@@ -1642,44 +1650,23 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 			else if (!forceNoCompression && glContext.textureCompression == TC_S3TC_ARB) {
 				internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 			}
-			else if ( r_textureDetail->i == TexDetail_GPUvsGod ) {
+			else if ( r_textureBits->i == 16 ) {
 				if ( r_hdr->i ) {
-					internalFormat = GL_RGB32F_ARB;
+					internalFormat = GL_RGBA16F;
 				} else {
-					internalFormat = GL_RGB16;
+					internalFormat = GL_RGB5;
 				}
 			}
-			else if ( r_textureDetail->i == TexDetail_ExpensiveShitWeveGotHere ) {
+			else if ( r_textureBits->i == 32 ) {
 				if ( r_hdr->i ) {
-					internalFormat = GL_RGB16F_ARB;
+					internalFormat = GL_RGB32F;
 				} else {
-					internalFormat = GL_RGB12;
+					internalFormat = GL_RGB8;
 				}
-			}
-			else if ( r_textureDetail->i == TexDetail_Normie ) {
-				internalFormat = GL_RGB5;
-			}
-			else if ( r_textureDetail->i == TexDetail_IntegratedGPU ) {
-				internalFormat = GL_RGB4;
-			}
-			else if ( r_textureDetail->i == TexDetail_MSDOS ) {
-				ri.Error( ERR_DROP, "RawImage_GetFormat: normal mapping enabled on MS-DOS!\n" );
-				internalFormat = GL_RGB2_EXT;
 			}
 			else {
 				internalFormat = GL_RGB;
 			}
-			/*
-			else if (r_textureBits->i == 16) {
-				internalFormat = GL_RGB5;
-			}
-			else if (r_textureBits->i == 32) {
-				internalFormat = GL_RGB8;
-			}
-			else {
-				internalFormat = GL_RGB;
-			}
-			*/
 		}
 	}
 	else if (lightMap) {
@@ -1711,51 +1698,32 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 				else if ( !forceNoCompression && glContext.textureCompression == TC_S3TC ) {
 					internalFormat = GL_RGB4_S3TC;
 				}
-				else if ( r_textureDetail->i == TexDetail_GPUvsGod ) {
-					if ( r_hdr->i ) {
-						internalFormat = GL_RGB32F_ARB;
-					} else {
-						internalFormat = GL_RGB16;
-					}
-				}
-				else if ( r_textureDetail->i == TexDetail_ExpensiveShitWeveGotHere ) {
-					if ( r_hdr->i ) {
-						internalFormat = GL_RGB16F_ARB;
-					} else {
-						internalFormat = GL_RGB12;
-					}
-				}
-				else if ( r_textureDetail->i == TexDetail_Normie ) {
-					internalFormat = GL_RGB8;
-				}
-				else if ( r_textureDetail->i == TexDetail_IntegratedGPU ) {
-					internalFormat = GL_RGB4;
-				}
-				else if ( r_textureDetail->i == TexDetail_MSDOS ) {
-					internalFormat = GL_RGB2_EXT;
-				}
-				else {
-					internalFormat = GL_RGB8;
-				}
-				/*
 				else if ( r_textureBits->i == 16 ) {
 					if ( r_hdr->i ) {
 						internalFormat = GL_RGBA16F;
+					} else {
+						internalFormat = GL_RGB5;
 					}
-					internalFormat = GL_RGB5;
 				}
 				else if ( r_textureBits->i == 32 ) {
-					internalFormat = GL_RGB8;
+					if ( r_hdr->i ) {
+						internalFormat = GL_RGB32F;
+					} else {
+						internalFormat = GL_RGB8;
+					}
 				}
-				*/
+				else {
+					internalFormat = GL_RGB;
+				}
 			}
 		}
 		else if ( samples == 4 ) {
-			if (r_greyscale->i) {
-				if (r_textureBits->i == 16 || r_textureBits->i == 32)
+			if ( r_greyscale->i ) {
+				if ( r_textureBits->i == 16 || r_textureBits->i == 32 ) {
 					internalFormat = GL_LUMINANCE8_ALPHA8;
-				else
+				} else {
 					internalFormat = GL_LUMINANCE_ALPHA;
+				}
 			}
 			else {
 				if ( !forceNoCompression && (glContext.textureCompressionRef & TCR_BPTC) ) {
@@ -1764,43 +1732,23 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 				else if ( !forceNoCompression && glContext.textureCompression == TC_S3TC_ARB ) {
 					internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 				}
-				else if ( r_textureDetail->i == TexDetail_GPUvsGod ) {
-					if ( r_hdr->i ) {
-						internalFormat = GL_RGBA32F;
-					} else {
-						internalFormat = GL_RGBA16;
-					}
-				}
-				else if ( r_textureDetail->i == TexDetail_ExpensiveShitWeveGotHere ) {
+				else if ( r_textureBits->i == 16 ) {
 					if ( r_hdr->i ) {
 						internalFormat = GL_RGBA16F;
 					} else {
-						internalFormat = GL_RGBA12;
+						internalFormat = GL_RGBA4;
 					}
 				}
-				else if ( r_textureDetail->i == TexDetail_Normie ) {
-					internalFormat = GL_RGBA8;
-				}
-				else if ( r_textureDetail->i == TexDetail_IntegratedGPU ) {
-					internalFormat = GL_RGBA4;
-				}
-				else if ( r_textureDetail->i == TexDetail_MSDOS ) {
-					internalFormat = GL_RGBA2;
-				}
-				else {
-					internalFormat = GL_RGBA8;
-				}
-				/*
-				else if ( r_textureBits->i == 16 ) {
-					internalFormat = GL_RGBA4;
-				}
 				else if ( r_textureBits->i == 32 ) {
-					internalFormat = GL_RGBA8;
+					if ( r_hdr->i ) {
+						internalFormat = GL_RGBA32F;
+					} else {
+						internalFormat = GL_RGBA8;
+					}
 				}
 				else {
 					internalFormat = GL_RGBA;
 				}
-				*/
 			}
 		}
 	}

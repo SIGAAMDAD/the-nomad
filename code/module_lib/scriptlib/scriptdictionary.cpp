@@ -54,16 +54,14 @@ void SDictionaryCache::Cleanup( asIScriptEngine *engine )
 
 CScriptDictionary *CScriptDictionary::Create( asIScriptEngine *engine )
 {
-	// Use the custom memory routine from AngelScript to allow application to better control how much memory is used
-	CScriptDictionary *obj = (CScriptDictionary *)asAllocMem( sizeof(CScriptDictionary) );
+	CScriptDictionary *obj = (CScriptDictionary *)Mem_ClearedAlloc( sizeof( *obj ) );
 	new ( obj ) CScriptDictionary( engine );
 	return obj;
 }
 
 CScriptDictionary *CScriptDictionary::Create( asBYTE *buffer )
 {
-	// Use the custom memory routine from AngelScript to allow application to better control how much memory is used
-	CScriptDictionary *obj = (CScriptDictionary *)asAllocMem( sizeof(CScriptDictionary) );
+	CScriptDictionary *obj = (CScriptDictionary *)Mem_ClearedAlloc( sizeof( *obj ) );
 	new ( obj ) CScriptDictionary( buffer );
 	return obj;
 }
@@ -196,17 +194,16 @@ void CScriptDictionary::AddRef( void ) const
 {
 	// We need to clear the GC flag
 	m_bGCFlag = false;
-	asAtomicInc(m_nRefCount);
+	m_nRefCount.fetch_add();
 }
 
 void CScriptDictionary::Release( void ) const
 {
 	// We need to clear the GC flag
 	m_bGCFlag = false;
-	if( asAtomicDec(m_nRefCount) == 0 )
-	{
+	if( m_nRefCount.fetch_sub() == 0 ) {
 		this->~CScriptDictionary();
-		asFreeMem(const_cast<CScriptDictionary*>(this));
+		Mem_Free( (byte *)const_cast<CScriptDictionary *>( this ) );
 	}
 }
 

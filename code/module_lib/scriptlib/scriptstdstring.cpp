@@ -9,6 +9,7 @@
 #include "../module_public.h"
 
 CModuleStringFactory *g_pStringFactory;
+static idBlockAlloc<byte, sizeof( string_t )> s_classAllocator;
 
 CModuleStringFactory *GetStringFactorySingleton( void )
 {
@@ -201,7 +202,7 @@ static char *StringCharAt( asQWORD i, string_t& str)
 // int string::opCmp(const string_t& in) const
 static asQWORD StringCmp(const string_t& a, const string_t& b)
 {
-	return N_strcmp( a.c_str(), b.c_str() );
+	return strcmp( a.c_str(), b.c_str() );
 }
 
 // This function returns the index of the first position where the substring
@@ -482,7 +483,7 @@ static string_t StringSubString(asUINT start, int count, const string_t& str)
 // makro, so this wrapper was introduced as work around.
 static bool StringEquals(const string_t& lhs, const string_t& rhs)
 {
-	return N_strcmp( lhs.c_str(), rhs.c_str() ) == 0;
+	return strcmp( lhs.c_str(), rhs.c_str() ) == 0;
 }
 
 static string_t StringAppend( const string_t& value, const string_t& add )
@@ -1039,17 +1040,6 @@ void RegisterStdString_Generic(asIScriptEngine *engine)
 
 	CheckASCall( engine->RegisterGlobalProperty( "const uint64 StringNPos", const_cast<size_t *>( &StringNPos ) ) );
 
-	#define REGISTER_BEHAVIOUR( decl, type, funcPtr ) \
-		CheckASCall( engine->RegisterObjectBehaviour( "string", type, decl, funcPtr, asCALL_GENERIC ) )
-	#define REGISTER_METHOD( decl, funcPtr ) \
-		CheckASCall( engine->RegisterObjectMethod( "string", decl, funcPtr, asCALL_GENERIC ) )
-
-//	REGISTER_BEHAVIOUR( "void f()", asBEHAVE_CONSTRUCT, WRAP_CON( string_t, ( void ) ) );
-//	REGISTER_BEHAVIOUR( "void f( const string& in )", asBEHAVE_CONSTRUCT, WRAP_CON( string_t, ( const string_t& ) ) );
-//	REGISTER_BEHAVIOUR( "void f()", asBEHAVE_DESTRUCT, WRAP_DES( string_t ) );
-
-//	REGISTER_METHOD( "string& opAssign( const string& in )", WRAP );
-
 	// Register the object operator overloads
 	CheckASCall( engine->RegisterObjectBehaviour("string", asBEHAVE_CONSTRUCT,  "void f()",                    asFUNCTION(ConstructStringGeneric), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectBehaviour("string", asBEHAVE_CONSTRUCT,  "void f(const string &in)",    asFUNCTION(CopyConstructStringGeneric), asCALL_GENERIC ) );
@@ -1057,64 +1047,50 @@ void RegisterStdString_Generic(asIScriptEngine *engine)
 	CheckASCall( engine->RegisterObjectMethod("string", "string &opAssign(const string &in)", asFUNCTION(AssignStringGeneric),    asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("string", "string &opAddAssign(const string &in)", asFUNCTION(AddAssignStringGeneric), asCALL_GENERIC ) );
 
-	CheckASCall( engine->RegisterObjectMethod("string", "bool opEquals(const string &in) const", asFUNCTION(StringEqualsGeneric), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("string", "int opCmp(const string &in) const", asFUNCTION(StringCmpGeneric), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("string", "string opAdd(const string &in) const", asFUNCTION(StringAddGeneric), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("string", "string& Concat(bool)", asFUNCTION(AddAssignBool2StringGeneric), asCALL_GENERIC ) );
-
-	// Register the object methods
-	CheckASCall( engine->RegisterObjectMethod("string", "uint length() const", asFUNCTION(StringLengthGeneric), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("string", "uint size() const", asFUNCTION(StringLengthGeneric), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("string", "uint Length() const", asFUNCTION(StringLengthGeneric), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("string", "void resize(uint)",   asFUNCTION(StringResizeGeneric), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod( "string", "void reserve( uint )", asFUNCTION(StringReserveGeneric), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("string", "bool Empty() const", asFUNCTION(StringIsEmptyGeneric), asCALL_GENERIC ) );
-
-	// Register the index operator, both as a mutator and as an inspector
-	CheckASCall( engine->RegisterObjectMethod("string", "uint8 &opIndex(uint)", asFUNCTION(StringCharAtGeneric), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("string", "const uint8 &opIndex(uint) const", asFUNCTION(StringCharAtGeneric), asCALL_GENERIC ) );
-
-	// Automatic conversion from values
 	CheckASCall( engine->RegisterObjectMethod("string", "string &opAssign(double)", asFUNCTION(AssignDouble2StringGeneric), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("string", "string &opAddAssign(double)", asFUNCTION(AddAssignDouble2StringGeneric), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("string", "string opAdd(double) const", asFUNCTION(AddString2DoubleGeneric), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("string", "string opAdd_r(double) const", asFUNCTION(AddDouble2StringGeneric), asCALL_GENERIC ) );
-
+	CheckASCall( engine->RegisterObjectMethod("string", "bool opEquals(const string &in) const", asFUNCTION(StringEqualsGeneric), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("string", "int opCmp(const string &in) const", asFUNCTION(StringCmpGeneric), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("string", "string opAdd(const string &in) const", asFUNCTION(StringAddGeneric), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("string", "string& Concat(bool)", asFUNCTION(AddAssignBool2StringGeneric), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("string", "uint8 &opIndex(uint)", asFUNCTION(StringCharAtGeneric), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("string", "const uint8 &opIndex(uint) const", asFUNCTION(StringCharAtGeneric), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("string", "string &opAssign(float)", asFUNCTION(AssignFloat2StringGeneric), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("string", "string &opAddAssign(float)", asFUNCTION(AddAssignFloat2StringGeneric), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("string", "string opAdd(float) const", asFUNCTION(AddString2FloatGeneric), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("string", "string opAdd_r(float) const", asFUNCTION(AddFloat2StringGeneric), asCALL_GENERIC ) );
-
 	CheckASCall( engine->RegisterObjectMethod("string", "string &opAssign(int64)", asFUNCTION(AssignInt2StringGeneric), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("string", "string &opAddAssign(int64)", asFUNCTION(AddAssignInt2StringGeneric), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("string", "string opAdd(int64) const", asFUNCTION(AddString2IntGeneric), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("string", "string opAdd_r(int64) const", asFUNCTION(AddInt2StringGeneric), asCALL_GENERIC ) );
-
 	CheckASCall( engine->RegisterObjectMethod("string", "string &opAssign(uint64)", asFUNCTION(AssignUInt2StringGeneric), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("string", "string &opAddAssign(uint64)", asFUNCTION(AddAssignUInt2StringGeneric), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("string", "string opAdd(uint64) const", asFUNCTION(AddString2UIntGeneric), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("string", "string opAdd_r(uint64) const", asFUNCTION(AddUInt2StringGeneric), asCALL_GENERIC ) );
-
-	CheckASCall( engine->RegisterObjectMethod( "string", "uint64 find( int8 ) const", asFUNCTION( StringFind_Generic ), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod( "string", "uint64 find( const string& in ) const", asFUNCTION( StringFindStr_Generic ), asCALL_GENERIC ) );
-
 	CheckASCall( engine->RegisterObjectMethod("string", "string &opAssign(bool)", asFUNCTION(AssignBool2StringGeneric), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("string", "string &opAddAssign(bool)", asFUNCTION(AddAssignBool2StringGeneric), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("string", "string opAdd(bool) const", asFUNCTION(AddString2BoolGeneric), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("string", "string opAdd_r(bool) const", asFUNCTION(AddBool2StringGeneric), asCALL_GENERIC ) );
 
-	CheckASCall( engine->RegisterObjectMethod("string", "string substr(uint start = 0, int count = -1) const", asFUNCTION(StringSubString_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("string", "int findFirst(const string &in, uint start = 0) const", asFUNCTION(StringFindFirst_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("string", "int findFirstOf(const string &in, uint start = 0) const", asFUNCTION(StringFindFirstOf_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("string", "int findFirstNotOf(const string &in, uint start = 0) const", asFUNCTION(StringFindFirstNotOf_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("string", "int findLast(const string &in, int start = -1) const", asFUNCTION(StringFindLast_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("string", "int findLastOf(const string &in, int start = -1) const", asFUNCTION(StringFindLastOf_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("string", "int findLastNotOf(const string &in, int start = -1) const", asFUNCTION(StringFindLastNotOf_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("string", "void insert(uint pos, const string &in other)", asFUNCTION(StringInsert_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("string", "void erase(uint pos, int count = -1)", asFUNCTION(StringErase_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod( "string", "uint64 Find( int8 ) const", asFUNCTION( StringFind_Generic ), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod( "string", "uint64 Find( const string& in ) const", asFUNCTION( StringFindStr_Generic ), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod( "string", "uint Length() const", asFUNCTION(StringLengthGeneric), asCALL_GENERIC ) );
+
+	CheckASCall( engine->RegisterObjectMethod("string", "bool Empty() const", asFUNCTION(StringIsEmptyGeneric), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("string", "string SubString(uint start = 0, int count = -1) const", asFUNCTION(StringSubString_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("string", "int FindFirst(const string &in, uint start = 0) const", asFUNCTION(StringFindFirst_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("string", "int FindFirstOf(const string &in, uint start = 0) const", asFUNCTION(StringFindFirstOf_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("string", "int FindFirstNotOf(const string &in, uint start = 0) const", asFUNCTION(StringFindFirstNotOf_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("string", "int FindLast(const string &in, int start = -1) const", asFUNCTION(StringFindLast_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("string", "int FindLastOf(const string &in, int start = -1) const", asFUNCTION(StringFindLastOf_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("string", "int FindLastNotOf(const string &in, int start = -1) const", asFUNCTION(StringFindLastNotOf_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("string", "void Insert(uint pos, const string &in other)", asFUNCTION(StringInsert_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("string", "void Erase(uint pos, int count = -1)", asFUNCTION(StringErase_Generic), asCALL_GENERIC ) );
 
 	CheckASCall( engine->RegisterGlobalFunction("string formatInt(int64 val, const string& in formatting = \"%i\")", asFUNCTION(formatInt_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterGlobalFunction("string formatUInt(uint64 val, const string& formatting = \"%u\")", asFUNCTION(formatUInt_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterGlobalFunction("string formatUInt(uint64 val, const string& in formatting = \"%u\")", asFUNCTION(formatUInt_Generic), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterGlobalFunction("string formatFloat(double val, const string& in formatting = \"%0.02f\")", asFUNCTION(formatFloat_Generic), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterGlobalFunction("int64 parseInt(const string &in, uint base = 10, uint &out byteCount = 0)", asFUNCTION(parseInt_Generic), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterGlobalFunction("uint64 parseUInt(const string &in, uint base = 10, uint &out byteCount = 0)", asFUNCTION(parseUInt_Generic), asCALL_GENERIC ) );

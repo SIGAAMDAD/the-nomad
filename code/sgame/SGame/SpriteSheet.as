@@ -15,6 +15,8 @@ namespace TheNomad::SGame {
 				GameError( "SpriteSheet::Load: please ensure that your sheetSize and spriteSize are powers of two" );
 			}
 
+			m_Name = fileName;
+
 			m_SheetSize = sheetSize;
 			m_SpriteSize = spriteSize;
 
@@ -23,19 +25,6 @@ namespace TheNomad::SGame {
 
 			m_hShader = TheNomad::Engine::Renderer::RegisterSpriteSheet( fileName, uint( sheetSize.x ), uint( sheetSize.y ),
 				uint( spriteSize.x ), uint( spriteSize.y ) );
-
-/*
-			m_hShader = TheNomad::Engine::Renderer::RegisterShader( fileName );
-
-			DebugPrint( "Processing sprite sheet '" + fileName + "', SpriteCount: [ " + m_nSpriteCountX + ", " + m_nSpriteCountY + " ]\n" );
-
-			for ( uint y = 0; y < m_nSpriteCountY; y++ ) {
-				for ( uint x = 0; x < m_nSpriteCountX; x++ ) {
-					m_SpriteData.Add( Sprite( ivec2( x, y ), sheetSize, spriteSize, m_hShader ) );
-				}
-			}
-			DebugPrint( "Generated " + m_SpriteData.Count() + " sprites for '" + fileName + "'\n" );
-			*/
 		}
 		const Sprite& opIndex( uint nIndex ) const {
 			return m_SpriteData[ nIndex ];
@@ -59,7 +48,11 @@ namespace TheNomad::SGame {
 		uint GetSpriteCountY() const {
 			return m_nSpriteCountY;
 		}
+		const string& GetName() const {
+			return m_Name;
+		}
 
+		private string m_Name;
 		private array<Sprite> m_SpriteData;
 		private vec2 m_SpriteSize = vec2( 0.0f );
 		private vec2 m_SheetSize = vec2( 0.0f );

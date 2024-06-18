@@ -297,6 +297,23 @@ void GLimp_Minimize( void )
     SDL_MinimizeWindow( SDL_window );
 }
 
+static rserr_t GLimp_StartDriverAndSetMode( int mode, const char *modeFS, qboolean fullscreen )
+{
+    rserr_t err;
+
+    if ( !SDL_WasInit( SDL_INIT_VIDEO ) ) {
+        const char *driverName;
+
+        if ( SDL_Init( SDL_INIT_VIDEO ) != 0 ) {
+            Con_Printf( "SDL_Init( SDL_INIT_VIDEO ) FAILED (%s)\n", SDL_GetError() );
+            return RSERR_FATAL_ERROR;
+        }
+
+        driverName = SDL_GetCurrentVideoDriver();
+        Con_Printf( "SDL2 using video driver \"%s\"\n", driverName );
+    }
+}
+
 /*
 * GLimp_Init: will initialize a new OpenGL
 * window and context handle, will also handle all
@@ -309,7 +326,16 @@ void GLimp_Init( gpuConfig_t *config )
     float windowAspect;
     SDL_DisplayMode dm;
 
-    Con_Printf( "---------- GLimp_Init ----------\n" );
+    Con_Printf( "GLimp_Init()\n" );
+
+    in_nograb = Cvar_Get( "in_nograb", "0", 0 );
+	Cvar_SetDescription( in_nograb, "Do not capture mouse in game, may be useful during online streaming." );
+
+	r_allowSoftwareGL = Cvar_Get( "r_allowSoftwareGL", "0", CVAR_LATCH );
+
+	r_swapInterval = Cvar_Get( "r_swapInterval", "0", CVAR_SAVE | CVAR_LATCH );
+	r_stereoEnabled = Cvar_Get( "r_stereoEnabled", "0", CVAR_SAVE | CVAR_LATCH );
+	Cvar_SetDescription( r_stereoEnabled, "Enable stereo rendering for techniques like shutter glasses." );
 
     if ( !SDL_WasInit( SDL_INIT_VIDEO ) ) {
         if ( SDL_Init( SDL_INIT_VIDEO ) != 0 ) {
@@ -371,7 +397,7 @@ void *GL_GetProcAddress( const char *name )
     return SDL_GL_GetProcAddress( name );
 }
 
-void GLimp_HideFullscreenWindow(void)
+void GLimp_HideFullscreenWindow( void )
 {
     if ( SDL_window && glw_state.isFullscreen ) {
         SDL_HideWindow( SDL_window );

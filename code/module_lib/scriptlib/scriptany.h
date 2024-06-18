@@ -83,13 +83,13 @@ protected:
             double flt64;
             void *valueObj;
         } data;
-        int   typeId;
+        int typeId;
     };
 
 	valueStruct value;
 };
 
-void RegisterScriptAny_Generic(asIScriptEngine *engine);
+void RegisterScriptAny( asIScriptEngine *engine );
 
 END_AS_NAMESPACE
 

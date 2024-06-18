@@ -4,19 +4,9 @@ namespace TheNomad::SGame {
     //
 	// DrawRect: quick and easy utility function
 	//
-	void DrawRect( const vec3& in origin, const vec2& in size, const SpriteSheet@ sheet, const ivec2& in offset ) {
-		TheNomad::Engine::Renderer::PolyVert[] verts( 4 );
-
-		verts[0].xyz = vec3( origin.x + ( size.x / 2 ), origin.y, 0.0f );
-		verts[1].xyz = vec3( origin.x + ( size.x / 2 ), origin.y + ( size.y / 2 ), 0.0f );
-		verts[2].xyz = vec3( origin.x, origin.y + ( size.y / 2 ), 0.0f );
-		verts[3].xyz = vec3( origin.x, origin.y, 0.0f );
-
-		for ( uint i = 0; i < 4; i++ ) {
-			verts[i].uv = sheet[offset.y * sheet.GetSpriteCountX() + offset.x][i];
-		}
-
-		TheNomad::Engine::Renderer::AddPolyToScene( sheet.GetShader(), verts );
+	void DrawRect( const vec3& in origin, const vec2& in size, int hShader ) {
+		const float scale = TheNomad::GameSystem::GameManager.GetUIScale();
+		ImGui::Image( hShader, vec2( origin.x * scale, origin.y * scale ), vec2( size.x * scale, size.y * scale ) );
 	}
 
 	class Sprite {

@@ -1008,6 +1008,21 @@ void Menu_Cache( void )
 	ui->controller_left_trigger = re.RegisterShader( "menu/left_trigger" );
 	ui->controller_right_trigger = re.RegisterShader( "menu/right_trigger" );
 
+	// cache the textures
+	// for some reason, we need to load these before the backdrop
+	// if we want the lower resolution textures to load properly
+	re.RegisterShader( "menu/save_0" );
+	re.RegisterShader( "menu/save_1" );
+	re.RegisterShader( "menu/load_0" );
+	re.RegisterShader( "menu/load_1" );
+	re.RegisterShader( "menu/reset_0" );
+	re.RegisterShader( "menu/reset_1" );
+	re.RegisterShader( "menu/accept_0" );
+	re.RegisterShader( "menu/accept_1" );
+	re.RegisterShader( "menu/play_0" );
+	re.RegisterShader( "menu/play_1" );
+	re.RegisterShader( "menu/tales_around_the_campfire" );
+
 	ui->backdrop = re.RegisterShader( "menu/mainbackdrop" );
 
     // IT MUST BE THERE!

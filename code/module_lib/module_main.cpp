@@ -13,6 +13,7 @@
 #include "module_debugger.h"
 #include "scriptlib/scriptarray.h"
 #include "scriptlib/scriptdictionary.h"
+#include "scriptlib/scriptany.h"
 #define JEMALLOC_NO_RENAME
 #include <jemalloc/jemalloc.h>
 
@@ -457,6 +458,7 @@ bool CModuleLib::AddDefaultProcs( void ) const {
     RegisterScriptArray( m_pEngine );
     RegisterStdString_Generic( g_pModuleLib->GetScriptEngine() );
     RegisterScriptHandle( m_pEngine );
+    RegisterScriptAny( m_pEngine );
 
     CheckASCall( g_pModuleLib->GetScriptEngine()->SetDefaultNamespace( "TheNomad::GameSystem" ) );
     CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterface( "GameObject" ) );
@@ -519,7 +521,7 @@ CModuleLib::CModuleLib( void )
     }
     CheckASCall( m_pEngine->SetMessageCallback( asFUNCTION( Module_ASMessage_f ), NULL, asCALL_CDECL ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_ALLOW_MULTILINE_STRINGS, true ) );
-    CheckASCall( m_pEngine->SetEngineProperty( asEP_ALLOW_UNSAFE_REFERENCES, true ) );
+    CheckASCall( m_pEngine->SetEngineProperty( asEP_ALLOW_UNSAFE_REFERENCES, false ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_ALWAYS_IMPL_DEFAULT_CONSTRUCT, false ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_COMPILER_WARNINGS, true ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_OPTIMIZE_BYTECODE, true ) );
@@ -629,6 +631,8 @@ CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *
     Cmd_AddCommand( "ml.garbage_collection_stats", ML_GarbageCollectionStats_f );
     Cmd_AddCommand( "ml_debug.print_string_cache", ML_PrintStringCache_f );
 
+    Mem_Init();
+
     // FIXME: angelscript's thread manager is fucking broken on unix (stalls forever)
     asSetGlobalMemoryFunctions( AS_Alloc, AS_Free );
 
@@ -710,6 +714,8 @@ void CModuleLib::Shutdown( qboolean quit )
     m_bRecursiveShutdown = qfalse;
     g_pModuleLib = NULL;
     g_pDebugger = NULL;
+
+    Mem_Shutdown();
 }
 
 asIScriptEngine *CModuleLib::GetScriptEngine( void ) {

@@ -80,7 +80,7 @@ namespace TheNomad::SGame {
 				GameError( "MobObject::DoAttack: invalid attack method " + uint( atk.attackMethod ) );
 			};
 			
-			if ( atk.effect.size() > 0 ) {
+			if ( atk.effect.Length() > 0 ) {
 				// apply effects
 				TheNomad::Engine::CmdExecuteCommand( atk.effect + " " + m_Link.m_nEntityNumber + "\n" );
 			}

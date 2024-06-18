@@ -1579,9 +1579,6 @@ void G_Init( void )
         Cvar_ForceReset( "g_renderer" );
     }
 
-    // init memory manager
-    Mem_Init();
-
     // init sound
     Snd_Init();
     gi.soundStarted = qtrue;
@@ -1654,7 +1651,6 @@ void G_Shutdown( qboolean quit )
 
     SteamApp_Shutdown();
 
-    Mem_Shutdown();
     if ( quit ) {
         remove( "nomad.pid" );
         PROFILE_STOP_LISTEN

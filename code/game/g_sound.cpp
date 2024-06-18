@@ -1226,5 +1226,8 @@ void Snd_Init( void )
 
     alDistanceModel( AL_EXPONENT_DISTANCE_CLAMPED );
 
+    gi.soundStarted = qtrue;
+    gi.soundRegistered = qtrue;
+
 //    soundCacheAllocator.Init();
 }

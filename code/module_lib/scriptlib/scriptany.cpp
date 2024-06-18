@@ -7,7 +7,7 @@ static void ScriptAnyFactory_Generic( asIScriptGeneric *gen )
 {
 	asIScriptEngine *engine = gen->GetEngine();
 
-	*(CScriptAny **)gen->GetAddressOfReturnLocation() = new CScriptAny( engine );
+	*(CScriptAny **)gen->GetAddressOfReturnLocation() = new ( Mem_ClearedAlloc( sizeof( CScriptAny ) ) ) CScriptAny( engine );
 }
 
 static void ScriptAnyFactory2_Generic( asIScriptGeneric *gen )
@@ -16,7 +16,7 @@ static void ScriptAnyFactory2_Generic( asIScriptGeneric *gen )
 	void *ref = (void *)gen->GetArgAddress( 0 );
 	int refType = gen->GetArgTypeId( 0 );
 
-	*(CScriptAny **)gen->GetAddressOfReturnLocation() = new CScriptAny( ref, refType, engine );
+	*(CScriptAny **)gen->GetAddressOfReturnLocation() = new ( Mem_ClearedAlloc( sizeof( CScriptAny ) ) ) CScriptAny( engine );
 }
 
 static CScriptAny& ScriptAnyAssignment( CScriptAny *other, CScriptAny *self )
@@ -183,43 +183,43 @@ static void ScriptAny_ReleaseAllHandles_Generic( asIScriptGeneric *gen )
 	self->ReleaseAllHandles(engine);
 }
 
-void RegisterScriptAny_Generic(asIScriptEngine *engine)
+void RegisterScriptAny( asIScriptEngine *engine )
 {
-	CheckASCall( engine->RegisterObjectType("any", sizeof(CScriptAny), asOBJ_REF | asOBJ_GC) );
+	CheckASCall( engine->RegisterObjectType( "any", sizeof( CScriptAny ), asOBJ_REF | asOBJ_GC ) );
 
 	// We'll use the generic interface for the constructor as we need the engine pointer
-	CheckASCall( engine->RegisterObjectBehaviour("any", asBEHAVE_FACTORY, "any@ f()", asFUNCTION(ScriptAnyFactory_Generic), asCALL_GENERIC) );
-	CheckASCall( engine->RegisterObjectBehaviour("any", asBEHAVE_FACTORY, "any@ f(?&in) explicit", asFUNCTION(ScriptAnyFactory2_Generic), asCALL_GENERIC) );
-	CheckASCall( engine->RegisterObjectBehaviour("any", asBEHAVE_FACTORY, "any@ f(const int64&in) explicit", asFUNCTION(ScriptAnyFactory2_Generic), asCALL_GENERIC) );
-	CheckASCall( engine->RegisterObjectBehaviour("any", asBEHAVE_FACTORY, "any@ f(const double&in) explicit", asFUNCTION(ScriptAnyFactory2_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectBehaviour( "any", asBEHAVE_FACTORY, "any@ f()", asFUNCTION(ScriptAnyFactory_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectBehaviour( "any", asBEHAVE_FACTORY, "any@ f(?&in) explicit", asFUNCTION(ScriptAnyFactory2_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectBehaviour( "any", asBEHAVE_FACTORY, "any@ f(const int64&in) explicit", asFUNCTION(ScriptAnyFactory2_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectBehaviour( "any", asBEHAVE_FACTORY, "any@ f(const double&in) explicit", asFUNCTION(ScriptAnyFactory2_Generic), asCALL_GENERIC) );
 
-	CheckASCall( engine->RegisterObjectBehaviour("any", asBEHAVE_ADDREF, "void f()", asFUNCTION(ScriptAny_AddRef_Generic), asCALL_GENERIC) );
-	CheckASCall( engine->RegisterObjectBehaviour("any", asBEHAVE_RELEASE, "void f()", asFUNCTION(ScriptAny_Release_Generic), asCALL_GENERIC) );
-	CheckASCall( engine->RegisterObjectMethod("any", "any &opAssign(any&in)", asFUNCTION(ScriptAnyAssignment_Generic), asCALL_GENERIC) );
-	CheckASCall( engine->RegisterObjectMethod("any", "void store(?&in)", asFUNCTION(ScriptAny_Store_Generic), asCALL_GENERIC) );
-    CheckASCall( engine->RegisterObjectMethod("any", "void store(const int8& in)", asFUNCTION(ScriptAny_StorePrimitive_Generic), asCALL_GENERIC) );
-    CheckASCall( engine->RegisterObjectMethod("any", "void store(const int16& in)", asFUNCTION(ScriptAny_StorePrimitive_Generic), asCALL_GENERIC) );
-    CheckASCall( engine->RegisterObjectMethod("any", "void store(const int32& in)", asFUNCTION(ScriptAny_StorePrimitive_Generic), asCALL_GENERIC) );
-	CheckASCall( engine->RegisterObjectMethod("any", "void store(const int64& in)", asFUNCTION(ScriptAny_StorePrimitive_Generic), asCALL_GENERIC) );
-    CheckASCall( engine->RegisterObjectMethod("any", "void store(const uint8& in)", asFUNCTION(ScriptAny_StorePrimitive_Generic), asCALL_GENERIC) );
-    CheckASCall( engine->RegisterObjectMethod("any", "void store(const uint16& in)", asFUNCTION(ScriptAny_StorePrimitive_Generic), asCALL_GENERIC) );
-    CheckASCall( engine->RegisterObjectMethod("any", "void store(const uint32& in)", asFUNCTION(ScriptAny_StorePrimitive_Generic), asCALL_GENERIC) );
-	CheckASCall( engine->RegisterObjectMethod("any", "void store(const uint64& in)", asFUNCTION(ScriptAny_StorePrimitive_Generic), asCALL_GENERIC) );
-	CheckASCall( engine->RegisterObjectMethod("any", "void store(const double& in)", asFUNCTION(ScriptAny_StorePrimitive_Generic), asCALL_GENERIC) );
-    CheckASCall( engine->RegisterObjectMethod("any", "void store(const float& in)", asFUNCTION(ScriptAny_StorePrimitive_Generic), asCALL_GENERIC) );
-    CheckASCall( engine->RegisterObjectMethod("any", "void store(const bool& in)", asFUNCTION(ScriptAny_StorePrimitive_Generic), asCALL_GENERIC) );
-	CheckASCall( engine->RegisterObjectMethod("any", "bool retrieve(?&out) const", asFUNCTION(ScriptAny_Retrieve_Generic), asCALL_GENERIC) );
-    CheckASCall( engine->RegisterObjectMethod("any", "bool retrieve(int8& out) const", asFUNCTION(ScriptAny_RetrievePrimitive_Generic), asCALL_GENERIC) );
-    CheckASCall( engine->RegisterObjectMethod("any", "bool retrieve(int16& out) const", asFUNCTION(ScriptAny_RetrievePrimitive_Generic), asCALL_GENERIC) );
-    CheckASCall( engine->RegisterObjectMethod("any", "bool retrieve(int32& out) const", asFUNCTION(ScriptAny_RetrievePrimitive_Generic), asCALL_GENERIC) );
-	CheckASCall( engine->RegisterObjectMethod("any", "bool retrieve(int64& out) const", asFUNCTION(ScriptAny_RetrievePrimitive_Generic), asCALL_GENERIC) );
-    CheckASCall( engine->RegisterObjectMethod("any", "bool retrieve(uint8& out) const", asFUNCTION(ScriptAny_RetrievePrimitive_Generic), asCALL_GENERIC) );
-    CheckASCall( engine->RegisterObjectMethod("any", "bool retrieve(uint16& out) const", asFUNCTION(ScriptAny_RetrievePrimitive_Generic), asCALL_GENERIC) );
-    CheckASCall( engine->RegisterObjectMethod("any", "bool retrieve(uint32& out) const", asFUNCTION(ScriptAny_RetrievePrimitive_Generic), asCALL_GENERIC) );
-	CheckASCall( engine->RegisterObjectMethod("any", "bool retrieve(uint64& out) const", asFUNCTION(ScriptAny_RetrievePrimitive_Generic), asCALL_GENERIC) );
-	CheckASCall( engine->RegisterObjectMethod("any", "bool retrieve(double& out) const", asFUNCTION(ScriptAny_RetrievePrimitive_Generic), asCALL_GENERIC) );
-    CheckASCall( engine->RegisterObjectMethod("any", "bool retrieve(float& out) const", asFUNCTION(ScriptAny_RetrievePrimitive_Generic), asCALL_GENERIC) );
-    CheckASCall( engine->RegisterObjectMethod("any", "bool retrieve(bool& out) const", asFUNCTION(ScriptAny_RetrievePrimitive_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectBehaviour( "any", asBEHAVE_ADDREF, "void f()", asFUNCTION(ScriptAny_AddRef_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectBehaviour( "any", asBEHAVE_RELEASE, "void f()", asFUNCTION(ScriptAny_Release_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "any &opAssign(any&in)", asFUNCTION(ScriptAnyAssignment_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "void store(?&in)", asFUNCTION(ScriptAny_Store_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod( "any", "void store(const int8& in)", asFUNCTION(ScriptAny_StorePrimitive_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod( "any", "void store(const int16& in)", asFUNCTION(ScriptAny_StorePrimitive_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod( "any", "void store(const int32& in)", asFUNCTION(ScriptAny_StorePrimitive_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "void store(const int64& in)", asFUNCTION(ScriptAny_StorePrimitive_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod( "any", "void store(const uint8& in)", asFUNCTION(ScriptAny_StorePrimitive_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod( "any", "void store(const uint16& in)", asFUNCTION(ScriptAny_StorePrimitive_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod( "any", "void store(const uint32& in)", asFUNCTION(ScriptAny_StorePrimitive_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "void store(const uint64& in)", asFUNCTION(ScriptAny_StorePrimitive_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "void store(const double& in)", asFUNCTION(ScriptAny_StorePrimitive_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod( "any", "void store(const float& in)", asFUNCTION(ScriptAny_StorePrimitive_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod( "any", "void store(const bool& in)", asFUNCTION(ScriptAny_StorePrimitive_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "bool load(?&out) const", asFUNCTION(ScriptAny_Retrieve_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod( "any", "bool load(int8& out) const", asFUNCTION(ScriptAny_RetrievePrimitive_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod( "any", "bool load(int16& out) const", asFUNCTION(ScriptAny_RetrievePrimitive_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod( "any", "bool load(int32& out) const", asFUNCTION(ScriptAny_RetrievePrimitive_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "bool load(int64& out) const", asFUNCTION(ScriptAny_RetrievePrimitive_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod( "any", "bool load(uint8& out) const", asFUNCTION(ScriptAny_RetrievePrimitive_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod( "any", "bool load(uint16& out) const", asFUNCTION(ScriptAny_RetrievePrimitive_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod( "any", "bool load(uint32& out) const", asFUNCTION(ScriptAny_RetrievePrimitive_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "bool load(uint64& out) const", asFUNCTION(ScriptAny_RetrievePrimitive_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "bool load(double& out) const", asFUNCTION(ScriptAny_RetrievePrimitive_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod( "any", "bool load(float& out) const", asFUNCTION(ScriptAny_RetrievePrimitive_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod( "any", "bool load(bool& out) const", asFUNCTION(ScriptAny_RetrievePrimitive_Generic), asCALL_GENERIC) );
 
 	// Register GC behaviours
 	CheckASCall( engine->RegisterObjectBehaviour("any", asBEHAVE_GETREFCOUNT, "int f()", asFUNCTION(ScriptAny_GetRefCount_Generic), asCALL_GENERIC) );
@@ -550,8 +550,7 @@ int CScriptAny::Release( void ) const
 	// Decrease the ref counter
 	gcFlag = false;
 	if ( refCount.fetch_sub() == 0 ) {
-		// Delete this object as no more references to it exists
-		delete this;
+		Mem_Free( const_cast<CScriptAny *>( this ) );
 		return 0;
 	}
 

@@ -65,8 +65,8 @@ namespace TheNomad {
 	class CvarTableEntry {
 		CvarTableEntry() {
 		}
-		CvarTableEntry( ConVar@ var ) {
-			@m_Handle = @var;
+		CvarTableEntry( ConVar@ cvar ) {
+			@m_Handle = @cvar;
 		}
 
 		ConVar@ m_Handle = null;
@@ -78,8 +78,9 @@ namespace TheNomad {
 		}
 
 		void OnInit() {
-//			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-//				TheNomad::Engine::CommandSystem::CommandFunc( @ListVars_f ), "sgame.list_cvars" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @ListVars_f ), "sgame.list_cvars", false
+			);
 		}
 		void OnShutdown() {
 			for ( uint i = 0; i < m_CvarCache.Count(); i++ ) {
@@ -90,16 +91,8 @@ namespace TheNomad {
 		
 		void AddCvar( ConVar@ cvar, const string& in name, const string& in value, uint flags, bool bTrackChanges ) {
 			CvarTableEntry var = CvarTableEntry( @cvar );
-			var.m_Handle.Register( name, value, flags, bTrackChanges  );
+			var.m_Handle.Register( name, value, flags, bTrackChanges );
 			m_CvarCache.Add( var );
-		}
-		
-		void ListVars_f() {
-			ConsolePrint( "VM " + MODULE_NAME + " Cvars:\n" );
-
-			for ( uint i = 0; i < m_CvarCache.Count(); i++ ) {
-				ConsolePrint( m_CvarCache[i].m_Handle.GetName() + " " + m_CvarCache[i].m_Handle.GetValue() );
-			}
 		}
 
 		bool OnConsoleCommand( const string& in cmd ) {
@@ -132,7 +125,12 @@ namespace TheNomad {
 			return "CvarSystem";
 		}
 		
-		void DrawCvarList() {
+		void ListVars_f() {
+			ConsolePrint( "VM " + MODULE_NAME + " Cvars:\n" );
+
+			for ( uint i = 0; i < m_CvarCache.Count(); i++ ) {
+				ConsolePrint( m_CvarCache[i].m_Handle.GetName() + " " + m_CvarCache[i].m_Handle.GetValue() );
+			}
 		}
 		
 		private array<CvarTableEntry> m_CvarCache;

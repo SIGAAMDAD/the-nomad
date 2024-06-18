@@ -301,6 +301,7 @@ SRC=\
 	$(O)/module_lib/module_debugger.o \
 	$(O)/module_lib/scriptbuilder.o \
 	$(O)/module_lib/scriptarray.o \
+	$(O)/module_lib/scriptany.o \
 	$(O)/module_lib/scriptstdstring.o \
 	$(O)/module_lib/scriptdictionary.o \
 	$(O)/module_lib/scriptstdstring_utils.o \

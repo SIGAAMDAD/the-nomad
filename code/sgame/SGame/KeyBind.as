@@ -16,7 +16,7 @@ namespace TheNomad::SGame {
 			string c;
 
 			c = TheNomad::Engine::CmdArgv( 1 );
-			if ( c.size() > 0 ) {
+			if ( c.Length() > 0 ) {
 				k = Convert().ToUInt( c );
 			}
 			
@@ -48,7 +48,7 @@ namespace TheNomad::SGame {
 			string c;
 
 			c = TheNomad::Engine::CmdArgv( 1 );
-			if ( c.size() > 0 ) {
+			if ( c.Length() > 0 ) {
 				k = Convert().ToUInt( c );
 			} else {
 				return;

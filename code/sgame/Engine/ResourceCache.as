@@ -6,6 +6,35 @@ namespace TheNomad::Engine {
         int GetShader( const string& in shader ) {
             int ret;
             if ( !m_ShaderCache.TryGetValue( shader, ret ) ) {
+                return -1;
+            }
+            return ret;
+        }
+        int GetSfx( const string& in sfx ) {
+            int ret;
+            if ( !m_SfxCache.TryGetValue( sfx, ret ) ) {
+                return -1;
+            }
+            return ret;
+        }
+        int GetTrack( const string& in npath ) {
+            int ret;
+            if ( !m_MusicCache.TryGetValue( npath, ret ) ) {
+                return -1;
+            }
+            return ret;
+        }
+        TheNomad::SGame::SpriteSheet@ GetSpriteSheet( const string& in shader ) {
+            TheNomad::SGame::SpriteSheet@ ret;
+            if ( !m_SpriteSheetCache.TryGetValue( shader, @ret ) ) {
+                return null;
+            }
+            return @ret;
+        }
+
+        int CacheShader( const string& in shader ) {
+            int ret;
+            if ( !m_ShaderCache.TryGetValue( shader, ret ) ) {
                 ret = TheNomad::Engine::Renderer::RegisterShader( shader );
                 if ( ret != -1 ) {
                     ConsolePrint( "- Loaded shader \"" + shader + "\".\n" );
@@ -14,7 +43,7 @@ namespace TheNomad::Engine {
             }
             return ret;
         }
-        int GetSfx( const string& in sfx ) {
+        int CacheSfx( const string& in sfx ) {
             int ret;
             if ( !m_SfxCache.TryGetValue( sfx, ret ) ) {
                 ret = TheNomad::Engine::SoundSystem::RegisterSfx( sfx );
@@ -25,7 +54,7 @@ namespace TheNomad::Engine {
             }
             return ret;
         }
-        int GetTrack( const string& in npath ) {
+        int CacheTrack( const string& in npath ) {
             int ret;
             if ( !m_MusicCache.TryGetValue( npath, ret ) ) {
                 ret = TheNomad::Engine::SoundSystem::RegisterTrack( npath );
@@ -36,7 +65,7 @@ namespace TheNomad::Engine {
             }
             return ret;
         }
-        TheNomad::SGame::SpriteSheet@ GetSpriteSheet( const string& in shader, uint spriteWidth, uint spriteHeight,
+        TheNomad::SGame::SpriteSheet@ CacheSpriteSheet( const string& in shader, uint spriteWidth, uint spriteHeight,
             uint sheetWidth, uint sheetHeight )
         {
             TheNomad::SGame::SpriteSheet@ ret;

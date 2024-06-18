@@ -9,14 +9,14 @@ BEGIN_AS_NAMESPACE
 
 CScriptJson *CScriptJson::Create(asIScriptEngine *engine)
 {
-    CScriptJson *obj = (CScriptJson *)Mem_Alloc( sizeof( CScriptJson ) );
+    CScriptJson *obj = (CScriptJson *)Mem_ClearedAlloc( sizeof( *obj ) );
     new (obj) CScriptJson(engine);
     return obj;
 }
 
 CScriptJson *CScriptJson::Create(asIScriptEngine *engine, const json& js)
 {
-    CScriptJson *obj = (CScriptJson *)Mem_Alloc( sizeof( CScriptJson ) );
+    CScriptJson *obj = (CScriptJson *)Mem_ClearedAlloc( sizeof( *obj ) );
     new (obj) CScriptJson(engine);
     (obj->js_info) = js;
     return obj;
@@ -29,10 +29,9 @@ void CScriptJson::AddRef( void ) const
 
 void CScriptJson::Release( void ) const
 {
-    if( const_cast<CScriptJson *>( this )->refCount.fetch_sub() == 0 )
-    {
+    if ( const_cast<CScriptJson *>( this )->refCount.fetch_sub() == 0 ) {
         this->~CScriptJson();
-        Mem_Free( const_cast<CScriptJson *>( this ) );
+        Mem_Free( (byte *)const_cast<CScriptJson *>( this ) );
     }
 }
 

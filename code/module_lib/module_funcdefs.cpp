@@ -1095,6 +1095,42 @@ static uint64_t LoadFile( const string_t *fileName, CScriptArray *buffer ) {
     return length;
 }
 
+static string_t *GetHomePath( void ) {
+    string_t *str = (string_t *)g_pModuleLib->GetScriptEngine()->CreateScriptObject(
+        g_pModuleLib->GetScriptEngine()->GetTypeInfoByName( "string" ) );
+
+    *str = FS_GetHomePath();
+    return str;
+}
+
+static string_t *GetBaseGameDir( void ) {
+    string_t *str = (string_t *)g_pModuleLib->GetScriptEngine()->CreateScriptObject(
+        g_pModuleLib->GetScriptEngine()->GetTypeInfoByName( "string" ) );
+
+    *str = FS_GetBaseGameDir();
+    return str;
+}
+
+static string_t *GetBasePath( void ) {
+    string_t *str = (string_t *)g_pModuleLib->GetScriptEngine()->CreateScriptObject(
+        g_pModuleLib->GetScriptEngine()->GetTypeInfoByName( "string" ) );
+
+    *str = FS_GetBasePath();
+    return str;
+}
+
+static string_t *GetGamePath( void ) {
+    string_t *str = (string_t *)g_pModuleLib->GetScriptEngine()->CreateScriptObject(
+        g_pModuleLib->GetScriptEngine()->GetTypeInfoByName( "string" ) );
+
+    *str = FS_GetGamePath();
+    return str;
+}
+
+static bool FileExists( const string_t *npath ) {
+    return FS_FileExists( npath->c_str() );
+}
+
 static void GetModuleDependencies( CScriptArray *depList, const string_t *modName ) {
     const CModuleInfo *info = g_pModuleLib->GetModule( modName->c_str() );
 
@@ -1284,8 +1320,39 @@ static bool ImGui_InputText( const string_t *label, string_t *str, ImGuiInputTex
     return ImGui::InputText( label->c_str(), str, flags );
 }
 
-static bool ImGui_InputInt( const string_t *label, int32_t *v, ImGuiInputTextFlags flags ) {
-    return ImGui::InputInt( label->c_str(), v, 1, 100, flags );
+static void ImGui_Image( asIScriptGeneric *pGeneric ) {
+    nhandle_t hShader = pGeneric->GetArgDWord( 0 );
+    const vec2& pos = *(const vec2 *)pGeneric->GetArgObject( 1 );
+    const vec2& size = *(const vec2 *)pGeneric->GetArgObject( 2 );
+    const vec2& uv0 = *(const vec2 *)pGeneric->GetArgObject( 3 );
+    const vec2& uv1 = *(const vec2 *)pGeneric->GetArgObject( 4 );
+
+    ImGui::SetCursorScreenPos( ImVec2( pos.x, pos.y ) );
+    ImGui::Image( (ImTextureID)(uintptr_t)hShader, ImVec2( size.x, size.y ), ImVec2( uv0.x, uv0.y ), ImVec2( uv1.x, uv1.y ) );
+}
+
+static void ImGui_InputInt( asIScriptGeneric *pGeneric ) {
+    const string_t *label = (const string_t *)pGeneric->GetArgObject( 0 );
+    int32_t v = pGeneric->GetArgDWord( 1 );
+    ImGuiInputTextFlags flags = pGeneric->GetArgDWord( 2 );
+
+    if ( ImGui::InputInt( label->c_str(), &v, 1, 100, flags ) ) {
+        *(int32_t *)pGeneric->GetAddressOfReturnLocation() = v;
+    } else {
+        *(int32_t *)pGeneric->GetAddressOfReturnLocation() = pGeneric->GetArgDWord( 1 );
+    }
+}
+
+static void ImGui_InputFloat( asIScriptGeneric *pGeneric ) {
+    const string_t *label = (const string_t *)pGeneric->GetArgObject( 0 );
+    float v = pGeneric->GetArgFloat( 1 );
+    ImGuiInputTextFlags flags = pGeneric->GetArgDWord( 2 );
+
+    if ( ImGui::InputFloat( label->c_str(), &v, 0.0f, 0.0f, "%.3f", flags ) ) {
+        *(float *)pGeneric->GetAddressOfReturnLocation() = v;
+    } else {
+        *(float *)pGeneric->GetAddressOfReturnLocation() = pGeneric->GetArgFloat( 1 );
+    }
 }
 
 static void ImGui_Text( const string_t *text ) {
@@ -2001,8 +2068,19 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_FUNCTION( "void ImGui::SetWindowFontScale( float )", ImGui::SetWindowFontScale, ( float ), void );
         REGISTER_GLOBAL_FUNCTION( "float ImGui::GetFontScale()", ImGui_GetFontScale, ( void ), float );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::EndTable()", ImGui::EndTable, ( void ), void );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+            "void ImGui::Image( int, const vec2& in, const vec2& in, const vec2& in = vec2( 0, 0 ), const vec2& in = vec2( 1, 1 ) )",
+            asFUNCTION( ImGui_Image ), asCALL_GENERIC
+        );
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::InputText( const string& in, string& out, ImGuiInputTextFlags = ImGuiInputTextFlags::None )", ImGui_InputText, ( const string_t *, string_t *, ImGuiInputTextFlags ), bool );
-        REGISTER_GLOBAL_FUNCTION( "bool ImGui::InputInt( const string& in, int& out, ImGuiInputTextFlags = ImGuiInputTextFlags::None )", ImGui_InputInt, ( const string_t *, int32_t *, ImGuiInputTextFlags ), bool );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+            "int ImGui::InputInt( const string& in, int, ImGuiInputTextFlags = ImGuiInputTextFlags::None )", asFUNCTION( ImGui_InputInt ),
+            asCALL_GENERIC
+        );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+            "float ImGui::InputFloat( const string& in, float, ImGuiInputTextFlags = ImGuiInputTextFlags::None )", asFUNCTION( ImGui_InputFloat ),
+            asCALL_GENERIC
+        );
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::TableNextColumn()", ImGui::TableNextColumn, ( void ), bool );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::TableNextRow( int = 0, float = 0 )", ImGui::TableNextRow, ( ImGuiTableRowFlags, float ), void );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::PushStyleColor( ImGuiCol, const vec4& in )", ImGui_PushStyleColor_V4, ( ImGuiCol, const vec4 * ), void );
@@ -2210,6 +2288,7 @@ void ModuleLib_Register_Engine( void )
 			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::FileSystem::OpenFileRead( const string& in )", WRAP_FN( OpenFileRead ) );
 			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::FileSystem::OpenFileWrite( const string& in )", WRAP_FN( OpenFileWrite ) );
 			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::FileSystem::OpenFileAppend( const string& in )", WRAP_FN( OpenFileAppend ) );
+            REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::FileSystem::OpenFileRW( const string& in )", WRAP_FN( OpenFileRW ) );
 			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::OpenFile( const string& in, int, int& out )", WRAP_FN( OpenFile ) );
 			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::FileSystem::CloseFile( int )", WRAP_FN( CloseFile ) );
 			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::GetLength( int )", WRAP_FN( GetFileLength ) );
@@ -2217,6 +2296,12 @@ void ModuleLib_Register_Engine( void )
             REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::SetPosition( int, uint64, uint )", WRAP_FN( FileSetPosition ) );
 			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::LoadFile( const string& in, array<int8>& out )",WRAP_FN( LoadFile ) );
             REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::LoadFile( const string& in, string& out )", WRAP_FN( LoadFileString ) );
+            REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::FileExists( const string& in )", WRAP_FN( FileExists ) );
+
+            REGISTER_GLOBAL_FUNCTION( "string TheNomad::Engine::FileSystem::GetHomePath()", WRAP_FN( GetHomePath ) );
+            REGISTER_GLOBAL_FUNCTION( "string TheNomad::Engine::FileSystem::GetBaseGameDir()", WRAP_FN( GetBaseGameDir ) );
+            REGISTER_GLOBAL_FUNCTION( "string TheNomad::Engine::FileSystem::GetBasePath()", WRAP_FN( GetBasePath ) );
+            REGISTER_GLOBAL_FUNCTION( "string TheNomad::Engine::FileSystem::GetGamePath()", WRAP_FN( GetGamePath ) );
 
             {
                 REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteInt8( char, int )", WRAP_FN( WriteInt8 ) );

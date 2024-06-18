@@ -165,7 +165,7 @@ namespace TheNomad::Util {
 	    array<string> values;
 	    string data;
 
-	    for ( uint i = 0; i < str.size(); i++ ) {
+	    for ( uint i = 0; i < str.Length(); i++ ) {
 	        switch ( str[i] ) {
 	        case ',':
 	            values.Add( data );
@@ -314,13 +314,13 @@ namespace TheNomad::Util {
 	}
 
 	int HexStringToInt( const string& in str ) {
-		if ( str.size() < 1 ) {
+		if ( str.Length() < 1 ) {
 			return -1;
 		}
 
 		// check for hex code
 		if ( str[ 0 ] == '0' && str[ 1 ] == 'x' && str[ 2 ] != '\0' ) {
-		    int i, digit, n = 0, len = str.size();
+		    int i, digit, n = 0, len = str.Length();
 
 			for ( i = 2; i < len; i++ ) {
 				n *= 16;
@@ -350,7 +350,7 @@ namespace TheNomad::Util {
 			return false;
 		}
 
-		len = str.size();
+		len = str.Length();
 		if ( len <= 0 || len > 6 ) {
 			return false;
 		}

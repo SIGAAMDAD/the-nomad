@@ -1572,7 +1572,9 @@ void *Hunk_Alloc (uint64_t size, ha_pref where)
 	}
 
 	if ( size >= hunksize ) {
-		N_Error( ERR_FATAL, "Hunk_Alloc: bad size" );
+		N_Error( ERR_FATAL, "Hunk_Alloc: bad size.\n"
+							"NOTE: if you are using a mod and got this error, find your " NOMAD_CONFIG " "
+							"and edit the CVar \"com_hunkMegs\" to a higher value." );
 	}
 	
 	CThreadAutoLock lock( hunkLock );
@@ -1600,9 +1602,13 @@ void *Hunk_Alloc (uint64_t size, ha_pref where)
 		Hunk_Log();
 		Hunk_SmallLog();
 
-		N_Error(ERR_DROP, "Hunk_Alloc failed on %lu: %s, line: %lu (%s)", size, file, line, name);
+		N_Error( ERR_DROP, "Hunk_Alloc failed on %lu: %s, line: %lu (%s)"
+							"NOTE: if you are using a mod and got this error, find your " NOMAD_CONFIG " "
+							"and edit the CVar \"com_hunkMegs\" to a higher value.", size, file, line, name );
 #else
-		N_Error(ERR_DROP, "Hunk_Alloc failed on %lu", size);
+		N_Error( ERR_DROP, "Hunk_Alloc failed on %lu"
+							"NOTE: if you are using a mod and got this error, find your " NOMAD_CONFIG " "
+							"and edit the CVar \"com_hunkMegs\" to a higher value.", size );
 #endif
 	}
 
@@ -1660,7 +1666,7 @@ void Hunk_SmallLog(void)
 	Com_snprintf(buf, sizeof(buf), "%lu total hunk blocks\r\n", numBlocks);
 }
 
-void Hunk_Log(void) {
+void Hunk_Log( void ) {
 	Hunk_SmallLog();
 }
 
