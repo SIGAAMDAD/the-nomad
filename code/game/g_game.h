@@ -302,6 +302,7 @@ extern cvar_t *r_stereoEnabled;
 extern cvar_t *g_drawBuffer;
 
 extern cvar_t *g_paused;
+extern cvar_t *g_maxSaveSlots;
 
 extern cvar_t *con_conspeed;
 extern cvar_t *con_autoclear;

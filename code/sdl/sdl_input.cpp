@@ -17,6 +17,8 @@
 static cvar_t *in_keyboardDebug;
 static cvar_t *in_forceCharset;
 
+#define JOYSTICK_DEADZONE 8000
+
 #define MAX_COOP_PLAYERS 4
 SDL_GameController *gamepads[MAX_COOP_PLAYERS];
 SDL_Haptic *haptics[MAX_COOP_PLAYERS];
@@ -449,7 +451,6 @@ static void IN_ActivateMouse( void )
 		return;
 	}
 
-	SDL_ShowCursor( in_mode->i == 0 ? SDL_ENABLE : SDL_DISABLE );
 	if ( in_mode->i == 0 && mouse_cursor_active && keys[KEY_MOUSE_LEFT].down ) {
 		SDL_SetCursor( mouse_cursor_active );
 	} else if ( in_mode->i == 0 && mouse_cursor && !keys[KEY_MOUSE_LEFT].down ) {
@@ -513,7 +514,7 @@ static void IN_DeactivateMouse( void )
 		if ( gw_active ) {
 //			SDL_WarpMouseInWindow( SDL_window, glw_state.window_width / 2, glw_state.window_height / 2 );
 		} else {
-			if ( glw_state.isFullscreen && in_mode->i == 0 ) {
+			if ( glw_state.isFullscreen ) {
 				SDL_ShowCursor( SDL_TRUE );
 			}
 
@@ -525,7 +526,7 @@ static void IN_DeactivateMouse( void )
 
 	// Always show the cursor when the mouse is disabled,
 	// but not when fullscreen
-	if ( !glw_state.isFullscreen && in_mode->i == 0 ) {
+	if ( !glw_state.isFullscreen ) {
 		SDL_ShowCursor( SDL_TRUE );
 	}
 }
@@ -1385,8 +1386,8 @@ void HandleEvents( void )
 			switch ( e.window.event ) {
 			case SDL_WINDOWEVENT_MOVED:
 				if ( gw_active && !gw_minimized && !glw_state.isFullscreen ) {
-					//Cvar_Setif( "vid_xpos", e.window.data1 );
-					//Cvar_Setif( "vid_ypos", e.window.data2 );
+					//Cvar_SetIntegerValue( "vid_xpos", e.window.data1 );
+					//Cvar_SetIntegerValue( "vid_ypos", e.window.data2 );
 				}
 				break;
 			// window states:

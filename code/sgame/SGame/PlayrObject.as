@@ -574,8 +574,8 @@ namespace TheNomad::SGame {
 			m_PhysicsObject.Init( cast<EntityObject@>( @this ) );
 			m_PhysicsObject.SetAngle( Util::Dir2Angle( TheNomad::GameSystem::DirType::East ) );
 
-			@m_SpriteSheet = TheNomad::Engine::ResourceCache.CacheSpriteSheet( "sprites/players/"
-				+ TheNomad::Engine::CvarVariableString( "skin" ) + "_torso", 32, 32, 512, 512 );
+			@m_SpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/" +
+				TheNomad::Engine::CvarVariableString( "skin" ) + "_torso", 32, 32, 512, 512 );
 			if ( @m_SpriteSheet is null ) {
 				GameError( "PlayrObject::Spawn: failed to load torso sprite sheet" );
 			}
@@ -677,7 +677,10 @@ namespace TheNomad::SGame {
 			refEntity.sheetNum = m_SpriteSheet.GetShader();
 			refEntity.spriteId = 0 + m_Facing;
 			refEntity.scale = 2.0f;
-			refEntity.Draw();
+//			refEntity.Draw();
+
+			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin,
+				m_SpriteSheet.GetShader(), 0, false );
 
 //			DrawLegs();
 //			DrawArms();

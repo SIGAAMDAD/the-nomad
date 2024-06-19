@@ -113,40 +113,48 @@ typedef struct {
 } videoSettings_t;
 
 typedef struct {
-	const char **multisampleTypes;
 	const char **anisotropyTypes;
-	const char **textureDetails;
-	const char **textureFilters;
 	const char **toneMappingTypes;
 
-	int numMultisampleTypes;
 	int numAnisotropyTypes;
-	int numTextureDetails;
-	int numTextureFilters;
 	int numToneMappingTypes;
 
-	int multisampleType;
 	int anisotropicFilter;
-	int textureDetail;
-	int textureFilter;
-
 	int toneMappingType;
 
-	int vertexLighting;
-	int dynamicLighting;
-	int bloom;
-	int pbr;
-	int hdr;
 	int postProcessing;
 	int normalMapping;
 	int specularMapping;
 	int depthMapping;
 	int toneMapping;
 
-	qboolean advancedSettings;
-
 	int bufferMode;
+} performanceAdvancedSettings_t;
+
+typedef struct {
+	const char **multisampleTypes;
+	const char **textureDetails;
+	const char **textureFilters;
+
+	int numMultisampleTypes;
+	int numTextureDetails;
+	int numTextureFilters;
+
+	int multisampleType;
+	int textureDetail;
+	int textureFilter;
+
+	int vertexLighting;
+	int dynamicLighting;
+	int bloom;
+	int pbr;
+	int hdr;
 } performanceSettings_t;
+
+typedef struct {
+	performanceSettings_t basic;
+	performanceAdvancedSettings_t advanced;
+} preset_t;
 
 typedef struct {
 	int sfxVolume;
@@ -189,7 +197,7 @@ typedef struct settingsMenu_s {
 
 	const char **presetNames;
 
-	performanceSettings_t *presets;
+	preset_t *presets;
 	int preset;
 
 	int gpuMemInfoType;
@@ -205,7 +213,10 @@ typedef struct settingsMenu_s {
 	qboolean saveHovered;
 	qboolean setDefaultsHovered;
 
+	int advancedSettings;
+
 	performanceSettings_t performance;
+	performanceAdvancedSettings_t advancedPerformance;
 	videoSettings_t video;
 	audioSettings_t audio;
 	controlsSettings_t controls;
@@ -307,7 +318,7 @@ static void SettingsMenu_CheckModified( void )
 	if ( s_settingsMenu->performance.multisampleType != s_initial->performance.multisampleType ) {
 		s_settingsMenu->modified = qtrue;
 	}
-	if ( s_settingsMenu->performance.anisotropicFilter != s_initial->performance.anisotropicFilter ) {
+	if ( s_settingsMenu->advancedPerformance.anisotropicFilter != s_initial->advancedPerformance.anisotropicFilter ) {
 		s_settingsMenu->modified = qtrue;
 	}
 	if ( s_settingsMenu->performance.bloom != s_initial->performance.bloom ) {
@@ -319,13 +330,13 @@ static void SettingsMenu_CheckModified( void )
 	if ( s_settingsMenu->performance.textureFilter != s_initial->performance.textureFilter ) {
 		s_settingsMenu->modified = qtrue;
 	}
-	if ( s_settingsMenu->performance.depthMapping != s_initial->performance.depthMapping ) {
+	if ( s_settingsMenu->advancedPerformance.depthMapping != s_initial->advancedPerformance.depthMapping ) {
 		s_settingsMenu->modified = qtrue;
 	}
-	if ( s_settingsMenu->performance.specularMapping != s_initial->performance.specularMapping ) {
+	if ( s_settingsMenu->advancedPerformance.specularMapping != s_initial->advancedPerformance.specularMapping ) {
 		s_settingsMenu->modified = qtrue;
 	}
-	if ( s_settingsMenu->performance.normalMapping != s_initial->performance.normalMapping ) {
+	if ( s_settingsMenu->advancedPerformance.normalMapping != s_initial->advancedPerformance.normalMapping ) {
 		s_settingsMenu->modified = qtrue;
 	}
 	if ( s_settingsMenu->performance.dynamicLighting != s_initial->performance.dynamicLighting ) {
@@ -337,16 +348,16 @@ static void SettingsMenu_CheckModified( void )
 	if ( s_settingsMenu->performance.hdr != s_initial->performance.hdr ) {
 		s_settingsMenu->modified = qtrue;
 	}
-	if ( s_settingsMenu->performance.postProcessing != s_initial->performance.postProcessing ) {
+	if ( s_settingsMenu->advancedPerformance.postProcessing != s_initial->advancedPerformance.postProcessing ) {
 		s_settingsMenu->modified = qtrue;
 	}
-	if ( s_settingsMenu->performance.toneMapping != s_initial->performance.toneMapping ) {
+	if ( s_settingsMenu->advancedPerformance.toneMapping != s_initial->advancedPerformance.toneMapping ) {
 		s_settingsMenu->modified = qtrue;
 	}
 	if ( s_settingsMenu->performance.bloom != s_initial->performance.bloom ) {
 		s_settingsMenu->modified = qtrue;
 	}
-	if ( s_settingsMenu->performance.toneMappingType != s_initial->performance.toneMappingType ) {
+	if ( s_settingsMenu->advancedPerformance.toneMappingType != s_initial->advancedPerformance.toneMappingType ) {
 		s_settingsMenu->modified = qtrue;
 	}
 
@@ -474,112 +485,112 @@ static void SettingsMenu_LoadBindings( void )
 }
 
 static void SettingsMenu_InitPresets( void ) {
-	s_settingsMenu->presets = (performanceSettings_t *)Hunk_Alloc( sizeof( *s_settingsMenu->presets ) * NUM_PRESETS, h_high );
+	s_settingsMenu->presets = (preset_t *)Hunk_Alloc( sizeof( *s_settingsMenu->presets ) * NUM_PRESETS, h_high );
 	s_settingsMenu->preset = PRESET_NORMAL;
 
 	memset( &s_settingsMenu->presets[ PRESET_CUSTOM ], 0, sizeof( performanceSettings_t ) );
 
 	// some quality but more optimized just for playability
-	s_settingsMenu->presets[ PRESET_LOW ].multisampleType = AntiAlias_2xMSAA;
-	s_settingsMenu->presets[ PRESET_LOW ].anisotropicFilter = 0;
-	s_settingsMenu->presets[ PRESET_LOW ].textureDetail = TexDetail_IntegratedGPU;
-	s_settingsMenu->presets[ PRESET_LOW ].textureFilter = TexFilter_LinearNearest;
-	s_settingsMenu->presets[ PRESET_LOW ].toneMappingType = 0; // Reinhard
-	s_settingsMenu->presets[ PRESET_LOW ].vertexLighting = qtrue;
-	s_settingsMenu->presets[ PRESET_LOW ].dynamicLighting = qfalse;
-	s_settingsMenu->presets[ PRESET_LOW ].bloom = qfalse;
-	s_settingsMenu->presets[ PRESET_LOW ].pbr = qfalse;
-	s_settingsMenu->presets[ PRESET_LOW ].hdr = qfalse;
-	s_settingsMenu->presets[ PRESET_LOW ].postProcessing = qfalse;
-	s_settingsMenu->presets[ PRESET_LOW ].normalMapping = qfalse;
-	s_settingsMenu->presets[ PRESET_LOW ].specularMapping = qfalse;
-	s_settingsMenu->presets[ PRESET_LOW ].depthMapping = qfalse;
-	s_settingsMenu->presets[ PRESET_LOW ].toneMapping = qfalse;
+	s_settingsMenu->presets[ PRESET_LOW ].basic.multisampleType = AntiAlias_2xMSAA;
+	s_settingsMenu->presets[ PRESET_LOW ].advanced.anisotropicFilter = 0;
+	s_settingsMenu->presets[ PRESET_LOW ].basic.textureDetail = TexDetail_IntegratedGPU;
+	s_settingsMenu->presets[ PRESET_LOW ].basic.textureFilter = TexFilter_LinearNearest;
+	s_settingsMenu->presets[ PRESET_LOW ].advanced.toneMappingType = 0; // Reinhard
+	s_settingsMenu->presets[ PRESET_LOW ].basic.vertexLighting = qtrue;
+	s_settingsMenu->presets[ PRESET_LOW ].basic.dynamicLighting = qfalse;
+	s_settingsMenu->presets[ PRESET_LOW ].basic.bloom = qfalse;
+	s_settingsMenu->presets[ PRESET_LOW ].basic.pbr = qfalse;
+	s_settingsMenu->presets[ PRESET_LOW ].basic.hdr = qfalse;
+	s_settingsMenu->presets[ PRESET_LOW ].advanced.postProcessing = qfalse;
+	s_settingsMenu->presets[ PRESET_LOW ].advanced.normalMapping = qfalse;
+	s_settingsMenu->presets[ PRESET_LOW ].advanced.specularMapping = qfalse;
+	s_settingsMenu->presets[ PRESET_LOW ].advanced.depthMapping = qfalse;
+	s_settingsMenu->presets[ PRESET_LOW ].advanced.toneMapping = qfalse;
 
-	s_settingsMenu->presets[ PRESET_NORMAL ].multisampleType = AntiAlias_4xMSAA;
-	s_settingsMenu->presets[ PRESET_NORMAL ].anisotropicFilter = 4;
-	s_settingsMenu->presets[ PRESET_NORMAL ].textureDetail = TexDetail_Normie;
-	s_settingsMenu->presets[ PRESET_NORMAL ].textureFilter = TexFilter_LinearNearest;
-	s_settingsMenu->presets[ PRESET_NORMAL ].toneMappingType = 0; // Reinhard
-	s_settingsMenu->presets[ PRESET_NORMAL ].vertexLighting = qtrue;
-	s_settingsMenu->presets[ PRESET_NORMAL ].dynamicLighting = qfalse;
-	s_settingsMenu->presets[ PRESET_NORMAL ].bloom = qtrue;
-	s_settingsMenu->presets[ PRESET_NORMAL ].pbr = qtrue;
-	s_settingsMenu->presets[ PRESET_NORMAL ].hdr = qtrue;
-	s_settingsMenu->presets[ PRESET_NORMAL ].postProcessing = qtrue;
-	s_settingsMenu->presets[ PRESET_NORMAL ].normalMapping = qtrue;
-	s_settingsMenu->presets[ PRESET_NORMAL ].specularMapping = qtrue;
-	s_settingsMenu->presets[ PRESET_NORMAL ].depthMapping = qtrue;
-	s_settingsMenu->presets[ PRESET_NORMAL ].toneMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_NORMAL ].basic.multisampleType = AntiAlias_4xMSAA;
+	s_settingsMenu->presets[ PRESET_NORMAL ].advanced.anisotropicFilter = 4;
+	s_settingsMenu->presets[ PRESET_NORMAL ].basic.textureDetail = TexDetail_Normie;
+	s_settingsMenu->presets[ PRESET_NORMAL ].basic.textureFilter = TexFilter_LinearNearest;
+	s_settingsMenu->presets[ PRESET_NORMAL ].advanced.toneMappingType = 0; // Reinhard
+	s_settingsMenu->presets[ PRESET_NORMAL ].basic.vertexLighting = qtrue;
+	s_settingsMenu->presets[ PRESET_NORMAL ].basic.dynamicLighting = qfalse;
+	s_settingsMenu->presets[ PRESET_NORMAL ].basic.bloom = qtrue;
+	s_settingsMenu->presets[ PRESET_NORMAL ].basic.pbr = qtrue;
+	s_settingsMenu->presets[ PRESET_NORMAL ].basic.hdr = qtrue;
+	s_settingsMenu->presets[ PRESET_NORMAL ].advanced.postProcessing = qtrue;
+	s_settingsMenu->presets[ PRESET_NORMAL ].advanced.normalMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_NORMAL ].advanced.specularMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_NORMAL ].advanced.depthMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_NORMAL ].advanced.toneMapping = qtrue;
 
-	s_settingsMenu->presets[ PRESET_HIGH ].multisampleType = AntiAlias_16xMSAA;
-	s_settingsMenu->presets[ PRESET_HIGH ].anisotropicFilter = 16;
-	s_settingsMenu->presets[ PRESET_HIGH ].textureDetail = TexDetail_ExpensiveShitWeveGotHere;
-	s_settingsMenu->presets[ PRESET_HIGH ].textureFilter = TexFilter_LinearNearest;
-	s_settingsMenu->presets[ PRESET_HIGH ].toneMappingType = 1; // Reinhard
-	s_settingsMenu->presets[ PRESET_HIGH ].vertexLighting = qtrue;
-	s_settingsMenu->presets[ PRESET_HIGH ].dynamicLighting = qtrue;
-	s_settingsMenu->presets[ PRESET_HIGH ].bloom = qtrue;
-	s_settingsMenu->presets[ PRESET_HIGH ].pbr = qfalse;
-	s_settingsMenu->presets[ PRESET_HIGH ].hdr = qtrue;
-	s_settingsMenu->presets[ PRESET_HIGH ].postProcessing = qtrue;
-	s_settingsMenu->presets[ PRESET_HIGH ].normalMapping = qtrue;
-	s_settingsMenu->presets[ PRESET_HIGH ].specularMapping = qtrue;
-	s_settingsMenu->presets[ PRESET_HIGH ].depthMapping = qtrue;
-	s_settingsMenu->presets[ PRESET_HIGH ].toneMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_HIGH ].basic.multisampleType = AntiAlias_16xMSAA;
+	s_settingsMenu->presets[ PRESET_HIGH ].advanced.anisotropicFilter = 16;
+	s_settingsMenu->presets[ PRESET_HIGH ].basic.textureDetail = TexDetail_ExpensiveShitWeveGotHere;
+	s_settingsMenu->presets[ PRESET_HIGH ].basic.textureFilter = TexFilter_LinearNearest;
+	s_settingsMenu->presets[ PRESET_HIGH ].advanced.toneMappingType = 1; // Reinhard
+	s_settingsMenu->presets[ PRESET_HIGH ].basic.vertexLighting = qtrue;
+	s_settingsMenu->presets[ PRESET_HIGH ].basic.dynamicLighting = qtrue;
+	s_settingsMenu->presets[ PRESET_HIGH ].basic.bloom = qtrue;
+	s_settingsMenu->presets[ PRESET_HIGH ].basic.pbr = qfalse;
+	s_settingsMenu->presets[ PRESET_HIGH ].basic.hdr = qtrue;
+	s_settingsMenu->presets[ PRESET_HIGH ].advanced.postProcessing = qtrue;
+	s_settingsMenu->presets[ PRESET_HIGH ].advanced.normalMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_HIGH ].advanced.specularMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_HIGH ].advanced.depthMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_HIGH ].advanced.toneMapping = qtrue;
 
 	// highest quality rendering, no care for performance
-	s_settingsMenu->presets[ PRESET_QUALITY ].multisampleType = AntiAlias_32xMSAA;
-	s_settingsMenu->presets[ PRESET_QUALITY ].anisotropicFilter = 32;
-	s_settingsMenu->presets[ PRESET_QUALITY ].textureDetail = TexDetail_GPUvsGod;
-	s_settingsMenu->presets[ PRESET_QUALITY ].textureFilter = TexFilter_LinearNearest;
-	s_settingsMenu->presets[ PRESET_QUALITY ].toneMappingType = 1; // Reinhard
-	s_settingsMenu->presets[ PRESET_QUALITY ].vertexLighting = qtrue;
-	s_settingsMenu->presets[ PRESET_QUALITY ].dynamicLighting = qtrue;
-	s_settingsMenu->presets[ PRESET_QUALITY ].bloom = qtrue;
-	s_settingsMenu->presets[ PRESET_QUALITY ].pbr = qtrue;
-	s_settingsMenu->presets[ PRESET_QUALITY ].hdr = qtrue;
-	s_settingsMenu->presets[ PRESET_QUALITY ].postProcessing = qtrue;
-	s_settingsMenu->presets[ PRESET_QUALITY ].normalMapping = qtrue;
-	s_settingsMenu->presets[ PRESET_QUALITY ].specularMapping = qtrue;
-	s_settingsMenu->presets[ PRESET_QUALITY ].depthMapping = qtrue;
-	s_settingsMenu->presets[ PRESET_QUALITY ].toneMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_QUALITY ].basic.multisampleType = AntiAlias_32xMSAA;
+	s_settingsMenu->presets[ PRESET_QUALITY ].advanced.anisotropicFilter = 32;
+	s_settingsMenu->presets[ PRESET_QUALITY ].basic.textureDetail = TexDetail_GPUvsGod;
+	s_settingsMenu->presets[ PRESET_QUALITY ].basic.textureFilter = TexFilter_LinearNearest;
+	s_settingsMenu->presets[ PRESET_QUALITY ].advanced.toneMappingType = 1; // Reinhard
+	s_settingsMenu->presets[ PRESET_QUALITY ].basic.vertexLighting = qtrue;
+	s_settingsMenu->presets[ PRESET_QUALITY ].basic.dynamicLighting = qtrue;
+	s_settingsMenu->presets[ PRESET_QUALITY ].basic.bloom = qtrue;
+	s_settingsMenu->presets[ PRESET_QUALITY ].basic.pbr = qtrue;
+	s_settingsMenu->presets[ PRESET_QUALITY ].basic.hdr = qtrue;
+	s_settingsMenu->presets[ PRESET_QUALITY ].advanced.postProcessing = qtrue;
+	s_settingsMenu->presets[ PRESET_QUALITY ].advanced.normalMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_QUALITY ].advanced.specularMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_QUALITY ].advanced.depthMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_QUALITY ].advanced.toneMapping = qtrue;
 
 	// looks the worst but gets the best stuff
-	s_settingsMenu->presets[ PRESET_PERFORMANCE ].multisampleType = AntiAlias_None;
-	s_settingsMenu->presets[ PRESET_PERFORMANCE ].anisotropicFilter = 0;
-	s_settingsMenu->presets[ PRESET_PERFORMANCE ].textureDetail = TexDetail_MSDOS;
-	s_settingsMenu->presets[ PRESET_PERFORMANCE ].textureFilter = TexFilter_LinearNearest;
-	s_settingsMenu->presets[ PRESET_PERFORMANCE ].toneMappingType = 0; // Reinhard
-	s_settingsMenu->presets[ PRESET_PERFORMANCE ].vertexLighting = qfalse;
-	s_settingsMenu->presets[ PRESET_PERFORMANCE ].dynamicLighting = qfalse;
-	s_settingsMenu->presets[ PRESET_PERFORMANCE ].bloom = qfalse;
-	s_settingsMenu->presets[ PRESET_PERFORMANCE ].pbr = qfalse;
-	s_settingsMenu->presets[ PRESET_PERFORMANCE ].hdr = qfalse;
-	s_settingsMenu->presets[ PRESET_PERFORMANCE ].postProcessing = qfalse;
-	s_settingsMenu->presets[ PRESET_PERFORMANCE ].normalMapping = qfalse;
-	s_settingsMenu->presets[ PRESET_PERFORMANCE ].specularMapping = qfalse;
-	s_settingsMenu->presets[ PRESET_PERFORMANCE ].depthMapping = qfalse;
-	s_settingsMenu->presets[ PRESET_PERFORMANCE ].toneMapping = qfalse;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.multisampleType = AntiAlias_None;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].advanced.anisotropicFilter = 0;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.textureDetail = TexDetail_MSDOS;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.textureFilter = TexFilter_LinearNearest;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].advanced.toneMappingType = 0; // Reinhard
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.vertexLighting = qfalse;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.dynamicLighting = qfalse;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.bloom = qfalse;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.pbr = qfalse;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.hdr = qfalse;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].advanced.postProcessing = qfalse;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].advanced.normalMapping = qfalse;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].advanced.specularMapping = qfalse;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].advanced.depthMapping = qfalse;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].advanced.toneMapping = qfalse;
 }
 
-static void SettingsMenu_SetPreset( const performanceSettings_t *preset )
+static void SettingsMenu_SetPreset( const preset_t *preset )
 {
-	s_settingsMenu->performance.multisampleType = preset->multisampleType;
-	s_settingsMenu->performance.anisotropicFilter = preset->anisotropicFilter;
-	s_settingsMenu->performance.textureDetail = preset->textureDetail;
-	s_settingsMenu->performance.textureFilter = preset->textureFilter;
-	s_settingsMenu->performance.toneMappingType = preset->toneMappingType;
-	s_settingsMenu->performance.vertexLighting = preset->vertexLighting;
-	s_settingsMenu->performance.dynamicLighting = preset->dynamicLighting;
-	s_settingsMenu->performance.bloom = preset->bloom;
-	s_settingsMenu->performance.pbr = preset->pbr;
-	s_settingsMenu->performance.hdr = preset->hdr;
-	s_settingsMenu->performance.postProcessing = preset->postProcessing;
-	s_settingsMenu->performance.normalMapping = preset->normalMapping;
-	s_settingsMenu->performance.specularMapping = preset->specularMapping;
-	s_settingsMenu->performance.depthMapping = preset->depthMapping;
-	s_settingsMenu->performance.toneMapping = preset->toneMapping;
+	s_settingsMenu->performance.multisampleType = preset->basic.multisampleType;
+	s_settingsMenu->advancedPerformance.anisotropicFilter = preset->advanced.anisotropicFilter;
+	s_settingsMenu->performance.textureDetail = preset->basic.textureDetail;
+	s_settingsMenu->performance.textureFilter = preset->basic.textureFilter;
+	s_settingsMenu->advancedPerformance.toneMappingType = preset->advanced.toneMappingType;
+	s_settingsMenu->performance.vertexLighting = preset->basic.vertexLighting;
+	s_settingsMenu->performance.dynamicLighting = preset->basic.dynamicLighting;
+	s_settingsMenu->performance.bloom = preset->basic.bloom;
+	s_settingsMenu->performance.pbr = preset->basic.pbr;
+	s_settingsMenu->performance.hdr = preset->basic.hdr;
+	s_settingsMenu->advancedPerformance.postProcessing = preset->advanced.postProcessing;
+	s_settingsMenu->advancedPerformance.normalMapping = preset->advanced.normalMapping;
+	s_settingsMenu->advancedPerformance.specularMapping = preset->advanced.specularMapping;
+	s_settingsMenu->advancedPerformance.depthMapping = preset->advanced.depthMapping;
+	s_settingsMenu->advancedPerformance.toneMapping = preset->advanced.toneMapping;
 }
 
 static inline void SfxFocused( const void *item ) {
@@ -1196,6 +1207,165 @@ static void ControlsMenu_Draw( void )
 	ImGui::EndTable();
 }
 
+static void PerformanceMenu_DrawBasic( void )
+{
+	ImGui::BeginTable( "##PerformanceSettingsMenuConfigTable", 2 );
+
+	SettingsMenu_MultiAdjustable( "Anti Aliasing", "AntiAliasing",
+		"Sets anti-aliasing technique used by the engine",
+		s_settingsMenu->performance.multisampleTypes, s_settingsMenu->performance.numMultisampleTypes,
+		&s_settingsMenu->performance.multisampleType,
+		s_settingsMenu->advancedPerformance.postProcessing );
+	
+	ImGui::TableNextRow();
+	
+	SettingsMenu_MultiAdjustable( "Texture Quality", "TextureQuality",
+		"Sets the quality of textures rendered, may effect performance",
+		s_settingsMenu->performance.textureDetails, s_settingsMenu->performance.numTextureDetails,
+		&s_settingsMenu->performance.textureDetail, true );
+	
+	ImGui::TableNextRow();
+
+	SettingsMenu_MultiAdjustable( "Texture Filtering", "TextureFiltering",
+		"Sets the type of texture filtering",
+		s_settingsMenu->advancedPerformance.anisotropyTypes, s_settingsMenu->advancedPerformance.numAnisotropyTypes,
+		&s_settingsMenu->advancedPerformance.anisotropicFilter, true );
+	
+	ImGui::TableNextRow();
+	
+	SettingsMenu_RadioButton( "Bloom", "Bloom",
+		"Enables bloom to make light sources stand out more in an environment",
+		&s_settingsMenu->performance.bloom, s_settingsMenu->advancedPerformance.postProcessing );
+
+	ImGui::TableNextRow();
+
+	SettingsMenu_RadioButton( "Vertex Lighting", "VertexLighting",
+		"Enables per-vertex software lighting",
+		&s_settingsMenu->performance.vertexLighting, true );
+		
+	ImGui::TableNextRow();
+
+	SettingsMenu_RadioButton( "Dynamic Lighting", "DynamicLighting",
+		"Enables per-pixel hardware accelerated lighting, slower than vertex lighting, but much higher quality",
+		&s_settingsMenu->performance.dynamicLighting, true );
+	
+	ImGui::EndTable();
+}
+
+static void PerformanceMenu_DrawAdvanced( void )
+{
+	if ( ImGui::CollapsingHeader( "Framebuffer Settings" ) ) {
+		ImGui::BeginTable( "##PerformanceSettingsMenuConfigTableFramebuffer", 2 );
+
+		SettingsMenu_RadioButton( "Post Processing", "PostProcessing",
+			"Toggles multiple framebuffers being used to apply special affects to a frame",
+			&s_settingsMenu->advancedPerformance.postProcessing, true );
+		
+		ImGui::TableNextRow();
+
+		SettingsMenu_MultiAdjustable( "Anti Aliasing", "AntiAliasing",
+			"Sets anti-aliasing technique used by the engine",
+			s_settingsMenu->performance.multisampleTypes, s_settingsMenu->performance.numMultisampleTypes,
+			&s_settingsMenu->performance.multisampleType,
+			s_settingsMenu->advancedPerformance.postProcessing );
+		
+		ImGui::TableNextRow();
+
+		SettingsMenu_RadioButton( "High Dynamic Range", "HDR",
+			"Enables HDR (High Dynamic Range) texture/framebuffer usage, uses more GPU memory but allows for much more "
+			"range in rendered color palette",
+			&s_settingsMenu->performance.hdr, s_settingsMenu->advancedPerformance.postProcessing );
+
+		ImGui::TableNextRow();
+
+		SettingsMenu_RadioButton( "Physically Based Rendering", "PBR",
+			"Enables Physically Based Rendering (PBR) for a more realistic texture look.",
+			&s_settingsMenu->performance.pbr, true );
+
+		ImGui::TableNextRow();
+
+		SettingsMenu_RadioButton( "Bloom", "Bloom",
+			"Enables bloom to make light sources stand out more in an environment",
+			&s_settingsMenu->performance.bloom, s_settingsMenu->advancedPerformance.postProcessing );
+
+		ImGui::EndTable();
+	}
+	if ( ImGui::CollapsingHeader( "GPU Shader Settings" ) ) {
+		ImGui::BeginTable( "##PerformanceSettingsMenuConfigTableGPUShader", 2 );
+
+		SettingsMenu_RadioButton( "Tone Mapping", "ToneMapping",
+			"Enables a more diverse range of colors when applying lighting to a scene",
+			&s_settingsMenu->advancedPerformance.toneMapping, true );
+
+		ImGui::TableNextRow();
+
+		SettingsMenu_MultiAdjustable( "Tone Mapping Type", "ToneMappingType",
+			"Sets the desired tone mapping type.\n"
+			"NOTE: Reinhard uses a fixed range, and makes darker spots less detailed, Exposure uses an adjustable level",
+			s_settingsMenu->advancedPerformance.toneMappingTypes, s_settingsMenu->advancedPerformance.numToneMappingTypes,
+			&s_settingsMenu->advancedPerformance.toneMappingType, s_settingsMenu->advancedPerformance.toneMapping );
+		
+		ImGui::EndTable();
+	}
+	if ( ImGui::CollapsingHeader( "Texture Settings" ) ) {
+		ImGui::BeginTable( "##PerformanceSettingsMenuConfigTableTextureStuff", 2 );
+
+		SettingsMenu_MultiAdjustable( "Anisotropic Filtering", "AnisotropicFiltering",
+			"Sets the level of anisotropic filtering that is applied to textures",
+			s_settingsMenu->advancedPerformance.anisotropyTypes, s_settingsMenu->advancedPerformance.numAnisotropyTypes,
+			&s_settingsMenu->advancedPerformance.anisotropicFilter, true );
+
+		ImGui::TableNextRow();
+
+		SettingsMenu_MultiAdjustable( "Texture Quality", "TextureQuality",
+			"Sets the quality of textures rendered, may effect performance",
+			s_settingsMenu->performance.textureDetails, s_settingsMenu->performance.numTextureDetails,
+			&s_settingsMenu->performance.textureDetail, true );
+
+		ImGui::TableNextRow();
+
+		SettingsMenu_MultiAdjustable( "Default Texture Filtering", "TextureFiltering",
+			"Sets the type of texture filtering",
+			s_settingsMenu->performance.textureFilters, s_settingsMenu->performance.numTextureFilters,
+			&s_settingsMenu->performance.textureFilter, true );
+
+		ImGui::TableNextRow();
+
+		SettingsMenu_RadioButton( "Normal Mapping", "BumpMapping",
+			"Toggles usage of normal maps",
+			&s_settingsMenu->advancedPerformance.normalMapping, true );
+
+		ImGui::TableNextRow();
+
+		SettingsMenu_RadioButton( "Specular Mapping", "SpecularMapping",
+			"Toggles usage of specular maps",
+			&s_settingsMenu->advancedPerformance.specularMapping, true );
+
+		ImGui::TableNextRow();
+
+		SettingsMenu_RadioButton( "Parallax Mapping", "ParallaxMapping",
+			"Toggles usage of parallax maps",
+			&s_settingsMenu->advancedPerformance.depthMapping, true );
+		
+		ImGui::EndTable();
+	}
+	if ( ImGui::CollapsingHeader( "Lighting" ) ) {
+		ImGui::BeginTable( "##PerformanceSettingsMenuConfigTableLighting", 2 );
+
+		SettingsMenu_RadioButton( "Vertex Lighting", "VertexLighting",
+			"Enables per-vertex software lighting",
+			&s_settingsMenu->performance.vertexLighting, true );
+
+		ImGui::TableNextRow();
+
+		SettingsMenu_RadioButton( "Dynamic Lighting", "DynamicLighting",
+			"Enables per-pixel hardware accelerated lighting, slower than vertex lighting, but much higher quality",
+			&s_settingsMenu->performance.dynamicLighting, true );
+		
+		ImGui::EndTable();
+	}
+}
+
 static void PerformanceMenu_Draw( void )
 {
 	int preset;
@@ -1204,6 +1374,7 @@ static void PerformanceMenu_Draw( void )
 
 	ImGui::BeginTable( "##PerformanceSettingsMenuConfigTable", 2 );
 	{
+		/*
 		preset = s_settingsMenu->preset;
 		SettingsMenu_MultiAdjustable( "Preset", "GraphicsPresets",
 			"",
@@ -1215,104 +1386,20 @@ static void PerformanceMenu_Draw( void )
 		}
 
 		ImGui::TableNextRow();
+		*/
 
-		SettingsMenu_MultiAdjustable( strManager->ValueForKey( "GAMEUI_ANTIALIASING" )->value, "AntiAliasing",
-			"Sets anti-aliasing technique used by the engine",
-			s_settingsMenu->performance.multisampleTypes, s_settingsMenu->performance.numMultisampleTypes,
-			&s_settingsMenu->performance.multisampleType,
-			s_settingsMenu->performance.postProcessing );
+		SettingsMenu_RadioButton( "Advanced Settings", "AdvancedSettings",
+			"Shows advanced settings, don't use if you aren't familiar with graphics programming.",
+			&s_settingsMenu->advancedSettings, true );
 
-		ImGui::TableNextRow();
+		ImGui::EndTable();
 
-		SettingsMenu_MultiAdjustable( strManager->ValueForKey( "GAMEUI_ANISOTROPY" )->value, "AnisotropicFiltering",
-			"",
-			s_settingsMenu->performance.anisotropyTypes, s_settingsMenu->performance.numAnisotropyTypes,
-			&s_settingsMenu->performance.anisotropicFilter, true );
-
-		ImGui::TableNextRow();
-
-		SettingsMenu_MultiAdjustable( strManager->ValueForKey( "GAMEUI_TEXDETAIL" )->value, "TextureQuality",
-			"Sets the quality of textures rendered, may effect performance",
-			s_settingsMenu->performance.textureDetails, s_settingsMenu->performance.numTextureDetails,
-			&s_settingsMenu->performance.textureDetail, true );
-
-		ImGui::TableNextRow();
-
-		SettingsMenu_MultiAdjustable( strManager->ValueForKey( "GAMEUI_TEXFILTER" )->value, "TextureFiltering",
-			"Sets the type of texture filtering",
-			s_settingsMenu->performance.textureFilters, s_settingsMenu->performance.numTextureFilters,
-			&s_settingsMenu->performance.textureFilter, true );
-
-		ImGui::TableNextRow();
-
-		SettingsMenu_RadioButton( strManager->ValueForKey( "GAMEUI_HDR" )->value, "HDR",
-			"Enables HDR (High Dynamic Range) texture/framebuffer usage, uses more GPU memory but allows for much more "
-			"range in rendered color palette",
-			&s_settingsMenu->performance.hdr, s_settingsMenu->performance.postProcessing );
-		
-		ImGui::TableNextRow();
-
-		SettingsMenu_RadioButton( strManager->ValueForKey( "GAMEUI_PBR" )->value, "PBR",
-			"Enables Physically Based Rendering (PBR) for a more realistic texture look.",
-			&s_settingsMenu->performance.pbr, true );
-		
-		ImGui::TableNextRow();
-
-		SettingsMenu_RadioButton( strManager->ValueForKey( "GAMEUI_BLOOM" )->value, "Bloom",
-			"Enables bloom to make light sources stand out more in an environment",
-			&s_settingsMenu->performance.bloom, s_settingsMenu->performance.postProcessing );
-
-		ImGui::TableNextRow();
-
-		SettingsMenu_RadioButton( strManager->ValueForKey( "GAMEUI_VERTEXLIGHT" )->value, "VertexLighting",
-			"Enables per-vertex software lighting",
-			&s_settingsMenu->performance.vertexLighting, true );
-		
-		ImGui::TableNextRow();
-
-		SettingsMenu_RadioButton( strManager->ValueForKey( "GAMEUI_DYNLIGHT" )->value, "DynamicLighting",
-			"Enables per-pixel hardware accelerated lighting, slower than vertex lighting, but much higher quality",
-			&s_settingsMenu->performance.dynamicLighting, true );
-		
-		ImGui::TableNextRow();
-
-		SettingsMenu_RadioButton( strManager->ValueForKey( "GAMEUI_TONEMAP" )->value, "ToneMapping",
-			"Enables a more diverse range of colors when applying lighting to a scene",
-			&s_settingsMenu->performance.toneMapping, true );
-
-		ImGui::TableNextRow();
-
-		SettingsMenu_MultiAdjustable( strManager->ValueForKey( "GAMEUI_TONEMAPTYPE" )->value, "ToneMappingType",
-			"Sets the desired tone mapping type.\n"
-			"NOTE: Reinhard uses a fixed range, and makes darker spots less detailed, Exposure uses an adjustable level",
-			s_settingsMenu->performance.toneMappingTypes, s_settingsMenu->performance.numToneMappingTypes,
-			&s_settingsMenu->performance.toneMappingType, s_settingsMenu->performance.toneMapping );
-
-		ImGui::TableNextRow();
-
-		SettingsMenu_RadioButton( strManager->ValueForKey( "GAMEUI_NORMALMAP" )->value, "BumpMapping",
-			"Toggles usage of normal maps",
-			&s_settingsMenu->performance.normalMapping, true );
-		
-		ImGui::TableNextRow();
-
-		SettingsMenu_RadioButton( strManager->ValueForKey( "GAMEUI_SPECULARMAP" )->value, "SpecularMapping",
-			"Toggles usage of specular maps",
-			&s_settingsMenu->performance.specularMapping, true );
-		
-		ImGui::TableNextRow();
-
-		SettingsMenu_RadioButton( strManager->ValueForKey( "GAMEUI_DEPTHMAP" )->value, "ParallaxMapping",
-			"Toggles usage of parallax maps",
-			&s_settingsMenu->performance.depthMapping, true );
-		
-		ImGui::TableNextRow();
-
-		SettingsMenu_RadioButton( strManager->ValueForKey( "GAMEUI_POSTPROCESS" )->value, "PostProcessing",
-			"Toggles multiple framebuffers being used to apply special affects to a frame",
-			&s_settingsMenu->performance.postProcessing, true );
+		if ( s_settingsMenu->advancedSettings ) {
+			PerformanceMenu_DrawAdvanced();
+		} else {
+			PerformanceMenu_DrawBasic();
+		}
 	}
-	ImGui::EndTable();
 
 	ImGui::Begin( "##GPUMemoryInfo", NULL, MENU_DEFAULT_FLAGS | ImGuiWindowFlags_AlwaysAutoResize & ~( ImGuiWindowFlags_NoBackground ) );
 	ImGui::SetWindowPos( ImVec2( 900 * ui->scale, 600 * ui->scale ) );
@@ -1470,10 +1557,21 @@ static void PerformanceMenu_Save( void )
 {
 	bool needRestart = false, restartFBO = false;
 
-	if ( s_settingsMenu->performance.normalMapping != s_initial->performance.normalMapping ) {
+	if ( !s_settingsMenu->advancedSettings ) {
+		if ( s_settingsMenu->performance.textureDetail > TexDetail_Normie ) {
+			s_settingsMenu->advancedPerformance.normalMapping = qtrue;
+			s_settingsMenu->advancedPerformance.specularMapping = qtrue;
+		}
+		if ( s_settingsMenu->performance.textureDetail >= TexDetail_Normie ) {
+			s_settingsMenu->performance.hdr = qtrue;
+			s_settingsMenu->performance.pbr = qtrue;
+		}
+	}
+
+	if ( s_settingsMenu->advancedPerformance.normalMapping != s_initial->advancedPerformance.normalMapping ) {
 		needRestart = true;
 	}
-	if ( s_settingsMenu->performance.specularMapping != s_initial->performance.specularMapping ) {
+	if ( s_settingsMenu->advancedPerformance.specularMapping != s_initial->advancedPerformance.specularMapping ) {
 		needRestart = true;
 	}
 	if ( s_settingsMenu->performance.textureDetail != s_initial->performance.textureDetail ) {
@@ -1520,50 +1618,47 @@ static void PerformanceMenu_Save( void )
 	if ( s_settingsMenu->performance.bloom != s_initial->performance.bloom ) {
 		restartFBO = true;
 	}
-	if ( s_settingsMenu->performance.postProcessing != s_initial->performance.postProcessing ) {
+	if ( s_settingsMenu->advancedPerformance.postProcessing != s_initial->advancedPerformance.postProcessing ) {
 		restartFBO = true;
 	}
 	if ( s_settingsMenu->performance.textureDetail != s_initial->performance.textureDetail ) {
 		needRestart = true;
 	}
-	if ( s_settingsMenu->performance.normalMapping != s_initial->performance.normalMapping ) {
+	if ( s_settingsMenu->advancedPerformance.normalMapping != s_initial->advancedPerformance.normalMapping ) {
 		needRestart = true;
 	}
-	if ( s_settingsMenu->performance.specularMapping != s_initial->performance.specularMapping ) {
+	if ( s_settingsMenu->advancedPerformance.specularMapping != s_initial->advancedPerformance.specularMapping ) {
 		needRestart = true;
 	}
 
-	switch ( s_settingsMenu->performance.anisotropicFilter ) {
+	switch ( s_settingsMenu->advancedPerformance.anisotropicFilter ) {
 	case 0:
-		Cvar_Set( "r_arb_texture_max_anisotropy", "0" );
-		break;
-	case 1:
 		Cvar_Set( "r_arb_texture_max_anisotropy", "2" );
 		break;
-	case 2:
+	case 1:
 		Cvar_Set( "r_arb_texture_max_anisotropy", "4" );
 		break;
-	case 3:
+	case 2:
 		Cvar_Set( "r_arb_texture_max_anisotropy", "8" );
 		break;
-	case 4:
+	case 3:
 		Cvar_Set( "r_arb_texture_max_anisotropy", "16" );
 		break;
-	case 5:
+	case 4:
 		Cvar_Set( "r_arb_texture_max_anisotropy", "32" );
 		break;
 	};
 
 	Cvar_Set( "r_textureMode", s_settingsMenu->performance.textureFilters[ s_settingsMenu->performance.textureFilter ] );
 	Cvar_SetIntegerValue( "r_textureDetail", s_settingsMenu->performance.textureDetail );
-	Cvar_SetIntegerValue( "r_normalMapping", s_settingsMenu->performance.normalMapping );
+	Cvar_SetIntegerValue( "r_normalMapping", s_settingsMenu->advancedPerformance.normalMapping );
 	Cvar_SetIntegerValue( "r_pbr", s_settingsMenu->performance.pbr );
 	Cvar_SetIntegerValue( "r_bloom", s_settingsMenu->performance.bloom );
-	Cvar_SetIntegerValue( "r_postProcess", s_settingsMenu->performance.postProcessing );
+	Cvar_SetIntegerValue( "r_postProcess", s_settingsMenu->advancedPerformance.postProcessing );
 	Cvar_SetIntegerValue( "r_vertexLight", s_settingsMenu->performance.vertexLighting );
 	Cvar_SetIntegerValue( "r_dynamiclight", s_settingsMenu->performance.dynamicLighting );
-	Cvar_SetIntegerValue( "r_toneMap", s_settingsMenu->performance.toneMapping );
-	Cvar_SetIntegerValue( "r_toneMapType", s_settingsMenu->performance.toneMappingType );
+	Cvar_SetIntegerValue( "r_toneMap", s_settingsMenu->advancedPerformance.toneMapping );
+	Cvar_SetIntegerValue( "r_toneMapType", s_settingsMenu->advancedPerformance.toneMappingType );
 
 	if ( !needRestart && restartFBO ) {
 		Cbuf_ExecuteText( EXEC_APPEND, "vid_restart_fbo\n" );
@@ -1618,41 +1713,38 @@ static void PerformanceMenu_SetDefault( void )
 	const char *textureMode;
 
 	switch ( Cvar_VariableInteger( "r_arb_texture_max_anisotropy" ) ) {
-	case 0:
-		s_settingsMenu->performance.anisotropicFilter = 0;
-		break;
 	case 2:
-		s_settingsMenu->performance.anisotropicFilter = 1;
+		s_settingsMenu->advancedPerformance.anisotropicFilter = 0;
 		break;
 	case 4:
-		s_settingsMenu->performance.anisotropicFilter = 2;
+		s_settingsMenu->advancedPerformance.anisotropicFilter = 1;
 		break;
 	case 8:
-		s_settingsMenu->performance.anisotropicFilter = 3;
+		s_settingsMenu->advancedPerformance.anisotropicFilter = 2;
 		break;
 	case 16:
-		s_settingsMenu->performance.anisotropicFilter = 4;
+		s_settingsMenu->advancedPerformance.anisotropicFilter = 3;
 		break;
 	case 32:
-		s_settingsMenu->performance.anisotropicFilter = 5;
+		s_settingsMenu->advancedPerformance.anisotropicFilter = 4;
 		break;
 	};
 
 	s_settingsMenu->performance.multisampleType = Cvar_VariableInteger( "r_multisampleType" );
-	s_settingsMenu->performance.depthMapping = Cvar_VariableInteger( "r_parallaxMapping" );
-	s_settingsMenu->performance.specularMapping = Cvar_VariableInteger( "r_specularMapping" );
-	s_settingsMenu->performance.normalMapping = Cvar_VariableInteger( "r_normalMapping" );
-	s_settingsMenu->performance.postProcessing = Cvar_VariableInteger( "r_postProcess" );
-	s_settingsMenu->performance.toneMappingType = Cvar_VariableInteger( "r_toneMapType" );
-	s_settingsMenu->performance.toneMapping = Cvar_VariableInteger( "r_toneMap" );
+	s_settingsMenu->advancedPerformance.depthMapping = Cvar_VariableInteger( "r_parallaxMapping" );
+	s_settingsMenu->advancedPerformance.specularMapping = Cvar_VariableInteger( "r_specularMapping" );
+	s_settingsMenu->advancedPerformance.normalMapping = Cvar_VariableInteger( "r_normalMapping" );
+	s_settingsMenu->advancedPerformance.postProcessing = Cvar_VariableInteger( "r_postProcess" );
+	s_settingsMenu->advancedPerformance.toneMappingType = Cvar_VariableInteger( "r_toneMapType" );
+	s_settingsMenu->advancedPerformance.toneMapping = Cvar_VariableInteger( "r_toneMap" );
 	s_settingsMenu->performance.textureDetail = Cvar_VariableInteger( "r_textureDetail" );
 	s_settingsMenu->performance.bloom = Cvar_VariableInteger( "r_bloom" );
 	s_settingsMenu->performance.hdr = Cvar_VariableInteger( "r_hdr" );
 	s_settingsMenu->performance.pbr = Cvar_VariableInteger( "r_pbr" );
 
-	s_settingsMenu->performance.bufferMode = Cvar_VariableInteger( "r_drawMode" );
+	s_settingsMenu->advancedPerformance.bufferMode = Cvar_VariableInteger( "r_drawMode" );
 
-	s_settingsMenu->performance.advancedSettings = qfalse;
+	s_settingsMenu->advancedSettings = qfalse;
 	
 	textureMode = Cvar_VariableString( "r_textureMode" );
 	for ( i = 0; i < s_settingsMenu->performance.numTextureDetails; i++ ) {
@@ -1777,11 +1869,20 @@ static void SettingsMenu_Draw( void )
 		s_settingsMenu->preset = PRESET_CUSTOM;
 	}
 
+		if ( !ImGui::IsAnyItemHovered() ) {
+		s_settingsMenu->focusedItem = NULL;
+	}
+	ImGui::GetStyle().ItemSpacing = itemSpacing;
+	ImGui::End();
+
 	//
 	// draw the other widgets (save/setdefaults)
 	//
 	if ( s_settingsMenu->modified ) {
-		ImGui::SetCursorScreenPos( ImVec2( 256 * ui->scale, 680 * ui->scale ) );
+		ImGui::Begin( "##SettingsMenuButtons", NULL, MENU_DEFAULT_FLAGS | ImGuiWindowFlags_AlwaysAutoResize );
+		ImGui::SetWindowPos( ImVec2( 280 * ui->scale, 670 * ui->scale ) );
+		ImGui::SetCursorScreenPos( ImVec2( 280 * ui->scale, 680 * ui->scale ) );
+		ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * 2.75f );
 		if ( in_mode->i == 0 ) {
 			ImGui::Image( (ImTextureID)(uintptr_t)( s_settingsMenu->saveHovered ? s_settingsMenu->save_1 : s_settingsMenu->save_0 ),
 				ImVec2( 256 * ui->scale, 72 * ui->scale ) );
@@ -1825,7 +1926,7 @@ static void SettingsMenu_Draw( void )
 			SettingsMenu_GetInitial();
 		}
 
-		ImGui::SetCursorScreenPos( ImVec2( 528 * ui->scale, 680 * ui->scale ) );
+		ImGui::SetCursorScreenPos( ImVec2( 540 * ui->scale, 680 * ui->scale ) );
 		if ( in_mode->i == 0 ) {
 			ImGui::Image( (ImTextureID)(uintptr_t)( s_settingsMenu->setDefaultsHovered ? s_settingsMenu->reset_1 : s_settingsMenu->reset_0 ),
 				ImVec2( 256 * ui->scale, 72 * ui->scale ) );
@@ -1868,15 +1969,8 @@ static void SettingsMenu_Draw( void )
 				break;
 			};
 		}
+		ImGui::End();
 	}
-
-	if ( !ImGui::IsAnyItemHovered() ) {
-		s_settingsMenu->focusedItem = NULL;
-	}
-
-	ImGui::GetStyle().ItemSpacing = itemSpacing;
-
-	ImGui::End();
 }
 
 qboolean R_HasExtension( const char *ext )
@@ -1902,8 +1996,8 @@ void SettingsMenu_Cache( void )
 	    strManager->ValueForKey( "GAMEUI_8X_MSAA" )->value,
 	    strManager->ValueForKey( "GAMEUI_16X_MSAA" )->value,
 	    strManager->ValueForKey( "GAMEUI_32X_MSAA" )->value,
-	    strManager->ValueForKey( "GAMEUI_2X_SSAA" )->value,
-	    strManager->ValueForKey( "GAMEUI_4X_SSAA" )->value,
+//	    strManager->ValueForKey( "GAMEUI_2X_SSAA" )->value,
+//	    strManager->ValueForKey( "GAMEUI_4X_SSAA" )->value,
 	};
 	static const char *s_anisotropyTypes[] = {
 	    strManager->ValueForKey( "GAMEUI_ANISOTROPIC2X" )->value,
@@ -2005,14 +2099,14 @@ void SettingsMenu_Cache( void )
 	s_settingsMenu->menu.draw = SettingsMenu_Draw;
 	s_settingsMenu->menu.flags = MENU_DEFAULT_FLAGS;
 	s_settingsMenu->menu.width = ui->gpuConfig.vidWidth * 0.60f;
-	s_settingsMenu->menu.height = ui->gpuConfig.vidHeight;
+	s_settingsMenu->menu.height = ui->gpuConfig.vidHeight - ( 100 * ui->scale );
 	s_settingsMenu->menu.titleFontScale = 3.5f;
 	s_settingsMenu->menu.textFontScale = 1.5f;
 	s_settingsMenu->lastChild = ID_VIDEO;
 
-	s_settingsMenu->performance.toneMappingTypes = s_toneMappingTypes;
+	s_settingsMenu->advancedPerformance.toneMappingTypes = s_toneMappingTypes;
 	s_settingsMenu->performance.multisampleTypes = s_multisampleTypes;
-	s_settingsMenu->performance.anisotropyTypes = s_anisotropyTypes;
+	s_settingsMenu->advancedPerformance.anisotropyTypes = s_anisotropyTypes;
 	s_settingsMenu->performance.textureDetails = s_textureDetail;
 	s_settingsMenu->performance.textureFilters = s_textureFilters;
 	s_settingsMenu->presetNames = s_presetLabels;
@@ -2026,10 +2120,10 @@ void SettingsMenu_Cache( void )
 	s_settingsMenu->video.numWindowSizes = arraylen( s_windowSizes );
 
 	s_settingsMenu->performance.numMultisampleTypes = arraylen( s_multisampleTypes );
-	s_settingsMenu->performance.numAnisotropyTypes = arraylen( s_anisotropyTypes );
+	s_settingsMenu->advancedPerformance.numAnisotropyTypes = arraylen( s_anisotropyTypes );
 	s_settingsMenu->performance.numTextureDetails = arraylen( s_textureDetail );
 	s_settingsMenu->performance.numTextureFilters = arraylen( s_textureFilters );
-	s_settingsMenu->performance.numToneMappingTypes = arraylen( s_toneMappingTypes );
+	s_settingsMenu->advancedPerformance.numToneMappingTypes = arraylen( s_toneMappingTypes );
 
 	s_settingsMenu->gameplay.numDifficultyTypes = arraylen( difficulties );
 

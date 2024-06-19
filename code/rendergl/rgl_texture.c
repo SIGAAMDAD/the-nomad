@@ -1589,15 +1589,16 @@ static qboolean RawImage_ScaleToPower2( byte **data, int *inout_width, int *inou
 	return scaled;
 }
 
-static qboolean RawImage_HasAlpha(const byte *scan, uint32_t numPixels)
+static qboolean RawImage_HasAlpha( const byte *scan, uint32_t numPixels )
 {
 	uint32_t i;
 
-	if (!scan)
+	if ( !scan ) {
 		return qtrue;
+	}
 	
-	for (i = 0; i < numPixels; i++) {
-		if (scan[i*4 + 3] != 255) {
+	for ( i = 0; i < numPixels; i++ ) {
+		if ( scan[i*4 + 3] != 255 ) {
 			return qtrue;
 		}
 	}
@@ -1608,51 +1609,77 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 {
 	uint32_t samples = 3;
 	GLenum internalFormat = GL_RGB;
-	qboolean forceNoCompression = (flags & IMGFLAG_NO_COMPRESSION);
-	qboolean normalmap = (type == IMGTYPE_NORMAL || type == IMGTYPE_NORMALHEIGHT);
+	qboolean forceNoCompression = ( flags & IMGFLAG_NO_COMPRESSION );
+	qboolean normalmap = ( type == IMGTYPE_NORMAL || type == IMGTYPE_NORMALHEIGHT );
 
-	if (picFormat != GL_RGBA8)
+	if ( picFormat != GL_RGBA8 ) {
 		return picFormat;
+	}
 
-	if (normalmap) {
-		if ((type == IMGTYPE_NORMALHEIGHT) && RawImage_HasAlpha(data, numPixels)) {
-			if (!forceNoCompression && glContext.textureCompressionRef & TCR_BPTC) {
+	if ( normalmap ) {
+		if ( ( type == IMGTYPE_NORMALHEIGHT ) && RawImage_HasAlpha( data, numPixels ) ) {
+			if ( !forceNoCompression && glContext.textureCompressionRef & TCR_BPTC ) {
 				internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM_ARB;
 			}
-			else if (!forceNoCompression && glContext.textureCompression == TC_S3TC_ARB) {
+			else if ( !forceNoCompression && glContext.textureCompression == TC_S3TC_ARB ) {
 				internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 			}
 			else if ( r_textureBits->i == 16 ) {
-				if ( r_hdr->i ) {
-					internalFormat = GL_RGBA16F;
-				} else {
-					internalFormat = GL_RGBA4;
+					if ( r_hdr->i ) {
+						internalFormat = GL_RGBA16F;
+					} else {
+						internalFormat = GL_RGBA4;
+					}
 				}
-			}
-			else if ( r_textureBits->i == 32 ) {
-				if ( r_hdr->i ) {
-					internalFormat = GL_RGBA32F;
-				} else {
-					internalFormat = GL_RGBA8;
+				else if ( r_textureBits->i == 32 ) {
+					if ( r_hdr->i ) {
+						internalFormat = GL_RGBA32F;
+					} else {
+						internalFormat = GL_RGBA8;
+					}
 				}
-			}
-			else {
-				internalFormat = GL_RGBA;
-			}
+				else {
+					internalFormat = GL_RGBA;
+					/*
+					switch ( r_textureDetail->i ) {
+					case TexDetail_MSDOS:
+					case TexDetail_IntegratedGPU:
+						internalFormat = GL_RGBA4;
+						break;
+					case TexDetail_Normie:
+						internalFormat = GL_RGBA8;
+						break;
+					case TexDetail_ExpensiveShitWeveGotHere: {
+						if ( r_hdr->i ) {
+							internalFormat = GL_RGBA16F;
+						} else {
+							internalFormat = GL_RGBA12;
+						}
+						break; }
+					case TexDetail_GPUvsGod: {
+						if ( r_hdr->i ) {
+							internalFormat = GL_RGBA32F;
+						} else {
+							internalFormat = GL_RGBA16;
+						}
+						break; }
+					};
+					*/
+				}
 		}
 		else {
-			if (!forceNoCompression && glContext.textureCompressionRef & TCR_RGTC) {
+			if ( !forceNoCompression && glContext.textureCompressionRef & TCR_RGTC ) {
 				internalFormat = GL_COMPRESSED_RG_RGTC2;
 			}
-			else if (!forceNoCompression && glContext.textureCompressionRef & TCR_BPTC) {
+			else if ( !forceNoCompression && glContext.textureCompressionRef & TCR_BPTC ) {
 				internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM_ARB;
 			}
-			else if (!forceNoCompression && glContext.textureCompression == TC_S3TC_ARB) {
+			else if ( !forceNoCompression && glContext.textureCompression == TC_S3TC_ARB ) {
 				internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 			}
 			else if ( r_textureBits->i == 16 ) {
 				if ( r_hdr->i ) {
-					internalFormat = GL_RGBA16F;
+					internalFormat = GL_RGB16F;
 				} else {
 					internalFormat = GL_RGB5;
 				}
@@ -1666,6 +1693,31 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 			}
 			else {
 				internalFormat = GL_RGB;
+				/*
+				switch ( r_textureDetail->i ) {
+				case TexDetail_MSDOS:
+				case TexDetail_IntegratedGPU:
+					internalFormat = GL_RGB4;
+					break;
+				case TexDetail_Normie:
+					internalFormat = GL_RGB8;
+					break;
+				case TexDetail_ExpensiveShitWeveGotHere: {
+					if ( r_hdr->i ) {
+						internalFormat = GL_RGB16F;
+					} else {
+						internalFormat = GL_RGB12;
+					}
+					break; }
+				case TexDetail_GPUvsGod: {
+					if ( r_hdr->i ) {
+						internalFormat = GL_RGB32F;
+					} else {
+						internalFormat = GL_RGB16;
+					}
+					break; }
+				};
+				*/
 			}
 		}
 	}
@@ -1682,11 +1734,12 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 
 		// select proper internal format
 		if ( samples == 3 ) {
-			if (r_greyscale->i) {
-				if (r_textureBits->i == 16 || r_textureBits->i == 32)
+			if ( r_greyscale->i ) {
+				if ( r_textureBits->i == 16 || r_textureBits->i == 32 ) {
 					internalFormat = GL_LUMINANCE8;
-				else
+				} else {
 					internalFormat = GL_LUMINANCE;
+				}
 			}
 			else {
 				if ( !forceNoCompression && (glContext.textureCompressionRef & TCR_BPTC) ) {
@@ -1700,7 +1753,7 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 				}
 				else if ( r_textureBits->i == 16 ) {
 					if ( r_hdr->i ) {
-						internalFormat = GL_RGBA16F;
+						internalFormat = GL_RGB16F;
 					} else {
 						internalFormat = GL_RGB5;
 					}
@@ -1714,6 +1767,31 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 				}
 				else {
 					internalFormat = GL_RGB;
+					/*
+					switch ( r_textureDetail->i ) {
+					case TexDetail_MSDOS:
+					case TexDetail_IntegratedGPU:
+						internalFormat = GL_RGB4;
+						break;
+					case TexDetail_Normie:
+						internalFormat = GL_RGB8;
+						break;
+					case TexDetail_ExpensiveShitWeveGotHere: {
+						if ( r_hdr->i ) {
+							internalFormat = GL_RGB16F;
+						} else {
+							internalFormat = GL_RGB12;
+						}
+						break; }
+					case TexDetail_GPUvsGod: {
+						if ( r_hdr->i ) {
+							internalFormat = GL_RGB32F;
+						} else {
+							internalFormat = GL_RGB16;
+						}
+						break; }
+					};
+					*/
 				}
 			}
 		}
@@ -1748,6 +1826,31 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 				}
 				else {
 					internalFormat = GL_RGBA;
+					/*
+					switch ( r_textureDetail->i ) {
+					case TexDetail_MSDOS:
+					case TexDetail_IntegratedGPU:
+						internalFormat = GL_RGBA4;
+						break;
+					case TexDetail_Normie:
+						internalFormat = GL_RGBA8;
+						break;
+					case TexDetail_ExpensiveShitWeveGotHere: {
+						if ( r_hdr->i ) {
+							internalFormat = GL_RGBA16F;
+						} else {
+							internalFormat = GL_RGBA12;
+						}
+						break; }
+					case TexDetail_GPUvsGod: {
+						if ( r_hdr->i ) {
+							internalFormat = GL_RGBA32F;
+						} else {
+							internalFormat = GL_RGBA16;
+						}
+						break; }
+					};
+					*/
 				}
 			}
 		}

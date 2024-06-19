@@ -52,9 +52,9 @@ namespace TheNomad::SGame {
 			
 			// these specific movement commands MUST NOT CHANGE as they are hardcoded into the engine
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_Down_f ), "+north", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_f ), "+north", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_Up_f ), "-north", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_f ), "-north", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveSouth_f ), "+south", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
@@ -327,7 +327,7 @@ namespace TheNomad::SGame {
 			Game_CameraPos.y = LevelManager.GetMapData().GetHeight() - origin.y;
 //			}
 			// technically no z coordinate because it's 2D
-//			Game_CameraZoom = 0.070f;
+			Game_CameraZoom = 0.070f;
 			
 			TheNomad::Engine::Renderer::ClearScene();
 			for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {

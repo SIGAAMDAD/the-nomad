@@ -92,6 +92,13 @@ void LoadLevelAssets() {
 
 	timer.Start();
 
+	TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "_torso",
+		32, 32, 512, 512 );
+	TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "_legs",
+		32, 32, 512, 512 );
+	TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "_arms",
+		32, 32, 512, 512 );
+
 	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_torso" );
 	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_legs" );
 	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_arms" );
@@ -231,6 +238,7 @@ int ModuleOnInit() {
 	TheNomad::Util::GetModuleList( TheNomad::SGame::sgame_ModList );
 	ConsolePrint( TheNomad::SGame::sgame_ModList.Count() + " total mods registered.\n" );
 
+	@TheNomad::Engine::FileSystem::FileManager = TheNomad::Engine::FileSystem::FileSystemManager();
 	@TheNomad::Engine::SoundSystem::SoundManager = TheNomad::Engine::SoundSystem::SoundFrameData();
 	@TheNomad::GameSystem::GameManager = cast<TheNomad::GameSystem::CampaignManager@>( @TheNomad::GameSystem::AddSystem( TheNomad::GameSystem::CampaignManager() ) );
 	@TheNomad::SGame::LevelManager = cast<TheNomad::SGame::LevelSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::LevelSystem() ) );
@@ -269,6 +277,7 @@ int ModuleOnShutdown() {
 	@TheNomad::SGame::EntityManager = null;
 	@TheNomad::SGame::StateManager = null;
 	@TheNomad::SGame::InfoSystem::InfoManager = null;
+	@TheNomad::Engine::FileSystem::FileManager = null;
 	TheNomad::GameSystem::GameSystems.Clear();
 
 	return 1;
@@ -308,7 +317,6 @@ int ModuleOnLoadGame() {
 
 int ModuleOnLevelStart() {
 	LoadLevelAssets();
-
 	TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::InLevel;
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnLevelStart();
@@ -321,7 +329,6 @@ int ModuleOnLevelEnd() {
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnLevelEnd();
 	}
-
 	return 1;
 }
 

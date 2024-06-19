@@ -791,19 +791,19 @@ static void R_Register( void )
     r_useExtensions = ri.Cvar_Get( "r_useExtensions", "1", CVAR_SAVE | CVAR_LATCH );
     ri.Cvar_SetDescription( r_useExtensions, "Use all of the OpenGL extensions your card is capable of." );
 
-    r_arb_texture_compression = ri.Cvar_Get("r_arb_texture_compression", "0", CVAR_SAVE | CVAR_LATCH);
-    ri.Cvar_SetDescription(r_arb_texture_compression, "Enables texture compression.");
-    r_arb_framebuffer_object = ri.Cvar_Get("r_arb_framebuffer_object", "1", CVAR_SAVE | CVAR_LATCH);
-    ri.Cvar_SetDescription(r_arb_framebuffer_object, "Enables post-processing via multiple framebuffers.");
-    r_arb_vertex_array_object = ri.Cvar_Get("r_arb_vertex_array_object", "0", CVAR_SAVE | CVAR_LATCH);
-    ri.Cvar_SetDescription(r_arb_vertex_array_object, "Enables use of vertex array object extensions.\nNOTE: only really matters if OpenGL version < 3.3");
-    r_arb_vertex_buffer_object = ri.Cvar_Get("r_arb_vertex_buffer_object", "1", CVAR_SAVE | CVAR_LATCH);
-    ri.Cvar_SetDescription(r_arb_vertex_buffer_object, "Enables use of hardware accelerated vertex and index rendering.");
+    r_arb_texture_compression = ri.Cvar_Get( "r_arb_texture_compression", "0", CVAR_SAVE | CVAR_LATCH );
+    ri.Cvar_SetDescription( r_arb_texture_compression, "Enables texture compression." );
+    r_arb_framebuffer_object = ri.Cvar_Get( "r_arb_framebuffer_object", "1", CVAR_SAVE | CVAR_LATCH );
+    ri.Cvar_SetDescription( r_arb_framebuffer_object, "Enables post-processing via multiple framebuffers." );
+    r_arb_vertex_array_object = ri.Cvar_Get( "r_arb_vertex_array_object", "0", CVAR_SAVE | CVAR_LATCH );
+    ri.Cvar_SetDescription( r_arb_vertex_array_object, "Enables use of vertex array object extensions.\nNOTE: only really matters if OpenGL version < 3.3" );
+    r_arb_vertex_buffer_object = ri.Cvar_Get( "r_arb_vertex_buffer_object", "1", CVAR_SAVE | CVAR_LATCH );
+    ri.Cvar_SetDescription( r_arb_vertex_buffer_object, "Enables use of hardware accelerated vertex and index rendering." );
 
     r_arb_sync = ri.Cvar_Get( "r_arb_sync", "0", CVAR_SAVE | CVAR_LATCH );
     ri.Cvar_CheckRange( r_arb_sync, "0", "1", CVT_INT );
 
-    r_arb_texture_filter_anisotropic = ri.Cvar_Get("r_arb_texture_filter_anisotropic", "1", CVAR_SAVE | CVAR_LATCH);
+    r_arb_texture_filter_anisotropic = ri.Cvar_Get( "r_arb_texture_filter_anisotropic", "1", CVAR_SAVE | CVAR_LATCH );
     ri.Cvar_SetDescription( r_arb_texture_filter_anisotropic, "Enabled anisotropic filtering." );
     r_arb_texture_max_anisotropy = ri.Cvar_Get( "r_arb_texture_max_anisotropy", "8", CVAR_SAVE | CVAR_LATCH );
     ri.Cvar_SetDescription( r_arb_texture_max_anisotropy, "Sets maximum anisotropic level for your graphics driver. Requires \\r_arb_texture_filter_anisotropic 1." );

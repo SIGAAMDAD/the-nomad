@@ -109,7 +109,7 @@ static void LoadGameMenu_Draw( void )
         FontCache()->SetActiveFont( RobotoMono );
         s_loadGame->saveOpen = qfalse;
         for ( i = 0; i < s_loadGame->numSaves; i++ ) {
-            if ( ImGui::TreeNodeEx( (void *)(uintptr_t)s_loadGame->saveList[i].name, treeNodeFlags, s_loadGame->saveList[i].name ) ) {
+            if ( ImGui::CollapsingHeader( s_loadGame->saveList[i].name ) ) {
                 if ( ImGui::IsItemActivated() && ImGui::IsMouseClicked( ImGuiMouseButton_Left ) ) {
                     Snd_PlaySfx( ui->sfx_select );
                 }
@@ -140,7 +140,7 @@ static void LoadGameMenu_Draw( void )
                     ImGui::TextUnformatted( difficultyTable[ s_loadGame->saveList[i].gd.dif ].name );
                 }
                 ImGui::EndTable();
-                ImGui::TreePop();
+                ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 1.5f ) * ui->scale );
             }
         }
     }
@@ -148,7 +148,7 @@ static void LoadGameMenu_Draw( void )
         ImGui::TextUnformatted( "No Saves" );
     }
 
-    if ( s_loadGame->saveOpen ) {
+    if ( s_loadGame->saveOpen && g_pArchiveHandler->SlotIsUsed( s_loadGame->currentSave ) ) {
         ImGui::SetCursorScreenPos( ImVec2( 528 * ui->scale, 680 * ui->scale ) );
         ImGui::Image( (ImTextureID)(uintptr_t)( s_loadGame->loadGameHovered ? s_loadGame->load_1 : s_loadGame->load_0 ),
 			ImVec2( 256 * ui->scale, 72 * ui->scale ) );
@@ -194,6 +194,10 @@ static void LoadGameMenu_InitSaveFiles( void )
             N_strncpyz( info->name, fileList[i], sizeof( info->name ) );
 
             info->index = i;
+
+            if ( i >= g_pArchiveHandler->NumUsedSaveSlots() ) {
+                continue;
+            }
             path = FS_BuildOSPath( FS_GetHomePath(), NULL, va( "SaveData/%s", info->name ) );
             if ( !Sys_GetFileStats( &info->stats, path ) ) { // this should never fail
                 N_Error( ERR_DROP, "Failed to stat savefile '%s' even though it exists", path );
