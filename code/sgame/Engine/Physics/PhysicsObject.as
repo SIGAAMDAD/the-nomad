@@ -48,18 +48,8 @@ namespace TheNomad::Engine::Physics {
         }
 
         private void ClipBounds() {
-            TheNomad::GameSystem::BBox mapBounds;
-			mapBounds.m_nWidth = TheNomad::SGame::LevelManager.GetMapData().GetWidth();
-			mapBounds.m_nHeight = TheNomad::SGame::LevelManager.GetMapData().GetHeight();
-			mapBounds.MakeBounds( vec3( float( TheNomad::SGame::LevelManager.GetMapData().GetWidth() ),
-				float( TheNomad::SGame::LevelManager.GetMapData().GetHeight() ), 0.0f ) );
 			vec3 origin = m_EntityData.GetOrigin();
 
-            if ( !Util::BoundsIntersect( m_EntityData.GetBounds(), mapBounds ) ) {
-                const float width = m_EntityData.GetBounds().m_Maxs.x - m_EntityData.GetBounds().m_Mins.x;
-                const float height = m_EntityData.GetBounds().m_Maxs.y - m_EntityData.GetBounds().m_Mins.y;
-                m_EntityData.SetOrigin( vec3( width, height, m_EntityData.GetOrigin().z ) );
-            }
             if ( origin.x < 0.0f ) {
                 m_EntityData.SetOrigin( vec3( 0.0f, origin.y, origin.z ) );
             }

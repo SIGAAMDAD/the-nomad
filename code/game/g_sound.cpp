@@ -842,6 +842,9 @@ void Snd_PlayWorldSfx( const vec3_t origin, sfxHandle_t hSfx )
     }
 
     source = sndManager->GetSource( hSfx );
+    if ( !source ) {
+        return;
+    }
     Assert( source );
 
     alSourcei( source->GetSource(), AL_SOURCE_RELATIVE, AL_TRUE );
