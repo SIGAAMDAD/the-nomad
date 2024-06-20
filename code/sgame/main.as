@@ -92,13 +92,6 @@ void LoadLevelAssets() {
 
 	timer.Start();
 
-	TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "_torso",
-		32, 32, 512, 512 );
-	TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "_legs",
-		32, 32, 512, 512 );
-	TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "_arms",
-		32, 32, 512, 512 );
-
 	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_torso" );
 	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_legs" );
 	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_arms" );

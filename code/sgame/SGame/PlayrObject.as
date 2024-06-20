@@ -677,10 +677,10 @@ namespace TheNomad::SGame {
 			refEntity.sheetNum = m_SpriteSheet.GetShader();
 			refEntity.spriteId = 0 + m_Facing;
 			refEntity.scale = 2.0f;
-//			refEntity.Draw();
+			refEntity.Draw();
 
-			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin,
-				m_SpriteSheet.GetShader(), 0, false );
+			ImGui::Image( TheNomad::Engine::Renderer::RegisterShader( "textures/sprites/players/raio_torso" ),
+				vec2( 16, 16 ), vec2( 256, 256 ) );
 
 //			DrawLegs();
 //			DrawArms();

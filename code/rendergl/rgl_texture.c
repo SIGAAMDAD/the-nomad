@@ -1625,47 +1625,47 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 				internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 			}
 			else if ( r_textureBits->i == 16 ) {
+				if ( r_hdr->i ) {
+					internalFormat = GL_RGBA16F;
+				} else {
+					internalFormat = GL_RGBA4;
+				}
+			}
+			else if ( r_textureBits->i == 32 ) {
+				if ( r_hdr->i ) {
+					internalFormat = GL_RGBA32F;
+				} else {
+					internalFormat = GL_RGBA8;
+				}
+			}
+			else {
+				internalFormat = GL_RGBA;
+				/*
+				switch ( r_textureDetail->i ) {
+				case TexDetail_MSDOS:
+				case TexDetail_IntegratedGPU:
+					internalFormat = GL_RGBA4;
+					break;
+				case TexDetail_Normie:
+					internalFormat = GL_RGBA8;
+					break;
+				case TexDetail_ExpensiveShitWeveGotHere: {
 					if ( r_hdr->i ) {
 						internalFormat = GL_RGBA16F;
 					} else {
-						internalFormat = GL_RGBA4;
+						internalFormat = GL_RGBA12;
 					}
-				}
-				else if ( r_textureBits->i == 32 ) {
+					break; }
+				case TexDetail_GPUvsGod: {
 					if ( r_hdr->i ) {
 						internalFormat = GL_RGBA32F;
 					} else {
-						internalFormat = GL_RGBA8;
+						internalFormat = GL_RGBA16;
 					}
-				}
-				else {
-					internalFormat = GL_RGBA;
-					/*
-					switch ( r_textureDetail->i ) {
-					case TexDetail_MSDOS:
-					case TexDetail_IntegratedGPU:
-						internalFormat = GL_RGBA4;
-						break;
-					case TexDetail_Normie:
-						internalFormat = GL_RGBA8;
-						break;
-					case TexDetail_ExpensiveShitWeveGotHere: {
-						if ( r_hdr->i ) {
-							internalFormat = GL_RGBA16F;
-						} else {
-							internalFormat = GL_RGBA12;
-						}
-						break; }
-					case TexDetail_GPUvsGod: {
-						if ( r_hdr->i ) {
-							internalFormat = GL_RGBA32F;
-						} else {
-							internalFormat = GL_RGBA16;
-						}
-						break; }
-					};
-					*/
-				}
+					break; }
+				};
+				*/
+			}
 		}
 		else {
 			if ( !forceNoCompression && glContext.textureCompressionRef & TCR_RGTC ) {
@@ -1859,7 +1859,7 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 	return internalFormat;
 }
 
-static void CompressMonoBlock(byte outdata[8], const byte indata[16])
+static void CompressMonoBlock( byte outdata[8], const byte indata[16] )
 {
 	uint32_t hi, lo, diff, bias, outbyte, shift, i;
 	byte *p = outdata;
