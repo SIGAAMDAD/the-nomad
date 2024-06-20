@@ -3,6 +3,7 @@
 #include "Engine/UserInterface/FontCache.as"
 #include "Engine/ResourceCache.as"
 #include "Engine/Renderer/RenderEntity.as"
+#include "Engine/FileSystem/FileSystem.as"
 
 namespace TheNomad::GameSystem {
     class CampaignManager : GameObject {

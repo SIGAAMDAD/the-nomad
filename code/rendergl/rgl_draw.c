@@ -431,6 +431,8 @@ void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, con
 
         GLSL_SetUniformInt( sp, UNIFORM_COLORGEN, stageP->rgbGen );
         GLSL_SetUniformInt( sp, UNIFORM_ALPHAGEN, stageP->alphaGen );
+
+		GLSL_SetUniformFloat( sp, UNIFORM_SHARPENING, r_imageSharpenAmount->f );
 		
 		{
 			vec2_t screenSize;

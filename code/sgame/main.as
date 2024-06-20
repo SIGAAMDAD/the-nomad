@@ -5,6 +5,7 @@
 #include "SGame/LevelSystem.as"
 #include "Engine/CommandSystem/CommandManager.as"
 #include "SGame/CheatCodes.as"
+#include "Engine/Engine.as"
 
 namespace TheNomad::SGame {
 	//
@@ -220,11 +221,11 @@ int ModuleOnInit() {
 	ConsolePrint( "GameName: " + GAME_NAME + "\n" );
 	ConsolePrint( "GameVersion: " + NOMAD_VERSION_STRING + "\n" );
 
-	@TheNomad::CvarManager = cast<TheNomad::CvarSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::CvarSystem() ) );
-
 	//
 	// register cvars
 	//
+
+	TheNomad::Engine::Init();
 
 	InitCvars();
 
@@ -263,7 +264,7 @@ int ModuleOnShutdown() {
 		TheNomad::GameSystem::GameSystems[i].OnShutdown();
 		@TheNomad::GameSystem::GameSystems[i] = null;
 	}
-	@TheNomad::CvarManager = null;
+	@THeNomad::CvarManager = null;
 	@TheNomad::GameSystem::GameManager = null;
 	@TheNomad::SGame::LevelManager = null;
 	@TheNomad::SGame::EntityManager = null;

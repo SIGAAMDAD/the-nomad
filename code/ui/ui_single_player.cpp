@@ -87,7 +87,7 @@ void SinglePlayerMenu_Cache( void )
     s_campaignMenu->menu.height = ui->gpuConfig.vidHeight;
     s_campaignMenu->menu.fullscreen = qtrue;
 
-    s_campaignMenu->newGame.generic.name = StringDup( newGameString, "SinglePlayerNewGameOption" );
+    s_campaignMenu->newGame.generic.name = newGameString->value;
     s_campaignMenu->newGame.generic.type = MTYPE_TEXT;
     s_campaignMenu->newGame.generic.id = ID_NEWGAME;
     s_campaignMenu->newGame.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
@@ -95,7 +95,7 @@ void SinglePlayerMenu_Cache( void )
     s_campaignMenu->newGame.text = newGameString->value;
     s_campaignMenu->newGame.color = color_white;
 
-    s_campaignMenu->loadGame.generic.name = StringDup( loadGameString, "SinglePlayerLoadGameOption" );
+    s_campaignMenu->loadGame.generic.name = loadGameString->value;
     s_campaignMenu->loadGame.generic.type = MTYPE_TEXT;
     s_campaignMenu->loadGame.generic.id = ID_LOADGAME;
     s_campaignMenu->loadGame.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
@@ -103,7 +103,7 @@ void SinglePlayerMenu_Cache( void )
     s_campaignMenu->loadGame.text = loadGameString->value;
     s_campaignMenu->loadGame.color = color_white;
 
-    s_campaignMenu->playMission.generic.name = StringDup( playMissionString, "SinglePlayerPlayMissionOption" );
+    s_campaignMenu->playMission.generic.name = playMissionString->value;
     s_campaignMenu->playMission.generic.type = MTYPE_TEXT;
     s_campaignMenu->playMission.generic.id = ID_PLAMISSION;
     s_campaignMenu->playMission.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;

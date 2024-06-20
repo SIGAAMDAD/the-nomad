@@ -646,7 +646,7 @@ static void SettingsMenu_GetGPUMemoryInfo( void )
 
 static void SettingsMenu_TabBar( void ) {
 	if ( ImGui::BeginTabBar( "##SettingsMenuTabBar" ) ) {
-		ImGui::PushStyleColor( ImGuiCol_Tab, ImVec4( 1.0f, 1.0f, 1.0f, 0.0f ) );
+		ImGui::PushStyleColor( ImGuiCol_Tab, ImVec4( 1.0f, 0.0f, 0.0f, 1.0f ) );
 		ImGui::PushStyleColor( ImGuiCol_TabActive, ImVec4( 0.0f, 1.0f, 0.0f, 1.0f ) );
 		ImGui::PushStyleColor( ImGuiCol_TabHovered, ImVec4( 0.0f, 1.0f, 0.0f, 1.0f ) );
 
@@ -1481,7 +1481,7 @@ static void VideoMenu_Draw( void )
 		
 		SettingsMenu_MultiSliderFloat( "Sharpening", "ImageSharpening",
 			"Sets the amount of sharpening applied to a rendered texture",
-			&s_settingsMenu->video.sharpening, 0.5f, 5.0f, 0.1f );
+			&s_settingsMenu->video.sharpening, 0.5f, 20.0f, 0.1f );
 		
 		ImGui::TableNextRow();
 
@@ -1537,6 +1537,7 @@ static void VideoMenu_Save( void )
 	Cvar_SetFloatValue( "r_imageSharpenAmount", s_settingsMenu->video.sharpening );
 	Cvar_SetFloatValue( "r_autoExposure", s_settingsMenu->video.exposure );
 	Cvar_SetFloatValue( "r_gammaAmount", s_settingsMenu->video.gamma );
+	Cvar_SetIntegerValue( "com_maxfps", s_settingsMenu->video.maxFPS );
 
 	if ( !N_stricmp( g_renderer->s, "opengl" ) ) {
 		SDL_GL_SetSwapInterval( s_settingsMenu->video.vsync - 1 );
@@ -1901,6 +1902,7 @@ static void SettingsMenu_Draw( void )
 	if ( !ImGui::IsAnyItemHovered() ) {
 		s_settingsMenu->focusedItem = NULL;
 	}
+
 	ImGui::GetStyle().ItemSpacing = itemSpacing;
 	ImGui::End();
 
