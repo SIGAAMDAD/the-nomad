@@ -675,12 +675,9 @@ namespace TheNomad::SGame {
 
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.sheetNum = m_SpriteSheet.GetShader();
-			refEntity.spriteId = 3 + m_Facing;
+			refEntity.spriteId = 0 + m_Facing;
 			refEntity.scale = 2.0f;
 			refEntity.Draw();
-
-			TheNomad::Engine::Renderer::AddSpriteToScene( vec3( 0.0f ), TheNomad::Engine::Renderer::RegisterShader( "textures/icons/iconpw_pewpew" ),
-				0, true );
 
 //			DrawLegs();
 //			DrawArms();
