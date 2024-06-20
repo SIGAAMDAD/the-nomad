@@ -222,8 +222,8 @@ void main() {
 	// reinhard tone mapping
 	a_Color.rgb = a_Color.rgb / ( a_Color.rgb + vec3( 1.0 ) );
 #else
-	// exposure tone mapping
-	a_Color.rgb = vec3( 1.0 ) - exp( -a_Color.rgb * u_Exposure );
+	// exposure tone mapping //  BROKEN
+//	a_Color.rgb = vec3( 1.0 ) - exp( -a_Color.rgb * u_Exposure );
 #endif
 
 #if defined(USE_BLOOM)

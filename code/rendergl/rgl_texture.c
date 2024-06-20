@@ -1637,7 +1637,29 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 				}
 			}
 			else {
-				internalFormat = GL_RGBA;
+				switch ( r_textureDetail->i ) {
+				case TexDetail_MSDOS:
+				case TexDetail_IntegratedGPU:
+					internalFormat = GL_RGBA4;
+					break;
+				case TexDetail_Normie:
+					internalFormat = GL_RGBA8;
+					break;
+				case TexDetail_ExpensiveShitWeveGotHere: {
+					if ( r_hdr->i ) {
+						internalFormat = GL_RGBA16F;
+					} else {
+						internalFormat = GL_RGBA8;
+					}
+					break; }
+				case TexDetail_GPUvsGod: {
+					if ( r_hdr->i ) {
+						internalFormat = GL_RGBA32F;
+					} else {
+						internalFormat = GL_RGBA8;
+					}
+					break; }
+				};
 			}
 		}
 		else {
@@ -1665,7 +1687,29 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 				}
 			}
 			else {
-				internalFormat = GL_RGB;
+				switch ( r_textureDetail->i ) {
+				case TexDetail_MSDOS:
+				case TexDetail_IntegratedGPU:
+					internalFormat = GL_RGB5;
+					break;
+				case TexDetail_Normie:
+					internalFormat = GL_RGB8;
+					break;
+				case TexDetail_ExpensiveShitWeveGotHere: {
+					if ( r_hdr->i ) {
+						internalFormat = GL_RGB16F;
+					} else {
+						internalFormat = GL_RGB8;
+					}
+					break; }
+				case TexDetail_GPUvsGod: {
+					if ( r_hdr->i ) {
+						internalFormat = GL_RGB32F;
+					} else {
+						internalFormat = GL_RGB8;
+					}
+					break; }
+				};
 			}
 		}
 	}
@@ -1700,7 +1744,7 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 				}
 				else if ( r_textureBits->i == 16 ) {
 					if ( r_hdr->i ) {
-						internalFormat = GL_RGBA16F;
+						internalFormat = GL_RGB16F;
 					} else {
 						internalFormat = GL_RGB5;
 					}
@@ -1713,7 +1757,29 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 					}
 				}
 				else {
-					internalFormat = GL_RGB;
+					switch ( r_textureDetail->i ) {
+					case TexDetail_MSDOS:
+					case TexDetail_IntegratedGPU:
+						internalFormat = GL_RGB4;
+						break;
+					case TexDetail_Normie:
+						internalFormat = GL_RGB8;
+						break;
+					case TexDetail_ExpensiveShitWeveGotHere: {
+						if ( r_hdr->i ) {
+							internalFormat = GL_RGB16F;
+						} else {
+							internalFormat = GL_RGB8;
+						}
+						break; }
+					case TexDetail_GPUvsGod: {
+						if ( r_hdr->i ) {
+							internalFormat = GL_RGB32F;
+						} else {
+							internalFormat = GL_RGB8;
+						}
+						break; }
+					};
 				}
 			}
 		}
@@ -1747,7 +1813,29 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 					}
 				}
 				else {
-					internalFormat = GL_RGBA;
+					switch ( r_textureDetail->i ) {
+					case TexDetail_MSDOS:
+					case TexDetail_IntegratedGPU:
+						internalFormat = GL_RGBA4;
+						break;
+					case TexDetail_Normie:
+						internalFormat = GL_RGBA8;
+						break;
+					case TexDetail_ExpensiveShitWeveGotHere: {
+						if ( r_hdr->i ) {
+							internalFormat = GL_RGBA16F;
+						} else {
+							internalFormat = GL_RGBA8;
+						}
+						break; }
+					case TexDetail_GPUvsGod: {
+						if ( r_hdr->i ) {
+							internalFormat = GL_RGBA32F;
+						} else {
+							internalFormat = GL_RGBA8;
+						}
+						break; }
+					};
 				}
 			}
 		}
