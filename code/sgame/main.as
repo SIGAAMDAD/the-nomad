@@ -87,15 +87,24 @@ namespace ImGui {
 };
 
 void LoadLevelAssets() {
+}
+
+//
+// InitResources: caches all important SGame resources
+//
+void InitResources() {
+
+	ConsolePrint( "Initializing SGame Resources...\n" );
+
 	TheNomad::Engine::Timer timer;
-	const string str = TheNomad::Engine::CvarVariableString( "skin" );
+	string str = TheNomad::Engine::CvarVariableString( "skin" );
 
 	timer.Start();
 
-//	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_torso" );
-//	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_legs" );
-//	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_arms" );
-//
+//	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_torso", 512, 512, 32, 32 );
+//	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_legs", 512, 512, 32, 32 );
+//	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_arms", 512, 512, 32, 32 );
+
 	TheNomad::SGame::InfoSystem::InfoManager.LoadMobInfos();
 	TheNomad::SGame::InfoSystem::InfoManager.LoadItemInfos();
 	TheNomad::SGame::InfoSystem::InfoManager.LoadAmmoInfos();
@@ -129,15 +138,7 @@ void LoadLevelAssets() {
 
 	timer.Stop();
 	ConsolePrint( "LoadLevelAssets: " + timer.ElapsedMilliseconds() + "ms\n" );
-}
 
-//
-// InitResources: caches all important SGame resources
-//
-void InitResources() {
-	string str;
-
-	ConsolePrint( "Initializing SGame Resources...\n" );
 	//
 	// register strings
 	//

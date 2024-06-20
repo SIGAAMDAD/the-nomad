@@ -849,8 +849,8 @@ static const void *RB_ClearDepth( const void *data )
 static const void *RB_DrawImage( const void *data ) {
 	const drawImageCmd_t *cmd;
 	shader_t *shader;
-	srfVert_t verts[4];
-	uint32_t indices[6];
+	srfVert_t *verts;
+	uint32_t *indices;
 	uint32_t numVerts, numIndices;
 
 	cmd = (const drawImageCmd_t *)data;
@@ -860,13 +860,12 @@ static const void *RB_DrawImage( const void *data ) {
 		if ( backend.drawBatch.idxOffset ) {
 			RB_FlushBatchBuffer();
 		}
-		RB_SetBatchBuffer( backend.drawBuffer, backendData->verts, sizeof( srfVert_t ),
-			backendData->indices, sizeof( glIndex_t ) );
+		RB_SetBatchBuffer( backend.drawBuffer, backendData->verts, sizeof( srfVert_t ), backendData->indices, sizeof( glIndex_t ) );
 	}
 	backend.drawBatch.shader = shader;
 
-//	verts = ( (srfVert_t *)backend.drawBatch.vertices ) + backend.drawBatch.vtxOffset;
-//	indices = ( (uint32_t *)backend.drawBatch.indices ) + backend.drawBatch.idxOffset;
+	verts = ( (srfVert_t *)backend.drawBatch.vertices ) + backend.drawBatch.vtxOffset;
+	indices = ( (uint32_t *)backend.drawBatch.indices ) + backend.drawBatch.idxOffset;
 
 	{
 		uint16_t color[4];
@@ -907,16 +906,16 @@ static const void *RB_DrawImage( const void *data ) {
 	verts[ 3 ].st[0] = cmd->u1;
 	verts[ 3 ].st[1] = cmd->v2;
 
-	indices[ 0 ] = 0;
-	indices[ 1 ] = 1;
-	indices[ 2 ] = 2;
-	indices[ 3 ] = 0;
-	indices[ 4 ] = 2;
-	indices[ 5 ] = 3;
+	backendData->indices[ backend.drawBatch.idxOffset + 0 ] = 0;
+	backendData->indices[ backend.drawBatch.idxOffset + 1 ] = 1;
+	backendData->indices[ backend.drawBatch.idxOffset + 2 ] = 2;
+	backendData->indices[ backend.drawBatch.idxOffset + 3 ] = 0;
+	backendData->indices[ backend.drawBatch.idxOffset + 4 ] = 2;
+	backendData->indices[ backend.drawBatch.idxOffset + 5 ] = 3;
 
-//	backend.drawBatch.vtxOffset += 4;
-//	backend.drawBatch.idxOffset += 6;
-	RB_CommitDrawData( verts, 4, indices, 6 );
+	backend.drawBatch.vtxOffset += 4;
+	backend.drawBatch.idxOffset += 6;
+//	RB_CommitDrawData( verts, 4, indices, 6 );
 
 	return (const void *)( cmd + 1 );
 }

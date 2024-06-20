@@ -1349,7 +1349,7 @@ static void R_AllocBackend( void ) {
     backendData->verts = (srfVert_t *)( backendData + 1 );
     backendData->polyVerts = (polyVert_t *)( backendData->verts + r_maxPolys->i * 4 );
     backendData->polys = (srfPoly_t *)( backendData->polyVerts + r_maxPolys->i * 4 );
-    backendData->indices = (glIndex_t *)( backendData->polys + r_maxPolys->i * 6 );
+    backendData->indices = (glIndex_t *)( backendData->polys + r_maxPolys->i );
     backendData->entities = (renderEntityDef_t *)( backendData->indices + r_maxPolys->i * 6 );
     backendData->dlights = (dlight_t *)( backendData->entities + r_maxEntities->i );
 
