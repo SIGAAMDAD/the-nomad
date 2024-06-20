@@ -92,10 +92,10 @@ void LoadLevelAssets() {
 
 	timer.Start();
 
-	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_torso" );
-	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_legs" );
-	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_arms" );
-
+//	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_torso" );
+//	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_legs" );
+//	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_arms" );
+//
 	TheNomad::SGame::InfoSystem::InfoManager.LoadMobInfos();
 	TheNomad::SGame::InfoSystem::InfoManager.LoadItemInfos();
 	TheNomad::SGame::InfoSystem::InfoManager.LoadAmmoInfos();

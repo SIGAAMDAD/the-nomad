@@ -1605,7 +1605,7 @@ static qboolean RawImage_HasAlpha( const byte *scan, uint32_t numPixels )
 	return qfalse;
 }
 
-static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum picFormat, qboolean lightMap, imgType_t type, imgFlags_t flags)
+static GLenum RawImage_GetFormat( const byte *data, uint32_t numPixels, GLenum picFormat, qboolean lightMap, imgType_t type, imgFlags_t flags )
 {
 	uint32_t samples = 3;
 	GLenum internalFormat = GL_RGB;
@@ -1640,7 +1640,6 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 			}
 			else {
 				internalFormat = GL_RGBA;
-				/*
 				switch ( r_textureDetail->i ) {
 				case TexDetail_MSDOS:
 				case TexDetail_IntegratedGPU:
@@ -1664,7 +1663,6 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 					}
 					break; }
 				};
-				*/
 			}
 		}
 		else {
@@ -1693,7 +1691,6 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 			}
 			else {
 				internalFormat = GL_RGB;
-				/*
 				switch ( r_textureDetail->i ) {
 				case TexDetail_MSDOS:
 				case TexDetail_IntegratedGPU:
@@ -1717,7 +1714,6 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 					}
 					break; }
 				};
-				*/
 			}
 		}
 	}
@@ -1767,7 +1763,6 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 				}
 				else {
 					internalFormat = GL_RGB;
-					/*
 					switch ( r_textureDetail->i ) {
 					case TexDetail_MSDOS:
 					case TexDetail_IntegratedGPU:
@@ -1791,7 +1786,6 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 						}
 						break; }
 					};
-					*/
 				}
 			}
 		}
@@ -1826,7 +1820,6 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 				}
 				else {
 					internalFormat = GL_RGBA;
-					/*
 					switch ( r_textureDetail->i ) {
 					case TexDetail_MSDOS:
 					case TexDetail_IntegratedGPU:
@@ -1850,7 +1843,6 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 						}
 						break; }
 					};
-					*/
 				}
 			}
 		}

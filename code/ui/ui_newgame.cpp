@@ -70,9 +70,6 @@ static void BeginNewGame( void )
 
     memset( s_newGame->saveName, 0, sizeof( s_newGame->saveName ) );
 
-    // set the marker before loading any map assets
-    Hunk_SetMark();
-
     // start a new game
     g_pModuleLib->ModuleCall( sgvm, ModuleOnLevelStart, 0 );
 }

@@ -117,9 +117,13 @@ VERSION_DEFINE=-D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPD
 ERRORS        =-Werror=return-type
 
 DEFINES       =$(VERSION_DEFINE) $(DEBUGDEF) -D_NOMAD_ENGINE
-OPTIMIZERS    = \
-			-mfma -msse3 -msse2 -msse \
-			-fno-omit-frame-pointer
+OPTIMIZERS    =\
+			-ffast-math \
+			-mfma -msse3 -msse2 -msse -mavx2 -mavx \
+			-fno-omit-frame-pointer \
+#			-ftree-vectorize \
+			-finline-functions \
+			-finline-small-functions \
 
 CFLAGS        =$(FTYPE) -Wno-unused-result $(DEFINES) $(INCLUDE) $(OPTIMIZERS)
 ifndef release

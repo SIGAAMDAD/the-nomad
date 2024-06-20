@@ -566,8 +566,8 @@ namespace TheNomad::SGame {
 			m_nHealMult = 0.0f;
 			m_nHealMultDecay = LevelManager.GetDifficultyScale();
 
-			InitLoadout();
-			CacheSfx();
+//			InitLoadout();
+//			CacheSfx();
 
 			m_HudData.Init( @this );
 
@@ -679,9 +679,6 @@ namespace TheNomad::SGame {
 			refEntity.scale = 2.0f;
 			refEntity.Draw();
 
-			ImGui::Image( TheNomad::Engine::Renderer::RegisterShader( "textures/sprites/players/raio_torso" ),
-				vec2( 16, 16 ), vec2( 256, 256 ) );
-
 //			DrawLegs();
 //			DrawArms();
 		}
@@ -719,6 +716,8 @@ namespace TheNomad::SGame {
 		private uint m_nControllerIndex = 0;
 		
 		private QuickShot m_QuickShot;
+
+		private TheNomad::Engine::Renderer::PolyVert[] verts( 4 );
 		
 		//
 		// sound effects

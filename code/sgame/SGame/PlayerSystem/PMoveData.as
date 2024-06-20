@@ -66,12 +66,12 @@ namespace TheNomad::SGame {
 			
 			KeyMove();
 			
-			if ( forward != 0.0f && side != 0.0f ) {
-				if ( ( move_toggle % ( 16 + ( TheNomad::Engine::CvarVariableInteger( "com_maxfps" ) / 10 ) ) ) == 0.0f ) {
+//			if ( forward != 0.0f && side != 0.0f ) {
+//				if ( ( move_toggle % ( 16 + ( TheNomad::Engine::CvarVariableInteger( "com_maxfps" ) / 10 ) ) ) == 0.0f ) {
 					accel.y += sgame_BaseSpeed.GetFloat() * forward;
 					accel.x += sgame_BaseSpeed.GetFloat() * side;
-				}
-			}
+//				}
+//			}
 
 			if ( m_EntityData.IsDashing() ) {
 				accel.y += 5.5f * forward;
