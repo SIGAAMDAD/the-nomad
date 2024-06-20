@@ -598,11 +598,7 @@ static void ML_PrintStringCache_f( void ) {
 
     auto it = g_pStringFactory->m_StringCache.cbegin();
     for ( i = 0; i < g_pStringFactory->m_StringCache.size(); i++, it++ ) {
-    #ifdef USE_STRINGCACHE_MAP
         Con_Printf( "%8lu: 0x%08lx (%i references)", i, (uintptr_t)(void *)it->first.c_str(), it->second );
-    #else
-        Con_Printf( "%8lu: 0x%08lx (%i references)", i, (uintptr_t)(void *)it->c_str(), it->refCount );
-    #endif
     }
 }
 
