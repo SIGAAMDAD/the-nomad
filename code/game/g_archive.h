@@ -14,7 +14,9 @@
 // data to the actual save file. That's my experience with Bannerlord. If you define this, then each different section will
 // also write an additional .prt file containing that individual data so that if the main save file is corrupted, someone
 // can still use the existing uncorrupted .prt files to reconstruct the clean save data. This does, hovewever, use much more
-// disk space especially depending on how much the game saves
+// disk space especially depending on how much the game saves.
+//
+// so overall only really designed for PC users
 #ifndef SAVEFILE_MOD_SAFETY
     #define SAVEFILE_MOD_SAFETY
 #endif
@@ -35,6 +37,7 @@ typedef struct {
     uint64_t numMods;
 } gamedata_t;
 
+#pragma pack( push, 1 )
 typedef struct {
 	char *name;
 	int32_t nameLength;
@@ -58,8 +61,6 @@ typedef struct {
 	} data;
 } ngdfield_t;
 
-
-#pragma pack( push, 1 )
 // version, 64 bits
 typedef union version_s {
 	struct {
@@ -77,8 +78,7 @@ typedef union version_s {
     }
 } version_t;
 
-typedef struct
-{
+typedef struct {
 	int32_t ident;
 	version_t version;
 } ngdvalidation_t;
@@ -104,8 +104,7 @@ typedef struct {
 template<typename Key, typename Value>
 using ArchiveCache = eastl::unordered_map<Key, Value, eastl::hash<Key>, eastl::equal_to<Key>, CHunkAllocator<h_low>, true>;
 
-typedef struct ngdsection_read_s
-{
+typedef struct ngdsection_read_s {
 	char name[MAX_SAVE_FIELD_NAME];
 	int32_t nameLength;
 	int32_t size;
@@ -135,6 +134,8 @@ public:
     void EndSaveSection( void );
 
     const char **GetSaveFiles( uint64_t *nFiles ) const;
+    uint64_t NumUsedSaveSlots( void ) const;
+    qboolean SlotIsUsed( uint64_t nSlot ) const;
 
     void SaveFloat( const char *name, float data );
 
@@ -206,6 +207,7 @@ private:
     char **m_pArchiveFileList;
     uint64_t m_nArchiveFiles;
     uint64_t m_nCurrentArchive;
+    uint64_t m_nUsedSaveSlots;
 };
 
 void G_InitArchiveHandler( void );

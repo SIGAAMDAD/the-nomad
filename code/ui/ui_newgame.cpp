@@ -29,6 +29,11 @@ typedef struct {
 
     int diff;
 
+    int selectedSaveSlot;
+    uint64_t numSaveFiles;
+    char **slotNames;
+    qboolean slotConflict;
+
     const char **difficultyList;
     char **hardestStrings;
     int64_t numHardestStrings;
@@ -65,35 +70,130 @@ static void BeginNewGame( void )
 
     memset( s_newGame->saveName, 0, sizeof( s_newGame->saveName ) );
 
+    // set the marker before loading any map assets
+    Hunk_SetMark();
+
     // start a new game
     g_pModuleLib->ModuleCall( sgvm, ModuleOnLevelStart, 0 );
 }
 
-static void NewGameMenu_Draw( void )
+static void NewGameMenu_Draw_FixedSlots( void )
 {
     int i;
-    extern cvar_t *in_joystick;
-    nhandle_t hShader;
-    ImVec2 imageSize;
 
-    ImGui::Begin( s_newGame->menu.name, NULL, s_newGame->menu.flags );
-    ImGui::SetWindowSize( ImVec2( s_newGame->menu.width, s_newGame->menu.height ) );
-    ImGui::SetWindowPos( ImVec2( s_newGame->menu.x, s_newGame->menu.y ) );
+    ImGui::BeginTable( "##SinglePlayerMenuNewGameConfigTable", 2 );
+    {
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted( s_newGame->newGameBegin->value );
+        ImGui::TableNextColumn();
 
-    UI_EscapeMenuToggle();
-    if ( ui->activemenu != &s_newGame->menu ) {
-        memset( s_newGame->saveName, 0, sizeof( s_newGame->saveName ) );
-        memset( &ui->virtKeyboard, 0, sizeof( ui->virtKeyboard ) );
+        if ( in_mode->i == 1 ) {
+            if ( ImGui::Button( va( "%s##SinglePlayerMenuSaveNamePromptInput", s_newGame->saveName ),
+                ImVec2( 528 * ui->scale, 72 * ui->scale ) ) )
+            {
+                // accessing it through the controller, toggle the on-screen keyboard
+                ui->virtKeyboard.open = qtrue;
+                ui->virtKeyboard.bufMaxLen = sizeof( s_newGame->saveName );
+                ui->virtKeyboard.bufTextLen = strlen( s_newGame->saveName );
+                ui->virtKeyboard.pBuffer = s_newGame->saveName;
+
+        		Snd_PlaySfx( ui->sfx_select );
+            }
+            if ( ui->virtKeyboard.open ) {
+            	if ( UI_VirtualKeyboard( "##SinglePlayerMenuSaveNamePromptInput", s_newGame->saveName, sizeof( s_newGame->saveName ) ) ) {
+            		Snd_PlaySfx( ui->sfx_select );
+            	}
+            }
+        } else if ( in_mode->i == 0 ) {
+            if ( ImGui::InputText( "##SinglePlayerMenuSaveNamePromptInput", s_newGame->saveName, sizeof( s_newGame->saveName ) - 1,
+                ImGuiInputTextFlags_EnterReturnsTrue ) )
+            {
+                Snd_PlaySfx( ui->sfx_select );
+            }
+        }
+
+        ImGui::TableNextRow();
+
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted( "Difficulty" );
+        ImGui::TableNextColumn();
+        if ( ImGui::ArrowButton( "##DifficultySinglePlayerMenuConfigLeft", ImGuiDir_Left ) ) {
+            Snd_PlaySfx( ui->sfx_select );
+            s_newGame->diff--;
+            if ( s_newGame->diff <= DIF_NOOB ) {
+                s_newGame->diff = DIF_HARDEST;
+            }
+        }
+        ImGui::SameLine();
+        if ( ImGui::BeginCombo( "##SinglePlayerMenuDifficultyConfigList", s_newGame->difficultyList[ (int)s_newGame->diff ] ) ) {
+            if ( ImGui::IsItemActivated() && ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
+                Snd_PlaySfx( ui->sfx_select );
+            }
+            for ( i = 0; i < NUMDIFS; i++ ) {
+                if ( ImGui::Selectable( va( "%s##%sSinglePlayerMenuDifficultySelectable_%i", s_newGame->difficultyList[ i ],
+                    s_newGame->difficultyList[ i ], i ), ( s_newGame->diff == i ) ) )
+                {
+                    Snd_PlaySfx( ui->sfx_select );
+                    s_newGame->diff = i;
+                }
+            }
+            ImGui::EndCombo();
+        }
+        if ( !ImGui::IsItemActivated() && ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
+            Snd_PlaySfx( ui->sfx_select );
+        }
+        ImGui::SameLine();
+        if ( ImGui::ArrowButton( "##DifficultySinglePlayerMenuConfigRight", ImGuiDir_Right ) ) {
+            Snd_PlaySfx( ui->sfx_select );
+            s_newGame->diff++;
+            if ( s_newGame->diff > DIF_HARDEST ) {
+                s_newGame->diff = DIF_NOOB;
+            }
+        }
+
+        ImGui::TableNextRow();
+
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted( "Save Slot" );
+        ImGui::TableNextColumn();
+        if ( ImGui::ArrowButton( "##SaveSlotSinglePlayerMenuConfigLeft", ImGuiDir_Left ) ) {
+            Snd_PlaySfx( ui->sfx_select );
+            s_newGame->selectedSaveSlot--;
+            if ( s_newGame->selectedSaveSlot < 0 ) {
+                s_newGame->selectedSaveSlot = Cvar_VariableInteger( "g_maxSaveSlots" ) - 1;
+            }
+        }
+        ImGui::SameLine();
+        if ( ImGui::BeginCombo( "##SinglePlayerMenuSaveSlotConfigList", s_newGame->slotNames[ s_newGame->selectedSaveSlot ] ) ) {
+            if ( ImGui::IsItemActivated() && ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
+                Snd_PlaySfx( ui->sfx_select );
+            }
+            for ( i = 0; i < s_newGame->numSaveFiles; i++ ) {
+                if ( ImGui::Selectable( va( "%s##%sSinglePlayerMenuSaveSlotSelectable_%i", s_newGame->slotNames[i],
+                    s_newGame->slotNames[i], i ), ( s_newGame->selectedSaveSlot == i ) ) )
+                {
+                    Snd_PlaySfx( ui->sfx_select );
+                    s_newGame->selectedSaveSlot = i;
+                }
+            }
+            ImGui::EndCombo();
+        }
+        ImGui::SameLine();
+        if ( ImGui::ArrowButton( "##SaveSlotSinglePlayerMenuConfigRight", ImGuiDir_Right ) ) {
+            Snd_PlaySfx( ui->sfx_select );
+            s_newGame->selectedSaveSlot++;
+            if ( s_newGame->selectedSaveSlot >= Cvar_VariableInteger( "g_maxSaveSlots" ) ) {
+                s_newGame->selectedSaveSlot = 0;
+            }
+        }
     }
-    if ( UI_MenuTitle( s_newGame->title->value, s_newGame->menu.titleFontScale ) ) {
-        UI_PopMenu();
-        memset( s_newGame->saveName, 0, sizeof( s_newGame->saveName ) );
-        memset( &ui->virtKeyboard, 0, sizeof( ui->virtKeyboard ) );
-        return;
-    }
+    ImGui::EndTable();
+}
 
-    ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * s_newGame->menu.textFontScale ) * ui->scale );
-
+static void NewGameMenu_Draw_DynamicSlots( void )
+{
+    int i;
+    
     ImGui::BeginTable( "##SinglePlayerMenuNewGameConfigTable", 2 );
     {
         ImGui::TableNextColumn();
@@ -165,32 +265,66 @@ static void NewGameMenu_Draw( void )
         }
     }
     ImGui::EndTable();
+}
 
-    if ( in_mode->i == 1 ) {
-        hShader = ui->controller_start;
-        imageSize = ImVec2( 172 * ui->scale, 64 * ui->scale );
-    } else {
-        hShader = s_newGame->acceptHovered ? s_newGame->accept_1 : s_newGame->accept_0;
-        imageSize = ImVec2( 256 * ui->scale, 72 * ui->scale );
-    }
+static void NewGameMenu_SaveConflict( void )
+{
+    ImGui::Begin( "Save Slot Overwrite", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse
+        | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoMove );
     
-    if ( !sgvm->m_pHandle->IsValid() ) {
-        hShader = s_newGame->accept_0;
+    ImGui::SetWindowSize( ImVec2( 256 * ui->scale, 72 * ui->scale ) );
+    ImGui::SetWindowPos( ImVec2( 480 * ui->scale, 460 * ui->scale ) );
+    ImGui::TextUnformatted( "                   *** WARNING ***                   " );
+    ImGui::TextUnformatted( "You about to overwrite a save slot with existing data" );
+    ImGui::TextUnformatted( "Are you sure about this?                             " );
+    ImGui::SetCursorScreenPos( ImVec2( 106 * ui->scale, 490 * ui->scale ) );
+    if ( ImGui::Button( "YES" ) ) {
+        s_newGame->slotConflict = qfalse;
+        BeginNewGame();
+    }
+    ImGui::SameLine();
+    ImGui::TextUnformatted( "/" );
+    ImGui::SameLine();
+    if ( ImGui::Button( "NO" ) ) {
+        s_newGame->slotConflict = qfalse;
     }
 
-    ImGui::SetCursorScreenPos( ImVec2( 970 * ui->scale, 680 * ui->scale ) );
-    ImGui::Image( (ImTextureID)(uintptr_t)hShader, imageSize );
-    s_newGame->acceptHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
-    if ( sgvm->m_pHandle->IsValid() ) {
-    	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) || Key_IsDown( KEY_PAD0_START ) ) {
-    		Snd_PlaySfx( ui->sfx_select );
-            BeginNewGame();
-    	}
+    ImGui::End();
+}
+
+static void NewGameMenu_Draw( void )
+{
+    int i;
+    extern cvar_t *in_joystick;
+    nhandle_t hShader;
+    ImVec2 imageSize;
+
+    ImGui::Begin( s_newGame->menu.name, NULL, s_newGame->menu.flags );
+    ImGui::SetWindowSize( ImVec2( s_newGame->menu.width, s_newGame->menu.height ) );
+    ImGui::SetWindowPos( ImVec2( s_newGame->menu.x, s_newGame->menu.y ) );
+
+    if ( s_newGame->slotConflict ) {
+        NewGameMenu_SaveConflict();
     } else {
-        if ( s_newGame->acceptHovered ) {
-            FontCache()->SetActiveFont( RobotoMono );
-            ImGui::SetItemTooltip( "ERROR: cannot begin new game, SGame module isn't valid, check the console log for details" );
-        }
+        UI_EscapeMenuToggle();
+    }
+    if ( ui->activemenu != &s_newGame->menu ) {
+        memset( s_newGame->saveName, 0, sizeof( s_newGame->saveName ) );
+        memset( &ui->virtKeyboard, 0, sizeof( ui->virtKeyboard ) );
+    }
+    if ( UI_MenuTitle( s_newGame->title->value, s_newGame->menu.titleFontScale ) ) {
+        UI_PopMenu();
+        memset( s_newGame->saveName, 0, sizeof( s_newGame->saveName ) );
+        memset( &ui->virtKeyboard, 0, sizeof( ui->virtKeyboard ) );
+        return;
+    }
+
+    ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * s_newGame->menu.textFontScale ) * ui->scale );
+
+    if ( Cvar_VariableInteger( "g_maxSaveSlots" ) == 0 ) {
+        NewGameMenu_Draw_DynamicSlots();
+    } else {
+        NewGameMenu_Draw_FixedSlots();
     }
 
     ImGui::SetCursorScreenPos( ImVec2( 16 * ui->scale, 300 * ui->scale ) );
@@ -206,6 +340,43 @@ static void NewGameMenu_Draw( void )
     ImGui::TextWrapped( "%s", difficultyTable[ (int)s_newGame->diff ].tooltip );
 
     ImGui::End();
+
+    if ( in_mode->i == 1 ) {
+        hShader = ui->controller_start;
+        imageSize = ImVec2( 172 * ui->scale, 64 * ui->scale );
+    } else {
+        hShader = s_newGame->acceptHovered ? s_newGame->accept_1 : s_newGame->accept_0;
+        imageSize = ImVec2( 256 * ui->scale, 72 * ui->scale );
+    }
+    
+    if ( !sgvm->m_pHandle->IsValid() ) {
+        hShader = s_newGame->accept_0;
+    }
+
+    ImGui::Begin( "##AcceptNewGameButton", NULL, MENU_DEFAULT_FLAGS );
+    ImGui::SetWindowSize( ImVec2( imageSize.x + 26, imageSize.y + 26 ) );
+    ImGui::SetWindowPos( ImVec2( 970 * ui->scale, 680 * ui->scale ) );
+    ImGui::SetCursorScreenPos( ImVec2( 970 * ui->scale, 680 * ui->scale ) );
+    ImGui::Image( (ImTextureID)(uintptr_t)hShader, imageSize );
+    if ( !s_newGame->slotConflict ) {
+        s_newGame->acceptHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
+        if ( sgvm->m_pHandle->IsValid() ) {
+        	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) || Key_IsDown( KEY_PAD0_START ) ) {
+        		Snd_PlaySfx( ui->sfx_select );
+                if ( Cvar_VariableInteger( "g_maxSaveSlots" ) != 0 && g_pArchiveHandler->SlotIsUsed( s_newGame->selectedSaveSlot ) ) {
+                    s_newGame->slotConflict = qtrue;
+                } else {
+                    BeginNewGame();
+                }
+        	}
+        } else {
+            if ( s_newGame->acceptHovered ) {
+                FontCache()->SetActiveFont( RobotoMono );
+                ImGui::SetItemTooltip( "ERROR: cannot begin new game, SGame module isn't valid, check the console log for details" );
+            }
+        }
+    }
+    ImGui::End();
 }
 
 int32_t count_fields( const char *line );
@@ -213,7 +384,9 @@ char **parse_csv( const char *line );
 
 void NewGameMenu_Cache( void )
 {
+    const char **saveFiles;
     const stringHash_t *hardest;
+    uint64_t i;
 
     hardest = strManager->ValueForKey( "SP_DIFF_THE_MEMES" );
 
@@ -247,7 +420,7 @@ void NewGameMenu_Cache( void )
     s_newGame->menu.draw = NewGameMenu_Draw;
     s_newGame->menu.flags = MENU_DEFAULT_FLAGS;
     s_newGame->menu.width = ui->gpuConfig.vidWidth;
-    s_newGame->menu.height = ui->gpuConfig.vidHeight;
+    s_newGame->menu.height = ui->gpuConfig.vidHeight - ( 300 * ui->scale );
     s_newGame->menu.titleFontScale = 3.5f;
     s_newGame->menu.textFontScale = 1.5f;
     s_newGame->menu.x = 0;
@@ -258,7 +431,27 @@ void NewGameMenu_Cache( void )
     s_newGame->accept_0 = re.RegisterShader( "menu/accept_0" );
     s_newGame->accept_1 = re.RegisterShader( "menu/accept_1" );
 
-    strcpy( s_newGame->saveName, "The Ultimate Lad" );
+    strcpy( s_newGame->saveName, Cvar_VariableString( "name" ) );
+
+    saveFiles = g_pArchiveHandler->GetSaveFiles( &s_newGame->numSaveFiles );
+    s_newGame->slotNames = (char **)Hunk_Alloc( sizeof( *s_newGame->slotNames ) * s_newGame->numSaveFiles, h_high );
+    for ( i = 0; i < s_newGame->numSaveFiles; i++ ) {
+        s_newGame->slotNames[i] = (char *)Hunk_Alloc( strlen( saveFiles[i] ) + i, h_high );
+        COM_StripExtension( saveFiles[i], s_newGame->slotNames[i], MAX_NPATH );
+        char *dot = strrchr( s_newGame->slotNames[i], '.' );
+        if ( dot != NULL ) {
+            *dot = '\0';
+        }
+    }
+
+    for ( i = 0; i < s_newGame->numSaveFiles; i++ ) {
+        if ( !g_pArchiveHandler->SlotIsUsed( i ) ) {
+            s_newGame->selectedSaveSlot = i;
+            break;
+        }
+    }
+
+    ImGui::SetNextWindowFocus();
 }
 
 void UI_NewGameMenu( void )
@@ -266,8 +459,6 @@ void UI_NewGameMenu( void )
     NewGameMenu_Cache();
     UI_PushMenu( &s_newGame->menu );
 }
-
-
 
 //
 // a small csv parser for c, credits to semitrivial for this
