@@ -327,7 +327,7 @@ namespace TheNomad::SGame {
 			Game_CameraPos.y = LevelManager.GetMapData().GetHeight() - origin.y;
 //			}
 			// technically no z coordinate because it's 2D
-//			Game_CameraZoom = 0.070f;
+			Game_CameraZoom = 0.070f;
 			
 			TheNomad::Engine::Renderer::ClearScene();
 			for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
