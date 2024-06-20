@@ -1637,7 +1637,7 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 				}
 			}
 			else {
-				internalFormat = GL_RGBA;
+				internalFormat = GL_RGBA8;
 			}
 		}
 		else {
@@ -1665,7 +1665,7 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 				}
 			}
 			else {
-				internalFormat = GL_RGB;
+				internalFormat = GL_RGB8;
 			}
 		}
 	}
@@ -1713,7 +1713,7 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 					}
 				}
 				else {
-					internalFormat = GL_RGB;
+					internalFormat = GL_RGB8;
 				}
 			}
 		}
@@ -1747,7 +1747,7 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 					}
 				}
 				else {
-					internalFormat = GL_RGBA;
+					internalFormat = GL_RGBA8;
 				}
 			}
 		}
