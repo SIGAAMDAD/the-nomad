@@ -225,7 +225,7 @@ int ModuleOnInit() {
 	// register cvars
 	//
 
-	TheNomad::Engine::Init();
+	@TheNomad::CvarManager = cast<TheNomad::CvarSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::CvarSystem() ) );
 
 	InitCvars();
 
@@ -264,7 +264,7 @@ int ModuleOnShutdown() {
 		TheNomad::GameSystem::GameSystems[i].OnShutdown();
 		@TheNomad::GameSystem::GameSystems[i] = null;
 	}
-	@THeNomad::CvarManager = null;
+	@TheNomad::CvarManager = null;
 	@TheNomad::GameSystem::GameManager = null;
 	@TheNomad::SGame::LevelManager = null;
 	@TheNomad::SGame::EntityManager = null;

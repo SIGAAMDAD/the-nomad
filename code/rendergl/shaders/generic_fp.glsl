@@ -236,6 +236,6 @@ void main() {
 	}
 #endif
 #endif
-	a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
+//	a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
     a_Color.rgb *= v_Color.rgb;
 }

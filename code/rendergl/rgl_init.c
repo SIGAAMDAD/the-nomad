@@ -90,6 +90,8 @@ cvar_t *r_depthPrepass;
 cvar_t *r_ssao;
 cvar_t *r_bloom;
 
+cvar_t *r_paused;
+
 cvar_t *r_normalMapping;
 cvar_t *r_specularMapping;
 cvar_t *r_deluxeMapping;
@@ -815,13 +817,13 @@ static void R_Register( void )
         "Enables usage of Shader Storage Buffer Objects (SSBO) instead of Uniform Buffer Objects (UBO).\n"
         "SSBOs can hold much more data and are dynamically sizeable, but are generally slower than UBOs." );
 
-    r_arb_texture_float = ri.Cvar_Get("r_arb_texture_float", "1", CVAR_SAVE | CVAR_LATCH);
-    ri.Cvar_SetDescription(r_arb_texture_float, "Enables HDR framebuffer.");
+    r_arb_texture_float = ri.Cvar_Get( "r_arb_texture_float", "1", CVAR_SAVE | CVAR_LATCH );
+    ri.Cvar_SetDescription( r_arb_texture_float, "Enables HDR framebuffer." );
 
-    r_allowLegacy = ri.Cvar_Get("r_allowLegacy", "0", CVAR_SAVE | CVAR_LATCH);
-    ri.Cvar_SetDescription(r_allowLegacy, "Allow the use of old OpenGL API versions, requires \\r_drawMode 0 or 1 and \\r_allowShaders 0");
-    r_allowShaders = ri.Cvar_Get("r_allowShaders", "1", CVAR_SAVE | CVAR_LATCH);
-    ri.Cvar_SetDescription(r_allowShaders, "Allow the use of GLSL shaders, requires \\r_allowLegacy 0.");
+    r_allowLegacy = ri.Cvar_Get( "r_allowLegacy", "0", CVAR_SAVE | CVAR_LATCH );
+    ri.Cvar_SetDescription( r_allowLegacy, "Allow the use of old OpenGL API versions, requires \\r_drawMode 0 or 1 and \\r_allowShaders 0" );
+    r_allowShaders = ri.Cvar_Get( "r_allowShaders", "1", CVAR_SAVE | CVAR_LATCH );
+    ri.Cvar_SetDescription( r_allowShaders, "Allow the use of GLSL shaders, requires \\r_allowLegacy 0." );
 
     r_picmip = ri.Cvar_Get( "r_picmip", "0", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_CheckRange( r_picmip, "0", "16", CVT_INT );
@@ -836,26 +838,10 @@ static void R_Register( void )
 	r_stencilBits = ri.Cvar_Get( "r_stencilBits", "8", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_stencilBits, "Stencil buffer size, value decreases Z-buffer depth." );
 
-    r_multisampleAmount = ri.Cvar_Get( "r_multisampleAmount", "2", CVAR_SAVE );
-    ri.Cvar_CheckRange( r_multisampleAmount, "0", "32", CVT_INT );
-    r_multisampleType = ri.Cvar_Get( "r_multisampleType", "1", CVAR_SAVE );
-    ri.Cvar_CheckRange( r_multisampleType, va( "%i", AntiAlias_None ), va( "%i", AntiAlias_CSAA ), CVT_INT );
-    ri.Cvar_SetDescription( r_multisampleType, "Sets the desired anti-aliasing technique. Requires \\r_postProcess" );
-
-    r_overBrightBits = ri.Cvar_Get( "r_overBrightBits", "1", CVAR_SAVE | CVAR_LATCH );
-	ri.Cvar_SetDescription( r_overBrightBits, "Sets the intensity of overall brightness of texture pixels." );
-	r_ignorehwgamma = ri.Cvar_Get( "r_ignorehwgamma", "0", CVAR_SAVE | CVAR_LATCH);
-    ri.Cvar_SetDescription( r_ignorehwgamma, "Overrides hardware gamma capabilities." );
-
 	r_hdr = ri.Cvar_Get( "r_hdr", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_hdr, "Do scene rendering in a framebuffer with high dynamic range." );
-	r_floatLightmap = ri.Cvar_Get( "r_floatLightmap", "0", CVAR_SAVE | CVAR_LATCH );
-	r_postProcess = ri.Cvar_Get( "r_postProcess", "1", CVAR_SAVE );
-	ri.Cvar_SetDescription( r_postProcess, "Enable post-processing." );
 
-    r_imageSharpenAmount = ri.Cvar_Get( "r_imageSharpenAmount", "1.0", CVAR_SAVE );
-    ri.Cvar_CheckRange( r_imageSharpenAmount, "0.5", "5.0", CVT_FLOAT );
-    ri.Cvar_SetDescription( r_imageSharpenAmount, "Sets the amount of sharpening applied per-pixel to a rendered texture" );
+    r_floatLightmap = ri.Cvar_Get( "r_floatLightmap", "0", CVAR_SAVE | CVAR_LATCH );
 
     r_toneMapType = ri.Cvar_Get( "r_toneMapType", "0", CVAR_SAVE | CVAR_LATCH );
     ri.Cvar_SetDescription( r_toneMapType,
@@ -971,12 +957,32 @@ static void R_Register( void )
     r_debugCamera = ri.Cvar_Get( "r_debugCamera", "0", CVAR_PRIVATE | CVAR_TEMP );
     ri.Cvar_SetDescription( r_debugCamera, "Toggles free camera movement, used for photomode." );
 
+    r_paused = Cvar_Get( "g_paused", "1", CVAR_TEMP );
+
 
     //
     // archived variables that can change any time
     //
     r_customWidth = ri.Cvar_Get( "r_customWidth", "1980", CVAR_SAVE );
 	r_customHeight = ri.Cvar_Get( "r_customHeight", "1080", CVAR_SAVE );
+
+    r_multisampleAmount = ri.Cvar_Get( "r_multisampleAmount", "2", CVAR_SAVE );
+    ri.Cvar_CheckRange( r_multisampleAmount, "0", "32", CVT_INT );
+    r_multisampleType = ri.Cvar_Get( "r_multisampleType", "1", CVAR_SAVE );
+    ri.Cvar_CheckRange( r_multisampleType, va( "%i", AntiAlias_None ), va( "%i", AntiAlias_FXAA ), CVT_INT );
+    ri.Cvar_SetDescription( r_multisampleType, "Sets the desired anti-aliasing technique. Requires \\r_postProcess" );
+
+    r_overBrightBits = ri.Cvar_Get( "r_overBrightBits", "1", CVAR_SAVE );
+	ri.Cvar_SetDescription( r_overBrightBits, "Sets the intensity of overall brightness of texture pixels." );
+	r_ignorehwgamma = ri.Cvar_Get( "r_ignorehwgamma", "1", CVAR_SAVE );
+    ri.Cvar_SetDescription( r_ignorehwgamma, "Overrides hardware gamma capabilities." );
+
+    r_postProcess = ri.Cvar_Get( "r_postProcess", "1", CVAR_SAVE );
+	ri.Cvar_SetDescription( r_postProcess, "Enable post-processing." );
+
+    r_imageSharpenAmount = ri.Cvar_Get( "r_imageSharpenAmount", "1.0", CVAR_SAVE );
+    ri.Cvar_CheckRange( r_imageSharpenAmount, "0.5", "5.0", CVT_FLOAT );
+    ri.Cvar_SetDescription( r_imageSharpenAmount, "Sets the amount of sharpening applied per-pixel to a rendered texture" );
 
 #ifdef _NOMAD_DEBUG
     r_glDiagnostics = ri.Cvar_Get( "r_gpuDiagnostics", "1", CVAR_SAVE | CVAR_LATCH );

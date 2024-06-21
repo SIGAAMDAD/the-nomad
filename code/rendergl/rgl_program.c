@@ -115,6 +115,7 @@ static uniformInfo_t uniformsInfo[UNIFORM_COUNT] = {
     { "u_ScreenSize",           GLSL_VEC2 },
     { "u_SharpenAmount",        GLSL_FLOAT },
     { "u_LightBuffer",          GLSL_BUFFER },
+    { "u_GamePaused",           GLSL_INT },
 };
 
 //static shaderProgram_t *hashTable[MAX_RENDER_SHADERS];

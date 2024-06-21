@@ -19,8 +19,8 @@ static void Image_Free( void *ptr ) {
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-static byte s_intensitytable[256];
-static unsigned char s_gammatable[256];
+static byte *s_intensitytable;
+static unsigned char *s_gammatable;
 
 int gl_filter_min = GL_LINEAR;
 int gl_filter_max = GL_NEAREST;
@@ -2847,7 +2847,7 @@ static void R_CreateBuiltinTextures( void )
 
 	for ( x = 0 ; x < arraylen( rg.scratchImage ) ; x++ ) {
 		// scratchimage is usually used for cinematic drawing
-		rg.scratchImage[x] = R_CreateImage( "*scratch", (byte *)data, DEFAULT_SIZE, DEFAULT_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_PICMIP | IMGFLAG_CLAMPTOEDGE, 0 );
+//		rg.scratchImage[x] = R_CreateImage( "*scratch", (byte *)data, DEFAULT_SIZE, DEFAULT_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_PICMIP | IMGFLAG_CLAMPTOEDGE, 0 );
 	}
 
 //	R_CreateDlightImage();
@@ -2876,35 +2876,35 @@ static void R_CreateBuiltinTextures( void )
 
 		rgbFormat = GL_RGBA8;
 
-		rg.renderImage = R_CreateImage( "_render", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
+//		rg.renderImage = R_CreateImage( "_render", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
 
 		if ( r_shadowBlur->i ) {
-			rg.screenScratchImage = R_CreateImage( "screenScratch", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, rgbFormat );
+//			rg.screenScratchImage = R_CreateImage( "screenScratch", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, rgbFormat );
 		}
 
 		if ( r_shadowBlur->i || r_ssao->i ) {
-			rg.hdrDepthImage = R_CreateImage( "*hdrDepth", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_R32F );
+//			rg.hdrDepthImage = R_CreateImage( "*hdrDepth", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_R32F );
 		}
 		
 		if ( r_drawSunRays->i ) {
-			rg.sunRaysImage = R_CreateImage("*sunRays", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, rgbFormat);
+//			rg.sunRaysImage = R_CreateImage("*sunRays", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, rgbFormat);
 		}
 
 		if ( r_bloom->i && r_hdr->i ) {
-			rg.bloomImage = R_CreateImage( "*bloom", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA16F );
+//			rg.bloomImage = R_CreateImage( "*bloom", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA16F );
 		}
 
 		if ( r_multisampleType->i == AntiAlias_2xSSAA || r_multisampleType->i == AntiAlias_4xSSAA ) {
 			int max = gl_filter_max;
 			gl_filter_max = GL_NEAREST;
 
-			rg.renderDepthImage  = R_CreateImage( "*renderdepth",  NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24 );
+//			rg.renderDepthImage  = R_CreateImage( "*renderdepth",  NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24 );
 
 			gl_filter_max = max;
 		} else {
-			rg.renderDepthImage  = R_CreateImage( "*renderdepth",  NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24 );
+//			rg.renderDepthImage  = R_CreateImage( "*renderdepth",  NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24 );
 		}
-		rg.textureDepthImage = R_CreateImage( "*texturedepth", NULL, PSHADOW_MAP_SIZE, PSHADOW_MAP_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24 );
+//		rg.textureDepthImage = R_CreateImage( "*texturedepth", NULL, PSHADOW_MAP_SIZE, PSHADOW_MAP_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24 );
 
 		{
 			void *p;
@@ -2915,20 +2915,20 @@ static void R_CreateBuiltinTextures( void )
 			data[0][0][3] = 255;
 			p = data;
 
-			rg.calcLevelsImage =   R_CreateImage( "*calcLevels",    p, 1, 1, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
-			rg.targetLevelsImage = R_CreateImage( "*targetLevels",  p, 1, 1, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
-			rg.fixedLevelsImage =  R_CreateImage( "*fixedLevels",   p, 1, 1, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
+//			rg.calcLevelsImage =   R_CreateImage( "*calcLevels",    p, 1, 1, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
+//			rg.targetLevelsImage = R_CreateImage( "*targetLevels",  p, 1, 1, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
+//			rg.fixedLevelsImage =  R_CreateImage( "*fixedLevels",   p, 1, 1, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
 		}
 
 		for ( x = 0; x < 2; x++ ) {
-			rg.textureScratchImage[x] = R_CreateImage( va( "*textureScratch%d", x), NULL, 256, 256, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8 );
+//			rg.textureScratchImage[x] = R_CreateImage( va( "*textureScratch%d", x), NULL, 256, 256, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8 );
 		}
 		for ( x = 0; x < 2; x++ ) {
-			rg.quarterImage[x] = R_CreateImage( va( "*quarter%d", x ), NULL, width / 2, height / 2, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8 );
+//			rg.quarterImage[x] = R_CreateImage( va( "*quarter%d", x ), NULL, width / 2, height / 2, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8 );
 		}
 
 		if ( r_ssao->i ) {
-			rg.screenSsaoImage = R_CreateImage( "*screenSsao", NULL, width / 2, height / 2, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8 );
+//			rg.screenSsaoImage = R_CreateImage( "*screenSsao", NULL, width / 2, height / 2, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8 );
 		}
 		/*
 
@@ -2979,19 +2979,30 @@ void R_SetColorMappings( void )
 		ri.Cvar_Set( "r_intensity", "1" );
 	}
 
+	if ( r_ignorehwgamma->i ) {
+		return;
+	}
+
+	if ( !s_gammatable ) {
+		s_gammatable = (unsigned char *)ri.Malloc( 256 );
+	}
+	if ( !s_intensitytable ) {
+		s_intensitytable = (byte *)ri.Malloc( 256 );
+	}
+
 	g = r_gammaAmount->f;
 
 	for ( i = 0; i < 256; i++ ) {
 		if ( g == 1 ) {
 			inf = i;
 		} else {
-			inf = 255 * powf( i/255.0f, 1.0f / g ) + 0.5f;
+			inf = 255 * powf( i / 255.0f, 1.0f / g ) + 0.5f;
 		}
 
-		if (inf < 0) {
+		if ( inf < 0 ) {
 			inf = 0;
 		}
-		if (inf > 255) {
+		if ( inf > 255 ) {
 			inf = 255;
 		}
 		s_gammatable[i] = inf;
@@ -3024,6 +3035,8 @@ void R_InitTextures( void )
 
 	// create the builtin textures for the framebuffers
 	R_CreateBuiltinTextures();
+
+	ri.Cmd_AddCommand( "setcolormappings", R_SetColorMappings );
 }
 
 void R_DeleteTextures( void )
@@ -3034,6 +3047,8 @@ void R_DeleteTextures( void )
 		nglDeleteTextures( 1, &rg.textures[i]->id );
 	}
 	memset( rg.textures, 0, sizeof( rg.textures ) );
+
+	ri.Cmd_RemoveCommand( "setcolormappings" );
 
 	GL_BindNullTextures();
 }

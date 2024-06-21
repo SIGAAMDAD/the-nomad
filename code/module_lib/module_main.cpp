@@ -375,25 +375,25 @@ void Module_ASMessage_f( const asSMessageInfo *pMsg, void *param )
 
 #ifdef _NOMAD_DEBUG
 void *AS_Alloc( size_t nSize, const char *pFilename, uint32_t lineNumber ) {
-//    return Z_Malloc( nSize, TAG_MODULES );
-    return Mem_Alloc( nSize );
+    return Z_Malloc( nSize, TAG_MODULES );
+//    return Mem_Alloc( nSize );
 }
 #else
 void *AS_Alloc( size_t nSize ) {
-//    return Z_Malloc( nSize, TAG_MODULES );
-    return Mem_Alloc( nSize );
+    return Z_Malloc( nSize, TAG_MODULES );
+//    return Mem_Alloc( nSize );
 }
 #endif
 
 #ifdef _NOMAD_DEBUG
 void AS_Free( void *ptr, const char *pFilename, uint32_t lineNumber ) {
-//    Z_Free( ptr );
-    Mem_Free( ptr );
+    Z_Free( ptr );
+//    Mem_Free( ptr );
 }
 #else
 void AS_Free( void *ptr ) {
-//    Z_Free( ptr );
-    Mem_Free( ptr );
+    Z_Free( ptr );
+//    Mem_Free( ptr );
 }
 #endif
 
@@ -715,6 +715,7 @@ void CModuleLib::Shutdown( qboolean quit )
     g_pModuleLib = NULL;
     g_pDebugger = NULL;
 
+    Z_FreeTags( TAG_MODULES );
     Mem_Shutdown();
 }
 

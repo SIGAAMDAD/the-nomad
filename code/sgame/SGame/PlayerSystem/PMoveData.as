@@ -279,7 +279,7 @@ namespace TheNomad::SGame {
 			
 			frametime = gameTic * 0.0001f;
 			
-			frame_msec = Game_FrameTime - old_frame_msec;
+			frame_msec = TheNomad::Engine::System::Milliseconds() - old_frame_msec;
 			
 			// if running over 1000fps, act as if each frame is 1ms
 			// prevents divisions by zero
@@ -292,7 +292,7 @@ namespace TheNomad::SGame {
 			if ( frame_msec > 200 ) {
 				frame_msec = 200;
 			}
-			old_frame_msec = Game_FrameTime;
+			old_frame_msec = TheNomad::Engine::System::Milliseconds();
 			
 			if ( up < 1.0f ) {
 				// not holding jump
