@@ -497,7 +497,7 @@ vec4 sharpen( sampler2D tex, in vec2 coords ) {
 // -- Sharpening --
 uniform float u_SharpenAmount;
 
-#define sharp_clamp 0.000  //[0.000 to 1.000] Limits maximum amount of sharpening a pixel recieves - Default is 0.035
+#define sharp_clamp 20.000  //[0.000 to 1.000] Limits maximum amount of sharpening a pixel recieves - Default is 0.035
 
 // -- Advanced sharpening settings --
 
