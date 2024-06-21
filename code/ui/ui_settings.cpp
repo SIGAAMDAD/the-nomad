@@ -112,6 +112,7 @@ typedef struct {
 	int windowWidth;
 	int windowHeight;
 	int maxFPS;
+	int ignorehwgamma;
 
 	float gamma;
 	float exposure;
@@ -1488,6 +1489,13 @@ static void VideoMenu_Draw( void )
 		SettingsMenu_MultiSliderInt( "Frame Limiter", "FrameLimiter",
 			"Sets the maximum amount of frames the game can render per second.",
 			&s_settingsMenu->video.maxFPS, 0, 1000, 1, true );
+		
+		ImGui::TableNextRow();
+
+		SettingsMenu_RadioButton( "Ignore Hardware Gamma", "IgnoreHardwareGamma",
+			"Enables hardware gamma correction factor if your graphics driver supports it, instead of applying"
+			"gamma correction in a GPU shader.",
+			&s_settingsMenu->video.ignorehwgamma, ui->gpuConfig.deviceSupportsGamma );
 	}
 	ImGui::EndTable();
 }
@@ -1537,6 +1545,7 @@ static void VideoMenu_Save( void )
 	Cvar_SetFloatValue( "r_imageSharpenAmount", s_settingsMenu->video.sharpening );
 	Cvar_SetFloatValue( "r_autoExposure", s_settingsMenu->video.exposure );
 	Cvar_SetFloatValue( "r_gammaAmount", s_settingsMenu->video.gamma );
+	Cvar_SetIntegerValue( "r_ignorehwgamma", s_settingsMenu->video.ignorehwgamma );
 	Cvar_SetIntegerValue( "com_maxfps", s_settingsMenu->video.maxFPS );
 
 	if ( !N_stricmp( g_renderer->s, "opengl" ) ) {
@@ -1563,7 +1572,6 @@ static void PerformanceMenu_Save( void )
 			s_settingsMenu->advancedPerformance.hdr = qtrue;
 			s_settingsMenu->advancedPerformance.pbr = qtrue;
 			s_settingsMenu->advancedPerformance.toneMapping = qtrue;
-			s_settingsMenu->advancedPerformance.toneMappingType = 1;
 			s_settingsMenu->advancedPerformance.postProcessing = qtrue;
 		}
 
@@ -1652,6 +1660,9 @@ static void PerformanceMenu_Save( void )
 		needRestart = true;
 	}
 	if ( s_settingsMenu->advancedPerformance.toneMapping != s_initial->advancedPerformance.toneMapping ) {
+		needRestart = true;
+	}
+	if ( s_settingsMenu->advancedPerformance.hdr != s_initial->advancedPerformance.hdr ) {
 		needRestart = true;
 	}
 
@@ -1801,6 +1812,7 @@ static void VideoMenu_SetDefault( void )
 	s_settingsMenu->video.sharpening = Cvar_VariableFloat( "r_imageSharpenAmount" );
 	s_settingsMenu->video.exposure = Cvar_VariableFloat( "r_autoExposure" );
 	s_settingsMenu->video.maxFPS = Cvar_VariableInteger( "com_maxfps" );
+	s_settingsMenu->video.ignorehwgamma = Cvar_VariableInteger( "r_ignorehwgamma" );
 }
 
 static void AudioMenu_SetDefault( void )

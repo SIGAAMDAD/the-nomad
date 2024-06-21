@@ -236,6 +236,12 @@ void main() {
 	}
 #endif
 #endif
-//	a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
+    if ( u_HardwareGamma == 0 ) {
+	    a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
+    }
     a_Color.rgb *= v_Color.rgb;
+
+    if ( u_GamePaused == 1 ) {
+        a_Color.rgb *= vec3( 0.25, 0.25, 0.25 );
+    }
 }

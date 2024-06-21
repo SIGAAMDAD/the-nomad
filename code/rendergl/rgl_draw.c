@@ -612,8 +612,9 @@ void RB_IterateShaderStages( shader_t *shader )
         GLSL_SetUniformInt( sp, UNIFORM_ALPHAGEN, stageP->alphaGen );
 		GLSL_SetUniformVec4( sp, UNIFORM_NORMAL_SCALE, stageP->normalScale );
 		GLSL_SetUniformVec4( sp, UNIFORM_SPECULAR_SCALE, stageP->specularScale );
+		GLSL_SetUniformInt( sp, UNIFORM_GAMEPAUSED, r_paused->i );
+		GLSL_SetUniformInt( sp, UNIFORM_HARDWAREGAMMA, !r_ignorehwgamma->i );
 		GLSL_SetUniformFloat( sp, UNIFORM_GAMMA, r_gammaAmount->f );
-		GLSL_SetUniformInt( sp, UNIFORM_GAMEPAUSED,  );
 
 		// custom texture filtering
 		if ( stageP->bundle[0].filter != -1 ) {
