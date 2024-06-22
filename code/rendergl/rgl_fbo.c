@@ -321,6 +321,7 @@ static void FBO_Restart_f( void )
 		R_CheckFBO( rg.hdrDepthFbo );
 	}
 
+/*
 	if ( rg.screenSsaoImage ) {
 		if ( rg.screenSsaoFbo ) {
 			FBO_Clear( rg.screenSsaoFbo );
@@ -353,6 +354,7 @@ static void FBO_Restart_f( void )
 			R_CheckFBO( rg.quarterFbo[i] );
 		}
 	}
+	*/
 
 	GL_CheckErrors();
 
@@ -437,13 +439,13 @@ void FBO_Init( void )
 		GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo->frameBuffer );
 		nglClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	}
-
 	if ( rg.hdrDepthImage ) {
 		rg.hdrDepthFbo = FBO_Create( "_hdrDepth", rg.hdrDepthImage->width, rg.hdrDepthImage->height );
 		FBO_CreateBuffer( rg.hdrDepthFbo, GL_RGBA16F, 0, multisample );
 		R_CheckFBO( rg.hdrDepthFbo );
 	}
 
+/*
 	if ( rg.screenSsaoImage ) {
 		rg.screenSsaoFbo = FBO_Create( "_screenSsao", rg.screenSsaoImage->width, rg.screenSsaoImage->height );
 		FBO_AttachImage( rg.screenSsaoFbo, rg.screenSsaoImage, GL_COLOR_ATTACHMENT0 );
@@ -459,10 +461,11 @@ void FBO_Init( void )
 		for ( i = 0; i < 2; i++ ) {
 			rg.quarterFbo[i] = FBO_Create( va( "_quarter%d", i ), rg.quarterImage[i]->width, rg.quarterImage[i]->height );
 			FBO_CreateBuffer( rg.quarterFbo[i], GL_RGBA8, i, 0 );
-//			FBO_AttachImage( rg.quarterFbo[i], rg.quarterImage[i], GL_COLOR_ATTACHMENT0 );
+			FBO_AttachImage( rg.quarterFbo[i], rg.quarterImage[i], GL_COLOR_ATTACHMENT0 );
 			R_CheckFBO( rg.quarterFbo[i] );
 		}
 	}
+	*/
 
 	GL_CheckErrors();
 

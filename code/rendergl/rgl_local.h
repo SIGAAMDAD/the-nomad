@@ -1677,6 +1677,62 @@ void R_LoadPCX( const char *name, byte **pic, int *width, int *height, int *chan
 void R_LoadPNG( const char *name, byte **pic, int *width, int *height, int *channels );
 void R_LoadTGA( const char *name, byte **pic, int *width, int *height, int *channels );
 
+
+/*
+====================================================================
+
+TESSELATOR/SHADER DECLARATIONS
+
+used for image drawing
+
+====================================================================
+*/
+
+typedef struct stageVars {
+	color4ub_t	colors[SHADER_MAX_VERTEXES];
+	vec2_t		texcoords[NUM_TEXTURE_BUNDLES][SHADER_MAX_VERTEXES];
+} stageVars_t;
+
+typedef struct shaderCommands_s {
+	glIndex_t	indexes[SHADER_MAX_INDEXES] GDR_ALIGN( 16 );
+	vec4_t		xyz[SHADER_MAX_VERTEXES] GDR_ALIGN( 16 );
+	int16_t		normal[SHADER_MAX_VERTEXES][4] GDR_ALIGN( 16 );
+	int16_t		tangent[SHADER_MAX_VERTEXES][4] GDR_ALIGN( 16 );
+	vec2_t		texCoords[SHADER_MAX_VERTEXES] GDR_ALIGN( 16 );
+	vec2_t		lightCoords[SHADER_MAX_VERTEXES] GDR_ALIGN( 16 );
+	uint16_t	color[SHADER_MAX_VERTEXES][4] GDR_ALIGN( 16 );
+	int16_t		lightdir[SHADER_MAX_VERTEXES][4] GDR_ALIGN( 16 );
+	//int			vertexDlightBits[SHADER_MAX_VERTEXES] GDR_ALIGN( 16 );
+
+	void *attribPointers[ATTRIB_INDEX_COUNT];
+	vertexBuffer_t *vao;
+
+	stageVars_t	svars GDR_ALIGN( 16 );
+
+	//color4ub_t	constantColor255[SHADER_MAX_VERTEXES] GDR_ALIGN( 16 );
+
+	shader_t	*shader;
+	double		shaderTime;	// -EC- set to double for frameloss fix
+
+//	int			dlightBits;	// or together of all vertexDlightBits
+//	int         pshadowBits;
+
+	int			firstIndex;
+	int			numIndexes;
+	int			numVertexes;
+
+	// info extracted from current shader
+	int			numPasses;
+	shaderStage_t	**xstages;
+} shaderCommands_t;
+
+extern	shaderCommands_t	tess;
+
+void RB_BeginSurface( shader_t *shader );
+void RB_EndSurface( void );
+void RB_CheckOverflow( int verts, int indexes );
+#define RB_CHECKOVERFLOW(v,i) if (tess.numVertexes + (v) >= SHADER_MAX_VERTEXES || tess.numIndexes + (i) >= SHADER_MAX_INDEXES ) {RB_CheckOverflow(v,i);}
+
 /*
 =============================================================
 

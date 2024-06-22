@@ -25,8 +25,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #pragma once
 
+//#define USE_MAP_HASH
+
 #include "ui_strings.h"
 #include <EASTL/unordered_map.h>
+#include <EASTL/vector_map.h>
 
 #define MAX_UI_STRINGS 4096
 
@@ -81,11 +84,16 @@ public:
     qboolean LanguageLoaded( language_t lang ) const;
     uint64_t NumLangsLoaded( void ) const;
     const stringHash_t *ValueForKey( const char *name );
+    qboolean StringExists( const char *name ) const;
 private:
     const stringHash_t *AllocErrorString( const char *key );
     int LoadTokenList( const char **text, language_t lang );
 
+#ifdef USE_MAP_HASH
+    eastl::unordered_map<const char *, stringHash_t *> stringHash[NUMLANGS];
+#else
     stringHash_t **stringHash[NUMLANGS];
+#endif
     uint64_t numLanguages;
 };
 

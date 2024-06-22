@@ -218,7 +218,7 @@ void R_InitExtensions(void)
         ri.Printf( PRINT_INFO, result[EXT_NOTFOUND], ext );
     }
 
-    ri.Cvar_Set( "r_arb_texture_max_anisotropy", va( "%i", (int)glContext.maxAnisotropy ) );
+    ri.Cvar_Set( "r_arb_texture_filter_anisotropic", va( "%i", glContext.ARB_texture_filter_anisotropic ) );
 
     //
     // ARB_texture_float

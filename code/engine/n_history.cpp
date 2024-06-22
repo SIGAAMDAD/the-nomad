@@ -325,7 +325,7 @@ void Con_SaveField(const field_t *field)
 }
 
 /*
-Con_HistoryGetPrev: returns qtrue if previously returned edit field needs to be updated
+* Con_HistoryGetPrev: returns qtrue if previously returned edit field needs to be updated
 */
 qboolean Con_HistoryGetPrev(field_t *field)
 {
@@ -349,7 +349,7 @@ qboolean Con_HistoryGetPrev(field_t *field)
 }
 
 /*
-Con_HistoryGetNext: returns qtrue if previously returned edit field needs to be updated
+* Con_HistoryGetNext: returns qtrue if previously returned edit field needs to be updated
 */
 qboolean Con_HistoryGetNext( field_t *field )
 {
@@ -503,4 +503,21 @@ static void Con_SaveHistory( void )
 		Con_Printf( "Couldn't write %s.\n", CONSOLE_HISTORY_FILE );
 
 	FS_FClose( f );
+}
+
+/*
+* Con_PrintHistory_f: prints console history just like bash history
+*/
+void Con_PrintHistory_f( void )
+{
+	field_t field;
+	int64_t numFields, i;
+
+	if ( !historyLoaded ) {
+		Con_LoadHistory();
+	}
+
+	for ( numFields = historyLine; numFields >= 0; numFields--, i++ ) {
+		Con_Printf( "%-4li  %s\n", i, historyEditLines[ numFields ].buffer );
+	}
 }

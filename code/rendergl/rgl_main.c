@@ -353,7 +353,7 @@ static void R_DrawWorld( void )
             VectorCopy4( vtx[3].color, color );
 
             for ( i = 0; i < 4; i++ ) {
-                VectorCopy2( vtx[i].uv, rg.world->sprites[ rg.world->tiles[y * rg.world->width + x].index ][i] );
+                VectorCopy2( vtx[i].uv, rg.world->sprites[ rg.world->tiles[ y * rg.world->width + x ].index ][i] );
                 VectorSet( vtx[i].worldPos, x, y, 0.0f );
 
                 R_VaoPackNormal( vtx[i].normal, normal );

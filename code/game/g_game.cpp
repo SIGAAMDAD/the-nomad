@@ -1491,7 +1491,7 @@ static void G_InitRenderer_Cvars( void )
                             " 10: FXAA\n"
                             " 11: CSAA\n"
                             "requires \\vid_restart." );
-    r_multisampleAmount = Cvar_Get( "r_multisampleAmount", "8", CVAR_SAVE );
+    r_multisampleAmount = Cvar_Get( "r_multisampleAmount", "2", CVAR_SAVE );
     Cvar_CheckRange( r_multisampleAmount, "0", "32", CVT_INT );
 
 	r_noborder = Cvar_Get( "r_noborder", "0", CVAR_ARCHIVE_ND );
@@ -1574,7 +1574,7 @@ void G_Init( void )
     g_maxSaveSlots = Cvar_Get( "g_maxSaveSlots", "10", CVAR_LATCH | CVAR_SAVE );
     Cvar_CheckRange( g_maxSaveSlots, "0", "1000", CVT_INT );
     Cvar_SetDescription( g_maxSaveSlots, "Sets the maximum allowed save files to be used." );
-
+    
     // userinfo
     Cvar_Get( "name", "The Ultimate Lad", CVAR_USERINFO | CVAR_ARCHIVE_ND );
     Cvar_Get( "skin", "raio", CVAR_USERINFO | CVAR_ARCHIVE_ND );

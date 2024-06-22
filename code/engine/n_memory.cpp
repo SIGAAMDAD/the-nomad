@@ -1399,7 +1399,6 @@ void Hunk_Clear( void )
 	hunk_temp = &hunk_high;
 
 	Con_Printf( "Hunk_Clear: reset the hunk ok\n" );
-//	VM_Clear();
 
 	hunkblocks = NULL;
 }
@@ -1431,6 +1430,7 @@ void Hunk_ClearToMark( void )
 	CThreadAutoLock lock( hunkLock );
 
 	Con_DPrintf( "Clearing to set hunk mark...\n" );
+	memset( hunkbase + hunk_low.mark, 0, hunk_low.permanent - hunk_low.mark );
 	hunk_low.permanent = hunk_low.temp = hunk_low.mark;
 	hunk_high.permanent = hunk_high.temp = hunk_high.mark;
 }

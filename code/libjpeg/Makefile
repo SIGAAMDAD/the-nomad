@@ -34,7 +34,8 @@ OPTIMIZERS    =\
 				-fexpensive-optimizations \
 				-funroll-loops \
 				-ffast-math \
-				-mfma -msse3 -msse2 -mno-avx2 -mno-avx
+				-mfma -msse3 -msse2 -msse -mavx2 -mavx \
+				-fno-omit-frame-pointer \
 #				-ftree-vectorize \
 				-finline-functions \
 				-finline-small-functions \

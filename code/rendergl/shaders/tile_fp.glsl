@@ -42,6 +42,8 @@ in vec3 v_WorldPos;
 
 uniform sampler2D u_DiffuseMap;
 uniform float u_GammaAmount;
+uniform int u_GamePaused;
+uniform int u_HardwareGamma;
 
 #if defined(USE_LIGHT)
 uniform vec3 u_AmbientColor;
@@ -395,14 +397,6 @@ void main() {
 
     ApplyLighting();
 
-#if defined(USE_BLOOM) && !defined(USE_FAST_LIGHT)
-	const float brightness = dot( a_Color.rgb, vec3( 0.2126, 0.7152, 0.0722 ) );
-	if ( brightness > 1.0 ) {
-		a_BrightColor = vec4( a_Color.rgb, 1.0 );
-	} else {
-		a_BrightColor = vec4( 0.0, 0.0, 0.0, 1.0 );
-	}
-#endif
 #if defined(USE_HDR)
 #if !defined(USE_EXPOSURE_TONE_MAPPING)
 	// reinhard tone mapping
@@ -411,7 +405,7 @@ void main() {
 	// exposure tone mapping
 	a_Color.rgb = vec3( 1.0 ) - exp( -a_Color.rgb * u_CameraExposure );
 #endif
-
+#endif
 #if defined(USE_BLOOM)
 	// check whether fragment output is higher than threshold, if so output as brightness color
 	float brightness = dot( a_Color.rgb, vec3( 0.2126, 0.7152, 0.0722 ) );
@@ -421,6 +415,10 @@ void main() {
 		a_BrightColor = vec4( 0.0, 0.0, 0.0, 1.0 );
 	}
 #endif
-#endif
-    a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
+    if ( u_HardwareGamma == 0 ) {
+        a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
+    }
+    if ( u_GamePaused == 1 ) {
+        a_Color.rgb = vec3( 0.75, 0.75, 0.75 );
+    }
 }

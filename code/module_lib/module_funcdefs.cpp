@@ -1095,36 +1095,42 @@ static uint64_t LoadFile( const string_t *fileName, CScriptArray *buffer ) {
     return length;
 }
 
-static string_t *GetHomePath( void ) {
-    string_t *str = (string_t *)g_pModuleLib->GetScriptEngine()->CreateScriptObject(
-        g_pModuleLib->GetScriptEngine()->GetTypeInfoByName( "string" ) );
+static void ListFiles( asIScriptGeneric *pGeneric )
+{
+    CScriptArray *fileList = CScriptArray::Create( g_pModuleLib->GetScriptEngine()->GetTypeInfoByName( "array" ) );
 
-    *str = FS_GetHomePath();
-    return str;
+    *(CScriptArray **)pGeneric->GetAddressOfReturnLocation() = fileList;
 }
 
-static string_t *GetBaseGameDir( void ) {
-    string_t *str = (string_t *)g_pModuleLib->GetScriptEngine()->CreateScriptObject(
-        g_pModuleLib->GetScriptEngine()->GetTypeInfoByName( "string" ) );
+static void MakeDir( asIScriptGeneric *pGeneric )
+{
 
-    *str = FS_GetBaseGameDir();
-    return str;
 }
 
-static string_t *GetBasePath( void ) {
-    string_t *str = (string_t *)g_pModuleLib->GetScriptEngine()->CreateScriptObject(
-        g_pModuleLib->GetScriptEngine()->GetTypeInfoByName( "string" ) );
+static void RemoveDir( asIScriptGeneric *pGeneric )
+{
 
-    *str = FS_GetBasePath();
-    return str;
 }
 
-static string_t *GetGamePath( void ) {
-    string_t *str = (string_t *)g_pModuleLib->GetScriptEngine()->CreateScriptObject(
-        g_pModuleLib->GetScriptEngine()->GetTypeInfoByName( "string" ) );
+static void RemoveFile( asIScriptGeneric *pGeneric )
+{
 
-    *str = FS_GetGamePath();
-    return str;
+}
+
+static void GetHomePath( asIScriptGeneric *pGeneric ) {
+    new ( pGeneric->GetAddressOfReturnLocation() ) string_t( FS_GetHomePath() );
+}
+
+static void GetBaseGameDir( asIScriptGeneric *pGeneric ) {
+    new ( pGeneric->GetAddressOfReturnLocation() ) string_t( FS_GetBaseGameDir() );
+}
+
+static void GetBasePath( asIScriptGeneric *pGeneric ) {
+    new ( pGeneric->GetAddressOfReturnLocation() ) string_t( FS_GetBasePath() );
+}
+
+static void GetGamePath( asIScriptGeneric *pGeneric ) {
+    new ( pGeneric->GetAddressOfReturnLocation() ) string_t( FS_GetGamePath() );
 }
 
 static bool FileExists( const string_t *npath ) {
@@ -2297,11 +2303,22 @@ void ModuleLib_Register_Engine( void )
 			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::LoadFile( const string& in, array<int8>& out )",WRAP_FN( LoadFile ) );
             REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::LoadFile( const string& in, string& out )", WRAP_FN( LoadFileString ) );
             REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::FileExists( const string& in )", WRAP_FN( FileExists ) );
-
-            REGISTER_GLOBAL_FUNCTION( "string TheNomad::Engine::FileSystem::GetHomePath()", WRAP_FN( GetHomePath ) );
-            REGISTER_GLOBAL_FUNCTION( "string TheNomad::Engine::FileSystem::GetBaseGameDir()", WRAP_FN( GetBaseGameDir ) );
-            REGISTER_GLOBAL_FUNCTION( "string TheNomad::Engine::FileSystem::GetBasePath()", WRAP_FN( GetBasePath ) );
-            REGISTER_GLOBAL_FUNCTION( "string TheNomad::Engine::FileSystem::GetGamePath()", WRAP_FN( GetGamePath ) );
+            g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+                "array<string>@ TheNomad::Engine::FileSystem::ListFiles()", asFUNCTION( ListFiles ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+                "bool TheNomad::Engine::FileSystem::MakeDir( const string& in )", asFUNCTION( MakeDir ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+                "bool TheNomad::Engine::FileSystem::RemoveDir( const string& in )", asFUNCTION( RemoveDir ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+                "bool TheNomad::Engine::FileSystem::RemoveFile( const string& in )", asFUNCTION( RemoveFile ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+                "string TheNomad::Engine::FileSystem::GetHomePath()", asFUNCTION( GetHomePath ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+                "string TheNomad::Engine::FileSystem::GetBaseGameDir()", asFUNCTION( GetBaseGameDir ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+                "string TheNomad::Engine::FileSystem::GetBasePath()", asFUNCTION( GetBasePath ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+                "string TheNomad::Engine::FileSystem::GetGamePath()", asFUNCTION( GetGamePath ), asCALL_GENERIC );
 
             {
                 REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteInt8( char, int )", WRAP_FN( WriteInt8 ) );

@@ -552,6 +552,9 @@ CModuleLib::CModuleLib( void )
     m_pLoadList = (CModuleInfo *)Hunk_Alloc( sizeof( *m_pLoadList ) * nFiles, h_high );
     
     for ( i = 0; i < nFiles; i++ ) {
+        if ( N_streq( fileList[i], "." ) || N_streq( fileList[i], ".." ) ) {
+            continue;
+        }
         Con_Printf( "...found module directory \"%s\".\n", fileList[i] );
         LoadModule( fileList[i] );
     }
@@ -598,11 +601,7 @@ static void ML_PrintStringCache_f( void ) {
 
     auto it = g_pStringFactory->m_StringCache.cbegin();
     for ( i = 0; i < g_pStringFactory->m_StringCache.size(); i++, it++ ) {
-    #ifdef USE_STRINGCACHE_MAP
         Con_Printf( "%8lu: 0x%08lx (%i references)", i, (uintptr_t)(void *)it->first.c_str(), it->second );
-    #else
-        Con_Printf( "%8lu: 0x%08lx (%i references)", i, (uintptr_t)(void *)it->c_str(), it->refCount );
-    #endif
     }
 }
 

@@ -1589,37 +1589,39 @@ static qboolean RawImage_ScaleToPower2( byte **data, int *inout_width, int *inou
 	return scaled;
 }
 
-static qboolean RawImage_HasAlpha(const byte *scan, uint32_t numPixels)
+static qboolean RawImage_HasAlpha( const byte *scan, uint32_t numPixels )
 {
 	uint32_t i;
 
-	if (!scan)
+	if ( !scan ) {
 		return qtrue;
+	}
 	
-	for (i = 0; i < numPixels; i++) {
-		if (scan[i*4 + 3] != 255) {
+	for ( i = 0; i < numPixels; i++ ) {
+		if ( scan[i*4 + 3] != 255 ) {
 			return qtrue;
 		}
 	}
 	return qfalse;
 }
 
-static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum picFormat, qboolean lightMap, imgType_t type, imgFlags_t flags)
+static GLenum RawImage_GetFormat( const byte *data, uint32_t numPixels, GLenum picFormat, qboolean lightMap, imgType_t type, imgFlags_t flags )
 {
 	uint32_t samples = 3;
 	GLenum internalFormat = GL_RGB;
-	qboolean forceNoCompression = (flags & IMGFLAG_NO_COMPRESSION);
-	qboolean normalmap = (type == IMGTYPE_NORMAL || type == IMGTYPE_NORMALHEIGHT);
+	qboolean forceNoCompression = ( flags & IMGFLAG_NO_COMPRESSION );
+	qboolean normalmap = ( type == IMGTYPE_NORMAL || type == IMGTYPE_NORMALHEIGHT );
 
-	if (picFormat != GL_RGBA8)
+	if ( picFormat != GL_RGBA8 ) {
 		return picFormat;
+	}
 
-	if (normalmap) {
-		if ((type == IMGTYPE_NORMALHEIGHT) && RawImage_HasAlpha(data, numPixels)) {
-			if (!forceNoCompression && glContext.textureCompressionRef & TCR_BPTC) {
+	if ( normalmap ) {
+		if ( ( type == IMGTYPE_NORMALHEIGHT ) && RawImage_HasAlpha( data, numPixels ) ) {
+			if ( !forceNoCompression && glContext.textureCompressionRef & TCR_BPTC ) {
 				internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM_ARB;
 			}
-			else if (!forceNoCompression && glContext.textureCompression == TC_S3TC_ARB) {
+			else if ( !forceNoCompression && glContext.textureCompression == TC_S3TC_ARB ) {
 				internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 			}
 			else if ( r_textureBits->i == 16 ) {
@@ -1663,18 +1665,18 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 			}
 		}
 		else {
-			if (!forceNoCompression && glContext.textureCompressionRef & TCR_RGTC) {
+			if ( !forceNoCompression && glContext.textureCompressionRef & TCR_RGTC ) {
 				internalFormat = GL_COMPRESSED_RG_RGTC2;
 			}
-			else if (!forceNoCompression && glContext.textureCompressionRef & TCR_BPTC) {
+			else if ( !forceNoCompression && glContext.textureCompressionRef & TCR_BPTC ) {
 				internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM_ARB;
 			}
-			else if (!forceNoCompression && glContext.textureCompression == TC_S3TC_ARB) {
+			else if ( !forceNoCompression && glContext.textureCompression == TC_S3TC_ARB ) {
 				internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 			}
 			else if ( r_textureBits->i == 16 ) {
 				if ( r_hdr->i ) {
-					internalFormat = GL_RGBA16F;
+					internalFormat = GL_RGB16F;
 				} else {
 					internalFormat = GL_RGB5;
 				}
@@ -1726,11 +1728,12 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 
 		// select proper internal format
 		if ( samples == 3 ) {
-			if (r_greyscale->i) {
-				if (r_textureBits->i == 16 || r_textureBits->i == 32)
+			if ( r_greyscale->i ) {
+				if ( r_textureBits->i == 16 || r_textureBits->i == 32 ) {
 					internalFormat = GL_LUMINANCE8;
-				else
+				} else {
 					internalFormat = GL_LUMINANCE;
+				}
 			}
 			else {
 				if ( !forceNoCompression && (glContext.textureCompressionRef & TCR_BPTC) ) {
@@ -1844,7 +1847,7 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 	return internalFormat;
 }
 
-static void CompressMonoBlock(byte outdata[8], const byte indata[16])
+static void CompressMonoBlock( byte outdata[8], const byte indata[16] )
 {
 	uint32_t hi, lo, diff, bias, outbyte, shift, i;
 	byte *p = outdata;
@@ -2876,18 +2879,18 @@ static void R_CreateBuiltinTextures( void )
 
 		rgbFormat = GL_RGBA8;
 
-//		rg.renderImage = R_CreateImage( "_render", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
+		rg.renderImage = R_CreateImage( "_render", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
 
 		if ( r_shadowBlur->i ) {
-//			rg.screenScratchImage = R_CreateImage( "screenScratch", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, rgbFormat );
+			rg.screenScratchImage = R_CreateImage( "screenScratch", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, rgbFormat );
 		}
 
 		if ( r_shadowBlur->i || r_ssao->i ) {
-//			rg.hdrDepthImage = R_CreateImage( "*hdrDepth", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_R32F );
+			rg.hdrDepthImage = R_CreateImage( "*hdrDepth", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_R32F );
 		}
-		
+/*		
 		if ( r_drawSunRays->i ) {
-//			rg.sunRaysImage = R_CreateImage("*sunRays", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, rgbFormat);
+			rg.sunRaysImage = R_CreateImage("*sunRays", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, rgbFormat);
 		}
 
 		if ( r_bloom->i && r_hdr->i ) {
@@ -2898,13 +2901,13 @@ static void R_CreateBuiltinTextures( void )
 			int max = gl_filter_max;
 			gl_filter_max = GL_NEAREST;
 
-//			rg.renderDepthImage  = R_CreateImage( "*renderdepth",  NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24 );
+			rg.renderDepthImage  = R_CreateImage( "*renderdepth",  NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24 );
 
 			gl_filter_max = max;
 		} else {
-//			rg.renderDepthImage  = R_CreateImage( "*renderdepth",  NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24 );
+			rg.renderDepthImage  = R_CreateImage( "*renderdepth",  NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24 );
 		}
-//		rg.textureDepthImage = R_CreateImage( "*texturedepth", NULL, PSHADOW_MAP_SIZE, PSHADOW_MAP_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24 );
+		rg.textureDepthImage = R_CreateImage( "*texturedepth", NULL, PSHADOW_MAP_SIZE, PSHADOW_MAP_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24 );
 
 		{
 			void *p;
@@ -2915,39 +2918,33 @@ static void R_CreateBuiltinTextures( void )
 			data[0][0][3] = 255;
 			p = data;
 
-//			rg.calcLevelsImage =   R_CreateImage( "*calcLevels",    p, 1, 1, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
-//			rg.targetLevelsImage = R_CreateImage( "*targetLevels",  p, 1, 1, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
-//			rg.fixedLevelsImage =  R_CreateImage( "*fixedLevels",   p, 1, 1, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
+			rg.calcLevelsImage =   R_CreateImage( "*calcLevels",    p, 1, 1, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
+			rg.targetLevelsImage = R_CreateImage( "*targetLevels",  p, 1, 1, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
+			rg.fixedLevelsImage =  R_CreateImage( "*fixedLevels",   p, 1, 1, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
 		}
 
 		for ( x = 0; x < 2; x++ ) {
-//			rg.textureScratchImage[x] = R_CreateImage( va( "*textureScratch%d", x), NULL, 256, 256, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8 );
+			rg.textureScratchImage[x] = R_CreateImage( va( "*textureScratch%d", x), NULL, 256, 256, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8 );
 		}
 		for ( x = 0; x < 2; x++ ) {
-//			rg.quarterImage[x] = R_CreateImage( va( "*quarter%d", x ), NULL, width / 2, height / 2, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8 );
+			rg.quarterImage[x] = R_CreateImage( va( "*quarter%d", x ), NULL, width / 2, height / 2, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8 );
 		}
 
 		if ( r_ssao->i ) {
-//			rg.screenSsaoImage = R_CreateImage( "*screenSsao", NULL, width / 2, height / 2, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8 );
+			rg.screenSsaoImage = R_CreateImage( "*screenSsao", NULL, width / 2, height / 2, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8 );
 		}
-		/*
 
-		if (r_sunlightMode->integer)
-		{
-			for ( x = 0; x < 4; x++)
-			{
-				tr.sunShadowDepthImage[x] = R_CreateImage(va("*sunshadowdepth%i", x), NULL, r_shadowMapSize->integer, r_shadowMapSize->integer, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24);
-				qglTextureParameterfEXT(tr.sunShadowDepthImage[x]->texnum, GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
-				qglTextureParameterfEXT(tr.sunShadowDepthImage[x]->texnum, GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+		if ( r_sunlightMode->i ) {
+			for ( x = 0; x < 4; x++ ) {
+				rg.sunShadowDepthImage[x] = R_CreateImage( va( "*sunshadowdepth%i", x ), NULL, r_shadowMapSize->i, r_shadowMapSize->i, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24 );
+				GL_BindTexture( TB_DIFFUSEMAP, rg.sunShadowDepthImage[x] );
+				nglTexParameterf( rg.sunShadowDepthImage[x]->id, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE );
+				nglTexParameterf( rg.sunShadowDepthImage[x]->id, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL );
 			}
 
-			tr.screenShadowImage = R_CreateImage("*screenShadow", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8);
+			rg.screenShadowImage = R_CreateImage( "*screenShadow", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8 );
 		}
-		if (r_cubeMapping->integer)
-		{
-			tr.renderCubeImage = R_CreateImage("*renderCube", NULL, r_cubemapSize->integer, r_cubemapSize->integer, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_MIPMAP | IMGFLAG_CUBEMAP, rgbFormat);
-		}
-		*/
+*/
 	}
 }
 
@@ -3024,8 +3021,6 @@ void R_InitTextures( void )
 
 	// create the builtin textures for the framebuffers
 	R_CreateBuiltinTextures();
-
-	ri.Cmd_AddCommand( "setcolormappings", R_SetColorMappings );
 }
 
 void R_DeleteTextures( void )
@@ -3036,8 +3031,6 @@ void R_DeleteTextures( void )
 		nglDeleteTextures( 1, &rg.textures[i]->id );
 	}
 	memset( rg.textures, 0, sizeof( rg.textures ) );
-
-	ri.Cmd_RemoveCommand( "setcolormappings" );
 
 	GL_BindNullTextures();
 }

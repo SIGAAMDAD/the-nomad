@@ -18,6 +18,10 @@ typedef struct {
 
 #define	IS_NAN(x) (((*(int *)&x)&nanmask)==nanmask)
 
+int	Q_rand( int *seed );
+float Q_random( int *seed );
+float Q_crandom( int *seed );
+
 float Q_rsqrt( float f );		// reciprocal square root
 
 float N_log2f( float f );

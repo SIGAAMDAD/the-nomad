@@ -878,7 +878,7 @@ static void UI_DrawDebugOverlay( void )
 
 void UI_EscapeMenuToggle( void )
 {
-    if ( ( Key_IsDown( KEY_ESCAPE ) || Key_IsDown( KEY_PAD0_B ) ) && ui->menusp > 1 ) {
+    if ( ( Key_IsDown( KEY_ESCAPE ) || Key_IsDown( KEY_PAD0_B ) && !ImGui::IsAnyItemActive() ) && ui->menusp > 1 ) {
 		if ( !ui->escapeToggle ) {
 			ui->escapeToggle = qtrue;
 			UI_PopMenu();

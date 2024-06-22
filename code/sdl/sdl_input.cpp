@@ -17,6 +17,8 @@
 static cvar_t *in_keyboardDebug;
 static cvar_t *in_forceCharset;
 
+#define JOYSTICK_DEADZONE 8000
+
 #define MAX_COOP_PLAYERS 4
 SDL_GameController *gamepads[MAX_COOP_PLAYERS];
 SDL_Haptic *haptics[MAX_COOP_PLAYERS];
@@ -1368,8 +1370,8 @@ void HandleEvents( void )
 			switch ( e.window.event ) {
 			case SDL_WINDOWEVENT_MOVED:
 				if ( gw_active && !gw_minimized && !glw_state.isFullscreen ) {
-					//Cvar_Setif( "vid_xpos", e.window.data1 );
-					//Cvar_Setif( "vid_ypos", e.window.data2 );
+					//Cvar_SetIntegerValue( "vid_xpos", e.window.data1 );
+					//Cvar_SetIntegerValue( "vid_ypos", e.window.data2 );
 				}
 				break;
 			// window states:

@@ -329,6 +329,7 @@ void Field_CompleteKeyBind( uint32_t key );
 void Field_CompleteFilename( const char *dir, const char *ext, qboolean stripExt, int flags );
 void Field_CompleteCommand( const char *cmd, qboolean doCommands, qboolean doCvars );
 
+void Con_PrintHistory_f( void );
 void Con_ResetHistory( void );
 void Con_SaveField( const field_t *field );
 qboolean Con_HistoryGetPrev( field_t *field );

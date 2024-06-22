@@ -250,7 +250,7 @@ void MainMenu_Cache( void )
         s_errorMenu->menu.draw = MainMenu_Draw;
         s_errorMenu->menu.fullscreen = qtrue;
 
-        s_errorMenu->menu.x = 528 - ( strlen( s_errorMenu->message ) * 2 );
+        s_errorMenu->menu.x = 528 - strlen( s_errorMenu->message );
         s_errorMenu->menu.y = 268;
 
         UI_ForceMenuOff();

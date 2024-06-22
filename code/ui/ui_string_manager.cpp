@@ -34,6 +34,8 @@ void CUIStringManager::Init( void ) {
 }
 
 void CUIStringManager::Shutdown( void ) {
+    numLanguages = 0;
+    memset( stringHash, 0, sizeof( stringHash ) );
 }
 
 static language_t StringToLanguage( const char *tok )
@@ -60,9 +62,13 @@ int CUIStringManager::LoadTokenList( const char **text, language_t lang )
     qboolean ignore;
 
     // we may be just reloading the language file, so clear it out
+#ifndef USE_MAP_HASH
     if ( !stringHash[ lang ] ) {
         stringHash[ lang ] = (stringHash_t **)Hunk_Alloc( sizeof( stringHash_t ** ) * ui_maxLangStrings->i, h_high );
     }
+#else
+    stringHash[lang].reserve( ui_maxLangStrings->i );
+#endif
 
     for ( i = 0; i < ui_maxLangStrings->i; i++ ) {
         ignore = qfalse;
@@ -84,6 +90,7 @@ int CUIStringManager::LoadTokenList( const char **text, language_t lang )
             continue;
         }
 
+#ifndef USE_MAP_HASH
         hash = Com_GenerateHashValue( tok, ui_maxLangStrings->i );
         for ( str = stringHash[lang][hash]; str; str = str->next ) {
             if ( !N_stricmp( str->name, tok ) ) {
@@ -92,6 +99,14 @@ int CUIStringManager::LoadTokenList( const char **text, language_t lang )
                 break;
             }
         }
+#else
+        auto it = stringHash[lang].find( tok );
+        if ( it != stringHash[lang].end() ) {
+            COM_ParseWarning( "found duplicate string token for '%s', ignoring it.\n", tok );
+            ignore = qtrue;
+            break;
+        }
+#endif
         if ( ignore ) {
             continue;
         }
@@ -115,11 +130,17 @@ int CUIStringManager::LoadTokenList( const char **text, language_t lang )
         str->name = (char *)( str + 1 );
         str->value = (char *)( str->name + strlen( name ) + 1 );
 
+#ifndef USE_MAP_HASH
         str->next = stringHash[lang][hash];
         stringHash[lang][hash] = str;
+#endif
 
         strcpy( str->name, name );
         strcpy( str->value, value );
+
+#ifdef USE_MAP_HASH
+        stringHash[lang].try_emplace( str->name, str );
+#endif
 
         str->lang = lang;
     }
@@ -214,16 +235,39 @@ void CUIStringManager::LoadLanguage( const char *filename )
 
     if ( ui_printStrings->i ) {
         Con_Printf( "\n---------- UI Strings: %s ----------\n", UI_LangToString( (int32_t)lang ) );
+#ifdef USE_MAP_HASH
+        for ( const auto& it : stringHash[ lang ] ) {
+            Con_Printf( "\"%s\" = \"%s\"\n", it.first, it.second->value );
+        }
+#else
         for ( i = 0; i < ui_maxLangStrings->i; i++ ) {
             if ( stringHash[lang][i] ) {
                 Con_Printf( "\"%s\" = \"%s\" (HASH: %lu)\n", stringHash[lang][i]->name, stringHash[lang][i]->value, i );
             }
         }
+#endif
     }
 }
 
+qboolean CUIStringManager::StringExists( const char *name ) const {
+    uint64_t hash;
+    const stringHash_t *str;
+
+    hash = Com_GenerateHashValue( name, ui_maxLangStrings->i );
+    for ( str = stringHash[ ui_language->i ][hash]; str; str = str->next ) {
+        if ( !N_stricmp( str->name, name ) ) {
+            return qtrue;
+        }
+    }
+    return qfalse;
+}
+
 qboolean CUIStringManager::LanguageLoaded( language_t lang ) const {
+#ifndef USE_MAP_HASH
     return (qboolean)( stringHash[lang] != NULL );
+#else
+    return (qboolean)( stringHash[lang].size() != 0 );
+#endif
 }
 
 uint64_t CUIStringManager::NumLangsLoaded( void ) const {
@@ -251,8 +295,12 @@ const stringHash_t *CUIStringManager::AllocErrorString( const char *key ) {
     N_strncpyz( str->value, value, MAX_STRING_CHARS );
 
     hash = Com_GenerateHashValue( key, ui_maxLangStrings->i );
+#ifdef USE_MAP_HASH
+    stringHash[ ui_language->i ].try_emplace( str->name, str );
+#else
     str->next = stringHash[ ui_language->i ][hash];
     stringHash[ ui_language->i ][hash] = str;
+#endif
 
     return str;
 }
@@ -266,12 +314,19 @@ const stringHash_t *CUIStringManager::ValueForKey( const char *name )
         N_Error( ERR_FATAL, "CUIStringManager::ValueForKey: NULL or empty name" );
     }
 
+#ifdef USE_MAP_HASH
+    const auto it = stringHash[ ui_language->i ].find( name );
+    if ( it != stringHash[ ui_language->i ].cend() ) {
+        return it->second;
+    }
+#else
     hash = Com_GenerateHashValue( name, ui_maxLangStrings->i );
     for ( str = stringHash[ui_language->i][hash]; str; str = str->next ) {
         if ( !N_stricmp( name, str->name ) ) {
             return str;
         }
     }
+#endif
 
     return AllocErrorString( name );
 }
