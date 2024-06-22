@@ -1570,10 +1570,6 @@ void G_Init( void )
     G_InitRenderer_Cvars();
 
     G_LoadSkins();
-
-    g_maxSaveSlots = Cvar_Get( "g_maxSaveSlots", "10", CVAR_LATCH | CVAR_SAVE );
-    Cvar_CheckRange( g_maxSaveSlots, "0", "1000", CVT_INT );
-    Cvar_SetDescription( g_maxSaveSlots, "Sets the maximum allowed save files to be used." );
     
     // userinfo
     Cvar_Get( "name", "The Ultimate Lad", CVAR_USERINFO | CVAR_ARCHIVE_ND );

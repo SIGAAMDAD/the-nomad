@@ -26,6 +26,8 @@ HEADER     | numSections   | N/A                  | int64
 
 CGameArchive *g_pArchiveHandler;
 
+cvar_t *g_maxSaveSlots;
+
 enum {
 	FT_CHAR,
 	FT_SHORT,
@@ -301,6 +303,10 @@ CGameArchive::CGameArchive( void )
 	char **fileList;
 
 	Con_Printf( "G_InitArchiveHandler: initializing save file cache...\n" );
+
+	g_maxSaveSlots = Cvar_Get( "g_maxSaveSlots", "10", CVAR_SAVE | CVAR_LATCH );
+	Cvar_CheckRange( g_maxSaveSlots, "0", "1000", CVT_INT );
+	Cvar_SetDescription( g_maxSaveSlots, "Sets the maximum allowed save slots, unlimited if \"0\"." );
 
 	fileList = FS_ListFiles( "SaveData", ".ngd", &numFiles );
 
