@@ -26,6 +26,8 @@ HEADER     | numSections   | N/A                  | int64
 
 CGameArchive *g_pArchiveHandler;
 
+cvar_t *g_maxSaveSlots;
+
 enum {
 	FT_CHAR,
 	FT_SHORT,
@@ -86,8 +88,6 @@ static void G_ListMods( const char *pSaveFile, uint64_t nMods, fileHandle_t hFil
 		Con_Printf( "%lu: %s v%i.%i.%i\n", i, name, versionMajor, versionUpdate, versionPatch );
 	}
 }
-
-static void G_LoadArchiveSection( ngdsection_read_t *section, fileHandle_t hFile );
 
 static ngdfield_t *G_LoadArchiveField( ngdsection_read_t *section, const char *pSaveFile, fileHandle_t hFile )
 {
@@ -299,19 +299,41 @@ static void G_SaveGame_f( void )
 
 CGameArchive::CGameArchive( void )
 {
-	uint64_t i;
+	uint64_t i, numFiles;
 	char **fileList;
 
 	Con_Printf( "G_InitArchiveHandler: initializing save file cache...\n" );
 
-	fileList = FS_ListFiles( "SaveData", ".ngd", &m_nArchiveFiles );
-	m_pArchiveCache = (ngd_file_t **)Hunk_Alloc( sizeof( *m_pArchiveCache ) * m_nArchiveFiles, h_low );
+	g_maxSaveSlots = Cvar_Get( "g_maxSaveSlots", "10", CVAR_SAVE | CVAR_LATCH );
+	Cvar_CheckRange( g_maxSaveSlots, "0", "1000", CVT_INT );
+	Cvar_SetDescription( g_maxSaveSlots, "Sets the maximum allowed save slots, unlimited if \"0\"." );
 
+	fileList = FS_ListFiles( "SaveData", ".ngd", &numFiles );
+
+	m_nArchiveFiles = numFiles;
+	if ( m_nArchiveFiles >= g_maxSaveSlots->i ) {
+		Con_Printf( COLOR_YELLOW "WARNING: more save files found than save slots allowed.\n" );
+	}
+	if ( g_maxSaveSlots->i != 0 ) {
+		m_nArchiveFiles = g_maxSaveSlots->i;
+	}
+
+	m_pArchiveCache = (ngd_file_t **)Hunk_Alloc( sizeof( *m_pArchiveCache ) * m_nArchiveFiles, h_low );
 	m_pArchiveFileList = (char **)Hunk_Alloc( sizeof( *m_pArchiveFileList ) * m_nArchiveFiles, h_low );
+	m_nUsedSaveSlots = 0;
+
 	for ( i = 0; i < m_nArchiveFiles; i++ ) {
+		if ( i >= numFiles ) {
+			m_pArchiveFileList[i] = (char *)Hunk_Alloc( strlen( va( "Save Slot %lu", i + 1 ) ) + 1, h_low );
+			strcpy( m_pArchiveFileList[i], va( "Save Slot %lu", i + 1 ) );
+			m_pArchiveCache[i] = NULL;
+			continue;
+		}
 		m_pArchiveFileList[i] = (char *)Hunk_Alloc( strlen( fileList[i] ) + 1, h_low );
 		strcpy( m_pArchiveFileList[i], fileList[i] );
 		LoadArchiveFile( fileList[i], i );
+
+		m_nUsedSaveSlots++;
 
 		Con_Printf( "...Cached save file '%s'\n", fileList[i] );
 	}
@@ -333,12 +355,19 @@ void G_ShutdownArchiveHandler( void ) {
 	g_pArchiveHandler->~CGameArchive();
 	g_pArchiveHandler = NULL;
 	Cmd_RemoveCommand( "sgame.save_game" );
-	Z_FreeTags( TAG_MODULES );
 }
 
 const char **CGameArchive::GetSaveFiles( uint64_t *nFiles ) const {
 	*nFiles = m_nArchiveFiles;
 	return (const char **)m_pArchiveFileList;
+}
+
+qboolean CGameArchive::SlotIsUsed( uint64_t nSlot ) const {
+	return m_pArchiveCache[ nSlot ] != NULL;
+}
+
+uint64_t CGameArchive::NumUsedSaveSlots( void ) const {
+	return m_nUsedSaveSlots;
 }
 
 void CGameArchive::BeginSaveSection( const char *moduleName, const char *name )

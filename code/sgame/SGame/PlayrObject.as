@@ -775,6 +775,6 @@ namespace TheNomad::SGame {
 		private PlayerDisplayUI m_HudData;
 		PMoveData Pmove( @this );
 
-		private InventoryManager m_Inventory;
+//		private InventoryManager m_Inventory;
 	};
 };
