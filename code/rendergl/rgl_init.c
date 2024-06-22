@@ -957,9 +957,6 @@ static void R_Register( void )
     r_debugCamera = ri.Cvar_Get( "r_debugCamera", "0", CVAR_PRIVATE | CVAR_TEMP );
     ri.Cvar_SetDescription( r_debugCamera, "Toggles free camera movement, used for photomode." );
 
-    r_paused = Cvar_Get( "g_paused", "1", CVAR_TEMP );
-
-
     //
     // archived variables that can change any time
     //
