@@ -67,10 +67,8 @@ vec4 sharpenImage( sampler2D tex, vec2 pos )
 }
 
 void main() {
-    a_Color = sharpenImage( u_DiffuseMap, v_TexCoords );
-
+    a_Color = v_Color.rgb * sharpenImage( u_DiffuseMap, v_TexCoords );
     a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
-    a_Color.rgb *= v_Color.rgb;
 
     if ( u_GamePaused == 1 ) {
         a_Color.rgb *= vec3( 0.75, 0.75, 0.75 );
