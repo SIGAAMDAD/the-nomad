@@ -86,15 +86,31 @@ namespace ImGui {
 	}
 };
 
+//
+// LoadLevelAssets: caches level relevant data
+//
 void LoadLevelAssets() {
-	TheNomad::Engine::Timer timer;
 	const string str = TheNomad::Engine::CvarVariableString( "skin" );
 
-	timer.Start();
+	// NOTE: always load the sprite sheets here instead of InitResources
+	// doing it there causes a weird bug where the sprite's texture doesn't
+	// render correctly
+	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_torso", 512, 512, 32, 32 );
+	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_legs", 512, 512, 32, 32 );
+	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_arms", 512, 512, 32, 32 );
+}
 
-	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_torso" );
-	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_legs" );
-	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_arms" );
+//
+// InitResources: caches all important SGame resources
+//
+void InitResources() {
+	string str;
+
+	ConsolePrint( "Initializing SGame Resources...\n" );
+
+	TheNomad::Engine::Timer timer;
+
+	timer.Start();
 
 	TheNomad::SGame::InfoSystem::InfoManager.LoadMobInfos();
 	TheNomad::SGame::InfoSystem::InfoManager.LoadItemInfos();
@@ -129,15 +145,7 @@ void LoadLevelAssets() {
 
 	timer.Stop();
 	ConsolePrint( "LoadLevelAssets: " + timer.ElapsedMilliseconds() + "ms\n" );
-}
 
-//
-// InitResources: caches all important SGame resources
-//
-void InitResources() {
-	string str;
-
-	ConsolePrint( "Initializing SGame Resources...\n" );
 	//
 	// register strings
 	//
