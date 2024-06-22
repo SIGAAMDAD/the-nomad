@@ -84,6 +84,7 @@ public:
     qboolean LanguageLoaded( language_t lang ) const;
     uint64_t NumLangsLoaded( void ) const;
     const stringHash_t *ValueForKey( const char *name );
+    qboolean StringExists( const char *name ) const;
 private:
     const stringHash_t *AllocErrorString( const char *key );
     int LoadTokenList( const char **text, language_t lang );

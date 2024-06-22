@@ -290,7 +290,7 @@ char *FS_BuildOSPath( const char *base, const char *game, const char *npath )
 }
 
 /*
-FS_PathCmp: Ignore case and separator char distinctions
+* FS_PathCmp: Ignore case and separator char distinctions
 */
 static int FS_PathCmp( const char *s1, const char *s2 )
 {
@@ -910,7 +910,7 @@ static void FS_SortFileList( char **list, uint64_t n )
 {
 	const char *m;
 	char *temp;
-	uint64_t i, j;
+	int i, j;
 	i = 0;
 	j = n;
 	m = list[ n >> 1 ];
@@ -4078,13 +4078,13 @@ static void FS_AddGameDirectory( const char *path, const char *dir )
 
 	// get .bff files
 	bffFiles = Sys_ListFiles( curpath, ".bff", NULL, &numfiles, qfalse );
-	if (numfiles >= 2) {
-//		FS_SortFileList( bffFiles, numfiles - 1 );
+	if ( numfiles >= 2 ) {
+		FS_SortFileList( bffFiles, numfiles - 1 );
 	}
 
-	bffDirs = Sys_ListFiles(curpath, "/", NULL, &numdirs, qfalse);
-	if (numdirs >= 2) {
-//		FS_SortFileList( bffDirs, numdirs - 1 );
+	bffDirs = Sys_ListFiles( curpath, "/", NULL, &numdirs, qfalse );
+	if ( numdirs >= 2 ) {
+		FS_SortFileList( bffDirs, numdirs - 1 );
 	}
 
 	Con_DPrintf( "Adding game directory '%s'...\n", curpath );

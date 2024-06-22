@@ -2888,7 +2888,7 @@ static void R_CreateBuiltinTextures( void )
 		if ( r_shadowBlur->i || r_ssao->i ) {
 			rg.hdrDepthImage = R_CreateImage( "*hdrDepth", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_R32F );
 		}
-		
+/*		
 		if ( r_drawSunRays->i ) {
 			rg.sunRaysImage = R_CreateImage("*sunRays", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, rgbFormat);
 		}
@@ -2933,20 +2933,18 @@ static void R_CreateBuiltinTextures( void )
 		if ( r_ssao->i ) {
 			rg.screenSsaoImage = R_CreateImage( "*screenSsao", NULL, width / 2, height / 2, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8 );
 		}
-		/*
 
-		if (r_sunlightMode->integer)
-		{
-			for ( x = 0; x < 4; x++)
-			{
-				tr.sunShadowDepthImage[x] = R_CreateImage(va("*sunshadowdepth%i", x), NULL, r_shadowMapSize->integer, r_shadowMapSize->integer, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24);
-				qglTextureParameterfEXT(tr.sunShadowDepthImage[x]->texnum, GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
-				qglTextureParameterfEXT(tr.sunShadowDepthImage[x]->texnum, GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+		if ( r_sunlightMode->i ) {
+			for ( x = 0; x < 4; x++ ) {
+				rg.sunShadowDepthImage[x] = R_CreateImage( va( "*sunshadowdepth%i", x ), NULL, r_shadowMapSize->i, r_shadowMapSize->i, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24 );
+				GL_BindTexture( TB_DIFFUSEMAP, rg.sunShadowDepthImage[x] );
+				nglTexParameterf( rg.sunShadowDepthImage[x]->id, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE );
+				nglTexParameterf( rg.sunShadowDepthImage[x]->id, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL );
 			}
 
-			tr.screenShadowImage = R_CreateImage("*screenShadow", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8);
+			rg.screenShadowImage = R_CreateImage( "*screenShadow", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8 );
 		}
-		*/
+*/
 	}
 }
 

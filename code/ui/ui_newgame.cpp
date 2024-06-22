@@ -35,9 +35,7 @@ typedef struct {
     qboolean slotConflict;
 
     const char **difficultyList;
-    char **hardestStrings;
-    int64_t numHardestStrings;
-    int64_t hardestIndex;
+    const stringHash_t *hardestString;
 
     const stringHash_t *title;
     const stringHash_t *newGameSaveNamePrompt;
@@ -387,28 +385,31 @@ void NewGameMenu_Cache( void )
     const char **saveFiles;
     const stringHash_t *hardest;
     uint64_t i;
-
-    hardest = strManager->ValueForKey( "SP_DIFF_THE_MEMES" );
+    int seed;
+    uint64_t hardestIndex, numHardestStrings;
 
     if ( !ui->uiAllocated ) {
         s_newGame = (newGameMenu_t *)Hunk_Alloc( sizeof( *s_newGame ), h_high );
-        memset( s_newGame, 0, sizeof( *s_newGame ) );
-        s_newGame->hardestStrings = parse_csv( hardest->value );
-        s_newGame->numHardestStrings = count_fields( hardest->value );
+    }
+    memset( s_newGame, 0, sizeof( *s_newGame ) );
+    memset( &ui->virtKeyboard, 0, sizeof( ui->virtKeyboard ) );
+
+    seed = Sys_Milliseconds();
+    numHardestStrings = 0;
+    while ( strManager->StringExists( va( "SP_DIFF_THE_MEMES_%lu", numHardestStrings ) ) ) {
+        numHardestStrings++;
     }
 
-    memset( &ui->virtKeyboard, 0, sizeof( ui->virtKeyboard ) );
-    memset( s_newGame->saveName, 0, sizeof( s_newGame->saveName ) );
+    hardestIndex = Q_rand( &seed ) % numHardestStrings;
+    hardest = strManager->ValueForKey( va( "SP_DIFF_THE_MEMES_%lu", hardestIndex ) );
 
-    srand( Sys_Milliseconds() );
-    s_newGame->hardestIndex = rand() % s_newGame->numHardestStrings;
     static const char *difficulties[NUMDIFS] = {
         difficultyTable[ DIF_NOOB ].name,
         difficultyTable[ DIF_RECRUIT ].name,
         difficultyTable[ DIF_MERC ].name,
         difficultyTable[ DIF_NOMAD ].name,
         difficultyTable[ DIF_BLACKDEATH ].name,
-        s_newGame->hardestStrings[ s_newGame->hardestIndex ]
+        hardest->value
     };
 
     s_newGame->title = strManager->ValueForKey( "SP_NEWGAME" );
@@ -460,6 +461,7 @@ void UI_NewGameMenu( void )
     UI_PushMenu( &s_newGame->menu );
 }
 
+/*
 //
 // a small csv parser for c, credits to semitrivial for this
 // https://github.com/semitrivial/csv_parser.git
@@ -517,11 +519,11 @@ static char *CopyUIString( const char *str ) {
     return out;
 }
 
-/*
- *  Given a string containing no linebreaks, or containing line breaks
- *  which are escaped by "double quotes", extract a NULL-terminated
- *  array of strings, one for every cell in the row.
- */
+//
+// Given a string containing no linebreaks, or containing line breaks
+// which are escaped by "double quotes", extract a NULL-terminated
+// array of strings, one for every cell in the row.
+//
 char **parse_csv( const char *line ) {
     char **buf, **bptr, *tmp, *tptr;
     const char *ptr;
@@ -590,3 +592,4 @@ char **parse_csv( const char *line ) {
     Hunk_FreeTempMemory( tmp );
     return buf;
 }
+*/

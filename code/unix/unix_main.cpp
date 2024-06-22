@@ -502,7 +502,7 @@ void Sys_Print( const char *msg )
 char *Sys_ConsoleInput( void )
 {
     // we use this when sending back commands
-    static char text[ sizeof(tty_con.buffer) ];
+    static char text[ sizeof( tty_con.buffer ) ];
     int avail;
     char key;
     char *s;
@@ -649,23 +649,24 @@ tty_err Sys_ConsoleInputInit( void )
 {
     struct termios tc;
     struct rlimit64 limit;
-    int err;
     const char *term;
 
-    signal( SIGTTIN, SIG_IGN );
-    signal( SIGTTOU, SIG_IGN );
-
-    Con_Printf( "Sys_InitConsole: initializing logging\n" );
+    // TTimo
+	// https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=390
+	// ttycon 0 or 1, if the process is backgrounded (running non interactively)
+	// then SIGTTIN or SIGTOU is emitted, if not catched, turns into a SIGSTP
+	signal( SIGTTIN, SIG_IGN );
+	signal( SIGTTOU, SIG_IGN );
 
     // if SIGCONT is recieved, reinitialize the console
     signal( SIGCONT, CON_SigCont );
 
     if ( signal( SIGTSTP, SIG_IGN ) == SIG_DFL ) {
-        signal( SIGTSTP, CON_SigTStp);
+        signal( SIGTSTP, CON_SigTStp );
     }
 
-    stdin_flags = fcntl(STDIN_FILENO, F_GETFL, 0);
-    if (stdin_flags == -1) {
+    stdin_flags = fcntl( STDIN_FILENO, F_GETFL, 0 );
+    if ( stdin_flags == -1 ) {
         stdin_active = qfalse;
         return TTY_ERROR;
     }
@@ -694,7 +695,10 @@ tty_err Sys_ConsoleInputInit( void )
     tc.c_cc[VTIME] = 0;
     tcsetattr( STDIN_FILENO, TCSADRAIN, &tc );
 
-    ttycon_color_on = qtrue;
+	if ( ttycon_ansicolor && ttycon_ansicolor->i ) {
+		ttycon_color_on = qtrue;
+	}
+
     ttycon_on = qtrue;
 
     tty_Hide();
