@@ -113,16 +113,12 @@ namespace TheNomad::SGame {
 				if ( ( move_toggle % ( 16 + ( TheNomad::Engine::CvarVariableInteger( "com_maxfps" ) / 10 ) ) ) == 0.0f ) {
 					switch ( TheNomad::Util::PRandom() & 3 ) {
 					case 0:
+					case 2:
 						moveGravel0.Play();
 						break;
 					case 1:
-						moveGravel1.Play();
-						break;
-					case 2:
-						moveGravel2.Play();
-						break;
 					case 3:
-						moveGravel3.Play();
+						moveGravel1.Play();
 						break;
 					};
 				}
