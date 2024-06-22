@@ -19,8 +19,8 @@ static void Image_Free( void *ptr ) {
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-static byte *s_intensitytable;
-static unsigned char *s_gammatable;
+static byte s_intensitytable[256];
+static unsigned char s_gammatable[256];
 
 int gl_filter_min = GL_LINEAR;
 int gl_filter_max = GL_NEAREST;
@@ -2977,17 +2977,6 @@ void R_SetColorMappings( void )
 
 	if ( r_intensity->f <= 1 ) {
 		ri.Cvar_Set( "r_intensity", "1" );
-	}
-
-	if ( r_ignorehwgamma->i ) {
-		return;
-	}
-
-	if ( !s_gammatable ) {
-		s_gammatable = (unsigned char *)ri.Malloc( 256 );
-	}
-	if ( !s_intensitytable ) {
-		s_intensitytable = (byte *)ri.Malloc( 256 );
 	}
 
 	g = r_gammaAmount->f;
