@@ -12,6 +12,7 @@ in vec4 v_Color;
 
 uniform sampler2D u_DiffuseMap;
 uniform float u_GammaAmount;
+uniform int u_GamePaused;
 
 #if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
 uniform vec4 u_SpecularScale;
@@ -162,9 +163,9 @@ uniform vec2 u_ScreenSize;
 #define offset_bias 6.0  //[0.0 to 6.0] Offset bias adjusts the radius of the sampling pattern.
                          //I designed the pattern for offset_bias 1.0, but feel free to experiment.
 
-//#define CoefLuma vec3( 0.2126, 0.7152, 0.0722 )      // BT.709 & sRBG luma coefficient (Monitors and HD Television)
+#define CoefLuma vec3( 0.2126, 0.7152, 0.0722 )      // BT.709 & sRBG luma coefficient (Monitors and HD Television)
 //#define CoefLuma vec3( 0.299, 0.587, 0.114 )       // BT.601 luma coefficient (SD Television)
-#define CoefLuma vec3( 1.0/3.0, 1.0/3.0, 1.0/3.0 ) // Equal weight coefficient
+//#define CoefLuma vec3( 1.0/3.0, 1.0/3.0, 1.0/3.0 ) // Equal weight coefficient
 
 vec4 sharpenImage( sampler2D tex, vec2 pos )
 {
@@ -222,8 +223,8 @@ void main() {
 	// reinhard tone mapping
 	a_Color.rgb = a_Color.rgb / ( a_Color.rgb + vec3( 1.0 ) );
 #else
-	// exposure tone mapping
-	a_Color.rgb = vec3( 1.0 ) - exp( -a_Color.rgb * u_Exposure );
+	// exposure tone mapping //  BROKEN
+//	a_Color.rgb = vec3( 1.0 ) - exp( -a_Color.rgb * u_Exposure );
 #endif
 
 #if defined(USE_BLOOM)
@@ -238,4 +239,8 @@ void main() {
 #endif
 	a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
     a_Color.rgb *= v_Color.rgb;
+
+    if ( u_GamePaused == 1 ) {
+        a_Color.rgb = vec3( 0.75, 0.75, 0.75 );
+    }
 }

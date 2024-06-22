@@ -24,12 +24,12 @@ SDL_GameController *gamepads[MAX_COOP_PLAYERS];
 SDL_Haptic *haptics[MAX_COOP_PLAYERS];
 SDL_Joystick *sticks[MAX_COOP_PLAYERS];
 
-static SDL_Cursor *mouse_cursor_active, *mouse_cursor;
+//static SDL_Cursor *mouse_cursor_active, *mouse_cursor;
+//qboolean sdlImageActive = qfalse;
+
 
 static qboolean mouseAvailable = qfalse;
 static qboolean mouseActive = qfalse;
-
-qboolean sdlImageActive = qfalse;
 
 static cvar_t *in_mouse;
 
@@ -392,6 +392,7 @@ static void IN_GobbleMouseEvents( void )
 	}
 }
 
+/*
 static void IN_LoadMouseIcons( void )
 {
 	SDL_Surface *image;
@@ -439,6 +440,7 @@ static void IN_LoadMouseIcons( void )
 		SDL_FreeSurface( image );
 	}
 }
+*/
 
 /*
 ===============
@@ -451,19 +453,11 @@ static void IN_ActivateMouse( void )
 		return;
 	}
 
-	if ( in_mode->i == 0 && mouse_cursor_active && keys[KEY_MOUSE_LEFT].down ) {
-		SDL_SetCursor( mouse_cursor_active );
-	} else if ( in_mode->i == 0 && mouse_cursor && !keys[KEY_MOUSE_LEFT].down ) {
-		SDL_SetCursor( mouse_cursor );
-	}
 	if ( !mouseActive ) {
 //		IN_GobbleMouseEvents();
 
 //		SDL_SetRelativeMouseMode( in_mouse->i == 1 ? SDL_TRUE : SDL_FALSE );
 //		SDL_SetWindowGrab( SDL_window, SDL_TRUE );
-
-//		if ( glw_state.isFullscreen )
-//			SDL_ShowCursor( SDL_FALSE );
 
 //		SDL_WarpMouseInWindow( SDL_window, glw_state.window_width / 2, glw_state.window_height / 2 );
 
@@ -514,20 +508,10 @@ static void IN_DeactivateMouse( void )
 		if ( gw_active ) {
 //			SDL_WarpMouseInWindow( SDL_window, glw_state.window_width / 2, glw_state.window_height / 2 );
 		} else {
-			if ( glw_state.isFullscreen ) {
-				SDL_ShowCursor( SDL_TRUE );
-			}
-
 //			SDL_WarpMouseGlobal( glw_state.desktop_width / 2, glw_state.desktop_height / 2 );
 		}
 
 		mouseActive = qfalse;
-	}
-
-	// Always show the cursor when the mouse is disabled,
-	// but not when fullscreen
-	if ( !glw_state.isFullscreen ) {
-		SDL_ShowCursor( SDL_TRUE );
 	}
 }
 
@@ -1468,6 +1452,7 @@ void IN_Init( void )
 		return;
 	}
 
+	/*
 	Con_Printf( "Calling IMG_Init( IMG_INIT_PNG | IMG_INIT_JPG )...\n" );
 	if ( IMG_Init( IMG_INIT_PNG | IMG_INIT_JPG ) == 0 ) {
 		Con_Printf( "IMG_Init( IMG_INIT_PNG ) failed: %s\n", SDL_GetError() );
@@ -1476,6 +1461,7 @@ void IN_Init( void )
 		Con_Printf( "IMG_Init( IMG_INIT_PNG | IMG_INIT_JPG ) passed.\n" );
 		sdlImageActive = qtrue;
 	}
+	*/
 
 	Con_DPrintf( "\n------- Input Initialization -------\n" );
 
@@ -1555,10 +1541,12 @@ void IN_Init( void )
 	Cmd_AddCommand( "in_haptic_rumble", IN_HapticRumble );
 
 	// FIXME: dont load mouse icons on console
+	/*
 	IN_LoadMouseIcons();
 	if ( in_mode->i == 0 && mouse_cursor ) {
 		SDL_SetCursor( mouse_cursor );
 	}
+	*/
 
 	Con_DPrintf( "------------------------------------\n" );
 }
@@ -1573,6 +1561,7 @@ void IN_Shutdown( void )
 
 	IN_ShutdownJoystick();
 
+/*
 	if ( mouse_cursor ) {
 		SDL_FreeCursor( mouse_cursor );
 		mouse_cursor = NULL;
@@ -1581,6 +1570,7 @@ void IN_Shutdown( void )
 		SDL_FreeCursor( mouse_cursor_active );
 		mouse_cursor_active = NULL;
 	}
+*/
 
     Cmd_RemoveCommand( "minimize" );
     Cmd_RemoveCommand( "in_restart" );

@@ -346,6 +346,9 @@ typedef enum {
     UNIFORM_SHARPENING,
 
     UNIFORM_LIGHTDATA,
+    UNIFORM_HARDWAREGAMMA,
+
+    UNIFORM_GAMEPAUSED,
 
     UNIFORM_COUNT
 } uniform_t;
@@ -1414,7 +1417,7 @@ extern cvar_t *r_mapOverBrightBits;
 extern cvar_t *r_showImages;
 
 extern cvar_t *r_printShaders;
-
+extern cvar_t *r_paused;
 extern cvar_t *r_showTris;
 
 extern cvar_t *r_useExtensions;

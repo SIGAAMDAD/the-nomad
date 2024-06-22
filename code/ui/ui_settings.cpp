@@ -38,6 +38,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define DRAWMODE_GPU       2
 #define DRAWMODE_MAPPED    3
 
+#define WINDOWMODE_WINDOWED					0
+#define WINDOWMODE_BORDERLESS_WINDOWED		1
+#define WINDOWMODE_FULLSCREEN				2
+#define WINDOWMODE_BORDERLESS_FULLSCREEN	3
+
 #define GPU_MEMINFO_NVX  0
 #define GPU_MEMINFO_ATI  1
 #define GPU_MEMINFO_NONE 2
@@ -101,13 +106,14 @@ typedef struct {
 typedef struct {
 	const char **windowSizes;
 	const char **vsyncList;
+	const char **windowModes;
 
 	int numWindowSizes;
 	int numVSync;
+	int numWindowModes;
 
 	int vsync;
-	int fullscreen;
-	int noborder;
+	int windowMode;
 	int windowResolution;
 	int windowWidth;
 	int windowHeight;
@@ -143,6 +149,7 @@ typedef struct {
 	const char **multisampleTypes;
 	const char **textureDetails;
 	const char **textureFilters;
+	const char **onoff;
 
 	int numMultisampleTypes;
 	int numTextureDetails;
@@ -646,7 +653,7 @@ static void SettingsMenu_GetGPUMemoryInfo( void )
 
 static void SettingsMenu_TabBar( void ) {
 	if ( ImGui::BeginTabBar( "##SettingsMenuTabBar" ) ) {
-		ImGui::PushStyleColor( ImGuiCol_Tab, ImVec4( 1.0f, 1.0f, 1.0f, 0.0f ) );
+		ImGui::PushStyleColor( ImGuiCol_Tab, ImVec4( 1.0f, 0.0f, 0.0f, 1.0f ) );
 		ImGui::PushStyleColor( ImGuiCol_TabActive, ImVec4( 0.0f, 1.0f, 0.0f, 1.0f ) );
 		ImGui::PushStyleColor( ImGuiCol_TabHovered, ImVec4( 0.0f, 1.0f, 0.0f, 1.0f ) );
 
@@ -705,6 +712,7 @@ static void SettingsMenu_Text( const char *name, const char *hint )
 	ImGui::PushStyleColor( ImGuiCol_Button, ImVec4( 0, 0, 0, 0 ) );
 	ImGui::PushStyleColor( ImGuiCol_ButtonActive, ImVec4( 0, 0, 0, 0 ) );
 	ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4( 0, 0, 0, 0 ) );
+	ImGui::PushStyleColor( ImGuiCol_Text, colorCyan );
 	if ( s_settingsMenu->focusedItem == name ) {
 		ImGui::PushStyleColor( ImGuiCol_Text, colorGold );
 	}
@@ -720,6 +728,7 @@ static void SettingsMenu_Text( const char *name, const char *hint )
 		s_settingsMenu->hintLabel = name;
 		s_settingsMenu->hintMessage = hint;
 	}
+	ImGui::PopStyleColor();
 	SfxFocused( name );
 }
 
@@ -727,6 +736,7 @@ static void SettingsMenu_List( const char *label, const char **itemnames, int nu
 {
 	int i;
 
+	ImGui::PushStyleColor( ImGuiCol_Text, colorLimeGreen );
 	if ( ImGui::BeginCombo( va( "##%sSettingsMenuConfigList", label ), itemnames[*curitem] ) ) {
 		for ( i = 0; i < numitems; i++ ) {
 			if ( ImGui::Selectable( va( "%s##%sSettingsMenuConfigList", itemnames[i], label ), ( *curitem == i ) ) ) {
@@ -739,6 +749,7 @@ static void SettingsMenu_List( const char *label, const char **itemnames, int nu
 		}
 		ImGui::EndCombo();
 	}
+	ImGui::PopStyleColor();
 	SfxFocused( label );
 }
 
@@ -752,6 +763,7 @@ static void SettingsMenu_MultiAdjustable( const char *name, const char *label, c
 		ImGui::PushStyleColor( ImGuiCol_FrameBgHovered, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
 	}
 
+	ImGui::PushStyleColor( ImGuiCol_Text, colorLimeGreen );
 	ImGui::TableNextColumn();
 	SettingsMenu_Text( name, hint );
 	ImGui::TableNextColumn();
@@ -780,11 +792,13 @@ static void SettingsMenu_MultiAdjustable( const char *name, const char *label, c
 	if ( !enabled ) {
 		ImGui::PopStyleColor( 4 );
 	}
+	ImGui::PopStyleColor();
 }
 
 static void SettingsMenu_MultiSliderFloat( const char *name, const char *label, const char *hint, float *curvalue, float minvalue, float maxvalue,
 	float delta )
 {
+	ImGui::PushStyleColor( ImGuiCol_Text, colorLimeGreen );
 	ImGui::TableNextColumn();
 	SettingsMenu_Text( name, hint );
 	ImGui::TableNextColumn();
@@ -810,6 +824,7 @@ static void SettingsMenu_MultiSliderFloat( const char *name, const char *label, 
 		}
 	}
 	SfxFocused( (void *)( (uintptr_t)curvalue * 0xfa ) );
+	ImGui::PopStyleColor();
 }
 
 static void SettingsMenu_MultiSliderInt( const char *name, const char *label, const char *hint, int *curvalue, int minvalue, int maxvalue,
@@ -822,6 +837,7 @@ static void SettingsMenu_MultiSliderInt( const char *name, const char *label, co
 		ImGui::PushStyleColor( ImGuiCol_FrameBgHovered, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
 	}
 
+	ImGui::PushStyleColor( ImGuiCol_Text, colorLimeGreen );
 	ImGui::TableNextColumn();
 	SettingsMenu_Text( name, hint );
 	ImGui::TableNextColumn();
@@ -857,6 +873,7 @@ static void SettingsMenu_MultiSliderInt( const char *name, const char *label, co
 	if ( !enabled ) {
 		ImGui::PopStyleColor( 4 );
 	}
+	ImGui::PopStyleColor();
 }
 
 static void SettingsMenu_RadioButton( const char *name, const char *label, const char *hint, int *curvalue, bool enabled )
@@ -868,6 +885,7 @@ static void SettingsMenu_RadioButton( const char *name, const char *label, const
 		ImGui::PushStyleColor( ImGuiCol_FrameBgHovered, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
 	}
 
+	ImGui::PushStyleColor( ImGuiCol_Text, colorLimeGreen );
 	ImGui::TableNextColumn();
 	SettingsMenu_Text( name, hint );
 	ImGui::TableNextColumn();
@@ -884,6 +902,7 @@ static void SettingsMenu_RadioButton( const char *name, const char *label, const
 	if ( !enabled ) {
 		ImGui::PopStyleColor( 4 );
 	}
+	ImGui::PopStyleColor();
 }
 
 static int32_t SettingsMenu_GetBindIndex( const char *bind )
@@ -1113,8 +1132,8 @@ static void ControlsMenu_Draw( void )
 	
 	ImGui::BeginTable( "##ControlsSettingsMenuConfigTable", 2 );
 	{
-		SettingsMenu_RadioButton( strManager->ValueForKey( "GAMEUI_MOUSEACCEL" )->value, "MouseAcceleration",
-			"Toggles mouse acceleration",
+		SettingsMenu_MultiAdjustable( strManager->ValueForKey( "GAMEUI_MOUSEACCEL" )->value, "MouseAcceleration",
+			"Toggles mouse acceleration", s_settingsMenu->performance.onoff, 2,
 			&s_settingsMenu->controls.mouseAcceleration, true );
 		
 		ImGui::TableNextRow();
@@ -1130,11 +1149,13 @@ static void ControlsMenu_Draw( void )
 		ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 2.5f ) * ui->scale );
 		
 		FontCache()->SetActiveFont( AlegreyaSC );
-
+		
+		ImGui::PushStyleColor( ImGuiCol_Text, colorCyan );
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted( "Binding" );
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted( "Key" );
+		ImGui::PopStyleColor();
 
 		FontCache()->SetActiveFont( RobotoMono );
 
@@ -1189,7 +1210,7 @@ static void PerformanceMenu_DrawBasic( void )
 {
 	ImGui::BeginTable( "##PerformanceSettingsMenuConfigTable", 2 );
 
-	SettingsMenu_MultiAdjustable( "Anti Aliasing", "AntiAliasing",
+	SettingsMenu_MultiAdjustable( "ANTIALIASING", "AntiAliasing",
 		"Sets anti-aliasing technique used by the engine",
 		s_settingsMenu->performance.multisampleTypes, s_settingsMenu->performance.numMultisampleTypes,
 		&s_settingsMenu->performance.multisampleType,
@@ -1197,40 +1218,44 @@ static void PerformanceMenu_DrawBasic( void )
 	
 	ImGui::TableNextRow();
 	
-	SettingsMenu_MultiAdjustable( "Texture Quality", "TextureQuality",
+	SettingsMenu_MultiAdjustable( "TEXTURE QUALITY", "TextureQuality",
 		"Sets the quality of textures rendered, may effect performance",
 		s_settingsMenu->performance.textureDetails, s_settingsMenu->performance.numTextureDetails,
 		&s_settingsMenu->performance.textureDetail, true );
 	
 	ImGui::TableNextRow();
 
-	SettingsMenu_MultiAdjustable( "Texture Filtering", "TextureFiltering",
+	SettingsMenu_MultiAdjustable( "TEXTURE FILTERING", "TextureFiltering",
 		"Sets the type of texture filtering",
 		s_settingsMenu->advancedPerformance.anisotropyTypes, s_settingsMenu->advancedPerformance.numAnisotropyTypes,
 		&s_settingsMenu->advancedPerformance.anisotropicFilter, true );
 	
 	ImGui::TableNextRow();
 	
-	SettingsMenu_RadioButton( "Bloom", "Bloom",
+	SettingsMenu_MultiAdjustable( "BLOOM", "Bloom",
 		"Enables bloom to make light sources stand out more in an environment",
+		s_settingsMenu->performance.onoff, 2,
 		&s_settingsMenu->performance.bloom, s_settingsMenu->advancedPerformance.postProcessing );
 
 	ImGui::TableNextRow();
 
-	SettingsMenu_RadioButton( "SSAO", "SSAO",
+	SettingsMenu_MultiAdjustable( "SSAO", "ScreenSpaceAmbientOcclusion",
 			"Enables screen space ambient occlusion for more diverse coloration of environments",
+			s_settingsMenu->performance.onoff, 2,
 			&s_settingsMenu->performance.ssao, s_settingsMenu->advancedPerformance.postProcessing );
 	
 	ImGui::TableNextRow();
 
-	SettingsMenu_RadioButton( "Vertex Lighting", "VertexLighting",
+	SettingsMenu_MultiAdjustable( "VERTEX LIGHTING", "VertexLighting",
 		"Enables per-vertex software lighting",
+		s_settingsMenu->performance.onoff, 2,
 		&s_settingsMenu->performance.vertexLighting, true );
 		
 	ImGui::TableNextRow();
 
-	SettingsMenu_RadioButton( "Dynamic Lighting", "DynamicLighting",
+	SettingsMenu_MultiAdjustable( "DYNAMIC LIGHTING", "DynamicLighting",
 		"Enables per-pixel hardware accelerated lighting, slower than vertex lighting, but much higher quality",
+		s_settingsMenu->performance.onoff, 2,
 		&s_settingsMenu->performance.dynamicLighting, true );
 	
 	ImGui::EndTable();
@@ -1241,13 +1266,14 @@ static void PerformanceMenu_DrawAdvanced( void )
 	if ( ImGui::CollapsingHeader( "Framebuffer Settings" ) ) {
 		ImGui::BeginTable( "##PerformanceSettingsMenuConfigTableFramebuffer", 2 );
 
-		SettingsMenu_RadioButton( "Post Processing", "PostProcessing",
+		SettingsMenu_MultiAdjustable( "POST PROCESSING", "PostProcessing",
 			"Toggles multiple framebuffers being used to apply special affects to a frame",
+			s_settingsMenu->performance.onoff, 2,
 			&s_settingsMenu->advancedPerformance.postProcessing, true );
 		
 		ImGui::TableNextRow();
 
-		SettingsMenu_MultiAdjustable( "Anti Aliasing", "AntiAliasing",
+		SettingsMenu_MultiAdjustable( "ANTIALIASING", "AntiAliasing",
 			"Sets anti-aliasing technique used by the engine",
 			s_settingsMenu->performance.multisampleTypes, s_settingsMenu->performance.numMultisampleTypes,
 			&s_settingsMenu->performance.multisampleType,
@@ -1255,25 +1281,28 @@ static void PerformanceMenu_DrawAdvanced( void )
 		
 		ImGui::TableNextRow();
 
-		SettingsMenu_RadioButton( "High Dynamic Range", "HDR",
+		SettingsMenu_MultiAdjustable( "HDR", "HDR",
 			"Enables HDR (High Dynamic Range) texture/framebuffer usage, uses more GPU memory but allows for much more "
-			"range in rendered color palette",
+			"range in rendered color palette", s_settingsMenu->performance.onoff, 2,
 			&s_settingsMenu->advancedPerformance.hdr, s_settingsMenu->advancedPerformance.postProcessing );
 
 		ImGui::TableNextRow();
 
-		SettingsMenu_RadioButton( "Physically Based Rendering", "PBR",
+		SettingsMenu_MultiAdjustable( "PBR", "PBR",
 			"Enables Physically Based Rendering (PBR) for a more realistic texture look.",
+			s_settingsMenu->performance.onoff, 2,
 			&s_settingsMenu->advancedPerformance.pbr, true );
 
 		ImGui::TableNextRow();
 
-		SettingsMenu_RadioButton( "Bloom", "Bloom",
+		SettingsMenu_MultiAdjustable( "BLOOM", "BloomConfig",
 			"Enables bloom to make light sources stand out more in an environment",
+			s_settingsMenu->performance.onoff, 2,
 			&s_settingsMenu->performance.bloom, s_settingsMenu->advancedPerformance.postProcessing );
 		
-		SettingsMenu_RadioButton( "SSAO", "SSAO",
+		SettingsMenu_MultiAdjustable( "SSAO", "SSAOConfig",
 			"Enables screen space ambient occlusion for more diverse coloration of environments",
+			s_settingsMenu->performance.onoff, 2,
 			&s_settingsMenu->performance.ssao, s_settingsMenu->advancedPerformance.postProcessing );
 
 		ImGui::EndTable();
@@ -1281,13 +1310,14 @@ static void PerformanceMenu_DrawAdvanced( void )
 	if ( ImGui::CollapsingHeader( "GPU Shader Settings" ) ) {
 		ImGui::BeginTable( "##PerformanceSettingsMenuConfigTableGPUShader", 2 );
 
-		SettingsMenu_RadioButton( "Tone Mapping", "ToneMapping",
+		SettingsMenu_MultiAdjustable( "TONE MAPPING", "ToneMapping",
 			"Enables a more diverse range of colors when applying lighting to a scene",
+			s_settingsMenu->performance.onoff, 2,
 			&s_settingsMenu->advancedPerformance.toneMapping, true );
 
 		ImGui::TableNextRow();
 
-		SettingsMenu_MultiAdjustable( "Tone Mapping Type", "ToneMappingType",
+		SettingsMenu_MultiAdjustable( "TONE MAPPING TYPE", "ToneMappingType",
 			"Sets the desired tone mapping type.\n"
 			"NOTE: Reinhard uses a fixed range, and makes darker spots less detailed, Exposure uses an adjustable level",
 			s_settingsMenu->advancedPerformance.toneMappingTypes, s_settingsMenu->advancedPerformance.numToneMappingTypes,
@@ -1298,41 +1328,41 @@ static void PerformanceMenu_DrawAdvanced( void )
 	if ( ImGui::CollapsingHeader( "Texture Settings" ) ) {
 		ImGui::BeginTable( "##PerformanceSettingsMenuConfigTableTextureStuff", 2 );
 
-		SettingsMenu_MultiAdjustable( "Anisotropic Filtering", "AnisotropicFiltering",
+		SettingsMenu_MultiAdjustable( "ANISOTROPIC FILTERING", "AnisotropicFiltering",
 			"Sets the level of anisotropic filtering that is applied to textures",
 			s_settingsMenu->advancedPerformance.anisotropyTypes, s_settingsMenu->advancedPerformance.numAnisotropyTypes,
 			&s_settingsMenu->advancedPerformance.anisotropicFilter, true );
 
 		ImGui::TableNextRow();
 
-		SettingsMenu_MultiAdjustable( "Texture Quality", "TextureQuality",
+		SettingsMenu_MultiAdjustable( "TEXTURE QUALITY", "TextureQuality",
 			"Sets the quality of textures rendered, may effect performance",
 			s_settingsMenu->performance.textureDetails, s_settingsMenu->performance.numTextureDetails,
 			&s_settingsMenu->performance.textureDetail, true );
 
 		ImGui::TableNextRow();
 
-		SettingsMenu_MultiAdjustable( "Default Texture Filtering", "TextureFiltering",
+		SettingsMenu_MultiAdjustable( "DEFAULT TEXTURE FILTERING", "TextureFiltering",
 			"Sets the type of texture filtering",
 			s_settingsMenu->performance.textureFilters, s_settingsMenu->performance.numTextureFilters,
 			&s_settingsMenu->performance.textureFilter, true );
 
 		ImGui::TableNextRow();
 
-		SettingsMenu_RadioButton( "Normal Mapping", "BumpMapping",
-			"Toggles usage of normal maps",
+		SettingsMenu_MultiAdjustable( "NORMAL MAPPING", "BumpMapping",
+			"Toggles usage of normal maps", s_settingsMenu->performance.onoff, 2,
 			&s_settingsMenu->advancedPerformance.normalMapping, true );
 
 		ImGui::TableNextRow();
 
-		SettingsMenu_RadioButton( "Specular Mapping", "SpecularMapping",
-			"Toggles usage of specular maps",
+		SettingsMenu_MultiAdjustable( "SPECULAR MAPPING", "SpecularMapping",
+			"Toggles usage of specular maps", s_settingsMenu->performance.onoff, 2,
 			&s_settingsMenu->advancedPerformance.specularMapping, true );
 
 		ImGui::TableNextRow();
 
-		SettingsMenu_RadioButton( "Parallax Mapping", "ParallaxMapping",
-			"Toggles usage of parallax maps",
+		SettingsMenu_MultiAdjustable( "PARALLAX MAPPING", "ParallaxMapping",
+			"Toggles usage of parallax maps", s_settingsMenu->performance.onoff, 2,
 			&s_settingsMenu->advancedPerformance.depthMapping, true );
 		
 		ImGui::EndTable();
@@ -1340,14 +1370,15 @@ static void PerformanceMenu_DrawAdvanced( void )
 	if ( ImGui::CollapsingHeader( "Lighting" ) ) {
 		ImGui::BeginTable( "##PerformanceSettingsMenuConfigTableLighting", 2 );
 
-		SettingsMenu_RadioButton( "Vertex Lighting", "VertexLighting",
-			"Enables per-vertex software lighting",
+		SettingsMenu_MultiAdjustable( "VERTEX LIGHTING", "VertexLighting",
+			"Enables per-vertex software lighting", s_settingsMenu->performance.onoff, 2,
 			&s_settingsMenu->performance.vertexLighting, true );
 
 		ImGui::TableNextRow();
 
-		SettingsMenu_RadioButton( "Dynamic Lighting", "DynamicLighting",
+		SettingsMenu_MultiAdjustable( "DYNAMIC LIGHTING", "DynamicLighting",
 			"Enables per-pixel hardware accelerated lighting, slower than vertex lighting, but much higher quality",
+			s_settingsMenu->performance.onoff, 2,
 			&s_settingsMenu->performance.dynamicLighting, true );
 		
 		ImGui::EndTable();
@@ -1376,8 +1407,9 @@ static void PerformanceMenu_Draw( void )
 		ImGui::TableNextRow();
 		*/
 
-		SettingsMenu_RadioButton( "Advanced Settings", "AdvancedSettings",
+		SettingsMenu_MultiAdjustable( "ADVANCED SETTINGS", "AdvancedSettings",
 			"Shows advanced settings, don't use if you aren't familiar with graphics programming.",
+			s_settingsMenu->performance.onoff, 2,
 			&s_settingsMenu->advancedSettings, true );
 
 		ImGui::EndTable();
@@ -1404,33 +1436,33 @@ static void AudioMenu_Draw( void )
 
 	ImGui::BeginTable( "##AudioSettingsMenuConfigTable", 2 );
 	{
-		SettingsMenu_MultiSliderInt( "Master Volume", "MasterVolume",
+		SettingsMenu_MultiSliderInt( "MASTER VOLUME", "MasterVolume",
 			"Sets overall volume",
 			&s_settingsMenu->audio.masterVolume, 0, 100, 1,
 			s_settingsMenu->audio.musicOn && s_settingsMenu->audio.sfxOn );
 		
 		ImGui::TableNextRow();
 		
-		SettingsMenu_MultiSliderInt( "Music Volume", "MusicVolume",
+		SettingsMenu_MultiSliderInt( "MUSIC VOLUME", "MusicVolume",
 			"Sets the music volume",
 			&s_settingsMenu->audio.musicVolume, 0, 100, 1, s_settingsMenu->audio.musicOn );
 		
 		ImGui::TableNextRow();
 		
-		SettingsMenu_MultiSliderInt( "Sound Effects Volume", "SoundEffectsVolume",
+		SettingsMenu_MultiSliderInt( "SOUND EFFECTS VOLUME", "SoundEffectsVolume",
 			"Sets the sound effects volume",
 			&s_settingsMenu->audio.sfxVolume, 0, 100, 1, s_settingsMenu->audio.sfxOn );
 		
 		ImGui::TableNextRow();
 
-		SettingsMenu_RadioButton( "Music On", "MusicOn",
-			"Toggles music",
+		SettingsMenu_MultiAdjustable( "MUSIC ON", "MusicOn",
+			"Toggles music", s_settingsMenu->performance.onoff, 2,
 			&s_settingsMenu->audio.musicOn, true );
 
 		ImGui::TableNextRow();
 
-		SettingsMenu_RadioButton( "Sound Effects On", "SoundEffectsOn",
-			"Toggles sound effects",
+		SettingsMenu_MultiAdjustable( "SOUND EFFECTS ON", "SoundEffectsOn",
+			"Toggles sound effects", s_settingsMenu->performance.onoff, 2,
 			&s_settingsMenu->audio.sfxOn, true );
 	}
 	ImGui::EndTable();
@@ -1442,50 +1474,45 @@ static void VideoMenu_Draw( void )
 
 	ImGui::BeginTable( "##VideoSettingsMenuConfigTable", 2 );
 	{
-		SettingsMenu_RadioButton( strManager->ValueForKey( "GAMEUI_MODE_FULLSCREEN" )->value, "Fullscreen",
+		SettingsMenu_MultiAdjustable( strManager->ValueForKey( "GAMEUI_WINDOWMODE" )->value, "WindowMode",
 			"Sets the game's window mode to fullscreen",
-			&s_settingsMenu->video.fullscreen, true );
-
-		ImGui::TableNextRow();
-	
-		SettingsMenu_RadioButton( strManager->ValueForKey( "GAMEUI_MODE_BORDERLESS" )->value, "Borderless",
-			"Sets the game's window mode to bordless",
-			&s_settingsMenu->video.noborder, true );
+			s_settingsMenu->video.windowModes, s_settingsMenu->video.numWindowModes,
+			&s_settingsMenu->video.windowMode, true );
 
 		ImGui::TableNextRow();
 
-		SettingsMenu_MultiAdjustable( strManager->ValueForKey( "GAMEUI_MODE_WINDOWRES" )->value, "Resolution",
+		SettingsMenu_MultiAdjustable( strManager->ValueForKey( "GAMEUI_MODE_WINDOWRES" )->value, "WindowResolution",
 			"Sets the game window's size",
 			s_settingsMenu->video.windowSizes, s_settingsMenu->video.numWindowSizes, &s_settingsMenu->video.windowResolution, true );
 
 		ImGui::TableNextRow();
 
-		SettingsMenu_MultiAdjustable( "V-Sync", "VSync",
+		SettingsMenu_MultiAdjustable( "V-SYNC", "VSync",
 			"Toggles when a frame will be rendered, vertical tearing may occur if disabled.\n"
 			"NOTE: setting this to \"Enabled\" will force a maximum of your moniter's refresh rate.",
 			s_settingsMenu->video.vsyncList, s_settingsMenu->video.numVSync, &s_settingsMenu->video.vsync, true );
 
 		ImGui::TableNextRow();
 
-		SettingsMenu_MultiSliderFloat( "Gamma Amount", "Gamma",
+		SettingsMenu_MultiSliderFloat( "BRIGHTNESS", "Gamma",
 			"Sets gamma linear light correction factor",
 			&s_settingsMenu->video.gamma, 0.5f, 3.0f, 0.10f );
 
 		ImGui::TableNextRow();
 		
-		SettingsMenu_MultiSliderFloat( "Exposure", "Exposure",
+		SettingsMenu_MultiSliderFloat( "EXPOSURE", "Exposure",
 			"Sets exposure level when rendered in a scene",
 			&s_settingsMenu->video.exposure, 0.10f, 10.0f, 1.0f );
 		
 		ImGui::TableNextRow();
 		
-		SettingsMenu_MultiSliderFloat( "Sharpening", "ImageSharpening",
+		SettingsMenu_MultiSliderFloat( "IMAGE SHARPENING", "ImageSharpening",
 			"Sets the amount of sharpening applied to a rendered texture",
-			&s_settingsMenu->video.sharpening, 0.5f, 5.0f, 0.1f );
+			&s_settingsMenu->video.sharpening, 0.5f, 20.0f, 0.1f );
 		
 		ImGui::TableNextRow();
 
-		SettingsMenu_MultiSliderInt( "Frame Limiter", "FrameLimiter",
+		SettingsMenu_MultiSliderInt( "FRAME LIMITER", "FrameLimiter",
 			"Sets the maximum amount of frames the game can render per second.",
 			&s_settingsMenu->video.maxFPS, 0, 1000, 1, true );
 	}
@@ -1498,27 +1525,30 @@ static void GameplayMenu_Draw( void )
 
 	ImGui::BeginTable( "##GameSettingsMenuConfigTable", 2 );
 	{
-		SettingsMenu_MultiAdjustable( "Game Difficulty", "GameDifficulty",
+		SettingsMenu_MultiAdjustable( "GAME DIFFICULTY", "GameDifficulty",
 			"Sets the game's difficulty",
 			s_settingsMenu->gameplay.difficultyNames, s_settingsMenu->gameplay.numDifficultyTypes, &s_settingsMenu->gameplay.difficulty,
 			s_settingsMenu->gameplay.difficulty != DIF_HARDEST );
 		
 		ImGui::TableNextRow();
 
-		SettingsMenu_RadioButton( "Toggle HUD", "Toggle HUD",
+		SettingsMenu_MultiAdjustable( "TOGGLE HUD", "ToggleHUD",
 			"Toggles Heads-Up-Display (HUD). Turn this off if you want a more immersive experience",
+			s_settingsMenu->performance.onoff, 2,
 			&s_settingsMenu->gameplay.toggleHUD, true );
 
 		ImGui::TableNextRow();
 
-		SettingsMenu_RadioButton( "Debug Mode", "Debug Mode",
+		SettingsMenu_MultiAdjustable( "DEBUG MODE", "DebugMode",
 			"Toggles debug messages from SGame",
+			s_settingsMenu->performance.onoff, 2,
 			&s_settingsMenu->gameplay.debugPrint, true );
 		
 		ImGui::TableNextRow();
 
-		SettingsMenu_RadioButton( "Stop Game on Focus Lost", "Stop Game on Focus Lost",
+		SettingsMenu_MultiAdjustable( "STOP GAME ON FOCUS LOST", "StopGameOnFocusLost",
 			"If on the game will pause when the window is unfocused",
+			s_settingsMenu->performance.onoff, 2,
 			&s_settingsMenu->gameplay.pauseUnfocused, true );
 	}
 	ImGui::EndTable();
@@ -1528,8 +1558,8 @@ static void VideoMenu_Save( void )
 {
 	extern SDL_Window *SDL_window;
 
-	Cvar_SetIntegerValue( "r_fullscreen", s_settingsMenu->video.fullscreen );
-	Cvar_SetIntegerValue( "r_noborder", s_settingsMenu->video.noborder );
+	Cvar_SetIntegerValue( "r_fullscreen", s_settingsMenu->video.windowMode >= WINDOWMODE_FULLSCREEN );
+	Cvar_SetIntegerValue( "r_noborder", s_settingsMenu->video.windowMode % 2 != 0 );
 	Cvar_SetIntegerValue( "r_customWidth", s_settingsMenu->video.windowWidth );
 	Cvar_SetIntegerValue( "r_customHeight", s_settingsMenu->video.windowHeight );
 	Cvar_SetIntegerValue( "r_mode", s_settingsMenu->video.windowResolution - 2 );
@@ -1537,14 +1567,16 @@ static void VideoMenu_Save( void )
 	Cvar_SetFloatValue( "r_imageSharpenAmount", s_settingsMenu->video.sharpening );
 	Cvar_SetFloatValue( "r_autoExposure", s_settingsMenu->video.exposure );
 	Cvar_SetFloatValue( "r_gammaAmount", s_settingsMenu->video.gamma );
+	Cvar_SetIntegerValue( "com_maxfps", s_settingsMenu->video.maxFPS );
 
 	if ( !N_stricmp( g_renderer->s, "opengl" ) ) {
 		SDL_GL_SetSwapInterval( s_settingsMenu->video.vsync - 1 );
 	}
-	SDL_SetWindowFullscreen( SDL_window, s_settingsMenu->video.fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0 );
+	SDL_SetWindowFullscreen( SDL_window, s_settingsMenu->video.windowMode >= WINDOWMODE_FULLSCREEN
+		? SDL_WINDOW_FULLSCREEN_DESKTOP : 0 );
 	SDL_SetWindowSize( SDL_window, r_vidModes[ s_settingsMenu->video.windowResolution - 2 ].width,
 		r_vidModes[ s_settingsMenu->video.windowResolution - 2 ].height );
-	SDL_SetWindowBordered( SDL_window, (SDL_bool)!s_settingsMenu->video.noborder );
+	SDL_SetWindowBordered( SDL_window, (SDL_bool)( s_settingsMenu->video.windowMode % 2 != 0 ) );
 }
 
 static void PerformanceMenu_Save( void )
@@ -1562,7 +1594,6 @@ static void PerformanceMenu_Save( void )
 			s_settingsMenu->advancedPerformance.hdr = qtrue;
 			s_settingsMenu->advancedPerformance.pbr = qtrue;
 			s_settingsMenu->advancedPerformance.toneMapping = qtrue;
-			s_settingsMenu->advancedPerformance.toneMappingType = 1;
 			s_settingsMenu->advancedPerformance.postProcessing = qtrue;
 		}
 
@@ -1651,6 +1682,9 @@ static void PerformanceMenu_Save( void )
 		needRestart = true;
 	}
 	if ( s_settingsMenu->advancedPerformance.toneMapping != s_initial->advancedPerformance.toneMapping ) {
+		needRestart = true;
+	}
+	if ( s_settingsMenu->advancedPerformance.hdr != s_initial->advancedPerformance.hdr ) {
 		needRestart = true;
 	}
 
@@ -1795,8 +1829,7 @@ static void VideoMenu_SetDefault( void )
 	s_settingsMenu->video.windowResolution = Cvar_VariableInteger( "r_mode" ) + 2;
 	s_settingsMenu->video.vsync = Cvar_VariableInteger( "r_swapInterval" ) + 1;
 	s_settingsMenu->video.gamma = Cvar_VariableFloat( "r_gammaAmount" );
-	s_settingsMenu->video.fullscreen = Cvar_VariableInteger( "r_fullscreen" );
-	s_settingsMenu->video.noborder = Cvar_VariableInteger( "r_noborder" );
+	s_settingsMenu->video.windowMode = Cvar_VariableInteger( "r_fullscreen" ) + Cvar_VariableInteger( "r_noborder" );
 	s_settingsMenu->video.sharpening = Cvar_VariableFloat( "r_imageSharpenAmount" );
 	s_settingsMenu->video.exposure = Cvar_VariableFloat( "r_autoExposure" );
 	s_settingsMenu->video.maxFPS = Cvar_VariableInteger( "com_maxfps" );
@@ -1875,7 +1908,14 @@ static void SettingsMenu_Draw( void )
 
 	ImGui::SetWindowFontScale( ( 1.2f * ImGui::GetFont()->Scale ) * ui->scale );
 	SettingsMenu_TabBar();
-	ImGui::SetWindowFontScale( ( 1.5f * ImGui::GetFont()->Scale ) * ui->scale );
+	ImGui::SetWindowFontScale( ( 1.75f * ImGui::GetFont()->Scale ) * ui->scale );
+
+	ImGui::PushStyleColor( ImGuiCol_FrameBg, colorBrown );
+	ImGui::PushStyleColor( ImGuiCol_FrameBgHovered, colorBrass );
+	ImGui::PushStyleColor( ImGuiCol_FrameBgActive, colorBrass );
+	ImGui::PushStyleColor( ImGuiCol_Button, colorBrown );
+	ImGui::PushStyleColor( ImGuiCol_ButtonActive, colorBrass );
+	ImGui::PushStyleColor( ImGuiCol_ButtonHovered, colorBrass );
 
 	switch ( s_settingsMenu->lastChild ) {
 	case ID_VIDEO:
@@ -1901,6 +1941,8 @@ static void SettingsMenu_Draw( void )
 	if ( !ImGui::IsAnyItemHovered() ) {
 		s_settingsMenu->focusedItem = NULL;
 	}
+
+	ImGui::PopStyleColor( 6 );
 	ImGui::GetStyle().ItemSpacing = itemSpacing;
 	ImGui::End();
 
@@ -2114,6 +2156,16 @@ void SettingsMenu_Cache( void )
 		"Quality",
 		"Custom"
 	};
+	static const char *s_onOff[] = {
+		"OFF",
+		"ON"
+	};
+	static const char *s_windowModes[] = {
+		strManager->ValueForKey( "GAMEUI_MODE_WINDOWED" )->value,
+		strManager->ValueForKey( "GAMEUI_MODE_BORDERLESS_WINDOWED" )->value,
+		strManager->ValueForKey( "GAMEUI_MODE_FULLSCREEN" )->value,
+		strManager->ValueForKey( "GAMEUI_MODE_BORDERLESS_FULLSCREEN" )->value
+	};
 
 	if ( !ui->uiAllocated ) {
 		s_settingsMenu = (settingsMenu_t *)Hunk_Alloc( sizeof( *s_settingsMenu ), h_high );
@@ -2133,6 +2185,7 @@ void SettingsMenu_Cache( void )
 	s_settingsMenu->menu.textFontScale = 1.5f;
 	s_settingsMenu->lastChild = ID_VIDEO;
 
+	s_settingsMenu->performance.onoff = s_onOff;
 	s_settingsMenu->advancedPerformance.toneMappingTypes = s_toneMappingTypes;
 	s_settingsMenu->performance.multisampleTypes = s_multisampleTypes;
 	s_settingsMenu->advancedPerformance.anisotropyTypes = s_anisotropyTypes;
@@ -2144,9 +2197,11 @@ void SettingsMenu_Cache( void )
 
 	s_settingsMenu->video.vsyncList = s_vsync;
 	s_settingsMenu->video.windowSizes = s_windowSizes;
+	s_settingsMenu->video.windowModes = s_windowModes;
 
 	s_settingsMenu->video.numVSync = arraylen( s_vsync );
 	s_settingsMenu->video.numWindowSizes = arraylen( s_windowSizes );
+	s_settingsMenu->video.numWindowModes = arraylen( s_windowModes );
 
 	s_settingsMenu->performance.numMultisampleTypes = arraylen( s_multisampleTypes );
 	s_settingsMenu->advancedPerformance.numAnisotropyTypes = arraylen( s_anisotropyTypes );

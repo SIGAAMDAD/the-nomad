@@ -333,7 +333,7 @@ void GLimp_Init( gpuConfig_t *config )
 
 	r_allowSoftwareGL = Cvar_Get( "r_allowSoftwareGL", "0", CVAR_LATCH );
 
-	r_swapInterval = Cvar_Get( "r_swapInterval", "0", CVAR_SAVE | CVAR_LATCH );
+	r_swapInterval = Cvar_Get( "r_swapInterval", "1", CVAR_SAVE );
 	r_stereoEnabled = Cvar_Get( "r_stereoEnabled", "0", CVAR_SAVE | CVAR_LATCH );
 	Cvar_SetDescription( r_stereoEnabled, "Enable stereo rendering for techniques like shutter glasses." );
 

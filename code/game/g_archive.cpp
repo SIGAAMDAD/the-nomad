@@ -349,7 +349,6 @@ void G_ShutdownArchiveHandler( void ) {
 	g_pArchiveHandler->~CGameArchive();
 	g_pArchiveHandler = NULL;
 	Cmd_RemoveCommand( "sgame.save_game" );
-	Z_FreeTags( TAG_MODULES );
 }
 
 const char **CGameArchive::GetSaveFiles( uint64_t *nFiles ) const {

@@ -5,6 +5,7 @@
 #include "SGame/LevelSystem.as"
 #include "Engine/CommandSystem/CommandManager.as"
 #include "SGame/CheatCodes.as"
+#include "Engine/Engine.as"
 
 namespace TheNomad::SGame {
 	//
@@ -221,11 +222,11 @@ int ModuleOnInit() {
 	ConsolePrint( "GameName: " + GAME_NAME + "\n" );
 	ConsolePrint( "GameVersion: " + NOMAD_VERSION_STRING + "\n" );
 
-	@TheNomad::CvarManager = cast<TheNomad::CvarSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::CvarSystem() ) );
-
 	//
 	// register cvars
 	//
+
+	@TheNomad::CvarManager = cast<TheNomad::CvarSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::CvarSystem() ) );
 
 	InitCvars();
 

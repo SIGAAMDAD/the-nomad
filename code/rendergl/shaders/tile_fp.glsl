@@ -42,6 +42,7 @@ in vec3 v_WorldPos;
 
 uniform sampler2D u_DiffuseMap;
 uniform float u_GammaAmount;
+uniform int u_GamePaused;
 
 #if defined(USE_LIGHT)
 uniform vec3 u_AmbientColor;
@@ -423,4 +424,7 @@ void main() {
 #endif
 #endif
     a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
+    if ( u_GamePaused == 1 ) {
+        a_Color.rgb = vec3( 0.75, 0.75, 0.75 );
+    }
 }
