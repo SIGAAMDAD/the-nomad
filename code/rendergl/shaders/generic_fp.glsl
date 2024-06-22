@@ -12,6 +12,7 @@ in vec4 v_Color;
 
 uniform sampler2D u_DiffuseMap;
 uniform float u_GammaAmount;
+uniform int u_GamePaused;
 
 #if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
 uniform vec4 u_SpecularScale;
@@ -236,12 +237,10 @@ void main() {
 	}
 #endif
 #endif
-    if ( u_HardwareGamma == 0 ) {
-	    a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
-    }
+	a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
     a_Color.rgb *= v_Color.rgb;
 
     if ( u_GamePaused == 1 ) {
-        a_Color.rgb *= vec3( 0.25, 0.25, 0.25 );
+        a_Color.rgb = vec3( 0.75, 0.75, 0.75 );
     }
 }
