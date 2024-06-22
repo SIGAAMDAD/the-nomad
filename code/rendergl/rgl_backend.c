@@ -567,6 +567,7 @@ static const void *RB_PostProcess(const void *data)
 		FBO_FastBlit( rg.renderFbo, NULL, rg.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 		srcFbo = rg.msaaResolveFbo;
 	}
+#if 0
 
 	dstBox[0] = glState.viewData.viewportX;
 	dstBox[1] = glState.viewData.viewportY;
@@ -586,6 +587,7 @@ static const void *RB_PostProcess(const void *data)
 	srcBox[1] = glState.viewData.viewportY;
 	srcBox[2] = glState.viewData.viewportWidth;
 	srcBox[3] = glState.viewData.viewportHeight;
+#endif
 
 	if ( srcFbo ) {
 		if ( r_hdr->i && ( r_toneMap->i || r_forceToneMap->i ) ) {

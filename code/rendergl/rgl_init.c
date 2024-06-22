@@ -1502,8 +1502,10 @@ void R_Init( void )
     if ( error != GL_NO_ERROR )
         ri.Printf(PRINT_INFO, COLOR_RED "glGetError() = 0x%x\n", error);
     
-    R_InitWorldBuffer();
+    //R_InitWorldBuffer();
     
+    VBO_Bind( backend.drawBuffer );
+
     ri.Cmd_AddCommand( "unloadworld", R_UnloadWorld_f );
 
     // print info

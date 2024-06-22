@@ -552,6 +552,9 @@ CModuleLib::CModuleLib( void )
     m_pLoadList = (CModuleInfo *)Hunk_Alloc( sizeof( *m_pLoadList ) * nFiles, h_high );
     
     for ( i = 0; i < nFiles; i++ ) {
+        if ( N_streq( fileList[i], "." ) || N_streq( fileList[i], ".." ) ) {
+            continue;
+        }
         Con_Printf( "...found module directory \"%s\".\n", fileList[i] );
         LoadModule( fileList[i] );
     }

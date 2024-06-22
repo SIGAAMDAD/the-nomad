@@ -249,6 +249,19 @@ void CUIStringManager::LoadLanguage( const char *filename )
     }
 }
 
+qboolean CUIStringManager::StringExists( const char *name ) const {
+    uint64_t hash;
+    const stringHash_t *str;
+
+    hash = Com_GenerateHashValue( name, ui_maxLangStrings->i );
+    for ( str = stringHash[ ui_language->i ][hash]; str; str = str->next ) {
+        if ( !N_stricmp( str->name, name ) ) {
+            return qtrue;
+        }
+    }
+    return qfalse;
+}
+
 qboolean CUIStringManager::LanguageLoaded( language_t lang ) const {
 #ifndef USE_MAP_HASH
     return (qboolean)( stringHash[lang] != NULL );

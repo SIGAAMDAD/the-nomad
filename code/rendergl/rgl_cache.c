@@ -85,6 +85,11 @@ void VBO_SetVertexPointers( vertexBuffer_t *vbo, uint32_t attribBits )
 	R_SetVertexPointers( vbo->attribs );
 }
 
+void VBO_SetVertexAttribPointers( vertexBuffer_t *vbo ) {
+	VBO_Bind( vbo );
+	R_SetVertexPointers( vbo->attribs );
+}
+
 /*
 * R_ClearVertexPointers: clears all vertex pointers in the current GL state
 */
@@ -101,17 +106,129 @@ static void R_ClearVertexPointers( void )
 	glState.vertexAttribsEnabled = 0;
 }
 
+/*
+============
+R_BufferList_f
+============
+*/
+void R_BufferList_f( void )
+{
+	int             i;
+	vertexBuffer_t  *vao;
+	uint64_t        vertexesSize = 0;
+	uint64_t        indexesSize = 0;
+
+	ri.Printf( PRINT_INFO, " size          name\n" );
+	ri.Printf( PRINT_INFO, "----------------------------------------------------------\n" );
+
+	for ( i = 0; i < rg.numBuffers; i++ ) {
+		vao = rg.buffers[i];
+
+		ri.Printf( PRINT_INFO, "%lu.%02lu MB %s\n", vao->vertex.size / ( 1024 * 1024 ),
+				  ( vao->vertex.size % ( 1024 * 1024 ) ) * 100 / ( 1024 * 1024 ), vao->name );
+
+		vertexesSize += vao->vertex.size;
+	}
+
+	for ( i = 0; i < rg.numBuffers; i++ ) {
+		vao = rg.buffers[i];
+
+		ri.Printf( PRINT_INFO, "%lu.%02lu MB %s\n", vao->index.size / ( 1024 * 1024 ),
+				  ( vao->index.size % ( 1024 * 1024 ) ) * 100 / ( 1024 * 1024 ), vao->name );
+
+		indexesSize += vao->index.size;
+	}
+
+	ri.Printf( PRINT_INFO, " %u total VAOs\n", rg.numBuffers );
+	ri.Printf( PRINT_INFO, " %lu.%02lu MB total vertices memory\n", vertexesSize / ( 1024 * 1024 ),
+			  ( vertexesSize % ( 1024 * 1024 ) ) * 100 / ( 1024 * 1024 ) );
+	ri.Printf( PRINT_INFO, " %lu.%02lu MB total triangle indices memory\n", indexesSize / ( 1024 * 1024 ),
+			  ( indexesSize % ( 1024 * 1024 ) ) * 100 / ( 1024 * 1024 ) );
+}
+
 void R_InitGPUBuffers( void )
 {
-	uint64_t verticesSize, indicesSize;
+	uint64_t vertexesSize, indexesSize;
 	uintptr_t offset;
 
 	ri.Printf( PRINT_INFO, "---------- R_InitGPUBuffers ----------\n" );
 
 	rg.numBuffers = 0;
 
-	backend.drawBuffer = R_AllocateBuffer( "batchBuffer", NULL, sizeof(srfVert_t) * MAX_BATCH_VERTICES, NULL,
-		sizeof(glIndex_t) * MAX_BATCH_INDICES, BUFFER_FRAME );
+	/*
+	vertexesSize  = sizeof( tess.xyz[0] );
+	vertexesSize += sizeof( tess.normal[0] );
+	vertexesSize += sizeof( tess.tangent[0] );
+	vertexesSize += sizeof( tess.color[0] );
+	vertexesSize += sizeof( tess.texCoords[0] );
+	vertexesSize += sizeof( tess.lightCoords[0] );
+	vertexesSize += sizeof( tess.lightdir[0] );
+	vertexesSize *= SHADER_MAX_VERTEXES;
+
+	indexesSize = sizeof( tess.indexes[0] ) * SHADER_MAX_INDEXES;
+
+	tess.vao = R_AllocateBuffer( "tessVertexArray_VAO", NULL, vertexesSize, NULL, indexesSize, BUFFER_DYNAMIC );
+
+	offset = 0;
+
+	tess.vao->attribs[ATTRIB_INDEX_POSITION      ].enabled = qtrue;
+	tess.vao->attribs[ATTRIB_INDEX_NORMAL        ].enabled = qtrue;
+	tess.vao->attribs[ATTRIB_INDEX_TANGENT       ].enabled = qfalse;
+	tess.vao->attribs[ATTRIB_INDEX_TEXCOORD      ].enabled = qtrue;
+	tess.vao->attribs[ATTRIB_INDEX_LIGHTCOORD    ].enabled = qfalse;
+	tess.vao->attribs[ATTRIB_INDEX_COLOR         ].enabled = qtrue;
+
+	tess.vao->attribs[ATTRIB_INDEX_POSITION      ].count = 3;
+	tess.vao->attribs[ATTRIB_INDEX_NORMAL        ].count = 4;
+	tess.vao->attribs[ATTRIB_INDEX_TANGENT       ].count = 4;
+	tess.vao->attribs[ATTRIB_INDEX_TEXCOORD      ].count = 2;
+	tess.vao->attribs[ATTRIB_INDEX_LIGHTCOORD    ].count = 2;
+	tess.vao->attribs[ATTRIB_INDEX_COLOR         ].count = 4;
+
+	tess.vao->attribs[ATTRIB_INDEX_POSITION      ].type = GL_FLOAT;
+	tess.vao->attribs[ATTRIB_INDEX_NORMAL        ].type = GL_SHORT;
+	tess.vao->attribs[ATTRIB_INDEX_TANGENT       ].type = GL_SHORT;
+	tess.vao->attribs[ATTRIB_INDEX_TEXCOORD      ].type = GL_FLOAT;
+	tess.vao->attribs[ATTRIB_INDEX_LIGHTCOORD    ].type = GL_FLOAT;
+	tess.vao->attribs[ATTRIB_INDEX_COLOR         ].type = GL_UNSIGNED_SHORT;
+
+	tess.vao->attribs[ATTRIB_INDEX_POSITION      ].normalized = GL_FALSE;
+	tess.vao->attribs[ATTRIB_INDEX_NORMAL        ].normalized = GL_TRUE;
+	tess.vao->attribs[ATTRIB_INDEX_TANGENT       ].normalized = GL_TRUE;
+	tess.vao->attribs[ATTRIB_INDEX_TEXCOORD      ].normalized = GL_FALSE;
+	tess.vao->attribs[ATTRIB_INDEX_LIGHTCOORD    ].normalized = GL_FALSE;
+	tess.vao->attribs[ATTRIB_INDEX_COLOR         ].normalized = GL_TRUE;
+
+	tess.vao->attribs[ATTRIB_INDEX_POSITION      ].offset = offset; offset += sizeof(tess.xyz[0])         * SHADER_MAX_VERTEXES;
+	tess.vao->attribs[ATTRIB_INDEX_NORMAL        ].offset = offset; offset += sizeof(tess.normal[0])      * SHADER_MAX_VERTEXES;
+	tess.vao->attribs[ATTRIB_INDEX_TANGENT       ].offset = offset; offset += sizeof(tess.tangent[0])     * SHADER_MAX_VERTEXES;
+	tess.vao->attribs[ATTRIB_INDEX_TEXCOORD      ].offset = offset; offset += sizeof(tess.texCoords[0])   * SHADER_MAX_VERTEXES;
+	tess.vao->attribs[ATTRIB_INDEX_LIGHTCOORD    ].offset = offset; offset += sizeof(tess.lightCoords[0]) * SHADER_MAX_VERTEXES;
+	tess.vao->attribs[ATTRIB_INDEX_COLOR         ].offset = offset; offset += sizeof(tess.color[0])       * SHADER_MAX_VERTEXES;
+
+	tess.vao->attribs[ATTRIB_INDEX_POSITION      ].stride = sizeof(tess.xyz[0]);
+	tess.vao->attribs[ATTRIB_INDEX_NORMAL        ].stride = sizeof(tess.normal[0]);
+	tess.vao->attribs[ATTRIB_INDEX_TANGENT       ].stride = sizeof(tess.tangent[0]);
+	tess.vao->attribs[ATTRIB_INDEX_TEXCOORD      ].stride = sizeof(tess.texCoords[0]);
+	tess.vao->attribs[ATTRIB_INDEX_LIGHTCOORD    ].stride = sizeof(tess.lightCoords[0]);
+	tess.vao->attribs[ATTRIB_INDEX_COLOR         ].stride = sizeof(tess.color[0]);
+
+	tess.attribPointers[ATTRIB_INDEX_POSITION]       = tess.xyz;
+	tess.attribPointers[ATTRIB_INDEX_NORMAL]         = tess.normal;
+	tess.attribPointers[ATTRIB_INDEX_TANGENT]        = tess.tangent;
+	tess.attribPointers[ATTRIB_INDEX_TEXCOORD]       = tess.texCoords;
+	tess.attribPointers[ATTRIB_INDEX_LIGHTCOORD]     = tess.lightCoords;
+	tess.attribPointers[ATTRIB_INDEX_COLOR]          = tess.color;
+
+	VBO_SetVertexAttribPointers( tess.vao );
+
+	VBO_BindNull();
+
+	GL_CheckErrors();
+	*/
+
+	backend.drawBuffer = R_AllocateBuffer( "batchBuffer", NULL, sizeof( srfVert_t ) * MAX_BATCH_VERTICES, NULL,
+		sizeof( glIndex_t ) * MAX_BATCH_INDICES, BUFFER_FRAME );
 
 	backend.drawBuffer->attribs[ATTRIB_INDEX_POSITION].enabled		= qtrue;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_TEXCOORD].enabled		= qtrue;
@@ -161,9 +278,13 @@ void R_InitGPUBuffers( void )
 	backend.drawBuffer->attribs[ATTRIB_INDEX_NORMAL].stride			= sizeof( srfVert_t );
 	backend.drawBuffer->attribs[ATTRIB_INDEX_WORLDPOS].stride		= sizeof( srfVert_t );
 
-	VBO_BindNull();
+	VBO_SetVertexAttribPointers( backend.drawBuffer );
 
+	VBO_BindNull();
+	
 	GL_CheckErrors();
+
+	ri.Cmd_AddCommand( "vaolist", R_BufferList_f );
 }
 
 void R_ShutdownGPUBuffers( void )
@@ -183,6 +304,8 @@ void R_ShutdownGPUBuffers( void )
 
 	memset( rg.buffers, 0, sizeof( rg.buffers ) );
 	rg.numBuffers = 0;
+
+	ri.Cmd_RemoveCommand( "vaolist" );
 }
 
 #if defined( GL_ARB_buffer_storage ) && defined( GL_ARB_sync )
