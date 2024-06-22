@@ -64,6 +64,7 @@ namespace TheNomad::SGame {
 	ConVar sgame_Gravity;
 	ConVar sgame_SwimSpeed;
 	ConVar sgame_AirSpeed;
+	ConVar sgame_SaveLastUsedWeaponModes;
 
 	class KeyBinding {
 		KeyBinding() {
@@ -210,7 +211,7 @@ void InitCvars() {
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_QuickShotTime, "sgame_QuickShotTime", "100", CVAR_TEMP, false );
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_QuickShotMaxRange, "sgame_QuickShotMaxRange", "40", CVAR_TEMP, false );
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_PlayerHealBase, "sgame_PlayerHealBase", "0.05", CVAR_SAVE, true );
-	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_BaseSpeed, "sgame_BaseSpeed", "1.5", CVAR_SAVE, true );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_BaseSpeed, "sgame_BaseSpeed", "0.5", CVAR_SAVE, true );
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_GroundFriction, "sgame_GroundFriction", "0.9", CVAR_SAVE, true );
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_GroundFriction, "sgame_WaterFriction", "2.5", CVAR_SAVE, true );
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_AirFriction, "sgame_AirFriction", "0.5", CVAR_SAVE, true );
@@ -222,6 +223,7 @@ void InitCvars() {
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_PlayerHeight, "sgame_PlayerHeight", "2.0", CVAR_TEMP, false );
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_SwimSpeed, "sgame_SwimSpeed", "1.0", CVAR_TEMP, false );
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_AirSpeed, "sgame_AirSpeed", "2.5", CVAR_TEMP, false );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_SaveLastUsedWeaponModes, "sgame_SaveLastUsedWeaponModes", "0", CVAR_SAVE, true );
 }
 
 int ModuleOnInit() {

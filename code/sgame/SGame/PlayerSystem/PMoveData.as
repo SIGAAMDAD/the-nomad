@@ -68,8 +68,8 @@ namespace TheNomad::SGame {
 			
 //			if ( forward != 0.0f && side != 0.0f ) {
 //				if ( ( move_toggle % ( 16 + ( TheNomad::Engine::CvarVariableInteger( "com_maxfps" ) / 10 ) ) ) == 0.0f ) {
-					accel.y += sgame_BaseSpeed.GetFloat() * forward;
-					accel.x += sgame_BaseSpeed.GetFloat() * side;
+					accel.y += forward * sgame_BaseSpeed.GetFloat();
+					accel.x += side * sgame_BaseSpeed.GetFloat();
 //				}
 //			}
 
@@ -217,7 +217,7 @@ namespace TheNomad::SGame {
 			// set legs direction
 			if ( side > 0 ) {
 				m_EntityData.SetLegsFacing( FACING_RIGHT );
-			} else if ( side > 0 ) {
+			} else if ( side < 0 ) {
 				m_EntityData.SetLegsFacing( FACING_LEFT );
 			}
 
@@ -264,6 +264,20 @@ namespace TheNomad::SGame {
 					m_EntityData.SetFacing( FACING_RIGHT );
 				} else if ( side < 0 ) {
 					m_EntityData.SetFacing( FACING_LEFT );
+				}
+
+				if ( side > forward ) {
+					if ( side > 0 ) {
+						m_EntityData.SetDirection( GameSystem::DirType::East );
+					} else if ( side > 0 ) {
+						m_EntityData.SetDirection( GameSystem::DirType::West );
+					}
+				} else if ( forward > side ) {
+					if ( forward > 0 ) {
+						m_EntityData.SetDirection( GameSystem::DirType::North );
+					} else if ( forward < 0 ) {
+						m_EntityData.SetDirection( GameSystem::DirType::South );
+					}
 				}
 			}
 		}
@@ -320,6 +334,17 @@ namespace TheNomad::SGame {
 			ImGui::Separator();
 			ImGui::Text( "Torso Direction: " + m_EntityData.GetFacing() );
 			ImGui::Separator();
+			ImGui::Text( "Bounding Box" );
+			{
+				const vec3 mins = m_EntityData.GetBounds().m_Mins;
+				const vec3 maxs = m_EntityData.GetBounds().m_Maxs;
+
+				ImGui::Text( "mins[0]: " + mins.x );
+				ImGui::Text( "mins[1]: " + mins.y );
+				ImGui::Text( "maxs[0]: " + maxs.x );
+				ImGui::Text( "maxs[1]: " + maxs.y );
+			}
+			ImGui::Separator();
 			ImGui::Text( "GameTic: " + gameTic );
 			ImGui::End();
 
@@ -348,7 +373,7 @@ namespace TheNomad::SGame {
 				key.downtime = TheNomad::GameSystem::GameManager.GetGameTic();
 			}
 
-			val = Util::Clamp( float( msec ) / float( frame_msec ), float( 0 ), float( 1 ) );
+			val = Util::Clamp( float( msec ) / float( frame_msec ), float( 0 ), float( sgame_BaseSpeed.GetFloat() ) );
 
 			return val;
 		}

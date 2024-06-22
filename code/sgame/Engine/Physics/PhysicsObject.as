@@ -56,10 +56,10 @@ namespace TheNomad::Engine::Physics {
             if ( origin.y < 0.0f ) {
                 m_EntityData.SetOrigin( vec3( origin.x, 0.0f, origin.z ) );
 		    }
-			if ( origin.x >= TheNomad::SGame::LevelManager.GetMapData().GetWidth() ) {
+			if ( origin.x > TheNomad::SGame::LevelManager.GetMapData().GetWidth() - 1 ) {
 				m_EntityData.SetOrigin( vec3( TheNomad::SGame::LevelManager.GetMapData().GetWidth() - 1, origin.y, origin.z ) );
 			}
-			if ( origin.y >= TheNomad::SGame::LevelManager.GetMapData().GetHeight() ) {
+			if ( origin.y > TheNomad::SGame::LevelManager.GetMapData().GetHeight() - 1 ) {
 				m_EntityData.SetOrigin( vec3( origin.x, TheNomad::SGame::LevelManager.GetMapData().GetHeight() - 1, origin.z ) );
 			}
 		}
@@ -178,6 +178,10 @@ namespace TheNomad::Engine::Physics {
 					m_Acceleration = 0.0f;
 					return; // clip
 				}
+			}
+
+			if ( TheNomad::GameSystem::CheckWallHit( origin, m_EntityData.GetDirection() ) ) {
+				return;
 			}
 			
 			origin.x += m_Velocity.x;

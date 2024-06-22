@@ -65,7 +65,6 @@ cvar_t *r_multisampleType;
 cvar_t *g_drawBuffer;
 cvar_t *g_paused;
 cvar_t *r_debugCamera;
-cvar_t *g_maxSaveSlots;
 
 static void *renderLib;
 
