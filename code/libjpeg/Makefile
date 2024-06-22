@@ -44,7 +44,7 @@ ifeq ($(build),debug)
 endif
 
 CC       =$(COMPILER) -std=c99
-CFLAGS   =$(FTYPE) $(DEFINES) $(INCLUDE) $(OPTIMIZERS)
+CFLAGS   =$(FTYPE) $(DEFINES) $(INCLUDE) $(OPTIMIZERS) -fPIC
 SDIR     =code
 LIB      =libjpeg.$(DLL_EXT)
 

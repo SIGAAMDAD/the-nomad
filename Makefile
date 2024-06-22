@@ -220,7 +220,7 @@ GAME_DIR=$(O)/game
 
 COMPILE_SRC=$(CC) $(CFLAGS) -o $@ -c $<
 
-JPGOBJ=\
+#JPGOBJ=\
 	$(O)/libjpeg/jaricom.o \
   	$(O)/libjpeg/jcapimin.o \
   	$(O)/libjpeg/jcapistd.o \
