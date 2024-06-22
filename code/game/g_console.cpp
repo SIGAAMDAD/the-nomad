@@ -165,6 +165,7 @@ typedef struct {
 	char times[NUM_CON_TIMES][MAXPRINTMSG];	// gi.realtime time the line was generated
 								// for transparent notify lines
 	int32_t contimes[NUM_CON_TIMES];
+
 	vec4_t	color;
 } console_t;
 
@@ -192,9 +193,9 @@ void Con_ToggleConsole_f( void ) {
 	const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar;
 
 	// Can't toggle the console when it's the only thing available
-//    if ( Key_GetCatcher() == KEYCATCH_CONSOLE ) {
-//		return;
-//	}
+    if ( Key_GetCatcher() == KEYCATCH_CONSOLE ) {
+		return;
+	}
 
 	if ( con_autoclear->i ) {
 		Field_Clear( &g_consoleField );
@@ -431,7 +432,7 @@ void Con_Init( void )
 	Cvar_SetDescription( con_notifytime, "Defines how long messages (from players or the system) are on the screen (in seconds)." );
 	con_conspeed = Cvar_Get( "scr_conspeed", "3", 0 );
 	Cvar_SetDescription( con_conspeed, "Console opening/closing scroll speed." );
-	con_autoclear = Cvar_Get("con_autoclear", "1", CVAR_ARCHIVE_ND);
+	con_autoclear = Cvar_Get( "con_autoclear", "1", CVAR_ARCHIVE_ND );
 	Cvar_SetDescription( con_autoclear, "Enable/disable clearing console input text when console is closed." );
 	con_scale = Cvar_Get( "con_scale", "1", CVAR_ARCHIVE_ND );
 	Cvar_CheckRange( con_scale, "0.5", "8", CVT_FLOAT );
@@ -452,6 +453,7 @@ void Con_Init( void )
 
 	Cmd_AddCommand( "clear", Con_Clear_f );
 	Cmd_AddCommand( "condump", Con_Dump_f );
+	Cmd_AddCommand( "history", Con_PrintHistory_f );
 	Cmd_SetCommandCompletionFunc( "condump", Cmd_CompleteTxtName );
 	Cmd_AddCommand( "toggleconsole", Con_ToggleConsole_f );
 }
@@ -466,6 +468,7 @@ void Con_Shutdown( void ) {
 	Cmd_RemoveCommand( "clear" );
 	Cmd_RemoveCommand( "condump" );
 	Cmd_RemoveCommand( "toggleconsole" );
+	Cmd_RemoveCommand( "history" );
 }
 
 /*
@@ -673,23 +676,33 @@ static void Con_DrawInput( void ) {
 	ImGui::PushStyleColor( ImGuiCol_FrameBgActive, ImVec4( 1.0f, 1.0f, 1.0f, 0.0f ) );
 	ImGui::PushStyleColor( ImGuiCol_FrameBgHovered, ImVec4( 1.0f, 1.0f, 1.0f, 0.0f ) );
 
+	if ( ImGui::GetScrollY() != ImGui::GetScrollMaxY() ) {
+		
+	}
+
 	ImGui::NewLine();
 	ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( g_color_table[ ColorIndex( S_COLOR_WHITE ) ] ) );
 	ImGui::TextUnformatted( "] " );
 	ImGui::SameLine();
 
+	// ctrl-L clears screen
+	if ( keys[ KEY_L ].down && keys[ KEY_CTRL ].down ) {
+		Cbuf_AddText( "clear\n" );
+	}
+
+	// enter finishes the line
 	if ( ImGui::InputText( "##ConsoleInputField", g_consoleField.buffer, sizeof( g_consoleField.buffer ) - 1,
 		ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackCompletion |
 		ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CtrlEnterForNewLine |
 		( key_overstrikeMode ? ImGuiInputTextFlags_AlwaysOverwrite : 0 ),
 		Con_TextCallback, NULL ) )
 	{
-		// enter finishes the line
-		// if not in the game explicitly prepend a slash if needed
 		if ( gi.state == GS_LEVEL
 			&& g_consoleField.buffer[0] != '\0'
 			&& g_consoleField.buffer[0] != '\\'
-			&& g_consoleField.buffer[0] != '/' ) {
+			&& g_consoleField.buffer[0] != '/' )
+		{
+			// if not in the game explicitly prepend a slash if needed
 			char	temp[MAX_EDIT_LINE-1];
 
 			N_strncpyz( temp, g_consoleField.buffer, sizeof( temp ) );
@@ -706,12 +719,14 @@ static void Con_DrawInput( void ) {
 		} else {
 			// other text will be chat messages
 			if ( !g_consoleField.buffer[0] ) {
+				ImGui::PopStyleColor( 4 );
 				return;	// empty lines just scroll the console without adding to history
 			} else {
 				Cbuf_AddText( g_consoleField.buffer );
 				Cbuf_AddText( "\n" );
 			}
 		}
+
 		// copy line to history buffer
 		Con_SaveField( &g_consoleField );
 
@@ -810,8 +825,6 @@ static void Con_DrawSolidConsole( float frac, qboolean open )
 	}
 
 	// draw the background
-//	re.ClearScene();
-	re.SetColor( colorWhite );
 	// custom console background color
 	if ( con_color->s[0] ) {
 		// track changes
@@ -837,19 +850,17 @@ static void Con_DrawSolidConsole( float frac, qboolean open )
 		ImGui::SetWindowSize( ImVec2( gi.gpuConfig.vidWidth + 16, height + 16 ) );
 		ImGui::Image( (ImTextureID)(uintptr_t)gi.consoleShader, ImVec2( (float)gi.gpuConfig.vidWidth, height ) );
 		ImGui::End();
-//		re.DrawImage( 0, 0, refdef.width, height, 0, 0, 1, 1, gi.consoleShader );
 	}
 
 	ImGui::Begin( "CommandConsole", NULL, windowFlags | ImGuiWindowFlags_NoBackground );
 	ImGui::SetWindowPos( ImVec2( 0, 0 ) );
 	ImGui::SetWindowSize( ImVec2( refdef.width, height ) );
 	ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * con_scale->f );
-//	ImGui::PushTextWrapPos( refdef.width );
 
 	// draw from the bottom up
 	{
 		// draw arrows to show the buffer is backscrolled
-		ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( g_color_table[ ColorIndex( S_COLOR_RED ) ] ) );
+		ImGui::PushStyleColor( ImGuiCol_Text, g_color_table[ ColorIndex( S_COLOR_RED ) ] );
 
 		const uint32_t count = gi.gpuConfig.vidWidth / ImGui::GetFontSize();
 
@@ -880,7 +891,6 @@ static void Con_DrawSolidConsole( float frac, qboolean open )
 	ImGui::SetWindowPos( ImVec2( refdef.width - ( 200 * gi.scale ), height - 48 ) );
 	ImGui::TextUnformatted( GLN_VERSION );
 	ImGui::End();
-//	re.RenderScene( &refdef );
 }
 
 static void Con_DrawNotify( void ) {
@@ -898,7 +908,7 @@ static void Con_DrawNotify( void ) {
 	ImGui::PushStyleColor( ImGuiCol_Text, g_color_table[ ColorIndex( S_COLOR_WHITE ) ] );
 
 	for ( i = 0; i < NUM_CON_TIMES; i++ ) {
-		time = gi.realtime - con.contimes[ i ];
+		time = Sys_Milliseconds() - con.contimes[ i ];
 		if ( time >= con_notifytime->f * 1000 ) {
 			// clear it
 			*con.times[ i ] = '\0';
@@ -911,9 +921,9 @@ static void Con_DrawNotify( void ) {
 
 	ImGui::PopStyleColor();
 
-	if ( Key_GetCatcher() & ( KEYCATCH_UI | KEYCATCH_SGAME ) ) {
-		return;
-	}
+//	if ( Key_GetCatcher() & ( KEYCATCH_UI | KEYCATCH_SGAME ) ) {
+//		return;
+//	}
 
 	ImGui::End();
 }
