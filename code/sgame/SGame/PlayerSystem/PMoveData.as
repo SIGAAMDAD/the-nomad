@@ -66,8 +66,12 @@ namespace TheNomad::SGame {
 			
 			KeyMove();
 			
-			accel.y += sgame_BaseSpeed.GetFloat() * forward;
-			accel.x += sgame_BaseSpeed.GetFloat() * side;
+//			if ( forward != 0.0f && side != 0.0f ) {
+//				if ( ( move_toggle % ( 16 + ( TheNomad::Engine::CvarVariableInteger( "com_maxfps" ) / 10 ) ) ) == 0.0f ) {
+					accel.y += sgame_BaseSpeed.GetFloat() * forward;
+					accel.x += sgame_BaseSpeed.GetFloat() * side;
+//				}
+//			}
 
 			if ( m_EntityData.IsDashing() ) {
 				accel.y += 5.5f * forward;
@@ -78,48 +82,43 @@ namespace TheNomad::SGame {
 			}
 
 			const uint tile = LevelManager.GetMapData().GetTile( m_EntityData.GetOrigin(), m_EntityData.GetBounds() );
-			if ( accel.x != 0.0f || accel.y != 0.0f &&
-				( move_toggle % ( 16 + ( TheNomad::Engine::CvarVariableInteger( "com_maxfps" ) / 12 ) ) ) == 0 )
-			{
-				// it sound like a machine gun if it isn't spaced out
-				if ( ( tile & SURFACEPARM_WATER ) != 0 ) {
-					switch ( TheNomad::Util::PRandom() & 2 ) {
-					case 0:
-						moveWater0.Play();
-						break;
-					case 1:
-						moveWater1.Play();
-						break;
-					};
-				}
-				if ( ( tile & SURFACEPARM_METAL ) != 0 ) {
+			// it sound like a machine gun if it isn't spaced out
+			if ( ( tile & SURFACEPARM_WATER ) != 0 ) {
+				switch ( TheNomad::Util::PRandom() & 2 ) {
+				case 0:
+					moveWater0.Play();
+					break;
+				case 1:
+					moveWater1.Play();
+					break;
+				};
+			}
+			if ( ( tile & SURFACEPARM_METAL ) != 0 ) {
+				switch ( TheNomad::Util::PRandom() & 3 ) {
+				case 0:
+					moveMetal0.Play();
+					break;
+				case 1:
+					moveMetal1.Play();
+					break;
+				case 2:
+					moveMetal2.Play();
+					break;
+				case 3:
+					moveMetal3.Play();
+					break;
+				};
+			}
+			if ( accel.x != 0.0f || accel.y != 0.0f ) {
+				if ( ( move_toggle % ( 16 + ( TheNomad::Engine::CvarVariableInteger( "com_maxfps" ) / 10 ) ) ) == 0.0f ) {
 					switch ( TheNomad::Util::PRandom() & 3 ) {
 					case 0:
-						moveMetal0.Play();
-						break;
-					case 1:
-						moveMetal1.Play();
-						break;
 					case 2:
-						moveMetal2.Play();
-						break;
-					case 3:
-						moveMetal3.Play();
-						break;
-					};
-				} else {
-					switch ( TheNomad::Util::PRandom() & 3 ) {
-					case 0:
 						moveGravel0.Play();
 						break;
 					case 1:
-						moveGravel1.Play();
-						break;
-					case 2:
-						moveGravel2.Play();
-						break;
 					case 3:
-						moveGravel3.Play();
+						moveGravel1.Play();
 						break;
 					};
 				}
@@ -238,10 +237,12 @@ namespace TheNomad::SGame {
 				
 				switch ( m_EntityData.GetDirection() ) {
 				case TheNomad::GameSystem::DirType::North:
-					m_EntityData.SetFacing( FACING_UP );
+//					m_EntityData.SetFacing( FACING_UP );
+					m_EntityData.SetFacing( FACING_RIGHT );
 					break;
 				case TheNomad::GameSystem::DirType::South:
-					m_EntityData.SetFacing( FACING_DOWN );
+//					m_EntityData.SetFacing( FACING_DOWN );
+					m_EntityData.SetFacing( FACING_RIGHT );
 					break;
 				case TheNomad::GameSystem::DirType::NorthEast:
 				case TheNomad::GameSystem::DirType::SouthEast:
@@ -274,7 +275,7 @@ namespace TheNomad::SGame {
 			
 			frametime = gameTic * 0.0001f;
 			
-			frame_msec = Game_FrameTime - old_frame_msec;
+			frame_msec = TheNomad::Engine::System::Milliseconds() - old_frame_msec;
 			
 			// if running over 1000fps, act as if each frame is 1ms
 			// prevents divisions by zero
@@ -287,7 +288,7 @@ namespace TheNomad::SGame {
 			if ( frame_msec > 200 ) {
 				frame_msec = 200;
 			}
-			old_frame_msec = Game_FrameTime;
+			old_frame_msec = TheNomad::Engine::System::Milliseconds();
 			
 			if ( up < 1.0f ) {
 				// not holding jump
@@ -308,7 +309,7 @@ namespace TheNomad::SGame {
 			SetMovementDir();
 
 			TheNomad::Engine::UserInterface::SetActiveFont( TheNomad::Engine::UserInterface::Font_RobotoMono );
-			ImGui::Begin( "Debug Player Movement" );
+			ImGui::Begin( "Debug Player Movement", null, ImGuiWindowFlags::AlwaysAutoResize );
 			ImGui::Text( "Velocity: [ " + m_EntityData.GetVelocity().x + ", " + m_EntityData.GetVelocity().y + " ]" );
 			ImGui::Text( "CameraPos: [ " + Game_CameraPos.x + ", " + Game_CameraPos.y + " ]" );
 			ImGui::Separator();
@@ -316,6 +317,8 @@ namespace TheNomad::SGame {
 			ImGui::Text( "South MSec: " + m_EntityData.key_MoveSouth.msec );
 			ImGui::Text( "East MSec: " + m_EntityData.key_MoveEast.msec );
 			ImGui::Text( "West MSec: " + m_EntityData.key_MoveWest.msec );
+			ImGui::Separator();
+			ImGui::Text( "Torso Direction: " + m_EntityData.GetFacing() );
 			ImGui::Separator();
 			ImGui::Text( "GameTic: " + gameTic );
 			ImGui::End();
@@ -338,11 +341,11 @@ namespace TheNomad::SGame {
 			if ( key.active ) {
 				// still down
 				if ( key.downtime <= 0 ) {
-					msec = Game_FrameTime;
+					msec = TheNomad::GameSystem::GameManager.GetGameTic();
 				} else {
-					msec += Game_FrameTime - key.downtime;
+					msec += TheNomad::GameSystem::GameManager.GetGameTic() - key.downtime;
 				}
-				key.downtime = Game_FrameTime;
+				key.downtime = TheNomad::GameSystem::GameManager.GetGameTic();
 			}
 
 			val = Util::Clamp( float( msec ) / float( frame_msec ), float( 0 ), float( 1 ) );

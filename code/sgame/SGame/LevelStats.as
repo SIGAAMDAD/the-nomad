@@ -260,7 +260,7 @@ namespace TheNomad::SGame {
 			const float scale = TheNomad::GameSystem::GameManager.GetUIScale();
 
 			if ( !TheNomad::Engine::IsKeyDown( TheNomad::Engine::KeyNum::Tab )
-				&& !TheNomad::Engine::IsKeyDown( TheNomad::Engine::KeyNum::GamePad_Guide )
+				&& !TheNomad::Engine::IsKeyDown( TheNomad::Engine::KeyNum::GamePad_Back )
 				&& GlobalState != GameState::StatsMenu )
 			{
 				return;
