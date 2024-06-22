@@ -461,4 +461,4 @@ clean.all:
 	rm -rf $(O)
 	rm $(EXE)
 clean:
-	rm -rf $(O)
+	rm -rf $(SRC) $(SYS)
