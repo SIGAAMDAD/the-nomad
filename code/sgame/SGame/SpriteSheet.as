@@ -25,6 +25,15 @@ namespace TheNomad::SGame {
 
 			m_hShader = TheNomad::Engine::Renderer::RegisterSpriteSheet( fileName, uint( sheetSize.x ), uint( sheetSize.y ),
 				uint( spriteSize.x ), uint( spriteSize.y ) );
+			
+			/*
+			m_SpriteData.Reserve( m_nSpriteCountX * m_nSpriteCountY );
+			for ( uint y = 0; y < m_nSpriteCountY; y++ ) {
+				for ( uint x = 0; x < m_nSpriteCountX; x++ ) {
+					m_SpriteData.Add( Sprite( ivec2( x, y ), sheetSize, spriteSize, m_hShader ) );
+				}
+			}
+			*/
 		}
 		const Sprite& opIndex( uint nIndex ) const {
 			return m_SpriteData[ nIndex ];

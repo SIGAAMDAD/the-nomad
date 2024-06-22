@@ -679,6 +679,9 @@ namespace TheNomad::SGame {
 			refEntity.scale = 2.0f;
 			refEntity.Draw();
 
+			TheNomad::Engine::Renderer::AddSpriteToScene( vec3( 0.0f ), TheNomad::Engine::Renderer::RegisterShader( "textures/icons/iconpw_pewpew" ),
+				0, true );
+
 //			DrawLegs();
 //			DrawArms();
 		}

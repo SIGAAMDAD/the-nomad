@@ -52,9 +52,9 @@ namespace TheNomad::SGame {
 			
 			// these specific movement commands MUST NOT CHANGE as they are hardcoded into the engine
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_Down_f ), "+north", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_f ), "+north", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_Up_f ), "-north", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_f ), "-north", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveSouth_f ), "+south", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(

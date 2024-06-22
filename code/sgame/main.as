@@ -88,14 +88,23 @@ namespace ImGui {
 };
 
 void LoadLevelAssets() {
+}
+
+//
+// InitResources: caches all important SGame resources
+//
+void InitResources() {
+
+	ConsolePrint( "Initializing SGame Resources...\n" );
+
 	TheNomad::Engine::Timer timer;
-	const string str = TheNomad::Engine::CvarVariableString( "skin" );
+	string str = TheNomad::Engine::CvarVariableString( "skin" );
 
 	timer.Start();
 
-	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_torso" );
-	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_legs" );
-	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_arms" );
+	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_torso", 512, 512, 32, 32 );
+	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_legs", 512, 512, 32, 32 );
+	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_arms", 512, 512, 32, 32 );
 
 	TheNomad::SGame::InfoSystem::InfoManager.LoadMobInfos();
 	TheNomad::SGame::InfoSystem::InfoManager.LoadItemInfos();
@@ -130,15 +139,7 @@ void LoadLevelAssets() {
 
 	timer.Stop();
 	ConsolePrint( "LoadLevelAssets: " + timer.ElapsedMilliseconds() + "ms\n" );
-}
 
-//
-// InitResources: caches all important SGame resources
-//
-void InitResources() {
-	string str;
-
-	ConsolePrint( "Initializing SGame Resources...\n" );
 	//
 	// register strings
 	//
@@ -232,6 +233,7 @@ int ModuleOnInit() {
 	TheNomad::Util::GetModuleList( TheNomad::SGame::sgame_ModList );
 	ConsolePrint( TheNomad::SGame::sgame_ModList.Count() + " total mods registered.\n" );
 
+	@TheNomad::Engine::FileSystem::FileManager = TheNomad::Engine::FileSystem::FileSystemManager();
 	@TheNomad::Engine::SoundSystem::SoundManager = TheNomad::Engine::SoundSystem::SoundFrameData();
 	@TheNomad::GameSystem::GameManager = cast<TheNomad::GameSystem::CampaignManager@>( @TheNomad::GameSystem::AddSystem( TheNomad::GameSystem::CampaignManager() ) );
 	@TheNomad::SGame::LevelManager = cast<TheNomad::SGame::LevelSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::LevelSystem() ) );
@@ -270,6 +272,7 @@ int ModuleOnShutdown() {
 	@TheNomad::SGame::EntityManager = null;
 	@TheNomad::SGame::StateManager = null;
 	@TheNomad::SGame::InfoSystem::InfoManager = null;
+	@TheNomad::Engine::FileSystem::FileManager = null;
 	TheNomad::GameSystem::GameSystems.Clear();
 
 	return 1;
@@ -309,7 +312,6 @@ int ModuleOnLoadGame() {
 
 int ModuleOnLevelStart() {
 	LoadLevelAssets();
-
 	TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::InLevel;
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnLevelStart();
@@ -322,7 +324,6 @@ int ModuleOnLevelEnd() {
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnLevelEnd();
 	}
-
 	return 1;
 }
 

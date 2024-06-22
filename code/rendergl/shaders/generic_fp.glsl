@@ -12,6 +12,8 @@ in vec4 v_Color;
 
 uniform sampler2D u_DiffuseMap;
 uniform float u_GammaAmount;
+uniform int u_GamePaused;
+uniform int u_HardwareGamma;
 
 #if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
 uniform vec4 u_SpecularScale;
