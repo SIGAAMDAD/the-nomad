@@ -287,7 +287,7 @@ namespace TheNomad::SGame {
 			TheNomad::GameSystem::DirType dir;
 			const uint gameTic = TheNomad::GameSystem::GameManager.GetGameTic();
 			
-			frametime = gameTic * 0.0001f;
+			frametime = uint( float( gameTic * 0.0001f ) );
 			
 			frame_msec = TheNomad::Engine::System::Milliseconds() - old_frame_msec;
 			

@@ -68,7 +68,7 @@ namespace TheNomad::SGame {
 		void OnLevelStart() {
 			// ensure we have the correct amount of polygons allocated
 
-			while ( m_PolyList.Count() != sgame_GfxDetail.GetInt() ) {
+			while ( m_PolyList.Count() != uint( sgame_GfxDetail.GetInt() ) ) {
 				m_PolyList.RemoveLast();
 			}
 		}

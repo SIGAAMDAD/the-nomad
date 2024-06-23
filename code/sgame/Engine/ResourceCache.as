@@ -4,7 +4,7 @@ namespace TheNomad::Engine {
         }
 
         int GetShader( const string& in shader ) {
-            int ret;
+            int64 ret;
             if ( !m_ShaderCache.TryGetValue( shader, ret ) ) {
                 ret = TheNomad::Engine::Renderer::RegisterShader( shader );
                 if ( ret != -1 ) {
@@ -12,10 +12,10 @@ namespace TheNomad::Engine {
                 }
                 m_ShaderCache.Add( shader, ret );
             }
-            return ret;
+            return int( ret );
         }
         int GetSfx( const string& in sfx ) {
-            int ret;
+            int64 ret;
             if ( !m_SfxCache.TryGetValue( sfx, ret ) ) {
                 ret = TheNomad::Engine::SoundSystem::RegisterSfx( sfx );
                 if ( ret != -1 ) {
@@ -23,18 +23,18 @@ namespace TheNomad::Engine {
                 }
                 m_SfxCache.Add( sfx, ret );
             }
-            return ret;
+            return int( ret );
         }
         int GetTrack( const string& in npath ) {
-            int ret;
-            if ( !m_MusicCache.TryGetValue( npath, ret ) ) {
+            int64 ret;
+            if ( !m_MusicCache.Contains( npath ) ) {
                 ret = TheNomad::Engine::SoundSystem::RegisterTrack( npath );
                 if ( ret != -1 ) {
                     ConsolePrint( "- Loaded music \"" + npath + "\".\n" );
                 }
                 m_MusicCache.Add( npath, ret );
             }
-            return ret;
+            return int( ret );
         }
         TheNomad::SGame::SpriteSheet@ GetSpriteSheet( const string& in shader, uint spriteWidth, uint spriteHeight,
             uint sheetWidth, uint sheetHeight )
@@ -43,6 +43,8 @@ namespace TheNomad::Engine {
             if ( !m_SpriteSheetCache.TryGetValue( shader, @ret ) ) {
                 @ret = TheNomad::SGame::SpriteSheet( shader, vec2( float( sheetWidth ), float( sheetHeight ) ),
                     vec2( float( spriteWidth ), float( spriteHeight ) ) );
+                ConsolePrint( "- Loaded sprite sheet \"" + shader + "\".\n" );
+                m_SpriteSheetCache.Add( shader, @ret );
             }
             return @ret;
         }

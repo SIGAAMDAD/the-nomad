@@ -7,6 +7,7 @@ namespace TheNomad::SGame::InfoSystem {
 		
 		bool Load( json@ json ) {
 			string type;
+			string shader;
 			uint i;
 			array<json@> props;
 			string ammo;
@@ -55,11 +56,11 @@ namespace TheNomad::SGame::InfoSystem {
 				ConsoleWarning( "invalid weapon info, missing variable 'AmmoType'\n" );
 				return false;
 			}
-			if ( !json.get( "Icon", iconShader ) ) {
+			if ( !json.get( "Icon", shader ) ) {
 				ConsoleWarning( "invalid weapon info, missing variable 'Icon'\n" );
 				return false;
 			} else {
-				TheNomad::Engine::ResourceCache.GetShader( iconShader );
+				iconShader = TheNomad::Engine::ResourceCache.GetShader( shader );
 			}
 
 			ConsolePrint( "Processing AmmoType for WeaponInfo '" + name + "'...\n" );
@@ -102,7 +103,7 @@ namespace TheNomad::SGame::InfoSystem {
 		}
 
 		string name;
-		string iconShader;
+		int iconShader = FS_INVALID_HANDLE;
 		uint type = 0;
 		float damage = 0.0f;
 		float range = 0.0f;
@@ -110,8 +111,6 @@ namespace TheNomad::SGame::InfoSystem {
 		AmmoType ammoType = AmmoType::Invalid; // ammo types allowed
 		WeaponProperty weaponProps = WeaponProperty::None;
 		WeaponType weaponType = WeaponType::NumWeaponTypes;
-		uint spriteOffsetX = 0;
-		uint spriteOffsetY = 0;
 		float width = 0.0f;
 		float height = 0.0f;
 

@@ -416,6 +416,8 @@ namespace TheNomad::SGame {
 			}
 			
 			m_nLevelTimer = TheNomad::Engine::System::Milliseconds();
+
+			m_PassedCheckpointSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/misc/passCheckpoint.ogg" );
 		}
 		
 		private void ForcePlayerSpawn() {

@@ -36,6 +36,7 @@ namespace TheNomad::SGame {
 	ConVar sgame_cheat_InfiniteRage;
 	ConVar sgame_cheat_GodMode;
 	ConVar sgame_cheats_enabled;
+	ConVar sgame_NoClip;
 
 	//
 	// cvars that are used by the engine
@@ -146,7 +147,7 @@ void InitResources() {
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal3.ogg" );
 
 	timer.Stop();
-	ConsolePrint( "LoadLevelAssets: " + timer.ElapsedMilliseconds() + "ms\n" );
+	ConsolePrint( "InitResources: " + timer.ElapsedMilliseconds() + "ms\n" );
 
 	//
 	// register strings
@@ -203,6 +204,7 @@ void InitCvars() {
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_cheat_InfiniteRage, "sgame_cheat_InfiniteRage", "0", CVAR_CHEAT | CVAR_SAVE, false );
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_cheat_GodMode, "sgame_cheat_GodMode", "0", CVAR_CHEAT | CVAR_SAVE, false );
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_cheats_enabled, "sgame_cheats_enabled", "0", CVAR_CHEAT | CVAR_SAVE, false );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_cheats_enabled, "sgame_NoClip", "0", CVAR_CHEAT, true );
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_LevelIndex, "g_levelIndex", "0", CVAR_LATCH | CVAR_TEMP, false );
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_MapName, "mapname", "", CVAR_TEMP, false );
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_MaxFps, "com_maxfps", "", CVAR_SAVE, false );

@@ -249,6 +249,7 @@ void CModuleLib::RunModules( EModuleFuncId nCallId, uint32_t nArgs, ... )
     uint64_t j;
     uint32_t i;
     uint32_t args[16];
+    CTimer time;
 
     if ( nCallId >= NumFuncs ) {
         N_Error( ERR_FATAL, "CModuleLib::RunModules: invalid call id" );
@@ -260,21 +261,13 @@ void CModuleLib::RunModules( EModuleFuncId nCallId, uint32_t nArgs, ... )
     }
     va_end( argptr );
 
-    switch ( nCallId ) {
-    case ModuleOnLevelStart: {
-    case ModuleOnLevelEnd:
-    case ModuleOnLoadGame:
-    case ModuleOnSaveGame:
-        CTimer time;
-
-        time.Start();
-        Con_DPrintf( "Garbage collection started...\n" );
-        g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_DETECT_GARBAGE | asGC_DESTROY_GARBAGE
-            | asGC_FULL_CYCLE, (uint32_t)ml_garbageCollectionIterations->i );
-        time.Stop();
-        Con_DPrintf( "Garbage collection: %lims, %li iterations\n", time.Milliseconds(), ml_garbageCollectionIterations->i );
-        break; }
-    };
+    time.Start();
+    AS_Printf( "Garbage collection started...\n" );
+    g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_DETECT_GARBAGE | asGC_DESTROY_GARBAGE
+        | asGC_FULL_CYCLE, (uint32_t)ml_garbageCollectionIterations->i );
+    
+    time.Stop();
+    AS_Printf( "Garbage collection: %lims, %li iterations\n", time.Milliseconds(), ml_garbageCollectionIterations->i );
 
     for ( j = 0; j < m_nModuleCount; j++ ) {
         if ( sgvm == &m_pLoadList[j] ) {
@@ -293,6 +286,7 @@ int CModuleLib::ModuleCall( CModuleInfo *pModule, EModuleFuncId nCallId, uint32_
     uint32_t i;
     uint32_t args[16];
     const char *name;
+    CTimer time;
 
     if ( !pModule ) {
         N_Error( ERR_FATAL, "CModuleLib::ModuleCall: invalid module" );
@@ -307,36 +301,14 @@ int CModuleLib::ModuleCall( CModuleInfo *pModule, EModuleFuncId nCallId, uint32_
     }
     va_end( argptr );
 
-    switch ( nCallId ) {
-    case ModuleOnLevelStart:
-        name = "OnLevelStart";
-        break;
-    case ModuleOnLevelEnd:
-        name = "OnLevelEnd";
-        break;
-    case ModuleOnSaveGame:
-        name = "OnSaveGame";
-        break;
-    case ModuleOnLoadGame:
-        name = "OnLoadGame";
-        break;
-    };
+    name = funcDefs[ nCallId ].name;
 
-    switch ( nCallId ) {
-    case ModuleOnLevelStart:
-    case ModuleOnLevelEnd:
-    case ModuleOnLoadGame:
-    case ModuleOnSaveGame: {
-        CTimer time;
-
-        time.Start();
-        Con_DPrintf( "Garbage collection started (%s)...\n", name );
-        g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_DETECT_GARBAGE | asGC_DESTROY_GARBAGE
-            | asGC_FULL_CYCLE, (uint32_t)ml_garbageCollectionIterations->i );
-        time.Stop();
-        Con_DPrintf( "Garbage collection: %lims, %li iterations\n", time.Milliseconds(), ml_garbageCollectionIterations->i );
-        break; }
-    };
+    time.Start();
+    AS_Printf( "Garbage collection started (%s)...\n", name );
+    g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_DETECT_GARBAGE | asGC_DESTROY_GARBAGE
+        | asGC_FULL_CYCLE, (uint32_t)ml_garbageCollectionIterations->i );
+    time.Stop();
+    AS_Printf( "Garbage collection: %lims, %li iterations\n", time.Milliseconds(), ml_garbageCollectionIterations->i );
 
     return pModule->m_pHandle->CallFunc( nCallId, nArgs, args );
 }
@@ -375,25 +347,25 @@ void Module_ASMessage_f( const asSMessageInfo *pMsg, void *param )
 
 #ifdef _NOMAD_DEBUG
 void *AS_Alloc( size_t nSize, const char *pFilename, uint32_t lineNumber ) {
-    return Z_Malloc( nSize, TAG_MODULES );
-//    return Mem_Alloc( nSize );
+//    return Z_Malloc( nSize, TAG_MODULES );
+    return Mem_Alloc( nSize );
 }
 #else
 void *AS_Alloc( size_t nSize ) {
-    return Z_Malloc( nSize, TAG_MODULES );
-//    return Mem_Alloc( nSize );
+//    return Z_Malloc( nSize, TAG_MODULES );
+    return Mem_Alloc( nSize );
 }
 #endif
 
 #ifdef _NOMAD_DEBUG
 void AS_Free( void *ptr, const char *pFilename, uint32_t lineNumber ) {
-    Z_Free( ptr );
-//    Mem_Free( ptr );
+//    Z_Free( ptr );
+    Mem_Free( ptr );
 }
 #else
 void AS_Free( void *ptr ) {
-    Z_Free( ptr );
-//    Mem_Free( ptr );
+//    Z_Free( ptr );
+    Mem_Free( ptr );
 }
 #endif
 
@@ -623,7 +595,7 @@ CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *
     Cvar_SetDescription( ml_allowJIT, "Toggle JIT compilation of a module" );
     ml_debugMode = Cvar_Get( "ml_debugMode", "0", CVAR_LATCH | CVAR_TEMP );
     Cvar_SetDescription( ml_debugMode, "Set to 1 whenever a module is being debugged" );
-    ml_garbageCollectionIterations = Cvar_Get( "ml_garbageCollectionIterations", "4", CVAR_LATCH | CVAR_TEMP | CVAR_PRIVATE );
+    ml_garbageCollectionIterations = Cvar_Get( "ml_garbageCollectionIterations", "4", CVAR_TEMP | CVAR_PRIVATE );
     Cvar_SetDescription( ml_garbageCollectionIterations, "Sets the number of iterations per garbage collection loop" );
 
     Cmd_AddCommand( "ml.clean_script_cache", ML_CleanCache_f );

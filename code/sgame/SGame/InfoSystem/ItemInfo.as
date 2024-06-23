@@ -66,7 +66,6 @@ namespace TheNomad::SGame::InfoSystem {
 		int iconShader = FS_INVALID_HANDLE;
 		uint type = 0;
 		int cost = 0;
-		uvec2 spriteOffset = uvec2( 0 );
 		uint maxStackSize = 0;
 		float width = 0.0f;
 		float height = 0.0f;

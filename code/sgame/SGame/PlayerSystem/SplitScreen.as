@@ -339,7 +339,7 @@ namespace TheNomad::SGame {
 				TheNomad::GameSystem::GameSystems[i].OnRenderScene();
 			}
 			TheNomad::Engine::Renderer::RenderScene( scenePos.x, scenePos.y, sceneSize.x, sceneSize.y, flags, 
-				TheNomad::GameSystem::GameManager.GetGameTic() * 0.1f );
+				uint( TheNomad::GameSystem::GameManager.GetGameTic() * 0.1f ) );
 		}
 
 		uint GetPlayerIndex( PlayrObject@ obj ) {
@@ -402,18 +402,18 @@ namespace TheNomad::SGame {
 			};
 		}
 
-		int GetPlayerCount() const {
+		uint GetPlayerCount() const {
 			return m_nPlayerCount;
 		}
-		PlayrObject@ GetPlayerAt( int nIndex ) {
+		PlayrObject@ GetPlayerAt( uint nIndex ) {
 			return @m_PlayerData[ nIndex ];
 		}
-		const PlayrObject@ GetPlayerAt( int nIndex ) const {
+		const PlayrObject@ GetPlayerAt( uint nIndex ) const {
 			return @m_PlayerData[ nIndex ];
 		}
 		
 		private PlayrObject@[] m_PlayerData( 4 );
-		private int m_nPlayerCount = 0;
+		private uint m_nPlayerCount = 0;
 	};
 	
 	SplitScreen ScreenData;

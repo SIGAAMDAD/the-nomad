@@ -33,14 +33,20 @@ public:
 
 	// Replace the stored value
 	void Set( asIScriptEngine *engine, void *value, int typeId );
-	void Set( asIScriptEngine *engine, const asINT64 &value );
-	void Set( asIScriptEngine *engine, const double &value );
-	void Set( asIScriptEngine *engine, CScriptDictValue &value );
+	void Set( asIScriptEngine *engine, const asINT32& value );
+	void Set( asIScriptEngine *engine, const asDWORD& value );
+	void Set( asIScriptEngine *engine, const asINT64& value );
+	void Set( asIScriptEngine *engine, const asQWORD& value );
+	void Set( asIScriptEngine *engine, const double& value );
+	void Set( asIScriptEngine *engine, CScriptDictValue& value );
 
 	// Gets the stored value. Returns false if the value isn't compatible with the informed typeId
 	bool Get( asIScriptEngine *engine, void *value, int typeId ) const;
-	bool Get( asIScriptEngine *engine, asINT64 &value ) const;
-	bool Get( asIScriptEngine *engine, double &value ) const;
+	bool Get( asIScriptEngine *engine, asINT32& value ) const;
+	bool Get( asIScriptEngine *engine, asDWORD& value ) const;
+	bool Get( asIScriptEngine *engine, asINT64& value ) const;
+	bool Get( asIScriptEngine *engine, asQWORD& value ) const;
+	bool Get( asIScriptEngine *engine, double& value ) const;
 
 	// Returns the address of the stored value for inspection
 	const void *GetAddressOfValue( void ) const;
@@ -82,13 +88,19 @@ public:
 
 	// Sets a key/value pair
 	void Set( const dictKey_t &key, void *value, int typeId );
-	void Set( const dictKey_t &key, const asINT64 &value );
-	void Set( const dictKey_t &key, const double &value );
+	void Set( const dictKey_t &key, const asINT32& value );
+	void Set( const dictKey_t &key, const asDWORD& value );
+	void Set( const dictKey_t &key, const asINT64& value );
+	void Set( const dictKey_t &key, const asQWORD& value );
+	void Set( const dictKey_t &key, const double& value );
 
 	// Gets the stored value. Returns false if the value isn't compatible with the informed typeId
 	bool Get( const dictKey_t &key, void *value, int typeId ) const;
-	bool Get( const dictKey_t &key, asINT64 &value ) const;
-	bool Get( const dictKey_t &key, double &value ) const;
+	bool Get( const dictKey_t &key, asINT32& value ) const;
+	bool Get( const dictKey_t &key, asDWORD& value ) const;
+	bool Get( const dictKey_t &key, asINT64& value ) const;
+	bool Get( const dictKey_t &key, asQWORD& value ) const;
+	bool Get( const dictKey_t &key, double& value ) const;
 
 	// Index accessors. If the dictionary is not const it inserts the value if it doesn't already exist
 	// If the dictionary is const then a script exception is set if it doesn't exist and a null pointer is returned
@@ -132,7 +144,10 @@ public:
 		// Accessors
 		const dictKey_t& GetKey( void ) const;
 		int              GetTypeId( void ) const;
+		bool             GetValue( asINT32& value ) const;
+		bool             GetValue( asDWORD& value ) const;
 		bool             GetValue( asINT64& value ) const;
+		bool             GetValue( asQWORD& value ) const;
 		bool             GetValue( double& value ) const;
 		bool             GetValue( void *value, int typeId ) const;
 		const void *     GetAddressOfValue( void ) const;

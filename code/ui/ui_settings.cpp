@@ -1577,6 +1577,7 @@ static void VideoMenu_Save( void )
 	SDL_SetWindowSize( SDL_window, r_vidModes[ s_settingsMenu->video.windowResolution - 2 ].width,
 		r_vidModes[ s_settingsMenu->video.windowResolution - 2 ].height );
 	SDL_SetWindowBordered( SDL_window, (SDL_bool)( s_settingsMenu->video.windowMode % 2 != 0 ) );
+//	SDL_SetWindowPosition( SDL_window, vid_xpos->i, vid_ypos->i );
 }
 
 static void PerformanceMenu_Save( void )

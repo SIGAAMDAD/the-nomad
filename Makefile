@@ -389,7 +389,7 @@ targets: makedirs
 	@echo ""
 	@echo "Building $(EXE):"
 	@echo ""
-	@echo "  VERSION: $(VERSION)"
+	@echo "  VERSION: $(VERSION).$(VERSION_UPDATE).$(VERSION_PATCH)"
 	@echo "  PLATFORM: $(PLATFORM)"
 	@echo "  ARCH: $(ARCH)"
 	@echo "  COMPILE_PLATFORM: $(COMPILE_PLATFORM)"

@@ -75,7 +75,7 @@ namespace TheNomad::SGame {
                 return;
             }
 
-            int64 toggle = TheNomad::Engine::CvarVariableInteger( "sgame_cheat_GodMode" );
+            int toggle = TheNomad::Engine::CvarVariableInteger( "sgame_cheat_GodMode" );
             ConsolePrint( "BitchMode " + ( toggle == 1 ? "On" : "Off" ) + "\n" );
             TheNomad::Engine::CvarSet( "sgame_cheat_GodMode", toggle == 1 ? "0" : "1" );
         }
@@ -89,7 +89,7 @@ namespace TheNomad::SGame {
                 return;
             }
 
-            int64 toggle = TheNomad::Engine::CvarVariableInteger( "sgame_cheat_BlindMobs" );
+            int toggle = TheNomad::Engine::CvarVariableInteger( "sgame_cheat_BlindMobs" );
             ConsolePrint( "BlindMobs " + ( toggle == 1 ? "On" : "Off" ) + "\n" );
             TheNomad::Engine::CvarSet( "sgame_cheat_BlindMobs", toggle == 1 ? "0" : "1" );
         }
@@ -103,7 +103,7 @@ namespace TheNomad::SGame {
                 return;
             }
 
-            int64 toggle = TheNomad::Engine::CvarVariableInteger( "sgame_cheat_DeafMobs" );
+            int toggle = TheNomad::Engine::CvarVariableInteger( "sgame_cheat_DeafMobs" );
             ConsolePrint( "DeafMobs " + ( toggle == 1 ? "On" : "Off" ) + "\n" );
             TheNomad::Engine::CvarSet( "sgame_cheat_DeafMobs", toggle == 1 ? "0" : "1" );
         }
@@ -117,7 +117,7 @@ namespace TheNomad::SGame {
                 return;
             }
 
-            int64 toggle = TheNomad::Engine::CvarVariableInteger( "sgame_cheat_InfiniteAmmo" );
+            int toggle = TheNomad::Engine::CvarVariableInteger( "sgame_cheat_InfiniteAmmo" );
             ConsolePrint( "AmericaFuckYeah " + ( toggle == 1 ? "On" : "Off" ) + "\n" );
             TheNomad::Engine::CvarSet( "sgame_cheat_InfiniteAmmo", toggle == 1 ? "0" : "1" );
         }
@@ -131,7 +131,7 @@ namespace TheNomad::SGame {
                 return;
             }
 
-            int64 toggle = TheNomad::Engine::CvarVariableInteger( "sgame_cheat_InfiniteHealth" );
+            int toggle = TheNomad::Engine::CvarVariableInteger( "sgame_cheat_InfiniteHealth" );
             ConsolePrint( "InfiniteHealth " + ( toggle == 1 ? "On" : "Off" ) + "\n" );
             TheNomad::Engine::CvarSet( "sgame_cheat_InfiniteHealth", toggle == 1 ? "0" : "1" );
         }
@@ -145,9 +145,23 @@ namespace TheNomad::SGame {
                 return;
             }
 
-            int64 toggle = TheNomad::Engine::CvarVariableInteger( "sgame_cheat_InfiniteRage" );
+            int toggle = TheNomad::Engine::CvarVariableInteger( "sgame_cheat_InfiniteRage" );
             ConsolePrint( "TooAngryToDie " + ( toggle == 1 ? "On" : "Off" ) + "\n" );
             TheNomad::Engine::CvarSet( "sgame_cheat_InfiniteRage", toggle == 1 ? "0" : "1" );
+        }
+
+        //
+        // NoClip_f: /noclip
+        //
+        void NoClip_f() {
+            if ( TheNomad::Engine::CvarVariableInteger( "sgame_cheats_enabled" ) == 0 ) {
+                ConsolePrint( "Cheats not enabled, launch the game with cheats enabled or +set sgame_cheats_enabled 1\n" );
+                return;
+            }
+
+            int toggle = TheNomad::Engine::CvarVariableInteger( "sgame_NoClip" );
+            ConsolePrint( "noclip " + ( toggle == 1 ? "on" : "off" ) + "\n" );
+            TheNomad::Engine::CvarSet( "sgame_NoClip", toggle == 1 ? "0" : "1" );
         }
     };
 

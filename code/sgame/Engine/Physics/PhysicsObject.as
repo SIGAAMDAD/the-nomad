@@ -48,6 +48,10 @@ namespace TheNomad::Engine::Physics {
         }
 
         private void ClipBounds() {
+			if ( SGame::sgame_NoClip.GetInt() == 1 ) {
+				return;
+			}
+
 			vec3 origin = m_EntityData.GetOrigin();
 
             if ( origin.x < 0.0f ) {
@@ -68,7 +72,7 @@ namespace TheNomad::Engine::Physics {
 			vec3 vec;
 			float speed, newspeed, control;
 			float drop;
-			const uint frameTime = TheNomad::GameSystem::GameManager.GetGameTic() * 0.0001f;
+			const uint frameTime = uint( float( TheNomad::GameSystem::GameManager.GetGameTic() * 0.0001f ) );
 			
 			vec = m_Velocity;
 			speed = Util::VectorLength( vec );
