@@ -365,7 +365,7 @@ namespace TheNomad::SGame {
 
 			m_Link.m_Bounds.m_nWidth = sgame_PlayerWidth.GetFloat();
 			m_Link.m_Bounds.m_nHeight = sgame_PlayerHeight.GetFloat();
-//			m_Link.m_Bounds.MakeBounds( m_Link.m_Origin ); // breaks movement
+			m_Link.m_Bounds.MakeBounds( m_Link.m_Origin ); // breaks movement
 			
 			// run a movement frame
 			Pmove.RunTic();

@@ -174,13 +174,14 @@ namespace TheNomad::Engine::Physics {
 			bounds.MakeBounds( origin + m_Velocity );
 			const array<TheNomad::SGame::EntityObject@>@ entList = @TheNomad::SGame::EntityManager.GetEntities();
 			for ( uint i = 0; i < entList.Count(); i++ ) {
-				if ( Util::BoundsIntersect( bounds, entList[i].GetBounds() ) ) {
+				if ( Util::BoundsIntersect( bounds, entList[i].GetBounds() ) && @m_EntityData !is @entList[i] ) {
 					m_Acceleration = 0.0f;
 					return; // clip
 				}
 			}
 
 			if ( TheNomad::GameSystem::CheckWallHit( origin, m_EntityData.GetDirection() ) ) {
+				m_Acceleration = 0.0f;
 				return;
 			}
 			

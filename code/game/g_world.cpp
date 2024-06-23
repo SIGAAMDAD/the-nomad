@@ -322,10 +322,48 @@ qboolean CGameWorld::CheckWallHit( const vec3_t origin, dirtype_t dir )
     vec3_t p;
 	ivec3_t tmp;
     VectorCopy( p, origin );
-	Sys_SnapVector( p );
 	VectorCopy( tmp, p );
 
-    return m_pMapInfo->tiles[ tmp[1] * m_pMapInfo->width + tmp[0] ].sides[dir];
+	/*
+	ray_t ray;
+
+	memset( &ray, 0, sizeof( ray ) );
+	VectorCopy( ray.start, origin );
+	ray.angle = Dir2Angle( dir );
+	ray.length = 1.0f;
+
+	CastRay( &ray );
+	if ( ray.entityNumber == ENTITYNUM_WALL ) {
+		Con_Printf( "Hit a wall\n" );
+		return qtrue;
+	}
+	*/
+
+	switch ( dir ) {
+	case DIR_NORTH:
+		tmp[1]--;
+		break;
+	case DIR_SOUTH:
+		tmp[1]++;
+		break;
+	case DIR_WEST:
+		tmp[0]--;
+		break;
+	case DIR_EAST:
+		tmp[0]++;
+		break;
+	};
+
+	if ( tmp[0] < 0 || tmp[1] < 0 ) {
+		return qfalse;
+	}
+
+	if ( m_pMapInfo->tiles[ tmp[1] * m_pMapInfo->width + tmp[0] ].sides[inversedirs[ dir ]]
+		|| m_pMapInfo->tiles[ tmp[1] * m_pMapInfo->width + tmp[0] ].sides[ DIR_NULL ] )
+	{
+		return qtrue;
+	}
+	return qfalse;
 }
 
 void CGameWorld::CastRay( ray_t *ray )
@@ -362,13 +400,15 @@ void CGameWorld::CastRay( ray_t *ray )
 			}
 		}
 		VectorCopy( pos, ray->origin );
-		Sys_SnapVector( pos );
+//		Sys_SnapVector( pos );
 		rayDir = inversedirs[ DirFromPoint( pos ) ];
 
         if ( ray->origin[0] >= ray->end[0] || ray->origin[1] >= ray->end[1] ) {
 			ray->entityNumber = ENTITYNUM_INVALID;
 			break;
-		} else if ( m_pMapInfo->tiles[ (unsigned)pos[1] * m_pMapInfo->width + (unsigned)pos[0] ].sides[ rayDir ] ) {
+		} else if ( m_pMapInfo->tiles[ (unsigned)pos[1] * m_pMapInfo->width + (unsigned)pos[0] ].sides[ rayDir ]
+			|| m_pMapInfo->tiles[ (unsigned)pos[1] * m_pMapInfo->width + (unsigned)pos[0] ].sides[ DIR_NULL ] )
+		{
 			// hit a wall
 			ray->entityNumber = ENTITYNUM_WALL;
 			break;

@@ -269,7 +269,7 @@ namespace TheNomad::SGame {
 				if ( side > forward ) {
 					if ( side > 0 ) {
 						m_EntityData.SetDirection( GameSystem::DirType::East );
-					} else if ( side > 0 ) {
+					} else if ( side < 0 ) {
 						m_EntityData.SetDirection( GameSystem::DirType::West );
 					}
 				} else if ( forward > side ) {
@@ -326,6 +326,8 @@ namespace TheNomad::SGame {
 			ImGui::Begin( "Debug Player Movement", null, ImGuiWindowFlags::AlwaysAutoResize );
 			ImGui::Text( "Velocity: [ " + m_EntityData.GetVelocity().x + ", " + m_EntityData.GetVelocity().y + " ]" );
 			ImGui::Text( "CameraPos: [ " + Game_CameraPos.x + ", " + Game_CameraPos.y + " ]" );
+			ImGui::Text( "Forward: " + forward );
+			ImGui::Text( "Side: " + side );
 			ImGui::Separator();
 			ImGui::Text( "North MSec: " + m_EntityData.key_MoveNorth.msec );
 			ImGui::Text( "South MSec: " + m_EntityData.key_MoveSouth.msec );
@@ -373,23 +375,31 @@ namespace TheNomad::SGame {
 				key.downtime = TheNomad::GameSystem::GameManager.GetGameTic();
 			}
 
-			val = Util::Clamp( float( msec ) / float( frame_msec ), float( 0 ), float( sgame_BaseSpeed.GetFloat() ) );
+			val = Util::Clamp( float( msec ) / float( frame_msec ), float( 0 ), float( 1 ) );
 
 			return val;
 		}
 
 		void KeyMove() {
+			float base = 1.10f;
+
 			forward = 0.0f;
 			side = 0.0f;
 			up = 0.0f;
+
+			if ( ( m_EntityData.key_MoveEast.msec != 0 || m_EntityData.key_MoveWest.msec != 0 )
+				&& ( m_EntityData.key_MoveNorth.msec != 0 || m_EntityData.key_MoveSouth.msec != 0 ) )
+			{
+				base = 1.7f;
+			}
 			
-			side += 1.25f * KeyState( m_EntityData.key_MoveEast );
-			side -= 1.25f * KeyState( m_EntityData.key_MoveWest );
+			side += base * KeyState( m_EntityData.key_MoveEast );
+			side -= base * KeyState( m_EntityData.key_MoveWest );
 			
 			up += 1.25f * KeyState( m_EntityData.key_Jump );
 			
-			forward -= 1.25f * KeyState( m_EntityData.key_MoveNorth );
-			forward += 1.25f * KeyState( m_EntityData.key_MoveSouth );
+			forward -= base * KeyState( m_EntityData.key_MoveNorth );
+			forward += base * KeyState( m_EntityData.key_MoveSouth );
 
 			northmove = southmove = 0.0f;
 			if ( forward > 0 ) {
