@@ -7,6 +7,7 @@ namespace TheNomad::SGame::InfoSystem {
 		
 		bool Load( json@ json ) {
 			string str;
+			bool useSpriteSheet = false;
 
 			if ( !json.get( "Name", name ) ) {
 				ConsoleWarning( "invalid item info, missing variable 'Name'\n" );
@@ -25,19 +26,11 @@ namespace TheNomad::SGame::InfoSystem {
 				return false;
 			}
 			json.get( "Cost", cost );
-			if ( !json.get( "Icon", iconShader ) ) {
+			if ( !json.get( "Icon", str ) ) {
 				ConsoleWarning( "invalid item info, missing variable 'Icon'\n" );
 				return false;
 			} else {
-				TheNomad::Engine::ResourceCache.GetShader( iconShader );
-			}
-			if ( !json.get( "SpriteOffsetX", spriteOffset.x ) ) {
-				ConsoleWarning( "invalid item info, missing variable 'SpriteOffsetX'\n" );
-				return false;
-			}
-			if ( !json.get( "SpriteOffsetY", spriteOffset.y ) ) {
-				ConsoleWarning( "invalid item info, missing variable 'SpriteOffsetY'\n" );
-				return false;
+				iconShader = TheNomad::Engine::ResourceCache.GetShader( str );
 			}
 			if ( !json.get( "PickupSfx", str ) ) {
 				ConsoleWarning( "invalid item info, missing variable 'PickupSfx'\n" );
@@ -70,7 +63,7 @@ namespace TheNomad::SGame::InfoSystem {
 		string name;
 		string description;
 		string effect;
-		string iconShader;
+		int iconShader = FS_INVALID_HANDLE;
 		uint type = 0;
 		int cost = 0;
 		uvec2 spriteOffset = uvec2( 0 );

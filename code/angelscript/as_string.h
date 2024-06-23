@@ -85,12 +85,11 @@ public:
 	size_t RecalculateLength();
 
 protected:
-	unsigned int length;
-	union
-	{
+	union {
 		char *dynamic;
-		char local[12];
+		char local[64];
 	};
+	unsigned int length;
 };
 
 // Helper functions

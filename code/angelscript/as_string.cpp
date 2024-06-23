@@ -59,7 +59,7 @@ asCString::asCString(const asCString &str)
 #ifdef AS_CAN_USE_CPP11
 asCString::asCString(asCString &&str)
 {
-	if( str.length <= 11 )
+	if( str.length <= sizeof( str.local ) - 1 )
 	{
 		length = str.length;
 		memcpy(local, str.local, length);
@@ -103,7 +103,7 @@ asCString::asCString(char ch)
 
 asCString::~asCString()
 {
-	if( length > 11 && dynamic )
+	if( length > sizeof( local ) - 1 && dynamic )
 	{
 		asDELETEARRAY(dynamic);
 	}
@@ -111,7 +111,7 @@ asCString::~asCString()
 
 char *asCString::AddressOf()
 {
-	if( length <= 11 )
+	if( length <= sizeof( local ) - 1 )
 		return local;
 	else
 		return dynamic;
@@ -119,7 +119,7 @@ char *asCString::AddressOf()
 
 const char *asCString::AddressOf() const
 {
-	if( length <= 11 )
+	if( length <= sizeof( local ) - 1 )
 		return local;
 	else
 		return dynamic;
@@ -139,7 +139,7 @@ void asCString::Allocate(size_t len, bool keepData)
 	// of these options, and it turned out that the current choice is what best balanced
 	// the number of allocations against the size of the allocations.
 
-	if( len > 11 && len > length )
+	if( len > sizeof( local ) - 1 && len > length )
 	{
 		// Allocate a new dynamic buffer if the new one is larger than the old
 		char *buf = asNEWARRAY(char,len+1);
@@ -155,14 +155,14 @@ void asCString::Allocate(size_t len, bool keepData)
 			memcpy(buf, AddressOf(), l);
 		}
 
-		if( length > 11 )
+		if( length > sizeof( local ) - 1 )
 		{
 			asDELETEARRAY(dynamic);
 		}
 
 		dynamic = buf;
 	}
-	else if( len <= 11 && length > 11 )
+	else if( len <= sizeof( local ) - 1 && length > sizeof( local ) - 1 )
 	{
 		// Free the dynamic buffer, since it is no longer needed
 		char *buf = dynamic;
@@ -208,12 +208,12 @@ asCString &asCString::operator =(asCString &&str)
 {
 	if( this != &str )
 	{
-		if( length > 11 && dynamic )
+		if( length > sizeof( str.local ) - 1 && dynamic )
 		{
 			asDELETEARRAY(dynamic);
 		}
 
-		if ( str.length <= 11 )
+		if ( str.length <= sizeof( str.local ) - 1 )
 		{
 			length = str.length;
 

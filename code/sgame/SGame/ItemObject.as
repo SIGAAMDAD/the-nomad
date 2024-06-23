@@ -20,7 +20,9 @@ namespace TheNomad::SGame {
 		}
 		void Use() {
 			m_Info.useSfx.Play();
-			Engine::CmdExecuteCommand( m_Info.effect + " " + m_Owner.GetEntityNum() );
+			if ( m_Info.effect.Length() > 0 ) {
+				Engine::CmdExecuteCommand( m_Info.effect + " " + m_Owner.GetEntityNum() );
+			}
 		}
 
 		void Save( const TheNomad::GameSystem::SaveSystem::SaveSection& in section ) const {
@@ -41,12 +43,22 @@ namespace TheNomad::SGame {
             return true;
 		}
 
-		void Think() const {
+		void Think() {
 			if ( @m_Owner !is null ) {
 				return;
 			}
 
-			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, m_hShader, 0, true );
+			TheNomad::Engine::Renderer::RenderEntity refEntity;
+
+			refEntity.sheetNum = -1;
+			refEntity.spriteId = m_Info.iconShader;
+			refEntity.origin = m_Link.m_Origin;
+			refEntity.scale = 1.5f;
+			refEntity.Draw();
+
+			m_Link.m_Bounds.m_nWidth = m_Info.width;
+			m_Link.m_Bounds.m_nHeight = m_Info.height;
+			m_Link.m_Bounds.MakeBounds( m_Link.m_Origin );
 		}
 		void Spawn( uint id, const vec3& in origin ) override {
 			@m_Info = @InfoSystem::InfoManager.GetItemInfo( id );
@@ -54,7 +66,7 @@ namespace TheNomad::SGame {
 				GameError( "ItemObject::Spawn: invalid item id " + id );
 			}
 
-			m_hShader = TheNomad::Engine::ResourceCache.GetShader( m_Info.iconShader );
+			m_hShader = m_Info.iconShader;
 			m_Link.m_nEntityId = id;
 			m_Link.m_Origin = origin;
 			m_Link.m_Bounds.m_nWidth = m_Info.width;

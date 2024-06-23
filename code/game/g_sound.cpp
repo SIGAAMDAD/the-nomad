@@ -11,6 +11,12 @@
 #include <vorbis/vorbisfile.h>
 #include "stb_vorbis.c"
 
+// AL_EXT_STATIC_BUFFER
+static PFNALBUFFERDATASTATICPROC alBufferDataStatic;
+
+// ALC_SOFT_HRTF
+static LPALCRESETDEVICESOFT alcResetDeviceSOFT;
+
 #define MAX_SOUND_SOURCES 2048
 #define MAX_MUSIC_QUEUE 12
 
@@ -25,6 +31,7 @@ cvar_t *snd_effectsOn;
 cvar_t *snd_masterVolume;
 cvar_t *snd_debugPrint;
 cvar_t *snd_muteUnfocused;
+cvar_t *snd_device;
 
 //static idDynamicBlockAlloc<byte, 1<<20, 1<<10> soundCacheAllocator;
 
@@ -172,6 +179,7 @@ public:
     void LoopTrack( CSoundSource *snd );
     void DisableSounds( void );
     void Update( int64_t msec );
+    bool CheckDeviceAndRecoverIfNeeded( void );
 
     inline CSoundSource **GetSources( void ) { return m_pSources; }
     inline void Mute( bool bMute ) {
@@ -226,6 +234,9 @@ public:
 private:
     CSoundSource *m_pSources[MAX_SOUND_SOURCES];
     uint64_t m_nSources;
+
+    uint64_t m_nLastCheckTime;
+    uint32_t m_nResetRetryCount;
 
     vec3_t m_ListenerPosition;
 
@@ -619,7 +630,11 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
         ALCall( alGenSources( 1, &m_iSource ) );
     }
 
-    ALCall( alBufferData( m_iBuffer, format, data, sizeof( short ) * m_hFData.channels * m_hFData.frames, m_hFData.samplerate ) );
+    if ( alBufferDataStatic ) {
+        ALCall( alBufferDataStatic( m_iBuffer, format, data, sizeof( short ) * m_hFData.channels * m_hFData.frames, m_hFData.samplerate ) );
+    } else {
+        ALCall( alBufferData( m_iBuffer, format, data, sizeof( short ) * m_hFData.channels * m_hFData.frames, m_hFData.samplerate ) );
+    }
 
     if ( tag == TAG_SFX ) {
         ALCall( alSourcef( m_iSource, AL_GAIN, snd_effectsVolume->f ) );
@@ -641,6 +656,71 @@ void CSoundManager::Init( void )
 {
     memset( this, 0, sizeof( *this ) );
 
+    // no point in initializing OpenAL if sound is disabled with snd_noSound
+	if ( snd_noSound->i ) {
+		Con_Printf( "Sound disabled with snd_noSound 1!\n" );
+		m_pDevice = NULL;
+		m_pContext = NULL;
+        return;
+	} else {
+		// set up openal device and context
+		Con_Printf( "Setup OpenAL device and context\n" );
+
+		const char *device = snd_device->s;
+		if ( strlen( device ) < 1 ) {
+			device = NULL;
+		} else if ( !N_stricmp( device, "default" ) ) {
+			device = NULL;
+        }
+
+		if ( alcIsExtensionPresent( NULL, "ALC_ENUMERATE_ALL_EXT" ) ) {
+			const char *devs = alcGetString( NULL, ALC_ALL_DEVICES_SPECIFIER );
+			bool found = false;
+
+			while ( devs && *devs ) {
+				Con_Printf( "OpenAL: found device '%s'", devs );
+
+				if ( device && !N_stricmp( devs, device ) ) {
+					Con_Printf( " (ACTIVE)\n" );
+					found = true;
+				} else {
+					Con_Printf( "\n" );
+				}
+
+				devs += strlen( devs ) + 1;
+			}
+
+			if ( device && !found ) {
+				Con_Printf( "OpenAL: device %s not found, using default\n", device );
+				device = NULL;
+			}
+		}
+
+		m_pDevice = alcOpenDevice( device );
+		if ( !m_pDevice && device ) {
+			Con_Printf( "OpenAL: failed to open device '%s' (0x%x), trying default...\n", device, alGetError() );
+			m_pDevice = alcOpenDevice( NULL );
+		}
+
+		// DG: handle the possibility that opening the default device or creating context failed
+		if ( m_pDevice == NULL ) {
+			Con_Printf( "OpenAL: failed to open default device (0x%x), disabling sound\n", alGetError() );
+			m_pContext = NULL;
+		} else {
+			m_pContext = alcCreateContext( m_pDevice, NULL );
+			if ( m_pContext == NULL ) {
+				Con_Printf( "OpenAL: failed to create context (0x%x), disabling sound\n", alcGetError( m_pDevice ) );
+				alcCloseDevice( m_pDevice );
+				m_pDevice = NULL;
+			}
+		}
+	}
+    if ( !m_pDevice || !m_pContext ) {
+        Cvar_Set( "snd_noSound", "1" );
+        return;
+    }
+
+/*
     m_pDevice = alcOpenDevice( NULL );
     if ( !m_pDevice ) {
         N_Error( ERR_FATAL, "Snd_Init: failed to open OpenAL device" );
@@ -650,6 +730,7 @@ void CSoundManager::Init( void )
     if ( !m_pContext ) {
         N_Error( ERR_FATAL, "Snd_Init: failed to create OpenAL context, reason: %s", alcGetString( m_pDevice, alcGetError( m_pDevice ) ) );
     }
+    */
 
     alcMakeContextCurrent( m_pContext );
     m_bRegistered = true;
@@ -661,6 +742,22 @@ void CSoundManager::Init( void )
     Con_Printf( "OpenAL vendor: %s\n", alGetString( AL_VENDOR ) );
     Con_Printf( "OpenAL renderer: %s\n", alGetString( AL_RENDERER ) );
     Con_Printf( "OpenAL version: %s\n", alGetString( AL_VERSION ) );
+
+    if ( alcIsExtensionPresent( m_pDevice, "AL_EXT_STATIC_BUFFER" ) ) {
+        Con_Printf( "AL_EXT_STATIC_BUFFER found\n" );
+        alBufferDataStatic = (PFNALBUFFERDATASTATICPROC)alcGetProcAddress( m_pDevice, "alBufferDataStatic" );
+    } else {
+        Con_Printf( "AL_EXT_STATIC_BUFFER not found\n" );
+        alBufferDataStatic = NULL;
+    }
+
+    if ( alcIsExtensionPresent( m_pDevice, "ALC_EXT_disconnect" ) && alcIsExtensionPresent( m_pDevice, "ALC_SOFT_HRTF" ) ) {
+        Con_Printf( "ALC_EXT_disconnect and ALC_SOFT_HRTF found, resetting disconnected devices now possible\n" );
+        alcResetDeviceSOFT = (LPALCRESETDEVICESOFT)alcGetProcAddress( m_pDevice, "alcResetDeviceSOFT" );
+    } else {
+        Con_Printf( "ALC_EXT_disconnect or ALC_SOFT_HRTF not found, resetting disconnected devices not possible\n" );
+        alcResetDeviceSOFT = NULL;
+    }
 
     gi.soundStarted = qtrue;
 }
@@ -812,6 +909,62 @@ void CSoundManager::DisableSounds( void ) {
         m_pSources[i]->Shutdown();
     }
     memset( m_pSources, 0, sizeof( m_pSources ) );
+}
+
+
+/*
+===============
+CSoundManager::CheckDeviceAndRecoverIfNeeded
+
+ DG: returns true if m_pDevice is still available,
+     otherwise it will try to recover the device and return false while it's gone
+     (display audio sound devices sometimes disappear for a few seconds when switching resolution)
+===============
+*/
+bool CSoundManager::CheckDeviceAndRecoverIfNeeded( void )
+{
+	static const int maxRetries = 20;
+
+	if ( alcResetDeviceSOFT == NULL ) {
+		return true; // we can't check or reset, just pretend everything is fine..
+	}
+
+	unsigned int curTime = Sys_Milliseconds();
+	if ( curTime - m_nLastCheckTime >= 1000 ) { // check once per second
+		m_nLastCheckTime = curTime;
+
+		ALCint connected; // ALC_CONNECTED needs ALC_EXT_disconnect (we check for that in Init())
+		alcGetIntegerv( m_pDevice, ALC_CONNECTED, 1, &connected );
+		if ( connected ) {
+			m_nResetRetryCount = 0;
+			return true;
+		}
+
+		if ( m_nResetRetryCount == 0 ) {
+			Con_Printf( COLOR_YELLOW "WARNING: OpenAL device disconnected! Will try to reconnect.." );
+			m_nResetRetryCount = 1;
+		} else if ( m_nResetRetryCount > maxRetries ) { // give up after 20 seconds
+			if ( m_nResetRetryCount == maxRetries+1 ) {
+				Con_Printf( COLOR_YELLOW "WARNING: OpenAL device still disconnected! Giving up!" );
+				++m_nResetRetryCount; // this makes sure the warning is only shown once
+
+				// TODO: can we shut down sound without things blowing up?
+				//       if we can, we could do that if we don't have alcResetDeviceSOFT but ALC_EXT_disconnect
+			}
+			return false;
+		}
+
+		if ( alcResetDeviceSOFT( m_pDevice, NULL ) ) {
+			Con_Printf( "OpenAL: resetting device succeeded!\n" );
+			m_nResetRetryCount = 0;
+			return true;
+		}
+
+		++m_nResetRetryCount;
+		return false;
+	}
+
+	return m_nResetRetryCount == 0; // if it's 0, state on last check was ok
 }
 
 
@@ -1070,6 +1223,10 @@ void Snd_Update( int32_t msec )
     CSoundSource *source;
     ALfloat v;
 
+    if ( !sndManager->CheckDeviceAndRecoverIfNeeded() ) {
+        return; // don't play anything
+    }
+
 //    if ( snd_muteUnfocused->i ) {
 //        sndManager->Mute( !gw_active );
 //    }
@@ -1183,6 +1340,8 @@ void Snd_StartupLevel_f( void ) {
 
 void Snd_Init( void )
 {
+    Con_Printf( "---------- Snd_Init ----------\n" );
+
     snd_effectsOn = Cvar_Get( "snd_effectsOn", "1", CVAR_SAVE );
     Cvar_CheckRange( snd_effectsOn, "0", "1", CVT_INT );
     Cvar_SetDescription( snd_effectsOn, "Toggles sound effects." );
@@ -1207,10 +1366,13 @@ void Snd_Init( void )
     Cvar_CheckRange( snd_debugPrint, "0", "1", CVT_INT );
     Cvar_SetDescription( snd_debugPrint, "Toggles OpenAL-soft debug messages." );
 
+    snd_noSound = Cvar_Get( "s_noSound", "0", CVAR_LATCH );
+
+    snd_device = Cvar_Get( "snd_device", "default", CVAR_LATCH | CVAR_SAVE );
+    Cvar_SetDescription( snd_device, "the audio device to use ('default' for the default audio device)" );
+
 //    snd_muteUnfocused = Cvar_Get( "snd_muteUnfocused", "1", CVAR_SAVE );
 //    Cvar_SetDescription( snd_muteUnfocused, "Toggles muting sounds when the game's window isn't focused." );
-
-    Con_Printf( "---------- Snd_Init ----------\n" );
 
     // init sound manager
     sndManager = (CSoundManager *)Hunk_Alloc( sizeof( *sndManager ), h_low );
@@ -1231,6 +1393,8 @@ void Snd_Init( void )
 
     gi.soundStarted = qtrue;
     gi.soundRegistered = qtrue;
+
+    Con_Printf( "----------------------------------\n" );
 
 //    soundCacheAllocator.Init();
 }

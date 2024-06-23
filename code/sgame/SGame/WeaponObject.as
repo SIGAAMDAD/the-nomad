@@ -199,6 +199,18 @@ namespace TheNomad::SGame {
 			if ( @m_Owner !is null ) {
 				return;
 			}
+
+			TheNomad::Engine::Renderer::RenderEntity refEntity;
+
+			refEntity.sheetNum = -1;
+			refEntity.spriteId = m_Info.iconShader;
+			refEntity.origin = m_Link.m_Origin;
+			refEntity.scale = 1.5f;
+			refEntity.Draw();
+			
+			m_Link.m_Bounds.m_nWidth = m_Info.width;
+			m_Link.m_Bounds.m_nHeight = m_Info.height;
+			m_Link.m_Bounds.MakeBounds( origin );
 		}
 		void Spawn( uint id, const vec3& in origin ) override {
 			@m_Info = @InfoSystem::InfoManager.GetWeaponInfo( id );

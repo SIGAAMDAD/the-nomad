@@ -210,16 +210,27 @@ void RE_ProcessEntities( void )
         origin[2] = refEntity->e.origin[2];
 
         poly->verts = verts;
-        poly->hShader = rg.sheets[ refEntity->e.sheetNum ]->hShader;
+        if ( refEntity->e.sheetNum == -1 ) {
+            poly->hShader = refEntity->e.spriteId;
+        } else {
+            poly->hShader = rg.sheets[ refEntity->e.sheetNum ]->hShader;
+        }
         poly->numVerts = 4;
         poly->scale = refEntity->e.scale;
         poly->rotation = refEntity->e.rotation;
 
-        for ( j = 0; j < 4; j++ ) {
-            VectorCopy2( verts->uv, rg.sheets[ refEntity->e.sheetNum ]->sprites[ refEntity->e.spriteId ].texCoords[j] );
-            VectorCopy( verts->worldPos, origin );
-            verts++;
-            r_numPolyVerts++;
+        if ( refEntity->e.sheetNum == -1 ) {
+            VectorSet2( verts[0].uv, 1, 0 );
+            VectorSet2( verts[1].uv, 1, 1 );
+            VectorSet2( verts[2].uv, 0, 1 );
+            VectorSet2( verts[3].uv, 0, 0 );
+        } else {
+            for ( j = 0; j < 4; j++ ) {
+                VectorCopy2( verts->uv, rg.sheets[ refEntity->e.sheetNum ]->sprites[ refEntity->e.spriteId ].texCoords[j] );
+                VectorCopy( verts->worldPos, origin );
+                verts++;
+                r_numPolyVerts++;
+            }
         }
 
         refEntity++;

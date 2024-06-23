@@ -528,7 +528,7 @@ CModuleLib::CModuleLib( void )
     CheckASCall( m_pEngine->SetEngineProperty( asEP_INCLUDE_JIT_INSTRUCTIONS, ml_allowJIT->i ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_REQUIRE_ENUM_SCOPE, true ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_USE_CHARACTER_LITERALS, true ) );
-    CheckASCall( m_pEngine->SetEngineProperty( asEP_AUTO_GARBAGE_COLLECT, false ) );
+    CheckASCall( m_pEngine->SetEngineProperty( asEP_AUTO_GARBAGE_COLLECT, true ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_HEREDOC_TRIM_MODE, 0 ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_INIT_GLOBAL_VARS_AFTER_BUILD, true ) );
 

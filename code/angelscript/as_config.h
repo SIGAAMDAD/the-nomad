@@ -417,7 +417,7 @@
 	#define AS_X86
 	#define ASM_INTEL
 
-	#define asVSNPRINTF(a, b, c, d) _vsnprintf(a, b, c, d)
+	#define asVSNPRINTF(a, b, c, d) N_vsnprintf(a, b, c, d)
 
 	#define fmodf(a,b) fmod(a,b)
 
@@ -452,7 +452,7 @@
 		#endif
 
 		// Marmalade doesn't use the Windows libraries
-		#define asVSNPRINTF(a, b, c, d) vsnprintf(a, b, c, d)
+		#define asVSNPRINTF(a, b, c, d) N_vsnprintf(a, b, c, d)
 
 		// Marmalade doesn't seem to have proper support for
 		// atomic instructions or read/write locks, so we turn off
@@ -469,9 +469,9 @@
 		#endif
 	#else
 		#if _MSC_VER < 1500  // MSVC++ 9 (aka MSVC++ .NET 2008)
-			#define asVSNPRINTF(a, b, c, d) _vsnprintf(a, b, c, d)
+			#define asVSNPRINTF(a, b, c, d) N_vsnprintf(a, b, c, d)
 		#else
-			#define asVSNPRINTF(a, b, c, d) vsnprintf_s(a, b, _TRUNCATE, c, d)
+			#define asVSNPRINTF(a, b, c, d) N_vsnprintf(a, b, _TRUNCATE, c, d)
 		#endif
 
 		#define AS_WINDOWS_THREADS
@@ -550,7 +550,7 @@
 	#define VIRTUAL_BASE_OFFSET(x) (*((asDWORD*)(&x)+3))
 	#define THISCALL_RETURN_SIMPLE_IN_MEMORY
 	#define THISCALL_PASS_OBJECT_POINTER_IN_ECX
-	#define asVSNPRINTF(a, b, c, d) _vsnprintf(a, b, c, d)
+	#define asVSNPRINTF(a, b, c, d) N_vsnprintf(a, b, c, d)
 	#define THISCALL_CALLEE_POPS_ARGUMENTS
 	#define COMPLEX_MASK (asOBJ_APP_CLASS_CONSTRUCTOR | asOBJ_APP_CLASS_DESTRUCTOR | asOBJ_APP_CLASS_ASSIGNMENT)
 	#define COMPLEX_RETURN_MASK (asOBJ_APP_CLASS_CONSTRUCTOR | asOBJ_APP_CLASS_DESTRUCTOR | asOBJ_APP_CLASS_ASSIGNMENT)
@@ -590,7 +590,7 @@
 	#endif
 
 	#define AS_SIZEOF_BOOL 1
-	#define asVSNPRINTF(a, b, c, d) vsnprintf(a, b, c, d)
+	#define asVSNPRINTF(a, b, c, d) N_vsnprintf(a, b, c, d)
 
 	// SN doesnt seem to like STDCALL.
 	// Maybe it can work with some fiddling, but I can't imagine linking to
@@ -640,7 +640,7 @@
 #if (defined(__GNUC__) && !defined(__SNC__) && !defined(_MSC_VER)) || defined(EPPC) || defined(__CYGWIN__) // JWC -- use this instead for Wii
 	#define GNU_STYLE_VIRTUAL_METHOD
 	#define MULTI_BASE_OFFSET(x) (*((asPWORD*)(&x)+1))
-	#define asVSNPRINTF(a, b, c, d) vsnprintf(a, b, c, d)
+	#define asVSNPRINTF(a, b, c, d) N_vsnprintf(a, b, c, d)
 	#define CALLEE_POPS_HIDDEN_RETURN_POINTER
 	#define COMPLEX_OBJS_PASSED_BY_REF
 	#define COMPLEX_MASK (asOBJ_APP_CLASS_DESTRUCTOR | asOBJ_APP_ARRAY)
@@ -1272,7 +1272,7 @@
 		#define STDCALL // There is no stdcall on Solaris/SunPro/SPARC
 	#endif
 	#if !defined(asVSNPRINTF)
-		#define asVSNPRINTF(a, b, c, d) vsnprintf(a, b, c, d)
+		#define asVSNPRINTF(a, b, c, d) N_vsnprintf(a, b, c, d)
 	#endif
 #endif
 

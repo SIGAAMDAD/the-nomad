@@ -534,7 +534,7 @@ void G_ConsolePrint( const char *txt ) {
 			if ( skipnotify ) {
 				con.contimes[ con.contime % NUM_CON_TIMES ] = 0;
 			} else {
-				con.contimes[ con.contime % NUM_CON_TIMES ] = gi.realtime;
+				con.contimes[ con.contime % NUM_CON_TIMES ] = Sys_Milliseconds();
 			}
 			buf = con.times[ con.contime % NUM_CON_TIMES ];
 			*buf++ = '\0';
@@ -664,20 +664,31 @@ Con_DrawInput
 Draw the editline after a ] prompt
 ================
 */
-static void Con_DrawInput( void ) {
+static void Con_DrawInput( float height, bool scroll ) {
 	const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar
-		| ImGuiWindowFlags_AlwaysAutoResize;
+		| ImGuiWindowFlags_NoBackground;
 	
 	if ( !( Key_GetCatcher() & KEYCATCH_CONSOLE ) ) {
 		return;
 	}
 
+	ImGui::Begin( "##ConsoleInputWidgetWindow", NULL, windowFlags );
+	ImGui::SetWindowPos( ImVec2( 0, height - 60 ) );
+	ImGui::SetWindowSize( ImVec2( gi.gpuConfig.vidWidth, 128 ) );
 	ImGui::PushStyleColor( ImGuiCol_FrameBg, ImVec4( 1.0f, 1.0f, 1.0f, 0.0f ) );
 	ImGui::PushStyleColor( ImGuiCol_FrameBgActive, ImVec4( 1.0f, 1.0f, 1.0f, 0.0f ) );
 	ImGui::PushStyleColor( ImGuiCol_FrameBgHovered, ImVec4( 1.0f, 1.0f, 1.0f, 0.0f ) );
 
-	if ( ImGui::GetScrollY() != ImGui::GetScrollMaxY() ) {
-		
+	if ( scroll ) {
+		int i;
+
+		ImGui::PushStyleColor( ImGuiCol_Text, g_color_table[ ColorIndex( S_COLOR_RED ) ] );
+		const int count = gi.gpuConfig.vidWidth / ( ImGui::GetFontSize() * con_scale->f );
+		for ( i = 0; i < count; i++ ) {
+			ImGui::TextUnformatted( "^  " );
+			ImGui::SameLine();
+		}
+		ImGui::PopStyleColor();
 	}
 
 	ImGui::NewLine();
@@ -735,6 +746,7 @@ static void Con_DrawInput( void ) {
 	}
 
 	ImGui::PopStyleColor( 4 );
+	ImGui::End();
 }
 
 /*
@@ -847,25 +859,24 @@ static void Con_DrawSolidConsole( float frac, qboolean open )
 	} else {
 		ImGui::Begin( "##ConsoleWindowBackground", NULL, windowFlags | ImGuiWindowFlags_NoBackground );
 		ImGui::SetWindowPos( ImVec2( -16, -16 ) );
-		ImGui::SetWindowSize( ImVec2( gi.gpuConfig.vidWidth + 16, height + 16 ) );
+		ImGui::SetWindowSize( ImVec2( gi.gpuConfig.vidWidth + 16, height + 54 ) );
 		ImGui::Image( (ImTextureID)(uintptr_t)gi.consoleShader, ImVec2( (float)gi.gpuConfig.vidWidth, height ) );
 		ImGui::End();
 	}
 
 	ImGui::Begin( "CommandConsole", NULL, windowFlags | ImGuiWindowFlags_NoBackground );
 	ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-	ImGui::SetWindowSize( ImVec2( refdef.width, height ) );
+	ImGui::SetWindowSize( ImVec2( refdef.width, height - 48 ) );
 	ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * con_scale->f );
 
 	// draw from the bottom up
 	{
 		// draw arrows to show the buffer is backscrolled
 		ImGui::PushStyleColor( ImGuiCol_Text, g_color_table[ ColorIndex( S_COLOR_RED ) ] );
-
-		const uint32_t count = gi.gpuConfig.vidWidth / ImGui::GetFontSize();
+		const uint32_t count = gi.gpuConfig.vidWidth / ( ImGui::GetFontSize() * con_scale->f );
 
 		for ( i = 0; i < count; i++ ) {
-			ImGui::TextUnformatted( "^" );
+			ImGui::TextUnformatted( "^  " );
 			ImGui::SameLine();
 		}
 		ImGui::PopStyleColor();
@@ -875,14 +886,16 @@ static void Con_DrawSolidConsole( float frac, qboolean open )
 	}
 
 	Con_DrawText( con.text );
-
-	Con_DrawInput();
-
+	ImGui::TextUnformatted( "" );
 	if ( open ) {
 		ImGui::SetScrollHereY();
 	}
 
+	const bool scroll = ImGui::GetScrollY() != ImGui::GetScrollMaxY();
+
 	ImGui::End();
+
+	Con_DrawInput( height, scroll );
 
 	//
 	// draw the version
@@ -961,7 +974,7 @@ void Con_RunConsole( void )
 {
 	// decide on the destination height of the console
 	if ( Key_GetCatcher( ) & KEYCATCH_CONSOLE ) {
-		con.finalFrac = 0.75f;	// half screen
+		con.finalFrac = 1.0f;	// half screen
 	} else {
 		con.finalFrac = 0.0f;	// none visible
 	}

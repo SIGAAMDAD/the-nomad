@@ -585,8 +585,7 @@ namespace TheNomad::SGame {
 			}
 			m_Facing = FACING_RIGHT;
 
-			/*
-			@m_LegSpriteSheet = TheNomad::Engine::ResourceCache.CacheSpriteSheet( "sprites/players/"
+			@m_LegSpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/"
 				+ TheNomad::Engine::CvarVariableString( "skin" ) + "_legs", 32, 32, 512, 512 );
 			if ( @m_LegSpriteSheet is null ) {
 				GameError( "PlayrObject::Spawn: failed to load leg sprite sheet" );
@@ -597,14 +596,13 @@ namespace TheNomad::SGame {
 			}
 			m_LegsFacing = FACING_RIGHT;
 
-			@m_ArmSpriteSheet = TheNomad::Engine::ResourceCache.CacheSpriteSheet( "sprites/players/"
+			@m_ArmSpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/"
 				+ TheNomad::Engine::CvarVariableString( "skin" ) + "_arms", 32, 32, 512, 512 );
 			if ( @m_ArmSpriteSheet is null ) {
 				GameError( "PlayrObject::Spawn: failed to load arm sprite sheet" );
 			}
 			@m_ArmState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_IDLE );
 			m_ArmsFacing = FACING_RIGHT;
-			*/
 		}
 
 		uint GetSpriteId( SpriteSheet@ sheet, EntityState@ state ) const {
@@ -678,9 +676,6 @@ namespace TheNomad::SGame {
 			refEntity.spriteId = 0 + m_Facing;
 			refEntity.scale = 2.0f;
 			refEntity.Draw();
-
-			TheNomad::Engine::Renderer::AddSpriteToScene( vec3( 0.0f ), TheNomad::Engine::Renderer::RegisterShader( "textures/icons/iconpw_pewpew" ),
-				0, true );
 
 //			DrawLegs();
 //			DrawArms();
