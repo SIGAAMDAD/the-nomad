@@ -243,7 +243,7 @@ namespace TheNomad::SGame {
 		}
 		void OnLevelStart() {
 			vec2 size;
-			
+
 			array<MapSpawn@>@ spawns = @LevelManager.GetMapData().GetCheckpoints()[0].m_Spawns;
 
 			DebugPrint( "Initializing entities...\n" );
@@ -647,5 +647,5 @@ namespace TheNomad::SGame {
 		}
 	};
 
-	EntitySystem@ EntityManager;
+	EntitySystem@ EntityManager = null;
 };

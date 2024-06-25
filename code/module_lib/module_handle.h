@@ -28,7 +28,7 @@ enum : uint64_t
     ModuleOnRunTic,
     ModuleOnSaveGame,
     ModuleOnLoadGame,
-	ModuleOnPlayerInput,
+	ModuleOnJoystickEvent,
 
     NumFuncs
 };
@@ -54,7 +54,7 @@ public:
 
 	const char *GetModulePath( void ) const;
 
-    int CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pArgList );
+    int CallFunc( EModuleFuncId nCallId, uint32_t nArgs, int *pArgList );
 
 	inline void GetVersion( int32_t *major, int32_t *update, int32_t *patch ) const {
 		*major = m_nVersionMajor;

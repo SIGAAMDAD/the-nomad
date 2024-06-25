@@ -2888,7 +2888,7 @@ static void R_CreateBuiltinTextures( void )
 		if ( r_shadowBlur->i || r_ssao->i ) {
 			rg.hdrDepthImage = R_CreateImage( "*hdrDepth", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_R32F );
 		}
-/*		
+
 		if ( r_drawSunRays->i ) {
 			rg.sunRaysImage = R_CreateImage("*sunRays", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, rgbFormat);
 		}
@@ -2930,10 +2930,11 @@ static void R_CreateBuiltinTextures( void )
 			rg.quarterImage[x] = R_CreateImage( va( "*quarter%d", x ), NULL, width / 2, height / 2, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8 );
 		}
 
-		if ( r_ssao->i ) {
+//		if ( r_ssao->i ) {
 			rg.screenSsaoImage = R_CreateImage( "*screenSsao", NULL, width / 2, height / 2, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8 );
-		}
+//		}
 
+		/* GL error on this
 		if ( r_sunlightMode->i ) {
 			for ( x = 0; x < 4; x++ ) {
 				rg.sunShadowDepthImage[x] = R_CreateImage( va( "*sunshadowdepth%i", x ), NULL, r_shadowMapSize->i, r_shadowMapSize->i, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24 );
@@ -2944,7 +2945,7 @@ static void R_CreateBuiltinTextures( void )
 
 			rg.screenShadowImage = R_CreateImage( "*screenShadow", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8 );
 		}
-*/
+		*/
 	}
 }
 

@@ -1667,6 +1667,9 @@ static void PerformanceMenu_Save( void )
 	if ( s_settingsMenu->performance.bloom != s_initial->performance.bloom ) {
 		restartFBO = true;
 	}
+	if ( s_settingsMenu->performance.ssao != s_initial->performance.ssao ) {
+		restartFBO = true;
+	}
 	if ( s_settingsMenu->advancedPerformance.postProcessing != s_initial->advancedPerformance.postProcessing ) {
 		restartFBO = true;
 	}

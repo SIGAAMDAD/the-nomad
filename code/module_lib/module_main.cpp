@@ -248,16 +248,17 @@ void CModuleLib::RunModules( EModuleFuncId nCallId, uint32_t nArgs, ... )
     va_list argptr;
     uint64_t j;
     uint32_t i;
-    uint32_t args[16];
+    int *args;
     CTimer time;
 
     if ( nCallId >= NumFuncs ) {
         N_Error( ERR_FATAL, "CModuleLib::RunModules: invalid call id" );
     }
     
+    args = (int *)alloca( sizeof( *args ) * nArgs );
     va_start( argptr, nArgs );
     for ( i = 0; i < nArgs; i++ ) {
-        args[i] = va_arg( argptr, uint32_t );
+        args[i] = va_arg( argptr, int );
     }
     va_end( argptr );
 
@@ -284,7 +285,7 @@ int CModuleLib::ModuleCall( CModuleInfo *pModule, EModuleFuncId nCallId, uint32_
 {
     va_list argptr;
     uint32_t i;
-    uint32_t args[16];
+    int *args;
     const char *name;
     CTimer time;
 
@@ -295,9 +296,10 @@ int CModuleLib::ModuleCall( CModuleInfo *pModule, EModuleFuncId nCallId, uint32_
         N_Error( ERR_FATAL, "CModuleLib::ModuleCall: invalid call id" );
     }
     
+    args = (int *)alloca( sizeof( *args ) * nArgs );
     va_start( argptr, nArgs );
     for ( i = 0; i < nArgs; i++ ) {
-        args[i] = va_arg( argptr, uint32_t );
+        args[i] = va_arg( argptr, int );
     }
     va_end( argptr );
 

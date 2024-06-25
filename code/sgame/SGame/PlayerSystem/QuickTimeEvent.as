@@ -12,9 +12,6 @@ namespace TheNomad::SGame {
         QuickTimeEvent() {
         }
 
-        bool IsActive() const {
-            return m_bActive;
-        }
         bool Load( json@ json ) {
             return true;
         }
@@ -26,21 +23,38 @@ namespace TheNomad::SGame {
         }
 
         protected QuickTimeEventType m_nType = QuickTimeEventType::QTE_ButtonMash;
-        protected bool m_bActive = false;
         protected uint m_nDuration = 0;
-        protected uint m_nLifeTime = 0;
+        protected uint m_nStartTime = 0;
     };
 
     class ButtonMashEvent : QuickTimeEvent {
-        ButtonMashEvent( TheNomad::Engine::KeyNum keyboardNum, TheNomad::Engine::KeyNum gamepadNum ) {
-            super();
+        ButtonMashEvent() {
+        }
 
-            m_KeyboardNum = keyboardNum;
-            m_GamepadNum = gamepadNum;
+        void Init( TheNomad::Engine::KeyNum keyboard, TheNomad::Engine::KeyNum gamepad0, TheNomad::Engine::KeyNum gamepad1,
+            uint nDuration, uint nClicks = 1 )
+        {
+            m_nDuration = nDuration;
+            m_nClicks = nClicks;
+            m_KeyboardNum = keyboard;
+            m_GamepadNum0 = gamepad0;
+            m_GamepadNum1 = gamepad1;
+        }
+
+        void Activate( PlayrObject@ ent ) {
+            m_nStartTime = TheNomad::Engine::System::Milliseconds();
+            m_nClickCounter = 0;
+            m_bActive = true;
+        }
+
+        void OnRunTic( PlayrObject@ ent ) {
+            if (  )
         }
 
         private TheNomad::Engine::KeyNum m_KeyboardNum = TheNomad::Engine::KeyNum::X;
-        private TheNomad::Engine::KeyNum m_GamepadNum = TheNomad::Engine::KeyNum::X;
-        private uint m_nClicks;
+        private TheNomad::Engine::KeyNum m_GamepadNum0 = TheNomad::Engine::KeyNum::GamePad_X;
+        private TheNomad::Engine::KeyNum m_GamepadNum1 = TheNomad::Engine::KeyNum::GamePad_X;
+        private uint m_nClicks = 0;
+        private uint m_nClickCounter = 0;
     };
 };

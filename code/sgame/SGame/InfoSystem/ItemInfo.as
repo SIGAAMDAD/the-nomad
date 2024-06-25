@@ -26,12 +26,6 @@ namespace TheNomad::SGame::InfoSystem {
 				return false;
 			}
 			json.get( "Cost", cost );
-			if ( !json.get( "Icon", str ) ) {
-				ConsoleWarning( "invalid item info, missing variable 'Icon'\n" );
-				return false;
-			} else {
-				iconShader = TheNomad::Engine::ResourceCache.GetShader( str );
-			}
 			if ( !json.get( "PickupSfx", str ) ) {
 				ConsoleWarning( "invalid item info, missing variable 'PickupSfx'\n" );
 				return false;
@@ -51,6 +45,12 @@ namespace TheNomad::SGame::InfoSystem {
 			if ( !json.get( "Height", height ) ) {
 				ConsoleWarning( "invalid item info, missing variable 'Height'\n" );
 				return false;
+			}
+			if ( !json.get( "Icon", str ) ) {
+				ConsoleWarning( "invalid item info, missing variable 'Icon'\n" );
+				return false;
+			} else {
+				iconShader = TheNomad::Engine::ResourceCache.GetShader( str );
 			}
 
 			TheNomad::GameSystem::GetString( name + "_DESC", description );

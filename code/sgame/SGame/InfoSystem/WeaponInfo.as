@@ -59,8 +59,6 @@ namespace TheNomad::SGame::InfoSystem {
 			if ( !json.get( "Icon", shader ) ) {
 				ConsoleWarning( "invalid weapon info, missing variable 'Icon'\n" );
 				return false;
-			} else {
-				iconShader = TheNomad::Engine::ResourceCache.GetShader( shader );
 			}
 
 			ConsolePrint( "Processing AmmoType for WeaponInfo '" + name + "'...\n" );
@@ -98,6 +96,8 @@ namespace TheNomad::SGame::InfoSystem {
 				ConsoleWarning( "invalid weapon info, WeaponProperties are invalid ( None, abide by physics pls ;) )\n" );
 				return false;
 			}
+
+			iconShader = TheNomad::Engine::ResourceCache.GetShader( shader );
 			
 			return true;
 		}

@@ -1867,6 +1867,7 @@ static void G_PhotoMode( void )
     }
 }
 
+/*
 static void G_WriteCommands( void )
 {
     int i, j;
@@ -1881,6 +1882,7 @@ static void G_WriteCommands( void )
     }
     gi.oldCmdNumber = gi.cmdNumber;
 }
+*/
 
 void G_Frame( int msec, int realMsec )
 {

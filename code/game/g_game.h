@@ -233,7 +233,7 @@ typedef struct {
     int demoDeltaNum;
     int demoMessageSequence;
 
-    char gameconfigStrings[BIG_INFO_STRING];
+//    char gameconfigStrings[BIG_INFO_STRING];
 
     backendCounters_t pc;
 

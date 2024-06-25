@@ -120,6 +120,12 @@ void InitResources() {
 	TheNomad::SGame::InfoSystem::InfoManager.LoadAmmoInfos();
 	TheNomad::SGame::InfoSystem::InfoManager.LoadWeaponInfos();
 
+	TheNomad::Engine::ResourceCache.GetSfx( "sfx/misc/passCheckpoint.ogg" );
+
+	TheNomad::Engine::ResourceCache.GetSfx( "sfx/mobs/detect.ogg" );
+	TheNomad::Engine::ResourceCache.GetSfx( "sfx/mobs/detectMeme.ogg" );
+
+/*
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die1.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die2.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die3.ogg" );
@@ -129,11 +135,6 @@ void InitResources() {
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/slide0.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/slide1.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/dash.ogg" );
-
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/misc/passCheckpoint.ogg" );
-
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/mobs/detect.ogg" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/mobs/detectMeme.ogg" );
 
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveGravel0.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveGravel1.ogg" );
@@ -145,6 +146,7 @@ void InitResources() {
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal1.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal2.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal3.ogg" );
+*/
 
 	timer.Stop();
 	ConsolePrint( "InitResources: " + timer.ElapsedMilliseconds() + "ms\n" );
@@ -338,7 +340,12 @@ int ModuleOnLevelEnd() {
 	return 1;
 }
 
-int ModuleOnKeyEvent( uint key, uint down ) {
+int ModuleOnJoystickEvent( int side, int forward, int up, int roll, int yaw, int pitch ) {
+	TheNomad::GameSystem::GameManager.SetJoystickAxis( side, forward, up, roll, yaw, pitch );
+	return 0;
+}
+
+int ModuleOnKeyEvent( int key, int down ) {
 	return 0;
 }
 
@@ -347,7 +354,7 @@ int ModuleOnMouseEvent( int dx, int dy ) {
 	return 0;
 }
 
-int ModuleOnRunTic( uint msec ) {
+int ModuleOnRunTic( int msec ) {
 	if ( TheNomad::SGame::GlobalState == TheNomad::SGame::GameState::LevelFinish ) {
 		// this will automatically call OnLevelEnd for all registered game objects
 		TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::StatsMenu;

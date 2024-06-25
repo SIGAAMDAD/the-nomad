@@ -1223,7 +1223,7 @@ void HandleEvents( void )
 			ImGui_ImplSDL2_ProcessEvent( &e );
 		}
 
-		switch( e.type ) {
+		switch ( e.type ) {
 		case SDL_KEYDOWN:
 			if ( e.key.repeat && Key_GetCatcher() == 0 )
 				break;
@@ -1239,6 +1239,7 @@ void HandleEvents( void )
 				break;
 			}
 
+			// keyboard is always index 0
 			if ( key ) {
 				Com_QueueEvent( in_eventTime, SE_KEY, key, qtrue, 0, NULL );
 
@@ -1308,7 +1309,7 @@ void HandleEvents( void )
 //				Cvar_Set( "in_mode", "0" );
 			}
 
-			if( mouseActive ) {
+			if ( mouseActive ) {
 				if ( !e.motion.xrel && !e.motion.yrel )
 					break;
 				Com_QueueEvent( in_eventTime, SE_MOUSE, e.motion.xrel, e.motion.yrel, 0, NULL );
@@ -1465,7 +1466,7 @@ void IN_Init( void )
 
 	Con_DPrintf( "\n------- Input Initialization -------\n" );
 
-	in_mode = Cvar_Get( "in_mode", "0", CVAR_SAVE );
+	in_mode = Cvar_Get( "in_mode", "0", 0 );
 	Cvar_SetDescription( in_mode,
 		"Sets how the game recieves user input:\n"
 		" 0 - keyboard & mouse\n"

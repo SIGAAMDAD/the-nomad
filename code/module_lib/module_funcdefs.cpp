@@ -785,11 +785,12 @@ static void KeyGetKey( asIScriptGeneric *pGeneric ) {
     pGeneric->SetReturnDWord( Key_GetKey( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
 }
 
-static void LoadWorld( const string_t *npath ) {
+static void LoadWorld( asIScriptGeneric *pGeneric ) {
+    const string_t *npath = (const string_t *)pGeneric->GetArgObject( 0 );
     re.LoadWorld( npath->c_str() );
 }
 
-static void ClearScene( void ) {
+static void ClearScene( asIScriptGeneric *pGeneric ) {
     CThreadAutoLock<CThreadMutex> lock( g_hRenderLock );
     re.ClearScene();
 }
@@ -848,13 +849,20 @@ static void AddPolyToScene( nhandle_t hShader, const CScriptArray *pPolyList ) {
     re.AddPolyToScene( hShader, (const polyVert_t *)pPolyList->GetBuffer(), pPolyList->GetSize() );
 }
 
-static void AddSpriteToScene( const vec3 *origin, nhandle_t hSpriteSheet, nhandle_t hSprite, bool bNoSpriteSheet ) {
+static void AddSpriteToScene( asIScriptGeneric *pGeneric ) {
     CThreadAutoLock<CThreadMutex> lock( g_hRenderLock );
-    re.AddSpriteToScene( (vec_t *)origin, hSpriteSheet, hSprite, bNoSpriteSheet );
+
+    const vec3& origin = *(const vec3 *)pGeneric->GetArgObject( 0 );
+    const nhandle_t hSpriteSheet = (nhandle_t)pGeneric->GetArgDWord( 1 );
+    const nhandle_t hSprite = (nhandle_t)pGeneric->GetArgDWord( 2 );
+    const bool bNoSpriteSheet = (bool)pGeneric->GetArgDWord( 3 );
+
+    re.AddSpriteToScene( (vec_t *)glm::value_ptr( origin ), hSpriteSheet, hSprite, bNoSpriteSheet );
 }
 
-static nhandle_t RegisterShader( const string_t *npath ) {
-    return re.RegisterShader( npath->c_str() );
+static void RegisterShader( asIScriptGeneric *pGeneric ) {
+    const string_t *npath = (const string_t *)pGeneric->GetArgObject( 0 );
+    *(nhandle_t *)pGeneric->GetAddressOfReturnLocation() = re.RegisterShader( npath->c_str() );
 }
 
 DEFINE_CALLBACK( RegisterSpriteSheet ) {
@@ -871,15 +879,36 @@ DEFINE_CALLBACK( DrawImage ) {
 
 DEFINE_CALLBACK( SetColor ) {
     // glm::vec4 has the same exact data layout as a vec4_t (i checked), we'll be fine
-    re.SetColor( (const float *)pGeneric->GetArgAddress( 0 ) );
+    re.SetColor( (const float *)pGeneric->GetArgObject( 0 ) );
 }
 
 static nhandle_t RegisterSprite( nhandle_t hSpriteSheet, uint32_t nIndex ) {
     return re.RegisterSprite( hSpriteSheet, nIndex );
 }
 
-static void CastRay( ray_t *ray ) {
-    g_world->CastRay( ray );
+static void CastRay( asIScriptGeneric *pGeneric ) {
+    ray_t ray;
+
+    const vec3& start = *(const vec3 *)pGeneric->GetArgObject( 0 );
+    vec3& end = *(vec3 *)pGeneric->GetArgObject( 1 );
+    vec3& origin = *(vec3 *)pGeneric->GetArgObject( 2 );
+    uint32_t *entityNumber = (uint32_t *)pGeneric->GetArgAddress( 3 );
+    const float length = pGeneric->GetArgFloat( 4 );
+    const float angle = pGeneric->GetArgFloat( 5 );
+    const uint32_t flags = pGeneric->GetArgDWord( 6 );
+
+    memset( &ray, 0, sizeof( ray ) );
+    VectorCopy( ray.start, start );
+    ray.angle = angle;
+    ray.flags = flags;
+    ray.entityNumber = ENTITYNUM_INVALID;
+    ray.length = length;
+
+    g_world->CastRay( &ray );
+
+    *entityNumber = ray.entityNumber;
+    VectorCopy( origin, ray.origin );
+    VectorCopy( end, ray.end );
 }
 
 static void TransformCameraFromWorld( asIScriptGeneric *pGeneric ) {
@@ -888,12 +917,16 @@ static void TransformCameraFromWorld( asIScriptGeneric *pGeneric ) {
     gi.cameraPos = gi.viewProjectionMatrix * glm::vec4( origin.x, gi.mapCache.info.height - origin.y, gi.cameraZoom, 1.0f );
 }
 
-static bool CheckWallHit( const vec3 *origin, dirtype_t dir ) {
-    return g_world->CheckWallHit( (const float *)origin, dir );
+static void CheckWallHit( asIScriptGeneric *pGeneric ) {
+    const vec3& origin = *(const vec3 *)pGeneric->GetArgObject( 0 );
+    const dirtype_t dir = (const dirtype_t)pGeneric->GetArgDWord( 1 );
+
+    pGeneric->SetReturnDWord( g_world->CheckWallHit( (const float *)glm::value_ptr( origin ), dir ) );
 }
 
-static nhandle_t LoadMap( const string_t *npath ) {
-    return G_LoadMap( npath->c_str() );
+static void LoadMap( asIScriptGeneric *pGeneric ) {
+    const string_t *npath = (const string_t *)pGeneric->GetArgObject( 0 );
+    *(nhandle_t *)pGeneric->GetAddressOfReturnLocation() = G_LoadMap( npath->c_str() );
 }
 
 DEFINE_CALLBACK( SetActiveMap ) {
@@ -907,6 +940,13 @@ DEFINE_CALLBACK( SetActiveMap ) {
     G_SetActiveMap( hMap, nCheckpoints, nSpawns, nTiles, pWidth, pHeight );
 }
 
+static void GetCheckpointData( asIScriptGeneric *pGeneric ) {
+    uvec3 *xyz = (uvec3 *)pGeneric->GetArgObject( 0 );
+    uint32_t index = pGeneric->GetArgDWord( 1 );
+
+    G_GetCheckpointData( (uvec_t *)xyz, index );
+}
+
 static void GetSpawnData( asIScriptGeneric *pGeneric ) {
     uvec3 *xyz = (uvec3 *)pGeneric->GetArgObject( 0 );
     uint32_t *type = (uint32_t *)pGeneric->GetArgAddress( 1 );
@@ -917,7 +957,9 @@ static void GetSpawnData( asIScriptGeneric *pGeneric ) {
     G_GetSpawnData( (uvec_t *)xyz, type, id, spawnIndex, pCheckpointIndex );
 }
 
-static void GetTileData( CScriptArray *tiles ) {
+static void GetTileData( asIScriptGeneric *pGeneric ) {
+    CScriptArray *tiles = (CScriptArray *)pGeneric->GetArgObject( 0 );
+
     tiles->Resize( gi.mapCache.info.numLevels );
     for ( uint32_t i = 0; i < gi.mapCache.info.numLevels; i++ ) {
         ( (CScriptArray *)tiles->At( i ) )->Resize( gi.mapCache.info.numTiles );
@@ -925,7 +967,9 @@ static void GetTileData( CScriptArray *tiles ) {
     }
 }
 
-static void GetGPUConfig( CModuleGPUConfig *config ) {
+static void GetGPUConfig( asIScriptGeneric *pGeneric ) {
+    CModuleGPUConfig *config = (CModuleGPUConfig *)pGeneric->GetArgObject( 0 );
+
     config->gpuConfig = gi.gpuConfig;
     config->shaderVersionString = config->gpuConfig.shader_version_str;
     config->versionString = config->gpuConfig.version_string;
@@ -2424,17 +2468,17 @@ void ModuleLib_Register_Engine( void )
             REGISTER_OBJECT_PROPERTY( "TheNomad::Engine::Renderer::PolyVert", "vec2 uv", offsetof( CModulePolyVert, m_TexCoords ) );
             REGISTER_OBJECT_PROPERTY( "TheNomad::Engine::Renderer::PolyVert", "uint32 color", offsetof( CModulePolyVert, m_Color ) );
 
-            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::ClearScene()", WRAP_FN( ClearScene ) );
+            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::ClearScene()", asFUNCTION( ClearScene ) );
             g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::Renderer::RenderScene( uint, uint, uint, uint, uint, uint )", asFUNCTION( ModuleLib_RenderScene ), asCALL_GENERIC );
             g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::Renderer::AddEntityToScene( int, int, int, const vec3& in, const vec3& in, uint64,"
                 " uint32, uint32, const vec2& in, float, float, float )",
                 asFUNCTION( AddEntityToScene ), asCALL_GENERIC );
             REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddPolyToScene( int, const TheNomad::Engine::Renderer::PolyVert[]& in )", WRAP_FN_PR( AddPolyToScene, ( nhandle_t, const CScriptArray * ), void ) );
-            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddSpriteToScene( const vec3& in, int, int, bool )", WRAP_FN( AddSpriteToScene ) );
-            REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::Renderer::RegisterShader( const string& in )", WRAP_FN( RegisterShader ) );
+            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddSpriteToScene( const vec3& in, int, int, bool )", asFUNCTION( AddSpriteToScene ) );
+            REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::Renderer::RegisterShader( const string& in )", asFUNCTION( RegisterShader ) );
             g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "int TheNomad::Engine::Renderer::RegisterSpriteSheet( const string& in, uint, uint, uint, uint )", asFUNCTION( ModuleLib_RegisterSpriteSheet ), asCALL_GENERIC );
             REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::Renderer::RegisterSprite( int, uint )", WRAP_FN( RegisterSprite ) );
-            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::LoadWorld( const string& in )", WRAP_FN( LoadWorld ) );
+            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::LoadWorld( const string& in )", asFUNCTION( LoadWorld ) );
             g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::Renderer::SetColor( const vec4& in color )", asFUNCTION( ModuleLib_SetColor ), asCALL_GENERIC );
             g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::Renderer::DrawImage( float, float, float, float, float, float, float, float, int )", asFUNCTION( ModuleLib_DrawImage ), asCALL_GENERIC );
 
@@ -2572,7 +2616,7 @@ void ModuleLib_Register_Engine( void )
             ValidateFunction( __func__, decl,\
                 g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( decl, funcPtr, asCALL_GENERIC ) )
 
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetGPUGameConfig( TheNomad::Engine::Renderer::GPUConfig& out )", WRAP_FN( GetGPUConfig ) );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetGPUGameConfig( TheNomad::Engine::Renderer::GPUConfig& out )", asFUNCTION( GetGPUConfig ) );
 
         
 		// these are here because if they change in the map editor or the engine, it'll break sgame
@@ -2606,18 +2650,19 @@ void ModuleLib_Register_Engine( void )
 		REGISTER_ENUM_VALUE( "DirType", "Inside", DIR_NULL );
         REGISTER_ENUM_VALUE( "DirType", "NumDirs", NUMDIRS );
 
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::CastRay( ref@ )", WRAP_FN( CastRay ) );
-        REGISTER_GLOBAL_FUNCTION( "bool TheNomad::GameSystem::CheckWallHit( const vec3& in, TheNomad::GameSystem::DirType )", WRAP_FN( CheckWallHit ) );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::CastRay( const vec3& in, vec3& out, vec3& out, uint32& out, float, float, uint32 )",
+            asFUNCTION( CastRay ) );
+        REGISTER_GLOBAL_FUNCTION( "bool TheNomad::GameSystem::CheckWallHit( const vec3& in, TheNomad::GameSystem::DirType )", asFUNCTION( CheckWallHit ) );
 		
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetCheckpointData( uvec3& out, uint )", WRAP_FN( G_GetCheckpointData ) );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetCheckpointData( uvec3& out, uint )", asFUNCTION( GetCheckpointData ) );
         g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::GameSystem::TransformCameraFromWorld( const vec3& in )",
             asFUNCTION( TransformCameraFromWorld ), asCALL_GENERIC );
         g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::GameSystem::GetSpawnData( uvec3& out, uint& out, uint& out, uint, uint& out )",
             asFUNCTION( GetSpawnData ), asCALL_GENERIC );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetTileData( array<array<uint>>@ )", WRAP_FN( GetTileData ) );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetTileData( array<array<uint>>@ )", asFUNCTION( GetTileData ) );
         g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::GameSystem::SetActiveMap( int, uint& out, uint& out, uint& out, int& out, int& out )",
             asFUNCTION( ModuleLib_SetActiveMap ), asCALL_GENERIC );
-        REGISTER_GLOBAL_FUNCTION( "int TheNomad::GameSystem::LoadMap( const string& in )", WRAP_FN( LoadMap ) );
+        REGISTER_GLOBAL_FUNCTION( "int TheNomad::GameSystem::LoadMap( const string& in )", asFUNCTION( LoadMap ) );
 
 //        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "TheNomad::GameSystem::GameObject@ TheNomad::GameSystem::AddSystem( "
 //                "TheNomad::GameSystem::GameObject@ SystemHandle )", asFUNCTION( RegisterGameObject ), asCALL_GENERIC );

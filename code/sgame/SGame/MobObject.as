@@ -60,12 +60,12 @@ namespace TheNomad::SGame {
 				
 				@rayData = @ray; // force it out of scope
 				
-				ray.m_Origin = m_Link.m_Origin;
+				ray.m_Start = m_Link.m_Origin;
 				ray.m_nLength = atk.range;
 				ray.m_nAngle = m_PhysicsObject.GetAngle();
 				ray.m_nEntityNumber = 0;
 
-				TheNomad::GameSystem::CastRay( @ray );
+				ray.Cast();
 
 				if ( ray.m_nEntityNumber == EntityManager.NumEntities() ) {
 					return; // got nothing
@@ -208,9 +208,9 @@ namespace TheNomad::SGame {
 			
 			ray.m_nLength = Util::VectorLength( m_Info.speed );
 			ray.m_nAngle = m_PhysicsObject.GetAngle();
-			ray.m_Origin = m_Link.m_Origin;
+			ray.m_Start = m_Link.m_Origin;
 			
-			TheNomad::GameSystem::CastRay( @ray );
+			ray.Cast();
 			
 			if ( ray.m_nEntityNumber == ENTITYNUM_INVALID || ray.m_nEntityNumber == ENTITYNUM_WALL ) {
 				if ( ray.m_nEntityNumber == ENTITYNUM_WALL ) {
@@ -286,10 +286,11 @@ namespace TheNomad::SGame {
 			// make sure that the line of sight isn't obstructed
 			//
 			ray.m_nLength = m_Info.sightRange;
-			ray.m_Origin = m_Link.m_Origin;
+			ray.m_Start = m_Link.m_Origin;
 			ray.m_nEntityNumber = 0;
 			ray.m_nAngle = m_PhysicsObject.GetAngle();
-			TheNomad::GameSystem::CastRay( @ray );
+
+			ray.Cast();
 			
 			if ( ray.m_nEntityNumber == ENTITYNUM_INVALID || ray.m_nEntityNumber == ENTITYNUM_WALL ) {
 				return false;

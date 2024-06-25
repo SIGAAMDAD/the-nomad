@@ -321,7 +321,6 @@ static void FBO_Restart_f( void )
 		R_CheckFBO( rg.hdrDepthFbo );
 	}
 
-/*
 	if ( rg.screenSsaoImage ) {
 		if ( rg.screenSsaoFbo ) {
 			FBO_Clear( rg.screenSsaoFbo );
@@ -341,6 +340,7 @@ static void FBO_Restart_f( void )
 		R_CheckFBO( rg.targetLevelsFbo );
 	}
 
+	/*
 	if ( rg.quarterImage[0] ) {
 		for ( i = 0; i < 2; i++ ) {
 			if ( rg.quarterFbo[i] ) {
@@ -445,7 +445,6 @@ void FBO_Init( void )
 		R_CheckFBO( rg.hdrDepthFbo );
 	}
 
-/*
 	if ( rg.screenSsaoImage ) {
 		rg.screenSsaoFbo = FBO_Create( "_screenSsao", rg.screenSsaoImage->width, rg.screenSsaoImage->height );
 		FBO_AttachImage( rg.screenSsaoFbo, rg.screenSsaoImage, GL_COLOR_ATTACHMENT0 );
@@ -457,6 +456,7 @@ void FBO_Init( void )
 		R_CheckFBO( rg.targetLevelsFbo );
 	}
 
+	/*
 	if ( rg.quarterImage[0] ) {
 		for ( i = 0; i < 2; i++ ) {
 			rg.quarterFbo[i] = FBO_Create( va( "_quarter%d", i ), rg.quarterImage[i]->width, rg.quarterImage[i]->height );

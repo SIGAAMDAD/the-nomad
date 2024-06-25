@@ -142,5 +142,5 @@ namespace TheNomad::SGame {
 		private bool m_bAllowGfx;
 	};
 	
-	GfxSystem@ GfxManager;
+	GfxSystem@ GfxManager = null;
 };

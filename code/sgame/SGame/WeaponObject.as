@@ -103,10 +103,10 @@ namespace TheNomad::SGame {
 			TheNomad::GameSystem::RayCast ray;
 			
 			ray.m_nLength = m_Info.range;
-			ray.m_Origin = ent.GetOrigin();
+			ray.m_Start = ent.GetOrigin();
 			ray.m_nAngle = ent.GetAngle();
 			
-			TheNomad::GameSystem::CastRay( @ray );
+			ray.Cast();
 			if ( ray.m_nEntityNumber == ENTITYNUM_INVALID || ray.m_nEntityNumber == ENTITYNUM_WALL ) {
 				return 0.0f; // hit nothing or a wall
 			}

@@ -26,14 +26,14 @@ const moduleFunc_t funcDefs[NumFuncs] = {
     { "int ModuleOnConsoleCommand()", ModuleCommandLine, 0, qfalse },
     { "int ModuleDrawConfiguration()", ModuleDrawConfiguration, 0, qfalse },
     { "int ModuleSaveConfiguration()", ModuleSaveConfiguration, 0, qfalse },
-    { "int ModuleOnKeyEvent( uint, uint )", ModuleOnKeyEvent, 2, qfalse },
+    { "int ModuleOnKeyEvent( int, int )", ModuleOnKeyEvent, 2, qfalse },
     { "int ModuleOnMouseEvent( int, int )", ModuleOnMouseEvent, 2, qfalse },
     { "int ModuleOnLevelStart()", ModuleOnLevelStart, 0, qfalse },
     { "int ModuleOnLevelEnd()", ModuleOnLevelEnd, 0, qfalse },
-    { "int ModuleOnRunTic( uint )", ModuleOnRunTic, 1, qtrue },
+    { "int ModuleOnRunTic( int )", ModuleOnRunTic, 1, qtrue },
     { "int ModuleOnSaveGame()", ModuleOnSaveGame, 0, qfalse },
     { "int ModuleOnLoadGame()", ModuleOnLoadGame, 0, qfalse },
-    { "int ModuleOnUserCmd( int, int, int )", ModuleOnPlayerInput, 3, qfalse }
+    { "int ModuleOnJoystickEvent( int, int, int, int, int, int )", ModuleOnJoystickEvent, 6, qfalse }
 };
 
 CModuleHandle::CModuleHandle( const char *pName, const char *pDescription, const nlohmann::json& sourceFiles, int32_t moduleVersionMajor,
@@ -174,7 +174,7 @@ void CModuleHandle::PrepareContext( asIScriptFunction *pFunction )
 {
 }
 
-int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pArgList )
+int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, int *pArgList )
 {
     uint32_t i;
     int retn;
@@ -197,12 +197,11 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pA
     }
     m_nLastCallId = nCallId;
 
-    if ( m_nStateStack ) {
+    if ( m_pScriptContext->GetState() == asEXECUTION_ACTIVE ) {
         // we're running something right now, so push a new state and
         // call into that instead
         CheckASCall( m_pScriptContext->PushState() );
         CheckASCall( m_pScriptContext->Prepare( m_pFuncTable[ nCallId ] ) );
-//        CheckASCall( m_pScriptContext->SetObject( m_pEntryPoint ) );
 
         if ( ml_debugMode->i && g_pDebugger->m_pModule && g_pDebugger->m_pModule->m_pHandle == this ) {
             CheckASCall( m_pScriptContext->SetLineCallback( asMETHOD( CDebugger, LineCallback ), g_pDebugger, asCALL_THISCALL ) );
@@ -254,12 +253,9 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pA
 
         CheckASCall( m_pScriptContext->PopState() );
 
-        m_nStateStack--;
         return retn;
     }
-    m_nStateStack++;
     CheckASCall( m_pScriptContext->Prepare( m_pFuncTable[ nCallId ] ) );
-//    CheckASCall( m_pScriptContext->SetObject( m_pEntryPoint ) );
 
     g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_DETECT_GARBAGE, 1 );
 
@@ -311,7 +307,6 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pA
 
     PROFILE_BLOCK_END;
 
-    m_nStateStack--;
     m_nLastCallId = NumFuncs;
 
     return retn;

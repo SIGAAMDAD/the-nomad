@@ -208,7 +208,10 @@ namespace TheNomad::SGame {
 
 		// engine data, for physics
 		protected TheNomad::GameSystem::LinkEntity m_Link;
-		
+
+		// cached info
+		protected InfoSystem::InfoLoader@ m_InfoData = null;
+
 		// the entity's current state
 		protected EntityState@ m_State = null;
 				
@@ -228,9 +231,6 @@ namespace TheNomad::SGame {
 		
 		// for direction based sprite drawing
 		protected int m_Facing = 0;
-		
-		// cached info
-		protected InfoSystem::InfoLoader@ m_InfoData = null;
 		
 		//
 		// renderer data

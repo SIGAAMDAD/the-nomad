@@ -201,7 +201,7 @@ void G_JoystickEvent( int axis, int value, int time ) {
 
 nkey_t keys[NUMKEYS];
 
-qboolean Key_AnyDown(void)
+qboolean Key_AnyDown( void )
 {
 	for (uint32_t i = 0; i < NUMKEYS; i++) {
 		if (keys[i].down)
@@ -226,38 +226,39 @@ void Key_SetOverstrikeMode( qboolean overstrike ) {
 	key_overstrikeMode = overstrike;
 }
 
-static void Key_CompleteBind(const char *argi, uint32_t argnum)
+static void Key_CompleteBind( const char *argi, uint32_t argnum )
 {
 	const char *p;
 
-	if (argnum == 2) {
+	if ( argnum == 2 ) {
 		// skip "bind "
-		p = Com_SkipTokens(argi, 1, " ");
+		p = Com_SkipTokens( argi, 1, " " );
 
-		if (p > argi)
+		if ( p > argi ) {
 			Field_CompleteKeyname();
+		}
 	}
-	else if (argnum >= 3) {
+	else if ( argnum >= 3 ) {
 		uint32_t key;
 
 		// skip "bind <key> "
-		p = Com_SkipTokens(argi, 2, " ");
-		if (*p == '\0' && (key = Key_StringToKeynum(Cmd_Argv(1))) >= 0) {
-			Field_CompleteKeyBind(key);
+		p = Com_SkipTokens( argi, 2, " " );
+		if ( *p == '\0' && ( key = Key_StringToKeynum( Cmd_Argv( 1 ) ) ) >= 0 ) {
+			Field_CompleteKeyBind( key );
 		}
-		else if (p > argi) {
-			Field_CompleteCommand(p, qtrue, qtrue);
+		else if ( p > argi ) {
+			Field_CompleteCommand( p, qtrue, qtrue );
 		}
 	}
 }
 
-static void Key_CompleteUnbind(const char *argi, uint32_t argnum)
+static void Key_CompleteUnbind( const char *argi, uint32_t argnum )
 {
-	if (argnum) {
+	if ( argnum ) {
 		// skip "unbind "
-		const char *p = Com_SkipTokens(argi, 1, " ");
+		const char *p = Com_SkipTokens( argi, 1, " " );
 
-		if (p > argi) {
+		if ( p > argi ) {
 			Field_CompleteKeyname();
 		}
 	}
@@ -283,7 +284,7 @@ uint32_t Key_StringToKeynum( const char *str )
 	}
 
 	// scan for a text match
-	for ( kn = keynames ; kn->name ; kn++ ) {
+	for ( kn = keynames; kn->name ; kn++ ) {
 		if ( !N_stricmp( str, kn->name ) ) {
 			return kn->keynum;
 		}
@@ -302,8 +303,8 @@ uint32_t Key_StringToKeynum( const char *str )
 }
 
 /*
-Key_KeynumToString: returns a string (either a single ascii char, a SDLKEY_* name, o a 0x11 hex string) for the
-given keynum
+* Key_KeynumToString: returns a string (either a single ascii char, a SDLKEY_* name, o a 0x11 hex string) for the
+* given keynum
 */
 const char *Key_KeynumToString(uint32_t keynum)
 {
@@ -314,65 +315,6 @@ const char *Key_KeynumToString(uint32_t keynum)
 	if ( keynum >= NUMKEYS ) {
 		return "<OUT OF RANGE>";
 	}
-
-	/*
-	// manual overrides for keys that show up as ASCII but really shouldn't show up as ASCII
-	switch ( keynum ) {
-	case KEY_MOUSE_BUTTON_4:
-		return "Mouse Button 4";
-	case KEY_MOUSE_BUTTON_5:
-		return "Mouse Button 5";
-	case SDL_BUTTON_LEFT:
-	case KEY_MOUSE_LEFT:
-		return "Left Mouse";
-	case SDL_BUTTON_RIGHT:
-	case KEY_MOUSE_RIGHT:
-		return "Right Mouse";
-	case SDL_BUTTON_MIDDLE:
-	case KEY_MOUSE_MIDDLE:
-		return "Middle Mouse";
-	case KEY_WHEEL_DOWN:
-		return "Mouse Wheel Down";
-	case KEY_WHEEL_UP:
-		return "Mouse Wheel Up";
-    case KEY_TAB: // shows up as '+'
-        return "Tab";
-    case KEY_SHIFT:
-        return "Shift";
-    case KEY_ALT:
-        return "Alt";
-    case KEY_CTRL:
-        return "Ctrl";
-    case KEY_HOME:
-        return "Home";
-    case KEY_SPACE:
-        return "Space";
-    case KEY_BACKSPACE:
-        return "Backspace";
-    case KEY_ENTER:
-        return "Enter";
-    case KEY_PAGEUP:
-        return "PageUp";
-    case KEY_PAGEDOWN:
-        return "PageDown";
-    case KEY_END:
-        return "End";
-    case KEY_DELETE:
-        return "Delete";
-    case KEY_INSERT:
-        return "Insert";
-    case KEY_UP:
-        return "Up Arrow";
-    case KEY_DOWN:
-        return "Down Arrow";
-    case KEY_LEFT:
-        return "Left Arrow";
-    case KEY_RIGHT:
-        return "Right Arrow";
-    default:
-        break;
-	};
-	*/
 
 	// check for printable ascii (don't use quote)
 	if ( keynum > ' ' && keynum < '~' && keynum != '"' && keynum != ';' ) {
@@ -401,24 +343,24 @@ const char *Key_KeynumToString(uint32_t keynum)
 	return tinystr;
 }
 
-void Key_SetBinding(uint32_t keynum, const char *binding)
+void Key_SetBinding( uint32_t keynum, const char *binding )
 {
-	if (keynum >= NUMKEYS) {
+	if ( keynum >= NUMKEYS ) {
 		return;
 	}
 
 	// free old binding
-	if (keys[keynum].binding) {
-		Z_Free(keys[keynum].binding);
+	if ( keys[keynum].binding ) {
+		Z_Free( keys[keynum].binding );
 	}
 
 	// allocate new memory for new binding
-	keys[keynum].binding = CopyString(binding);
+	keys[keynum].binding = CopyString( binding );
 }
 
 const char *Key_GetBinding( int32_t keynum )
 {
-	if (keynum >= NUMKEYS) {
+	if ( keynum >= NUMKEYS ) {
 		return "";
 	}
 
@@ -468,10 +410,11 @@ static void Key_Bind_f( void )
 	}
 
 	if ( c == 2 ) {
-		if ( keys[b].binding && keys[b].binding[0] )
+		if ( keys[b].binding && keys[b].binding[0] ) {
 			Con_Printf( "\"%s\" = \"%s\"\n", Cmd_Argv( 1 ), keys[b].binding );
-		else
+		} else {
 			Con_Printf( "\"%s\" is not bound\n", Cmd_Argv( 1 ) );
+		}
 		
 		return;
 	}
@@ -490,10 +433,11 @@ void Key_WriteBindings( fileHandle_t f )
 	FS_Printf( f, "unbindall" GDR_NEWLINE );
 
 	for ( i = 0 ; i < NUMKEYS ; i++ ) {
-		if (!keys[i].binding || !keys[i].binding[0])
+		if ( !keys[i].binding || !keys[i].binding[0] ) {
 			continue;
+		}
 		
-		FS_Printf( f, "bind \"%s\" \"%s\"" GDR_NEWLINE, Key_KeynumToString(i), keys[i].binding );
+		FS_Printf( f, "bind \"%s\" \"%s\"" GDR_NEWLINE, Key_KeynumToString( i ), keys[i].binding );
 	}
 }
 
@@ -703,7 +647,7 @@ Field_Paste
 ================
 */
 static void Field_Paste( field_t *edit ) {
-	char	*cbd;
+	char	*cbd; // heh heh
 	int		pasteLen, i;
 
 	cbd = Sys_GetClipboardData();

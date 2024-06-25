@@ -461,9 +461,9 @@ namespace TheNomad::SGame {
 					
 					ray.m_nLength = dist;
 					ray.m_nAngle = atan2( ( origin.x - m_Link.m_Origin.x ), ( origin.y - m_Link.m_Origin.y ) );
-					ray.m_Origin = m_Link.m_Origin;
+					ray.m_Start = m_Link.m_Origin;
 					
-					TheNomad::GameSystem::CastRay( @ray );
+					ray.Cast();
 					if ( ray.m_nEntityNumber == ENTITYNUM_INVALID || ray.m_nEntityNumber == ENTITYNUM_WALL ) {
 						continue; // hit a wall or dead air, no detection
 					}
