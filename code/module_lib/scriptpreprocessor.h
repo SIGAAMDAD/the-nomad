@@ -56,6 +56,7 @@
 #define __ANGELJUICE_PREPROCESSOR_H_INCLUDED__
 
 #include "module_public.h"
+#include <EASTL/list.h>
 
 class Preprocessor
 {
@@ -63,7 +64,7 @@ public:
 	class VectorOutStream
 	{
 	private:
-		eastl::vector<char> m_data;
+		UtlVector<char> m_data;
 	protected:
 		virtual void Write(const char* d, unsigned int size)
 		{
@@ -103,7 +104,7 @@ public:
 	public:
 		LineNumberTranslator();
 		~LineNumberTranslator();
-		eastl::string ResolveOriginalFile(unsigned int linenumber);
+		UtlString ResolveOriginalFile(unsigned int linenumber);
 		unsigned int ResolveOriginalLine(unsigned int linenumber);
 		void SetTable(Table*);
 	};
@@ -113,11 +114,11 @@ public:
 	class PragmaInstance
 	{
 	public:
-		eastl::string name;
-		eastl::string text;
-		eastl::string current_file;
+		UtlString name;
+		UtlString text;
+		UtlString current_file;
 		unsigned int current_file_line;
-		eastl::string root_file;
+		UtlString root_file;
 		unsigned int global_line;
 	};
 
@@ -126,7 +127,7 @@ public:
 	public:
 		virtual ~PragmaModel() {}
 	
-		virtual void handlePragma(const PragmaInstance&) = 0;
+		virtual void handlePragma( const PragmaInstance& ) = 0;
 	};
 
 
@@ -136,19 +137,19 @@ public:
 	public:
 		virtual ~FileSource() {}
 
-		virtual bool LoadFile(const eastl::string& filename, eastl::vector<char>& buffer ) {
-            fileHandle_t f;
+		virtual bool LoadFile(const UtlString& filename, UtlVector<char>& buffer ) {
+			union {
+				void *v;
+				char *b;
+			} f;
+			uint64_t nLength;
 
-            f = FS_FOpenRead( filename.c_str() );
-            if ( f == FS_INVALID_HANDLE ) {
-                return false;
-            }
-            buffer.resize( FS_FileLength( f ) );
-            if ( !FS_Read( buffer.data(), buffer.size(), f ) ) {
-                FS_FClose( f );
-                return false;
-            }
-            FS_FClose( f );
+			nLength = FS_LoadFile( filename.c_str(), &f.v );
+			if ( !f.v ) {
+				return false;
+			}
+            buffer.resize( nLength );
+			FS_FreeFile( f.v );
 
             return true;
         }
@@ -176,18 +177,18 @@ public:
 	class Lexem
 	{
 	public:
-		eastl::string value;
+		UtlString value;
 		LexemType type;
 	}; //End class Lexem
 
 	
 	//  ==============================================================================
-	typedef eastl::list<Lexem> LexemList;
+	typedef UtlList<Lexem> LexemList;
 	typedef LexemList::iterator LLITR;
 	
 
 	//  ==============================================================================
-	typedef eastl::map<eastl::string, int32_t> ArgSet;
+	typedef UtlMap<UtlString, int32_t> ArgSet;
 	
 	class DefineEntry
 	{
@@ -196,10 +197,10 @@ public:
 		ArgSet arguments;
 	}; //end class DefineEntry
 	
-	typedef eastl::map<eastl::string, DefineEntry> DefineTable;
+	typedef UtlMap<UtlString, DefineEntry> DefineTable;
 
 	//  ==============================================================================
-    typedef eastl::map<eastl::string, PragmaModel*> PragmaMap;
+    typedef UtlMap<UtlString, PragmaModel*> PragmaMap;
 	typedef PragmaMap::iterator PragmaIterator;
 
 public:
@@ -210,34 +211,34 @@ public:
 
     //  ==============================================================================
 	int preprocess(
-		const eastl::string& filename, 
-		const eastl::string& filedata, 
+		const UtlString& filename, 
+		const UtlString& filedata, 
 		FileSource& file_source,
 		UtlVector<char>& destination, 
 		LineNumberTranslator* lnt = nullptr);
 
-	void define(const eastl::string&);
-	void registerPragma(const eastl::string&, PragmaModel*);
+	void define(const UtlString&);
+	void registerPragma(const UtlString&, PragmaModel*);
 
 	
 protected:
-    void PrintErrorMessage(const eastl::string& errmsg);
-    void PrintWarningMessage(const eastl::string& errmsg);
+    void PrintErrorMessage(const UtlString& errmsg);
+    void PrintWarningMessage(const UtlString& errmsg);
     
-    void callPragma(const eastl::string& name, const PragmaInstance& parms);
+    void callPragma(const UtlString& name, const PragmaInstance& parms);
 
-    LLITR findLexem(LLITR ITR, LLITR END, LexemType type);
-    LLITR parseStatement(LLITR ITR, LLITR END, LexemList& dest);
-    LLITR parseDefineArguments(LLITR ITR, LLITR END, LexemList& lexems, eastl::vector<LexemList>& args);
-    LLITR expandDefine(LLITR ITR, LLITR END, LexemList& lexems, DefineTable& define_table);
-    void parseDefine(DefineTable& define_table, LexemList& def_lexems);
-    LLITR parseIfDef(LLITR ITR, LLITR END);
-    void parseIf(LexemList& directive, eastl::string& name_out);
-    void parsePragma(LexemList& args);
+    LLITR findLexem( LLITR ITR, LLITR END, LexemType type );
+    LLITR parseStatement( LLITR ITR, LLITR END, LexemList& dest );
+    LLITR parseDefineArguments( LLITR ITR, LLITR END, LexemList& lexems, UtlVector<LexemList>& args );
+    LLITR expandDefine( LLITR ITR, LLITR END, LexemList& lexems, DefineTable& define_table );
+    void parseDefine( DefineTable& define_table, LexemList& def_lexems );
+    LLITR parseIfDef( LLITR ITR, LLITR END );
+    void parseIf( LexemList& directive, UtlString& name_out );
+    void parsePragma( LexemList& args );
 
     void recursivePreprocess(	
-	    eastl::string filename,
-	    eastl::string filedata,
+	    const UtlString& filename,
+	    const UtlString& filedata,
 	    FileSource& file_source,
 	    LexemList& lexems,
 	    DefineTable& define_table,
@@ -248,8 +249,8 @@ protected:
 	PragmaMap registered_pragmas;
 
 	LineNumberTranslator::Table* LNT;
-	eastl::string root_file;
-	eastl::string current_file;
+	UtlString root_file;
+	UtlString current_file;
 	unsigned int current_line;
 	unsigned int lines_this_file;
 

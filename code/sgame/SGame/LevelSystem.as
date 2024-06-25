@@ -10,12 +10,9 @@
 #include "SGame/Sprite.as"
 #include "SGame/SpriteSheet.as"
 #include "SGame/GfxSystem.as"
+#include "SGame/HellBreakerSystem.as"
 
 namespace TheNomad::SGame {
-	// hellbreaker add-on, toggled with "sgame_hellbreaker"
-    import void HellbreakerInit() from "hellbreaker";
-	import bool HellbreakerRunTic() from "hellbreaker";
-
     enum LevelRank {
 		RankS,
 		RankA,
@@ -250,8 +247,6 @@ namespace TheNomad::SGame {
 				}
 				section.SaveUInt( "CurrentCheckpoint", m_CurrentCheckpoint );
 				section.SaveUInt( "Time", m_nLevelTimer );
-//				section.SaveUInt( "TimeSeconds", m_nLevelTimer / 1000 );
-//				section.SaveUInt( "TimeMinutes", m_nLevelTimer / 60000 );
 			}
 			
 			// save individual stats for each level
@@ -279,7 +274,7 @@ namespace TheNomad::SGame {
 					save.SaveUInt( "DeathsRank", uint( stats.deaths_Rank ) );
 					
 					save.SaveBool( "CleanRun", stats.isClean );
-					save.SaveUInt( "TimeMilliseconds", uint( stats.m_TimeMilliseconds ) );
+					save.SaveUInt( "Time", uint( stats.m_TimeMilliseconds ) );
 					
 					save.SaveUInt( "NumKills", stats.numKills );
 					save.SaveUInt( "StylePoints", stats.stylePoints );

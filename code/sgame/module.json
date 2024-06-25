@@ -3,9 +3,6 @@
     "Id": "nomadmain",
     "Description": "nomadmain is the official module for The Nomad",
     "DependedModules": [],
-    "IncludePaths": [
-        "modules/nomadmain/"
-    ],
     "SubModules": [
         "main.as"
     ],

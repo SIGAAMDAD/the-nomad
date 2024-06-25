@@ -69,6 +69,7 @@ constexpr GDR_INLINE bool operator!=( const CModuleAllocator& a, const eastl::al
 #include <EASTL/array.h>
 #include <EASTL/functional.h>
 #include <EASTL/string_view.h>
+#include <EASTL/list.h>
 
 #include "../engine/n_allocator.h"
 #include "../rendercommon/r_public.h"
@@ -159,7 +160,7 @@ constexpr GDR_INLINE bool operator!=( const CModuleStringAllocator& a, const CMo
 using string_view_t = eastl::basic_string_view<char>;
 using string_t = eastl::fixed_string<char, 256, true, eastl::allocator_malloc<char>>;
 //using string_t = eastl::basic_string<char, memory::std_allocator<char, memory::virtual_memory_allocator>>;
-using UtlString = eastl::fixed_string<char, MAX_STRING_CHARS, true, eastl::allocator_malloc<char>>;
+using UtlString = eastl::fixed_string<char, 528, true, eastl::allocator_malloc<char>>;
 namespace eastl {
 	// for some reason, the eastl doesn't support eastl::hash<eastl::fixed_string>
 	template<> struct hash<UtlString> {
@@ -192,6 +193,8 @@ template<typename Key, typename Value, typename Hash = eastl::hash<Key>, typenam
 using UtlMap = eastl::unordered_map<Key, Value, Hash, Predicate, CModuleAllocator, true>;
 template<typename Key, typename Compare = eastl::less<Key>>
 using UtlSet = eastl::set<Key, Compare, CModuleAllocator>;
+template<typename T, typename Allocator = CModuleAllocator>
+using UtlList = eastl::list<T, Allocator>;
 
 #include "nlohmann/json.hpp"
 #include "module_handle.h"

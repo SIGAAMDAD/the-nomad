@@ -67,35 +67,6 @@ namespace TheNomad::SGame {
 		}
 		void OnShutdown() {
 		}
-
-		void DrawEntity( const EntityObject@ ent ) {
-		//	const SGame::SpriteSheet@ sheet;
-			switch ( ent.GetType() ) {
-			case TheNomad::GameSystem::EntityType::Playr: {
-		//		cast<PlayrObject>( @ent ).DrawLegs();
-				break; }
-			case TheNomad::GameSystem::EntityType::Mob: {
-
-				break; }
-			case TheNomad::GameSystem::EntityType::Bot: {
-
-				break; }
-			case TheNomad::GameSystem::EntityType::Item: {
-
-				break; }
-			case TheNomad::GameSystem::EntityType::Weapon: {
-		//		@sheet = ent.GetSpriteSheet();
-		//		Engine::Renderer::AddSpriteToScene( ent.GetOrigin(), sheet.GetShader(),
-		//			ent.GetState().SpriteOffset() );
-				break; }
-			case TheNomad::GameSystem::EntityType::Wall: {
-				break; } // engine should handle this
-			default:
-				GameError( "DrawEntity: bad type" );
-				break;
-			};
-		}
-		
 		const string& GetName() const {
 			return "EntityManager";
 		}
@@ -326,10 +297,10 @@ namespace TheNomad::SGame {
 				PlayrObject@ obj = cast<PlayrObject@>( @ent );
 				
 				// is hellbreaker available?
-				if ( sgame_HellbreakerOn.GetInt() != 0 && Util::IsModuleActive( "hellbreaker" )
-					&& sgame_HellbreakerActive.GetInt() == 0 /* ensure there's no recursion */ )
-				{
-					HellbreakerInit();
+				if ( sgame_HellbreakerOn.GetInt() == 1 && sgame_HellbreakerActive.GetInt() == 0 ) {
+					// ensure there's no recursion
+					@HellBreaker = cast<HellBreakerSystem@>( @TheNomad::GameSystem::AddSystem( HellBreakerSystem() ) );
+					TheNomad::Engine::CvarSet( "sgame_HellbreakerActive", "1" );
 					return; // startup the hellbreak
 				}
 				

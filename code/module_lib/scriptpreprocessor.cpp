@@ -56,11 +56,11 @@
 #include "module_alloc.h"
 #include "scriptpreprocessor.h"
 
-const eastl::string numbers = "0123456789";
-const eastl::string identifierStart = "_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const eastl::string identifierBody = "_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-const eastl::string hexnumbers = "0123456789abcdefABCDEF";
-const eastl::string trivials = ",;\n\r\t [{(]})";
+const UtlString numbers = "0123456789";
+const UtlString identifierStart = "_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const UtlString identifierBody = "_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+const UtlString hexnumbers = "0123456789abcdefABCDEF";
+const UtlString trivials = ",;\n\r\t [{(]})";
 
 const Preprocessor::LexemType trivial_types[] =
 {
@@ -78,7 +78,7 @@ const Preprocessor::LexemType trivial_types[] =
 	Preprocessor::CLOSE
 };
 
-static bool searchString(eastl::string str, char in)
+static bool searchString(UtlString str, char in)
 {
 	return (str.find_first_of(in) < str.length());
 }
@@ -305,7 +305,7 @@ static char* parseLexem(char* start, char* end, Preprocessor::Lexem& out)
 	return ++start;
 }
 
-static int lex(char* begin, char* end, eastl::list<Preprocessor::Lexem>& results)
+static int lex(char* begin, char* end, UtlList<Preprocessor::Lexem>& results)
 {
 	Assert(begin != 0 && end != 0);
 	Assert(begin <= end);
@@ -339,14 +339,14 @@ static void printLexemList( Preprocessor::LexemList& out, UtlVector<char>& desti
 	}
 }
 
-static eastl::string removeQuotes(const eastl::string& in)
+static UtlString removeQuotes(const UtlString& in)
 {
 	return eastl::move( in.substr(1,in.size()-2) );
 }
 
-static eastl::string addPaths(const eastl::string& first, const eastl::string& second)
+static UtlString addPaths(const UtlString& first, const UtlString& second)
 {
-	eastl::string result;
+	UtlString result;
 	size_t slash_pos = first.find_last_of('/');
 	if (slash_pos == 0 || slash_pos >= first.size()) return second;
 	result = eastl::move( first.substr(0,slash_pos+1) );
@@ -365,7 +365,7 @@ static void setLineMacro(Preprocessor::DefineTable& define_table, unsigned int l
     define_table["__LINE__"] = def;
 }
 
-static void setFileMacro(Preprocessor::DefineTable& define_table, const eastl::string& file)
+static void setFileMacro(Preprocessor::DefineTable& define_table, const UtlString& file)
 {
 	Preprocessor::DefineEntry def;
 	Preprocessor::Lexem l;
@@ -388,20 +388,20 @@ Preprocessor::~Preprocessor()
 }
 
 
-void Preprocessor::PrintErrorMessage(const eastl::string& errmsg)
+void Preprocessor::PrintErrorMessage(const UtlString& errmsg)
 {
     g_pModuleLib->GetScriptEngine()->WriteMessage( current_file.c_str(), (int)( lines_this_file + 1 ), 0,
         asMSGTYPE_ERROR, errmsg.c_str() );
     number_of_errors++;
 }
 
-void Preprocessor::PrintWarningMessage(const eastl::string& errmsg)
+void Preprocessor::PrintWarningMessage(const UtlString& errmsg)
 {
     g_pModuleLib->GetScriptEngine()->WriteMessage( current_file.c_str(), (int)( lines_this_file + 1 ), 0,
         asMSGTYPE_WARNING, errmsg.c_str() );
 }
 
-void Preprocessor::registerPragma(const eastl::string& name, Preprocessor::PragmaModel* pc)
+void Preprocessor::registerPragma(const UtlString& name, Preprocessor::PragmaModel* pc)
 {
 	if (pc == 0) return;
 	PragmaIterator I = registered_pragmas.find(name);
@@ -413,7 +413,7 @@ void Preprocessor::registerPragma(const eastl::string& name, Preprocessor::Pragm
 	registered_pragmas[name] = pc;
 }
 
-void Preprocessor::callPragma(const eastl::string& name, const Preprocessor::PragmaInstance& parms)
+void Preprocessor::callPragma(const UtlString& name, const Preprocessor::PragmaInstance& parms)
 {
 	Preprocessor::PragmaIterator I = registered_pragmas.find(name);
 	if (I == registered_pragmas.end())
@@ -432,12 +432,12 @@ class Preprocessor::LineNumberTranslator::Table
 public:
 	struct Entry
 	{
-		eastl::string file;
+		UtlString file;
 		unsigned int start_line;
 		unsigned int offset;
 	};
 
-	eastl::vector<Entry> lines;
+	UtlVector<Entry> lines;
 
 	//Assuming blocks were entered in the proper order.
 	Entry& search(unsigned int linenumber)
@@ -453,7 +453,7 @@ public:
 		return lines[lines.size()-1]; //Line must be in last block.
 	}
 
-	void AddLineRange(const eastl::string& file, unsigned int start_line, unsigned int offset)
+	void AddLineRange(const UtlString& file, unsigned int start_line, unsigned int offset)
 	{
 		Entry e;
 		e.file = file;
@@ -478,7 +478,7 @@ Preprocessor::LineNumberTranslator::~LineNumberTranslator()
     pimple = 0;
 }
 
-eastl::string Preprocessor::LineNumberTranslator::ResolveOriginalFile(unsigned int linenumber)
+UtlString Preprocessor::LineNumberTranslator::ResolveOriginalFile(unsigned int linenumber)
 {
 	if (! pimple) return "ERROR";
 	return pimple->search(linenumber).file;
@@ -529,7 +529,7 @@ Preprocessor::LLITR Preprocessor::parseStatement(Preprocessor::LLITR ITR, Prepro
 }
 
 Preprocessor::LLITR Preprocessor::parseDefineArguments(Preprocessor::LLITR ITR, Preprocessor::LLITR END, Preprocessor::LexemList& lexems,
-	eastl::vector<Preprocessor::LexemList>& args)
+	UtlVector<Preprocessor::LexemList>& args)
 {
 	if (ITR == END || ITR->value != "(") 
 	{
@@ -582,7 +582,7 @@ Preprocessor::LLITR Preprocessor::expandDefine(Preprocessor::LLITR ITR, Preproce
 	}
 
 	//define has arguments.
-	eastl::vector<Preprocessor::LexemList> arguments;
+	UtlVector<Preprocessor::LexemList> arguments;
 	ITR = parseDefineArguments(ITR,END,lexems,arguments);
 
 	if (define_entry->second.arguments.size() != arguments.size()) 
@@ -727,7 +727,7 @@ Preprocessor::LLITR Preprocessor::parseIfDef(Preprocessor::LLITR ITR, Preprocess
 	return ITR;
 }
 
-void Preprocessor::parseIf(Preprocessor::LexemList& directive, eastl::string& name_out)
+void Preprocessor::parseIf( Preprocessor::LexemList& directive, UtlString& name_out )
 {
 	directive.pop_front();
 	if (directive.empty()) 
@@ -748,9 +748,9 @@ void Preprocessor::parsePragma(Preprocessor::LexemList& args)
 		PrintErrorMessage("Pragmas need arguments.");
 		return;
 	}
-	eastl::string p_name = args.begin()->value;
+	UtlString p_name = args.begin()->value;
 	args.pop_front();
-	eastl::string p_args;
+	UtlString p_args;
 	if (!args.empty())
 	{
 		if (args.begin()->type != Preprocessor::STRING) 
@@ -771,8 +771,8 @@ void Preprocessor::parsePragma(Preprocessor::LexemList& args)
 }
 
 void Preprocessor::recursivePreprocess(	
-	eastl::string filename,
-	eastl::string filedata,
+	const UtlString& filename,
+	const UtlString& filedata,
 	Preprocessor::FileSource& file_source,
 	Preprocessor::LexemList& lexems,
 	Preprocessor::DefineTable& define_table,
@@ -784,7 +784,7 @@ void Preprocessor::recursivePreprocess(
 	setFileMacro(define_table,current_file);
 	setLineMacro(define_table,lines_this_file);
 
-	eastl::vector<char> data;
+	UtlVector<char> data;
 
 	if (fromString)
 	{
@@ -818,21 +818,21 @@ void Preprocessor::recursivePreprocess(
 			++ITR;
 			setLineMacro(define_table,lines_this_file);
 		}
-		else if (ITR->type == Preprocessor::PREPROCESSOR)
+		else if (ITR->type == Preprocessor::PREPROCESSOR && ITR->value.find( "#include" ) == UtlString::npos )
 		{
 			Preprocessor::LLITR start_of_line = ITR;
 			Preprocessor::LLITR end_of_line = findLexem(ITR,END,NEWLINE);
 			Preprocessor::LexemList directive(start_of_line,end_of_line);
 			ITR = lexems.erase(start_of_line,end_of_line);
 			
-			eastl::string value = directive.begin()->value;
+			UtlString value = directive.begin()->value;
 			if (value == "#define")
 			{
 				parseDefine(define_table,directive);
 			} 
 			else if (value == "#ifdef")
 			{
-				eastl::string def_name;
+				UtlString def_name;
 				parseIf(directive,def_name);
 				Preprocessor::DefineTable::iterator DTI = define_table.find(def_name);
 				if (DTI == define_table.end())
@@ -843,7 +843,7 @@ void Preprocessor::recursivePreprocess(
 			} 
 			else if (value == "#ifndef")
 			{
-				eastl::string def_name;
+				UtlString def_name;
 				parseIf(directive,def_name);
 				Preprocessor::DefineTable::iterator DTI = define_table.find(def_name);
 				if (DTI != define_table.end())
@@ -856,12 +856,12 @@ void Preprocessor::recursivePreprocess(
 			{
 				//ignore
 			}
-			/*
 			else if (value == "#include")
 			{
+				/*
 				if (LNT) LNT->AddLineRange(filename,start_line,current_line-lines_this_file);
 				unsigned int save_lines_this_file = lines_this_file;
-				eastl::string file_name;
+				UtlString file_name;
 				parseIf(directive,file_name);
 				Preprocessor::LexemList next_file;
 				recursivePreprocess(
@@ -877,15 +877,15 @@ void Preprocessor::recursivePreprocess(
 				current_file = filename;
 				setFileMacro(define_table,current_file);
 				setLineMacro(define_table,lines_this_file);
+				*/
 			}
-			*/
 			else if (value == "#pragma")
 			{
 				parsePragma(directive);
 			}
 			else if (value == "#warning")
 			{
-				eastl::string msg;
+				UtlString msg;
 				parseIf(directive,msg);
 				PrintWarningMessage(msg);
 			}
@@ -905,8 +905,8 @@ void Preprocessor::recursivePreprocess(
 }
 
 int Preprocessor::preprocess(
-	const eastl::string& source_file,
-	const eastl::string& source_data,
+	const UtlString& source_file,
+	const UtlString& source_data,
 	Preprocessor::FileSource& file_source,
 	UtlVector<char>& destination,
 	Preprocessor::LineNumberTranslator* trans)
@@ -938,12 +938,12 @@ int Preprocessor::preprocess(
 	return number_of_errors;
 }
 
-void Preprocessor::define(const eastl::string& str)
+void Preprocessor::define(const UtlString& str)
 {
 	if ( !str.length() ) {
         return;
     }
-	eastl::string data;
+	UtlString data;
 
     data.sprintf( "#define %s", str.c_str() );
 	

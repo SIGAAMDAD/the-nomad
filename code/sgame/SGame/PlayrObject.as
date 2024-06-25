@@ -1,11 +1,6 @@
 #include "Engine/SoundSystem/SoundFrameData.as"
 #include "SGame/KeyBind.as"
-#include "SGame/PlayerSystem/QuickShot.as"
-#include "SGame/PlayerSystem/PMoveData.as"
-#include "SGame/PlayerSystem/PlayerHud.as"
-#include "SGame/PlayerSystem/SplitScreen.as"
-#include "SGame/PlayerSystem/StyleTracker.as"
-#include "SGame/PlayerSystem/Inventory.as"
+#include "SGame/PlayerSystem/PlayerSystem.as"
 
 namespace TheNomad::SGame {
 	const uint[] sgame_WeaponModeList = {

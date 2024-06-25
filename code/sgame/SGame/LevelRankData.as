@@ -1,3 +1,5 @@
+#include "SGame/LevelSystem.as"
+
 namespace TheNomad::SGame {
 	//
 	// LevelRankData: holds data that will be read-only after parsed in from the json file

@@ -321,6 +321,7 @@ static void FBO_Restart_f( void )
 		R_CheckFBO( rg.hdrDepthFbo );
 	}
 
+/*
 	if ( rg.screenSsaoImage ) {
 		if ( rg.screenSsaoFbo ) {
 			FBO_Clear( rg.screenSsaoFbo );
@@ -340,7 +341,6 @@ static void FBO_Restart_f( void )
 		R_CheckFBO( rg.targetLevelsFbo );
 	}
 
-	/*
 	if ( rg.quarterImage[0] ) {
 		for ( i = 0; i < 2; i++ ) {
 			if ( rg.quarterFbo[i] ) {
@@ -349,12 +349,12 @@ static void FBO_Restart_f( void )
 				rg.quarterFbo[i]->height = rg.quarterImage[i]->height;
 			}
 			rg.quarterFbo[i] = FBO_Create( va( "_quarter%d", i ), rg.quarterImage[i]->width, rg.quarterImage[i]->height );
-			FBO_CreateBuffer( rg.quarterFbo[i], GL_RGBA8, i, 0 );
-//			FBO_AttachImage( rg.quarterFbo[i], rg.quarterImage[i], GL_COLOR_ATTACHMENT0 );
+//			FBO_CreateBuffer( rg.quarterFbo[i], GL_RGBA8, i, 0 );
+			FBO_AttachImage( rg.quarterFbo[i], rg.quarterImage[i], GL_COLOR_ATTACHMENT0 );
 			R_CheckFBO( rg.quarterFbo[i] );
 		}
 	}
-	*/
+*/
 
 	GL_CheckErrors();
 
@@ -445,9 +445,12 @@ void FBO_Init( void )
 		R_CheckFBO( rg.hdrDepthFbo );
 	}
 
+/*
 	if ( rg.screenSsaoImage ) {
 		rg.screenSsaoFbo = FBO_Create( "_screenSsao", rg.screenSsaoImage->width, rg.screenSsaoImage->height );
-		FBO_AttachImage( rg.screenSsaoFbo, rg.screenSsaoImage, GL_COLOR_ATTACHMENT0 );
+//		FBO_AttachImage( rg.screenSsaoFbo, rg.screenSsaoImage, GL_COLOR_ATTACHMENT0 );
+		FBO_CreateBuffer( rg.screenSsaoFbo, GL_RGBA8, 0, 0 );
+		R_CheckFBO( rg.screenSsaoFbo );
 	}
 
 	if ( rg.targetLevelsImage ) {
@@ -456,16 +459,15 @@ void FBO_Init( void )
 		R_CheckFBO( rg.targetLevelsFbo );
 	}
 
-	/*
 	if ( rg.quarterImage[0] ) {
 		for ( i = 0; i < 2; i++ ) {
 			rg.quarterFbo[i] = FBO_Create( va( "_quarter%d", i ), rg.quarterImage[i]->width, rg.quarterImage[i]->height );
 			FBO_CreateBuffer( rg.quarterFbo[i], GL_RGBA8, i, 0 );
-			FBO_AttachImage( rg.quarterFbo[i], rg.quarterImage[i], GL_COLOR_ATTACHMENT0 );
+//			FBO_AttachImage( rg.quarterFbo[i], rg.quarterImage[i], GL_COLOR_ATTACHMENT0 + i );
 			R_CheckFBO( rg.quarterFbo[i] );
 		}
 	}
-	*/
+*/
 
 	GL_CheckErrors();
 
@@ -628,8 +630,8 @@ void FBO_Blit( fbo_t *src, ivec4_t inSrcBox, vec2_t srcTexScale, fbo_t *dst, ive
 		VectorSet4( srcTexCorners, 0.0f, 0.0f, 1.0f, 1.0f );
 	}
 
-	FBO_FastBlit( src, inSrcBox, dst, dstBox, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
-//	FBO_BlitFromTexture( src->colorImage[0], srcTexCorners, srcTexScale, dst, dstBox, shaderProgram, color, blend | GLS_DEPTHTEST_DISABLE );
+//	FBO_FastBlit( src, inSrcBox, dst, dstBox, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+	FBO_BlitFromTexture( src->colorImage[0], srcTexCorners, srcTexScale, dst, dstBox, shaderProgram, color, blend | GLS_DEPTHTEST_DISABLE );
 }
 
 void FBO_FastBlit( fbo_t *src, ivec4_t srcBox, fbo_t *dst, ivec4_t dstBox, int buffers, int filter )
@@ -1105,13 +1107,14 @@ static void RB_VBlur(fbo_t *srcFbo, fbo_t *dstFbo, float strength)
 	RB_BlurAxis(srcFbo, dstFbo, strength, qfalse);
 }
 
-void RB_GaussianBlur(float blur)
+void RB_GaussianBlur( float blur )
 {
 	//float mul = 1.f;
-	float factor = Com_Clamp(0.f, 1.f, blur);
+	float factor = Com_Clamp( 0.0f, 1.0f, blur );
 
-	if (factor <= 0.f)
+	if ( factor <= 0.0f ) {
 		return;
+	}
 
 	{
 		ivec4_t srcBox, dstBox;

@@ -5,6 +5,9 @@ namespace TheNomad::SGame {
         Execution() {
         }
 
+        bool IsActive() const {
+            return m_bActive;
+        }
         void OnRunTic( PlayrObject@ ent ) {
         }
 		void Activate( PlayrObject@ ent ) {
@@ -12,5 +15,7 @@ namespace TheNomad::SGame {
 		bool Load( json@ json ) {
             return true;
         }
+
+        private bool m_bActive = false;
     };
 };

@@ -102,6 +102,13 @@ public:
 
 	// Get metadata declared for class methods
 	const UtlVector<UtlString>& GetMetadataForTypeMethod(int typeId, asIScriptFunction *method);
+
+	inline unsigned int GetRow( void ) const {
+		return row;
+	}
+	inline unsigned int GetColumn( void ) const {
+		return col;
+	}
 protected:
 	void ClearAll();
 	int  Build();
@@ -149,6 +156,8 @@ protected:
 	UtlVector<SMetadataDecl> foundDeclarations;
 	UtlString currentClass;
 	UtlString currentNamespace;
+
+	unsigned int row, col;
 
 	// Storage of metadata for global declarations
 	UtlHashMap<int, UtlVector<UtlString> > typeMetadataMap;

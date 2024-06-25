@@ -1,3 +1,25 @@
+/*
+===========================================================================
+Copyright (C) 2023-2024 GDR Games
+
+This file is part of The Nomad source code.
+
+The Nomad source code is free software; you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation; either version 2 of the License,
+or (at your option) any later version.
+
+The Nomad source code is distributed in the hope that it will be
+useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Foobar; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+===========================================================================
+*/
+
 #include "module_public.h"
 #include "module_alloc.h"
 #include "module_handle.h"
@@ -5,6 +27,7 @@
 #include "module_funcdefs.hpp"
 #include "module_debugger.h"
 #include "angelscript/as_scriptobject.h"
+#include "scriptpreprocessor.h"
 
 const moduleFunc_t funcDefs[NumFuncs] = {
     /*
@@ -43,6 +66,7 @@ CModuleHandle::CModuleHandle( const char *pName, const char *pDescription, const
     m_nVersionUpdate{ moduleVersionUpdate }, m_nVersionPatch{ moduleVersionPatch }
 {
     int error;
+    char name[MAX_NPATH];
 
     PROFILE_BLOCK_BEGIN( "Compile Module" );
 
@@ -80,6 +104,9 @@ CModuleHandle::CModuleHandle( const char *pName, const char *pDescription, const
         Con_Printf( COLOR_RED "failed to load module bytecode.\n" );
         break;
     };
+
+    N_strncpyz( name, m_szName.c_str(), sizeof( name ) - 1 );
+    g_pModuleLib->GetScriptBuilder()->DefineWord( va( "MODULE_%s", N_strupr( name ) ) );
     
     if ( error != 1 ) {
         Build( sourceFiles );
@@ -374,9 +401,13 @@ bool CModuleHandle::LoadSourceFile( const string_t& filename )
         void *v;
         char *b;
     } f;
-    int retn;
+    int retn, errCount;
     const char *path;
     uint64_t length;
+    Preprocessor preprocessor;
+    Preprocessor::FileSource fileSource;
+    UtlString data;
+    UtlVector<char> out;
 
     path = va( "modules/%s/%s", m_szName.c_str(), filename.c_str() );
     length = FS_LoadFile( path, &f.v );
@@ -384,13 +415,24 @@ bool CModuleHandle::LoadSourceFile( const string_t& filename )
         Con_Printf( "Couldn't load script file '%s'.\n", path );
         return false;
     }
-    
-    retn = g_pModuleLib->GetScriptBuilder()->AddSectionFromMemory( filename.c_str(), f.b, length );
-    if ( retn < 0 ) {
-        Con_Printf( COLOR_RED "ERROR: failed to add source file '%s' -- %s\n", filename.c_str(), AS_PrintErrorString( retn ) );
-        return false;
-    }
 
+    data.resize( length );
+    memcpy( data.data(), f.v, length );
+
+    if ( ( errCount =  preprocessor.preprocess( filename.c_str(), data, fileSource, out ) ) > 0 ) {
+        retn = g_pModuleLib->GetScriptBuilder()->AddSectionFromMemory( filename.c_str(), f.b, length );
+        if ( retn < 0 ) {
+            Con_Printf( COLOR_RED "ERROR: failed to compile source file '%s' -- %s, %i errors\n", filename.c_str(),
+                AS_PrintErrorString( retn ), errCount );
+            return false;
+        }
+    } else {
+        retn = g_pModuleLib->GetScriptBuilder()->AddSectionFromMemory( filename.c_str(), out.data(), out.size() );
+        if ( retn < 0 ) {
+            Con_Printf( COLOR_RED "ERROR: failed to compile source file '%s' -- %s\n", filename.c_str(), AS_PrintErrorString( retn ) );
+            return false;
+        }
+    }
     FS_FreeFile( f.v );
     /*
     int retn;
@@ -418,7 +460,7 @@ bool CModuleHandle::LoadSourceFile( const string_t& filename )
     }
     */
 
-   return true;
+    return true;
 }
 
 #define AS_CACHE_CODE_IDENT (('C'<<24)+('B'<<16)+('S'<<8)+'A')

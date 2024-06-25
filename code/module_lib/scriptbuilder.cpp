@@ -124,9 +124,10 @@ int CScriptBuilder::BuildModule()
 void CScriptBuilder::DefineWord(const char *word)
 {
 	UtlString sword = word;
-	if( definedWords.find(sword) == definedWords.end() )
-	{
-		definedWords.insert(sword);
+
+	Con_Printf( "Added preprocessor #define \"%s\"\n", word );
+	if( definedWords.find( sword ) == definedWords.end() ) {
+		definedWords.insert( sword );
 	}
 }
 
@@ -167,7 +168,7 @@ int CScriptBuilder::LoadScriptSection(const char *filename)
 	int ret;
 
 	nLength = FS_LoadFile( filename, &f.v );
-	if ( !nLength || !f.v ) {
+	if ( !f.v ) {
 		engine->WriteMessage( filename, 0, 0, asMSGTYPE_ERROR, va( "Failed to load script file '%s'",
 			COM_SkipPath( const_cast<char *>( filename ) ) ) );
 		return -1;
@@ -231,7 +232,8 @@ int CScriptBuilder::LoadScriptSection(const char *filename)
 int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length, const char *sectionname, int lineOffset)
 {
 	UtlVector<UtlString> includes;
-	unsigned int row, col;
+
+	row = col = 0;
 
 	// Perform a superficial parsing of the script first to store the metadata
 	if( length )

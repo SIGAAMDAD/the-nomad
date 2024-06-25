@@ -404,7 +404,7 @@ int Module_IncludeCallback_f( const char *pInclude, const char *pFrom, CScriptBu
     for ( const auto& it : includePaths ) {
         path = va( "%s%s", it.get<string_t>().c_str(), pInclude );
         length = FS_LoadFile( path, &f.v );
-        if ( !length || !f.v ) {
+        if ( !f.v ) {
             continue;
         }
 
@@ -417,7 +417,6 @@ int Module_IncludeCallback_f( const char *pInclude, const char *pFrom, CScriptBu
     }
 
     (void)unused; // shut up compiler
-
     g_pModuleLib->GetScriptEngine()->WriteMessage(
         g_pModuleLib->GetCurrentHandle()->GetModulePath(),
         0, 0, asMSGTYPE_WARNING, va( "failed to load include preprocessor file \"%s\" from \"%s\"", pInclude, pFrom ) );

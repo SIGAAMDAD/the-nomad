@@ -567,13 +567,13 @@ static const void *RB_PostProcess(const void *data)
 		FBO_FastBlit( rg.renderFbo, NULL, rg.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 		srcFbo = rg.msaaResolveFbo;
 	}
-#if 0
 
 	dstBox[0] = glState.viewData.viewportX;
 	dstBox[1] = glState.viewData.viewportY;
 	dstBox[2] = glState.viewData.viewportWidth;
 	dstBox[3] = glState.viewData.viewportHeight;
 
+#if 0
 	if ( r_ssao->i ) {
 		srcBox[0] = glState.viewData.viewportX      * rg.screenSsaoImage->width  / (float)glConfig.vidWidth;
 		srcBox[1] = glState.viewData.viewportY      * rg.screenSsaoImage->height / (float)glConfig.vidHeight;
@@ -582,12 +582,12 @@ static const void *RB_PostProcess(const void *data)
 
 		FBO_Blit( rg.screenSsaoFbo, srcBox, NULL, srcFbo, dstBox, NULL, NULL, GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO );
 	}
+#endif
 
 	srcBox[0] = glState.viewData.viewportX;
 	srcBox[1] = glState.viewData.viewportY;
 	srcBox[2] = glState.viewData.viewportWidth;
 	srcBox[3] = glState.viewData.viewportHeight;
-#endif
 
 	if ( srcFbo ) {
 		if ( r_hdr->i && ( r_toneMap->i || r_forceToneMap->i ) ) {

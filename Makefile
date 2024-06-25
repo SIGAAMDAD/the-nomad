@@ -306,6 +306,7 @@ SRC=\
 	$(O)/module_lib/module_virtual_asm_x64.o \
 	$(O)/module_lib/module_debugger.o \
 	$(O)/module_lib/scriptbuilder.o \
+	$(O)/module_lib/scriptpreprocessor.o \
 	$(O)/module_lib/scriptarray.o \
 	$(O)/module_lib/scriptany.o \
 	$(O)/module_lib/scriptstdstring.o \

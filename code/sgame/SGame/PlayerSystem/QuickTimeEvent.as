@@ -1,5 +1,3 @@
-#include "SGame/PlayerEvent/PlayerEvent.as"
-
 namespace TheNomad::SGame {
     // we've all experienced them (probably)
     enum QuickTimeEventType {
@@ -12,6 +10,9 @@ namespace TheNomad::SGame {
         QuickTimeEvent() {
         }
 
+        bool IsActive() const {
+            return m_bActive;
+        }
         bool Load( json@ json ) {
             return true;
         }
@@ -25,6 +26,7 @@ namespace TheNomad::SGame {
         protected QuickTimeEventType m_nType = QuickTimeEventType::QTE_ButtonMash;
         protected uint m_nDuration = 0;
         protected uint m_nStartTime = 0;
+        protected bool m_bActive = false;
     };
 
     class ButtonMashEvent : QuickTimeEvent {
@@ -48,7 +50,6 @@ namespace TheNomad::SGame {
         }
 
         void OnRunTic( PlayrObject@ ent ) {
-            if (  )
         }
 
         private TheNomad::Engine::KeyNum m_KeyboardNum = TheNomad::Engine::KeyNum::X;
