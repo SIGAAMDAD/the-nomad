@@ -938,16 +938,16 @@ int Preprocessor::preprocess(
 	return number_of_errors;
 }
 
-void Preprocessor::define(const UtlString& str)
+void Preprocessor::define( const char *str )
 {
-	if ( !str.length() ) {
+	if ( !str || !strlen( str ) ) {
         return;
     }
 	UtlString data;
 
-    data.sprintf( "#define %s", str.c_str() );
+    data.sprintf( "#define %s", str );
 	
-    char* d_end = &data[data.length()-1];
+    char *d_end = &data[ data.length() - 1 ];
 	++d_end;
 	Preprocessor::LexemList lexems;
 	lex(&data[0],d_end,lexems);

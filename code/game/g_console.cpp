@@ -885,10 +885,12 @@ static void Con_DrawSolidConsole( float frac, qboolean open )
 		ImGui::NewLine();
 	}
 
-	Con_DrawText( con.text );
-	ImGui::TextUnformatted( "" );
-	if ( open ) {
-		ImGui::SetScrollHereY();
+	if ( height == gi.gpuConfig.vidHeight ) {
+		Con_DrawText( con.text );
+		ImGui::TextUnformatted( "" );
+		if ( open ) {
+			ImGui::SetScrollHereY();
+		}
 	}
 
 	const bool scroll = ImGui::GetScrollY() != ImGui::GetScrollMaxY();

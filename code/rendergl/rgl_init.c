@@ -1391,8 +1391,6 @@ static void R_CameraInfo_f( void ) {
 }
 
 static void R_UnloadWorld_f( void ) {
-    int i;
-
     ri.Printf( PRINT_INFO, "Unloading world...\n" );
 
     if ( !rg.world ) {
@@ -1400,14 +1398,16 @@ static void R_UnloadWorld_f( void ) {
         return;
     }
 
-    ri.Printf( PRINT_INFO, "Clearing level assets...\n" );
-    
-    rg.numSpriteSheets = rg.world->firstLevelSpriteSheet;
+    R_ShutdownBuffer( rg.world->buffer );
+    VBO_Bind( backend.drawBuffer );
 
-    R_UnloadLevelTextures();
-    R_UnloadLevelShaders();
+//    R_UnloadLevelShaders();
+//    R_UnloadLevelTextures();
 
-    ri.Cmd_ExecuteCommand( "snd.unload_level" );
+//    memset( rg.sheets + rg.world->firstLevelSpriteSheet, 0, sizeof( *rg.sheets ) * rg.world->levelSpriteSheets );
+//    rg.numSpriteSheets = rg.world->firstLevelSpriteSheet;
+
+//    ri.Cmd_ExecuteCommand( "snd.unload_level" );
 
     rg.world = NULL;
     rg.worldMapLoaded = qfalse;

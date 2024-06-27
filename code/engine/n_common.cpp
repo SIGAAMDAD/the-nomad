@@ -769,17 +769,17 @@ static sysEvent_t Com_GetRealEvent( void )
 		uint64_t r;
 		sysEvent_t ev;
 
-		if (com_journal->i == JOURNAL_PLAYBACK) {
+		if ( com_journal->i == JOURNAL_PLAYBACK ) {
 			Sys_SendKeyEvents();
-			r = FS_Read(&ev, ev.evPtrLength, com_journalFile);
-			if (r != sizeof(ev)) {
-				N_Error(ERR_FATAL, "Error reading from journal file");
+			r = FS_Read( &ev, ev.evPtrLength, com_journalFile );
+			if ( r != sizeof( ev ) ) {
+				N_Error( ERR_FATAL, "Error reading from journal file" );
 			}
-			if (ev.evPtrLength) {
-				ev.evPtr = Z_Malloc(ev.evPtrLength, TAG_STATIC);
-				r = FS_Read(ev.evPtr, ev.evPtrLength, com_journalFile);
-				if (r != ev.evPtrLength) {
-					N_Error(ERR_FATAL, "Error reading from journal file");
+			if ( ev.evPtrLength ) {
+				ev.evPtr = Z_Malloc( ev.evPtrLength, TAG_STATIC );
+				r = FS_Read( ev.evPtr, ev.evPtrLength, com_journalFile );
+				if ( r != ev.evPtrLength ) {
+					N_Error( ERR_FATAL, "Error reading from journal file" );
 				}
 			}
 		}
@@ -787,15 +787,15 @@ static sysEvent_t Com_GetRealEvent( void )
 			ev = Com_GetSystemEvent();
 
 			// write the journal value out if needed
-			if (com_journal->i == JOURNAL_WRITE) {
-				r = FS_Write(&ev, sizeof(ev), com_journalFile);
-				if (r != sizeof(ev)) {
-					N_Error(ERR_FATAL, "Error writing to journal file");
+			if ( com_journal->i == JOURNAL_WRITE ) {
+				r = FS_Write( &ev, sizeof( ev ), com_journalFile );
+				if ( r != sizeof( ev ) ) {
+					N_Error( ERR_FATAL, "Error writing to journal file" );
 				}
-				if (ev.evPtrLength) {
-					r = FS_Write(ev.evPtr, ev.evPtrLength, com_journalFile);
-					if (r != ev.evPtrLength) {
-						N_Error(ERR_FATAL, "Error writing to journal file");
+				if ( ev.evPtrLength ) {
+					r = FS_Write( ev.evPtr, ev.evPtrLength, com_journalFile );
+					if ( r != ev.evPtrLength ) {
+						N_Error( ERR_FATAL, "Error writing to journal file" );
 					}
 				}
 			}
@@ -807,7 +807,7 @@ static sysEvent_t Com_GetRealEvent( void )
 	return Com_GetSystemEvent();
 }
 
-void Com_QueueEvent(uint32_t evTime, sysEventType_t evType, uint32_t evValue, uint32_t evValue2, uint32_t ptrLength, void *ptr)
+void Com_QueueEvent( uint32_t evTime, sysEventType_t evType, uint32_t evValue, uint32_t evValue2, uint32_t ptrLength, void *ptr )
 {
 	sysEvent_t *ev;
 
@@ -843,13 +843,18 @@ void Com_QueueEvent(uint32_t evTime, sysEventType_t evType, uint32_t evValue, ui
 	ev->evPtrLength = ptrLength;
 	ev->evPtr = ptr;
 
+	if ( gi.state == GS_LEVEL && gi.demorecording && gi.recordfile != FS_INVALID_HANDLE ) {
+		// record to the demofile
+		G_RecordEvent( ev );
+	}
+
 	lastEvent = ev;
 }
 
 static sysEvent_t Com_GetEvent( void )
 {
-	if (com_pushedEventsHead - com_pushedEventsTail > 0) {
-		return com_pushedEvents[(com_pushedEventsTail++) & (MAX_EVENT_QUEUE - 1)];
+	if ( com_pushedEventsHead - com_pushedEventsTail > 0 ) {
+		return com_pushedEvents[( com_pushedEventsTail++ ) & ( MAX_EVENT_QUEUE - 1 )];
 	}
 
 	return Com_GetRealEvent();
@@ -1447,8 +1452,8 @@ quake3 set test blah + map test
 */
 
 #define	MAX_CONSOLE_LINES 256
-static int com_numConsoleLines;
-static eastl::vector<char *> com_consoleLines;
+int com_numConsoleLines;
+eastl::vector<char *> com_consoleLines;
 
 int I_GetParm( const char *parm )
 {
@@ -1836,7 +1841,7 @@ void Com_Init( char *commandLine )
 	com_demo = Cvar_Get( "com_demo", "0", CVAR_LATCH );
 
 	Com_StartupVariable( "com_journal" );
-	com_journal = Cvar_Get( "com_journal", "0", CVAR_INIT | CVAR_PROTECTED );
+	com_journal = Cvar_Get( "com_journal", "0", CVAR_PROTECTED );
 	Cvar_CheckRange( com_journal, "0", "2", CVT_INT );
 	Cvar_SetDescription( com_journal, "When enabled, writes events and its data to 'journal.dat'" );
 

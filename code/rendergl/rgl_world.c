@@ -316,12 +316,14 @@ void RE_LoadWorldMap( const char *filename )
     r_worldData.height = mheader->mapHeight;
     r_worldData.numTiles = r_worldData.width * r_worldData.height;
 
-    r_worldData.firstLevelTexture = rg.numTextures;
     r_worldData.firstLevelShader = rg.numShaders;
     r_worldData.firstLevelSpriteSheet = rg.numSpriteSheets;
+    r_worldData.firstLevelTexture = rg.numTextures;
     r_worldData.levelShaders = 0;
-    r_worldData.levelTextures = 0;
     r_worldData.levelSpriteSheets = 0;
+    r_worldData.levelTextures = 0;
+
+//    ri.Cmd_ExecuteCommand( "snd.startup_level" );
 
     // load into heap
     R_LoadTileset( &mheader->lumps[LUMP_SPRITES], theader );
@@ -333,8 +335,6 @@ void RE_LoadWorldMap( const char *filename )
     R_ProcessLights();
     R_InitWorldBuffer();
     R_GenerateTexCoords( &theader->info );
-
-    ri.Cmd_ExecuteCommand( "snd.startup_level" );
 
     ri.FS_FreeFile( buffer.v );
 }

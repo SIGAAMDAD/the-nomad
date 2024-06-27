@@ -665,6 +665,131 @@ static void G_ViewMemory_f( void ) {
 }
 
 
+static void G_BeginRecord( void )
+{
+    version_t version;
+    int difficulty;
+    int cheat;
+    char mapname[64];
+    int length;
+    extern eastl::vector<char *> com_consoleLines;
+    extern int com_numConsoleLines;
+
+    version.m_nVersionMajor = NOMAD_VERSION;
+    version.m_nVersionUpdate = NOMAD_VERSION_UPDATE;
+    version.m_nVersionPatch = NOMAD_VERSION_PATCH;
+
+    memset( mapname, 0, sizeof( mapname ) );
+    Cvar_VariableStringBuffer( "mapname", mapname, sizeof( mapname ) - 1 );
+
+    difficulty = Cvar_VariableInteger( "sgame_Difficulty" );
+
+    FS_Write( &version, sizeof( version ), gi.recordfile );
+
+    length = strlen( FS_ReferencedBFFNames() ) + 1;
+    FS_Write( &length, sizeof( length ), gi.recordfile );
+    FS_Write( FS_ReferencedBFFNames(), length, gi.recordfile );
+
+    // write the command line
+    FS_Write( &com_numConsoleLines, sizeof( com_numConsoleLines ), gi.recordfile );
+    for ( const auto& it : com_consoleLines ) {
+        length = strlen( it ) + 1;
+        FS_Write( &length, sizeof( length ), gi.recordfile );
+        FS_Write( it, strlen( it ) + 1, gi.recordfile );
+    }
+
+    FS_Write( &difficulty, sizeof( difficulty ), gi.recordfile );
+    FS_Write( mapname, sizeof( mapname ), gi.recordfile );
+
+    // write cheats
+
+    cheat = Cvar_VariableInteger( "sgame_cheats_enabled" );
+    FS_Write( &cheat, sizeof( cheat ), gi.recordfile );
+
+    cheat = Cvar_VariableInteger( "sgame_cheat_BlindMobs" );
+    FS_Write( &cheat, sizeof( cheat ), gi.recordfile );
+
+    cheat = Cvar_VariableInteger( "sgame_cheat_DeafMobs" );
+    FS_Write( &cheat, sizeof( cheat ), gi.recordfile );
+    
+    cheat = Cvar_VariableInteger( "sgame_cheat_GodMode" );
+    FS_Write( &cheat, sizeof( cheat ), gi.recordfile );
+    
+    cheat = Cvar_VariableInteger( "sgame_cheat_InfiniteAmmo" );
+    FS_Write( &cheat, sizeof( cheat ), gi.recordfile );
+    
+    cheat = Cvar_VariableInteger( "sgame_cheat_InfiniteHealth" );
+    FS_Write( &cheat, sizeof( cheat ), gi.recordfile );
+    
+    cheat = Cvar_VariableInteger( "sgame_cheat_InfiniteRage" );
+    FS_Write( &cheat, sizeof( cheat ), gi.recordfile );
+}
+
+static void G_BeginDemoPlay( void )
+{
+    version_t version;
+    int difficulty;
+    int cheat;
+    char mapname[64];
+    int length;
+    char *referencedBffs;
+    char **commandLine;
+    int numLines, i;
+
+    FS_Read( &version, sizeof( version ), gi.demofile );
+
+    FS_Read( &length, sizeof( length ), gi.demofile );
+    referencedBffs = (char *)Z_Malloc( length, TAG_STATIC );
+    FS_Read( referencedBffs, length, gi.demofile );
+
+    FS_Read( &numLines, sizeof( numLines ), gi.demofile );
+    commandLine = (char **)Z_Malloc( sizeof( *commandLine ) * numLines, TAG_STATIC );
+    for ( i = 0; i < numLines; i++ ) {
+        FS_Read( &length, sizeof( length ), gi.demofile );
+        commandLine[i] = (char *)Z_Malloc( length, TAG_STATIC );
+        FS_Read( commandLine[i], length, gi.demofile );
+    }
+
+    FS_Read( &difficulty, sizeof( difficulty ), gi.demofile );
+    FS_Read( mapname, sizeof( mapname ), gi.demofile );
+
+    FS_Read( &cheat, sizeof( cheat ), gi.demofile );
+    Cvar_SetIntegerValue( "sgame_cheats_enabled", cheat );
+
+    FS_Read( &cheat, sizeof( cheat ), gi.demofile );
+    Cvar_SetIntegerValue( "sgame_cheat_BlindMobs", cheat );
+
+    FS_Read( &cheat, sizeof( cheat ), gi.demofile );
+    Cvar_SetIntegerValue( "sgame_cheat_DeafMobs", cheat );
+
+    FS_Read( &cheat, sizeof( cheat ), gi.demofile );
+    Cvar_SetIntegerValue( "sgame_cheat_GodMode", cheat );
+    
+    FS_Read( &cheat, sizeof( cheat ), gi.demofile );
+    Cvar_SetIntegerValue( "sgame_cheat_InfiniteAmmo", cheat );
+
+    FS_Read( &cheat, sizeof( cheat ), gi.demofile );
+    Cvar_SetIntegerValue( "sgame_cheat_InfiniteHealth", cheat );
+
+    FS_Read( &cheat, sizeof( cheat ), gi.demofile );
+    Cvar_SetIntegerValue( "sgame_cheat_InfiniteRage", cheat );
+
+    Con_Printf( "--------------------------------\n" );
+    Con_Printf( "Demo Playback Begun\n" );
+    Con_Printf( "--------------------------------\n" );
+    Con_Printf( "version: v%hu.%hu.%u\n", version.m_nVersionMajor, version.m_nVersionUpdate, version.m_nVersionPatch );
+    Con_Printf( "referenced bffs: %s\n", referencedBffs );
+    Con_Printf( "difficulty: %i\n", difficulty );
+    Con_Printf( "map: %s\n", mapname );
+    Con_Printf( "--------------------------------\n" );
+
+    Z_Free( referencedBffs );
+    for ( i = 0; i < numLines; i++ ) {
+        Z_Free( commandLine[i] );
+    }
+    Z_Free( commandLine );
+}
+
 /*
 ====================
 G_Record_f
@@ -755,8 +880,8 @@ static void G_Record_f( void ) {
 	// don't start saving messages until a non-delta compressed message is received
 	gi.demowaiting = qtrue;
 
-	// write out the gamestate message
-//	CL_WriteGamestate( qtrue );
+	// write out initial data
+    G_BeginRecord();
 }
 
 
@@ -824,7 +949,6 @@ static void G_DemoCompleted( void ) {
 		}
 	}
 
-//	CL_Disconnect( qtrue );
 	G_NextDemo();
 }
 
@@ -835,27 +959,17 @@ G_WalkDemoExt
 */
 static int G_WalkDemoExt( const char *arg, char *name, int name_len, fileHandle_t *handle )
 {
-	int i;
-
 	*handle = FS_INVALID_HANDLE;
-	i = 0;
 
-	//while ( demo_protocols[ i ] )
-	//{
-		Com_snprintf( name, name_len, "demos/%s.%s", arg, DEMOEXT );
-//		FS_BypassPure();
-		FS_FOpenFileRead( name, handle );
-//		FS_RestorePure();
-		if ( *handle != FS_INVALID_HANDLE ) {
-			Con_Printf( "Demo file: %s\n", name );
-            return 1;
-//			return demo_protocols[ i ];
-		}
-		else {
-			Con_Printf( "Not found: %s\n", name );
-        }
-//		i++;
-//	}
+	Com_snprintf( name, name_len, "demos/%s.%s", arg, DEMOEXT );
+	FS_FOpenFileRead( name, handle );
+	if ( *handle != FS_INVALID_HANDLE ) {
+		Con_Printf( "Demo file: %s\n", name );
+        return 1;
+	}
+	else {
+		Con_Printf( "Not found: %s\n", name );
+    }
 	return -1;
 }
 
@@ -916,11 +1030,7 @@ void G_StopRecord_f( void ) {
 		char finalName[MAX_OSPATH];
 		int	len, sequence;
 
-		// finish up
-		len = -1;
-		FS_Write( &len, 4, gi.recordfile );
-		FS_Write( &len, 4, gi.recordfile );
-		FS_FClose( gi.recordfile );
+        FS_FClose( gi.recordfile );
 		gi.recordfile = FS_INVALID_HANDLE;
 
 		Com_snprintf( tempName, sizeof( tempName ) - 1, "%s.tmp", gi.recordName );
@@ -950,6 +1060,58 @@ void G_StopRecord_f( void ) {
 	gi.spDemoRecording = qfalse;
 }
 
+static void G_WriteGamestate( void )
+{
+    FS_Write( glm::value_ptr( gi.cameraPos ), sizeof( gi.cameraPos ), gi.recordfile );
+    FS_Write( &gi.cameraZoom, sizeof( gi.cameraZoom ), gi.recordfile );
+    FS_Write( &gi.demoNumEvents, sizeof( gi.demoNumEvents ), gi.recordfile );
+}
+
+void G_RecordEvent( const sysEvent_t *ev )
+{
+    FS_Write( &ev->evTime, sizeof( ev->evTime ), gi.recordfile );
+    FS_Write( &ev->evType, sizeof( ev->evType ), gi.recordfile );
+    FS_Write( &ev->evValue, sizeof( ev->evValue ), gi.recordfile );
+    FS_Write( &ev->evValue2, sizeof( ev->evValue2 ), gi.recordfile );
+    FS_Write( &ev->evPtrLength, sizeof( ev->evPtrLength ), gi.recordfile );
+
+    if ( ev->evPtrLength > 0 ) {
+        FS_Write( ev->evPtr, ev->evPtrLength, gi.recordfile );
+    }
+
+    gi.demoNumEvents++;
+}
+
+static void G_ReadDemoEvents( void )
+{
+    sysEvent_t ev;
+    int i;
+
+    for ( i = 0; i < gi.demoNumEvents; i++ ) {
+        FS_Read( &ev.evTime, sizeof( ev.evTime ), gi.demofile );
+        FS_Read( &ev.evType, sizeof( ev.evType ), gi.demofile );
+        FS_Read( &ev.evValue, sizeof( ev.evValue ), gi.demofile );
+        FS_Read( &ev.evValue2, sizeof( ev.evValue2 ), gi.demofile );
+        FS_Read( &ev.evPtrLength, sizeof( ev.evPtrLength ), gi.demofile );
+
+        ev.evPtr = NULL;
+        if ( ev.evPtrLength ) {
+            ev.evPtr = Z_Malloc( ev.evPtrLength, TAG_STATIC );
+            FS_Read( ev.evPtr, ev.evPtrLength, gi.demofile );
+        }
+
+        Com_QueueEvent( ev.evTime, ev.evType, ev.evValue, ev.evValue2, ev.evPtrLength, ev.evPtr );
+    }
+}
+
+static void G_ReadGamestate( void )
+{
+    FS_Read( glm::value_ptr( gi.cameraPos ), sizeof( gi.cameraPos ), gi.demofile );
+    FS_Read( &gi.cameraZoom, sizeof( gi.cameraZoom ), gi.demofile );
+    FS_Read( &gi.demoNumEvents, sizeof( gi.demoNumEvents ), gi.demofile );
+
+    G_ReadDemoEvents();
+}
 
 /*
 ==================
@@ -979,35 +1141,10 @@ static void G_PlayDemo_f( void )
     // check for an extension .DEMOEXT
 	ext_test = const_cast<char *>( strrchr( arg, '.' ) );
 	if ( ext_test && !N_stricmpn( ext_test + 1, DEMOEXT, arraylen( DEMOEXT ) - 1 ) ) {
-		protocol = atoi( ext_test + arraylen( DEMOEXT ) );
+        protocol = 1;
 
-        /*
-		for( i = 0; demo_protocols[ i ]; i++ ) {
-			if ( demo_protocols[ i ] == protocol )
-				break;
-		}
-        */
-
-//		if ( demo_protocols[ i ] || protocol == com_protocol->integer  ) {
-			Com_snprintf( name, sizeof( name ) - 1, "demos/%s", arg );
-			FS_FOpenFileRead( name, &hFile );
-        /*
-		}
-		else {
-			size_t len;
-
-			Con_Printf( "Protocol %d not supported for demos\n", protocol );
-			len = ext_test - arg;
-
-			if ( len > arraylen( retry ) - 1 ) {
-				len = arraylen( retry ) - 1;
-			}
-
-			N_strncpyz( retry, arg, len + 1);
-			retry[len] = '\0';
-			protocol = G_WalkDemoExt( retry, name, sizeof( name ), &hFile );
-		}
-        */
+		Com_snprintf( name, sizeof( name ) - 1, "demos/%s", arg );
+		FS_FOpenFileRead( name, &hFile );
 	}
 	else {
 		protocol = G_WalkDemoExt( arg, name, sizeof( name ), &hFile );
@@ -1020,10 +1157,6 @@ static void G_PlayDemo_f( void )
 
 	FS_FClose( hFile );
 	hFile = FS_INVALID_HANDLE;
-
-	// make sure a local server is killed
-	// 2 means don't force disconnect of local client
-//	Cvar_Set( "sv_killserver", "2" );
 
 	if ( FS_FOpenFileRead( name, &gi.demofile ) == -1 ) {
 		// drop this time
@@ -1044,27 +1177,11 @@ static void G_PlayDemo_f( void )
     gi.state = GS_LEVEL;
 	gi.demoplaying = qtrue;
 
-    /*
-	Q_strncpyz( cls.servername, shortname, sizeof( cls.servername ) );
-
-	if ( protocol <= OLD_PROTOCOL_VERSION )
-		gi.compat = qtrue;
-	else
-		gi.compat = qfalse;
-
-	// read demo messages until connected
-#ifdef USE_CURL
-	while ( cls.state >= CA_CONNECTED && cls.state < CA_PRIMED && !Com_DL_InProgress( &download ) ) {
-#else
-	while ( cls.state >= CA_CONNECTED && cls.state < CA_PRIMED ) {
-#endif
-		CL_ReadDemoMessage();
-	}
-    */
-
 	// don't get the first snapshot this frame, to prevent the long
 	// time from the gamestate load from messing causing a time skip
 	gi.firstDemoFrameSkipped = qfalse;
+
+    G_BeginDemoPlay();
 }
 
 static void G_Vid_Restart_f( void )
@@ -1321,10 +1438,14 @@ static void G_UpdateGUID( const char *prefix, int prefix_len )
 #endif
 }
 
+#define MAX_DESCRIPTION_LENGTH 1024
+#define MAX_DISPLAY_NAME_LENGTH 128
+#define MAX_ID_LENGTH 24
+
 typedef struct skin_s {
-    char *name;
-    char *displayText;
     char *description;
+    char *displayText;
+    char *name;
     struct skin_s *next;
 } skin_t;
 
@@ -1336,9 +1457,9 @@ static void G_LoadSkins( void )
     uint64_t nLength;
     const char **text;
     const char *tok, *text_p;
-    char name[MAX_NPATH];
-    char display[MAX_NPATH];
-    char description[MAX_NPATH];
+    char name[MAX_ID_LENGTH];
+    char display[MAX_DISPLAY_NAME_LENGTH];
+    char description[MAX_DESCRIPTION_LENGTH];
     uint32_t numSkins, size;
     skin_t *skin;
 
@@ -1382,7 +1503,11 @@ static void G_LoadSkins( void )
         size += PAD( strlen( name ) + 1, sizeof( uintptr_t ) );
         size += PAD( strlen( display ) + 1, sizeof( uintptr_t ) );
         size += PAD( strlen( description ) + 1, sizeof( uintptr_t ) );
-        skin = (skin_t *)Hunk_Alloc( sizeof( *skin ), h_low );
+
+        skin = (skin_t *)Hunk_Alloc( size, h_low );
+        skin->name = (char *)( skin + 1 );
+        skin->displayText = (char *)( skin->name + strlen( name ) + 1 );
+        skin->description = (char *)( skin->displayText + strlen( display ) + 1 );
         
         strcpy( skin->name, name );
         strcpy( skin->displayText, display );
@@ -1390,12 +1515,34 @@ static void G_LoadSkins( void )
         skin->next = s_pSkinList;
         s_pSkinList = skin;
 
+        Con_Printf( "- Loaded skin \"%s\"\n", skin->name );
+
         numSkins++;
     }
 
     FS_FreeFile( b );
 
     Con_Printf( "Loaded %u skins.\n", numSkins );
+}
+
+static void G_SaveSkins( void )
+{
+    skin_t *skin;
+    fileHandle_t fh;
+
+    Con_Printf( "Saving skins configuration...\n" );
+
+    fh = FS_FOpenWrite( LOG_DIR "/skins.cfg" );
+    if ( fh == FS_INVALID_HANDLE ) {
+        Con_Printf( COLOR_RED "Error saving skins config\n" );
+        return;
+    }
+
+    for ( skin = s_pSkinList; skin; skin = skin->next ) {
+        FS_Printf( fh, "\"%s\" \"%s\" \"%s\"" GDR_NEWLINE, skin->name, skin->displayText, skin->description );
+    }
+
+    FS_FClose( fh );
 }
 
 skin_t *G_FindSkin( const char *name )
@@ -1410,6 +1557,23 @@ skin_t *G_FindSkin( const char *name )
     }
 
     return NULL;
+}
+
+static void G_ListSkins_f( void )
+{
+    skin_t *s;
+
+    Con_Printf( "\n" );
+    Con_Printf( "-----------------------------\n" );
+    Con_Printf( "Skins:\n" );
+    for ( s = s_pSkinList; s; s = s->next ) {
+        Con_Printf(
+            "  ID: \"%s\"\n"
+            "  Name: \"%s\"\n"
+            "  Description: \"%s\"\n"
+        , s->name, s->displayText, s->description );
+    }
+    Con_Printf( "-----------------------------\n" );
 }
 
 static void G_SetSkin_f( void )
@@ -1474,7 +1638,7 @@ static void G_InitRenderer_Cvars( void )
 	Cvar_SetDescription( vid_ypos, "Saves/sets window Y-coordinate when windowed, requires \\vid_restart." );
 
     r_multisampleType = Cvar_Get( "r_multisampleType", "1", CVAR_SAVE );
-    Cvar_CheckRange( r_multisampleType, va( "%i", AntiAlias_None ), va( "%i", AntiAlias_CSAA ), CVT_INT );
+    Cvar_CheckRange( r_multisampleType, va( "%i", AntiAlias_None ), va( "%i", AntiAlias_FXAA ), CVT_INT );
     Cvar_SetDescription( r_multisampleType,
                             "Sets the anti-aliasing type to the desired:\n"
                             " 0: None\n"
@@ -1488,7 +1652,6 @@ static void G_InitRenderer_Cvars( void )
                             " 8: TAA\n"
                             " 9: SMAA\n"
                             " 10: FXAA\n"
-                            " 11: CSAA\n"
                             "requires \\vid_restart." );
     r_multisampleAmount = Cvar_Get( "r_multisampleAmount", "2", CVAR_SAVE );
     Cvar_CheckRange( r_multisampleAmount, "0", "32", CVT_INT );
@@ -1572,7 +1735,7 @@ void G_Init( void )
     
     // userinfo
     Cvar_Get( "name", "The Ultimate Lad", CVAR_USERINFO | CVAR_ARCHIVE_ND );
-    Cvar_Get( "skin", "raio", CVAR_USERINFO | CVAR_ARCHIVE_ND );
+    Cvar_Get( "skin", "raio", CVAR_USERINFO | CVAR_SAVE );
     Cvar_Get( "voice", "0", CVAR_USERINFO | CVAR_ARCHIVE_ND ); // for the future
     
     if ( !isValidRenderer( g_renderer->s ) ) {
@@ -1616,6 +1779,8 @@ void G_Init( void )
     Cmd_AddCommand( "setcamerapos", G_SetCameraPos_f );
     Cmd_AddCommand( "referenced_bffs", G_ReferencedBFFList_f );
     Cmd_AddCommand( "opened_bffs", G_OpenedBFFList_f );
+    Cmd_AddCommand( "setskin", G_SetSkin_f );
+    Cmd_AddCommand( "skinlist", G_ListSkins_f );
 
 #ifdef USE_MD5
     G_GenerateGameKey();
@@ -1673,6 +1838,8 @@ void G_Shutdown( qboolean quit )
     Cmd_RemoveCommand( "setcamerapos" );
     Cmd_RemoveCommand( "referenced_bffs" );
     Cmd_RemoveCommand( "opened_bffs" );
+    Cmd_RemoveCommand( "setskin" );
+    Cmd_RemoveCommand( "skinlist" );
 
     Key_SetCatcher( 0 );
     Con_Printf( "-------------------------------\n" );
@@ -1804,6 +1971,7 @@ void G_ClearMem( void )
     Z_FreeTags( TAG_GAME );
     Z_FreeTags( TAG_SAVEFILE );
     Z_FreeTags( TAG_MODULES );
+
     // if not in a level, clear the whole hunk
     if ( !gi.mapLoaded ) {
         // clear the whole hunk
@@ -1888,9 +2056,17 @@ void G_Frame( int msec, int realMsec )
 {
     uint32_t i, j;
 
+    if ( gi.state == GS_LEVEL ) {
+        if ( gi.demorecording && gi.recordfile != FS_INVALID_HANDLE ) {
+            G_WriteGamestate();
+        } else if ( gi.demoplaying && gi.demofile != FS_INVALID_HANDLE ) {
+            G_ReadGamestate();
+        }
+    }
+
     // save the msec before checking pause
     gi.realFrameTime = realMsec;
-    
+
     // decide the simulation time
     gi.frametime = msec;
     gi.realtime += msec;

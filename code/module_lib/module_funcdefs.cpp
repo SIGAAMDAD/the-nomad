@@ -2810,6 +2810,9 @@ void ModuleLib_Register_Engine( void )
 
         REGISTER_GLOBAL_VAR( "const uint32 ENTITYNUM_INVALID", &script_ENTITYNUM_INVALID );
         REGISTER_GLOBAL_VAR( "const uint32 ENTITYNUM_WALL", &script_ENTITYNUM_WALL );
+        
+        REGISTER_GLOBAL_VAR( "const string GAME_NAME", &script_NOMAD_VERSION_STRING );
+        REGISTER_GLOBAL_VAR( "const string NOMAD_VERSION_STRING", &script_NOMAD_VERSION_STR );
 
         REGISTER_GLOBAL_VAR( "const vec3 Vec3Origin", vec3_origin );
         REGISTER_GLOBAL_VAR( "const vec2 Vec2Origin", vec2_origin );
@@ -2823,9 +2826,6 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_VAR( "const vec4 colorCyan", colorCyan );
         REGISTER_GLOBAL_VAR( "const vec4 colorWhite", colorWhite );
         REGISTER_GLOBAL_VAR( "const vec4 colorGold", colorGold );
-
-        REGISTER_GLOBAL_VAR( "const string GAME_NAME", &script_NOMAD_VERSION_STRING );
-        REGISTER_GLOBAL_VAR( "const string NOMAD_VERSION_STRING", &script_NOMAD_VERSION_STR );
 
         REGISTER_GLOBAL_VAR( "float Game_CameraZoom", &gi.cameraZoom );
         REGISTER_GLOBAL_VAR( "vec3 Game_CameraWorldPos", &gi.cameraWorldPos );

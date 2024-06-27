@@ -217,9 +217,12 @@ public:
 		UtlVector<char>& destination, 
 		LineNumberTranslator* lnt = nullptr);
 
-	void define(const UtlString&);
+	void define( const char * );
 	void registerPragma(const UtlString&, PragmaModel*);
 
+	inline void ReserveDefines( uint64_t nDefines ) {
+		application_specified.reserve( nDefines );
+	}
 	
 protected:
     void PrintErrorMessage(const UtlString& errmsg);

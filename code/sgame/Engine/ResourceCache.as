@@ -49,6 +49,13 @@ namespace TheNomad::Engine {
             return @ret;
         }
 
+        void ClearCache() {
+            m_ShaderCache.Clear();
+            m_SfxCache.Clear();
+            m_MusicCache.Clear();
+            m_SpriteSheetCache.Clear();
+        }
+
         private dictionary m_ShaderCache;
         private dictionary m_SfxCache;
         private dictionary m_MusicCache;

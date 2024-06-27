@@ -299,6 +299,7 @@ void R_ShutdownGPUBuffers( void )
 	for ( i = 0; i < rg.numBuffers; i++ ) {
 		vbo = rg.buffers[i];
 
+		VBO_Bind( vbo );
 		R_ShutdownBuffer( vbo );
 	}
 

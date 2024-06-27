@@ -734,6 +734,8 @@ static void IN_InitJoystick( void )
 	Cvar_CheckRange( cv, "0", "4", CVT_INT );
 	Cvar_SetDescription( cv, "Sets the number of input devices that are handled by the engine.\nNOTE: only used for split-screen co-op." );
 
+	Cvar_SetIntegerValue( "in_numInputDevices", numInputDevices );
+
 	for ( i = 0; i < numInputDevices; i++ ) {
 		sticks[i] = SDL_JoystickOpen( i );
 		if ( !sticks[i] ) {

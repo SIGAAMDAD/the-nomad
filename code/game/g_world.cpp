@@ -183,7 +183,7 @@ void G_SetMap_f( void ) {
     gi.mapCache.currentMapLoaded = hMap;
 	gi.mapLoaded = qtrue;
 
-	Cvar_Set( "mapname", mapname );
+	Cvar_Set( "mapname", gi.mapCache.info.name );
 
 	Con_Printf( "Loaded map '%s'\n", mapname );
 }
@@ -265,6 +265,11 @@ void G_SetActiveMap( nhandle_t hMap, uint32_t *nCheckpoints, uint32_t *nSpawns, 
 		N_Error( ERR_DROP, "G_SetActiveMap: invalid parameter" );
 	}
 	
+#if 0
+	// set the marker before loading any map assets
+    Hunk_SetMark();
+#endif
+
 	info = &gi.mapCache.info;
 	if ( !G_LoadLevelFile( gi.mapCache.mapList[ hMap - 1 ], info ) ) {
 		N_Error( ERR_DROP, "G_SetActiveMap: failed to load map level file '%s'", gi.mapCache.mapList[ hMap - 1 ] );

@@ -1510,11 +1510,13 @@ static void VideoMenu_Draw( void )
 			"Sets the amount of sharpening applied to a rendered texture",
 			&s_settingsMenu->video.sharpening, 0.5f, 20.0f, 0.1f );
 		
+		/* for now we will only really allow running at 60 fps
 		ImGui::TableNextRow();
 
 		SettingsMenu_MultiSliderInt( "FRAME LIMITER", "FrameLimiter",
 			"Sets the maximum amount of frames the game can render per second.",
 			&s_settingsMenu->video.maxFPS, 0, 1000, 1, true );
+		*/
 	}
 	ImGui::EndTable();
 }
@@ -1567,7 +1569,6 @@ static void VideoMenu_Save( void )
 	Cvar_SetFloatValue( "r_imageSharpenAmount", s_settingsMenu->video.sharpening );
 	Cvar_SetFloatValue( "r_autoExposure", s_settingsMenu->video.exposure );
 	Cvar_SetFloatValue( "r_gammaAmount", s_settingsMenu->video.gamma );
-	Cvar_SetIntegerValue( "com_maxfps", s_settingsMenu->video.maxFPS );
 
 	if ( !N_stricmp( g_renderer->s, "opengl" ) ) {
 		SDL_GL_SetSwapInterval( s_settingsMenu->video.vsync - 1 );

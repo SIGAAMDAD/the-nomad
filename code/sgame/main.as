@@ -19,13 +19,6 @@ namespace ImGui {
 //
 void LoadLevelAssets() {
 	const string str = TheNomad::Engine::CvarVariableString( "skin" );
-
-	// NOTE: always load the sprite sheets here instead of InitResources
-	// doing it there causes a weird bug where the sprite's texture doesn't
-	// render correctly
-	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_torso", 512, 512, 32, 32 );
-	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_legs", 512, 512, 32, 32 );
-	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_arms", 512, 512, 32, 32 );
 }
 
 //
@@ -45,15 +38,26 @@ void InitResources() {
 	TheNomad::SGame::InfoSystem::InfoManager.LoadAmmoInfos();
 	TheNomad::SGame::InfoSystem::InfoManager.LoadWeaponInfos();
 
+	str = TheNomad::Engine::CvarVariableString( "skin" );
+	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_torso" );
+	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_legs" );
+	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_arms" );
+
+	// NOTE: always load the sprite sheets after the info sprites
+	// doing it there causes a weird bug where the sprite's texture doesn't
+	// render correctly
+	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_torso", 512, 512, 32, 32 );
+	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_legs", 512, 512, 32, 32 );
+	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_arms", 512, 512, 32, 32 );
+
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/misc/passCheckpoint.ogg" );
 
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/mobs/detect.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/mobs/detectMeme.ogg" );
 
-/*
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die1.ogg" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die2.ogg" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die3.ogg" );
+	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/death1.ogg" );
+	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/death2.ogg" );
+	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/death3.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain0.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain1.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain2.ogg" );
@@ -71,10 +75,6 @@ void InitResources() {
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal1.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal2.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal3.ogg" );
-*/
-
-	timer.Stop();
-	ConsolePrint( "InitResources: " + timer.ElapsedMilliseconds() + "ms\n" );
 
 	//
 	// register strings
@@ -109,6 +109,9 @@ void InitResources() {
 		TheNomad::GameSystem::GetString( "SP_RANK_U_COLOR", str );
 		TheNomad::SGame::sgame_RankStringColors[ TheNomad::SGame::LevelRank::RankWereUBotting ] = TheNomad::Util::StringToColor( str );
 	}
+
+	timer.Stop();
+	ConsolePrint( "InitResources: " + timer.ElapsedMilliseconds() + "ms\n" );
 }
 
 void InitCvars() {
@@ -212,6 +215,8 @@ int ModuleOnShutdown() {
 	@TheNomad::SGame::InfoSystem::InfoManager = null;
 	@TheNomad::Engine::FileSystem::FileManager = null;
 	TheNomad::GameSystem::GameSystems.Clear();
+
+	TheNomad::Engine::ResourceCache.ClearCache();
 
 	return 1;
 }

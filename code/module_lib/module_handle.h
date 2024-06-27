@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "angelscript/as_context.h"
 #include "module_jit.h"
 #include "scriptlib/scriptarray.h"
+#include "scriptpreprocessor.h"
 
 typedef uint64_t EModuleFuncId;
 
@@ -108,6 +109,7 @@ public:
 
 	bool LoadSourceFile( const string_t& filename );
 private:
+	void AddDefines( Preprocessor& preprocessor ) const;
 	void RegisterGameObject( void );
 	void PrepareContext( asIScriptFunction *pFunction );
 	void Build( const nlohmann::json& sourceFiles );

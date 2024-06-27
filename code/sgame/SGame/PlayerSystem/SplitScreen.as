@@ -1,4 +1,4 @@
-#pragma warning ( ignore : 48811 )
+//#pragma warning ( ignore : 48811 )
 
 namespace TheNomad::SGame {
 	//

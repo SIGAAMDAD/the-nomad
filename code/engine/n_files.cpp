@@ -3403,10 +3403,10 @@ fileHandle_t FS_FOpenWrite(const char *path)
 	FILE *fp;
 	const char *ospath;
 
-	if (!fs_searchpaths) {
-		N_Error(ERR_FATAL, "Filesystem call made without initialization");
+	if ( !fs_searchpaths ) {
+		N_Error( ERR_FATAL, "Filesystem call made without initialization" );
 	}
-	if (!path || !*path) {
+	if ( !path || !*path ) {
 		return FS_INVALID_HANDLE;
 	}
 
@@ -3420,8 +3420,9 @@ fileHandle_t FS_FOpenWrite(const char *path)
 	FS_CheckFilenameIsNotAllowed(ospath, __func__, qfalse);
 
 	fd = FS_HandleForFile();
-	if (fd == FS_INVALID_HANDLE)
+	if ( fd == FS_INVALID_HANDLE ) {
 		return fd;
+	}
 	
 	f = &handles[fd];
 	FS_InitHandle(f);

@@ -453,6 +453,9 @@ nhandle_t RE_RegisterSpriteSheet( const char *npath, uint32_t sheetWidth, uint32
     // check if we already have it
     //
     for ( i = 0; i < rg.numSpriteSheets; i++ ) {
+        if ( !rg.sheets[i] ) {
+            continue;
+        }
         if ( !N_stricmp( npath, rg.sheets[i]->name ) ) {
             return (nhandle_t)i;
         }
@@ -465,7 +468,7 @@ nhandle_t RE_RegisterSpriteSheet( const char *npath, uint32_t sheetWidth, uint32
     size = 0;
     size += PAD( sizeof( *sheet ), sizeof( uintptr_t ) );
     size += PAD( sizeof( *sheet->sprites ) * numSprites, sizeof( uintptr_t ) );
-    size += PAD( len, sizeof( uintptr_t ) );
+    size += PAD( len + 1, sizeof( uintptr_t ) );
 
     handle = rg.numSpriteSheets;
     sheet = rg.sheets[rg.numSpriteSheets] = (spriteSheet_t *)ri.Hunk_Alloc( size, h_low );
