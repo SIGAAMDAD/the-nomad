@@ -1382,8 +1382,11 @@ static void G_LoadSkins( void )
         size += PAD( strlen( name ) + 1, sizeof( uintptr_t ) );
         size += PAD( strlen( display ) + 1, sizeof( uintptr_t ) );
         size += PAD( strlen( description ) + 1, sizeof( uintptr_t ) );
-        skin = (skin_t *)Hunk_Alloc( sizeof( *skin ), h_low );
-        
+        skin = (skin_t *)Hunk_Alloc( size, h_low );
+        skin->name = (char *)( skin + 1 );
+        skin->displayText = (char *)( skin->name + strlen( name ) + 1 );
+        skin->description = (char *)( skin->displayText + strlen( display ) + 1 );
+
         strcpy( skin->name, name );
         strcpy( skin->displayText, display );
         strcpy( skin->description, description );
