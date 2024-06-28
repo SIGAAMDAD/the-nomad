@@ -337,5 +337,6 @@ void MainMenu_Cache( void )
 }
 
 void UI_MainMenu( void ) {
+    Snd_ClearLoopingTracks();
     MainMenu_Cache();
 }

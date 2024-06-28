@@ -2864,7 +2864,6 @@ void R_InitShaders( void )
 	ScanAndLoadShaderFiles();
 }
 
-/*
 void R_UnloadLevelShaders( void )
 {
 	uint64_t i, j;
@@ -2877,7 +2876,8 @@ void R_UnloadLevelShaders( void )
 			hashTable[i] = NULL;
 		}
 	}
-	memset( rg.shaders + rg.world->firstLevelShader, 0, sizeof( *rg.shaders ) * rg.world->levelShaders );
+	for ( i = 0; i < rg.world->levelShaders; i++ ) {
+		rg.shaders[ i + rg.world->firstLevelShader ] = NULL;
+	}
 	rg.numShaders = rg.world->firstLevelShader;
 }
-*/

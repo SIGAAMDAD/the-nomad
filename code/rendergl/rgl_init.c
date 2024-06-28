@@ -1401,11 +1401,11 @@ static void R_UnloadWorld_f( void ) {
     R_ShutdownBuffer( rg.world->buffer );
     VBO_Bind( backend.drawBuffer );
 
-//    R_UnloadLevelShaders();
-//    R_UnloadLevelTextures();
+    R_UnloadLevelShaders();
+    R_UnloadLevelTextures();
 
-//    memset( rg.sheets + rg.world->firstLevelSpriteSheet, 0, sizeof( *rg.sheets ) * rg.world->levelSpriteSheets );
-//    rg.numSpriteSheets = rg.world->firstLevelSpriteSheet;
+    memset( rg.sheets + rg.world->firstLevelSpriteSheet, 0, sizeof( *rg.sheets ) * rg.world->levelSpriteSheets );
+    rg.numSpriteSheets = rg.world->firstLevelSpriteSheet;
 
 //    ri.Cmd_ExecuteCommand( "snd.unload_level" );
 

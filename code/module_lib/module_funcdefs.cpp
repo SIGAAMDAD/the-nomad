@@ -1298,9 +1298,9 @@ static void LoadModuleFunction( asIScriptGeneric *pGeneric )
 {
     const string_t& moduleName = *(const string_t *)pGeneric->GetArgObject( 0 );
     const string_t& funcName = *(const string_t *)pGeneric->GetArgObject( 1 );
-    asIScriptFunction **func = (asIScriptFunction **)pGeneric->GetArgObject( 2 );
+    asIScriptFunction *func = (asIScriptFunction *)pGeneric->GetAddressOfArg( 2 );
 
-    g_pModuleLib->GetCurrentHandle()->LoadFunction( moduleName, funcName, func );
+    g_pModuleLib->GetCurrentHandle()->LoadFunction( moduleName, funcName, &func );
 }
 
 static bool IsModuleActive( const string_t *modName ) {
@@ -2716,6 +2716,8 @@ void ModuleLib_Register_Engine( void )
     { // Util
         SET_NAMESPACE( "TheNomad::Util" );
 
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Util::LoadFunction( const string& in moduleName, const string& in funcName, ?&in )",
+            asFUNCTION( LoadModuleFunction ) );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::Util::GetModuleList( array<string>& out )", WRAP_FN( GetModuleList ) );
         REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Util::IsModuleActive( const string& in )", WRAP_FN( IsModuleActive ) );
 

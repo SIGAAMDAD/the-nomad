@@ -3041,7 +3041,6 @@ void R_DeleteTextures( void )
 	GL_BindNullTextures();
 }
 
-/*
 void R_UnloadLevelTextures( void )
 {
 	uint64_t i, j;
@@ -3063,4 +3062,3 @@ void R_UnloadLevelTextures( void )
 //	memset( rg.textures + rg.world->firstLevelTexture, 0, sizeof( *rg.textures ) * rg.world->levelTextures );
 	rg.numTextures = rg.world->firstLevelTexture;
 }
-*/

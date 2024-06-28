@@ -80,6 +80,9 @@ CModuleHandle::CModuleHandle( const char *pName, const char *pDescription, const
 
     if ( bIsDynamicModule ) {
         // don't compile it if we're possibly not even going to load it
+
+        m_SourceFiles = eastl::move( sourceFiles );
+
         return;
     }
 
@@ -142,7 +145,6 @@ void CModuleHandle::LoadFunction( const string_t& moduleName, const string_t& fu
     asUINT i;
 
     path = FS_BuildOSPath( FS_GetHomePath(), NULL, va( "modules/%s", moduleName.c_str() ) );
-    *pFunction = NULL;
 
     auto it = m_DynamicModules.find( moduleName );
     if ( it != m_DynamicModules.end() ) {
@@ -172,6 +174,10 @@ void CModuleHandle::LoadFunction( const string_t& moduleName, const string_t& fu
         dll.funcs.reserve( pInfo->m_pHandle->m_pScriptModule->GetFunctionCount() );
         for ( i = 0; i < pInfo->m_pHandle->m_pScriptModule->GetFunctionCount(); i++ ) {
             dll.funcs.emplace_back( pInfo->m_pHandle->m_pScriptModule->GetFunctionByIndex( i ) );
+
+            if ( N_streq( pInfo->m_pHandle->m_pScriptModule->GetFunctionByIndex( i )->GetName(), funcName.c_str() ) ) {
+                *pFunction = pInfo->m_pHandle->m_pScriptModule->GetFunctionByIndex( i );
+            }
         }
 
         m_DynamicModules.try_emplace( moduleName, eastl::move( dll ) );
