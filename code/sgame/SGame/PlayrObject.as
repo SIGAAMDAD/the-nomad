@@ -533,9 +533,9 @@ namespace TheNomad::SGame {
 		}
 
 		private void CacheSfx() {
-			dieSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die1.ogg" );
-			dieSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die2.ogg" );
-			dieSfx2 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die3.ogg" );
+			dieSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/death1.ogg" );
+			dieSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/death2.ogg" );
+			dieSfx2 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/death3.ogg" );
 
 			painSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain0.ogg" );
 			painSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain1.ogg" );
