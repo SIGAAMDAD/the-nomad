@@ -312,7 +312,7 @@ void MainMenu_Cache( void )
 
     s_main->exitGame.generic.type = MTYPE_TEXT;
     s_main->exitGame.generic.id = ID_EXIT;
-    s_main->exitGame.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
+    s_main->exitGame.generic.flags = QMF_HIGHLIGHT_IF_FOCUS | QMF_SILENT;
     s_main->exitGame.generic.eventcallback = MainMenu_EventCallback;
     s_main->exitGame.generic.font = AlegreyaSC;
     s_main->exitGame.text = strManager->ValueForKey( "MENU_MAIN_EXIT" )->value;

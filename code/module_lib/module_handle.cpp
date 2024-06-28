@@ -61,7 +61,7 @@ const moduleFunc_t funcDefs[NumFuncs] = {
 };
 
 CModuleHandle::CModuleHandle( const char *pName, const char *pDescription, const nlohmann::json& sourceFiles, int32_t moduleVersionMajor,
-    int32_t moduleVersionUpdate, int32_t moduleVersionPatch, const nlohmann::json& includePaths
+    int32_t moduleVersionUpdate, int32_t moduleVersionPatch, const nlohmann::json& includePaths, bool bIsDynamicModule
 )
     : m_szName{ pName }, m_szDescription{ pDescription }, m_nStateStack{ 0 }, m_nVersionMajor{ moduleVersionMajor },
     m_nVersionUpdate{ moduleVersionUpdate }, m_nVersionPatch{ moduleVersionPatch }
@@ -75,6 +75,11 @@ CModuleHandle::CModuleHandle( const char *pName, const char *pDescription, const
 
     if ( !sourceFiles.size() ) {
         Con_Printf( COLOR_YELLOW "WARNING: no source files found for '%s', not compiling\n", pName );
+        return;
+    }
+
+    if ( bIsDynamicModule ) {
+        // don't compile it if we're possibly not even going to load it
         return;
     }
 
@@ -128,6 +133,54 @@ CModuleHandle::CModuleHandle( const char *pName, const char *pDescription, const
 
 CModuleHandle::~CModuleHandle() {
     ClearMemory();
+}
+
+void CModuleHandle::LoadFunction( const string_t& moduleName, const string_t& funcName, asIScriptFunction **pFunction )
+{
+    const char *path;
+    CModuleInfo *pInfo;
+    asUINT i;
+
+    path = FS_BuildOSPath( FS_GetHomePath(), NULL, va( "modules/%s", moduleName.c_str() ) );
+    *pFunction = NULL;
+
+    auto it = m_DynamicModules.find( moduleName );
+    if ( it != m_DynamicModules.end() ) {
+        // the dynamic module has already been added, just find the function index
+        for ( auto& fn : it->second.funcs ) {
+            if ( N_streq( funcName.c_str(), fn->GetName() ) ) {
+                *pFunction = fn;
+            }
+        }
+    }
+
+    if ( ( pInfo = g_pModuleLib->GetModule( moduleName.c_str() ) ) != NULL ) {
+        Con_Printf( "Compiling dynamic module '%s'...\n", pInfo->m_szName );
+        const nlohmann::json& sourceFiles = pInfo->m_pHandle->GetSourceFiles();
+        for ( const auto& it : sourceFiles ) {
+            if ( !LoadSourceFile( it ) ) {
+                Con_Printf( COLOR_RED "Error compiling source file '%s'", it.get<string_t>().c_str() );
+                *pFunction = NULL; // FIXME: is this necessary?
+                break;
+            }
+        }
+
+        // get all the function pointers
+        DynamicModule_t dll;
+        memset( &dll, 0, sizeof( dll ) );
+        N_strncpyz( dll.name, moduleName.c_str(), sizeof( dll.name ) - 1 );
+        dll.funcs.reserve( pInfo->m_pHandle->m_pScriptModule->GetFunctionCount() );
+        for ( i = 0; i < pInfo->m_pHandle->m_pScriptModule->GetFunctionCount(); i++ ) {
+            dll.funcs.emplace_back( pInfo->m_pHandle->m_pScriptModule->GetFunctionByIndex( i ) );
+        }
+
+        m_DynamicModules.try_emplace( moduleName, eastl::move( dll ) );
+        Con_Printf( "Added dynamic AngelScript module '%s'\n", moduleName.c_str() );
+    }
+
+    if ( !*pFunction ) {
+        Con_Printf( COLOR_RED "Error loading dynamic function pointer \"%s\".\n", funcName.c_str() );
+    }
 }
 
 void CModuleHandle::Build( const nlohmann::json& sourceFiles ) {
@@ -216,6 +269,9 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, int *pArgLis
     if ( !m_pFuncTable[ nCallId ] ) {
         return 1; // just wasn't registered, any required func procs will have thrown an error in init stage
     }
+
+    // always ensure the handle is set for any calls into the engine that'll modify the module itself
+    g_pModuleLib->SetHandle( this );
 
     CheckASCall( m_pScriptContext->SetExceptionCallback( asFUNCTION( LogExceptionInfo ), this, asCALL_CDECL ) );
 

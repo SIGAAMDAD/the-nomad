@@ -76,6 +76,8 @@ void InitResources() {
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal2.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal3.ogg" );
 
+	TheNomad::Engine::ResourceCache.GetSfx( "music/levels/darkofthenight_combat.ogg" );
+
 	//
 	// register strings
 	//

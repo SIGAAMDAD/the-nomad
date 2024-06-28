@@ -98,6 +98,7 @@ namespace TheNomad::SGame {
 						ConsoleWarning( "SoundTrack_Combat for LevelData \"" + data.m_Name + "\" not found.\n" );
 					}
 				}
+
 				info.get( "BeginLevelScript", data.m_StartLevelScript );
 				info.get( "EndLevelScript", data.m_EndLevelScript );
 
@@ -226,6 +227,7 @@ namespace TheNomad::SGame {
 				if ( TheNomad::Engine::FileSystem::LoadFile( m_Current.m_EndLevelScript, script ) == 0 ) {
 					ConsoleWarning( "Error loading EndOfLevel script\n" );
 				} else {
+					ConsolePrint( "Executing \"" + script + "\"\n" );
 					TheNomad::Engine::CmdExecuteCommand( script );
 				}
 			}

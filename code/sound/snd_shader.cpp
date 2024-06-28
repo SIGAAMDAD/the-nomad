@@ -1,42 +1,11 @@
-/*
-===========================================================================
-
-Doom 3 GPL Source Code
-Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-
-This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
-
-Doom 3 Source Code is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Doom 3 Source Code is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
-
-In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
-
-If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
-
-===========================================================================
-*/
-
-#include "sys/platform.h"
-#include "framework/FileSystem.h"
-
-#include "sound/snd_local.h"
+#include "snd_local.h"
 
 /*
 ===============
-idSoundShader::Init
+CSoundShader::Init
 ===============
 */
-void idSoundShader::Init( void ) {
+void CSoundShader::Init( void ) {
 	desc = "<no description>";
 	errorDuringParse = false;
 	onDemand = false;
@@ -48,59 +17,78 @@ void idSoundShader::Init( void ) {
 
 /*
 ===============
-idSoundShader::idSoundShader
+CSoundShader::CSoundShader
 ===============
 */
-idSoundShader::idSoundShader( void ) {
+CSoundShader::CSoundShader( void ) {
 	Init();
 }
 
 /*
 ===============
-idSoundShader::~idSoundShader
+CSoundShader::~CSoundShader
 ===============
 */
-idSoundShader::~idSoundShader( void ) {
+CSoundShader::~CSoundShader() {
 }
 
 /*
 =================
-idSoundShader::Size
+CSoundShader::Size
 =================
 */
-size_t idSoundShader::Size( void ) const {
-	return sizeof( idSoundShader );
+size_t CSoundShader::Size( void ) const {
+	return sizeof( CSoundShader );
 }
 
 /*
 ===============
-idSoundShader::idSoundShader::FreeData
+CSoundShader::FreeData
 ===============
 */
-void idSoundShader::FreeData() {
+void CSoundShader::FreeData( void ) {
 	numEntries = 0;
 	numLeadins = 0;
 }
 
+const char *CSoundShader::GetName( void ) const {
+    return name;
+}
+
+const char *CSoundShader::GetText( void ) const {
+    return text;
+}
+
+void CSoundShader::SetText( const char *_text )
+{
+    if ( text ) {
+        Z_Free( text );
+    }
+
+    nLength = strlen( _text ) + 1;
+    text = (char *)Z_Malloc( nLength, TAG_SFX );
+    memcpy( text, _text, nLength );
+}
+
 /*
 ===================
-idSoundShader::SetDefaultText
+CSoundShader::SetDefaultText
 ===================
 */
-bool idSoundShader::SetDefaultText( void ) {
-	idStr wavname;
+bool CSoundShader::SetDefaultText( void ) {
+    char wavname[MAX_NPATH];
 
-	wavname = GetName();
-	wavname.DefaultFileExtension( ".wav" );		// if the name has .ogg in it, that will stay
+    N_strncpyz( wavname, GetName(), sizeof( wavname ) - 1 );
+	COM_DefaultExtension( wavname, sizeof( wavname ) - 1, ".wav" ); // if the name has .ogg in it, that will stay
 
 	// if there exists a wav file with the same name
 	if ( 1 ) { //fileSystem->ReadFile( wavname, NULL ) != -1 ) {
 		char generated[2048];
-		idStr::snPrintf( generated, sizeof( generated ),
+		Com_snprintf( generated, sizeof( generated ),
 						"sound %s // IMPLICITLY GENERATED\n"
 						"{\n"
-						"%s\n"
-						"}\n", GetName(), wavname.c_str() );
+						"\t%s\n"
+						"}\n", GetName(), wavname );
 		SetText( generated );
 		return true;
 	} else {
@@ -113,7 +101,7 @@ bool idSoundShader::SetDefaultText( void ) {
 DefaultDefinition
 ===================
 */
-const char *idSoundShader::DefaultDefinition() const {
+const char *CSoundShader::DefaultDefinition( void ) const {
 	return
 		"{\n"
 	"\t"	"_default.wav\n"
@@ -122,17 +110,15 @@ const char *idSoundShader::DefaultDefinition() const {
 
 /*
 ===============
-idSoundShader::Parse
+CSoundShader::Parse
 
   this is called by the declManager
 ===============
 */
-bool idSoundShader::Parse( const char *text, const int textLength ) {
-	idLexer	src;
+bool CSoundShader::Parse( const char *text, const uint64_t textLength ) {
+    const char **text_p, *buf;
 
-	src.LoadMemory( text, textLength, GetFileName(), GetLineNum() );
-	src.SetFlags( DECL_LEXER_FLAGS );
-	src.SkipUntilString( "{" );
+    text_p = (const char **)&text;
 
 	// deeper functions can set this, which will cause MakeDefault() to be called at the end
 	errorDuringParse = false;
@@ -146,10 +132,10 @@ bool idSoundShader::Parse( const char *text, const int textLength ) {
 
 /*
 ===============
-idSoundShader::ParseShader
+CSoundShader::ParseShader
 ===============
 */
-bool idSoundShader::ParseShader( idLexer &src ) {
+bool CSoundShader::ParseShader( idLexer &src ) {
 	int			i;
 	idToken		token;
 
@@ -370,10 +356,10 @@ bool idSoundShader::ParseShader( idLexer &src ) {
 
 /*
 ===============
-idSoundShader::CheckShakesAndOgg
+CSoundShader::CheckShakesAndOgg
 ===============
 */
-bool idSoundShader::CheckShakesAndOgg( void ) const {
+bool CSoundShader::CheckShakesAndOgg( void ) const {
 	int i;
 	bool ret = false;
 
@@ -396,10 +382,10 @@ bool idSoundShader::CheckShakesAndOgg( void ) const {
 
 /*
 ===============
-idSoundShader::List
+CSoundShader::List
 ===============
 */
-void idSoundShader::List() const {
+void CSoundShader::List() const {
 	idStrList	shaders;
 
 	common->Printf( "%4i: %s\n", Index(), GetName() );
@@ -424,46 +410,46 @@ void idSoundShader::List() const {
 
 /*
 ===============
-idSoundShader::GetAltSound
+CSoundShader::GetAltSound
 ===============
 */
-const idSoundShader *idSoundShader::GetAltSound( void ) const {
+const CSoundShader *CSoundShader::GetAltSound( void ) const {
 	return altSound;
 }
 
 /*
 ===============
-idSoundShader::GetMinDistance
+CSoundShader::GetMinDistance
 ===============
 */
-float idSoundShader::GetMinDistance() const {
+float CSoundShader::GetMinDistance() const {
 	return parms.minDistance;
 }
 
 /*
 ===============
-idSoundShader::GetMaxDistance
+CSoundShader::GetMaxDistance
 ===============
 */
-float idSoundShader::GetMaxDistance() const {
+float CSoundShader::GetMaxDistance() const {
 	return parms.maxDistance;
 }
 
 /*
 ===============
-idSoundShader::GetDescription
+CSoundShader::GetDescription
 ===============
 */
-const char *idSoundShader::GetDescription() const {
+const char *CSoundShader::GetDescription() const {
 	return desc;
 }
 
 /*
 ===============
-idSoundShader::HasDefaultSound
+CSoundShader::HasDefaultSound
 ===============
 */
-bool idSoundShader::HasDefaultSound() const {
+bool CSoundShader::HasDefaultSound() const {
 	for ( int i = 0; i < numEntries; i++ ) {
 		if ( entries[i] && entries[i]->defaultSound ) {
 			return true;
@@ -474,28 +460,28 @@ bool idSoundShader::HasDefaultSound() const {
 
 /*
 ===============
-idSoundShader::GetParms
+CSoundShader::GetParms
 ===============
 */
-const soundShaderParms_t *idSoundShader::GetParms() const {
+const soundShaderParms_t *CSoundShader::GetParms() const {
 	return &parms;
 }
 
 /*
 ===============
-idSoundShader::GetNumSounds
+CSoundShader::GetNumSounds
 ===============
 */
-int idSoundShader::GetNumSounds() const {
+int CSoundShader::GetNumSounds() const {
 	return numLeadins + numEntries;
 }
 
 /*
 ===============
-idSoundShader::GetSound
+CSoundShader::GetSound
 ===============
 */
-const char *idSoundShader::GetSound( int index ) const {
+const char *CSoundShader::GetSound( int index ) const {
 	if ( index >= 0 ) {
 		if ( index < numLeadins ) {
 			return leadins[index]->name.c_str();

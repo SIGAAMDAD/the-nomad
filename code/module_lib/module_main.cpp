@@ -148,7 +148,6 @@ void CModuleLib::LoadModule( const char *pModule )
     CModuleHandle *pHandle;
     nlohmann::json parse;
     nlohmann::json includePaths;
-    CModuleInfo *m;
     string_t description;
     union {
         void *v;
@@ -238,8 +237,8 @@ void CModuleLib::LoadModule( const char *pModule )
     const int32_t versionPatch = parse[ "Version" ][ "VersionPatch" ];
 
     pHandle = new ( Hunk_Alloc( sizeof( *pHandle ), h_high ) ) CModuleHandle( pModule, description.c_str(), parse.at( "SubModules" ),
-        versionMajor, versionUpdate, versionPatch, includePaths );
-    m = new ( &m_pLoadList[ m_nModuleCount ] ) CModuleInfo( parse, pHandle );
+        versionMajor, versionUpdate, versionPatch, includePaths, parse.at( "IsDynamic" ) );
+    new ( &m_pLoadList[ m_nModuleCount ] ) CModuleInfo( parse, pHandle );
     m_nModuleCount++;
 }
 
@@ -471,6 +470,114 @@ bool CModuleLib::AddDefaultProcs( void ) const {
     return true;
 }
 
+void CModuleLib::LoadModList( void )
+{
+    char *b;
+    uint64_t nLength;
+	int i, j;
+	const char **text;
+	const char *text_p;
+	const char *tok;
+	char *modName;
+	char **loadList;
+    nlohmann::json json;
+
+    m_pModList = (module_t *)Hunk_Alloc( sizeof( *m_pModList ) * m_nModuleCount, h_high );
+    for ( i = 0; i < m_nModuleCount; i++ ) {
+        m_pModList[i].info = &m_pLoadList[i];
+        m_pModList[i].valid = m_pLoadList[i].m_pHandle->IsValid();
+        m_pModList[i].active = qtrue;
+        m_pModList[i].bootIndex = i;
+        m_pModList[i].isRequired = N_streq( m_pModList[i].info->m_szName, "nomadmain" );
+		m_pModList[i].numDependencies = m_pLoadList[i].m_nDependencies;
+
+        // check if we have any dependencies that either don't exist or aren't properly loaded
+        for ( j = 0; j < m_pLoadList[i].m_nDependencies; j++ ) {
+            const CModuleInfo *dep = GetModule( m_pLoadList[i].m_pDependencies[j].c_str() );
+
+            if ( !dep || !dep->m_pHandle->IsValid() ) {
+                m_pModList[i].valid = m_pModList[i].active = qfalse;
+            }
+        }
+    }
+
+    // check for required modules
+	for ( i = 0; i < m_nModuleCount; i++ ) {
+		if ( !N_stricmp( m_pModList[i].info->m_szName, "nomadmain" ) ) {
+			m_pModList[i].isRequired = qtrue;
+		}
+	}
+
+    nLength = FS_LoadFile( CACHE_DIR "/loadlist.json", (void **)&b );
+    if ( !nLength || !b ) {
+        return; // doesn't exist yet
+    }
+
+    try {
+        json = nlohmann::json::parse( b, b + nLength );
+    } catch ( const nlohmann::json::exception& e ) {
+        Con_Printf( COLOR_RED "ModsMenu_LoadModList: invalid loadlist.json (nlohmann::json::exception) ->\n  id: %i\n  message: %s\n",
+            e.id, e.what() );
+		FS_FreeFile( b );
+		return;
+    }
+    FS_FreeFile( b );
+
+    if ( json.at( "LoadList" ).size() != m_nModuleCount ) {
+        Con_Printf( COLOR_YELLOW "WARNING: ModsMenu_LoadModList: bad load list, mods in list different than in memory\n" );
+    }
+
+    const nlohmann::json& data = json.at( "LoadList" );
+    for ( i = 0; i < m_nModuleCount; i++ ) {
+        for ( const auto& it : data ) {
+			if ( !N_strcmp( m_pModList[i].info->m_szName, it.at( "Name" ).get<nlohmann::json::string_t>().c_str() ) ) {
+			    m_pModList[i].valid = it.at( "Valid" );
+			    m_pModList[i].active = it.at( "Active" );
+			    m_pModList[i].bootIndex = i;
+
+                if ( !m_pModList[i].active && IsRequiredModule( m_pModList[i].info->m_szName ) ) {
+                    m_pModList[i].active = qtrue; // force on
+                }
+			}
+        }
+    }
+	
+    // reorder
+    for ( i = 0; i < m_nModuleCount; i++ ) {
+		module_t m = m_pModList[ m_pModList[i].bootIndex ];
+		m_pModList[ m_pModList[i].bootIndex ] = m_pModList[i];
+		m_pModList[i] = m;
+    }
+
+    eastl::sort( m_pModList, m_pModList + m_nModuleCount );
+
+	// check for missing dependencies
+    for ( i = 0; i < m_nModuleCount; i++ ) {
+		bool done = false;
+		m_pModList[i].allDepsActive = qtrue;
+    	for ( j = 0; j < m_pModList[i].info->m_nDependencies; j++ ) {
+			for ( j = 0; j < m_nModuleCount; j++ ) {
+				if ( N_strcmp( m_pModList[j].info->m_szName, m_pLoadList[i].m_pDependencies[j].c_str() ) == 0 ) {
+					if ( !m_pModList[j].info->m_pHandle->IsValid() ) {
+						m_pModList[i].allDepsActive = qfalse;
+						done = true;
+                        Con_Printf( COLOR_YELLOW "WARNING: module \"%s\" missing dependency \"%s\"\n",
+                            m_pLoadList[i].m_pDependencies[j].c_str(), m_pModList[i].info->m_szName );
+						break;
+					}
+				}
+			}
+			if ( done ) {
+				break;
+			}
+		}
+        m_pModList[i].info = &m_pLoadList[i];
+    	m_pModList[i].active = m_pModList[i].valid = m_pModList[i].allDepsActive;
+    }
+
+    Con_Printf( "...Got %lu modules\n", m_nModuleCount );
+}
+
 CModuleLib::CModuleLib( void )
 {
     const char *path;
@@ -523,32 +630,21 @@ CModuleLib::CModuleLib( void )
     path = "modules/";
     fileList = FS_ListFiles( "modules/", "/", &nFiles );
     m_pLoadList = (CModuleInfo *)Hunk_Alloc( sizeof( *m_pLoadList ) * nFiles, h_high );
-    
+
     for ( i = 0; i < nFiles; i++ ) {
         if ( N_streq( fileList[i], "." ) || N_streq( fileList[i], ".." ) ) {
             continue;
         }
-        Con_Printf( "...found module directory \"%s\".\n", fileList[i] );
+        Con_Printf( "...found module directory '%s'\n", fileList[i] );
         LoadModule( fileList[i] );
+    }
+    LoadModList();
+
+    for ( i = 0; i < m_nModuleCount; i++ ) {
+        m_pModList[i].info = &m_pLoadList[i];
     }
 
     FS_FreeFileList( fileList );
-
-/*
-    try {
-        // this is really inefficient but it'll do for now
-        for ( const auto& it : std::filesystem::directory_iterator{ path } ) {
-            if ( it.is_directory() ) {
-                const std::string path = eastl::move( it.path().filename().string() );
-                Con_Printf( "...found module directory \"%s\".\n", path.c_str() );
-
-                LoadModule( path.c_str() );
-            }
-        }
-    } catch ( const std::exception& e ) {
-        N_Error( ERR_FATAL, "InitModuleLib: failed to load module directories, std::exception was thrown -> %s", e.what() );
-    }
-*/
 
     // bind all the functions
     for ( i = 0; i < m_nModuleCount; i++ ) {

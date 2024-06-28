@@ -28,9 +28,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "module_public.h"
 
 typedef struct {
+    eastl::string name;
     union {
         asIScriptFunction *pFunc;
-        
+        asIScriptObject *pObject;
     } Data;
 } DynamicModuleSymbol_t;
 
@@ -44,8 +45,17 @@ class CModuleDynamicLibrary
 public:
     CModuleDynamicLibrary( void );
     ~CModuleDynamicLibrary();
+
+    bool Load( CModuleInfo *pModule );
 private:
-    UtlVector<asIScriptFunction *> m_SymbolFuncs;
+    bool LoadObject( const string_t& name );
+    bool LoadFunction( const string_t& name );
+    void Link( void );
+    
+    char m_szName[MAX_NPATH];
+    UtlVector<DynamicModuleSymbol_t *> m_Symbols;
+
+    qboolean m_bValid;
 };
 
 #endif

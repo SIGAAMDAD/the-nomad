@@ -178,6 +178,8 @@ typedef struct {
 	// size = uint16_t
 	int sfxOn;
 	int musicOn;
+
+	int maxSoundChannels;
 } audioSettings_t;
 
 typedef struct {
@@ -666,7 +668,7 @@ static void SettingsMenu_TabBar( void ) {
 			ImGui::EndTabItem();
 		}
 		SfxFocused( "Video" );
-		if ( ImGui::BeginTabItem( "Performance" ) ) {
+		if ( ImGui::BeginTabItem( "Graphics" ) ) {
 			if ( s_settingsMenu->lastChild != ID_PERFORMANCE ) {
 				s_settingsMenu->lastChild = ID_PERFORMANCE;
 				Snd_PlaySfx( ui->sfx_select );
@@ -674,7 +676,7 @@ static void SettingsMenu_TabBar( void ) {
 			SettingsMenu_GetGPUMemoryInfo();
 			ImGui::EndTabItem();
 		}
-		SfxFocused( "Performance" );
+		SfxFocused( "Graphics" );
 		if ( ImGui::BeginTabItem( "Audio" ) ) {
 			if ( s_settingsMenu->lastChild != ID_AUDIO ) {
 				s_settingsMenu->lastChild = ID_AUDIO;
@@ -1741,6 +1743,7 @@ static void AudioMenu_Save( void )
 	Cvar_SetIntegerValue( "snd_musicVolume", s_settingsMenu->audio.musicVolume );
 	Cvar_SetIntegerValue( "snd_effectsOn", s_settingsMenu->audio.sfxOn );
 	Cvar_SetIntegerValue( "snd_musicOn", s_settingsMenu->audio.musicOn );
+	Cvar_SetIntegerValue( "snd_maxSoundChannels", s_settingsMenu->audio.maxSoundChannels );
 }
 
 static void ControlsMenu_Save( void )
@@ -1847,6 +1850,7 @@ static void AudioMenu_SetDefault( void )
 	s_settingsMenu->audio.sfxVolume = Cvar_VariableInteger( "snd_effectsVolume" );
 	s_settingsMenu->audio.musicOn = Cvar_VariableInteger( "snd_musicOn" );
 	s_settingsMenu->audio.sfxOn = Cvar_VariableInteger( "snd_effectsOn" );
+	s_settingsMenu->audio.maxSoundChannels = Cvar_VariableInteger( "snd_maxSoundChannels" );
 }
 
 static void ControlsMenu_SetDefault( void )

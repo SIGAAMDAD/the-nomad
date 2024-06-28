@@ -82,10 +82,6 @@ typedef enum { qfalse = 0, qtrue = 1 } qboolean;
 #define MAX_NPATH 64
 #endif
 
-#ifndef MAX_NPATH
-#define MAX_NPATH 64
-#endif
-
 // the minimum size in bytes a lump should be before compressing it
 #define COMPRESSED_LUMP_SIZE (4*1024*1024)
 
