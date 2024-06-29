@@ -38,13 +38,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../ui/ui_public.hpp"
 #endif
 
-typedef enum
-{
-    GS_INACTIVE,
-    GS_READY,
-    GS_MENU,
-    GS_LEVEL,
-    GS_PAUSE,
+typedef enum {
+    GS_INACTIVE,    // before any initialization (G_Init)
+    GS_PRIMED,      // got gamestate, waiting for first frame
+    GS_MENU,        // in menu
+    GS_LEVEL,       // in level
+    GS_PAUSE,       // pause menu
     GS_SETTINGS,
     GS_STATS_MENU,
     GS_MEMORY_VIEW,
@@ -232,6 +231,8 @@ typedef struct {
     int demoCommandSequence;
     int demoDeltaNum;
     int demoMessageSequence;
+    int demoNumEvents;
+    int demoBufferSize;
 
 //    char gameconfigStrings[BIG_INFO_STRING];
 
@@ -369,6 +370,7 @@ void GLimp_Minimize( void );
 qboolean G_CheckPaused( void );
 qboolean G_CheckWallHit( const vec3_t origin, dirtype_t dir );
 void G_SetCameraData( const vec2_t origin, float zoom, float rotation );
+void G_RecordEvent( const sysEvent_t *ev );
 
 //
 // g_world.cpp
