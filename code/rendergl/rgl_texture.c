@@ -25,7 +25,7 @@ static unsigned char s_gammatable[256];
 int gl_filter_min = GL_LINEAR;
 int gl_filter_max = GL_NEAREST;
 
-#define FILE_HASH_SIZE 1024
+#define FILE_HASH_SIZE MAX_RENDER_TEXTURES
 static texture_t *hashTable[FILE_HASH_SIZE];
 
 /*
@@ -3031,6 +3031,9 @@ void R_DeleteTextures( void )
 	uint64_t i;
 
 	for ( i = 0; i < rg.numTextures; i++ ) {
+		if ( !rg.textures[i] ) {
+			continue;
+		}
 		nglDeleteTextures( 1, &rg.textures[i]->id );
 	}
 	memset( rg.textures, 0, sizeof( rg.textures ) );
@@ -3040,18 +3043,22 @@ void R_DeleteTextures( void )
 
 void R_UnloadLevelTextures( void )
 {
-	uint32_t i, j;
-	uint64_t hash;
-	texture_t *image;
+	uint64_t i, j;
 
-	for ( i = 0; i < rg.world->levelTextures; i++ ) {
-		for ( j = 0; j < FILE_HASH_SIZE; j++ ) {
-			if ( hashTable[ j ] == rg.textures[ rg.world->firstLevelTexture + i ] ) {
-				hashTable[ j ] = NULL;
+	ri.Printf( PRINT_INFO, "R_UnloadLevelTextures(): Releasing %u textures...\n", rg.world->levelTextures );
+
+	for ( i = 0; i < FILE_HASH_SIZE; i++ ) {
+		for ( j = 0; j < rg.world->levelTextures; j++ ) {
+			if ( hashTable[i] == rg.textures[ j + rg.world->firstLevelTexture ] && hashTable[i] ) {
+				hashTable[i]->next = NULL;
+				hashTable[i] = NULL;
 			}
 		}
-
-		nglDeleteTextures( 1, &rg.textures[ rg.world->firstLevelTexture + i ]->id );
-    }
+	}
+	for ( j = 0; j < rg.world->levelTextures; j++ ) {
+		nglDeleteTextures( 1, &rg.textures[ j + rg.world->firstLevelTexture ]->id );
+		rg.textures[ j + rg.world->firstLevelTexture ] = NULL;
+	}
+//	memset( rg.textures + rg.world->firstLevelTexture, 0, sizeof( *rg.textures ) * rg.world->levelTextures );
 	rg.numTextures = rg.world->firstLevelTexture;
 }

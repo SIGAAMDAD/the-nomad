@@ -458,19 +458,19 @@ nhandle_t RE_RegisterSpriteSheet( const char *npath, uint32_t sheetWidth, uint32
         }
     }
 
-    len = PAD( len, sizeof(uintptr_t) );
+    len = PAD( len, sizeof( uintptr_t ) );
 
     numSprites = ( sheetWidth / spriteWidth ) * ( sheetHeight / spriteHeight );
 
     size = 0;
     size += PAD( sizeof( *sheet ), sizeof( uintptr_t ) );
     size += PAD( sizeof( *sheet->sprites ) * numSprites, sizeof( uintptr_t ) );
-    size += PAD( len, sizeof( uintptr_t ) );
+    size += PAD( len + 1, sizeof( uintptr_t ) );
 
     handle = rg.numSpriteSheets;
     sheet = rg.sheets[rg.numSpriteSheets] = (spriteSheet_t *)ri.Hunk_Alloc( size, h_low );
     sheet->name = (char *)( sheet + 1 );
-    sheet->sprites = (sprite_t *)( sheet->name + len );
+    sheet->sprites = (sprite_t *)( sheet->name + len + 1 );
 
     strcpy( sheet->name, npath );
 

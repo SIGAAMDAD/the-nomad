@@ -27,8 +27,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "ui_string_manager.h"
 
-#define MAX_TABLE_ITEMS 528
-#define MAX_MENU_ITEMS 528
+#define MAX_TABLE_ITEMS 64
+#define MAX_MENU_ITEMS 64
 
 #define MTYPE_NULL          0
 #define MTYPE_TEXT          1

@@ -15,20 +15,6 @@ namespace ImGui {
 };
 
 //
-// LoadLevelAssets: caches level relevant data
-//
-void LoadLevelAssets() {
-	const string str = TheNomad::Engine::CvarVariableString( "skin" );
-
-	// NOTE: always load the sprite sheets here instead of InitResources
-	// doing it there causes a weird bug where the sprite's texture doesn't
-	// render correctly
-	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_torso", 512, 512, 32, 32 );
-	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_legs", 512, 512, 32, 32 );
-	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_arms", 512, 512, 32, 32 );
-}
-
-//
 // InitResources: caches all important SGame resources
 //
 void InitResources() {
@@ -45,12 +31,23 @@ void InitResources() {
 	TheNomad::SGame::InfoSystem::InfoManager.LoadAmmoInfos();
 	TheNomad::SGame::InfoSystem::InfoManager.LoadWeaponInfos();
 
+	str = TheNomad::Engine::CvarVariableString( "skin" );
+	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_torso" );
+	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_legs" );
+	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_arms" );
+
+	// NOTE: always load the sprite sheets here instead of InitResources
+	// doing it there causes a weird bug where the sprite's texture doesn't
+	// render correctly
+	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_torso", 512, 512, 32, 32 );
+	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_legs", 512, 512, 32, 32 );
+	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_arms", 512, 512, 32, 32 );
+
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/misc/passCheckpoint.ogg" );
 
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/mobs/detect.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/mobs/detectMeme.ogg" );
 
-/*
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die1.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die2.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die3.ogg" );
@@ -71,7 +68,6 @@ void InitResources() {
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal1.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal2.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal3.ogg" );
-*/
 
 	timer.Stop();
 	ConsolePrint( "InitResources: " + timer.ElapsedMilliseconds() + "ms\n" );
@@ -238,8 +234,6 @@ int ModuleOnSaveGame() {
 }
 
 int ModuleOnLoadGame() {
-	LoadLevelAssets();
-
 	TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::InLevel;
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnLoad();
@@ -249,7 +243,6 @@ int ModuleOnLoadGame() {
 }
 
 int ModuleOnLevelStart() {
-	LoadLevelAssets();
 	TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::InLevel;
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnLevelStart();

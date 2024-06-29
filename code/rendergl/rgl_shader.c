@@ -1660,7 +1660,7 @@ static shader_t *GeneratePermanentShader( void )
     uint64_t size, hash;
 	uint32_t i;
 
-    newShader = ri.Hunk_Alloc( sizeof(shader_t), h_low );
+    newShader = ri.Hunk_Alloc( sizeof( *newShader ), h_low );
 
     *newShader = shader;
 
@@ -2866,14 +2866,18 @@ void R_InitShaders( void )
 
 void R_UnloadLevelShaders( void )
 {
-	int i;
+	uint64_t i, j;
 
-	ri.Printf( PRINT_INFO, "Clearing level shaders...\n" );
+	ri.Printf( PRINT_INFO, "R_UnloadLevelShaders(): Releasing %u shaders...\n", rg.world->levelShaders );
 
 	for ( i = 0; i < MAX_RENDER_SHADERS; i++ ) {
 		if ( hashTable[i] && hashTable[i]->index >= rg.world->firstLevelShader ) {
+			hashTable[i]->next = NULL;
 			hashTable[i] = NULL;
 		}
+	}
+	for ( i = 0; i < rg.world->levelShaders; i++ ) {
+		rg.shaders[ i + rg.world->firstLevelShader ] = NULL;
 	}
 	rg.numShaders = rg.world->firstLevelShader;
 }

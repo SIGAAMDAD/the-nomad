@@ -780,6 +780,7 @@ void CSoundManager::Shutdown( void )
     uint64_t i;
     trackQueue_t *pTrack, *pNext;
 
+    m_LoopingTracks.clear();
     for ( i = 0; i < MAX_SOUND_SOURCES; i++ ) {
         if ( !m_pSources[i] ) {
             continue;
@@ -886,6 +887,8 @@ CSoundSource *CSoundManager::InitSource( const char *filename, int64_t tag )
     }
 
     src->SetVolume();
+
+    m_nSources++;
 
     m_hAllocLock.Unlock();
 
@@ -1287,12 +1290,33 @@ static void Snd_ListFiles_f( void )
     Con_Printf( "Total sound files loaded: %lu\n", numFiles );
 }
 
+static void Snd_PlayTrack_f( void ) {
+    sfxHandle_t hSfx;
+    const char *music;
+
+    music = Cmd_Argv( 1 );
+    
+    if ( !*music ) {
+        Con_Printf( "Clearing current track...\n" );
+        Snd_ClearLoopingTrack();
+    } else {
+        hSfx = Com_GenerateHashValue( music, MAX_SOUND_SOURCES );
+
+        if ( sndManager->GetSource( hSfx ) == NULL ) {
+            Con_Printf( "invalid track '%s'\n", music );
+            return;
+        }
+
+        Snd_SetLoopingTrack( hSfx );
+    }
+}
+
 static void Snd_QueueTrack_f( void ) {
     sfxHandle_t hSfx;
     const char *music;
 
     if ( Cmd_Argc() != 2 ) {
-        Con_Printf( "usage: snd.queuetrack <music>\n" );
+        Con_Printf( "usage: snd.queue_track <music>\n" );
         return;
     }
 
@@ -1300,8 +1324,11 @@ static void Snd_QueueTrack_f( void ) {
     hSfx = Com_GenerateHashValue( music, MAX_SOUND_SOURCES );
     
     if ( sndManager->GetSource( hSfx ) == NULL ) {
-        Con_Printf( "invalid track '%s'\n", music );
-        return;
+        hSfx = Snd_RegisterSfx( music );
+        if ( hSfx == -1 ) {
+            Con_Printf( "invalid track '%s'\n", music );
+            return;
+        }
     }
 
     Snd_AddLoopingTrack( hSfx );
@@ -1395,6 +1422,7 @@ void Snd_Init( void )
     Cmd_AddCommand( "snd.audio_info", Snd_AudioInfo_f );
     Cmd_AddCommand( "snd.startup_level", Snd_StartupLevel_f );
     Cmd_AddCommand( "snd.unload_level", Snd_UnloadLevel_f );
+    Cmd_AddCommand( "snd.play_track", Snd_PlayTrack_f );
 
     alDistanceModel( AL_EXPONENT_DISTANCE_CLAMPED );
 

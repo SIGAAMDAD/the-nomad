@@ -1106,14 +1106,10 @@ static void R_Register( void )
 
     r_shadows = ri.Cvar_Get( "sgame_Shadows", "1", 0 );
 
-    r_maxPolys = ri.Cvar_Get( "r_maxPolys", "4096", CVAR_LATCH | CVAR_PROTECTED );
-    ri.Cvar_CheckRange( r_maxPolys, "64", va( "%lu", ( MAX_INT / sizeof(srfPoly_t) ) ), CVT_INT );
-    ri.Cvar_SetDescription(r_maxPolys, "Sets the maximum amount of polygons that can be processed per scene.\n"
-                                        "NOTE: there can be multiple scenes rendered in a single frame.");
-    
-    if ( r_maxPolys->i == MAX_INT / sizeof(srfPoly_t) ) {
-        ri.Printf( PRINT_WARNING, "\n**********\n" COLOR_RED "BRU\n" COLOR_RED "**********\n" );
-    }
+    r_maxPolys = ri.Cvar_Get( "r_maxPolys", "1024", CVAR_LATCH | CVAR_PROTECTED );
+    ri.Cvar_CheckRange( r_maxPolys, "64", "8192", CVT_INT );
+    ri.Cvar_SetDescription( r_maxPolys, "Sets the maximum amount of polygons that can be processed per scene.\n"
+                                        "NOTE: there can be multiple scenes rendered in a single frame." );
 
     r_screenshotJpegQuality = ri.Cvar_Get( "r_screenshotJpegQuality", "90", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_screenshotJpegQuality, "Controls quality of Jpeg screenshots when using screenshotJpeg." );
@@ -1327,10 +1323,6 @@ static void R_AllocBackend( void ) {
     uint64_t indexBytes;
     uint64_t dlightBytes;
     uint64_t entityBytes;
-    
-    if ( r_maxPolys->i < MAX_BATCH_QUADS ) {
-        ri.Cvar_Set( "r_maxPolys", va( "%i", MAX_BATCH_QUADS ) );
-    }
 
     vertBytes = PAD( sizeof( srfVert_t ) * r_maxPolys->i * 4, sizeof(uintptr_t) );
     polyVertBytes = PAD( sizeof(polyVert_t) * r_maxPolys->i * 4, sizeof(uintptr_t) );

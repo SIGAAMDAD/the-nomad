@@ -9,6 +9,7 @@
             "MapNameDifficulty_3": "maps/darkofthenight.bmf",
             "MapNameDifficulty_4": "maps/darkofthenight.bmf",
             "MapNameDifficulty_5": "maps/darkofthenight.bmf",
+            "BeginLevelScript": "scripts/levels/darkofthenight.level",
             "RankS": {
                 "MinKills": 0,
                 "MinStyle": 0,
