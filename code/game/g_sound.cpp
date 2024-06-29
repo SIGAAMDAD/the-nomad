@@ -1252,6 +1252,13 @@ void Snd_Update( int32_t msec )
         alSourcef( sndManager->GetMusicSource(), AL_GAIN, snd_musicVolume->f / 100.0f );
         alSourcePlay( sndManager->GetMusicSource() );
         snd_musicVolume->modified = qfalse;
+
+        for ( i = 0; i < sndManager->m_LoopingTracks.size(); i++ ) {
+            source = sndManager->m_LoopingTracks[i];
+            if ( source->IsPlaying() ) {
+                alSourcef( source->GetSource(), AL_GAIN, snd_musicVolume->f / 100.0f );
+            }
+        }
     }
     if ( sndManager->m_pCurrentTrack && !sndManager->m_pCurrentTrack->IsPlaying() || sndManager->m_pQueuedTrack ) {
         Snd_ClearLoopingTrack();
