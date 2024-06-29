@@ -3,6 +3,7 @@
     "Id": "nomadmain",
     "Description": "nomadmain is the official module for The Nomad",
     "DependedModules": [],
+    "IsDynamic": false,
     "SubModules": [
         "main.as"
     ],

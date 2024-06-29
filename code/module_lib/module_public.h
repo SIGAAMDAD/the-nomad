@@ -357,6 +357,112 @@ public:
     eastl::vector<CModuleHandle *> m_InvolvedModules;
 };
 
+typedef struct module_s {
+    CModuleInfo *info;
+    uint64_t numDependencies;
+    uint64_t bootIndex;
+    qboolean active;        // is it active?
+    qboolean valid;         // did it fail to load?
+    qboolean isRequired;
+    qboolean allDepsActive;
+
+	module_s& operator=( module_s& other );
+	module_s& operator=( const module_s& other );
+	bool operator==( const string_t& other ) const;
+	bool operator!=( const string_t& other ) const;
+    bool operator<( const module_s& other ) const;
+    bool operator>( const module_s& other ) const;
+    bool operator==( const module_s& other ) const;
+    bool operator!=( const module_s& other ) const;
+} module_t;
+
+//
+// required modules, those made with love, by Your Resident Fiend
+//
+inline const char *requiredModules[] = {
+    "nomadmain"
+};
+
+inline qboolean IsRequiredModule( const char *name ) {
+    for ( const auto& it : requiredModules ) {
+        if ( N_streq( name, it ) ) {
+            return qtrue;
+        }
+    }
+    return qfalse;
+}
+
+inline qboolean IsLoadedAfter( const module_t *mod, const module_t *dep ) {
+	return ( dep > mod );
+}
+
+inline qboolean IsLoadedBefore( const module_t *mod, const module_t *dep ) {
+	return ( dep > mod );
+}
+
+inline qboolean IsDependentOn( const module_t *mod, const module_t *dep ) {
+	if ( !mod->info ) {
+		Con_Printf( COLOR_YELLOW "WARNING: bad mod info\n" );
+		return qfalse;
+	}
+	for ( uint32_t i = 0; i < mod->info->m_nDependencies; i++ ) {
+		if ( N_streq( mod->info->m_pDependencies[i].c_str(), dep->info->m_szName ) ) {
+			return qtrue;
+		}
+	}
+	return qfalse;
+}
+
+
+inline module_s& module_s::operator=( module_s& other ) {
+	info = other.info;
+	active = other.active;
+	valid = other.valid;
+	numDependencies = other.numDependencies;
+	bootIndex = other.bootIndex;
+	isRequired = other.isRequired;
+	allDepsActive = other.allDepsActive;
+	return *this;
+}
+
+inline module_s& module_s::operator=( const module_s& other ) {
+	info = const_cast<CModuleInfo *>( other.info );
+	active = other.active;
+	valid = other.valid;
+	numDependencies = other.numDependencies;
+	bootIndex = other.bootIndex;
+	isRequired = other.isRequired;
+	allDepsActive = other.allDepsActive;
+	return *this;
+}
+
+inline bool module_s::operator<( const module_s& other ) const {
+	if ( IsDependentOn( eastl::addressof( other ), this ) ) {
+		return true;
+	}
+    return N_strcmp( info->m_szName, other.info->m_szName ) == 1 ? true : false;
+}
+inline bool module_s::operator>( const module_s& other ) const {
+	if ( IsDependentOn( this, eastl::addressof( other ) ) ) {
+		return false;
+	}
+    return N_strcmp( other.info->m_szName, info->m_szName ) == -1 ? true : false;
+}
+inline bool module_s::operator==( const module_s& other ) const {
+    return N_strcmp( info->m_szName, other.info->m_szName ) == 0;
+}
+inline bool module_s::operator!=( const module_s& other ) const {
+    return N_strcmp( info->m_szName, other.info->m_szName ) != 0;
+}
+
+inline bool module_s::operator==( const string_t& other ) const {
+	return N_strcmp( info->m_szName, other.c_str() ) == 0;
+}
+
+inline bool module_s::operator!=( const string_t& other ) const {
+	return N_strcmp( info->m_szName, other.c_str() ) != 0;
+}
+
 class CModuleLib
 {
 public:
@@ -394,7 +500,10 @@ public:
     const CModuleCrashData& GetCrashData( void ) const {
         return m_CrashData;
     }
+
+    module_t *m_pModList;
 private:
+    void LoadModList( void );
 	void LoadModule( const char *pModuleName );
 
 	CModuleInfo *m_pLoadList;

@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "angelscript/as_context.h"
 #include "module_jit.h"
 #include "scriptlib/scriptarray.h"
+#include "scriptpreprocessor.h"
 
 typedef uint64_t EModuleFuncId;
 
@@ -55,6 +56,11 @@ enum : uint64_t
     NumFuncs
 };
 
+typedef struct {
+	char name[MAX_NPATH];
+	UtlVector<asIScriptFunction *> funcs;
+} DynamicModule_t;
+
 using ModuleIncludePath = eastl::string;
 
 class CModuleHandle
@@ -62,7 +68,7 @@ class CModuleHandle
 public:
     CModuleHandle( const char *pName, const char *pDescription, const nlohmann::json& sourceFiles,
 		int32_t moduleVersionMajor, int32_t moduleVersionUpdate, int32_t moduleVersionPatch,
-		const nlohmann::json& includePaths );
+		const nlohmann::json& includePaths, bool bIsDynamicModule );
     ~CModuleHandle();
 
     void SaveToCache( void ) const;
@@ -73,6 +79,8 @@ public:
     asIScriptModule *GetModule( void );
     const string_t& GetName( void ) const;
 	const string_t& GetDescription( void ) const;
+
+	void LoadFunction( const string_t& moduleName, const string_t& funcName, asIScriptFunction **pFunction );
 
 	const char *GetModulePath( void ) const;
 
@@ -108,6 +116,7 @@ public:
 
 	bool LoadSourceFile( const string_t& filename );
 private:
+	void AddDefines( Preprocessor& preprocessor ) const;
 	void RegisterGameObject( void );
 	void PrepareContext( asIScriptFunction *pFunction );
 	void Build( const nlohmann::json& sourceFiles );
@@ -131,6 +140,8 @@ private:
 	
 	nlohmann::json m_SourceFiles;
 	nlohmann::json m_IncludePaths;
+
+	UtlHashMap<string_t, DynamicModule_t> m_DynamicModules;
 };
 
 class CModuleContextHandle : public asIScriptContext

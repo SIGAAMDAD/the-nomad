@@ -28,6 +28,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "module_debugger.h"
 #include "angelscript/as_scriptobject.h"
 #include "scriptpreprocessor.h"
+#include "../game/g_world.h"
 
 const moduleFunc_t funcDefs[NumFuncs] = {
     /*
@@ -60,7 +61,7 @@ const moduleFunc_t funcDefs[NumFuncs] = {
 };
 
 CModuleHandle::CModuleHandle( const char *pName, const char *pDescription, const nlohmann::json& sourceFiles, int32_t moduleVersionMajor,
-    int32_t moduleVersionUpdate, int32_t moduleVersionPatch, const nlohmann::json& includePaths
+    int32_t moduleVersionUpdate, int32_t moduleVersionPatch, const nlohmann::json& includePaths, bool bIsDynamicModule
 )
     : m_szName{ pName }, m_szDescription{ pDescription }, m_nStateStack{ 0 }, m_nVersionMajor{ moduleVersionMajor },
     m_nVersionUpdate{ moduleVersionUpdate }, m_nVersionPatch{ moduleVersionPatch }
@@ -74,6 +75,14 @@ CModuleHandle::CModuleHandle( const char *pName, const char *pDescription, const
 
     if ( !sourceFiles.size() ) {
         Con_Printf( COLOR_YELLOW "WARNING: no source files found for '%s', not compiling\n", pName );
+        return;
+    }
+
+    if ( bIsDynamicModule ) {
+        // don't compile it if we're possibly not even going to load it
+
+        m_SourceFiles = eastl::move( sourceFiles );
+
         return;
     }
 
@@ -127,6 +136,57 @@ CModuleHandle::CModuleHandle( const char *pName, const char *pDescription, const
 
 CModuleHandle::~CModuleHandle() {
     ClearMemory();
+}
+
+void CModuleHandle::LoadFunction( const string_t& moduleName, const string_t& funcName, asIScriptFunction **pFunction )
+{
+    const char *path;
+    CModuleInfo *pInfo;
+    asUINT i;
+
+    path = FS_BuildOSPath( FS_GetHomePath(), NULL, va( "modules/%s", moduleName.c_str() ) );
+
+    auto it = m_DynamicModules.find( moduleName );
+    if ( it != m_DynamicModules.end() ) {
+        // the dynamic module has already been added, just find the function index
+        for ( auto& fn : it->second.funcs ) {
+            if ( N_streq( funcName.c_str(), fn->GetName() ) ) {
+                *pFunction = fn;
+            }
+        }
+    }
+
+    if ( ( pInfo = g_pModuleLib->GetModule( moduleName.c_str() ) ) != NULL ) {
+        Con_Printf( "Compiling dynamic module '%s'...\n", pInfo->m_szName );
+        const nlohmann::json& sourceFiles = pInfo->m_pHandle->GetSourceFiles();
+        for ( const auto& it : sourceFiles ) {
+            if ( !LoadSourceFile( it ) ) {
+                Con_Printf( COLOR_RED "Error compiling source file '%s'", it.get<string_t>().c_str() );
+                *pFunction = NULL; // FIXME: is this necessary?
+                break;
+            }
+        }
+
+        // get all the function pointers
+        DynamicModule_t dll;
+        memset( &dll, 0, sizeof( dll ) );
+        N_strncpyz( dll.name, moduleName.c_str(), sizeof( dll.name ) - 1 );
+        dll.funcs.reserve( pInfo->m_pHandle->m_pScriptModule->GetFunctionCount() );
+        for ( i = 0; i < pInfo->m_pHandle->m_pScriptModule->GetFunctionCount(); i++ ) {
+            dll.funcs.emplace_back( pInfo->m_pHandle->m_pScriptModule->GetFunctionByIndex( i ) );
+
+            if ( N_streq( pInfo->m_pHandle->m_pScriptModule->GetFunctionByIndex( i )->GetName(), funcName.c_str() ) ) {
+                *pFunction = pInfo->m_pHandle->m_pScriptModule->GetFunctionByIndex( i );
+            }
+        }
+
+        m_DynamicModules.try_emplace( moduleName, eastl::move( dll ) );
+        Con_Printf( "Added dynamic AngelScript module '%s'\n", moduleName.c_str() );
+    }
+
+    if ( !*pFunction ) {
+        Con_Printf( COLOR_RED "Error loading dynamic function pointer \"%s\".\n", funcName.c_str() );
+    }
 }
 
 void CModuleHandle::Build( const nlohmann::json& sourceFiles ) {
@@ -215,6 +275,9 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, int *pArgLis
     if ( !m_pFuncTable[ nCallId ] ) {
         return 1; // just wasn't registered, any required func procs will have thrown an error in init stage
     }
+
+    // always ensure the handle is set for any calls into the engine that'll modify the module itself
+    g_pModuleLib->SetHandle( this );
 
     CheckASCall( m_pScriptContext->SetExceptionCallback( asFUNCTION( LogExceptionInfo ), this, asCALL_CDECL ) );
 
@@ -395,6 +458,90 @@ bool CModuleHandle::InitCalls( void )
     return true;
 }
 
+/*
+void CModuleHandle::AddDefines( Preprocessor& preprocessor ) const
+{
+//    preprocessor.ReserveDefines( 1024 );
+
+    preprocessor.define( va( "MODULE_NAME \"%s\"", m_szName.c_str() ) );
+    preprocessor.define( va( "MODULE_VERSION_MAJOR %i", m_nVersionMajor ) );
+    preprocessor.define( va( "MODULE_VERSION_UPDATE %i", m_nVersionUpdate ) );
+    preprocessor.define( va( "MODULE_VERSION_PATCH %i", m_nVersionPatch ) );
+
+    preprocessor.define( va( "GAME_NAME \"%s\"", GLN_VERSION ) );
+    preprocessor.define( va( "NOMAD_VERSION_STRING \"%u\"", NOMAD_VERSION_FULL ) );
+    preprocessor.define( va( "NOMAD_VERSION %u", NOMAD_VERSION ) );
+    preprocessor.define( va( "NOMAD_VERSION_UPDATE %u", NOMAD_VERSION_UPDATE ) );
+    preprocessor.define( va( "NOMAD_VERSION_PATCH %u", NOMAD_VERSION_PATCH ) );
+
+    preprocessor.define( va( "ENTITYNUM_INVALID %i", ENTITYNUM_INVALID ) );
+    preprocessor.define( va( "ENTITYNUM_WALL %i", ENTITYNUM_WALL ) );
+
+    preprocessor.define( va( "RSF_NOWORLDMODEL %u", RSF_NOWORLDMODEL ) );
+    preprocessor.define( va( "RSF_ORTHO_BITS %u", RSF_ORTHO_BITS ) );
+    preprocessor.define( va( "RSF_ORTHO_TYPE_CORDESIAN %u", RSF_ORTHO_TYPE_CORDESIAN ) );
+    preprocessor.define( va( "RSF_ORTHO_TYPE_SCREENSPACE %u", RSF_ORTHO_TYPE_SCREENSPACE ) );
+    preprocessor.define( va( "RSF_ORTHO_TYPE_WORLD %u", RSF_ORTHO_TYPE_WORLD ) );
+
+    preprocessor.define( va( "FS_INVALID_HANDLE %i", FS_INVALID_HANDLE ) );
+    preprocessor.define( va( "FS_OPEN_APPEND %i", FS_OPEN_APPEND ) );
+    preprocessor.define( va( "FS_OPEN_READ %i", FS_OPEN_READ ) );
+    preprocessor.define( va( "FS_OPEN_WRITE %i", FS_OPEN_WRITE ) );
+    preprocessor.define( va( "FS_OPEN_RW %i", FS_OPEN_RW ) );
+
+    preprocessor.define( va( "S_COLOR_RED %i", S_COLOR_RED ) );
+    preprocessor.define( va( "S_COLOR_GREEN %i", S_COLOR_GREEN ) );
+    preprocessor.define( va( "S_COLOR_YELLOW %i", S_COLOR_YELLOW ) );
+    preprocessor.define( va( "S_COLOR_BLUE %i", S_COLOR_BLUE ) );
+    preprocessor.define( va( "S_COLOR_CYAN %i", S_COLOR_CYAN ) );
+    preprocessor.define( va( "S_COLOR_MAGENTA %i", S_COLOR_MAGENTA ) );
+    preprocessor.define( va( "S_COLOR_WHITE %i", S_COLOR_WHITE ) );
+    preprocessor.define( va( "S_COLOR_RESET %i", S_COLOR_RESET ) );
+
+    preprocessor.define( va( "COLOR_BLACK \"%s\"", COLOR_BLACK ) );
+    preprocessor.define( va( "COLOR_RED \"%s\"", COLOR_RED ) );
+    preprocessor.define( va( "COLOR_GREEN \"%s\"", COLOR_GREEN ) );
+    preprocessor.define( va( "COLOR_YELLOW \"%s\"", COLOR_YELLOW ) );
+    preprocessor.define( va( "COLOR_BLUE \"%s\"", COLOR_BLUE ) );
+    preprocessor.define( va( "COLOR_CYAN \"%s\"", COLOR_CYAN ) );
+    preprocessor.define( va( "COLOR_MAGENTA \"%s\"", COLOR_MAGENTA ) );
+    preprocessor.define( va( "COLOR_WHITE \"%s\"", COLOR_WHITE ) );
+    preprocessor.define( va( "COLOR_RESET \"%s\"", COLOR_RESET ) );
+
+    preprocessor.define( va( "CVAR_CHEAT %i", CVAR_CHEAT ) );
+    preprocessor.define( va( "CVAR_ROM %i", CVAR_ROM ) );
+    preprocessor.define( va( "CVAR_INIT %i", CVAR_INIT ) );
+    preprocessor.define( va( "CVAR_LATCH %i", CVAR_LATCH ) );
+    preprocessor.define( va( "CVAR_NODEFAULT %i", CVAR_NODEFAULT ) );
+    preprocessor.define( va( "CVAR_NORESTART %i", CVAR_NORESTART ) );
+    preprocessor.define( va( "CVAR_NOTABCOMPLETE %i", CVAR_NOTABCOMPLETE ) );
+    preprocessor.define( va( "CVAR_TEMP %i", CVAR_TEMP ) );
+    preprocessor.define( va( "CVAR_SAVE %i", CVAR_SAVE ) );
+
+    preprocessor.define( va( "MAXPRINTMSG %i", MAXPRINTMSG ) );
+
+    preprocessor.define( va( "SURFACEPARM_WOOD %i", SURFACEPARM_WOOD ) );
+    preprocessor.define( va( "SURFACEPARM_METAL %i", SURFACEPARM_METAL ) );
+    preprocessor.define( va( "SURFACEPARM_FLESH %i", SURFACEPARM_FLESH ) );
+    preprocessor.define( va( "SURFACEPARM_WATER %i", SURFACEPARM_WATER ) );
+    preprocessor.define( va( "SURFACEPARM_LAVA %i", SURFACEPARM_LAVA ) );
+    preprocessor.define( va( "SURFACEPARM_NOSTEPS %i", SURFACEPARM_NOSTEPS ) );
+    preprocessor.define( va( "SURFACEPARM_NODAMAGE %i", SURFACEPARM_NODAMAGE ) );
+    preprocessor.define( va( "SURFACEPARM_NODLIGHT %i", SURFACEPARM_NODLIGHT ) );
+    preprocessor.define( va( "SURFACEPARM_NOMARKS %i", SURFACEPARM_NOMARKS ) );
+    preprocessor.define( va( "SURFACEPARM_NOMISSILE %i", SURFACEPARM_NOMISSILE ) );
+    preprocessor.define( va( "SURFACEPARM_SLICK %i", SURFACEPARM_SLICK ) );
+    preprocessor.define( va( "SURFACEPARM_LIGHTFILTER %i", SURFACEPARM_LIGHTFILTER ) );
+    preprocessor.define( va( "SURFACEPARM_ALPHASHADOW %i", SURFACEPARM_ALPHASHADOW ) );
+    preprocessor.define( va( "SURFACEPARM_LADDER %i", SURFACEPARM_LADDER ) );
+    preprocessor.define( va( "SURFACEPARM_NODRAW %i", SURFACEPARM_NODRAW ) );
+    preprocessor.define( va( "SURFACEPARM_POINTLIGHT %i", SURFACEPARM_POINTLIGHT ) );
+    preprocessor.define( va( "SURFACEPARM_NOLIGHTMAP %i", SURFACEPARM_NOLIGHTMAP ) );
+    preprocessor.define( va( "SURFACEPARM_DUST %i", SURFACEPARM_DUST ) );
+    preprocessor.define( va( "SURFACEPARM_NONSOLID %i", SURFACEPARM_NONSOLID ) );
+}
+*/
+
 bool CModuleHandle::LoadSourceFile( const string_t& filename )
 {
     union {
@@ -419,7 +566,7 @@ bool CModuleHandle::LoadSourceFile( const string_t& filename )
     data.resize( length );
     memcpy( data.data(), f.v, length );
 
-    if ( ( errCount =  preprocessor.preprocess( filename.c_str(), data, fileSource, out ) ) > 0 ) {
+    if ( ( errCount = preprocessor.preprocess( filename.c_str(), data, fileSource, out ) ) > 0 ) {
         retn = g_pModuleLib->GetScriptBuilder()->AddSectionFromMemory( filename.c_str(), f.b, length );
         if ( retn < 0 ) {
             Con_Printf( COLOR_RED "ERROR: failed to compile source file '%s' -- %s, %i errors\n", filename.c_str(),
