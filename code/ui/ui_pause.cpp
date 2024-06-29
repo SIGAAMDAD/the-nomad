@@ -55,7 +55,8 @@ typedef struct {
     uint64_t numDailyTips;
     qboolean popped;
 
-    int oldVolume;
+    int oldMusicVolume;
+    int oldEffectsVolume;
 } pauseMenu_t;
 
 #define PAUSEMENU_VOLUME_CAP 20
@@ -71,11 +72,17 @@ static void PauseMenu_EventCallback( void *ptr, int event )
 
     switch ( ( (menucommon_t *)ptr )->id ) {
     case ID_RESUME:
+        Cvar_Set( "snd_musicVolume", va( "%i", s_pauseMenu->oldMusicVolume ) );
+        Cvar_Set( "snd_effectsVolume", va( "%i", s_pauseMenu->oldEffectsVolume ) );
+
         UI_SetActiveMenu( UI_MENU_NONE );
         break;
     case ID_CHECKPOINT:
         // rewind the checkpoint
         Cbuf_ExecuteText( EXEC_NOW, "sgame.rewind_checkpoint\n" );
+
+        Cvar_Set( "snd_musicVolume", va( "%i", s_pauseMenu->oldMusicVolume ) );
+        Cvar_Set( "snd_effectsVolume", va( "%i", s_pauseMenu->oldEffectsVolume ) );
 
         UI_SetActiveMenu( UI_MENU_NONE );
         break;
@@ -279,8 +286,10 @@ void PauseMenu_Cache( void )
     s_pauseMenu->dailyTipText.color = color_white;
     s_pauseMenu->dailyTipText.text = s_pauseMenu->dailyTips[ rand() & s_pauseMenu->numDailyTips - 1 ];
 
-    s_pauseMenu->oldVolume = Cvar_VariableFloat( "snd_musicVolume" );
+    s_pauseMenu->oldMusicVolume = Cvar_VariableInteger( "snd_musicVolume" );
+    s_pauseMenu->oldEffectsVolume = Cvar_VariableInteger( "snd_effectsVolume" );
     Cvar_Set( "snd_musicVolume", va( "%i", PAUSEMENU_VOLUME_CAP ) );
+    Cvar_Set( "snd_effectsVolume", va( "%i", PAUSEMENU_VOLUME_CAP ) );
 
     Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->resume );
     Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->checkpoint );
