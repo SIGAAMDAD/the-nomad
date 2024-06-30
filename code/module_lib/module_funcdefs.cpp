@@ -1318,8 +1318,9 @@ static void CmdArgvFixed( CScriptArray *pBuffer, uint32_t nIndex ) {
     Cmd_ArgvBuffer( nIndex, (char *)pBuffer->GetBuffer(), pBuffer->GetSize() );
 }
 
-static const string_t *CmdArgv( uint32_t nIndex ) {
-    return new string_t( Cmd_Argv( nIndex ) );
+static void CmdArgv( asIScriptGeneric *pGeneric ) {
+    asDWORD nIndex = pGeneric->GetArgDWord( 0 );
+    new ( pGeneric->GetAddressOfReturnLocation() ) string_t( Cmd_Argv( nIndex ) );
 }
 
 
@@ -1327,7 +1328,8 @@ static const string_t *CmdArgs( uint32_t nIndex ) {
     return new string_t( Cmd_ArgsFrom( nIndex ) );
 }
 
-static void CmdAddCommand( const string_t *cmd ) {
+static void CmdAddCommand( asIScriptGeneric *pGeneric ) {
+    const string_t *cmd = (const string_t *)pGeneric->GetArgObject( 0 );
     Cmd_AddCommand( cmd->c_str(), NULL );
 }
 
@@ -1335,11 +1337,15 @@ static void CmdRemoveCommand( const string_t *cmd ) {
     Cmd_RemoveCommand( cmd->c_str() );
 }
 
-static void CmdExecuteCommand( const string_t *cmd ) {
+static void CmdExecuteCommand( asIScriptGeneric *pGeneric ) {
+    const string_t *cmd = (const string_t *)pGeneric->GetArgObject( 0 );
     Cbuf_ExecuteText( EXEC_APPEND, cmd->c_str() );
 }
 
-static void GetString( const string_t *name, string_t *value ) {
+static void GetString( asIScriptGeneric *pGeneric ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    string_t *value = (string_t *)pGeneric->GetArgObject( 1 );
+
     const stringHash_t *hash = strManager->ValueForKey( name->c_str() );
     *value = hash->value;
 }
@@ -2227,11 +2233,11 @@ void ModuleLib_Register_Engine( void )
 
         REGISTER_GLOBAL_FUNCTION( "uint TheNomad::Engine::CmdArgc()", WRAP_FN( Cmd_Argc ) );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdArgvFixed( int8[]& in, uint )", WRAP_FN( CmdArgvFixed ) );
-        REGISTER_GLOBAL_FUNCTION( "const string& TheNomad::Engine::CmdArgv( uint )", WRAP_FN( CmdArgv ) );
-        REGISTER_GLOBAL_FUNCTION( "const string& TheNomad::Engine::CmdArgs( uint )", WRAP_FN( CmdArgs ) );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdAddCommand( const string& in )", WRAP_FN( CmdAddCommand ) );
+        REGISTER_GLOBAL_FUNCTION( "string TheNomad::Engine::CmdArgv( uint )", asFUNCTION( CmdArgv ) );
+        REGISTER_GLOBAL_FUNCTION( "string TheNomad::Engine::CmdArgs( uint )", WRAP_FN( CmdArgs ) );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdAddCommand( const string& in )", asFUNCTION( CmdAddCommand ) );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdRemoveCommand( const string& in )", WRAP_FN( CmdRemoveCommand ) );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdExecuteCommand( const string& in )", WRAP_FN( CmdExecuteCommand ) );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdExecuteCommand( const string& in )", asFUNCTION( CmdExecuteCommand ) );
 
         REGISTER_ENUM_TYPE( "KeyNum" );
         REGISTER_ENUM_VALUE( "KeyNum", "A", KEY_A );
@@ -2555,7 +2561,7 @@ void ModuleLib_Register_Engine( void )
 //        REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::RayCast", "float m_nLength", offsetof( ray_t, length ) );
 //        REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::RayCast", "float m_nAngle", offsetof( ray_t, angle ) );
         
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetString( const string& in, string& out )", WRAP_FN( GetString ) );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetString( const string& in, string& out )", asFUNCTION( GetString ) );
 
         g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::GameSystem::SetCameraPos( const vec2& in, float, float )",
             asFUNCTION( SetCameraPos ), asCALL_GENERIC );
