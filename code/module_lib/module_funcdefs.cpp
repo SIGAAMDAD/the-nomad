@@ -2246,12 +2246,12 @@ void ModuleLib_Register_Engine( void )
         g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "string TheNomad::Engine::CvarVariableString( const string& in )",
             asFUNCTION( CvarVariableString ), asCALL_GENERIC );
 
-        REGISTER_GLOBAL_FUNCTION( "uint TheNomad::Engine::CmdArgc()", asFUNCTION( CmdArgc ) );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdArgvFixed( int8[]& in, uint )", asFUNCTION( CmdArgvFixed ) );
-        REGISTER_GLOBAL_FUNCTION( "const string& TheNomad::Engine::CmdArgv( uint )", asFUNCTION( CmdArgv ) );
-        REGISTER_GLOBAL_FUNCTION( "const string& TheNomad::Engine::CmdArgs( uint )", asFUNCTION( CmdArgs ) );
+        REGISTER_GLOBAL_FUNCTION( "uint TheNomad::Engine::CmdArgc()", WRAP_FN( Cmd_Argc ) );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdArgvFixed( int8[]& in, uint )", WRAP_FN( CmdArgvFixed ) );
+        REGISTER_GLOBAL_FUNCTION( "string TheNomad::Engine::CmdArgv( uint )", asFUNCTION( CmdArgv ) );
+        REGISTER_GLOBAL_FUNCTION( "string TheNomad::Engine::CmdArgs( uint )", WRAP_FN( CmdArgs ) );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdAddCommand( const string& in )", asFUNCTION( CmdAddCommand ) );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdRemoveCommand( const string& in )", asFUNCTION( CmdRemoveCommand ) );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdRemoveCommand( const string& in )", WRAP_FN( CmdRemoveCommand ) );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdExecuteCommand( const string& in )", asFUNCTION( CmdExecuteCommand ) );
 
         REGISTER_ENUM_TYPE( "KeyNum" );

@@ -245,8 +245,6 @@ int ModuleOnSaveGame() {
 }
 
 int ModuleOnLoadGame() {
-	LoadLevelAssets();
-
 	TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::InLevel;
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnLoad();
@@ -256,7 +254,6 @@ int ModuleOnLoadGame() {
 }
 
 int ModuleOnLevelStart() {
-	LoadLevelAssets();
 	TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::InLevel;
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnLevelStart();

@@ -117,7 +117,7 @@ typedef struct {
 	int windowResolution;
 	int windowWidth;
 	int windowHeight;
-	int maxFPS;
+//	int maxFPS;
 
 	float gamma;
 	float exposure;
@@ -1840,7 +1840,7 @@ static void VideoMenu_SetDefault( void )
 	s_settingsMenu->video.windowMode = Cvar_VariableInteger( "r_fullscreen" ) + Cvar_VariableInteger( "r_noborder" );
 	s_settingsMenu->video.sharpening = Cvar_VariableFloat( "r_imageSharpenAmount" );
 	s_settingsMenu->video.exposure = Cvar_VariableFloat( "r_autoExposure" );
-	s_settingsMenu->video.maxFPS = Cvar_VariableInteger( "com_maxfps" );
+//	s_settingsMenu->video.maxFPS = Cvar_VariableInteger( "com_maxfps" );
 }
 
 static void AudioMenu_SetDefault( void )

@@ -339,9 +339,9 @@ static void UI_RegisterCvars( void )
 {
     ui_language = Cvar_Get( "ui_language", "english", CVAR_LATCH | CVAR_SAVE );
     Cvar_SetDescription( ui_language,
-                        "Sets the game's language: american_english, british_english, spanish, german\n"
-						"Currently only english is supported, but I'm looking for some translators :)"
-                    );
+                        	"Sets the game's language: american_english, british_english, spanish, german\n"
+							"Currently only english is supported, but I'm looking for some translators :)"
+                   		);
 
     ui_cpuString = Cvar_Get( "sys_cpuString", "detect", CVAR_PROTECTED | CVAR_ROM | CVAR_NORESTART );
 
@@ -378,7 +378,7 @@ static void UI_RegisterCvars( void )
 											" 2 - display cpu memory usage\n"
 											" 3 - SHOW ME EVERYTHING!!!!" );
 	
-	ui_maxLangStrings = Cvar_Get( "ui_maxLangStrings", "1024", CVAR_TEMP | CVAR_LATCH );
+	ui_maxLangStrings = Cvar_Get( "ui_maxLangStrings", "528", CVAR_TEMP | CVAR_LATCH );
 	Cvar_CheckRange( ui_maxLangStrings, "528", "8192", CVT_INT );
 
 	ui_menuStyle = Cvar_Get( "ui_menuStyle", "0", CVAR_SAVE );
@@ -1027,7 +1027,7 @@ void Menu_Cache( void )
 
     // IT MUST BE THERE!
     if ( !FS_LoadFile( "textures/coconut.jpg", NULL ) || ui->backdrop == FS_INVALID_HANDLE ) {
-        N_Error( ERR_FATAL, "Menu_Cache: could not load coconut.jpg" );
+        N_Error( ERR_FATAL, "YOU DARE DEFY THE WILL OF THE GODS!?!?!?!?!?" );
     }
 }
 

@@ -264,6 +264,9 @@ void G_SetActiveMap( nhandle_t hMap, uint32_t *nCheckpoints, uint32_t *nSpawns, 
 	} else if ( !nCheckpoints || !nSpawns || !nTiles ) {
 		N_Error( ERR_DROP, "G_SetActiveMap: invalid parameter" );
 	}
+
+	// set the marker before loading any map assets
+	Hunk_SetMark();
 	
 	// set the marker before loading any map assets
     Hunk_SetMark();

@@ -854,6 +854,7 @@ static const void *RB_DrawImage( const void *data ) {
 	srfVert_t *verts;
 	uint32_t *indices;
 	uint32_t numVerts, numIndices;
+	int i;
 
 	cmd = (const drawImageCmd_t *)data;
 
@@ -917,6 +918,7 @@ static const void *RB_DrawImage( const void *data ) {
 
 	backend.drawBatch.vtxOffset += 4;
 	backend.drawBatch.idxOffset += 6;
+	
 //	RB_CommitDrawData( verts, 4, indices, 6 );
 
 	return (const void *)( cmd + 1 );

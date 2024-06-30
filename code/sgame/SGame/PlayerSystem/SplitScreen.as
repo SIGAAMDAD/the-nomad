@@ -1,5 +1,3 @@
-//#pragma warning ( ignore : 48811 )
-
 namespace TheNomad::SGame {
 	//
 	// SplitScreen

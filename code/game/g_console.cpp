@@ -889,7 +889,7 @@ static void Con_DrawSolidConsole( float frac, qboolean open )
 		Con_DrawText( con.text );
 		ImGui::TextUnformatted( "" );
 		if ( open ) {
-			ImGui::SetScrollHereY();
+			ImGui::SetScrollY( ImGui::GetScrollMaxY() );
 		}
 	}
 
