@@ -66,6 +66,7 @@ public:
         m_CallbackRemoteStorageFileWriteAsyncComplete );
     
     STEAM_CALLBACK( CSteamManager, OnLowBatteryPower, LowBatteryPower_t, m_CallbackLowBatteryPower );
+    STEAM_CALLBACK( CSteamManager, OnTimedTrialStatus, TimedTrialStatus_t,  m_CallbackTimedTrialStatus );
 
     static void Message_f( void );
     static void AppInfo_f( void );

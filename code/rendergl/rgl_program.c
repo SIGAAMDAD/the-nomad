@@ -1211,7 +1211,7 @@ void GLSL_InitGPUShaders( void )
             N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_LUMA_SMAA_EDGE\n" );
         }
         else if ( r_multisampleType->i == AntiAlias_FXAA ) {
-//            N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_FXAA\n" );
+            N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_FXAA\n" );
         }
         if ( r_bloom->i ) {
             N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_BLOOM\n" );
@@ -1383,7 +1383,7 @@ void GLSL_InitGPUShaders( void )
 
     extradefines[0] = '\0';
     if ( r_multisampleType->i == AntiAlias_FXAA ) {
-//        N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_FXAA\n" );
+        N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_FXAA\n" );
     }
     N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_TCGEN\n" );
     N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_TCMOD\n" );

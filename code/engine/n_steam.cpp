@@ -221,7 +221,8 @@ void CSteamStatsManager::AddAchievement( const char *pName, const char *pDescrip
 CSteamManager::CSteamManager( void )
     : m_CallbackRemoteStorageFileReadAsyncComplete( this, &CSteamManager::OnRemoteStorageFileReadAsyncComplete ),
     m_CallbackRemoteStorageFileWriteAsyncComplete( this, &CSteamManager::OnRemoteStorageFileWriteAsyncComplete ),
-    m_CallbackLowBatteryPower( this, &CSteamManager::OnLowBatteryPower )
+    m_CallbackLowBatteryPower( this, &CSteamManager::OnLowBatteryPower ),
+    m_CallbackTimedTrialStatus( this, &CSteamManager::OnTimedTrialStatus )
 {
 }
 
@@ -253,6 +254,11 @@ void CSteamManager::OnLowBatteryPower( LowBatteryPower_t *pCallback )
     default:
         break;
     };
+}
+
+void CSteamManager::OnTimedTrialStatus( TimedTrialStatus_t *pCallback )
+{
+
 }
 
 void CSteamManager::OnRemoteStorageFileReadAsyncComplete( RemoteStorageFileReadAsyncComplete_t *pCallback )
@@ -364,6 +370,9 @@ void CSteamManager::LoadUserInfo( void )
 {
     m_pSteamUser = SteamUser();
 
+    LogInfo( "------------------------------------\n" );
+    LogInfo( "Loading User Info...\n" );
+
     if ( !m_pSteamUser ) {
         LogError( "SteamUser() failed.\n" );
         return;
@@ -388,9 +397,60 @@ void CSteamManager::LoadUserInfo( void )
     LogInfo( "SteamUser.UserName: %s\n", SteamFriends()->GetPersonaName() );
 }
 
+void CSteamManager::LoadInput( void )
+{
+    int XinputSlotIndex, numControllers;
+    InputHandle_t szInputHandle[STEAM_INPUT_MAX_COUNT];
+    InputHandle_t hInputHandle;
+
+    LogInfo( "------------------------------------\n" );
+    LogInfo( "Loading Input Info...\n" );
+
+    SteamInput()->Init( true );
+    numControllers = SteamInput()->GetConnectedControllers( szInputHandle );
+
+    LogInfo( "Got %i controllers\n", numControllers );
+
+    XinputSlotIndex = 0;
+    hInputHandle = SteamInput()->GetControllerForGamepadIndex( XinputSlotIndex );
+    if ( hInputHandle == 0 ) {
+        LogInfo( "Standard Xbox Controller\n" );
+    } else {
+        ESteamInputType inputType = SteamInput()->GetInputTypeForHandle( hInputHandle );
+        switch ( inputType ) {
+        case k_ESteamInputType_Unknown:
+            LogWarning( "Unknown input device type!\n" );
+            break;
+        case k_ESteamInputType_PS3Controller:
+            LogInfo( "PS3 Controller Connected\n" );
+            break;
+        case k_ESteamInputType_PS4Controller:
+            LogInfo( "PS4 Controller Connected\n" );
+            break;
+        case k_ESteamInputType_PS5Controller:
+            LogInfo( "PS5 Controller Connected\n" );
+            break;
+        case k_ESteamInputType_XBox360Controller:
+            LogInfo( "Xbox 360 Controller Connected\n" );
+            break;
+        case k_ESteamInputType_XBoxOneController:
+            LogInfo( "Xbox One Controller Connected\n" );
+            break;
+        case k_ESteamInputType_GenericGamepad:
+            LogInfo( "Generic Gamepad Controller Connected\n" );
+            break;
+        default:
+            break;
+        };
+    }
+}
+
 void CSteamManager::LoadDLC( void )
 {
     int i;
+
+    LogInfo( "------------------------------------\n" );
+    LogInfo( "Loading DLC Info...\n" );
 
     m_nDlcCount = SteamApps()->GetDLCCount();
     if ( !m_nDlcCount ) {
@@ -415,6 +475,9 @@ void CSteamManager::LoadAppInfo( void )
     char szCommandLine[MAX_CMD_BUFFER];
     uint32 nTimedTrialSecondsAllowed, nTimedTrialSecondsPlayed;
     bool bIsTimedTrial;
+
+    LogInfo( "------------------------------------\n" );
+    LogInfo( "Loading App Info...\n" );
 
     Cvar_Set( "ui_language", SteamApps()->GetCurrentGameLanguage() );
     m_nAppId = SteamUtils()->GetAppID();
@@ -527,11 +590,21 @@ void CSteamManager::LoadEngineFiles( void )
     }
 }
 
+extern "C" void GDR_DECL SteamAPIDebugMessageHook( int nSeverity, const char *pchDebugText )
+{
+    Con_DPrintf( "%s", pchDebugText );
+    if ( nSeverity >= 1 ) {
+        DebuggerBreak();
+    }
+}
+
 void CSteamManager::Init( void )
 {
     LoadAppInfo();
 
     LoadUserInfo();
+
+    LoadInput();
 
     // ... ;)
 
@@ -547,10 +620,14 @@ void CSteamManager::Init( void )
     Cvar_Set( "name", SteamFriends()->GetPersonaName() );
 
     LoadEngineFiles();
+
+    SteamUtils()->SetWarningMessageHook( &SteamAPIDebugMessageHook );
 }
 
 void CSteamManager::Shutdown( void )
 {
+    SteamInput()->Shutdown();
+
     SteamAPI_Shutdown();
 
     if ( m_pDlcList ) {
@@ -677,7 +754,7 @@ void SteamApp_Init( void )
         return;
     }
     
-    g_pSteamManager = (CSteamManager *)Z_Malloc( sizeof( *g_pSteamManager ), TAG_STATIC );
+    g_pSteamManager = new ( Z_Malloc( sizeof( *g_pSteamManager ), TAG_STATIC ) ) CSteamManager();
     g_pSteamManager->Init();
 
     s_pSteamStats = new ( Z_Malloc( sizeof( *s_pSteamStats ), TAG_STATIC ) ) CSteamStatsManager();
@@ -690,15 +767,16 @@ void SteamApp_Init( void )
 
 void SteamApp_Frame( void )
 {
-    if ( !g_pSteamManager || !SteamAPI_IsSteamRunning() ) {
+    if ( !g_pSteamManager ) {
         return;
     }
+
     SteamAPI_RunCallbacks();
 }
 
 void SteamApp_CloudSave( void )
 {
-    if ( !g_pSteamManager || !SteamAPI_IsSteamRunning() ) {
+    if ( !g_pSteamManager ) {
         return;
     }
     g_pSteamManager->SaveEngineFiles();

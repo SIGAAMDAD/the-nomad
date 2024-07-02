@@ -41,7 +41,6 @@ uniform vec3 u_TCGen0Vector1;
 uniform vec3 u_WorldPos;
 #endif
 
-
 #if defined(USE_TCMOD)
 vec2 ModTexCoords( vec2 st, vec3 position, vec4 texMatrix, vec4 offTurb )
 {

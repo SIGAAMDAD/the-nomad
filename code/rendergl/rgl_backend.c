@@ -589,12 +589,12 @@ static const void *RB_PostProcess(const void *data)
 	srcBox[2] = glState.viewData.viewportWidth;
 	srcBox[3] = glState.viewData.viewportHeight;
 
-	if ( srcFbo ) {
+	if ( srcFbo && r_multisampleAmount->i <= AntiAlias_32xMSAA ) {
 		if ( r_hdr->i && ( r_toneMap->i || r_forceToneMap->i ) ) {
 			autoExposure = r_autoExposure->i || r_forceAutoExposure->i;
 			RB_ToneMap( srcFbo, srcBox, NULL, dstBox, autoExposure );
 		}
-		else if ( r_cameraExposure->f == 0.0f ) {
+		else if ( r_autoExposure->f == 0.0f ) {
 			FBO_FastBlit( srcFbo, srcBox, NULL, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
 		}
 		else {
@@ -602,7 +602,7 @@ static const void *RB_PostProcess(const void *data)
 
 			color[0] =
 			color[1] =
-			color[2] = pow( 2, r_cameraExposure->f ); //exp2(r_cameraExposure->f);
+			color[2] = pow( 2, r_autoExposure->f ); //exp2(r_cameraExposure->f);
 			color[3] = 1.0f;
 
 			FBO_Blit( srcFbo, srcBox, NULL, NULL, dstBox, NULL, color, 0 );

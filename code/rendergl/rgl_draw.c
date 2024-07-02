@@ -482,6 +482,7 @@ void RB_IterateShaderStages( shader_t *shader )
 	int deformGen;
 	float deformParams[5];
 	uint32_t numLights;
+	qboolean horizontalBlur = qtrue;
 
 	numLights = backend.refdef.numDLights;
 	if ( !( backend.refdef.flags & RSF_NOWORLDMODEL ) && rg.world ) {

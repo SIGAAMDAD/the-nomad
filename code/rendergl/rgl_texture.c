@@ -2881,7 +2881,6 @@ static void R_CreateBuiltinTextures( void )
 
 		rg.renderImage = R_CreateImage( "_render", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
 
-/*
 		if ( r_shadowBlur->i ) {
 			rg.screenScratchImage = R_CreateImage( "screenScratch", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, rgbFormat );
 		}
@@ -2925,7 +2924,7 @@ static void R_CreateBuiltinTextures( void )
 		}
 
 		for ( x = 0; x < 2; x++ ) {
-			rg.textureScratchImage[x] = R_CreateImage( va( "*textureScratch%d", x), NULL, 256, 256, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8 );
+			rg.textureScratchImage[x] = R_CreateImage( va( "*textureScratch%d", x ), NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
 		}
 		for ( x = 0; x < 2; x++ ) {
 			rg.quarterImage[x] = R_CreateImage( va( "*quarter%d", x ), NULL, width / 2, height / 2, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8 );
@@ -2934,7 +2933,6 @@ static void R_CreateBuiltinTextures( void )
 		if ( r_ssao->i ) {
 			rg.screenSsaoImage = R_CreateImage( "*screenSsao", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8 );
 		}
-		*/
 
 		/* GL error on this
 		if ( r_sunlightMode->i ) {

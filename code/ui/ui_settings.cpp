@@ -2082,8 +2082,11 @@ void SettingsMenu_Cache( void )
 	    strManager->ValueForKey( "GAMEUI_8X_MSAA" )->value,
 	    strManager->ValueForKey( "GAMEUI_16X_MSAA" )->value,
 	    strManager->ValueForKey( "GAMEUI_32X_MSAA" )->value,
-//	    strManager->ValueForKey( "GAMEUI_2X_SSAA" )->value,
-//	    strManager->ValueForKey( "GAMEUI_4X_SSAA" )->value,
+	    strManager->ValueForKey( "GAMEUI_2X_SSAA" )->value,
+	    strManager->ValueForKey( "GAMEUI_4X_SSAA" )->value,
+		strManager->ValueForKey( "GAMEUI_TAA" )->value,
+		strManager->ValueForKey( "GAMEUI_SMAA" )->value,
+		strManager->ValueForKey( "GAMEUI_FXAA" )->value
 	};
 	static const char *s_anisotropyTypes[] = {
 	    strManager->ValueForKey( "GAMEUI_ANISOTROPIC2X" )->value,
