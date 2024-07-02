@@ -7,6 +7,7 @@
 #include <setjmp.h>
 #include "../game/g_game.h"
 #include "../ui/ui_lib.h"
+#include "n_steam.h"
 
 #define MAX_EVENT_QUEUE 256
 #define MASK_QUEUED_EVENTS (MAX_EVENT_QUEUE - 1)
@@ -2208,6 +2209,7 @@ void Com_WriteConfiguration( void ) {
 	}
 	cvar_modifiedFlags &= ~CVAR_SAVE;
 
+	SteamApp_CloudSave();
 	Com_WriteConfigToFile( LOG_DIR "/" NOMAD_CONFIG );
 
 	gamedir = Cvar_VariableString( "fs_game" );

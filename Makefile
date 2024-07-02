@@ -170,7 +170,7 @@ LDLIBS= \
 		-lzip \
 		-lSDL2_image \
 		-Wl,-rpath='.' \
-		-ljpeg
+		-ljpeg -lsteam_api
 
 ifndef release
 LDLIBS+=-leasy_profiler
@@ -356,6 +356,7 @@ SRC=\
 	$(O)/ui/ui_newgame.o \
 	$(O)/ui/ui_loadgame.o \
 	$(O)/ui/ui_mods.o \
+	$(O)/ui/ui_database.o \
 	\
 	$(O)/sdl/sdl_input.o \
 	$(O)/sdl/sdl_glimp.o \

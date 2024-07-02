@@ -740,6 +740,9 @@ static void SettingsMenu_List( const char *label, const char **itemnames, int nu
 
 	ImGui::PushStyleColor( ImGuiCol_Text, colorLimeGreen );
 	if ( ImGui::BeginCombo( va( "##%sSettingsMenuConfigList", label ), itemnames[*curitem] ) ) {
+		if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
+			Snd_PlaySfx( ui->sfx_select );
+		}
 		for ( i = 0; i < numitems; i++ ) {
 			if ( ImGui::Selectable( va( "%s##%sSettingsMenuConfigList", itemnames[i], label ), ( *curitem == i ) ) ) {
 				if ( enabled ) {
@@ -750,6 +753,9 @@ static void SettingsMenu_List( const char *label, const char **itemnames, int nu
 			SfxFocused( itemnames[i] );
 		}
 		ImGui::EndCombo();
+	}
+	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
+		Snd_PlaySfx( ui->sfx_select );
 	}
 	ImGui::PopStyleColor();
 	SfxFocused( label );

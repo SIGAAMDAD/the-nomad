@@ -342,6 +342,8 @@ inline bool operator==( CModuleInfo *const m1, const UtlString& m2 ) {
 class CContextMgr;
 class CScriptBuilder;
 
+#include "module_debugger.h"
+
 class CModuleCrashData
 {
 public:
@@ -500,6 +502,8 @@ public:
     const CModuleCrashData& GetCrashData( void ) const {
         return m_CrashData;
     }
+
+    CDebugger *GetDebugger( void );
 
     module_t *m_pModList;
 private:

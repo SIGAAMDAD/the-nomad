@@ -94,6 +94,7 @@ static void PauseMenu_EventCallback( void *ptr, int event )
         Cbuf_ExecuteText( EXEC_APPEND, "togglephotomode\n" );
         break;
     case ID_HELP:
+        UI_DataBaseMenu();
         break;
     case ID_SETTINGS:
         gi.state = GS_MENU;
@@ -264,7 +265,7 @@ void PauseMenu_Cache( void )
     s_pauseMenu->settings.color = color_white;
 
     s_pauseMenu->help.generic.type = MTYPE_TEXT;
-    s_pauseMenu->help.generic.id = ID_EXIT;
+    s_pauseMenu->help.generic.id = ID_HELP;
     s_pauseMenu->help.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
     s_pauseMenu->help.generic.eventcallback = PauseMenu_EventCallback;
     s_pauseMenu->help.generic.font = AlegreyaSC;

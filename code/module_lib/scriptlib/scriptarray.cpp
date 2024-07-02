@@ -61,7 +61,7 @@ static void CleanupTypeInfoArrayCache(asITypeInfo *type)
 	}
 }
 
-CScriptArray* CScriptArray::Create(asITypeInfo *ti, asUINT length)
+CScriptArray *CScriptArray::Create( asITypeInfo *ti, asUINT length )
 {
 	void *mem = Mem_ClearedAlloc( sizeof( CScriptArray ) );
 	if( mem == 0 ) {
@@ -77,7 +77,7 @@ CScriptArray* CScriptArray::Create(asITypeInfo *ti, asUINT length)
 	return a;
 }
 
-CScriptArray* CScriptArray::Create(asITypeInfo *ti, void *initList)
+CScriptArray *CScriptArray::Create( asITypeInfo *ti, void *initList )
 {
 	void *mem = Mem_ClearedAlloc( sizeof( CScriptArray ) );
 	if( mem == 0 ) {
@@ -93,7 +93,7 @@ CScriptArray* CScriptArray::Create(asITypeInfo *ti, void *initList)
 	return a;
 }
 
-CScriptArray* CScriptArray::Create(asITypeInfo *ti, asUINT length, void *defVal)
+CScriptArray *CScriptArray::Create( asITypeInfo *ti, asUINT length, void *defVal )
 {
 	void *mem = Mem_ClearedAlloc( sizeof( CScriptArray ) );
 	if ( mem == 0 ) {
@@ -109,9 +109,9 @@ CScriptArray* CScriptArray::Create(asITypeInfo *ti, asUINT length, void *defVal)
 	return a;
 }
 
-CScriptArray* CScriptArray::Create(asITypeInfo *ti)
+CScriptArray *CScriptArray::Create( asITypeInfo *ti )
 {
-	return CScriptArray::Create(ti, asUINT(0));
+	return CScriptArray::Create( ti, asUINT( 0 ) );
 }
 
 // This optional callback is called when the template type is first used by the compiler.
@@ -119,7 +119,7 @@ CScriptArray* CScriptArray::Create(asITypeInfo *ti)
 // subtype at compile time, instead of at runtime. The output argument dontGarbageCollect
 // allow the callback to tell the engine if the template instance type shouldn't be garbage collected,
 // i.e. no asOBJ_GC flag.
-static bool ScriptListTemplateCallback(asITypeInfo *ti, bool *dontGarbageCollect = NULL)
+static bool ScriptListTemplateCallback( asITypeInfo *ti, bool *dontGarbageCollect = NULL )
 {
 	// Make sure the subtype can be instantiated with a default factory/constructor,
 	// otherwise we won't be able to instantiate the elements.
@@ -1946,45 +1946,36 @@ void CScriptArray::EnumReferences(asIScriptEngine *engine)
 	}
 }
 
-// GC behaviour
-void CScriptArray::ReleaseAllHandles(asIScriptEngine *)
+void CScriptArray::ReleaseAllHandles( asIScriptEngine * )
 {
-	// Resizing to zero will release everything
-	Resize( 0 );
+	Clear();
 }
 
 void CScriptArray::AddRef() const
 {
-	// Clear the GC flag then increase the counter
 	gcFlag = false;
 	refCount.fetch_add();
 }
 
 void CScriptArray::Release() const
 {
-	// Clearing the GC flag then descrease the counter
 	gcFlag = false;
-	if( refCount.fetch_sub() == 0 ) {
-		// When reaching 0 no more references to this instance
-		// exists and the object should be destroyed
+	if ( refCount.fetch_sub() == 0 ) {
 		this->~CScriptArray();
 		Mem_Free( const_cast<CScriptArray *>( this ) );
 	}
 }
 
-// GC behaviour
 int CScriptArray::GetRefCount()
 {
 	return refCount.load();
 }
 
-// GC behaviour
 void CScriptArray::SetFlag()
 {
 	gcFlag = true;
 }
 
-// GC behaviour
 bool CScriptArray::GetFlag()
 {
 	return gcFlag;

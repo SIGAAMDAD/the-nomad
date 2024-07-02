@@ -21,106 +21,265 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include "n_shared.h"
-#include <steam/steam_api.h>
 #include "n_steam.h"
 #include "n_common.h"
 #include "n_cvar.h"
+#include "../game/g_game.h"
 #include <EASTL/vector.h>
 #include <EASTL/map.h>
 
-// define this only in release builds, but of course if we're debugging steam tho
-//#define NOMAD_STEAM_APP
+#define TESTING_APP_ID 480
 
-#ifndef NOMAD_STEAM_APP
+#define STAT_ID( id, type, name ) { id, type, name, { 0 } }
 
-void SteamApp_Init( void ) {
-}
-
-void SteamApp_Shutdown( void ) {
-}
-
-#else
-// shared with MAX_MODULE_NAME
-#define MAX_DLC_NAME MAX_NPATH
+typedef enum {
+    STAT_INT = 0,
+    STAT_FLOAT = 1
+} StatType_t;
 
 typedef struct {
-    char szName[MAX_DLC_NAME];
-    qboolean bAvailable;
-} dlc_t;
+    const char *m_pName;
+    int m_nID;
+    StatType_t m_nType;
+    union {
+        int m_iValue;
+        float m_fValue;
+    };
+} Stat_t;
 
-class CSteamManager
+CSteamManager *g_pSteamManager;
+
+class CSteamStatsManager
 {
 public:
-    CSteamManager( void );
-    ~CSteamManager();
-
-    void GDR_DECL LogInfo( const char *fmt, ... ) GDR_ATTRIBUTE((format( printf, 2, 3 )));
-    void GDR_DECL LogError( const char *fmt, ... ) GDR_ATTRIBUTE((format( printf, 2, 3 )));
-    void GDR_DECL LogWarning( const char *fmt, ... ) GDR_ATTRIBUTE((format( printf, 2, 3 )));
-
-    void Init( void );
-    void Shutdown( void );
-private:
-    void LoadDLC( void );
-    void LoadUserInfo( void );
-    void LoadAppInfo( void );
-
-    ISteamUser *m_pSteamUser;
-    HSteamUser m_nSteamUser;
-    uint64_t m_nSteamUserId;
-
-    dlc_t *m_pDlcList;
-    int m_nDlcCount;
-
-    char m_szInstallDir[MAX_OSPATH];
-    AppId_t m_nAppId;
-
-    qboolean m_bVipAccount;
-};
-
-typedef struct {
-    const char *pName;
-    const char *pDescription;
-    qboolean bAchieved;
-} achievement_t;
-
-class CSteamAchievementManager
-{
-public:
-    CSteamAchievementManager( void );
-    ~CSteamAchievementManager();
+    CSteamStatsManager( void );
+    ~CSteamStatsManager();
 
     void AddAchievement( const char *pName, const char *pDescription );
+
+    bool StoreStats( void );
+    bool RequestStats( void );
+    bool SetAchievement( const char *pszID );
+
+    STEAM_CALLBACK( CSteamStatsManager, OnUserStatsReceived, UserStatsReceived_t,
+        m_CallbackUserStatsReceived );
+    STEAM_CALLBACK( CSteamStatsManager, OnUserStatsStored, UserStatsStored_t,
+        m_CallbackUserStatsStored );
+    STEAM_CALLBACK( CSteamStatsManager, OnAchievementStored, UserAchievementStored_t,
+        m_CallbackAchievementStored );
 private:
+    void InitAchievements( void );
+
     eastl::vector<achievement_t> m_Achievements;
+    eastl::vector<Stat_t> m_Stats;
+    qboolean m_bStatsInitialized;
 };
 
-static CSteamManager *s_pSteamManager;
+static CSteamStatsManager *s_pSteamStats;
 
-CSteamAchievementManager::CSteamAchievementManager( void )
+CSteamStatsManager::CSteamStatsManager( void )
+    : m_CallbackUserStatsReceived( this, &CSteamStatsManager::OnUserStatsReceived ),
+    m_CallbackUserStatsStored( this, &CSteamStatsManager::OnUserStatsStored ),
+    m_CallbackAchievementStored( this, &CSteamStatsManager::OnAchievementStored )
 {
+    m_bStatsInitialized = qfalse;
+    InitAchievements();
 }
 
-void CSteamAchievementManager::AddAchievement( const char *pName, const char *pDescription ) {
-    achievement_t ach;
-    ach.pName = pName;
-    ach.pDescription = pDescription;
-    ach.bAchieved = qfalse;
-
-    m_Achievements.emplace_back( ach );
+CSteamStatsManager::~CSteamStatsManager( void ) {
 }
 
-CSteamManager::CSteamManager( void ) {
+void CSteamStatsManager::InitAchievements( void )
+{
+    int i;
+
+    for ( i = 0; i < NUM_ACHIEVEMENTS; i++ ) {
+        if ( !SteamUserStats()->GetAchievement( g_szAchivements[i].m_pchAchievementID, (bool *)&g_szAchivements[i].m_bAchieved ) ) {
+            g_pSteamManager->LogError( "GetAchievement() - failed on '%s'\n", g_szAchivements[i].m_szName );
+        }
+    }
+}
+
+bool CSteamStatsManager::RequestStats( void )
+{
+    // is steam loaded?
+    if ( SteamUserStats() == NULL || SteamUser() == NULL ) {
+        return false;
+    }
+    // is the user logged on?
+    if ( !SteamUser()->BLoggedOn() ) {
+        return false;
+    }
+    m_bStatsInitialized = SteamUserStats()->RequestCurrentStats();
+    return m_bStatsInitialized;
+}
+
+bool CSteamStatsManager::StoreStats( void )
+{
+    if ( g_pSteamManager ) {
+        for ( int iStat = 0; iStat < m_Stats.size(); iStat++ ) {
+            Stat_t *stat = &m_Stats[iStat];
+
+            switch ( stat->m_nType ) {
+            case STAT_INT:
+                SteamUserStats()->SetStat( stat->m_pName, stat->m_iValue );
+                break;
+            case STAT_FLOAT:
+                SteamUserStats()->SetStat( stat->m_pName, stat->m_fValue );
+                break;
+            default:
+                break;
+            };
+        }
+        return SteamUserStats()->StoreStats();
+    }
+    return false;
+}
+
+bool CSteamStatsManager::SetAchievement( const char *pszID )
+{
+	// have we received a callback from Steam yet?
+	if ( g_pSteamManager ) {
+		SteamUserStats()->SetAchievement( pszID );
+		return SteamUserStats()->StoreStats();
+	}
+	return false;
+}
+
+void CSteamStatsManager::OnUserStatsReceived( UserStatsReceived_t *pCallback )
+{
+	if ( g_pSteamManager->GetAppId() == pCallback->m_nGameID ) {
+		if ( pCallback->m_eResult == k_EResultOK ) {
+			g_pSteamManager->LogInfo( "Received stats and achievements from Steam\n" );
+
+			// load achievements
+			for ( int iAch = 0; iAch < NUM_ACHIEVEMENTS; ++iAch ) {
+				achievement_t *ach = &g_szAchivements[iAch];
+
+				SteamUserStats()->GetAchievement( ach->m_pchAchievementID, (bool *)&ach->m_bAchieved );
+				N_strncpyz( ach->m_szName, SteamUserStats()->GetAchievementDisplayAttribute( ach->m_pchAchievementID,
+					"name" ), sizeof( ach->m_szName ) - 1 );
+                N_strncpyz( ach->m_szDescription, SteamUserStats()->GetAchievementDisplayAttribute( ach->m_pchAchievementID,
+					"desc" ), sizeof( ach->m_szDescription ) - 1 );
+			}
+
+            // load stats
+            for ( int iStat = 0; iStat < m_Stats.size(); iStat++ ) {
+                Stat_t *stat = &m_Stats[iStat];
+
+                switch ( stat->m_nType ) {
+                case STAT_INT:
+                    SteamUserStats()->GetStat( stat->m_pName, &stat->m_iValue );
+                    break;
+                case STAT_FLOAT:
+                    SteamUserStats()->GetStat( stat->m_pName, &stat->m_fValue );
+                    break;
+                default:
+                    break;
+                };
+            }
+		}
+		else {
+			g_pSteamManager->LogInfo( "RequestStats - failed, %i\n", pCallback->m_eResult );
+		}
+	}
+}
+
+void CSteamStatsManager::OnUserStatsStored( UserStatsStored_t *pCallback )
+{
+	if ( g_pSteamManager->GetAppId() == pCallback->m_nGameID ) {
+		if ( pCallback->m_eResult == k_EResultOK ) {
+			g_pSteamManager->LogInfo( "Stored stats for Steam\n" );
+		}
+        else if ( pCallback->m_eResult == k_EResultInvalidParam ) {
+            g_pSteamManager->LogInfo( "OnUserStatsStored - some failed to validate\n" );
+
+            // fake callback to get a reload
+            UserStatsReceived_t callback;
+            callback.m_eResult = k_EResultOK;
+            callback.m_nGameID = g_pSteamManager->GetAppId();
+            OnUserStatsReceived( &callback );
+        }
+		else {
+			g_pSteamManager->LogInfo( "OnUserStatsStored - failed, %i\n", pCallback->m_eResult );
+		}
+	}
+}
+
+void CSteamStatsManager::OnAchievementStored( UserAchievementStored_t *pCallback )
+{
+    if ( g_pSteamManager->GetAppId() != pCallback->m_nGameID ) {
+        return;
+    }
+
+    g_pSteamManager->LogInfo( "Stored Achievement for Steam\n" );
+}
+
+void CSteamStatsManager::AddAchievement( const char *pName, const char *pDescription ) {
+}
+
+CSteamManager::CSteamManager( void )
+    : m_CallbackRemoteStorageFileReadAsyncComplete( this, &CSteamManager::OnRemoteStorageFileReadAsyncComplete ),
+    m_CallbackRemoteStorageFileWriteAsyncComplete( this, &CSteamManager::OnRemoteStorageFileWriteAsyncComplete ),
+    m_CallbackLowBatteryPower( this, &CSteamManager::OnLowBatteryPower )
+{
 }
 
 CSteamManager::~CSteamManager() {
+}
+
+//==========================================================
+// Steam API Callbacks
+//
+
+void CSteamManager::OnLowBatteryPower( LowBatteryPower_t *pCallback )
+{
+    if ( gi.state != GS_LEVEL ) {
+        return;
+    }
+    switch ( pCallback->m_nMinutesBatteryLeft ) {
+    case 9:
+        LogWarning( "Saving game with 9 minutes of battery left...\n" );
+        Cbuf_ExecuteText( EXEC_APPEND, "sgame.save_game\n" );
+        break;
+    case 5:
+        LogWarning( "Saving game with 5 minutes of battery left...\n" );
+        Cbuf_ExecuteText( EXEC_APPEND, "sgame.save_game\n" );
+        break;
+    case 1:
+        LogWarning( "Saving game with 1 minute of battery left...\n" );
+        Cbuf_ExecuteText( EXEC_APPEND, "sgame.save_game\n" );
+        break;
+    default:
+        break;
+    };
+}
+
+void CSteamManager::OnRemoteStorageFileReadAsyncComplete( RemoteStorageFileReadAsyncComplete_t *pCallback )
+{
+    if ( pCallback->m_eResult != k_EResultOK ) {
+        LogError( "" );
+        return;
+    }
+
+    m_ReadAsyncLock.Lock();
+    SteamRemoteStorage()->FileReadAsyncComplete( pCallback->m_hFileReadAsync, m_pReadAsyncBuffer, pCallback->m_cubRead );
+    m_ReadAsyncLock.Unlock();
+}
+
+void CSteamManager::OnRemoteStorageFileWriteAsyncComplete( RemoteStorageFileWriteAsyncComplete_t *pCallback )
+{
+    if ( pCallback->m_eResult != k_EResultOK ) {
+        LogError( "Error writing file '%s' to steam cloud (bytes:%lu, address:%p)\n", m_pWriteAsyncFileName, m_nWriteAsyncLength,
+            m_pWriteAsyncBuffer );
+    }
 }
 
 void GDR_DECL GDR_ATTRIBUTE((format( printf, 2, 3 ))) CSteamManager::LogInfo( const char *fmt, ... )
 {
     va_list argptr;
     char ts[32];
-    char msg[4096];
+    char msg[MAXPRINTMSG];
     time_t curtime;
 
     va_start( argptr, fmt );
@@ -138,7 +297,7 @@ void GDR_DECL GDR_ATTRIBUTE((format( printf, 2, 3 ))) CSteamManager::LogError( c
 {
     va_list argptr;
     char ts[32];
-    char msg[4096];
+    char msg[MAXPRINTMSG];
     time_t curtime;
 
     va_start( argptr, fmt );
@@ -156,7 +315,7 @@ void GDR_DECL GDR_ATTRIBUTE((format( printf, 2, 3 ))) CSteamManager::LogWarning(
 {
     va_list argptr;
     char ts[32];
-    char msg[4096];
+    char msg[MAXPRINTMSG];
     time_t curtime;
 
     va_start( argptr, fmt );
@@ -170,10 +329,39 @@ void GDR_DECL GDR_ATTRIBUTE((format( printf, 2, 3 ))) CSteamManager::LogWarning(
     Con_Printf( COLOR_YELLOW "[SteamAPI:Warning](%s) %s", ts, msg );
 }
 
+void CSteamManager::Save( const char *pszFileName )
+{
+    void *pBuffer;
+    uint64_t nLength;
+
+    if ( !g_pSteamManager ) {
+        return;
+    }
+
+    LogInfo( "Saving file '%s' to steam cloud...\n", pszFileName );
+
+    nLength = FS_LoadFile( pszFileName, &pBuffer );
+    if ( !nLength || !pBuffer ) {
+        LogWarning( "Error loading file '%s' from engine\n", pszFileName );
+        return;
+    }
+    if ( !SteamRemoteStorage()->FileWrite( pszFileName, pBuffer, nLength ) ) {
+        LogError( "Error writing file '%s' to steam cloud (bytes:%lu, address:%p)\n", pszFileName, nLength, pBuffer );
+    }
+    FS_FreeFile( pBuffer );
+
+#ifdef SAVEFILE_MOD_SAFETY
+    if ( !SteamRemoteStorage()->BeginFileWriteBatch() ) {
+        
+    }
+    if ( !SteamRemoteStorage()->EndFileWriteBatch() ) {
+
+    }
+#endif
+}
+
 void CSteamManager::LoadUserInfo( void )
 {
-    char szUserDataFolder[MAX_OSPATH];
-
     m_pSteamUser = SteamUser();
 
     if ( !m_pSteamUser ) {
@@ -188,15 +376,16 @@ void CSteamManager::LoadUserInfo( void )
         m_bVipAccount = qtrue;
     }
 
-    if ( !m_pSteamUser->GetUserDataFolder( szUserDataFolder, sizeof( szUserDataFolder ) - 1 ) ) {
+    if ( !m_pSteamUser->GetUserDataFolder( m_szUserDataFolder, sizeof( m_szUserDataFolder ) - 1 ) ) {
         LogError( "SteamUser()->GetUserDataFolder() failed\n" );
-        N_strncpyz( szUserDataFolder, COLOR_RED "FAILED", sizeof( szUserDataFolder ) - 1 );
+        N_strncpyz( m_szUserDataFolder, COLOR_RED "FAILED", sizeof( m_szUserDataFolder ) - 1 );
     }
 
     LogInfo( "SteamUser.Id: %lu\n", m_nSteamUserId );
     LogInfo( "SteamUser.IndividualAccount: %s\n", m_pSteamUser->GetSteamID().BIndividualAccount() ? "true" : "false" );
-    LogInfo( "SteamUser.UserDataFolder: %s\n", szUserDataFolder );
+    LogInfo( "SteamUser.UserDataFolder: %s\n", m_szUserDataFolder );
     LogInfo( "SteamUser.IsVipAccount: %s\n", m_bVipAccount ? "true" : "false" );
+    LogInfo( "SteamUser.UserName: %s\n", SteamFriends()->GetPersonaName() );
 }
 
 void CSteamManager::LoadDLC( void )
@@ -204,6 +393,9 @@ void CSteamManager::LoadDLC( void )
     int i;
 
     m_nDlcCount = SteamApps()->GetDLCCount();
+    if ( !m_nDlcCount ) {
+        return;
+    }
     m_pDlcList = (dlc_t *)Z_Malloc( sizeof( *m_pDlcList ) * m_nDlcCount, TAG_STATIC );
 
     LogInfo( "Got %i DLC.\n", m_nDlcCount );
@@ -225,7 +417,10 @@ void CSteamManager::LoadAppInfo( void )
     bool bIsTimedTrial;
 
     Cvar_Set( "ui_language", SteamApps()->GetCurrentGameLanguage() );
-    m_nAppId = SteamApps()->GetAppBuildId();
+    m_nAppId = SteamUtils()->GetAppID();
+    m_nAppBuildId = SteamApps()->GetAppBuildId();
+
+    memset( m_szInstallDir, 0, sizeof( m_szInstallDir ) );
     SteamApps()->GetAppInstallDir( m_nAppId, m_szInstallDir, sizeof( m_szInstallDir ) );
 
     memset( szCommandLine, 0, sizeof( szCommandLine ) );
@@ -242,8 +437,94 @@ void CSteamManager::LoadAppInfo( void )
 
     LogInfo( "Language: %s\n", SteamApps()->GetCurrentGameLanguage() );
     LogInfo( "AppId: %u\n", m_nAppId );
+    LogInfo( "AppBuildId: %u\n", m_nAppBuildId );
     LogInfo( "InstallDir: %s\n", m_szInstallDir );
     LogInfo( "IsTimedTrial: %s\n", bIsTimedTrial ? "true" : "false" );
+    if ( m_nAppId == TESTING_APP_ID ) {
+        LogInfo( "IsTestBuild: true\n" );
+    } else {
+        LogInfo( "IsTestBuild: false\n" );
+    }
+}
+
+void CSteamManager::WriteFile( const char *npath )
+{
+    void *pBuffer;
+    uint64_t nLength;
+
+    nLength = FS_LoadFile( npath, &pBuffer );
+    if ( !nLength || !pBuffer ) {
+        return;
+    }
+    if ( !SteamRemoteStorage()->FileWrite( npath, pBuffer, nLength ) ) {
+        LogError( "Error writing file '%s' to steam cloud (bytes:%lu, address:%p)\n", npath, nLength, pBuffer );
+    }
+    FS_FreeFile( pBuffer );
+}
+
+void CSteamManager::SaveEngineFiles( void )
+{
+    if ( !SteamRemoteStorage()->IsCloudEnabledForApp() || !SteamRemoteStorage()->IsCloudEnabledForAccount() ) {
+        return;
+    }
+
+    LogInfo( "Saving Engine Configurations from Steam Cloud\n" );
+
+    SteamRemoteStorage()->BeginFileWriteBatch();
+
+    // save config
+    WriteFile( LOG_DIR "/" NOMAD_CONFIG );
+
+    // save skins config
+    WriteFile( LOG_DIR "/skins.cfg" );
+
+    // save load list
+    WriteFile( CACHE_DIR "/loadlist.json" );
+    
+    SteamRemoteStorage()->EndFileWriteBatch();
+}
+
+void CSteamManager::LoadEngineFiles( void )
+{
+    char *pBuffer;
+    int32 nLength;
+    const char *path;
+
+    if ( !SteamRemoteStorage()->IsCloudEnabledForApp() || !SteamRemoteStorage()->IsCloudEnabledForAccount() ) {
+        return;
+    }
+
+    LogInfo( "Loading Engine Configurations to Steam Cloud\n" );
+
+    path = LOG_DIR "/" NOMAD_CONFIG;
+    nLength = SteamRemoteStorage()->GetFileSize( path );
+    if ( nLength ) {
+        pBuffer = (char *)Hunk_AllocateTempMemory( nLength );
+        if ( SteamRemoteStorage()->FileRead( path, pBuffer, nLength ) ) {
+            FS_WriteFile( path, pBuffer, nLength );
+        }
+        Hunk_FreeTempMemory( pBuffer );
+    }
+
+    path = LOG_DIR "/skins.cfg";
+    nLength = SteamRemoteStorage()->GetFileSize( path );
+    if ( nLength ) {
+        pBuffer = (char *)Hunk_AllocateTempMemory( nLength );
+        if ( SteamRemoteStorage()->FileRead( path, pBuffer, nLength ) ) {
+            FS_WriteFile( path, pBuffer, nLength );
+        }
+        Hunk_FreeTempMemory( pBuffer );
+    }
+
+    path = CACHE_DIR "/loadlist.json";
+    nLength = SteamRemoteStorage()->GetFileSize( path );
+    if ( nLength ) {
+        pBuffer = (char *)Hunk_AllocateTempMemory( nLength );
+        if ( SteamRemoteStorage()->FileRead( path, pBuffer, nLength ) ) {
+            FS_WriteFile( path, pBuffer, nLength );
+        }
+        Hunk_FreeTempMemory( pBuffer );
+    }
 }
 
 void CSteamManager::Init( void )
@@ -255,6 +536,17 @@ void CSteamManager::Init( void )
     // ... ;)
 
     LoadDLC();
+
+    if ( SteamUtils()->GetCurrentBatteryPower() < 20 ) {
+        LogWarning( "Charge Ur Goddamn Device!\n" );
+    }
+
+    SteamFriends()->ActivateGameOverlay( "Stats" );
+    SteamFriends()->ActivateGameOverlay( "Achievements" );
+
+    Cvar_Set( "name", SteamFriends()->GetPersonaName() );
+
+    LoadEngineFiles();
 }
 
 void CSteamManager::Shutdown( void )
@@ -266,6 +558,114 @@ void CSteamManager::Shutdown( void )
     }
 }
 
+void CSteamManager::AppInfo_f( void )
+{
+    char szCommandLine[MAX_CMD_BUFFER];
+    uint32 nTimedTrialSecondsAllowed, nTimedTrialSecondsPlayed;
+    bool bIsTimedTrial;
+    int i;
+
+    memset( szCommandLine, 0, sizeof( szCommandLine ) );
+    SteamApps()->GetLaunchCommandLine( szCommandLine, sizeof( szCommandLine ) );
+
+    if ( ( bIsTimedTrial = SteamApps()->BIsTimedTrial( &nTimedTrialSecondsAllowed, &nTimedTrialSecondsPlayed ) ) ) {
+        if ( nTimedTrialSecondsPlayed > nTimedTrialSecondsAllowed ) {
+            N_Error( ERR_FATAL, "*** STEAM *** Time Trial has expired" );
+        }
+    }
+
+    Con_Printf( "\n" );
+    Con_Printf( "--------------------------\n" );
+    Con_Printf( "[Steam AppInfo]\n" );
+    Con_Printf( "Language: %s\n", SteamApps()->GetCurrentGameLanguage() );
+    Con_Printf( "AppId: %u\n", g_pSteamManager->m_nAppId );
+    Con_Printf( "AppBuildId: %u\n", g_pSteamManager->m_nAppBuildId );
+    Con_Printf( "InstallDir: %s\n", g_pSteamManager->m_szInstallDir );
+    Con_Printf( "IsTimedTrial: %s\n", bIsTimedTrial ? "true" : "false" );
+    Con_Printf( "CommandLine: %s\n", szCommandLine );
+    Con_Printf( "SteamUser.Id: %lu\n", g_pSteamManager->m_nSteamUserId );
+    Con_Printf( "SteamUser.IndividualAccount: %s\n", g_pSteamManager->m_pSteamUser->GetSteamID().BIndividualAccount() ? "true" : "false" );
+    Con_Printf( "SteamUser.UserDataFolder: %s\n", g_pSteamManager->m_szUserDataFolder );
+    Con_Printf( "SteamUser.IsVipAccount: %s\n", g_pSteamManager->m_bVipAccount ? "true" : "false" );
+    Con_Printf( "DlcCount: %i\n", g_pSteamManager->m_nDlcCount );
+    if ( g_pSteamManager->m_nAppId == TESTING_APP_ID ) {
+        Con_Printf( "IsTestBuild: true\n" );
+    } else {
+        Con_Printf( "IsTestBuild: false\n" );
+    }
+    for ( i = 0; i < g_pSteamManager->m_nDlcCount; i++ ) {
+        Con_Printf( "DlcCount[%i]: %s - %s\n", i, g_pSteamManager->m_pDlcList[i].szName,
+            g_pSteamManager->m_pDlcList[i].bAvailable ? "active" : "inactive" );
+    }
+    Con_Printf( "--------------------------\n" );
+}
+
+void CSteamManager::Message_f( void )
+{
+    const char *msg;
+
+    if ( Cmd_Argc() != 2 ) {
+        Con_Printf( "usage: say <message>\n" );
+        return;
+    }
+
+    msg = Cmd_Argv( 0 );
+
+    
+}
+
+static void Steam_ListCloudFiles_f( void )
+{
+    int32 i, count;
+    int32 size;
+    const char *name;
+
+    Con_Printf( "\n" );
+    Con_Printf( "Steam Cloud Files:\n" );
+
+    if ( !SteamRemoteStorage()->IsCloudEnabledForApp() || !SteamRemoteStorage()->IsCloudEnabledForAccount() ) {
+        Con_Printf( "Disabled\n" );
+    }
+
+    count = SteamRemoteStorage()->GetFileCount();
+    for ( i = 0; i < count; i++ ) {
+        name = SteamRemoteStorage()->GetFileNameAndSize( i, &size );
+        Con_Printf( "  %4i: %s ( size: %i )\n", i, name, size );
+    }
+}
+
+static void Steam_UnlockAchievement_f( void )
+{
+    const char *achievementID;
+
+    if ( Cmd_Argc() < 2 ) {
+        Con_Printf( "usage: steam.unlock_achievement <achievementID>\n" );
+        return;
+    }
+
+    achievementID = Cmd_Argv( 1 );
+    if ( !s_pSteamStats->SetAchievement( achievementID ) ) {
+        g_pSteamManager->LogError( "SetAchievement() - failed on '%s'\n", achievementID );
+    }
+    g_pSteamManager->LogInfo( "Unlocked Achievement '%s'\n", achievementID );
+}
+
+static void Steam_ClearAchievement_f( void )
+{
+    const char *achievementID;
+
+    if ( Cmd_Argc() < 2 ) {
+        Con_Printf( "usage: steam.clear_achievement <achievementID>\n" );
+        return;
+    }
+
+    achievementID = Cmd_Argv( 1 );
+    if ( !SteamUserStats()->ClearAchievement( achievementID ) ) {
+        g_pSteamManager->LogError( "ClearAchievement() - failed on '%s'\n", achievementID );
+    }
+    g_pSteamManager->LogInfo( "Reset Achievement '%s'\n", achievementID );
+}
+
 void SteamApp_Init( void )
 {
     char dllName[MAX_NPATH];
@@ -273,25 +673,187 @@ void SteamApp_Init( void )
     Con_Printf( "---------- SteamApp_Init ----------\n" );
 
     if ( !SteamAPI_Init() ) {
-        Con_Printf( COLOR_RED "SteamAPI_Init failed!\n" );
+        Con_Printf( COLOR_RED "\nSteamAPI_Init failed!\n" );
         return;
     }
     
-    s_pSteamManager = (CSteamManager *)Z_Malloc( sizeof( *s_pSteamManager ), TAG_STATIC );
-    s_pSteamManager->Init();
+    g_pSteamManager = (CSteamManager *)Z_Malloc( sizeof( *g_pSteamManager ), TAG_STATIC );
+    g_pSteamManager->Init();
+
+    s_pSteamStats = new ( Z_Malloc( sizeof( *s_pSteamStats ), TAG_STATIC ) ) CSteamStatsManager();
+
+    Cmd_AddCommand( "steam.appinfo", CSteamManager::AppInfo_f );
+    Cmd_AddCommand( "steam.listcloudfiles", Steam_ListCloudFiles_f );
+    Cmd_AddCommand( "steam.unlock_achievement", Steam_UnlockAchievement_f );
+    Cmd_AddCommand( "steam.clear_achievement", Steam_ClearAchievement_f );
+}
+
+void SteamApp_Frame( void )
+{
+    if ( !g_pSteamManager || !SteamAPI_IsSteamRunning() ) {
+        return;
+    }
+    SteamAPI_RunCallbacks();
+}
+
+void SteamApp_CloudSave( void )
+{
+    if ( !g_pSteamManager || !SteamAPI_IsSteamRunning() ) {
+        return;
+    }
+    g_pSteamManager->SaveEngineFiles();
 }
 
 void SteamApp_Shutdown( void )
 {
     Con_Printf( "---------- SteamApp_Shutdown ----------\n" );
 
-    if ( !s_pSteamManager ) {
+    if ( !g_pSteamManager ) {
         return;
     }
 
-    s_pSteamManager->Shutdown();
-    Z_Free( s_pSteamManager );
-    s_pSteamManager = NULL;
+    g_pSteamManager->Shutdown();
+    Z_Free( g_pSteamManager );
+    g_pSteamManager = NULL;
+
+    Z_Free( s_pSteamStats );
+    s_pSteamStats = NULL;
+
+    Cmd_RemoveCommand( "steam.appinfo" );
+    Cmd_RemoveCommand( "steam.listcloudfiles" );
+    Cmd_RemoveCommand( "steam.unlock_achievement" );
+    Cmd_RemoveCommand( "steam.clear_achievement" );
 }
 
-#endif // NOMAD_STEAM_APP
+#define ACH_ID( id, name, desc ) { id, #id, name, desc, 0, 0 }
+
+achievement_t g_szAchivements[NUM_ACHIEVEMENTS] = {
+    ACH_ID( R_U_CHEATING,                           "R U Cheating?",
+        "" ),
+    ACH_ID( COMPLETE_DOMINATION,                    "Complete Domination",
+        "" ),
+    ACH_ID( GENEVA_SUGGESTION,                      "Geneva Suggestion",
+        "" ),
+    ACH_ID( PYROMANIAC,                             "Pyromaniac",
+        "" ),
+    ACH_ID( MASSACRE,                               "Massacre",
+        "" ),
+    ACH_ID( JUST_A_MINOR_INCONVENIENCE,             "Just A Minor Inconvenience",
+        "" ),
+    ACH_ID( JACK_THE_RIPPER,                        "Jack The Ripper",
+        "" ),
+    ACH_ID( EXPLOSION_CONNOISSEUIR,                 "Explosion Connoisseuir",
+        "" ),
+    ACH_ID( GOD_OF_WAR,                             "God Of War",
+        "" ),
+    ACH_ID( BOOM_HEADSHOT,                          "BOOM! Headshot",
+        "" ),
+    ACH_ID( RESPECTFUL,                             "Respectful",
+        "" ),
+    ACH_ID( A_LEGEND_IS_BORN,                       "A Legend Is Born",
+        "" ),
+    ACH_ID( BUILDING_THE_LEGEND,                    "Building The Legend",
+        "" ),
+    ACH_ID( SAME_SHIT_DIFFERENT_DAY,                "Same Shit Different Day",
+        "" ),
+    ACH_ID( SHUT_THE_FUCK_UP,                       "Shut The FUCK Up",
+        "" ),
+    ACH_ID( UNEARTHED_ARCANA,                       "Unearthed Arcana",
+        "" ),
+    ACH_ID( AWAKEN_THE_ANCIENTS,                    "Awaken The Ancients",
+        "" ),
+    ACH_ID( ITS_HIGH_NOON,                          "It's High Noon",
+        "" ),
+    ACH_ID( DEATH_FROM_ABOVE,                       "Death From Above",
+        "" ),
+    ACH_ID( KOMBATANT,                              "Kombatant",
+        "" ),
+    ACH_ID( LAUGHING_IN_DEATHS_FACE,                "Laughing in Death's Face",
+        "" ),
+    ACH_ID( RIGHT_BACK_AT_YOU,                      "Right Back At You",
+        "" ),
+    ACH_ID( BITCH_SLAP,                             "Bitch Slap",
+        "" ),
+    ACH_ID( CHEFS_SPECIAL,                          "Chef's Special",
+        "" ),
+    ACH_ID( KNUCKLE_SANDWICH,                       "Knuckle Sandwich",
+        "" ),
+    ACH_ID( BROTHER_IN_ARMS,                        "Brother in Arms",
+        "" ),
+    ACH_ID( BRU,                                    "BRU",
+        "" ),
+    ACH_ID( GIT_PWNED,                              "GIT PWNED",
+        "" ),
+    ACH_ID( SILENT_DEATH,                           "Silent Death",
+        "" ),
+    ACH_ID( WELL_DONE_WEEB,                         "Well Done Weeb!",
+        "" ),
+    ACH_ID( ITS_TREASON_THEN,                       "It's Treason Then!",
+        "" ),
+    ACH_ID( HEARTLESS,                              "Heartless",
+        "" ),
+    ACH_ID( BUSHIDO,                                "Bushido",
+        "" ),
+    ACH_ID( MAXIMUS_THE_MERCIFUL,                   "Maximus The Merciful",
+        "" ),
+    ACH_ID( CHEER_UP_LOVE_THE_CALVARYS_HERE,        "Cheer Up Love, The Calvary's Here!",
+        "" ),
+    ACH_ID( WORSE_THAN_DEATH,                       "Worse Than Death",
+        "" ),
+    ACH_ID( LOOKS_LIKE_MEATS_BACK_ON_OUR_MENU_BOYS, "Looks Like Meats Back On Our Menu Boys!",
+        "" ),
+    ACH_ID( GYAT,                                   "Gyat",
+        "" ),
+    ACH_ID( TO_THE_SLAUGHTER,                       "To The Slaughter",
+        "" ),
+    ACH_ID( ONE_MAN_ARMY,                           "One Man Army",
+        "" ),
+    ACH_ID( YOU_CALL_THAT_A_KNIFE,                  "You Call THAT A Knife?",
+        "" ),
+    ACH_ID( AMERICA_FUCK_YEAH,                      "America, FUCK YEAH!",
+        "" ),
+    ACH_ID( SUSSY,                                  "Sussy",
+        "" ),
+    ACH_ID( LIVE_TO_FIGHT_ANOTHER_DAY,              "Live To Fight Another Day",
+        "" ),
+    ACH_ID( REMEMBER_US,                            "Remember Us",
+        "" ),
+    ACH_ID( ZANDATSU_THAT_SHIT,                     "Zandatsu That Shit",
+        "" ),
+    ACH_ID( MORE,                                   "MORE!",
+        "" ),
+    ACH_ID( EDGELORD,                               "Edgelord",
+        "" ),
+    ACH_ID( THAT_ACTUALLY_WORKED,                   "That Actually WORKED?",
+        "" ),
+    ACH_ID( NANOMACHINES_SON,                       "Nanomachines, Son!",
+        "" ),
+    ACH_ID( COOL_GUYS_DONT_LOOK_AT_EXPLOSIONS,      "Cool Guys Don't Look At Explosions",
+        "" ),
+    ACH_ID( DOUBLE_TAKE,                            "Double Take",
+        "" ),
+    ACH_ID( TRIPLE_THREAT,                          "Triple Threat",
+        "" ),
+    ACH_ID( DAYUUM_I_AINT_GONNA_SUGARCOAT_IT,       "DAYUUM! I Ain't Gonna Sugarcoat It",
+        "" ),
+    ACH_ID( BACK_FROM_THE_BRINK,                    "Back From The Brink",
+        "" ),
+    ACH_ID( DANCE_DANCE_DANCE,                      "Dance! Dance! DANCE!",
+        "" ),
+    ACH_ID( BANG_BANG_I_SHOT_EM_DOWN,               "Bang, Bang, I Shot 'Em Down",
+        "" ),
+    ACH_ID( BOP_IT,                                 "Bop It",
+        "" ),
+    ACH_ID( JUST_A_LEAP_OF_FAITH,                   "Just A Leap Of Faith",
+        "" ),
+    ACH_ID( SEND_THEM_TO_JESUS,                     "Send Them To Jesus",
+        "" ),
+    ACH_ID( RIZZLORD,                               "Rizzlord",
+        "" ),
+    ACH_ID( AHHH_GAHHH_HAAAAAAA,                    "Ahhh! Gahhh! HAAAAAAA!",
+        "" ),
+    ACH_ID( ABSOLUTELY_NECESSARY_PRECAUTIONS,       "Absolutely Necessary Precautions",
+        "" ),
+    ACH_ID( STOP_HITTING_YOURSELF,                  "Stop Hitting Yourself",
+        "" )
+};

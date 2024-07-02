@@ -787,6 +787,10 @@ void CModuleLib::Shutdown( qboolean quit )
     Mem_Shutdown();
 }
 
+CDebugger *CModuleLib::GetDebugger( void ) {
+    return g_pDebugger;
+}
+
 asIScriptEngine *CModuleLib::GetScriptEngine( void ) {
     return m_pEngine;
 }

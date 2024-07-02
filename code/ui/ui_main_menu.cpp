@@ -26,9 +26,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define ID_SINGEPLAYER      1
 #define ID_MODS             2
 #define ID_SETTINGS         3
-#define ID_CREDITS          4
-#define ID_EXIT             5
-#define ID_TABLE            6
+#define ID_DATABASE         4
+#define ID_CREDITS          5
+#define ID_EXIT             6
+#define ID_TABLE            7
 
 //#define UI_FAST_EDIT
 
@@ -45,11 +46,12 @@ typedef struct {
 typedef struct {
     menuframework_t menu;
 
-    menutable_t table;
+//    menutable_t table;
 
     menutext_t singleplayer;
     menutext_t mods;
     menutext_t settings;
+    menutext_t database;
     menutext_t credits;
     menutext_t exitGame;
 
@@ -84,6 +86,9 @@ static void MainMenu_EventCallback( void *item, int event )
         break;
     case ID_SETTINGS:
         UI_SettingsMenu();
+        break;
+    case ID_DATABASE:
+        UI_DataBaseMenu();
         break;
     case ID_CREDITS:
         UI_CreditsMenu();
@@ -273,10 +278,10 @@ void MainMenu_Cache( void )
     s_main->menu.draw = MainMenu_Draw;
     s_main->menu.flags = MENU_DEFAULT_FLAGS;
 
-    s_main->table.generic.name = "##MainMenuOptionsTable";
-    s_main->table.generic.type = MTYPE_TABLE;
-    s_main->table.generic.id = ID_TABLE;
-    s_main->table.columns = 2;
+//    s_main->table.generic.name = "##MainMenuOptionsTable";
+//    s_main->table.generic.type = MTYPE_TABLE;
+//    s_main->table.generic.id = ID_TABLE;
+//    s_main->table.columns = 2;
 
     s_main->singleplayer.generic.type = MTYPE_TEXT;
     s_main->singleplayer.generic.id = ID_SINGEPLAYER;
@@ -301,6 +306,14 @@ void MainMenu_Cache( void )
     s_main->settings.generic.font = AlegreyaSC;
     s_main->settings.text = strManager->ValueForKey( "MENU_MAIN_SETTINGS" )->value;
     s_main->settings.color = color_white;
+
+    s_main->database.generic.type = MTYPE_TEXT;
+    s_main->database.generic.id = ID_DATABASE;
+    s_main->database.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
+    s_main->database.generic.eventcallback = MainMenu_EventCallback;
+    s_main->database.generic.font = AlegreyaSC;
+    s_main->database.text = "Valden's Book";
+    s_main->database.color = color_white;
 
     s_main->credits.generic.type = MTYPE_TEXT;
     s_main->credits.generic.id = ID_CREDITS;
@@ -328,12 +341,16 @@ void MainMenu_Cache( void )
     Menu_AddItem( &s_main->menu, &s_main->singleplayer );
     Menu_AddItem( &s_main->menu, &s_main->mods );
     Menu_AddItem( &s_main->menu, &s_main->settings );
+    Menu_AddItem( &s_main->menu, &s_main->database );
     Menu_AddItem( &s_main->menu, &s_main->credits );
     Menu_AddItem( &s_main->menu, &s_main->exitGame );
 
     Key_SetCatcher( KEYCATCH_UI );
     ui->menusp = 0;
     UI_PushMenu( &s_main->menu );
+
+    // add in background ambience
+    Snd_AddLoopingTrack( Snd_RegisterSfx( "music/world/icy_gusts.wav" ) );
 }
 
 void UI_MainMenu( void ) {

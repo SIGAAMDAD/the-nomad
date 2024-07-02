@@ -2074,6 +2074,8 @@ void G_Frame( int msec, int realMsec )
     G_MoveCamera_f();
     G_PhotoMode();
 
+    SteamApp_Frame();
+
     // update the screen
     gi.framecount++;
     SCR_UpdateScreen();

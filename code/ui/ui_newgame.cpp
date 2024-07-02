@@ -133,9 +133,10 @@ static void NewGameMenu_Draw_FixedSlots( void )
                 }
             }
             ImGui::EndCombo();
-        }
-        if ( !ImGui::IsItemActivated() && ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
-            Snd_PlaySfx( ui->sfx_select );
+        } else {
+            if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
+    			Snd_PlaySfx( ui->sfx_select );
+    		}
         }
         ImGui::SameLine();
         if ( ImGui::ArrowButton( "##DifficultySinglePlayerMenuConfigRight", ImGuiDir_Right ) ) {
@@ -172,6 +173,10 @@ static void NewGameMenu_Draw_FixedSlots( void )
                 }
             }
             ImGui::EndCombo();
+        } else {
+            if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
+		    	Snd_PlaySfx( ui->sfx_select );
+		    }
         }
         ImGui::SameLine();
         if ( ImGui::ArrowButton( "##SaveSlotSinglePlayerMenuConfigRight", ImGuiDir_Right ) ) {
@@ -246,9 +251,10 @@ static void NewGameMenu_Draw_DynamicSlots( void )
                 }
             }
             ImGui::EndCombo();
-        }
-        if ( !ImGui::IsItemActivated() && ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
-            Snd_PlaySfx( ui->sfx_select );
+        } else {
+            if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
+		    	Snd_PlaySfx( ui->sfx_select );
+		    }
         }
         ImGui::SameLine();
         if ( ImGui::ArrowButton( "##DifficultySinglePlayerMenuConfigRight", ImGuiDir_Right ) ) {

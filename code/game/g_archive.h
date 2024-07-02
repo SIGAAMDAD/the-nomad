@@ -95,10 +95,11 @@ typedef struct {
     char name[MAX_SAVE_FIELD_NAME];
     int32_t nameLength;
     int32_t numFields;
+    uint32_t offset;
 #ifdef SAVEFILE_MOD_SAFETY
     fileHandle_t hFile;
+    const char *m_pModuleName;
 #endif
-    uint32_t offset;
 } ngdsection_write_t;
 
 template<typename Key, typename Value>

@@ -228,10 +228,17 @@ extern void         UI_Message( const char **lines );
 extern void         ConfirmMenu_Cache( void );
 
 //
+// ui_database.cpp
+//
+extern void         UI_DataBaseMenu( void );
+extern void         DataBaseMenu_Cache( void );
+
+//
 // ui_loadgame.cpp
 //
 extern void         UI_LoadGameMenu( void );
 extern void         LoadGameMenu_Cache( void );
+extern void         UI_ReloadSaveFiles_f( void );
 
 //
 // ui_newgame.cpp

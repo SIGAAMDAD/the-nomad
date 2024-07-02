@@ -803,8 +803,20 @@ static void KeyGetBinding( asIScriptGeneric *pGeneric ) {
     ::new ( pGeneric->GetAddressOfReturnLocation() ) string_t( Key_GetBinding( pGeneric->GetArgDWord( 0 ) ) );
 }
 
+static void KeyIsDown( asIScriptGeneric *pGeneric ) {
+    pGeneric->SetReturnDWord( Key_IsDown( pGeneric->GetArgDWord( 0 ) ) );
+}
+
+static void KeyAnyDown( asIScriptGeneric *pGeneric ) {
+    pGeneric->SetReturnDWord( Key_AnyDown() );
+}
+
 static void KeyGetKey( asIScriptGeneric *pGeneric ) {
     pGeneric->SetReturnDWord( Key_GetKey( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
+}
+
+static void SysMilliseconds( asIScriptGeneric *pGeneric ) {
+    pGeneric->SetReturnQWord( Sys_Milliseconds() );
 }
 
 static void LoadWorld( asIScriptGeneric *pGeneric ) {
@@ -1129,12 +1141,17 @@ static uint64_t ReadString( fileHandle_t arg, string_t *data ) {
     return FS_VM_Read( data->data(), length, arg, H_SGAME );
 }
 
-static uint64_t LoadFileString( const string_t *fileName, string_t *buffer ) {
+static void LoadFileString( asIScriptGeneric *pGeneric ) {
     void *v;
-    const uint64_t length = FS_LoadFile( fileName->c_str(), &v );
+    uint64_t length;
+    const string_t *fileName = (const string_t *)pGeneric->GetArgObject( 0 );
+    string_t *buffer = (string_t *)pGeneric->GetArgObject( 1 );
+    
+    length = FS_LoadFile( fileName->c_str(), &v );
     if ( !length || !v ) {
         Con_Printf( COLOR_RED "ERROR: failed to load file '%s' at vm request\n", fileName->c_str() );
-        return length;
+        pGeneric->SetReturnQWord( 0 );
+        return;
     }
 
     buffer->resize( length );
@@ -1142,15 +1159,20 @@ static uint64_t LoadFileString( const string_t *fileName, string_t *buffer ) {
 
     FS_FreeFile( v );
 
-    return length;
+    pGeneric->SetReturnQWord( length );
 }
 
-static uint64_t LoadFile( const string_t *fileName, CScriptArray *buffer ) {
+static void LoadFile( asIScriptGeneric *pGeneric ) {
     void *v;
-    uint64_t length = FS_LoadFile( fileName->c_str(), &v );
+    uint64_t length;
+    const string_t *fileName = (const string_t *)pGeneric->GetArgObject( 0 );
+    CScriptArray *buffer = (CScriptArray *)pGeneric->GetArgObject( 1 );
+
+    length = FS_LoadFile( fileName->c_str(), &v );
     if ( !length || !v ) {
         Con_Printf( COLOR_RED "ERROR: failed to load file '%s' at vm request\n", fileName->c_str() );
-        return 0;
+        pGeneric->SetReturnQWord( 0 );
+        return;
     }
 
     buffer->Resize( length );
@@ -1158,29 +1180,37 @@ static uint64_t LoadFile( const string_t *fileName, CScriptArray *buffer ) {
 
     FS_FreeFile( v );
 
-    return length;
+    pGeneric->SetReturnQWord( length );
 }
 
 static void ListFiles( asIScriptGeneric *pGeneric )
 {
-    CScriptArray *fileList = CScriptArray::Create( g_pModuleLib->GetScriptEngine()->GetTypeInfoByName( "array" ) );
+    uint64_t numFiles, i;
 
-    *(CScriptArray **)pGeneric->GetAddressOfReturnLocation() = fileList;
+    const string_t *path = (const string_t *)pGeneric->GetArgObject( 0 );
+    const string_t *ext = (const string_t *)pGeneric->GetArgObject( 1 );
+
+    CScriptArray *returnList = CScriptArray::Create( g_pModuleLib->GetScriptEngine()->GetTypeInfoByName( "array" ) );
+    char **fileList = FS_ListFiles( path->c_str(), ext->c_str(), &numFiles );
+
+    returnList->Resize( numFiles );
+    for ( i = 0; i < numFiles; i++ ) {
+        new ( returnList->At( i ) ) string_t( fileList[i] );
+    }
+
+    *(CScriptArray **)pGeneric->GetAddressOfReturnLocation() = returnList;
 }
 
-static void MakeDir( asIScriptGeneric *pGeneric )
-{
-
+static void MakeDir( asIScriptGeneric *pGeneric ) {
 }
 
-static void RemoveDir( asIScriptGeneric *pGeneric )
-{
-
+static void RemoveDir( asIScriptGeneric *pGeneric ) {
 }
 
-static void RemoveFile( asIScriptGeneric *pGeneric )
-{
-
+static void RemoveFile( asIScriptGeneric *pGeneric ) {
+    const string_t *npath = (const string_t *)pGeneric->GetArgObject( 0 );
+    FS_Remove( npath->c_str() );
+    FS_HomeRemove( npath->c_str() );
 }
 
 static void GetHomePath( asIScriptGeneric *pGeneric ) {
@@ -2323,15 +2353,15 @@ void ModuleLib_Register_Engine( void )
         REGISTER_ENUM_VALUE( "KeyNum", "GamePad_Paddle3", KEY_PAD0_PADDLE3 );
         REGISTER_ENUM_VALUE( "KeyNum", "GamePad_Paddle4", KEY_PAD0_PADDLE4 );
 
-        REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::IsAnyKeyDown()", WRAP_FN( Key_AnyDown ) );
-        REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::IsKeyDown( KeyNum )", WRAP_FN( Key_IsDown ) );
+        REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::IsAnyKeyDown()", asFUNCTION( KeyAnyDown ) );
+        REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::IsKeyDown( KeyNum )", asFUNCTION( KeyIsDown ) );
         g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "uint32 TheNomad::Engine::KeyGetKey( const string& in )",
             asFUNCTION( KeyGetKey ), asCALL_GENERIC );
         g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "const string TheNomad::Engine::KeyGetBinding( uint32 )",
             asFUNCTION( KeyGetBinding ), asCALL_GENERIC );
 
         SET_NAMESPACE( "TheNomad::Engine::System" );
-        REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::System::Milliseconds()", WRAP_FN( Sys_Milliseconds ) );
+        REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::System::Milliseconds()", asFUNCTION( SysMilliseconds ) );
         SET_NAMESPACE( "TheNomad::Engine" );
 
         REGISTER_OBJECT_TYPE( "Timer", CTimer, asOBJ_VALUE );
@@ -2387,8 +2417,8 @@ void ModuleLib_Register_Engine( void )
 			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::GetLength( int )", WRAP_FN( GetFileLength ) );
 			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::GetPosition( int )", WRAP_FN( GetFilePosition ) );
             REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::SetPosition( int, uint64, uint )", WRAP_FN( FileSetPosition ) );
-			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::LoadFile( const string& in, array<int8>& out )",WRAP_FN( LoadFile ) );
-            REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::LoadFile( const string& in, string& out )", WRAP_FN( LoadFileString ) );
+			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::LoadFile( const string& in, array<int8>& out )",asFUNCTION( LoadFile ) );
+            REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::LoadFile( const string& in, string& out )", asFUNCTION( LoadFileString ) );
             REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::FileExists( const string& in )", WRAP_FN( FileExists ) );
             g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
                 "array<string>@ TheNomad::Engine::FileSystem::ListFiles()", asFUNCTION( ListFiles ), asCALL_GENERIC );

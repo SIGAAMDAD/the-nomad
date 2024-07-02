@@ -165,17 +165,13 @@ static void LoadGameMenu_Draw( void )
     ImGui::End();
 }
 
-static void LoadGameMenu_InitSaveFiles( void )
+void UI_ReloadSaveFiles_f( void )
 {
     struct tm *fileTime;
     saveinfo_t *info;
     const char **fileList;
     uint64_t i, j;
     const char *path;
-
-    if ( ui->uiAllocated ) {
-        return;
-    }
 
     //
     // init savefiles
@@ -187,7 +183,7 @@ static void LoadGameMenu_InitSaveFiles( void )
     if ( s_loadGame->numSaves ) {
         Cvar_Set( "sgame_NumSaves", va( "%li", (int64_t)s_loadGame->numSaves ) );
 
-        s_loadGame->saveList = (saveinfo_t *)Hunk_Alloc( sizeof( saveinfo_t ) * s_loadGame->numSaves, h_high );
+        s_loadGame->saveList = (saveinfo_t *)Z_Malloc( sizeof( saveinfo_t ) * s_loadGame->numSaves, TAG_SAVEFILE );
         info = s_loadGame->saveList;
 
         for ( i = 0; i < s_loadGame->numSaves; i++, info++ ) {
@@ -215,7 +211,7 @@ static void LoadGameMenu_InitSaveFiles( void )
                 info->valid = qtrue;
             }
 
-            info->modsLoaded = (qboolean *)Hunk_Alloc( sizeof( *info->modsLoaded ) * info->gd.numMods, h_high );
+            info->modsLoaded = (qboolean *)Z_Malloc( sizeof( *info->modsLoaded ) * info->gd.numMods, TAG_SAVEFILE );
             for ( uint64_t a = 0; a < info->gd.numMods; a++ ) {
                 info->modsLoaded[a] = g_pModuleLib->GetModule( info->gd.modList[a].name ) != NULL;
             }
@@ -254,7 +250,9 @@ void LoadGameMenu_Cache( void )
     s_loadGame->load_0 = re.RegisterShader( "menu/load_0" );
     s_loadGame->load_1 = re.RegisterShader( "menu/load_1" );
 
-    LoadGameMenu_InitSaveFiles();
+    if ( !ui->uiAllocated ) {
+        UI_ReloadSaveFiles_f();
+    }
 }
 
 void UI_LoadGameMenu( void )

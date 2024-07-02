@@ -71,6 +71,7 @@ static void UI_Cache_f( void ) {
 	PauseMenu_Cache();
 	CreditsMenu_Cache();
 	ConfirmMenu_Cache();
+	DataBaseMenu_Cache();
 }
 
 CUIFontCache::CUIFontCache( void ) {
@@ -411,6 +412,7 @@ extern "C" void UI_Shutdown( void )
     Cmd_RemoveCommand( "ui.cache" );
 	Cmd_RemoveCommand( "ui.fontinfo" );
 	Cmd_RemoveCommand( "togglepausemenu" );
+	Cmd_RemoveCommand( "ui.reload_savefiles" );
 }
 
 // FIXME: call UI_Shutdown instead
@@ -480,9 +482,9 @@ extern "C" void UI_DrawFPS( void )
     ImGui::Begin( "DrawFPS##UI", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar
                                         | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMouseInputs
 										| ImGuiWindowFlags_NoBackground );
-    ImGui::SetWindowPos( ImVec2( 1000 * ui->scale + ui->bias, 8 * ui->scale ) );
+    ImGui::SetWindowPos( ImVec2( 1010 * ui->scale + ui->bias, 8 * ui->scale ) );
     ImGui::SetWindowFontScale( 1.5f * ui->scale );
-    ImGui::Text( "%ifps", fps );
+    ImGui::Text( "%i", fps );
     ImGui::End();
 }
 
@@ -657,9 +659,255 @@ void ImGui_ShowAboutWindow( void ) {
     }
 }
 
+static void UI_DrawModuleProperty( asIScriptObject *pObject, asUINT index )
+{
+	int typeId;
+	const char *name;
+	asUINT n;
+
+	name = pObject->GetPropertyName( index );
+	typeId = pObject->GetPropertyTypeId( index );
+
+	ImGui::Text( "%s - (typeId) %i", name, typeId );
+	ImGui::Indent();
+	switch ( typeId ) {
+	case asTYPEID_BOOL:
+		ImGui::Text( "%s", *(bool *)pObject->GetAddressOfProperty( index ) ? "true" : "false" );
+		break;
+	case asTYPEID_DOUBLE:
+		ImGui::Text( "%lf", *(double *)pObject->GetAddressOfProperty( index ) );
+		break;
+	case asTYPEID_FLOAT:
+		ImGui::Text( "%f", *(float *)pObject->GetAddressOfProperty( index ) );
+		break;
+	case asTYPEID_INT8:
+		ImGui::Text( "%hi", *(int8_t *)pObject->GetAddressOfProperty( index ) );
+		break;
+	case asTYPEID_INT16:
+		ImGui::Text( "%hi", *(int16_t *)pObject->GetAddressOfProperty( index ) );
+		break;
+	case asTYPEID_INT32:
+		ImGui::Text( "%i", *(int32_t *)pObject->GetAddressOfProperty( index ) );
+		break;
+	case asTYPEID_INT64:
+		ImGui::Text( "%li", *(int64_t *)pObject->GetAddressOfProperty( index ) );
+		break;
+	case asTYPEID_UINT8:
+		ImGui::Text( "%hu", *(uint8_t *)pObject->GetAddressOfProperty( index ) );
+		break;
+	case asTYPEID_UINT16:
+		ImGui::Text( "%hu", *(uint16_t *)pObject->GetAddressOfProperty( index ) );
+		break;
+	case asTYPEID_UINT32:
+		ImGui::Text( "%u", *(uint32_t *)pObject->GetAddressOfProperty( index ) );
+		break;
+	case asTYPEID_UINT64:
+		ImGui::Text( "%lu", *(uint64_t *)pObject->GetAddressOfProperty( index ) );
+		break;
+	case asTYPEID_OBJHANDLE:
+		ImGui::Text( "0x%08lx", (uintptr_t)pObject->GetAddressOfProperty( index ) );
+		break;
+	case asTYPEID_APPOBJECT: {
+		asIScriptObject *pSubObject = (asIScriptObject *)pObject->GetAddressOfProperty( index );
+		for ( n = 0; n < pSubObject->GetPropertyCount(); n++ ) {
+			UI_DrawModuleProperty( pSubObject, n );
+		}
+		break; }
+	default:
+		ImGui::TextUnformatted( "Cannot fetch value" );
+		break;
+	};
+	ImGui::Unindent();
+}
+
+static void UI_DrawModuleGlobalVar( const char *name, const char *nameSpace, int typeId, bool isConst, asUINT index, asIScriptModule *pModule )
+{
+	asUINT n;
+
+	ImGui::Text( "%s::%s - (typeId) %i, (isConst) %s", nameSpace, name, typeId, isConst ? "true" : "false" );
+	ImGui::Indent();
+	switch ( typeId ) {
+	case asTYPEID_BOOL:
+		ImGui::Text( "%s", *(bool *)pModule->GetAddressOfGlobalVar( index ) ? "true" : "false" );
+		break;
+	case asTYPEID_DOUBLE:
+		ImGui::Text( "%lf", *(double *)pModule->GetAddressOfGlobalVar( index ) );
+		break;
+	case asTYPEID_FLOAT:
+		ImGui::Text( "%f", *(float *)pModule->GetAddressOfGlobalVar( index ) );
+		break;
+	case asTYPEID_INT8:
+		ImGui::Text( "%hi", *(int8_t *)pModule->GetAddressOfGlobalVar( index ) );
+		break;
+	case asTYPEID_INT16:
+		ImGui::Text( "%hi", *(int16_t *)pModule->GetAddressOfGlobalVar( index ) );
+		break;
+	case asTYPEID_INT32:
+		ImGui::Text( "%i", *(int32_t *)pModule->GetAddressOfGlobalVar( index ) );
+		break;
+	case asTYPEID_INT64:
+		ImGui::Text( "%li", *(int64_t *)pModule->GetAddressOfGlobalVar( index ) );
+		break;
+	case asTYPEID_UINT8:
+		ImGui::Text( "%hu", *(uint8_t *)pModule->GetAddressOfGlobalVar( index ) );
+		break;
+	case asTYPEID_UINT16:
+		ImGui::Text( "%hu", *(uint16_t *)pModule->GetAddressOfGlobalVar( index ) );
+		break;
+	case asTYPEID_UINT32:
+		ImGui::Text( "%u", *(uint32_t *)pModule->GetAddressOfGlobalVar( index ) );
+		break;
+	case asTYPEID_UINT64:
+		ImGui::Text( "%lu", *(uint64_t *)pModule->GetAddressOfGlobalVar( index ) );
+		break;
+	case asTYPEID_OBJHANDLE:
+		ImGui::Text( "0x%08lx", (uintptr_t)pModule->GetAddressOfGlobalVar( index ) );
+		break;
+	case asTYPEID_MASK_OBJECT: {
+		ImGui::Text( "%u", *(asUINT *)pModule->GetAddressOfGlobalVar( index ) );
+	
+		asITypeInfo *type = g_pModuleLib->GetScriptEngine()->GetTypeInfoById( typeId );
+		for ( n = type->GetEnumValueCount(); n-- > 0; ) {
+			int32_t enumValue;
+			const char *enumName;
+				
+			enumName = type->GetEnumValueByIndex( n, &enumValue );
+			if ( enumValue == *(int32_t *)pModule->GetAddressOfGlobalVar( index ) ) {
+				ImGui::SameLine();
+				ImGui::Text( ", %s", enumName );
+				break;
+			}
+		}
+		break; }
+	case asTYPEID_SCRIPTOBJECT: {
+		asIScriptObject *pObject = (asIScriptObject *)pModule->GetAddressOfGlobalVar( index );
+		for ( n = 0; n < pObject->GetPropertyCount(); n++ ) {
+			UI_DrawModuleProperty( pObject, n );
+		}
+		break; }
+	default:
+		if ( typeId & asTYPEID_APPOBJECT ) {
+			asIScriptObject *pObject = (asIScriptObject *)pModule->GetAddressOfGlobalVar( index );
+			for ( n = 0; n < pObject->GetPropertyCount(); n++ ) {
+				UI_DrawModuleProperty( pObject, n );
+			}
+		}
+		if ( typeId & asTYPEID_SCRIPTOBJECT ||
+			g_pModuleLib->GetScriptEngine()->GetTypeInfoById( typeId )->GetFlags() & asOBJ_REF )
+		{
+			ImGui::Text( "0x%08lx", (uintptr_t)pModule->GetAddressOfGlobalVar( index ) );
+		} else {
+			ImGui::TextUnformatted( "Cannot fetch value" );
+		}
+		break;
+	};
+	ImGui::NewLine();
+	if ( typeId & asTYPEID_SCRIPTOBJECT ) {
+		ImGui::TextUnformatted( " ScriptObject" );
+	}
+	if ( typeId & asTYPEID_APPOBJECT ) {
+		ImGui::SameLine();
+		ImGui::TextUnformatted( " AppObject" );
+	}
+	if ( typeId & asTYPEID_HANDLETOCONST ) {
+		ImGui::SameLine();
+		ImGui::TextUnformatted( " HandleToConst" );
+	}
+	if ( typeId & asTYPEID_MASK_OBJECT ) {
+		ImGui::SameLine();
+		ImGui::TextUnformatted( " MaskObject" );
+	}
+	ImGui::Unindent();
+}
+
+static void UI_DrawModuleDebugOverlay( void )
+{
+	asIScriptModule *pModule;
+	asIScriptFunction *pFunction;
+	asUINT i, j, n;
+	uint32_t nModules;
+
+	ImGui::Begin( "Module Debug", NULL, ImGuiWindowFlags_AlwaysAutoResize );
+
+	nModules = g_pModuleLib->GetModCount();
+	for ( i = 0; i < nModules; i++ ) {
+		pModule = g_pModuleLib->m_pModList[i].info->m_pHandle->GetModule();
+
+		if ( ImGui::CollapsingHeader( pModule->GetName() ) ) {
+			ImGui::SeparatorText( "Functions" );
+			for ( j = 0; j < pModule->GetFunctionCount(); j++ ) {
+				pFunction = pModule->GetFunctionByIndex( j );
+				ImGui::TextUnformatted( pFunction->GetDeclaration() );
+			}
+
+			ImGui::SeparatorText( "Imported Functions" );
+			for ( j = 0; j < pModule->GetImportedFunctionCount(); j++ ) {
+				ImGui::Text( "%s -> %s", pModule->GetImportedFunctionDeclaration( j ), pModule->GetImportedFunctionSourceModule( j ) );
+			}
+
+			ImGui::SeparatorText( "Global Variables" );
+			for ( j = 0; j < pModule->GetGlobalVarCount(); j++ ) {
+				const char *name, *nameSpace;
+				int typeId;
+				bool isConst;
+
+				pModule->GetGlobalVar( j, &name, &nameSpace, &typeId, &isConst );
+				
+				UI_DrawModuleGlobalVar( name, nameSpace, typeId, isConst, j, pModule );
+			}
+
+			ImGui::SeparatorText( "Object Types" );
+			for ( j = 0; j < pModule->GetObjectTypeCount(); j++ ) {
+				asITypeInfo *pTypeInfo = pModule->GetObjectTypeByIndex( j );
+
+				ImGui::SeparatorText( pTypeInfo->GetName() );
+
+				ImGui::Indent();
+				ImGui::SeparatorText( "Behaviours" );
+				ImGui::Indent();
+				for ( n = 0; n < pTypeInfo->GetBehaviourCount(); n++ ) {
+					asEBehaviours behaviour;
+					ImGui::TextUnformatted( pTypeInfo->GetBehaviourByIndex( n, &behaviour )->GetDeclaration() );
+				}
+				ImGui::Unindent();
+				ImGui::Unindent();
+
+				ImGui::Indent();
+				ImGui::SeparatorText( "Methods" );
+				ImGui::Indent();
+				for ( n = 0; n < pTypeInfo->GetMethodCount(); n++ ) {
+					ImGui::TextUnformatted( pTypeInfo->GetMethodByIndex( n )->GetDeclaration() );
+				}
+				ImGui::Unindent();
+				ImGui::Unindent();
+
+				ImGui::Indent();
+				ImGui::SeparatorText( "Properties" );
+				ImGui::Indent();
+				for ( n = 0; n < pTypeInfo->GetPropertyCount(); n++ ) {
+					const char *name;
+					bool isPrivate, isProtected, isRef;
+					int typeId, offset;
+
+					pTypeInfo->GetProperty( n, &name, &typeId, &isPrivate, &isProtected, &offset, &isRef );
+					ImGui::Text( "%s - (typeId) %i, (offset) %i, (isPrivate) %s, (isProtected) %s, (isReference) %s",
+						pTypeInfo->GetPropertyDeclaration( n ), typeId, offset, isPrivate ? "true" : "false",
+						isProtected ? "true" : "false", isRef ? "true" : "false" );
+				}
+				ImGui::Unindent();
+				ImGui::Unindent();
+			}
+		}
+	}
+
+	ImGui::End();
+}
+
 static void UI_DrawDebugOverlay( void )
 {
 	uint64_t i;
+
+	UI_DrawModuleDebugOverlay();
 
 	if ( ImGui::Begin( "Input Debug##DebugOverlayInputSystem" ) ) {
 		extern cvar_t *in_joystick;
@@ -683,6 +931,10 @@ static void UI_DrawDebugOverlay( void )
 	ImGui::ShowIDStackToolWindow();
 	ImGui::ShowMetricsWindow();
 	ImGui::ShowDebugLogWindow();
+
+	if ( !ImPlot::GetCurrentContext() ) {
+		ImPlot::CreateContext();
+	}
 
 	if ( ImGui::Begin( "GPU Debug##DebugOverlayGPUDriver" ) ) {
 		char *p;
@@ -972,6 +1224,7 @@ extern "C" void UI_Init( void )
     Cmd_AddCommand( "ui.cache", UI_Cache_f );
 	Cmd_AddCommand( "ui.fontinfo", CUIFontCache::ListFonts_f );
 	Cmd_AddCommand( "togglepausemenu", UI_PauseMenu_f );
+	Cmd_AddCommand( "ui.reload_savefiles", UI_ReloadSaveFiles_f );
 
 //	ImGuiIO& io = ImGui::GetIO();
 //	ImFontConfig config;

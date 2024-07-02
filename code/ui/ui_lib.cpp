@@ -3,6 +3,7 @@
 #include "ui_public.hpp"
 #include "ui_menu.h"
 #include "ui_lib.h"
+#include "../rendercommon/imgui_internal.h"
 
 qboolean m_entersound;
 
@@ -151,8 +152,13 @@ extern "C" void UI_DrawText( const char *txt )
 	qboolean usedColor = qfalse;
 	char s[2];
 
+	ImGuiStyle& style = ImGui::GetStyle();
+	const ImVec2 itemSpacing = style.ItemSpacing;
+	style.ItemSpacing.x = 0.0f;
+
 	len = strlen( txt );
 	currentColorIndex = ColorIndex( S_COLOR_WHITE );
+	ImGui::PushTextWrapPos();
 
 	for ( i = 0, text = txt; i < len; i++, text++ ) {
 		// track color changes
@@ -191,6 +197,9 @@ extern "C" void UI_DrawText( const char *txt )
 			break;
 		};
 	}
+	ImGui::PopTextWrapPos();
+	
+	style.ItemSpacing = itemSpacing;
 }
 
 void UI_PopMenu( void )

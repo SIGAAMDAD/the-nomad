@@ -2,6 +2,7 @@
 
 #include "g_game.h"
 #include "g_archive.h"
+#include "../engine/n_steam.h"
 #include "../ui/ui_lib.h"
 
 #define NGD_MAGIC 0xff5ad1120
@@ -173,7 +174,7 @@ static ngdfield_t *G_LoadArchiveField( ngdsection_read_t *section, const char *p
 	size += PAD( nameLength, sizeof( uintptr_t ) );
 	size += PAD( dataSize, sizeof( uintptr_t ) );
 
-	field = (ngdfield_t *)Hunk_Alloc( size, h_low );
+	field = (ngdfield_t *)Z_Malloc( size, TAG_SAVEFILE );
 	memset( field, 0, size );
 	field->name = (char *)( field + 1 );
 	field->dataSize = dataSize;
@@ -231,7 +232,7 @@ qboolean CGameArchive::LoadArchiveFile( const char *filename, uint64_t index )
 
 	size = PAD( sizeof( *file ) + ( sizeof( *file->m_pSectionList ) * header.numSections ), sizeof( uintptr_t ) );
 
-	file = (ngd_file_t *)Hunk_Alloc( size, h_low );
+	file = (ngd_file_t *)Z_Malloc( size, TAG_SAVEFILE );
 	memset( file, 0, size );
 
 	file->m_pSectionList = (ngdsection_read_t *)( file + 1 );
@@ -258,7 +259,7 @@ qboolean CGameArchive::LoadArchiveFile( const char *filename, uint64_t index )
 		numFields = LittleInt( numFields );
 
 		memset( section, 0, sizeof( *section ) );
-		section->m_pFieldCache = (ngdfield_t **)Hunk_Alloc( sizeof( *section->m_pFieldCache ) * numFields, h_low );
+		section->m_pFieldCache = (ngdfield_t **)Z_Malloc( sizeof( *section->m_pFieldCache ) * numFields, TAG_SAVEFILE );
 		section->numFields = numFields;
 		strcpy( section->name, name );
 		section->nameLength = nameLength;
@@ -304,7 +305,7 @@ CGameArchive::CGameArchive( void )
 
 	Con_Printf( "G_InitArchiveHandler: initializing save file cache...\n" );
 
-	g_maxSaveSlots = Cvar_Get( "g_maxSaveSlots", "10", CVAR_SAVE | CVAR_LATCH );
+	g_maxSaveSlots = Cvar_Get( "g_maxSaveSlots", "10", CVAR_SAVE );
 	Cvar_CheckRange( g_maxSaveSlots, "0", "1000", CVT_INT );
 	Cvar_SetDescription( g_maxSaveSlots, "Sets the maximum allowed save slots, unlimited if \"0\"." );
 
@@ -318,18 +319,18 @@ CGameArchive::CGameArchive( void )
 		m_nArchiveFiles = g_maxSaveSlots->i;
 	}
 
-	m_pArchiveCache = (ngd_file_t **)Hunk_Alloc( sizeof( *m_pArchiveCache ) * m_nArchiveFiles, h_low );
-	m_pArchiveFileList = (char **)Hunk_Alloc( sizeof( *m_pArchiveFileList ) * m_nArchiveFiles, h_low );
+	m_pArchiveCache = (ngd_file_t **)Z_Malloc( sizeof( *m_pArchiveCache ) * m_nArchiveFiles, TAG_SAVEFILE );
+	m_pArchiveFileList = (char **)Z_Malloc( sizeof( *m_pArchiveFileList ) * m_nArchiveFiles, TAG_SAVEFILE );
 	m_nUsedSaveSlots = 0;
 
 	for ( i = 0; i < m_nArchiveFiles; i++ ) {
 		if ( i >= numFiles ) {
-			m_pArchiveFileList[i] = (char *)Hunk_Alloc( strlen( va( "Save Slot %lu", i + 1 ) ) + 1, h_low );
+			m_pArchiveFileList[i] = (char *)Z_Malloc( strlen( va( "Save Slot %lu", i + 1 ) ) + 1, TAG_SAVEFILE );
 			strcpy( m_pArchiveFileList[i], va( "Save Slot %lu", i + 1 ) );
 			m_pArchiveCache[i] = NULL;
 			continue;
 		}
-		m_pArchiveFileList[i] = (char *)Hunk_Alloc( strlen( fileList[i] ) + 1, h_low );
+		m_pArchiveFileList[i] = (char *)Z_Malloc( strlen( fileList[i] ) + 1, TAG_SAVEFILE );
 		strcpy( m_pArchiveFileList[i], fileList[i] );
 		LoadArchiveFile( fileList[i], i );
 
@@ -355,6 +356,7 @@ void G_ShutdownArchiveHandler( void ) {
 	g_pArchiveHandler->~CGameArchive();
 	g_pArchiveHandler = NULL;
 	Cmd_RemoveCommand( "sgame.save_game" );
+	Z_FreeTags( TAG_SAVEFILE );
 }
 
 const char **CGameArchive::GetSaveFiles( uint64_t *nFiles ) const {
@@ -400,6 +402,8 @@ void CGameArchive::BeginSaveSection( const char *moduleName, const char *name )
 	FS_Write( m_pSection->name, m_pSection->nameLength, m_hFile );
 	FS_Write( &m_pSection->numFields, sizeof( m_pSection->numFields ), m_hFile );
 #ifdef SAVEFILE_MOD_SAFETY
+	m_pSection->m_pModuleName = moduleName;
+
 	path = va( "SaveData/%s/%s/%s.prt", moduleName, Cvar_VariableString( "sgame_SaveName" ), name );
 	m_pSection->hFile = FS_FOpenWrite( path );
 	if ( m_pSection->hFile == FS_INVALID_HANDLE ) {
@@ -427,6 +431,9 @@ void CGameArchive::EndSaveSection( void )
 	FS_Write( m_pSection->name, m_pSection->nameLength, m_pSection->hFile );
 	FS_Write( &m_pSection->numFields, sizeof( m_pSection->numFields ), m_pSection->hFile );
 	FS_FClose( m_pSection->hFile );
+
+	g_pSteamManager->Save( va( "SaveData/%s/%s/%s.prt", m_pSection->m_pModuleName, Cvar_VariableString( "sgame_SaveName" ),
+		m_pSection->name ) );
 #endif
 
 	Con_DPrintf( "Finished save section '%s' with %i fields\n", m_pSection->name, m_pSection->numFields );
@@ -1074,8 +1081,14 @@ bool CGameArchive::Save( const char *filename )
 	//
 	// save to steam
 	//
-#ifdef NOMAD_STEAM_BUILD
-#endif
+	g_pSteamManager->Save( va( "SaveData/%s", filename ) );
+
+	//
+	// reload the cache
+	//
+	Z_FreeTags( TAG_SAVEFILE );
+	g_pArchiveHandler = new ( g_pArchiveHandler ) CGameArchive();
+	Cbuf_ExecuteText( EXEC_APPEND, "ui.reload_savefiles\n" );
 
 	return true;
 }
@@ -1128,7 +1141,7 @@ bool CGameArchive::LoadPartial( const char *filename, gamedata_t *gd )
 	FS_Read( &gd->numMods, sizeof( gd->numMods ), f );
 
 	if ( gd->numMods ) {
-		gd->modList = (modlist_t *)Hunk_Alloc( sizeof( *gd->modList ) * gd->numMods, h_low );
+		gd->modList = (modlist_t *)Z_Malloc( sizeof( *gd->modList ) * gd->numMods, TAG_SAVEFILE );
 		for ( i = 0; i < gd->numMods; i++ ) {
 			FS_Read( gd->modList[i].name, sizeof( gd->modList[i].name ), f );
 			FS_Read( &gd->modList[i].nVersionMajor, sizeof( gd->modList[i].nVersionMajor ), f );
