@@ -505,7 +505,8 @@ static const void *RB_SwapBuffers(const void *data)
 				FBO_FastBlit( rg.renderFbo, NULL, rg.ssaaResolveFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
 				FBO_FastBlit( rg.ssaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
 			} else {
-				FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+				FBO_FastBlit( rg.renderFbo, NULL, rg.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+				FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
 			}
 			end = ri.Milliseconds();
 			backend.pc.postprocessMsec = end - start;

@@ -435,6 +435,7 @@ void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, con
 			GLSL_SetUniformInt( sp, UNIFORM_GAMEPAUSED, ri.Cvar_VariableInteger( "g_paused" ) );
 		}
 		GLSL_SetUniformFloat( sp, UNIFORM_SHARPENING, r_imageSharpenAmount->f );
+		GLSL_SetUniformInt( sp, UNIFORM_ANTIALIASING, r_multisampleType->i );
 		
 		{
 			vec2_t screenSize;
@@ -619,6 +620,7 @@ void RB_IterateShaderStages( shader_t *shader )
 		}
 		GLSL_SetUniformInt( sp, UNIFORM_HARDWAREGAMMA, !r_ignorehwgamma->i );
 		GLSL_SetUniformFloat( sp, UNIFORM_GAMMA, r_gammaAmount->f );
+		GLSL_SetUniformInt( sp, UNIFORM_ANTIALIASING, r_multisampleType->i );
 
 		// custom texture filtering
 		if ( stageP->bundle[0].filter != -1 ) {

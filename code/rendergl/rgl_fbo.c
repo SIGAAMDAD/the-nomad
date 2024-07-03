@@ -373,10 +373,10 @@ void FBO_Init( void )
 	}
 	R_CheckFBO( rg.renderFbo );
 
-	if ( multisample && r_multisampleType->i <= AntiAlias_32xMSAA && glContext.ARB_framebuffer_multisample ) {
+	if ( multisample && glContext.ARB_framebuffer_multisample ) {
 		rg.msaaResolveFbo = FBO_Create( "_msaaResolve", width, height );
-		FBO_CreateBuffer( rg.msaaResolveFbo, hdrFormat, 0, 0 );
-		FBO_CreateBuffer( rg.msaaResolveFbo, GL_DEPTH24_STENCIL8, 0, 0 );
+		FBO_CreateBuffer( rg.msaaResolveFbo, hdrFormat, 0, multisample );
+		FBO_CreateBuffer( rg.msaaResolveFbo, GL_DEPTH24_STENCIL8, 0, multisample );
 		R_CheckFBO( rg.msaaResolveFbo );
 	}
 

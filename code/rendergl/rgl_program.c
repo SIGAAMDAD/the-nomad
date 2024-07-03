@@ -117,6 +117,8 @@ static uniformInfo_t uniformsInfo[UNIFORM_COUNT] = {
     { "u_LightBuffer",          GLSL_BUFFER },
     { "u_GamePaused",           GLSL_INT },
     { "u_HardwareGamma",        GLSL_INT },
+
+    { "u_AntiAliasing",         GLSL_INT },
 };
 
 //static shaderProgram_t *hashTable[MAX_RENDER_SHADERS];
@@ -676,6 +678,12 @@ static void GLSL_PrepareHeader(GLenum shaderType, const GLchar *extra, char *des
 								"#endif\n",
 								AGEN_LIGHTING_SPECULAR,
 								AGEN_PORTAL));
+    
+    N_strcat( dest, size,
+                            va( "#ifndef AntiAliasingType_t\n"
+                                "#define AntiAlias_FXAA %i\n"
+                                "#endif\n"
+                            , AntiAlias_FXAA ) );
 
     fbufWidthScale = 1.0f / ((float)glConfig.vidWidth);
 	fbufHeightScale = 1.0f / ((float)glConfig.vidHeight);
@@ -1210,9 +1218,6 @@ void GLSL_InitGPUShaders( void )
             N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_SMAA\n" );
             N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_LUMA_SMAA_EDGE\n" );
         }
-        else if ( r_multisampleType->i == AntiAlias_FXAA ) {
-//            N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_FXAA\n" );
-        }
         if ( r_bloom->i ) {
             N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_BLOOM\n" );
         }
@@ -1305,10 +1310,6 @@ void GLSL_InitGPUShaders( void )
                 break;
             };
 
-            if ( r_multisampleType->i == AntiAlias_FXAA ) {
-                N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_FXAA\n" );
-            }
-
             if ( r_normalMapping->i ) {
     			N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_NORMALMAP\n" );
 
@@ -1380,11 +1381,7 @@ void GLSL_InitGPUShaders( void )
     }
 
     attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_COLOR;
-
     extradefines[0] = '\0';
-    if ( r_multisampleType->i == AntiAlias_FXAA ) {
-//        N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_FXAA\n" );
-    }
     N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_TCGEN\n" );
     N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_TCMOD\n" );
     if ( !GLSL_InitGPUShader( &rg.imguiShader, "imgui", attribs, qtrue, extradefines, qtrue, fallbackShader_imgui_vp, fallbackShader_imgui_fp ) ) {

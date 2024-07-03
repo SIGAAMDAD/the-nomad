@@ -169,7 +169,7 @@ void R_AddPostProcessCmd( void ) {
 	cmd->viewData = glState.viewData;
 }
 
-void RE_BeginFrame(stereoFrame_t stereoFrame)
+void RE_BeginFrame( stereoFrame_t stereoFrame )
 {
     int width, height;
     unsigned clearBits;
@@ -177,7 +177,7 @@ void RE_BeginFrame(stereoFrame_t stereoFrame)
     mat4_t matrix;
 	drawBufferCmd_t *cmd = NULL;
 
-	if (!rg.registered) {
+	if ( !rg.registered ) {
 		return;
 	}
 
@@ -185,7 +185,6 @@ void RE_BeginFrame(stereoFrame_t stereoFrame)
 		GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo->frameBuffer );
 	}
 
-    // unused for now
     if ( glState.currentFbo ) {
         width = glState.currentFbo->width;
         height = glState.currentFbo->height;

@@ -350,6 +350,8 @@ typedef enum {
 
     UNIFORM_GAMEPAUSED,
 
+    UNIFORM_ANTIALIASING,
+
     UNIFORM_COUNT
 } uniform_t;
 
