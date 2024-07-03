@@ -1158,6 +1158,7 @@ typedef struct
 	fbo_t					*screenShadowFbo;
 	fbo_t					*screenSsaoFbo;
 	fbo_t					*hdrDepthFbo;
+    fbo_t                   *ssaaResolveFbo;
 //	fbo_t                   *renderCubeFbo;
 
 	shader_t				*defaultShader;
@@ -1687,6 +1688,7 @@ used for image drawing
 
 ====================================================================
 */
+#if 0
 
 typedef struct stageVars {
 	color4ub_t	colors[SHADER_MAX_VERTEXES];
@@ -1732,6 +1734,7 @@ void RB_BeginSurface( shader_t *shader );
 void RB_EndSurface( void );
 void RB_CheckOverflow( int verts, int indexes );
 #define RB_CHECKOVERFLOW(v,i) if (tess.numVertexes + (v) >= SHADER_MAX_VERTEXES || tess.numIndexes + (i) >= SHADER_MAX_INDEXES ) {RB_CheckOverflow(v,i);}
+#endif
 
 /*
 =============================================================

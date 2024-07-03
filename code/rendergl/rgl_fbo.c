@@ -159,6 +159,7 @@ void FBO_AttachImage( fbo_t *fbo, texture_t *image, GLenum attachment )
     int32_t index;
 
 	GL_BindFramebuffer( GL_FRAMEBUFFER, fbo->frameBuffer );
+	GL_BindTexture( TB_DIFFUSEMAP, image );
     nglFramebufferTexture2D( GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, image->id, 0 );
     index = attachment - GL_COLOR_ATTACHMENT0;
     if ( index >= 0 && index <= 15 ) {
@@ -231,9 +232,12 @@ static void FBO_Restart_f( void )
 	height = glConfig.vidHeight;
 	switch ( r_multisampleType->i ) {
 	case AntiAlias_2xSSAA:
-	case AntiAlias_4xSSAA:
 		width *= 2;
 		height *= 2;
+		break;
+	case AntiAlias_4xSSAA:
+		width *= 4;
+		height *= 4;
 		break;
 	};
 
@@ -259,48 +263,37 @@ static void FBO_Restart_f( void )
 		ri.Cvar_Set( "r_multisampleAmount", va( "%i", multisample ) );
 	}
 
-	if ( multisample && glContext.ARB_framebuffer_multisample ) {
-		if ( rg.renderFbo ) {
-			FBO_Clear( rg.renderFbo );
-			rg.renderFbo->width = width;
-			rg.renderFbo->height = height;
-		}
-		rg.renderFbo = FBO_Create( "_render", width, height );
-		FBO_CreateBuffer( rg.renderFbo, hdrFormat, 0, multisample );
-		FBO_CreateBuffer( rg.renderFbo, GL_DEPTH24_STENCIL8, 0, multisample );
-		if ( r_bloom->i ) {
-			GLuint buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-			FBO_CreateBuffer( rg.renderFbo, hdrFormat, 1, multisample );
-			nglDrawBuffers( 2, buffers );
-		}
-		R_CheckFBO( rg.renderFbo );
+	if ( rg.renderFbo ) {
+		FBO_Clear( rg.renderFbo );
+		rg.renderFbo->width = width;
+		rg.renderFbo->height = height;
+	}
+	rg.renderFbo = FBO_Create( "_render", width, height );
+	FBO_CreateBuffer( rg.renderFbo, hdrFormat, 0, multisample );
+	FBO_CreateBuffer( rg.renderFbo, GL_DEPTH24_STENCIL8, 0, multisample );
+	if ( r_bloom->i ) {
+		GLuint buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+		FBO_CreateBuffer( rg.renderFbo, hdrFormat, 1, multisample );
+		nglDrawBuffers( 2, buffers );
+	}
+	R_CheckFBO( rg.renderFbo );
 
+	if ( multisample && r_multisampleType->i <= AntiAlias_32xMSAA && glContext.ARB_framebuffer_multisample ) {
 		if ( rg.msaaResolveFbo ) {
 			FBO_Clear( rg.msaaResolveFbo );
 			rg.msaaResolveFbo->width = width;
 			rg.msaaResolveFbo->height = height;
 		}
-		if ( r_multisampleType->i == AntiAlias_2xSSAA || r_multisampleType->i == AntiAlias_4xSSAA ) {
-			rg.msaaResolveFbo->width = glConfig.vidWidth;
-			rg.msaaResolveFbo->height = glConfig.vidHeight;
-		}
 	    rg.msaaResolveFbo = FBO_Create( "_msaaResolve", width, height );
 		FBO_CreateBuffer( rg.msaaResolveFbo, hdrFormat, 0, 0 );
 		FBO_CreateBuffer( rg.msaaResolveFbo, GL_DEPTH24_STENCIL8, 0, 0 );
-//		FBO_AttachImage( rg.msaaResolveFbo, rg.renderImage, GL_COLOR_ATTACHMENT0 );
-//		FBO_CreateBuffer( rg.msaaResolveFbo, GL_DEPTH24_STENCIL8, 0, 0 );
 		R_CheckFBO( rg.msaaResolveFbo );
 	}
-	else if ( r_hdr->i ) {
-		if ( rg.renderFbo ) {
-			FBO_Clear( rg.renderFbo );
-			rg.renderFbo->width = width;
-			rg.renderFbo->height = height;
-		}
-		rg.renderFbo = FBO_Create( "_render", width, height );
-		FBO_CreateBuffer( rg.renderFbo, hdrFormat, 0, 0 );
-		FBO_CreateBuffer( rg.renderFbo, GL_DEPTH24_STENCIL8, 0, 0 );
-		R_CheckFBO( rg.renderFbo );
+
+	if ( multisample && r_multisampleType->i >= AntiAlias_2xSSAA && r_multisampleType->i <= AntiAlias_4xSSAA ) {
+		rg.ssaaResolveFbo = FBO_Create( "_ssaaResolve", glConfig.vidWidth, glConfig.vidHeight );
+		FBO_CreateBuffer( rg.ssaaResolveFbo, hdrFormat, 0, multisample );
+		R_CheckFBO( rg.ssaaResolveFbo );
 	}
 
 	// clear render buffer
@@ -309,52 +302,6 @@ static void FBO_Restart_f( void )
 		GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo->frameBuffer );
 		nglClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	}
-
-	if ( rg.hdrDepthImage ) {
-		if ( rg.hdrDepthFbo ) {
-			FBO_Clear( rg.hdrDepthFbo );
-			rg.hdrDepthFbo->width = width;
-			rg.hdrDepthFbo->height = height;
-		}
-		rg.hdrDepthFbo = FBO_Create( "_hdrDepth", rg.hdrDepthImage->width, rg.hdrDepthImage->height );
-		FBO_CreateBuffer( rg.hdrDepthFbo, GL_RGBA16F, 0, multisample );
-		R_CheckFBO( rg.hdrDepthFbo );
-	}
-
-/*
-	if ( rg.screenSsaoImage ) {
-		if ( rg.screenSsaoFbo ) {
-			FBO_Clear( rg.screenSsaoFbo );
-		}
-		rg.screenSsaoFbo = FBO_Create( "_screenSsao", rg.screenSsaoImage->width, rg.screenSsaoImage->height );
-		FBO_AttachImage( rg.screenSsaoFbo, rg.screenSsaoImage, GL_COLOR_ATTACHMENT0 );
-	}
-
-	if ( rg.targetLevelsImage ) {
-		if ( rg.targetLevelsFbo ) {
-			FBO_Clear( rg.targetLevelsFbo );
-			rg.targetLevelsFbo->width = rg.targetLevelsImage->width;
-			rg.targetLevelsFbo->height = rg.targetLevelsImage->height;
-		}
-		rg.targetLevelsFbo = FBO_Create( "_targetlevels", rg.targetLevelsImage->width, rg.targetLevelsImage->height );
-		FBO_AttachImage( rg.targetLevelsFbo, rg.targetLevelsImage, GL_COLOR_ATTACHMENT0 );
-		R_CheckFBO( rg.targetLevelsFbo );
-	}
-
-	if ( rg.quarterImage[0] ) {
-		for ( i = 0; i < 2; i++ ) {
-			if ( rg.quarterFbo[i] ) {
-				FBO_Clear( rg.quarterFbo[i] );
-				rg.quarterFbo[i]->width = rg.quarterImage[i]->width;
-				rg.quarterFbo[i]->height = rg.quarterImage[i]->height;
-			}
-			rg.quarterFbo[i] = FBO_Create( va( "_quarter%d", i ), rg.quarterImage[i]->width, rg.quarterImage[i]->height );
-//			FBO_CreateBuffer( rg.quarterFbo[i], GL_RGBA8, i, 0 );
-			FBO_AttachImage( rg.quarterFbo[i], rg.quarterImage[i], GL_COLOR_ATTACHMENT0 );
-			R_CheckFBO( rg.quarterFbo[i] );
-		}
-	}
-*/
 
 	GL_CheckErrors();
 
@@ -416,17 +363,17 @@ void FBO_Init( void )
 		ri.Cvar_Set( "r_multisampleAmount", va( "%i", multisample ) );
 	}
 
-	if ( multisample && glContext.ARB_framebuffer_multisample ) {
-		rg.renderFbo = FBO_Create( "_render", width, height );
-		FBO_CreateBuffer( rg.renderFbo, hdrFormat, 0, multisample );
-		FBO_CreateBuffer( rg.renderFbo, GL_DEPTH24_STENCIL8, 0, multisample );
-		if ( r_bloom->i ) {
-			GLuint buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-			FBO_CreateBuffer( rg.renderFbo, hdrFormat, 1, multisample );
-			nglDrawBuffers( 2, buffers );
-		}
-		R_CheckFBO( rg.renderFbo );
+	rg.renderFbo = FBO_Create( "_render", width, height );
+	FBO_CreateBuffer( rg.renderFbo, hdrFormat, 0, multisample );
+	FBO_CreateBuffer( rg.renderFbo, GL_DEPTH24_STENCIL8, 0, multisample );
+	if ( r_bloom->i ) {
+		GLuint buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+		FBO_CreateBuffer( rg.renderFbo, hdrFormat, 1, multisample );
+		nglDrawBuffers( 2, buffers );
+	}
+	R_CheckFBO( rg.renderFbo );
 
+	if ( multisample && r_multisampleType->i <= AntiAlias_32xMSAA && glContext.ARB_framebuffer_multisample ) {
 		rg.msaaResolveFbo = FBO_Create( "_msaaResolve", width, height );
 		FBO_CreateBuffer( rg.msaaResolveFbo, hdrFormat, 0, 0 );
 		FBO_CreateBuffer( rg.msaaResolveFbo, GL_DEPTH24_STENCIL8, 0, 0 );
@@ -443,6 +390,20 @@ void FBO_Init( void )
 		rg.hdrDepthFbo = FBO_Create( "_hdrDepth", rg.hdrDepthImage->width, rg.hdrDepthImage->height );
 		FBO_CreateBuffer( rg.hdrDepthFbo, GL_RGBA16F, 0, multisample );
 		R_CheckFBO( rg.hdrDepthFbo );
+	}
+
+	if ( multisample && r_multisampleType->i >= AntiAlias_2xSSAA && r_multisampleType->i <= AntiAlias_4xSSAA ) {
+		rg.ssaaResolveFbo = FBO_Create( "_ssaaResolve", glConfig.vidWidth, glConfig.vidHeight );
+		FBO_CreateBuffer( rg.ssaaResolveFbo, hdrFormat, 0, multisample );
+		R_CheckFBO( rg.ssaaResolveFbo );
+	}
+
+	if ( rg.textureScratchImage[0] ) {
+		for ( i = 0; i < 2; i++ ) {
+			rg.textureScratchFbo[i] = FBO_Create( va( "_texturescratch%d", i ), rg.textureScratchImage[i]->width, rg.textureScratchImage[i]->height );
+			FBO_AttachImage( rg.textureScratchFbo[i], rg.textureScratchImage[i], GL_COLOR_ATTACHMENT0 );
+			R_CheckFBO( rg.textureScratchFbo[i] );
+		}
 	}
 
 /*
@@ -515,7 +476,8 @@ void FBO_Shutdown( void )
 	}
 }
 
-void FBO_BlitFromTexture( struct texture_s *src, vec4_t inSrcTexCorners, vec2_t inSrcTexScale, fbo_t *dst, ivec4_t inDstBox, struct shaderProgram_s *shaderProgram, const vec4_t inColor, int blend )
+void FBO_BlitFromTexture( fbo_t *srcFbo, struct texture_s *src, vec4_t inSrcTexCorners, vec2_t inSrcTexScale, fbo_t *dst,
+	ivec4_t inDstBox, struct shaderProgram_s *shaderProgram, const vec4_t inColor, int blend )
 {
 	ivec4_t dstBox;
 	vec4_t color;
@@ -528,7 +490,7 @@ void FBO_BlitFromTexture( struct texture_s *src, vec4_t inSrcTexCorners, vec2_t 
 	vec4_t ortho;
 
 	if ( !src ) {
-		ri.Printf( PRINT_WARNING, "Tried to blit from a NULL texture!\n" );
+		ri.Printf( PRINT_WARNING, "Tried to blit from a NULL texture! (%s)\n", srcFbo->name );
 		return;
 	}
 
@@ -631,7 +593,7 @@ void FBO_Blit( fbo_t *src, ivec4_t inSrcBox, vec2_t srcTexScale, fbo_t *dst, ive
 	}
 
 //	FBO_FastBlit( src, inSrcBox, dst, dstBox, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
-	FBO_BlitFromTexture( src->colorImage[0], srcTexCorners, srcTexScale, dst, dstBox, shaderProgram, color, blend | GLS_DEPTHTEST_DISABLE );
+	FBO_BlitFromTexture( src, src->colorImage[0], srcTexCorners, srcTexScale, dst, dstBox, shaderProgram, color, blend | GLS_DEPTHTEST_DISABLE );
 }
 
 void FBO_FastBlit( fbo_t *src, ivec4_t srcBox, fbo_t *dst, ivec4_t dstBox, int buffers, int filter )
@@ -1128,7 +1090,7 @@ void RB_GaussianBlur( float blur )
 
 		// set the alpha channel
 		nglColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_TRUE);
-		FBO_BlitFromTexture(rg.whiteImage, NULL, NULL, rg.textureScratchFbo[0], NULL, NULL, color, GLS_DEPTHTEST_DISABLE);
+		FBO_BlitFromTexture(rg.textureScratchFbo[0], rg.whiteImage, NULL, NULL, rg.textureScratchFbo[0], NULL, NULL, color, GLS_DEPTHTEST_DISABLE);
 		nglColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
 		// blur the tiny buffer horizontally and vertically
@@ -1142,4 +1104,3 @@ void RB_GaussianBlur( float blur )
 		FBO_Blit(rg.textureScratchFbo[0], srcBox, NULL, NULL, dstBox, NULL, color, GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA);
 	}
 }
-
