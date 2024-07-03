@@ -2874,6 +2874,7 @@ static void R_CreateBuiltinTextures( void )
 
 		rg.renderImage = R_CreateImage( "_render", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
 
+		/*
 		if ( r_shadowBlur->i ) {
 			rg.screenScratchImage = R_CreateImage( "screenScratch", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, rgbFormat );
 		}
@@ -2948,6 +2949,7 @@ static void R_CreateBuiltinTextures( void )
 			gl_filter_max = max_filter;
 			gl_filter_min = min_filter;
 		}
+		*/
 
 		/* GL error on this
 		if ( r_sunlightMode->i ) {
