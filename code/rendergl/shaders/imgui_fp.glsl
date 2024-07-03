@@ -23,49 +23,6 @@ uniform int u_GamePaused;
 //#define CoefLuma vec3( 0.299, 0.587, 0.114 )       // BT.601 luma coefficient (SD Television)
 #define CoefLuma vec3( 1.0/3.0, 1.0/3.0, 1.0/3.0 ) // Equal weight coefficient
 
-vec4 sharpenImage( sampler2D tex, vec2 pos )
-{
-	  vec4 colorInput = texture2D(tex, pos);
-  	
-	  vec3 ori = colorInput.rgb;
-
-	  // -- Combining the strength and luma multipliers --
-	  vec3 sharp_strength_luma = (CoefLuma * u_SharpenAmount); //I'll be combining even more multipliers with it later on
-	
-	  // -- Gaussian filter --
-	  //   [ .25, .50, .25]     [ 1 , 2 , 1 ]
-	  //   [ .50,   1, .50]  =  [ 2 , 4 , 2 ]
- 	  //   [ .25, .50, .25]     [ 1 , 2 , 1 ]
-
-
-    float px = 1.0/u_ScreenSize[0];
-	  float py = 1.0/u_ScreenSize[1];
-
-	  vec3 blur_ori = texture2D(tex, pos + vec2(px,-py) * 0.5 * offset_bias).rgb; // South East
-	  blur_ori += texture2D(tex, pos + vec2(-px,-py) * 0.5 * offset_bias).rgb;  // South West
-	  blur_ori += texture2D(tex, pos + vec2(px,py) * 0.5 * offset_bias).rgb; // North East
-	  blur_ori += texture2D(tex, pos + vec2(-px,py) * 0.5 * offset_bias).rgb; // North West
-
-	  blur_ori *= 0.25;  // ( /= 4) Divide by the number of texture fetches
-
-
-
-	  // -- Calculate the sharpening --
-	  vec3 sharp = ori - blur_ori;  //Subtracting the blurred image from the original image
-
-	  // -- Adjust strength of the sharpening and clamp it--
-	  vec4 sharp_strength_luma_clamp = vec4(sharp_strength_luma * (0.5 / sharp_clamp),0.5); //Roll part of the clamp into the dot
-
-	  float sharp_luma = clamp((dot(vec4(sharp,1.0), sharp_strength_luma_clamp)), 0.0,1.0 ); //Calculate the luma, adjust the strength, scale up and clamp
-	  sharp_luma = (sharp_clamp * 2.0) * sharp_luma - sharp_clamp; //scale down
-
-
-	  // -- Combining the values to get the final sharpened pixel	--
-
-	  colorInput.rgb = colorInput.rgb + sharp_luma;    // Add the sharpening to the input color.
-	  return clamp(colorInput, 0.0,1.0);
-}
-
 #if defined(USE_FXAA)
 void texcoords( vec2 fragCoord, vec2 resolution, out vec2 v_rgbNW, out vec2 v_rgbNE, out vec2 v_rgbSW,
 	out vec2 v_rgbSE, out vec2 v_rgbM )
@@ -151,11 +108,55 @@ vec4 applyFXAA( sampler2D tex, vec2 fragCoord, vec2 resolution ) {
 }
 #endif
 
+vec4 sharpenImage( sampler2D tex, vec2 pos )
+{
+	  vec4 colorInput = texture2D(tex, pos);
+  	
+	  vec3 ori = colorInput.rgb;
+
+	  // -- Combining the strength and luma multipliers --
+	  vec3 sharp_strength_luma = (CoefLuma * u_SharpenAmount); //I'll be combining even more multipliers with it later on
+	
+	  // -- Gaussian filter --
+	  //   [ .25, .50, .25]     [ 1 , 2 , 1 ]
+	  //   [ .50,   1, .50]  =  [ 2 , 4 , 2 ]
+ 	  //   [ .25, .50, .25]     [ 1 , 2 , 1 ]
+
+
+    float px = 1.0/u_ScreenSize[0];
+	  float py = 1.0/u_ScreenSize[1];
+
+	  vec3 blur_ori = texture2D(tex, pos + vec2(px,-py) * 0.5 * offset_bias).rgb; // South East
+	  blur_ori += texture2D(tex, pos + vec2(-px,-py) * 0.5 * offset_bias).rgb;  // South West
+	  blur_ori += texture2D(tex, pos + vec2(px,py) * 0.5 * offset_bias).rgb; // North East
+	  blur_ori += texture2D(tex, pos + vec2(-px,py) * 0.5 * offset_bias).rgb; // North West
+
+	  blur_ori *= 0.25;  // ( /= 4) Divide by the number of texture fetches
+
+
+
+	  // -- Calculate the sharpening --
+	  vec3 sharp = ori - blur_ori;  //Subtracting the blurred image from the original image
+
+	  // -- Adjust strength of the sharpening and clamp it--
+	  vec4 sharp_strength_luma_clamp = vec4(sharp_strength_luma * (0.5 / sharp_clamp),0.5); //Roll part of the clamp into the dot
+
+	  float sharp_luma = clamp((dot(vec4(sharp,1.0), sharp_strength_luma_clamp)), 0.0,1.0 ); //Calculate the luma, adjust the strength, scale up and clamp
+	  sharp_luma = (sharp_clamp * 2.0) * sharp_luma - sharp_clamp; //scale down
+
+
+	  // -- Combining the values to get the final sharpened pixel	--
+
+	  colorInput.rgb = colorInput.rgb + sharp_luma;    // Add the sharpening to the input color.
+	  return clamp(colorInput, 0.0,1.0);
+}
+
 void main() {
-#ifdef USE_FXAA
+#if defined(USE_FXAA)
 	vec2 fragCoord = v_TexCoords * u_ScreenSize;
 	a_Color = v_Color * applyFXAA( u_DiffuseMap, fragCoord, u_ScreenSize );
-#else
+#endif
+#if !defined(USE_SMAA) && !defined(USE_FXAA)
     a_Color = v_Color * sharpenImage( u_DiffuseMap, v_TexCoords );
 #endif
     a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );

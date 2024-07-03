@@ -177,11 +177,11 @@ void RE_BeginFrame(stereoFrame_t stereoFrame)
     mat4_t matrix;
 	drawBufferCmd_t *cmd = NULL;
 
-	if (!rg.registered) {
+	if ( !rg.registered ) {
 		return;
 	}
 
-	if ( glContext.ARB_framebuffer_object && r_arb_framebuffer_object->i && rg.renderFbo && r_multisampleType->i <= AntiAlias_32xMSAA ) {
+	if ( glContext.ARB_framebuffer_object && r_arb_framebuffer_object->i && rg.renderFbo && r_multisampleType->i <= AntiAlias_4xSSAA ) {
 		GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo->frameBuffer );
 	}
 

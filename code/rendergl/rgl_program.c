@@ -1307,6 +1307,8 @@ void GLSL_InitGPUShaders( void )
 
             if ( r_multisampleType->i == AntiAlias_FXAA ) {
                 N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_FXAA\n" );
+            } else if ( r_multisampleType->i == AntiAlias_SMAA ) {
+                N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_SMAA\n" );
             }
 
             if ( r_normalMapping->i ) {
@@ -1379,11 +1381,22 @@ void GLSL_InitGPUShaders( void )
         numLightShaders++;
     }
 
+//    attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_COLOR;
+//    extradefines[0] = '\0';
+//
+//    if ( !GLSL_InitGPUShader( &rg.smaaEdges, "SMAAEdges", attribs, qtrue, extradefines, qtrue, fallbackShader_smaaEdges_vp, fallbackShader_smaaEdges_fp ) ) {
+//        ri.Error( ERR_FATAL, "Could not load smaaEdges shader!" );
+//    }
+
+
+
     attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_COLOR;
 
     extradefines[0] = '\0';
     if ( r_multisampleType->i == AntiAlias_FXAA ) {
         N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_FXAA\n" );
+    } else if ( r_multisampleType->i == AntiAlias_SMAA ) {
+        N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_SMAA\n" );
     }
     N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_TCGEN\n" );
     N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_TCMOD\n" );
@@ -1394,7 +1407,7 @@ void GLSL_InitGPUShaders( void )
     GLSL_FinishGPUShader( &rg.imguiShader );
     numGenShaders++;
 
-    attribs = ATTRIB_POSITION | ATTRIB_NORMAL | ATTRIB_TANGENT | ATTRIB_TEXCOORD | ATTRIB_COLOR | ATTRIB_WORLDPOS;
+    attribs = ATTRIB_POSITION | ATTRIB_NORMAL | ATTRIB_TANGENT | ATTRIB_TEXCOORD | ATTRIB_WORLDPOS;
 
     extradefines[0] = '\0';
     N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_LIGHT\n" );

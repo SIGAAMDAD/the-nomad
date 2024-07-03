@@ -36,7 +36,8 @@ void FBO_Shutdown( void );
 void FBO_FastBlit( fbo_t *src, ivec4_t srcBox, fbo_t *dst, ivec4_t dstBox, int buffers, int filter );
 void FBO_Blit( fbo_t *src, ivec4_t inSrcBox, vec2_t srcTexScale, fbo_t *dst, ivec4_t dstBox, struct shaderProgram_s *shaderProgram, const vec4_t color, int blend );
 void FBO_Bind( fbo_t *fbo );
-
+void FBO_BlitFromTexture( fbo_t *srcFbo, struct texture_s *src, vec4_t inSrcTexCorners, vec2_t inSrcTexScale, fbo_t *dst,
+	ivec4_t inDstBox, struct shaderProgram_s *shaderProgram, const vec4_t inColor, int blend );
 
 void RB_ToneMap(fbo_t *hdrFbo, ivec4_t hdrBox, fbo_t *ldrFbo, ivec4_t ldrBox, int autoExposure);
 void RB_BokehBlur(fbo_t *src, ivec4_t srcBox, fbo_t *dst, ivec4_t dstBox, float blur);

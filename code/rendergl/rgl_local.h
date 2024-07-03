@@ -189,7 +189,8 @@ typedef enum
 	IMGFLAG_LIGHTMAP       = 0x0080,
 	IMGFLAG_NOSCALE        = 0x0100,
 	IMGFLAG_CLAMPTOBORDER  = 0x0200,
-    IMGFLAG_NOWRAP         = 0x0400
+    IMGFLAG_NOWRAP         = 0x0400,
+    IMGFLAG_FBO            = 0x0800
 } imgFlags_t;
 
 typedef struct {
@@ -1141,6 +1142,7 @@ typedef struct
 	texture_t               *screenShadowImage;
 	texture_t               *screenSsaoImage;
 	texture_t				*hdrDepthImage;
+    texture_t               *screenSsaaImage;
 	
 	texture_t				*textureDepthImage;
 
@@ -1158,6 +1160,10 @@ typedef struct
 	fbo_t					*screenShadowFbo;
 	fbo_t					*screenSsaoFbo;
 	fbo_t					*hdrDepthFbo;
+    fbo_t                   *ssaaFbo;
+//    fbo_t                   *smaaColorFbo;
+//    fbo_t                   *smaaDepthFbo;
+//    fbo_t                   *smaaBlendFbo;
 //	fbo_t                   *renderCubeFbo;
 
 	shader_t				*defaultShader;
@@ -1214,6 +1220,10 @@ typedef struct
 	shaderProgram_t bokehShader;
 	shaderProgram_t tonemapShader;
     shaderProgram_t textureColorShader;
+
+    shaderProgram_t smaaEdges;
+    shaderProgram_t smaaBlending;
+    shaderProgram_t smaaWeights;
 
     qboolean beganQuery;
 
@@ -1369,6 +1379,8 @@ extern cvar_t  *r_forceAutoExposureMax;
 extern cvar_t *r_depthPrepass;
 extern cvar_t *r_ssao;
 extern cvar_t *r_bloom;
+
+extern cvar_t *r_smaaEdgesType;
 
 extern cvar_t *r_normalMapping;
 extern cvar_t *r_specularMapping;
@@ -1643,7 +1655,6 @@ void RB_IterateShaderStages( shader_t *shader );
 void RB_InstantQuad(vec4_t quadVerts[4]);
 void RB_InstantQuad2(vec4_t quadVerts[4], vec2_t texCoords[4]);
 void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, const void *offset, int32_t baseVertex );
-
 //
 // rgl_cache.c
 //
@@ -1658,8 +1669,9 @@ void VBO_BindNull( void );
 void R_InitGPUBuffers( void );
 void R_ShutdownGPUBuffers( void );
 void VBO_Bind( vertexBuffer_t *vbo );
-void VBO_SetVertexPointers(vertexBuffer_t *vbo, uint32_t attribBits);
+void VBO_SetVertexPointers( vertexBuffer_t *vbo, uint32_t attribBits );
 void R_ShutdownBuffer( vertexBuffer_t *vbo );
+void RB_UpdateTessVao( unsigned int vertexAttribs );
 
 // for batch drawing
 void RB_SetBatchBuffer( vertexBuffer_t *buffer, void *vertexBuffer, uintptr_t vtxSize, void *indexBuffer, uintptr_t idxSize );
@@ -1725,8 +1737,6 @@ typedef struct shaderCommands_s {
 	int			numPasses;
 	shaderStage_t	**xstages;
 } shaderCommands_t;
-
-extern	shaderCommands_t	tess;
 
 void RB_BeginSurface( shader_t *shader );
 void RB_EndSurface( void );

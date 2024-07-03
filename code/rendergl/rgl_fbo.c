@@ -232,9 +232,12 @@ static void FBO_Restart_f( void )
 	height = glConfig.vidHeight;
 	switch ( r_multisampleType->i ) {
 	case AntiAlias_2xSSAA:
-	case AntiAlias_4xSSAA:
 		width *= 2;
 		height *= 2;
+		break;
+	case AntiAlias_4xSSAA:
+		width *= 4;
+		height *= 4;
 		break;
 	};
 
@@ -262,8 +265,6 @@ static void FBO_Restart_f( void )
 
 	if ( rg.renderFbo ) {
 		FBO_Clear( rg.renderFbo );
-		rg.renderFbo->width = width;
-		rg.renderFbo->height = height;
 	}
 	rg.renderFbo = FBO_Create( "_render", width, height );
 	FBO_CreateBuffer( rg.renderFbo, hdrFormat, 0, multisample );
@@ -275,33 +276,26 @@ static void FBO_Restart_f( void )
 	}
 	R_CheckFBO( rg.renderFbo );
 
-	if ( multisample && glContext.ARB_framebuffer_multisample ) {
+	if ( multisample && r_multisampleType->i <= AntiAlias_32xMSAA && glContext.ARB_framebuffer_multisample ) {
 		if ( rg.msaaResolveFbo ) {
 			FBO_Clear( rg.msaaResolveFbo );
-			rg.msaaResolveFbo->width = width;
-			rg.msaaResolveFbo->height = height;
 		}
-		if ( r_multisampleType->i == AntiAlias_2xSSAA || r_multisampleType->i == AntiAlias_4xSSAA ) {
-			rg.msaaResolveFbo->width = glConfig.vidWidth;
-			rg.msaaResolveFbo->height = glConfig.vidHeight;
-		}
-	    rg.msaaResolveFbo = FBO_Create( "_msaaResolve", width, height );
-		FBO_CreateBuffer( rg.msaaResolveFbo, hdrFormat, 0, 0 );
-		FBO_CreateBuffer( rg.msaaResolveFbo, GL_DEPTH24_STENCIL8, 0, 0 );
-//		FBO_AttachImage( rg.msaaResolveFbo, rg.renderImage, GL_COLOR_ATTACHMENT0 );
-//		FBO_CreateBuffer( rg.msaaResolveFbo, GL_DEPTH24_STENCIL8, 0, 0 );
+		rg.msaaResolveFbo = FBO_Create( "_msaaResolve", width, height );
+		FBO_CreateBuffer( rg.msaaResolveFbo, hdrFormat, 0, multisample );
+		FBO_CreateBuffer( rg.msaaResolveFbo, GL_DEPTH24_STENCIL8, 0, multisample );
 		R_CheckFBO( rg.msaaResolveFbo );
 	}
-	else if ( r_hdr->i ) {
-		if ( rg.renderFbo ) {
-			FBO_Clear( rg.renderFbo );
-			rg.renderFbo->width = width;
-			rg.renderFbo->height = height;
+
+	if ( r_multisampleType->i >= AntiAlias_2xSSAA && r_multisampleType-> i<= AntiAlias_4xSSAA ) {
+		if ( rg.ssaaFbo ) {
+			FBO_Clear( rg.ssaaFbo );
+			rg.ssaaFbo->width = glConfig.vidWidth;
+			rg.ssaaFbo->height = glConfig.vidHeight;
 		}
-		rg.renderFbo = FBO_Create( "_render", width, height );
-		FBO_CreateBuffer( rg.renderFbo, hdrFormat, 0, 0 );
-		FBO_CreateBuffer( rg.renderFbo, GL_DEPTH24_STENCIL8, 0, 0 );
-		R_CheckFBO( rg.renderFbo );
+		rg.ssaaFbo = FBO_Create( "_ssaa", glConfig.vidWidth, glConfig.vidHeight );
+//		FBO_AttachImage( rg.ssaaFbo, rg.screenSsaaImage, GL_COLOR_ATTACHMENT0 );
+		FBO_CreateBuffer( rg.ssaaFbo, GL_RGBA8, 0, multisample );
+		R_CheckFBO( rg.ssaaFbo );
 	}
 
 	// clear render buffer
@@ -310,7 +304,6 @@ static void FBO_Restart_f( void )
 		GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo->frameBuffer );
 		nglClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	}
-
 	if ( rg.hdrDepthImage ) {
 		if ( rg.hdrDepthFbo ) {
 			FBO_Clear( rg.hdrDepthFbo );
@@ -324,28 +317,21 @@ static void FBO_Restart_f( void )
 
 	if ( rg.textureScratchImage[0] ) {
 		for ( i = 0; i < 2; i++ ) {
-			rg.textureScratchFbo[i] = FBO_Create( va( "_texturescratch%d", i ), 256, 256 );
-//			FBO_AttachImage( rg.textureScratchFbo[i], rg.textureScratchImage[i], GL_COLOR_ATTACHMENT0 );
-			FBO_CreateBuffer( rg.textureScratchFbo[i], GL_RGBA8, 0, 0 );
+			rg.textureScratchFbo[i] = FBO_Create( va( "_texturescratch%d", i ), rg.textureScratchImage[i]->width, rg.textureScratchImage[i]->height );
+			FBO_AttachImage( rg.textureScratchFbo[i], rg.textureScratchImage[i], GL_COLOR_ATTACHMENT0 );
 			R_CheckFBO( rg.textureScratchFbo[i] );
 		}
 	}
 
 /*
 	if ( rg.screenSsaoImage ) {
-		if ( rg.screenSsaoFbo ) {
-			FBO_Clear( rg.screenSsaoFbo );
-		}
 		rg.screenSsaoFbo = FBO_Create( "_screenSsao", rg.screenSsaoImage->width, rg.screenSsaoImage->height );
-		FBO_AttachImage( rg.screenSsaoFbo, rg.screenSsaoImage, GL_COLOR_ATTACHMENT0 );
+//		FBO_AttachImage( rg.screenSsaoFbo, rg.screenSsaoImage, GL_COLOR_ATTACHMENT0 );
+		FBO_CreateBuffer( rg.screenSsaoFbo, GL_RGBA8, 0, 0 );
+		R_CheckFBO( rg.screenSsaoFbo );
 	}
 
 	if ( rg.targetLevelsImage ) {
-		if ( rg.targetLevelsFbo ) {
-			FBO_Clear( rg.targetLevelsFbo );
-			rg.targetLevelsFbo->width = rg.targetLevelsImage->width;
-			rg.targetLevelsFbo->height = rg.targetLevelsImage->height;
-		}
 		rg.targetLevelsFbo = FBO_Create( "_targetlevels", rg.targetLevelsImage->width, rg.targetLevelsImage->height );
 		FBO_AttachImage( rg.targetLevelsFbo, rg.targetLevelsImage, GL_COLOR_ATTACHMENT0 );
 		R_CheckFBO( rg.targetLevelsFbo );
@@ -353,14 +339,9 @@ static void FBO_Restart_f( void )
 
 	if ( rg.quarterImage[0] ) {
 		for ( i = 0; i < 2; i++ ) {
-			if ( rg.quarterFbo[i] ) {
-				FBO_Clear( rg.quarterFbo[i] );
-				rg.quarterFbo[i]->width = rg.quarterImage[i]->width;
-				rg.quarterFbo[i]->height = rg.quarterImage[i]->height;
-			}
 			rg.quarterFbo[i] = FBO_Create( va( "_quarter%d", i ), rg.quarterImage[i]->width, rg.quarterImage[i]->height );
-//			FBO_CreateBuffer( rg.quarterFbo[i], GL_RGBA8, i, 0 );
-			FBO_AttachImage( rg.quarterFbo[i], rg.quarterImage[i], GL_COLOR_ATTACHMENT0 );
+			FBO_CreateBuffer( rg.quarterFbo[i], GL_RGBA8, i, 0 );
+//			FBO_AttachImage( rg.quarterFbo[i], rg.quarterImage[i], GL_COLOR_ATTACHMENT0 + i );
 			R_CheckFBO( rg.quarterFbo[i] );
 		}
 	}
@@ -438,9 +419,26 @@ void FBO_Init( void )
 
 	if ( multisample && r_multisampleType->i <= AntiAlias_32xMSAA && glContext.ARB_framebuffer_multisample ) {
 		rg.msaaResolveFbo = FBO_Create( "_msaaResolve", width, height );
-		FBO_CreateBuffer( rg.msaaResolveFbo, hdrFormat, 0, 0 );
-		FBO_CreateBuffer( rg.msaaResolveFbo, GL_DEPTH24_STENCIL8, 0, 0 );
+		FBO_CreateBuffer( rg.msaaResolveFbo, hdrFormat, 0, multisample );
+		FBO_CreateBuffer( rg.msaaResolveFbo, GL_DEPTH24_STENCIL8, 0, multisample );
 		R_CheckFBO( rg.msaaResolveFbo );
+	}
+
+	if ( r_multisampleType->i >= AntiAlias_2xSSAA && r_multisampleType-> i<= AntiAlias_4xSSAA ) {
+//		switch ( r_multisampleType->i ) {
+//		case AntiAlias_2xSSAA:
+//			width *= 2;
+//			height *= 2;
+//			break;
+//		case AntiAlias_4xSSAA:
+//			width *= 4;
+//			height *= 4;
+//			break;
+//		};
+		rg.ssaaFbo = FBO_Create( "_ssaa", glConfig.vidWidth, glConfig.vidHeight );
+		FBO_CreateBuffer( rg.ssaaFbo, GL_RGBA8, 0, 0 );
+//		FBO_AttachImage( rg.ssaaFbo, rg.screenSsaaImage, GL_COLOR_ATTACHMENT0 );
+		R_CheckFBO( rg.ssaaFbo );
 	}
 
 	// clear render buffer
@@ -615,14 +613,14 @@ void FBO_BlitFromTexture( fbo_t *srcFbo, struct texture_s *src, vec4_t inSrcTexC
 
 	GL_State( blend );
 
-	GLSL_UseProgram( shaderProgram );
+//	GLSL_UseProgram( shaderProgram );
 	
-	GLSL_SetUniformMatrix4( shaderProgram, UNIFORM_MODELVIEWPROJECTION, projection );
-	GLSL_SetUniformVec4( shaderProgram, UNIFORM_COLOR, color );
-	GLSL_SetUniformVec2( shaderProgram, UNIFORM_INVTEXRES, invTexRes );
-	GLSL_SetUniformVec2( shaderProgram, UNIFORM_AUTOEXPOSUREMINMAX, backend.refdef.autoExposureMinMax );
-	GLSL_SetUniformVec3( shaderProgram, UNIFORM_TONEMINAVGMAXLINEAR, backend.refdef.toneMinAvgMaxLinear );
-
+//	GLSL_SetUniformMatrix4( shaderProgram, UNIFORM_MODELVIEWPROJECTION, projection );
+//	GLSL_SetUniformVec4( shaderProgram, UNIFORM_COLOR, color );
+//	GLSL_SetUniformVec2( shaderProgram, UNIFORM_INVTEXRES, invTexRes );
+//	GLSL_SetUniformVec2( shaderProgram, UNIFORM_AUTOEXPOSUREMINMAX, backend.refdef.autoExposureMinMax );
+//	GLSL_SetUniformVec3( shaderProgram, UNIFORM_TONEMINAVGMAXLINEAR, backend.refdef.toneMinAvgMaxLinear );
+//	GLSL_SetUniformInt( shaderProgram, UNIFORM_DIFFUSE_MAP, 0 );
 
 
 	RB_InstantQuad2(quadVerts, texCoords);
@@ -803,16 +801,16 @@ void RB_BokehBlur(fbo_t *src, ivec4_t srcBox, fbo_t *dst, ivec4_t dstBox, float 
 			quarterBox[3] = -rg.quarterFbo[0]->height;
 
 			// create a quarter texture
-			//FBO_Blit(NULL, NULL, NULL, rg.quarterFbo[0], NULL, NULL, NULL, 0);
-			FBO_FastBlit(src, srcBox, rg.quarterFbo[0], quarterBox, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+			FBO_Blit(NULL, NULL, NULL, rg.quarterFbo[0], NULL, NULL, NULL, 0);
+			//FBO_FastBlit(src, srcBox, rg.quarterFbo[0], quarterBox, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 		}
 
 #ifndef HQ_BLUR
 		if (blur > 1.0f)
 		{
 			// create a 1/16th texture
-			//FBO_Blit(rg.quarterFbo[0], NULL, NULL, rg.textureScratchFbo[0], NULL, NULL, NULL, 0);
-			FBO_FastBlit(rg.quarterFbo[0], NULL, rg.textureScratchFbo[0], NULL, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+			FBO_Blit(rg.quarterFbo[0], NULL, NULL, rg.textureScratchFbo[0], NULL, NULL, NULL, 0);
+			//FBO_FastBlit(rg.quarterFbo[0], NULL, rg.textureScratchFbo[0], NULL, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 		}
 #endif
 

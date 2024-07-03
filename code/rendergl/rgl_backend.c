@@ -490,20 +490,24 @@ static const void *RB_SwapBuffers(const void *data)
 	if ( glContext.ARB_framebuffer_object && r_arb_framebuffer_object->i ) {
 		if ( !backend.framePostProcessed ) {
 			start = ri.Milliseconds();
-			if ( rg.msaaResolveFbo && r_hdr->i ) {
+			if ( rg.msaaResolveFbo && r_multisampleType->i <= AntiAlias_32xMSAA && r_hdr->i ) {
 				// Resolving an RGB16F MSAA FBO to the screen messes with the brightness, so resolve to an RGB16F FBO first
 				FBO_FastBlit( rg.renderFbo, NULL, rg.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
-				if ( r_multisampleType->i == AntiAlias_2xSSAA || r_multisampleType->i == AntiAlias_4xSSAA ) {
-					FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
-				} else {
-					FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
-				}
-			} else {
-				if ( r_multisampleType->i == AntiAlias_2xSSAA || r_multisampleType->i == AntiAlias_4xSSAA ) {
-					FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
-				} else {
-					FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
-				}
+				FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+			}
+			else if ( rg.ssaaFbo && r_multisampleType->i >= AntiAlias_2xSSAA && r_multisampleType->i <= AntiAlias_4xSSAA ) {
+				ivec4_t dstBox;
+
+				dstBox[0] = 0;
+				dstBox[1] = 0;
+				dstBox[2] = rg.renderFbo->width;
+				dstBox[3] = rg.renderFbo->height;
+
+				FBO_FastBlit( rg.renderFbo, NULL, rg.ssaaFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+				FBO_FastBlit( rg.ssaaFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+			}
+			else {
+				FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 			}
 			end = ri.Milliseconds();
 			backend.pc.postprocessMsec = end - start;
@@ -561,7 +565,7 @@ static const void *RB_PostProcess(const void *data)
 	}
 
 	srcFbo = rg.renderFbo;
-	if ( rg.msaaResolveFbo ) {
+	if ( rg.msaaResolveFbo && r_multisampleAmount->i <= AntiAlias_32xMSAA ) {
 		// Resolve the MSAA before anything else
 		// Can't resolve just part of the MSAA FBO, so multiple views will suffer a performance hit here
 		FBO_FastBlit( rg.renderFbo, NULL, rg.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
@@ -573,7 +577,6 @@ static const void *RB_PostProcess(const void *data)
 	dstBox[2] = glState.viewData.viewportWidth;
 	dstBox[3] = glState.viewData.viewportHeight;
 
-#if 0
 	if ( r_ssao->i ) {
 		srcBox[0] = glState.viewData.viewportX      * rg.screenSsaoImage->width  / (float)glConfig.vidWidth;
 		srcBox[1] = glState.viewData.viewportY      * rg.screenSsaoImage->height / (float)glConfig.vidHeight;
@@ -582,7 +585,6 @@ static const void *RB_PostProcess(const void *data)
 
 		FBO_Blit( rg.screenSsaoFbo, srcBox, NULL, srcFbo, dstBox, NULL, NULL, GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO );
 	}
-#endif
 
 	srcBox[0] = glState.viewData.viewportX;
 	srcBox[1] = glState.viewData.viewportY;
@@ -617,6 +619,9 @@ static const void *RB_PostProcess(const void *data)
 		RB_BokehBlur( NULL, srcBox, NULL, dstBox, backend.refdef.blurFactor );
 	} else {
 		RB_GaussianBlur( backend.refdef.blurFactor );
+	}
+
+	if ( r_multisampleType->i == AntiAlias_SMAA ) {
 	}
 
 #if 0
@@ -858,6 +863,7 @@ static const void *RB_DrawImage( const void *data ) {
 
 	cmd = (const drawImageCmd_t *)data;
 
+#if 1
 	shader = cmd->shader;
 	if ( backend.drawBatch.shader != shader ) {
 		if ( backend.drawBatch.idxOffset ) {
@@ -867,8 +873,8 @@ static const void *RB_DrawImage( const void *data ) {
 	}
 	backend.drawBatch.shader = shader;
 
-	verts = ( (srfVert_t *)backend.drawBatch.vertices ) + backend.drawBatch.vtxOffset;
-	indices = ( (uint32_t *)backend.drawBatch.indices ) + backend.drawBatch.idxOffset;
+	verts = &backendData->verts[ backend.drawBatch.vtxOffset ];
+	indices = &backendData->indices[ backend.drawBatch.idxOffset ];
 
 	{
 		uint16_t color[4];
@@ -920,6 +926,69 @@ static const void *RB_DrawImage( const void *data ) {
 	backend.drawBatch.idxOffset += 6;
 	
 //	RB_CommitDrawData( verts, 4, indices, 6 );
+#else
+	shader = cmd->shader;
+	if ( shader != tess.shader ) {
+		if ( tess.numIndexes ) {
+			RB_EndSurface();
+		}
+//		backend.currentEntity = &backend.entity2D;
+		RB_BeginSurface( shader );
+	}
+
+	RB_CHECKOVERFLOW( 4, 6 );
+	numVerts = tess.numVertexes;
+	numIndices = tess.numIndexes;
+
+	tess.numVertexes += 4;
+	tess.numIndexes += 6;
+
+	tess.indexes[ numIndices ] = numVerts + 3;
+	tess.indexes[ numIndices + 1 ] = numVerts + 0;
+	tess.indexes[ numIndices + 2 ] = numVerts + 2;
+	tess.indexes[ numIndices + 3 ] = numVerts + 2;
+	tess.indexes[ numIndices + 4 ] = numVerts + 0;
+	tess.indexes[ numIndices + 5 ] = numVerts + 1;
+
+	{
+		uint16_t color[4];
+
+		VectorScale4( backend.color2D, 257, color );
+
+		VectorCopy4( color, tess.color[ numVerts ] );
+		VectorCopy4( color, tess.color[ numVerts + 1 ] );
+		VectorCopy4( color, tess.color[ numVerts + 2 ] );
+		VectorCopy4( color, tess.color[ numVerts + 3 ] );
+	}
+
+	tess.xyz[ numVerts ][0] = cmd->x;
+	tess.xyz[ numVerts ][1] = cmd->y;
+	tess.xyz[ numVerts ][2] = 0;
+
+	tess.texCoords[ numVerts ][0] = cmd->u1;
+	tess.texCoords[ numVerts ][1] = cmd->v1;
+
+	tess.xyz[ numVerts + 1 ][0] = cmd->x + cmd->w;
+	tess.xyz[ numVerts + 1 ][1] = cmd->y;
+	tess.xyz[ numVerts + 1 ][2] = 0;
+
+	tess.texCoords[ numVerts + 1 ][0] = cmd->u2;
+	tess.texCoords[ numVerts + 1 ][1] = cmd->v1;
+
+	tess.xyz[ numVerts + 2 ][0] = cmd->x + cmd->w;
+	tess.xyz[ numVerts + 2 ][1] = cmd->y + cmd->h;
+	tess.xyz[ numVerts + 2 ][2] = 0;
+
+	tess.texCoords[ numVerts + 2 ][0] = cmd->u2;
+	tess.texCoords[ numVerts + 2 ][1] = cmd->v2;
+
+	tess.xyz[ numVerts + 3 ][0] = cmd->x;
+	tess.xyz[ numVerts + 3 ][1] = cmd->y + cmd->h;
+	tess.xyz[ numVerts + 3 ][2] = 0;
+
+	tess.texCoords[ numVerts + 3 ][0] = cmd->u1;
+	tess.texCoords[ numVerts + 3 ][1] = cmd->v2;
+#endif
 
 	return (const void *)( cmd + 1 );
 }
@@ -964,6 +1033,9 @@ void RB_ExecuteRenderCommands( const void *data )
 		default:
 			// finish any drawing if needed
 			RB_FlushBatchBuffer();
+			if ( tess.numIndexes ) {
+				RB_EndSurface();
+			}
 
 			// stop rendering
 			t2 = ri.Milliseconds();
