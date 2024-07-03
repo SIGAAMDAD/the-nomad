@@ -117,6 +117,8 @@ static uniformInfo_t uniformsInfo[UNIFORM_COUNT] = {
     { "u_LightBuffer",          GLSL_BUFFER },
     { "u_GamePaused",           GLSL_INT },
     { "u_HardwareGamma",        GLSL_INT },
+
+    { "u_AntiAliasing",         GLSL_INT },
 };
 
 //static shaderProgram_t *hashTable[MAX_RENDER_SHADERS];
@@ -669,13 +671,21 @@ static void GLSL_PrepareHeader(GLenum shaderType, const GLchar *extra, char *des
 						CGEN_LIGHTING_DIFFUSE, CGEN_VERTEX ) );
 
 	N_strcat(dest, size,
-							 va("#ifndef alphaGen_t\n"
-								"#define alphaGen_t\n"
-								"#define AGEN_LIGHTING_SPECULAR %i\n"
-								"#define AGEN_PORTAL %i\n"
-								"#endif\n",
-								AGEN_LIGHTING_SPECULAR,
-								AGEN_PORTAL));
+			    va("#ifndef alphaGen_t\n"
+			    	"#define alphaGen_t\n"
+			    	"#define AGEN_LIGHTING_SPECULAR %i\n"
+			    	"#define AGEN_PORTAL %i\n"
+			    	"#endif\n",
+			    	AGEN_LIGHTING_SPECULAR,
+			    	AGEN_PORTAL));
+        
+    N_strcat( dest, size,
+                va( "#ifndef AntiAliasingType_t\n"
+                    "#define AntiAliasingType_t\n"
+                    "#define AntiAlias_FXAA %i\n"
+                    "#define AntiAlias_SMAA %i\n"
+                    "#endif\n"
+                , AntiAlias_FXAA, AntiAlias_SMAA ) );
 
     fbufWidthScale = 1.0f / ((float)glConfig.vidWidth);
 	fbufHeightScale = 1.0f / ((float)glConfig.vidHeight);

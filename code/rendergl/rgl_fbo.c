@@ -425,19 +425,8 @@ void FBO_Init( void )
 	}
 
 	if ( r_multisampleType->i >= AntiAlias_2xSSAA && r_multisampleType-> i<= AntiAlias_4xSSAA ) {
-//		switch ( r_multisampleType->i ) {
-//		case AntiAlias_2xSSAA:
-//			width *= 2;
-//			height *= 2;
-//			break;
-//		case AntiAlias_4xSSAA:
-//			width *= 4;
-//			height *= 4;
-//			break;
-//		};
 		rg.ssaaFbo = FBO_Create( "_ssaa", glConfig.vidWidth, glConfig.vidHeight );
 		FBO_CreateBuffer( rg.ssaaFbo, GL_RGBA8, 0, 0 );
-//		FBO_AttachImage( rg.ssaaFbo, rg.screenSsaaImage, GL_COLOR_ATTACHMENT0 );
 		R_CheckFBO( rg.ssaaFbo );
 	}
 
@@ -461,11 +450,10 @@ void FBO_Init( void )
 		}
 	}
 
-/*
 	if ( rg.screenSsaoImage ) {
 		rg.screenSsaoFbo = FBO_Create( "_screenSsao", rg.screenSsaoImage->width, rg.screenSsaoImage->height );
-//		FBO_AttachImage( rg.screenSsaoFbo, rg.screenSsaoImage, GL_COLOR_ATTACHMENT0 );
-		FBO_CreateBuffer( rg.screenSsaoFbo, GL_RGBA8, 0, 0 );
+		FBO_AttachImage( rg.screenSsaoFbo, rg.screenSsaoImage, GL_COLOR_ATTACHMENT0 );
+//		FBO_CreateBuffer( rg.screenSsaoFbo, GL_RGBA8, 0, 0 );
 		R_CheckFBO( rg.screenSsaoFbo );
 	}
 
@@ -478,12 +466,11 @@ void FBO_Init( void )
 	if ( rg.quarterImage[0] ) {
 		for ( i = 0; i < 2; i++ ) {
 			rg.quarterFbo[i] = FBO_Create( va( "_quarter%d", i ), rg.quarterImage[i]->width, rg.quarterImage[i]->height );
-			FBO_CreateBuffer( rg.quarterFbo[i], GL_RGBA8, i, 0 );
-//			FBO_AttachImage( rg.quarterFbo[i], rg.quarterImage[i], GL_COLOR_ATTACHMENT0 + i );
+//			FBO_CreateBuffer( rg.quarterFbo[i], GL_RGBA8, i, 0 );
+			FBO_AttachImage( rg.quarterFbo[i], rg.quarterImage[i], GL_COLOR_ATTACHMENT0 + i );
 			R_CheckFBO( rg.quarterFbo[i] );
 		}
 	}
-*/
 
 	GL_CheckErrors();
 

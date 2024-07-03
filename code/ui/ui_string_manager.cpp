@@ -60,16 +60,19 @@ int CUIStringManager::LoadTokenList( const char **text, language_t lang )
     char name[MAX_STRING_CHARS], value[MAX_STRING_CHARS];
     const char *tok;
     qboolean ignore;
+    uint64_t bytesUsed;
 
     // we may be just reloading the language file, so clear it out
 #ifndef USE_MAP_HASH
     if ( !stringHash[ lang ] ) {
         stringHash[ lang ] = (stringHash_t **)Hunk_Alloc( sizeof( stringHash_t ** ) * ui_maxLangStrings->i, h_high );
+        memset( stringHash[ lang ], 0, sizeof( *stringHash ) * ui_maxLangStrings->i );
     }
 #else
     stringHash[lang].reserve( ui_maxLangStrings->i );
 #endif
 
+    bytesUsed = 0;
     for ( i = 0; i < ui_maxLangStrings->i; i++ ) {
         ignore = qfalse;
 
@@ -121,12 +124,17 @@ int CUIStringManager::LoadTokenList( const char **text, language_t lang )
 
         N_strncpyz( value, tok, sizeof( value ) );
 
+        Con_Printf( "- Loaded key value string: '%s' = \"%s\"\n", name, value );
+
         size = 0;
         size += PAD( sizeof( *str ), sizeof( uintptr_t ) );
         size += PAD( strlen( name ) + 1, sizeof( uintptr_t ) );
         size += PAD( strlen( value ) + 1, sizeof( uintptr_t ) );
 
+        bytesUsed += size;
+
         str = (stringHash_t *)Hunk_Alloc( size, h_high );
+        memset( str, 0, size );
         str->name = (char *)( str + 1 );
         str->value = (char *)( str->name + strlen( name ) + 1 );
 
@@ -135,8 +143,8 @@ int CUIStringManager::LoadTokenList( const char **text, language_t lang )
         stringHash[lang][hash] = str;
 #endif
 
-        strcpy( str->name, name );
-        strcpy( str->value, value );
+        N_strncpyz( str->name, name, strlen( name ) + 1 );
+        N_strncpyz( str->value, value, strlen( value ) + 1 );
 
 #ifdef USE_MAP_HASH
         stringHash[lang].try_emplace( str->name, str );
@@ -144,6 +152,8 @@ int CUIStringManager::LoadTokenList( const char **text, language_t lang )
 
         str->lang = lang;
     }
+
+    Con_Printf( "Allocated %lu bytes for ui language strings.\n", bytesUsed );
 
     return 1;
 }
@@ -286,7 +296,8 @@ const stringHash_t *CUIStringManager::AllocErrorString( const char *key ) {
     size += PAD( strlen( key ) + 1, sizeof( uintptr_t ) );
     size += PAD( strlen( value ) + 1, sizeof( uintptr_t ) );
 
-    str = (stringHash_t *)Hunk_Alloc( size, h_high );
+    str = (stringHash_t *)Hunk_Alloc( size, h_low );
+    memset( str, 0, size );
     str->name = (char *)( str + 1 );
     str->value = (char *)( str->name + strlen( key ) + 1 );
     str->lang = (language_t)ui_language->i;

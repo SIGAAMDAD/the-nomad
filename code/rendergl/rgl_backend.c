@@ -507,7 +507,7 @@ static const void *RB_SwapBuffers(const void *data)
 				FBO_FastBlit( rg.ssaaFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
 			}
 			else {
-				FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+				FBO_FastBlit( rg.renderFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 			}
 			end = ri.Milliseconds();
 			backend.pc.postprocessMsec = end - start;
@@ -565,11 +565,21 @@ static const void *RB_PostProcess(const void *data)
 	}
 
 	srcFbo = rg.renderFbo;
-	if ( rg.msaaResolveFbo && r_multisampleAmount->i <= AntiAlias_32xMSAA ) {
+	if ( rg.msaaResolveFbo && r_multisampleType->i <= AntiAlias_32xMSAA ) {
 		// Resolve the MSAA before anything else
 		// Can't resolve just part of the MSAA FBO, so multiple views will suffer a performance hit here
 		FBO_FastBlit( rg.renderFbo, NULL, rg.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 		srcFbo = rg.msaaResolveFbo;
+	} else if ( rg.ssaaFbo && r_multisampleType->i >= AntiAlias_2xSSAA && r_multisampleType->i >= AntiAlias_4xSSAA ) {
+		ivec4_t dstBox;
+
+		dstBox[0] = 0;
+		dstBox[1] = 0;
+		dstBox[2] = rg.renderFbo->width;
+		dstBox[3] = rg.renderFbo->height;
+
+		FBO_FastBlit( rg.renderFbo, NULL, rg.ssaaFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+		srcFbo = rg.ssaaFbo;
 	}
 
 	dstBox[0] = glState.viewData.viewportX;
@@ -583,7 +593,7 @@ static const void *RB_PostProcess(const void *data)
 		srcBox[2] = glState.viewData.viewportWidth  * rg.screenSsaoImage->width  / (float)glConfig.vidWidth;
 		srcBox[3] = glState.viewData.viewportHeight * rg.screenSsaoImage->height / (float)glConfig.vidHeight;
 
-		FBO_Blit( rg.screenSsaoFbo, srcBox, NULL, srcFbo, dstBox, NULL, NULL, GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO );
+//		FBO_Blit( rg.screenSsaoFbo, srcBox, NULL, srcFbo, dstBox, NULL, NULL, GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO );
 	}
 
 	srcBox[0] = glState.viewData.viewportX;
@@ -591,6 +601,7 @@ static const void *RB_PostProcess(const void *data)
 	srcBox[2] = glState.viewData.viewportWidth;
 	srcBox[3] = glState.viewData.viewportHeight;
 
+/*
 	if ( srcFbo && r_multisampleAmount->i <= AntiAlias_32xMSAA ) {
 		if ( r_hdr->i && ( r_toneMap->i || r_forceToneMap->i ) ) {
 			autoExposure = r_autoExposure->i || r_forceAutoExposure->i;
@@ -610,6 +621,7 @@ static const void *RB_PostProcess(const void *data)
 			FBO_Blit( srcFbo, srcBox, NULL, NULL, dstBox, NULL, color, 0 );
 		}
 	}
+*/
 
 	if ( r_drawSunRays->i ) {
 //		RB_SunRays( NULL, srcBox, NULL, dstBox );
@@ -623,6 +635,8 @@ static const void *RB_PostProcess(const void *data)
 
 	if ( r_multisampleType->i == AntiAlias_SMAA ) {
 	}
+
+	FBO_FastBlit( srcFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 
 #if 0
 	if (0)
@@ -1033,9 +1047,6 @@ void RB_ExecuteRenderCommands( const void *data )
 		default:
 			// finish any drawing if needed
 			RB_FlushBatchBuffer();
-			if ( tess.numIndexes ) {
-				RB_EndSurface();
-			}
 
 			// stop rendering
 			t2 = ri.Milliseconds();

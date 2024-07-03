@@ -13,8 +13,9 @@ in vec3 v_WorldPos;
 
 uniform sampler2D u_DiffuseMap;
 uniform float u_GammaAmount;
-uniform int u_GamePaused;
-uniform int u_HardwareGamma;
+uniform bool u_GamePaused;
+uniform bool u_HardwareGamma;
+uniform int u_AntiAliasing;
 
 #if defined(USE_LIGHT)
 uniform vec3 u_AmbientColor;
@@ -63,8 +64,6 @@ uniform vec2 u_ScreenSize;
 
 uniform int u_AlphaTest;
 
-
-#if defined(USE_FXAA)
 void texcoords( vec2 fragCoord, vec2 resolution, out vec2 v_rgbNW, out vec2 v_rgbNE, out vec2 v_rgbSW,
 	out vec2 v_rgbSE, out vec2 v_rgbM )
 {
@@ -147,7 +146,6 @@ vec4 applyFXAA( sampler2D tex, vec2 fragCoord, vec2 resolution ) {
 
 	return fxaa( tex, fragCoord, resolution, v_rgbNW, v_rgbNE, v_rgbSW, v_rgbSE, v_rgbM );
 }
-#endif
 
 #if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
 //
@@ -307,12 +305,12 @@ vec4 sharpenImage( sampler2D tex, vec2 pos )
 }
 
 void main() {
-#if defined(USE_FXAA)
-    vec2 fragCoord = v_TexCoords * u_ScreenSize;
-    a_Color = applyFXAA( u_DiffuseMap, fragCoord, u_ScreenSize );
-#else
-    a_Color = sharpenImage( u_DiffuseMap, v_TexCoords );
-#endif
+    if ( u_AntiAliasing == AntiAlias_FXAA ) {
+        vec2 fragCoord = v_TexCoords * u_ScreenSize;
+        a_Color = applyFXAA( u_DiffuseMap, fragCoord, u_ScreenSize );
+    } else {
+        a_Color = sharpenImage( u_DiffuseMap, v_TexCoords );
+    }
     a_Color.rgb *= v_Color.rgb;
 
     ApplyLighting();
@@ -335,10 +333,10 @@ void main() {
 		a_BrightColor = vec4( 0.0, 0.0, 0.0, 1.0 );
 	}
 #endif
-    if ( u_HardwareGamma == 0 ) {
+    if ( !u_HardwareGamma ) {
         a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
     }
-    if ( u_GamePaused == 1 ) {
+    if ( u_GamePaused ) {
         a_Color.rgb = vec3( 0.75, 0.75, 0.75 );
     }
 }

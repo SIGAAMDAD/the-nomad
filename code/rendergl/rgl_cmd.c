@@ -185,24 +185,6 @@ void RE_BeginFrame(stereoFrame_t stereoFrame)
 		GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo->frameBuffer );
 	}
 
-	GLSL_UseProgram( &rg.bokehShader );
-	GLSL_SetUniformInt( &rg.bokehShader, UNIFORM_TEXTURE_MAP, TB_DIFFUSEMAP );
-
-	GLSL_UseProgram( &rg.tonemapShader );
-	GLSL_SetUniformInt( &rg.tonemapShader, UNIFORM_TEXTURE_MAP, TB_COLORMAP );
-    GLSL_SetUniformInt( &rg.tonemapShader, UNIFORM_LEVELS_MAP, TB_LEVELSMAP );
-
-	for ( i = 0; i < 2; i++ ) {
-		GLSL_UseProgram( &rg.calclevels4xShader[i] );
-		GLSL_SetUniformInt( &rg.calclevels4xShader[i], UNIFORM_TEXTURE_MAP, TB_DIFFUSEMAP );
-	}
-
-	for ( i = 0; i < 4; i++ ) {
-		GLSL_UseProgram( &rg.depthBlurShader[i] );
-		GLSL_SetUniformInt( &rg.depthBlurShader[i], UNIFORM_SCREENIMAGE_MAP, TB_COLORMAP );
-        GLSL_SetUniformInt( &rg.depthBlurShader[i], UNIFORM_SCREENDEPTH_MAP, TB_LIGHTMAP );
-	}
-
     // unused for now
     if ( glState.currentFbo ) {
         width = glState.currentFbo->width;
