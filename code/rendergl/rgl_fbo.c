@@ -64,11 +64,13 @@ static fbo_t *FBO_Create( const char *name, int width, int height )
 	for ( i = 0; i < rg.numFBOs; i++ ) {
 		if ( !N_stricmp( name, rg.fbos[i]->name ) ) {
 			exists = qtrue;
+			fbo = rg.fbos[i];
 			break;
 		}
 	}
 	if ( !exists ) {
     	fbo = rg.fbos[rg.numFBOs] = ri.Hunk_Alloc( sizeof( *fbo ), h_low );
+		rg.numFBOs++;
 	}
     N_strncpyz( fbo->name, name, sizeof( fbo->name ) );
     fbo->width = width;
@@ -213,21 +215,28 @@ static void FBO_List_f( void )
 {
 	int i, j;
 	uint64_t renderBufferMemoryUsed;
-	uint64_t textureMemoryUsed;
+	GLint type;
 
 	renderBufferMemoryUsed = 0;
-	textureMemoryUsed = 0;
 
-	ri.Printf( PRINT_INFO, " size          name         \n" );
+	ri.Printf( PRINT_INFO, " name             width      height\n" );
 	ri.Printf( PRINT_INFO, "----------------------------------------------------------\n" );
 	for ( i = 0; i < rg.numFBOs; i++ ) {
-		
+		for ( j = 0; j < glContext.maxColorAttachments; j++ ) {
+			if ( rg.fbos[i]->colorBuffers[j] ) {
+				GL_BindFramebuffer( GL_FRAMEBUFFER, rg.fbos[i]->frameBuffer );
+	
+				nglGetFramebufferAttachmentParameteriv( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + j, GL_FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE,
+					&type );
+
+				renderBufferMemoryUsed = 4 * rg.fbos[i]->width * rg.fbos[i]->height;
+			}
+		}
+		ri.Printf( PRINT_INFO, "%s %i %i\n", rg.fbos[i]->name, rg.fbos[i]->width, rg.fbos[i]->height );
 	}
 	ri.Printf( PRINT_INFO, " %u total FBOs\n", rg.numFBOs );
 	ri.Printf( PRINT_INFO, " %lu.%02lu MB render buffer memory\n", renderBufferMemoryUsed / ( 1024 * 1024 ),
 		( renderBufferMemoryUsed % ( 1024 * 1024 ) ) * 100 / ( 1024 * 1024 ) );
-	ri.Printf( PRINT_INFO, " %lu.%02lu MB texture memory\n", textureMemoryUsed / ( 1024 * 1024 ),
-		( textureMemoryUsed % ( 1024 * 1024 ) ) * 100 / ( 1024 * 1024 ) );
 }
 
 static void FBO_Restart_f( void )
@@ -286,8 +295,6 @@ static void FBO_Restart_f( void )
 
 	if ( rg.renderFbo ) {
 		FBO_Clear( rg.renderFbo );
-		rg.renderFbo->width = width;
-		rg.renderFbo->height = height;
 	}
 	rg.renderFbo = FBO_Create( "_render", width, height );
 	FBO_CreateBuffer( rg.renderFbo, hdrFormat, 0, multisample );
@@ -299,22 +306,45 @@ static void FBO_Restart_f( void )
 	}
 	R_CheckFBO( rg.renderFbo );
 
-	if ( multisample && r_multisampleType->i <= AntiAlias_32xMSAA && glContext.ARB_framebuffer_multisample ) {
-		if ( rg.msaaResolveFbo ) {
-			FBO_Clear( rg.msaaResolveFbo );
-			rg.msaaResolveFbo->width = width;
-			rg.msaaResolveFbo->height = height;
+	if ( r_multisampleType->i == AntiAlias_SMAA ) {
+		if ( rg.smaaBlendFbo ) {
+			FBO_Clear( rg.smaaBlendFbo );
 		}
-	    rg.msaaResolveFbo = FBO_Create( "_msaaResolve", width, height );
-		FBO_CreateBuffer( rg.msaaResolveFbo, hdrFormat, 0, 0 );
-		FBO_CreateBuffer( rg.msaaResolveFbo, GL_DEPTH24_STENCIL8, 0, 0 );
-		R_CheckFBO( rg.msaaResolveFbo );
-	}
+		rg.smaaBlendFbo = FBO_Create( "_smaaBlend", width, height );
+		FBO_AttachImage( rg.smaaBlendFbo, rg.smaaBlendImage, GL_COLOR_ATTACHMENT0 );
+		R_CheckFBO( rg.smaaBlendFbo );
 
-	if ( multisample && r_multisampleType->i >= AntiAlias_2xSSAA && r_multisampleType->i <= AntiAlias_4xSSAA ) {
+		if ( rg.smaaEdgesFbo ) {
+			FBO_Clear( rg.smaaEdgesFbo );
+		}
+		rg.smaaEdgesFbo = FBO_Create( "_smaaEdges", width, height );
+		FBO_AttachImage( rg.smaaEdgesFbo, rg.smaaEdgesImage, GL_COLOR_ATTACHMENT0 );
+		R_CheckFBO( rg.smaaEdgesFbo );
+
+		if ( rg.smaaWeightsFbo ) {
+			FBO_Clear( rg.smaaWeightsFbo );
+		}
+		rg.smaaWeightsFbo = FBO_Create( "_smaaWeights", width, height );
+		FBO_AttachImage( rg.smaaWeightsFbo, rg.smaaWeightsImage, GL_COLOR_ATTACHMENT0 );
+		R_CheckFBO( rg.smaaWeightsFbo );
+	}
+	else if ( multisample && r_multisampleType->i >= AntiAlias_2xSSAA && r_multisampleType->i <= AntiAlias_4xSSAA ) {
+		if ( rg.ssaaResolveFbo ) {
+			FBO_Clear( rg.ssaaResolveFbo );
+		}
 		rg.ssaaResolveFbo = FBO_Create( "_ssaaResolve", glConfig.vidWidth, glConfig.vidHeight );
 		FBO_CreateBuffer( rg.ssaaResolveFbo, hdrFormat, 0, multisample );
 		R_CheckFBO( rg.ssaaResolveFbo );
+	}
+
+	if ( multisample && glContext.ARB_framebuffer_multisample ) {
+		if ( rg.msaaResolveFbo ) {
+			FBO_Clear( rg.msaaResolveFbo );
+		}
+		rg.msaaResolveFbo = FBO_Create( "_msaaResolve", width, height );
+		FBO_CreateBuffer( rg.msaaResolveFbo, hdrFormat, 0, multisample );
+		FBO_CreateBuffer( rg.msaaResolveFbo, GL_DEPTH24_STENCIL8, 0, multisample );
+		R_CheckFBO( rg.msaaResolveFbo );
 	}
 
 	// clear render buffer
@@ -322,6 +352,43 @@ static void FBO_Restart_f( void )
 	if ( rg.renderFbo ) {
 		GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo->frameBuffer );
 		nglClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	}
+	if ( rg.hdrDepthImage ) {
+		if ( rg.hdrDepthFbo ) {
+			FBO_Clear( rg.hdrDepthFbo );
+		}
+		rg.hdrDepthFbo = FBO_Create( "_hdrDepth", rg.hdrDepthImage->width, rg.hdrDepthImage->height );
+		FBO_CreateBuffer( rg.hdrDepthFbo, GL_RGBA16F, 0, multisample );
+		R_CheckFBO( rg.hdrDepthFbo );
+	}
+
+	if ( rg.screenShadowImage ) {
+		if ( rg.screenShadowFbo ) {
+			FBO_Clear( rg.screenShadowFbo );
+		}
+		rg.screenShadowFbo = FBO_Create( "_screenshadow", rg.screenShadowImage->width, rg.screenShadowImage->height );
+		FBO_AttachImage( rg.screenShadowFbo, rg.screenShadowImage, GL_COLOR_ATTACHMENT0 );
+		R_CheckFBO( rg.screenShadowFbo );
+	}
+
+	if ( rg.screenSsaoImage ) {
+		if ( rg.screenSsaoFbo ) {
+			FBO_Clear( rg.screenSsaoFbo );
+		}
+		rg.screenSsaoFbo = FBO_Create( "_screenssao", rg.screenSsaoImage->width, rg.screenSsaoImage->height );
+		FBO_AttachImage( rg.screenSsaoFbo, rg.screenSsaoImage, GL_COLOR_ATTACHMENT0 );
+		R_CheckFBO( rg.screenSsaoFbo );
+	}
+
+	if ( rg.textureScratchImage[0] ) {
+		for ( i = 0; i < 2; i++ ) {
+			if ( rg.textureScratchFbo[i] ) {
+				FBO_Clear( rg.textureScratchFbo[i] );
+			}
+			rg.textureScratchFbo[i] = FBO_Create( va( "_texturescratch%d", i ), rg.textureScratchImage[i]->width, rg.textureScratchImage[i]->height );
+			FBO_AttachImage( rg.textureScratchFbo[i], rg.textureScratchImage[i], GL_COLOR_ATTACHMENT0 );
+			R_CheckFBO( rg.textureScratchFbo[i] );
+		}
 	}
 
 	GL_CheckErrors();
@@ -385,13 +452,14 @@ void FBO_Init( void )
 	}
 
 	rg.renderFbo = FBO_Create( "_render", width, height );
-	if ( r_multisampleType->i == AntiAlias_SMAA ) {
-		FBO_CreateBuffer( rg.renderFbo, hdrFormat, 0, multisample );
-		FBO_CreateBuffer( rg.renderFbo, GL_DEPTH24_STENCIL8, 0, multisample );
-	} else {
-		FBO_AttachImage( rg.renderFbo, rg.renderImage, GL_COLOR_ATTACHMENT0 );
-		FBO_AttachImage( rg.renderFbo, rg.renderDepthImage, GL_DEPTH_ATTACHMENT );
+	FBO_CreateBuffer( rg.renderFbo, hdrFormat, 0, multisample );
+	FBO_CreateBuffer( rg.renderFbo, GL_DEPTH24_STENCIL8, 0, multisample );
+	if ( r_bloom->i ) {
+		GLuint buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+		FBO_CreateBuffer( rg.renderFbo, hdrFormat, 1, multisample );
+		nglDrawBuffers( 2, buffers );
 	}
+	R_CheckFBO( rg.renderFbo );
 
 	if ( r_multisampleType->i == AntiAlias_SMAA ) {
 		rg.smaaBlendFbo = FBO_Create( "_smaaBlend", width, height );
@@ -406,23 +474,16 @@ void FBO_Init( void )
 		FBO_AttachImage( rg.smaaWeightsFbo, rg.smaaWeightsImage, GL_COLOR_ATTACHMENT0 );
 		R_CheckFBO( rg.smaaWeightsFbo );
 	}
-
-//	if ( r_bloom->i ) {
-//		GLuint buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-//		FBO_CreateBuffer( rg.renderFbo, hdrFormat, 1, multisample );
-//		nglDrawBuffers( 2, buffers );
-//	}
-	R_CheckFBO( rg.renderFbo );
+	else if ( multisample && r_multisampleType->i >= AntiAlias_2xSSAA && r_multisampleType->i <= AntiAlias_4xSSAA ) {
+		rg.ssaaResolveFbo = FBO_Create( "_ssaaResolve", glConfig.vidWidth, glConfig.vidHeight );
+		FBO_CreateBuffer( rg.ssaaResolveFbo, hdrFormat, 0, multisample );
+		R_CheckFBO( rg.ssaaResolveFbo );
+	}
 
 	if ( multisample && glContext.ARB_framebuffer_multisample ) {
 		rg.msaaResolveFbo = FBO_Create( "_msaaResolve", width, height );
-		if ( r_multisampleType->i == AntiAlias_SMAA ) {
-			FBO_CreateBuffer( rg.msaaResolveFbo, hdrFormat, 0, multisample );
-			FBO_CreateBuffer( rg.msaaResolveFbo, GL_DEPTH24_STENCIL8, 0, multisample );
-		} else {
-			FBO_AttachImage( rg.msaaResolveFbo, rg.renderImage, GL_COLOR_ATTACHMENT0 );
-			FBO_AttachImage( rg.msaaResolveFbo, rg.renderDepthImage, GL_DEPTH_ATTACHMENT );
-		}
+		FBO_CreateBuffer( rg.msaaResolveFbo, hdrFormat, 0, multisample );
+		FBO_CreateBuffer( rg.msaaResolveFbo, GL_DEPTH24_STENCIL8, 0, multisample );
 		R_CheckFBO( rg.msaaResolveFbo );
 	}
 
@@ -438,12 +499,6 @@ void FBO_Init( void )
 		R_CheckFBO( rg.hdrDepthFbo );
 	}
 
-	if ( multisample && r_multisampleType->i >= AntiAlias_2xSSAA && r_multisampleType->i <= AntiAlias_4xSSAA ) {
-		rg.ssaaResolveFbo = FBO_Create( "_ssaaResolve", glConfig.vidWidth, glConfig.vidHeight );
-		FBO_CreateBuffer( rg.ssaaResolveFbo, hdrFormat, 0, multisample );
-		R_CheckFBO( rg.ssaaResolveFbo );
-	}
-
 	if ( rg.textureScratchImage[0] ) {
 		for ( i = 0; i < 2; i++ ) {
 			rg.textureScratchFbo[i] = FBO_Create( va( "_texturescratch%d", i ), rg.textureScratchImage[i]->width, rg.textureScratchImage[i]->height );
@@ -452,11 +507,15 @@ void FBO_Init( void )
 		}
 	}
 
-/*
+	if ( rg.screenShadowImage ) {
+		rg.screenShadowFbo = FBO_Create( "_screenshadow", rg.screenShadowImage->width, rg.screenShadowImage->height );
+		FBO_AttachImage( rg.screenShadowFbo, rg.screenShadowImage, GL_COLOR_ATTACHMENT0 );
+		R_CheckFBO( rg.screenShadowFbo );
+	}
+
 	if ( rg.screenSsaoImage ) {
-		rg.screenSsaoFbo = FBO_Create( "_screenSsao", rg.screenSsaoImage->width, rg.screenSsaoImage->height );
-//		FBO_AttachImage( rg.screenSsaoFbo, rg.screenSsaoImage, GL_COLOR_ATTACHMENT0 );
-		FBO_CreateBuffer( rg.screenSsaoFbo, GL_RGBA8, 0, 0 );
+		rg.screenSsaoFbo = FBO_Create( "_screenssao", rg.screenSsaoImage->width, rg.screenSsaoImage->height );
+		FBO_AttachImage( rg.screenSsaoFbo, rg.screenSsaoImage, GL_COLOR_ATTACHMENT0 );
 		R_CheckFBO( rg.screenSsaoFbo );
 	}
 
@@ -469,12 +528,11 @@ void FBO_Init( void )
 	if ( rg.quarterImage[0] ) {
 		for ( i = 0; i < 2; i++ ) {
 			rg.quarterFbo[i] = FBO_Create( va( "_quarter%d", i ), rg.quarterImage[i]->width, rg.quarterImage[i]->height );
-			FBO_CreateBuffer( rg.quarterFbo[i], GL_RGBA8, i, 0 );
-//			FBO_AttachImage( rg.quarterFbo[i], rg.quarterImage[i], GL_COLOR_ATTACHMENT0 + i );
+//			FBO_CreateBuffer( rg.quarterFbo[i], GL_RGBA8, i, 0 );
+			FBO_AttachImage( rg.quarterFbo[i], rg.quarterImage[i], GL_COLOR_ATTACHMENT0 + i );
 			R_CheckFBO( rg.quarterFbo[i] );
 		}
 	}
-*/
 
 	GL_CheckErrors();
 
@@ -482,6 +540,7 @@ void FBO_Init( void )
 	glState.currentFbo = NULL;
 
 	ri.Cmd_AddCommand( "vid_restart_fbo", FBO_Restart_f );
+	ri.Cmd_AddCommand( "fbolist", FBO_List_f );
 }
 
 void FBO_Shutdown( void )
@@ -496,6 +555,7 @@ void FBO_Shutdown( void )
 	}
 
 	ri.Cmd_RemoveCommand( "vid_restart_fbo" );
+	ri.Cmd_RemoveCommand( "fbolist" );
 
 	FBO_Bind( NULL );
 

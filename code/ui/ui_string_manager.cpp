@@ -61,7 +61,6 @@ int CUIStringManager::LoadTokenList( const char **text, language_t lang )
     const char *tok;
     qboolean ignore;
 
-    // we may be just reloading the language file, so clear it out
     if ( !stringHash[ lang ] ) {
         stringHash[ lang ] = (stringHash_t **)Hunk_Alloc( sizeof( stringHash_t ** ) * ui_maxLangStrings->i, h_high );
     }
@@ -113,11 +112,10 @@ int CUIStringManager::LoadTokenList( const char **text, language_t lang )
         size += PAD( strlen( name ) + 1, sizeof( uintptr_t ) );
         size += PAD( strlen( value ) + 1, sizeof( uintptr_t ) );
 
-        str = (stringHash_t *)Hunk_Alloc( sizeof( *str ), h_high );
-        str->name = (char *)Hunk_Alloc( strlen( name ) + 1, h_high );
-        str->value = (char *)Hunk_Alloc( strlen( value ) + 1, h_high );
-//        str->name = (char *)( str + 1 );
-//        str->value = (char *)( str->name + strlen( name ) + 1 );
+        str = (stringHash_t *)Z_Malloc( size, TAG_STATIC );
+        memset( str, 0, size );
+        str->name = (char *)( str + 1 );
+        str->value = (char *)( str->name + strlen( name ) + 1 );
 
         str->next = stringHash[lang][hash];
         stringHash[lang][hash] = str;
@@ -250,9 +248,11 @@ uint64_t CUIStringManager::NumLangsLoaded( void ) const {
 const stringHash_t *CUIStringManager::AllocErrorString( const char *key ) {
     stringHash_t *str;
     uint64_t size, hash;
-    const char *value;
+    char value[MAX_STRING_CHARS];
 
-    value = va( "ERROR: %s variable has not been set before.", key );
+    // [TheNomad] 7/4/24
+    // fixed up string manager having an anyeurism on vid_restart
+    Com_snprintf( value, sizeof( value ) - 1, "ERROR: %s variable has not been set before.", key );
 
     size = 0;
     size += PAD( sizeof( *str ), sizeof( uintptr_t ) );
@@ -260,6 +260,7 @@ const stringHash_t *CUIStringManager::AllocErrorString( const char *key ) {
     size += PAD( strlen( value ) + 1, sizeof( uintptr_t ) );
 
     str = (stringHash_t *)Hunk_Alloc( size, h_high );
+    memset( str, 0, size );
     str->name = (char *)( str + 1 );
     str->value = (char *)( str->name + strlen( key ) + 1 );
     str->lang = (language_t)ui_language->i;

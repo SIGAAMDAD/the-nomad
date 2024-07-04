@@ -239,6 +239,7 @@ typedef void*(*NGLloadproc)(const char *name);
     NGL( void, glFramebufferTexture2D, GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level ) \
     NGL( GLenum, glCheckFramebufferStatus, GLenum target ) \
     NGL( void, glRenderBufferStorageMultisampleCoverageNV, GLenum target, GLsizei coverageSamples, GLsizei colorSamples, GLenum internalformat, GLsizei width, GLsizei height ) \
+    NGL( void, glGetFramebufferAttachmentParameteriv, GLenum target, GLenum attachment, GLenum pname, GLint *params ) \
 
 #define NGL_VertexArrayARB_Procs \
     NGL( void, glEnableVertexArrayAttribARB, GLuint vao, GLuint index ) \

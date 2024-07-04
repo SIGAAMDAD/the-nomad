@@ -2896,7 +2896,7 @@ static void R_CreateBuiltinTextures( void )
 		if ( r_drawSunRays->i ) {
 			rg.sunRaysImage = R_CreateImage("*sunRays", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, rgbFormat);
 		}
-		{
+		if ( r_multisampleType->i == AntiAlias_SMAA ) {
 			float *p;
 
 			p = (float *)ri.Hunk_AllocateTempMemory( sizeof( *p ) * width * height );
@@ -2907,12 +2907,12 @@ static void R_CreateBuiltinTextures( void )
 			}
 			rg.smaaBlendImage = R_CreateImage( "*smaaBlendImage", (byte *)p, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA16F );
 			ri.Hunk_FreeTempMemory( p );
-		}
 
-		rg.smaaEdgesImage = R_CreateImage( "*smaaEdgesImage", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_RGBA8 );
-		rg.smaaWeightsImage = R_CreateImage( "*smaaWeightsImage", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_RGBA8 );
-		rg.smaaAreaImage = R_FindImageFile( "textures/effects/SearchTex.jpg", IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE );
-		rg.smaaSearchImage = R_FindImageFile( "textures/effects/AreaTexDX10.jpg", IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE );
+			rg.smaaEdgesImage = R_CreateImage( "*smaaEdgesImage", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_RGBA8 );
+			rg.smaaWeightsImage = R_CreateImage( "*smaaWeightsImage", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_RGBA8 );
+			rg.smaaAreaImage = R_FindImageFile( "textures/effects/SearchTex.jpg", IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE );
+			rg.smaaSearchImage = R_FindImageFile( "textures/effects/AreaTexDX10.jpg", IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE );
+		}
 
 		if ( r_bloom->i && r_hdr->i ) {
 //			rg.bloomImage = R_CreateImage( "*bloom", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA16F );

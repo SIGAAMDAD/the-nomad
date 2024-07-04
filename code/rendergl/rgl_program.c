@@ -1398,6 +1398,7 @@ void GLSL_InitGPUShaders( void )
     }
     GLSL_InitUniforms( &rg.smaaEdgesShader );
     GLSL_FinishGPUShader( &rg.smaaEdgesShader );
+    numEtcShaders++;
 
     attribs = ATTRIB_POSITION;
     extradefines[0] = '\0';
@@ -1406,6 +1407,16 @@ void GLSL_InitGPUShaders( void )
     }
     GLSL_InitUniforms( &rg.smaaWeightsShader );
     GLSL_FinishGPUShader( &rg.smaaWeightsShader );
+    numEtcShaders++;
+
+    attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD;
+    extradefines[0] = '\0';
+    if ( !GLSL_InitGPUShader( &rg.ssaoShader, "ssao", attribs, qtrue, extradefines, qtrue, fallbackShader_ssao_vp, fallbackShader_ssao_fp ) ) {
+        ri.Error( ERR_FATAL, "Could not load ssao shader!" );
+    }
+    GLSL_InitUniforms( &rg.ssaoShader );
+    GLSL_FinishGPUShader( &rg.ssaoShader );
+    numEtcShaders++;
 
     attribs = ATTRIB_POSITION;
     extradefines[0] = '\0';
@@ -1414,6 +1425,7 @@ void GLSL_InitGPUShaders( void )
     }
     GLSL_InitUniforms( &rg.smaaBlendShader );
     GLSL_FinishGPUShader( &rg.smaaBlendShader );
+    numEtcShaders++;
 
     attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_COLOR;
     extradefines[0] = '\0';

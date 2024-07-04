@@ -17,7 +17,7 @@ vec2(0.7320465, 0.6317794)
 );
 #endif
 
-#define NUM_SAMPLES 3
+#define NUM_SAMPLES 9
 
 // Input: It uses texture coords as the random number seed.
 // Output: Random number: [0,1), that is between 0.0 and 0.999999... inclusive.

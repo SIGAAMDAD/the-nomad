@@ -1,4 +1,5 @@
 #include "rgl_local.h"
+#include "rgl_fbo.h"
 
 qboolean screenshotFrame;
 
@@ -576,23 +577,33 @@ static const void *RB_PostProcess(const void *data)
 	dstBox[2] = glState.viewData.viewportWidth;
 	dstBox[3] = glState.viewData.viewportHeight;
 
-#if 0
 	if ( r_ssao->i ) {
+		vec4_t viewInfo;
+
 		srcBox[0] = glState.viewData.viewportX      * rg.screenSsaoImage->width  / (float)glConfig.vidWidth;
 		srcBox[1] = glState.viewData.viewportY      * rg.screenSsaoImage->height / (float)glConfig.vidHeight;
 		srcBox[2] = glState.viewData.viewportWidth  * rg.screenSsaoImage->width  / (float)glConfig.vidWidth;
 		srcBox[3] = glState.viewData.viewportHeight * rg.screenSsaoImage->height / (float)glConfig.vidHeight;
 
+		GL_BindTexture( TB_DIFFUSEMAP, rg.screenSsaoImage );
+
+		viewInfo[0] = glState.viewData.zFar / glState.viewData.zNear;
+		viewInfo[1] = glState.viewData.zFar;
+		viewInfo[2] = 1.0f / glState.viewData.viewportWidth;
+		viewInfo[2] = 1.0f / glState.viewData.viewportHeight;
+
+		GLSL_UseProgram( &rg.ssaoShader );
+		GLSL_SetUniformInt( &rg.ssaoShader, UNIFORM_SCREENDEPTH_MAP, 0 );
+		GLSL_SetUniformVec4( &rg.ssaoShader, UNIFORM_VIEWINFO, viewInfo );
+
 		FBO_Blit( rg.screenSsaoFbo, srcBox, NULL, srcFbo, dstBox, NULL, NULL, GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO );
 	}
-#endif
 
 	srcBox[0] = glState.viewData.viewportX;
 	srcBox[1] = glState.viewData.viewportY;
 	srcBox[2] = glState.viewData.viewportWidth;
 	srcBox[3] = glState.viewData.viewportHeight;
 
-	/*
 	if ( srcFbo && r_multisampleAmount->i <= AntiAlias_32xMSAA ) {
 		if ( r_hdr->i && ( r_toneMap->i || r_forceToneMap->i ) ) {
 			autoExposure = r_autoExposure->i || r_forceAutoExposure->i;
@@ -612,12 +623,12 @@ static const void *RB_PostProcess(const void *data)
 			FBO_Blit( srcFbo, srcBox, NULL, NULL, dstBox, NULL, color, 0 );
 		}
 	}
-	*/
 
 	if ( r_drawSunRays->i ) {
 //		RB_SunRays( NULL, srcBox, NULL, dstBox );
 	}
 
+	backend.refdef.blurFactor = 1.0f;
 	if ( 0 ) {
 		RB_BokehBlur( NULL, srcBox, NULL, dstBox, backend.refdef.blurFactor );
 	} else {
