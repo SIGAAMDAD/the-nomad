@@ -704,10 +704,15 @@ void RB_InstantQuad2( vec4_t quadVerts[4], vec2_t texCoords[4] )
 {
 	int i;
 	srfVert_t verts[4];
+	void *data;
 
 	ri.GLimp_LogComment( "--- RB_InstantQuad2 ---" );
 
-	/*
+#if 0
+	nglOrtho( glState.viewData.viewportX, glState.viewData.viewportX + glState.viewData.viewportWidth,
+		glState.viewData.viewportY + glState.viewData.viewportHeight, glState.viewData.viewportY,
+		glState.viewData.zFar, glState.viewData.zNear );
+
 	nglBegin( GL_TRIANGLE_FAN );
 	
 	nglVertex3f( quadVerts[0][0], quadVerts[0][1], quadVerts[0][2] );
@@ -723,8 +728,7 @@ void RB_InstantQuad2( vec4_t quadVerts[4], vec2_t texCoords[4] )
 	nglTexCoord2f( texCoords[3][0], texCoords[3][1] );
 
 	nglEnd();
-	*/
-
+#else
     RB_SetBatchBuffer( backend.drawBuffer, backendData->verts, sizeof( srfVert_t ), backendData->indices, sizeof(glIndex_t) );
 
     for ( i = 0; i < 4; i++ ) {
@@ -739,8 +743,41 @@ void RB_InstantQuad2( vec4_t quadVerts[4], vec2_t texCoords[4] )
     backendData->indices[4] = 2;
     backendData->indices[5] = 0;
 
-    RB_CommitDrawData( verts, 4, backendData->indices, 6 );
-    RB_FlushBatchBuffer();
+	backend.drawBatch.vtxOffset = 4;
+	backend.drawBatch.idxOffset = 6;
+
+	VBO_Bind( backend.drawBuffer );
+
+	// orphan the old index buffer so that we don't stall on it
+	if ( r_drawMode->i == DRAWMODE_MAPPED ) {
+		nglInvalidateBufferData( backend.drawBuffer->index.id );
+		data = nglMapBufferRange( GL_ELEMENT_ARRAY_BUFFER_ARB, 0, backend.drawBatch.maxIndices, GL_MAP_WRITE_BIT
+			| GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT );
+		if ( data ) {
+			memcpy( data, backend.drawBatch.indices, backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize );
+		}
+		nglUnmapBuffer( GL_ELEMENT_ARRAY_BUFFER );
+	} else if ( r_drawMode->i == DRAWMODE_GPU ) {
+		nglBufferData( GL_ELEMENT_ARRAY_BUFFER, backend.drawBatch.maxIndices, NULL, backend.drawBatch.buffer->index.glUsage );
+		nglBufferSubData( GL_ELEMENT_ARRAY_BUFFER, 0, backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize, backend.drawBatch.indices );
+	}
+
+	// orphan the old vertex buffer so that we don't stall on it
+	if ( r_drawMode->i == DRAWMODE_MAPPED ) {
+		nglInvalidateBufferData( backend.drawBuffer->vertex.id );
+		data = nglMapBufferRange( GL_ARRAY_BUFFER_ARB, 0, backend.drawBatch.maxVertices, GL_MAP_WRITE_BIT
+			| GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT );
+		if ( data ) {
+			memcpy( data, backend.drawBatch.vertices, backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize );
+		}
+		nglUnmapBuffer( GL_ARRAY_BUFFER );
+	} else if ( r_drawMode->i == DRAWMODE_GPU ) {
+		nglBufferData( GL_ARRAY_BUFFER, backend.drawBatch.maxVertices, NULL, backend.drawBatch.buffer->vertex.glUsage );
+		nglBufferSubData( GL_ARRAY_BUFFER, 0, backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize, backend.drawBatch.vertices );
+	}
+
+	R_DrawElements( 6, 0 );
+#endif
 }
 
 void RB_InstantQuad( vec4_t quadVerts[4] )

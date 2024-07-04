@@ -1671,16 +1671,16 @@ static void PerformanceMenu_Save( void )
 	};
 
 	if ( s_settingsMenu->performance.multisampleType != s_initial->performance.multisampleType ) {
-		restartFBO = true;
+		needRestart = true;
 	}
 	if ( s_settingsMenu->performance.bloom != s_initial->performance.bloom ) {
-		restartFBO = true;
+		needRestart = true;
 	}
 	if ( s_settingsMenu->performance.ssao != s_initial->performance.ssao ) {
-		restartFBO = true;
+		needRestart = true;
 	}
 	if ( s_settingsMenu->advancedPerformance.postProcessing != s_initial->advancedPerformance.postProcessing ) {
-		restartFBO = true;
+		needRestart = true;
 	}
 	if ( s_settingsMenu->performance.textureDetail != s_initial->performance.textureDetail ) {
 		needRestart = true;

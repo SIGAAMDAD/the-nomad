@@ -454,7 +454,9 @@ static const void *RB_SwapBuffers(const void *data)
     cmd = (const swapBuffersCmd_t *)data;
 
 	// only draw imgui data after everything else has finished
-	ri.ImGui_Draw();
+	if ( !backend.framePostProcessed ) {
+		ri.ImGui_Draw();
+	}
 
 	if ( r_glDiagnostics->i ) {
 		if ( rg.beganQuery ) {
@@ -491,11 +493,13 @@ static const void *RB_SwapBuffers(const void *data)
 	if ( glContext.ARB_framebuffer_object && r_arb_framebuffer_object->i ) {
 		if ( !backend.framePostProcessed ) {
 			start = ri.Milliseconds();
-			if ( rg.msaaResolveFbo && r_hdr->i && r_multisampleType->i <= AntiAlias_32xMSAA ) {
+			if ( rg.msaaResolveFbo && rg.renderFbo && r_hdr->i && ( r_multisampleType->i <= AntiAlias_32xMSAA
+				|| r_multisampleType->i == AntiAlias_SMAA ) )
+			{
 				// Resolving an RGB16F MSAA FBO to the screen messes with the brightness, so resolve to an RGB16F FBO first
 				FBO_FastBlit( rg.renderFbo, NULL, rg.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
 				FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
-			} else if ( rg.ssaaResolveFbo && r_multisampleType->i >= AntiAlias_2xSSAA && r_multisampleType->i <= AntiAlias_4xSSAA ) {
+			} else if ( rg.ssaaResolveFbo && rg.renderFbo && r_multisampleType->i >= AntiAlias_2xSSAA && r_multisampleType->i <= AntiAlias_4xSSAA ) {
 				ivec4_t dstBox;
 
 				dstBox[0] = 0;
@@ -505,9 +509,8 @@ static const void *RB_SwapBuffers(const void *data)
 
 				FBO_FastBlit( rg.renderFbo, NULL, rg.ssaaResolveFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
 				FBO_FastBlit( rg.ssaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
-			} else {
-				FBO_FastBlit( rg.renderFbo, NULL, rg.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
-				FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+			} else if ( rg.renderFbo ) {
+				FBO_FastBlit( rg.renderFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
 			}
 			end = ri.Milliseconds();
 			backend.pc.postprocessMsec = end - start;
@@ -548,6 +551,9 @@ static const void *RB_PostProcess(const void *data)
 
 	backend.refdef.blurFactor = 0.0f;
 	backend.drawBatch.shader = rg.defaultShader;
+
+	// only draw imgui data after everything else has finished
+	ri.ImGui_Draw();
 
 	// finish any drawing if needed
 	if ( backend.drawBatch.idxOffset ) {

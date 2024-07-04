@@ -124,8 +124,7 @@ void R_BufferList_f( void )
 	for ( i = 0; i < rg.numBuffers; i++ ) {
 		vao = rg.buffers[i];
 
-		ri.Printf( PRINT_INFO, "%lu.%02lu MB %s\n", vao->vertex.size / ( 1024 * 1024 ),
-				  ( vao->vertex.size % ( 1024 * 1024 ) ) * 100 / ( 1024 * 1024 ), vao->name );
+		ri.Printf( PRINT_INFO, "%0.02lf MB %s\n", (double)( vao->vertex.size / ( 1024 * 1024 ) ), vao->name );
 
 		vertexesSize += vao->vertex.size;
 	}
@@ -133,17 +132,14 @@ void R_BufferList_f( void )
 	for ( i = 0; i < rg.numBuffers; i++ ) {
 		vao = rg.buffers[i];
 
-		ri.Printf( PRINT_INFO, "%lu.%02lu MB %s\n", vao->index.size / ( 1024 * 1024 ),
-				  ( vao->index.size % ( 1024 * 1024 ) ) * 100 / ( 1024 * 1024 ), vao->name );
+		ri.Printf( PRINT_INFO, "%0.02lf MB %s\n", (double)( vao->index.size / ( 1024 * 1024 ) ), vao->name );
 
 		indexesSize += vao->index.size;
 	}
 
 	ri.Printf( PRINT_INFO, " %u total VAOs\n", rg.numBuffers );
-	ri.Printf( PRINT_INFO, " %lu.%02lu MB total vertices memory\n", vertexesSize / ( 1024 * 1024 ),
-			  ( vertexesSize % ( 1024 * 1024 ) ) * 100 / ( 1024 * 1024 ) );
-	ri.Printf( PRINT_INFO, " %lu.%02lu MB total triangle indices memory\n", indexesSize / ( 1024 * 1024 ),
-			  ( indexesSize % ( 1024 * 1024 ) ) * 100 / ( 1024 * 1024 ) );
+	ri.Printf( PRINT_INFO, " %0.02lf MB total vertices memory\n", (double)( vertexesSize / ( 1024 * 1024 ) ) );
+	ri.Printf( PRINT_INFO, " %0.02lf MB total triangle indices memory\n", (double)( indexesSize / ( 1024 * 1024 ) ) );
 }
 
 void R_InitGPUBuffers( void )

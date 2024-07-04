@@ -189,6 +189,10 @@ static void FBO_Clear( fbo_t *fbo )
 {
 	int i;
 
+	if ( !fbo ) {
+		return;
+	}
+
 	if ( fbo->frameBuffer ) {
 		nglDeleteFramebuffers( 1, &fbo->frameBuffer );
 	}
@@ -235,9 +239,10 @@ static void FBO_List_f( void )
 		ri.Printf( PRINT_INFO, "%s %i %i\n", rg.fbos[i]->name, rg.fbos[i]->width, rg.fbos[i]->height );
 	}
 	ri.Printf( PRINT_INFO, " %u total FBOs\n", rg.numFBOs );
-	ri.Printf( PRINT_INFO, " %lu.%02lu MB render buffer memory\n", renderBufferMemoryUsed / ( 1024 * 1024 ),
-		( renderBufferMemoryUsed % ( 1024 * 1024 ) ) * 100 / ( 1024 * 1024 ) );
+	ri.Printf( PRINT_INFO, " %0.02lf MB render buffer memory\n", (double)( renderBufferMemoryUsed / ( 1024 * 1024 ) ) );
 }
+
+extern void R_CreateBuiltinTextures( void );
 
 static void FBO_Restart_f( void )
 {
@@ -245,13 +250,25 @@ static void FBO_Restart_f( void )
 	int width, height;
 	int i;
 
+	FBO_Clear( rg.renderFbo );
+	FBO_Clear( rg.msaaResolveFbo );
+	FBO_Clear( rg.hdrDepthFbo );
+	FBO_Clear( rg.smaaBlendFbo );
+	FBO_Clear( rg.smaaEdgesFbo );
+	FBO_Clear( rg.smaaWeightsFbo );
+	FBO_Clear( rg.ssaaResolveFbo );
+	FBO_Clear( rg.screenShadowFbo );
+	FBO_Clear( rg.screenSsaoFbo );
+	FBO_Clear( rg.textureScratchFbo[0] );
+	FBO_Clear( rg.textureScratchFbo[1] );
+	FBO_Clear( rg.targetLevelsFbo );
+
+	ri.Printf( PRINT_INFO, "------- FBO_Restart -------\n" );
+
 	if ( !glContext.ARB_framebuffer_object || !r_arb_framebuffer_object->i ) {
 		return;
 	}
 
-	ri.Printf( PRINT_INFO, "------- FBO_Restart -------\n" );
-
-	rg.numFBOs = 0;
 	multisample = 0;
 
 	GL_CheckErrors();
@@ -280,7 +297,7 @@ static void FBO_Restart_f( void )
 	if ( glContext.ARB_framebuffer_multisample ) {
 		nglGetIntegerv( GL_MAX_SAMPLES, &multisample );
 	}
-	
+
 	if ( r_multisampleAmount->i < multisample ) {
 		multisample = r_multisampleAmount->i;
 	}
@@ -293,58 +310,49 @@ static void FBO_Restart_f( void )
 		ri.Cvar_Set( "r_multisampleAmount", va( "%i", multisample ) );
 	}
 
-	if ( rg.renderFbo ) {
-		FBO_Clear( rg.renderFbo );
-	}
-	rg.renderFbo = FBO_Create( "_render", width, height );
-	FBO_CreateBuffer( rg.renderFbo, hdrFormat, 0, multisample );
-	FBO_CreateBuffer( rg.renderFbo, GL_DEPTH24_STENCIL8, 0, multisample );
-	if ( r_bloom->i ) {
-		GLuint buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-		FBO_CreateBuffer( rg.renderFbo, hdrFormat, 1, multisample );
-		nglDrawBuffers( 2, buffers );
-	}
-	R_CheckFBO( rg.renderFbo );
-
-	if ( r_multisampleType->i == AntiAlias_SMAA ) {
-		if ( rg.smaaBlendFbo ) {
-			FBO_Clear( rg.smaaBlendFbo );
+	if ( r_multisampleType->i >= AntiAlias_2xMSAA && r_multisampleType->i <= AntiAlias_32xMSAA ) {
+		rg.renderFbo = FBO_Create( "_render", width, height );
+		FBO_CreateBuffer( rg.renderFbo, hdrFormat, 0, multisample );
+		FBO_CreateBuffer( rg.renderFbo, GL_DEPTH24_STENCIL8, 0, multisample );
+		if ( r_bloom->i ) {
+			GLuint buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+			FBO_CreateBuffer( rg.renderFbo, hdrFormat, 1, multisample );
+			nglDrawBuffers( 2, buffers );
 		}
+		R_CheckFBO( rg.renderFbo );
+
+		rg.msaaResolveFbo = FBO_Create( "_msaaResolve", width, height );
+		FBO_AttachImage( rg.msaaResolveFbo, rg.renderImage, GL_COLOR_ATTACHMENT0 );
+		FBO_AttachImage( rg.msaaResolveFbo, rg.renderDepthImage, GL_DEPTH_ATTACHMENT );
+		R_CheckFBO( rg.msaaResolveFbo );
+	}
+	if ( r_multisampleType->i == AntiAlias_SMAA ) {
+		rg.renderFbo = FBO_Create( "_render", width, height );
+		FBO_CreateBuffer( rg.renderFbo, hdrFormat, 0, multisample );
+		FBO_CreateBuffer( rg.renderFbo, GL_DEPTH24_STENCIL8, 0, multisample );
+		if ( r_bloom->i ) {
+			GLuint buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+			FBO_CreateBuffer( rg.renderFbo, hdrFormat, 1, multisample );
+			nglDrawBuffers( 2, buffers );
+		}
+		R_CheckFBO( rg.renderFbo );
+
 		rg.smaaBlendFbo = FBO_Create( "_smaaBlend", width, height );
 		FBO_AttachImage( rg.smaaBlendFbo, rg.smaaBlendImage, GL_COLOR_ATTACHMENT0 );
 		R_CheckFBO( rg.smaaBlendFbo );
 
-		if ( rg.smaaEdgesFbo ) {
-			FBO_Clear( rg.smaaEdgesFbo );
-		}
 		rg.smaaEdgesFbo = FBO_Create( "_smaaEdges", width, height );
 		FBO_AttachImage( rg.smaaEdgesFbo, rg.smaaEdgesImage, GL_COLOR_ATTACHMENT0 );
 		R_CheckFBO( rg.smaaEdgesFbo );
 
-		if ( rg.smaaWeightsFbo ) {
-			FBO_Clear( rg.smaaWeightsFbo );
-		}
 		rg.smaaWeightsFbo = FBO_Create( "_smaaWeights", width, height );
 		FBO_AttachImage( rg.smaaWeightsFbo, rg.smaaWeightsImage, GL_COLOR_ATTACHMENT0 );
 		R_CheckFBO( rg.smaaWeightsFbo );
 	}
-	else if ( multisample && r_multisampleType->i >= AntiAlias_2xSSAA && r_multisampleType->i <= AntiAlias_4xSSAA ) {
-		if ( rg.ssaaResolveFbo ) {
-			FBO_Clear( rg.ssaaResolveFbo );
-		}
+	if ( multisample && r_multisampleType->i >= AntiAlias_2xSSAA && r_multisampleType->i <= AntiAlias_4xSSAA ) {
 		rg.ssaaResolveFbo = FBO_Create( "_ssaaResolve", glConfig.vidWidth, glConfig.vidHeight );
 		FBO_CreateBuffer( rg.ssaaResolveFbo, hdrFormat, 0, multisample );
 		R_CheckFBO( rg.ssaaResolveFbo );
-	}
-
-	if ( multisample && glContext.ARB_framebuffer_multisample ) {
-		if ( rg.msaaResolveFbo ) {
-			FBO_Clear( rg.msaaResolveFbo );
-		}
-		rg.msaaResolveFbo = FBO_Create( "_msaaResolve", width, height );
-		FBO_CreateBuffer( rg.msaaResolveFbo, hdrFormat, 0, multisample );
-		FBO_CreateBuffer( rg.msaaResolveFbo, GL_DEPTH24_STENCIL8, 0, multisample );
-		R_CheckFBO( rg.msaaResolveFbo );
 	}
 
 	// clear render buffer
@@ -354,47 +362,47 @@ static void FBO_Restart_f( void )
 		nglClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	}
 	if ( rg.hdrDepthImage ) {
-		if ( rg.hdrDepthFbo ) {
-			FBO_Clear( rg.hdrDepthFbo );
-		}
 		rg.hdrDepthFbo = FBO_Create( "_hdrDepth", rg.hdrDepthImage->width, rg.hdrDepthImage->height );
 		FBO_CreateBuffer( rg.hdrDepthFbo, GL_RGBA16F, 0, multisample );
 		R_CheckFBO( rg.hdrDepthFbo );
 	}
 
-	if ( rg.screenShadowImage ) {
-		if ( rg.screenShadowFbo ) {
-			FBO_Clear( rg.screenShadowFbo );
-		}
-		rg.screenShadowFbo = FBO_Create( "_screenshadow", rg.screenShadowImage->width, rg.screenShadowImage->height );
-		FBO_AttachImage( rg.screenShadowFbo, rg.screenShadowImage, GL_COLOR_ATTACHMENT0 );
-		R_CheckFBO( rg.screenShadowFbo );
-	}
-
-	if ( rg.screenSsaoImage ) {
-		if ( rg.screenSsaoFbo ) {
-			FBO_Clear( rg.screenSsaoFbo );
-		}
-		rg.screenSsaoFbo = FBO_Create( "_screenssao", rg.screenSsaoImage->width, rg.screenSsaoImage->height );
-		FBO_AttachImage( rg.screenSsaoFbo, rg.screenSsaoImage, GL_COLOR_ATTACHMENT0 );
-		R_CheckFBO( rg.screenSsaoFbo );
-	}
-
 	if ( rg.textureScratchImage[0] ) {
 		for ( i = 0; i < 2; i++ ) {
-			if ( rg.textureScratchFbo[i] ) {
-				FBO_Clear( rg.textureScratchFbo[i] );
-			}
 			rg.textureScratchFbo[i] = FBO_Create( va( "_texturescratch%d", i ), rg.textureScratchImage[i]->width, rg.textureScratchImage[i]->height );
 			FBO_AttachImage( rg.textureScratchFbo[i], rg.textureScratchImage[i], GL_COLOR_ATTACHMENT0 );
 			R_CheckFBO( rg.textureScratchFbo[i] );
 		}
 	}
 
-	GL_CheckErrors();
+	if ( rg.screenShadowImage ) {
+		rg.screenShadowFbo = FBO_Create( "_screenshadow", rg.screenShadowImage->width, rg.screenShadowImage->height );
+		FBO_AttachImage( rg.screenShadowFbo, rg.screenShadowImage, GL_COLOR_ATTACHMENT0 );
+		R_CheckFBO( rg.screenShadowFbo );
+	}
 
-	GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
-	glState.currentFbo = NULL;
+	if ( rg.screenSsaoImage ) {
+		rg.screenSsaoFbo = FBO_Create( "_screenssao", rg.screenSsaoImage->width, rg.screenSsaoImage->height );
+		FBO_AttachImage( rg.screenSsaoFbo, rg.screenSsaoImage, GL_COLOR_ATTACHMENT0 );
+		R_CheckFBO( rg.screenSsaoFbo );
+	}
+
+	if ( rg.targetLevelsImage ) {
+		rg.targetLevelsFbo = FBO_Create( "_targetlevels", rg.targetLevelsImage->width, rg.targetLevelsImage->height );
+		FBO_AttachImage( rg.targetLevelsFbo, rg.targetLevelsImage, GL_COLOR_ATTACHMENT0 );
+		R_CheckFBO( rg.targetLevelsFbo );
+	}
+
+/*
+	if ( rg.quarterImage[0] ) {
+		for ( i = 0; i < 2; i++ ) {
+			rg.quarterFbo[i] = FBO_Create( va( "_quarter%d", i ), rg.quarterImage[i]->width, rg.quarterImage[i]->height );
+//			FBO_CreateBuffer( rg.quarterFbo[i], GL_RGBA8, i, 0 );
+			FBO_AttachImage( rg.quarterFbo[i], rg.quarterImage[i], GL_COLOR_ATTACHMENT0 + i );
+			R_CheckFBO( rg.quarterFbo[i] );
+		}
+	}
+*/
 }
 
 void FBO_Init( void )
@@ -438,7 +446,7 @@ void FBO_Init( void )
 	if ( glContext.ARB_framebuffer_multisample ) {
 		nglGetIntegerv( GL_MAX_SAMPLES, &multisample );
 	}
-	
+
 	if ( r_multisampleAmount->i < multisample ) {
 		multisample = r_multisampleAmount->i;
 	}
@@ -451,16 +459,24 @@ void FBO_Init( void )
 		ri.Cvar_Set( "r_multisampleAmount", va( "%i", multisample ) );
 	}
 
-	rg.renderFbo = FBO_Create( "_render", width, height );
-	FBO_CreateBuffer( rg.renderFbo, hdrFormat, 0, multisample );
-	FBO_CreateBuffer( rg.renderFbo, GL_DEPTH24_STENCIL8, 0, multisample );
-	if ( r_bloom->i ) {
-		GLuint buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-		FBO_CreateBuffer( rg.renderFbo, hdrFormat, 1, multisample );
-		nglDrawBuffers( 2, buffers );
-	}
-	R_CheckFBO( rg.renderFbo );
+	if ( multisample /* r_multisampleType->i >= AntiAlias_2xMSAA && r_multisampleType->i <= AntiAlias_32xMSAA */ ) {
+		rg.renderFbo = FBO_Create( "_render", width, height );
+		FBO_CreateBuffer( rg.renderFbo, hdrFormat, 0, multisample );
+		FBO_CreateBuffer( rg.renderFbo, GL_DEPTH24_STENCIL8, 0, multisample );
+		if ( r_bloom->i ) {
+			GLuint buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+			FBO_CreateBuffer( rg.renderFbo, hdrFormat, 1, multisample );
+			nglDrawBuffers( 2, buffers );
+		}
+		R_CheckFBO( rg.renderFbo );
 
+		rg.msaaResolveFbo = FBO_Create( "_msaaResolve", width, height );
+		FBO_CreateBuffer( rg.msaaResolveFbo, hdrFormat, 0, multisample );
+		FBO_CreateBuffer( rg.msaaResolveFbo, GL_DEPTH24_STENCIL8, 0, multisample );
+//		FBO_AttachImage( rg.msaaResolveFbo, rg.renderImage, GL_COLOR_ATTACHMENT0 );
+//		FBO_AttachImage( rg.msaaResolveFbo, rg.renderDepthImage, GL_DEPTH_ATTACHMENT );
+		R_CheckFBO( rg.msaaResolveFbo );
+	}
 	if ( r_multisampleType->i == AntiAlias_SMAA ) {
 		rg.smaaBlendFbo = FBO_Create( "_smaaBlend", width, height );
 		FBO_AttachImage( rg.smaaBlendFbo, rg.smaaBlendImage, GL_COLOR_ATTACHMENT0 );
@@ -474,17 +490,10 @@ void FBO_Init( void )
 		FBO_AttachImage( rg.smaaWeightsFbo, rg.smaaWeightsImage, GL_COLOR_ATTACHMENT0 );
 		R_CheckFBO( rg.smaaWeightsFbo );
 	}
-	else if ( multisample && r_multisampleType->i >= AntiAlias_2xSSAA && r_multisampleType->i <= AntiAlias_4xSSAA ) {
+	if ( multisample && r_multisampleType->i >= AntiAlias_2xSSAA && r_multisampleType->i <= AntiAlias_4xSSAA ) {
 		rg.ssaaResolveFbo = FBO_Create( "_ssaaResolve", glConfig.vidWidth, glConfig.vidHeight );
 		FBO_CreateBuffer( rg.ssaaResolveFbo, hdrFormat, 0, multisample );
 		R_CheckFBO( rg.ssaaResolveFbo );
-	}
-
-	if ( multisample && glContext.ARB_framebuffer_multisample ) {
-		rg.msaaResolveFbo = FBO_Create( "_msaaResolve", width, height );
-		FBO_CreateBuffer( rg.msaaResolveFbo, hdrFormat, 0, multisample );
-		FBO_CreateBuffer( rg.msaaResolveFbo, GL_DEPTH24_STENCIL8, 0, multisample );
-		R_CheckFBO( rg.msaaResolveFbo );
 	}
 
 	// clear render buffer
@@ -525,6 +534,7 @@ void FBO_Init( void )
 		R_CheckFBO( rg.targetLevelsFbo );
 	}
 
+/*
 	if ( rg.quarterImage[0] ) {
 		for ( i = 0; i < 2; i++ ) {
 			rg.quarterFbo[i] = FBO_Create( va( "_quarter%d", i ), rg.quarterImage[i]->width, rg.quarterImage[i]->height );
@@ -533,6 +543,7 @@ void FBO_Init( void )
 			R_CheckFBO( rg.quarterFbo[i] );
 		}
 	}
+*/
 
 	GL_CheckErrors();
 
@@ -651,6 +662,7 @@ void FBO_BlitFromTexture( fbo_t *srcFbo, struct texture_s *src, vec4_t inSrcTexC
 	nglScissor( 0, 0, width, height );
 
 	GLSL_UseProgram( shaderProgram );
+	GLSL_SetUniformVec4( shaderProgram, UNIFORM_COLOR, color );
 
 //	Mat4Ortho( 0, width, height, 0, 0, 1, projection );
 
@@ -669,7 +681,6 @@ void FBO_BlitFromTexture( fbo_t *srcFbo, struct texture_s *src, vec4_t inSrcTexC
 	/*
 	
 	GLSL_SetUniformMatrix4( shaderProgram, UNIFORM_MODELVIEWPROJECTION, projection );
-	GLSL_SetUniformVec4( shaderProgram, UNIFORM_COLOR, color );
 	GLSL_SetUniformVec2( shaderProgram, UNIFORM_INVTEXRES, invTexRes );
 	GLSL_SetUniformVec2( shaderProgram, UNIFORM_AUTOEXPOSUREMINMAX, backend.refdef.autoExposureMinMax );
 	GLSL_SetUniformVec3( shaderProgram, UNIFORM_TONEMINAVGMAXLINEAR, backend.refdef.toneMinAvgMaxLinear );

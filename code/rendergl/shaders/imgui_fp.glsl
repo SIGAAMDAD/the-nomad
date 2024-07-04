@@ -156,7 +156,6 @@ void main() {
 	    a_Color = v_Color * sharpenImage( u_DiffuseMap, v_TexCoords );
 	}
 
-
     a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
 
     if ( u_GamePaused ) {

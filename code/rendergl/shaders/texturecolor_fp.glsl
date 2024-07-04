@@ -8,5 +8,5 @@ uniform vec4 u_Color;
 in vec2 v_TexCoords;
 
 void main() {
-	a_Color = texture2D( u_DiffuseMap, v_TexCoords ) * u_Color;
+	a_Color = texture2D( u_DiffuseMap, v_TexCoords );
 }

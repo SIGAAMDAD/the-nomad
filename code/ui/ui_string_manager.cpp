@@ -52,6 +52,40 @@ static language_t StringToLanguage( const char *tok )
     return LANGUAGE_ENGLISH;
 }
 
+void CUIStringManager::AddString( const char *key, const char *value )
+{
+    stringHash_t *str;
+    uint64_t size, hash;
+    int keyLength;
+
+    if ( !stringHash[ ui_language->i ] ) {
+        // ensure allocated
+        stringHash[ ui_language->i ] = (stringHash_t **)Hunk_Alloc( sizeof( stringHash_t ** ) * ui_maxLangStrings->i, h_high );
+    }
+
+    keyLength = strlen( key ) + 1;
+
+    size = 0;
+    size += PAD( sizeof( *str ), sizeof( uintptr_t ) );
+    size += PAD( keyLength, sizeof( uintptr_t ) );
+    size += PAD( strlen( value ) + 1, sizeof( uintptr_t ) );
+    
+    str = (stringHash_t *)Hunk_Alloc( size, h_high );
+    memset( str, 0, size );
+    str->name = (char *)( str + 1 );
+    str->value = (char *)( str->name + keyLength );
+
+    strcpy( str->name, key );
+    strcpy( str->value, value );
+    str->lang = (language_t)ui_language->i;
+
+    hash = Com_GenerateHashValue( key, ui_maxLangStrings->i );
+    str->next = stringHash[ ui_language->i ][hash];
+    stringHash[ ui_language->i ][hash] = str;
+
+    Con_Printf( COLOR_GREEN "Added UIString \"%s\" with value \"%s\"\n", key, value );
+}
+
 int CUIStringManager::LoadTokenList( const char **text, language_t lang )
 {
     stringHash_t *str, **hashTable;
@@ -112,7 +146,7 @@ int CUIStringManager::LoadTokenList( const char **text, language_t lang )
         size += PAD( strlen( name ) + 1, sizeof( uintptr_t ) );
         size += PAD( strlen( value ) + 1, sizeof( uintptr_t ) );
 
-        str = (stringHash_t *)Z_Malloc( size, TAG_STATIC );
+        str = (stringHash_t *)Hunk_Alloc( size, h_high );
         memset( str, 0, size );
         str->name = (char *)( str + 1 );
         str->value = (char *)( str->name + strlen( name ) + 1 );
@@ -251,7 +285,7 @@ const stringHash_t *CUIStringManager::AllocErrorString( const char *key ) {
     char value[MAX_STRING_CHARS];
 
     // [TheNomad] 7/4/24
-    // fixed up string manager having an anyeurism on vid_restart
+    // fixed up string manager having an aneurysm on vid_restart
     Com_snprintf( value, sizeof( value ) - 1, "ERROR: %s variable has not been set before.", key );
 
     size = 0;

@@ -2828,7 +2828,7 @@ static void R_CreateDefaultTexture( void )
 	rg.defaultImage = R_CreateImage( "*default", (byte *)data, DEFAULT_SIZE, DEFAULT_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_MIPMAP, 0 );
 }
 
-static void R_CreateBuiltinTextures( void )
+void R_CreateBuiltinTextures( void )
 {
 	uint32_t x, y;
 	byte data[DEFAULT_SIZE][DEFAULT_SIZE][4];
@@ -2915,7 +2915,7 @@ static void R_CreateBuiltinTextures( void )
 		}
 
 		if ( r_bloom->i && r_hdr->i ) {
-//			rg.bloomImage = R_CreateImage( "*bloom", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA16F );
+			rg.bloomImage = R_CreateImage( "*bloom", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_RGBA16F );
 		}
 
 		if ( r_multisampleType->i == AntiAlias_2xSSAA || r_multisampleType->i == AntiAlias_4xSSAA ) {
