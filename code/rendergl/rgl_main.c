@@ -277,7 +277,7 @@ void R_DrawPolys( void )
 	RB_FlushBatchBuffer();
 }
 
-static void R_DrawWorld( void )
+void R_DrawWorld( void )
 {
     uint32_t y, x;
     uint32_t i;
@@ -461,8 +461,6 @@ nhandle_t RE_RegisterSpriteSheet( const char *npath, uint32_t sheetWidth, uint32
         }
     }
 
-    len = PAD( len, sizeof( uintptr_t ) );
-
     numSprites = ( sheetWidth / spriteWidth ) * ( sheetHeight / spriteHeight );
 
     size = 0;
@@ -472,6 +470,7 @@ nhandle_t RE_RegisterSpriteSheet( const char *npath, uint32_t sheetWidth, uint32
 
     handle = rg.numSpriteSheets;
     sheet = rg.sheets[rg.numSpriteSheets] = (spriteSheet_t *)ri.Hunk_Alloc( size, h_low );
+    memset( sheet, 0, size );
     sheet->name = (char *)( sheet + 1 );
     sheet->sprites = (sprite_t *)( sheet->name + len + 1 );
 

@@ -703,15 +703,33 @@ based on Tess_InstantQuad from xreal
 void RB_InstantQuad2( vec4_t quadVerts[4], vec2_t texCoords[4] )
 {
 	int i;
-	polyVert_t verts[4];
+	srfVert_t verts[4];
 
 	ri.GLimp_LogComment( "--- RB_InstantQuad2 ---" );
 
-    RB_SetBatchBuffer( backend.drawBuffer, backendData->polyVerts, sizeof(polyVert_t), backendData->indices, sizeof(glIndex_t) );
+	/*
+	nglBegin( GL_TRIANGLE_FAN );
+	
+	nglVertex3f( quadVerts[0][0], quadVerts[0][1], quadVerts[0][2] );
+	nglTexCoord2f( texCoords[0][0], texCoords[0][1] );
+
+	nglVertex3f( quadVerts[1][0], quadVerts[1][1], quadVerts[1][2] );
+	nglTexCoord2f( texCoords[1][0], texCoords[1][1] );
+
+	nglVertex3f( quadVerts[2][0], quadVerts[2][1], quadVerts[2][2] );
+	nglTexCoord2f( texCoords[2][0], texCoords[2][1] );
+
+	nglVertex3f( quadVerts[3][0], quadVerts[3][1], quadVerts[3][2] );
+	nglTexCoord2f( texCoords[3][0], texCoords[3][1] );
+
+	nglEnd();
+	*/
+
+    RB_SetBatchBuffer( backend.drawBuffer, backendData->verts, sizeof( srfVert_t ), backendData->indices, sizeof(glIndex_t) );
 
     for ( i = 0; i < 4; i++ ) {
         VectorCopy( verts[i].xyz, quadVerts[0] );
-        VectorCopy2( verts[i].uv, texCoords[0] );
+        VectorCopy2( verts[i].st, texCoords[0] );
     }
 
     backendData->indices[0] = 0;
@@ -722,7 +740,6 @@ void RB_InstantQuad2( vec4_t quadVerts[4], vec2_t texCoords[4] )
     backendData->indices[5] = 0;
 
     RB_CommitDrawData( verts, 4, backendData->indices, 6 );
-
     RB_FlushBatchBuffer();
 }
 

@@ -624,6 +624,10 @@ static const void *RB_PostProcess(const void *data)
 		RB_GaussianBlur( backend.refdef.blurFactor );
 	}
 
+	if ( r_multisampleType->i == AntiAlias_SMAA ) {
+		RB_PostProcessSMAA( srcFbo );
+	}
+
 	FBO_FastBlit( srcFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 
 #if 0
@@ -978,5 +982,4 @@ void RB_ExecuteRenderCommands( const void *data )
 			return;
 		}
 	}
-
 }

@@ -22,6 +22,12 @@ extern const char *fallbackShader_lightall_vp;
 extern const char *fallbackShader_lightall_fp;
 extern const char *fallbackShader_texturecolor_vp;
 extern const char *fallbackShader_texturecolor_fp;
+extern const char *fallbackShader_SMAAEdges_vp;
+extern const char *fallbackShader_SMAAEdges_fp;
+extern const char *fallbackShader_SMAAWeights_vp;
+extern const char *fallbackShader_SMAAWeights_fp;
+extern const char *fallbackShader_SMAABlend_vp;
+extern const char *fallbackShader_SMAABlend_fp;
 
 #define GLSL_VERSION_ATLEAST(major,minor) (glContext.glslVersionMajor > (major) || (glContext.versionMajor == (major) && glContext.glslVersionMinor >= minor))
 
@@ -119,6 +125,11 @@ static uniformInfo_t uniformsInfo[UNIFORM_COUNT] = {
     { "u_HardwareGamma",        GLSL_INT },
 
     { "u_AntiAliasing",         GLSL_INT },
+
+    { "u_AreaTexture",          GLSL_INT },
+    { "u_SearchTexture",        GLSL_INT },
+    { "u_EdgesTexture",         GLSL_INT },
+    { "u_BlendTexture",         GLSL_INT },
 };
 
 //static shaderProgram_t *hashTable[MAX_RENDER_SHADERS];
@@ -1380,6 +1391,30 @@ void GLSL_InitGPUShaders( void )
         numLightShaders++;
     }
 
+    attribs = ATTRIB_POSITION;
+    extradefines[0] = '\0';
+    if ( !GLSL_InitGPUShader( &rg.smaaEdgesShader, "SMAAEdges", attribs, qtrue, extradefines, qtrue, fallbackShader_SMAAEdges_vp, fallbackShader_SMAAEdges_fp ) ) {
+        ri.Error( ERR_FATAL, "Could not load SMAAEdges shader!" );
+    }
+    GLSL_InitUniforms( &rg.smaaEdgesShader );
+    GLSL_FinishGPUShader( &rg.smaaEdgesShader );
+
+    attribs = ATTRIB_POSITION;
+    extradefines[0] = '\0';
+    if ( !GLSL_InitGPUShader( &rg.smaaWeightsShader, "SMAAWeights", attribs, qtrue, extradefines, qtrue, fallbackShader_SMAAWeights_vp, fallbackShader_SMAAWeights_fp ) ) {
+        ri.Error( ERR_FATAL, "Could not load SMAAWeights shader!" );
+    }
+    GLSL_InitUniforms( &rg.smaaWeightsShader );
+    GLSL_FinishGPUShader( &rg.smaaWeightsShader );
+
+    attribs = ATTRIB_POSITION;
+    extradefines[0] = '\0';
+    if ( !GLSL_InitGPUShader( &rg.smaaBlendShader, "SMAABlend", attribs, qtrue, extradefines, qtrue, fallbackShader_SMAABlend_vp, fallbackShader_SMAABlend_fp ) ) {
+        ri.Error( ERR_FATAL, "Could not load SMAABlend shader!" );
+    }
+    GLSL_InitUniforms( &rg.smaaBlendShader );
+    GLSL_FinishGPUShader( &rg.smaaBlendShader );
+
     attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_COLOR;
     extradefines[0] = '\0';
     N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_TCGEN\n" );
@@ -1483,7 +1518,7 @@ void GLSL_InitGPUShaders( void )
         rg.numPrograms, numGenShaders, numEtcShaders, numLightShaders, ( end - start ) / 1000.0f );
 }
 
-void GLSL_ShutdownGPUShaders(void)
+void GLSL_ShutdownGPUShaders( void )
 {
     uint32_t i;
 

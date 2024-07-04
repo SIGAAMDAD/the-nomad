@@ -189,7 +189,8 @@ typedef enum
 	IMGFLAG_LIGHTMAP       = 0x0080,
 	IMGFLAG_NOSCALE        = 0x0100,
 	IMGFLAG_CLAMPTOBORDER  = 0x0200,
-    IMGFLAG_NOWRAP         = 0x0400
+    IMGFLAG_NOWRAP         = 0x0400,
+    IMGFLAG_FBO            = 0x0800
 } imgFlags_t;
 
 typedef struct {
@@ -351,6 +352,11 @@ typedef enum {
     UNIFORM_GAMEPAUSED,
 
     UNIFORM_ANTIALIASING,
+
+    UNIFORM_AREA_TEXTURE,
+    UNIFORM_SEARCH_TEXTURE,
+    UNIFORM_EDGES_TEXTURE,
+    UNIFORM_BLEND_TEXTURE,
 
     UNIFORM_COUNT
 } uniform_t;
@@ -1143,6 +1149,11 @@ typedef struct
 	texture_t               *screenShadowImage;
 	texture_t               *screenSsaoImage;
 	texture_t				*hdrDepthImage;
+    texture_t               *smaaEdgesImage;
+    texture_t               *smaaBlendImage;
+    texture_t               *smaaAreaImage;
+    texture_t               *smaaSearchImage;
+    texture_t               *smaaWeightsImage;
 	
 	texture_t				*textureDepthImage;
 
@@ -1160,6 +1171,9 @@ typedef struct
 	fbo_t					*screenShadowFbo;
 	fbo_t					*screenSsaoFbo;
 	fbo_t					*hdrDepthFbo;
+    fbo_t                   *smaaEdgesFbo;
+    fbo_t                   *smaaWeightsFbo;
+    fbo_t                   *smaaBlendFbo;
     fbo_t                   *ssaaResolveFbo;
 //	fbo_t                   *renderCubeFbo;
 
@@ -1217,6 +1231,9 @@ typedef struct
 	shaderProgram_t bokehShader;
 	shaderProgram_t tonemapShader;
     shaderProgram_t textureColorShader;
+    shaderProgram_t smaaEdgesShader;
+    shaderProgram_t smaaWeightsShader;
+    shaderProgram_t smaaBlendShader;
 
     qboolean beganQuery;
 
@@ -1609,6 +1626,8 @@ nhandle_t RE_RegisterSprite( nhandle_t hSpriteSheet, uint32_t index );
 void R_WorldToGL2( polyVert_t *verts, vec3_t pos, uint32_t numVerts );
 void R_WorldToGL( drawVert_t *verts, vec3_t pos );
 qboolean R_CalcTangentVectors(drawVert_t dv[3]);
+void R_DrawPolys( void );
+void R_DrawWorld( void );
 
 //
 // rgl_scene.c
