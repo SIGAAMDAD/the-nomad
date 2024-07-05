@@ -1,5 +1,6 @@
 #include "g_game.h"
 #include "../rendercommon/imgui.h"
+#include "../rendercommon/imgui_impl_opengl3.h"
 #include "g_threads.h"
 
 /*
@@ -410,6 +411,10 @@ void SCR_UpdateScreen( void )
     Con_DrawConsole();
 
 	UI_Refresh( gi.realtime );
+
+	// draw imgui
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
 
 	if ( ui_debugOverlay->i ) {
 		re.EndFrame( &time_frontend, &time_backend, &gi.pc );

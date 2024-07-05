@@ -184,11 +184,6 @@ static void G_RefImGuiNewFrame( void ) {
     ImGui::NewFrame();
 }
 
-static void G_RefImGuiDraw( void ) {
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
-}
-
 static void G_SetScaling(float factor, uint32_t captureWidth, uint32_t captureHeight)
 {
     if ( gi.con_factor != factor ) {
@@ -495,7 +490,6 @@ static void G_InitRenderRef(void)
     import.ImGui_Init = G_RefImGuiInit;
     import.ImGui_Shutdown = G_RefImGuiShutdown;
     import.ImGui_NewFrame = G_RefImGuiNewFrame;
-    import.ImGui_Draw = G_RefImGuiDraw;
 
     import.Sys_LoadDLL = Sys_LoadDLL;
     import.Sys_CloseDLL = Sys_CloseDLL;
