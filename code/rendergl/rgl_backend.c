@@ -610,6 +610,7 @@ static const void *RB_PostProcess(const void *data)
 	srcBox[2] = glState.viewData.viewportWidth;
 	srcBox[3] = glState.viewData.viewportHeight;
 
+/*
 	if ( srcFbo && r_multisampleAmount->i <= AntiAlias_32xMSAA ) {
 		if ( r_hdr->i && ( r_toneMap->i || r_forceToneMap->i ) ) {
 			autoExposure = r_autoExposure->i || r_forceAutoExposure->i;
@@ -626,15 +627,15 @@ static const void *RB_PostProcess(const void *data)
 			color[2] = pow( 2, r_autoExposure->f ); //exp2(r_cameraExposure->f);
 			color[3] = 1.0f;
 
-			FBO_Blit( srcFbo, srcBox, NULL, NULL, dstBox, NULL, color, 0 );
+//			FBO_Blit( srcFbo, srcBox, NULL, NULL, dstBox, NULL, color, 0 );
 		}
 	}
+*/	
 
 	if ( r_drawSunRays->i ) {
 //		RB_SunRays( NULL, srcBox, NULL, dstBox );
 	}
-
-	backend.refdef.blurFactor = 1.0f;
+	
 	if ( 0 ) {
 		RB_BokehBlur( NULL, srcBox, NULL, dstBox, backend.refdef.blurFactor );
 	} else {
@@ -645,7 +646,9 @@ static const void *RB_PostProcess(const void *data)
 		RB_PostProcessSMAA( srcFbo );
 	}
 
-	FBO_FastBlit( srcFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+	if ( srcFbo ) {
+		FBO_FastBlit( srcFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+	}
 
 #if 0
 	if (0)

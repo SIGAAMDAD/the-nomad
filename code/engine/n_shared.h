@@ -834,6 +834,8 @@ float Com_Clamp( float min, float max, float value );
 #define	YAW					1		// left / right
 #define	ROLL				2		// fall over
 
+#define MAX_INFO_TOKENS ((MAX_INFO_STRING/3)+2)
+
 //
 // key / value info strings
 //

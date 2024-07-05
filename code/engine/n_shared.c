@@ -2021,12 +2021,45 @@ const char *Info_ValueForKey( const char *s, const char *key )
 	return "";
 }
 
-
-#define MAX_INFO_TOKENS ((MAX_INFO_STRING/3)+2)
-
 static const char *info_keys[ MAX_INFO_TOKENS ];
 static const char *info_values[ MAX_INFO_TOKENS ];
 static uint32_t info_tokens;
+
+void Info_Tokenize2( const char *s, const char *keys[ MAX_INFO_TOKENS ], const char *values[ MAX_INFO_TOKENS ],
+	uint32_t *tokens )
+{
+	static char tokenBuffer[ MAX_INFO_STRING ];
+	char *o = tokenBuffer;
+
+	*tokens = 0;
+	*o = '\0';
+
+	for ( ;; ) {
+		while ( *s == '\\' ) // skip leading/trailing separators
+			s++;
+
+		if ( *s == '\0' )
+			break;
+
+		keys[ *tokens ] = o;
+		while ( *s != '\\' ) {
+			if ( *s == '\0' ) {
+				*o = '\0'; // terminate key
+				values[ (*tokens)++ ] = o;
+				return;
+			}
+			*o++ = *s++;
+		}
+		*o++ = '\0'; // terminate key
+		s++; // skip '\\'
+
+		values[ (*tokens)++ ] = o;
+		while ( *s != '\\' && *s != '\0' ) {
+			*o++ = *s++;
+		}
+		*o++ = '\0';
+	}
+}
 
 /*
 ===================

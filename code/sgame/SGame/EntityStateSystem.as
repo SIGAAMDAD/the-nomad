@@ -127,6 +127,8 @@ namespace TheNomad::SGame {
 			return "EntityStateSystem";
 		}
 		void OnInit() {
+			uint i;
+
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.ListStateCache_f ), "sgame.state_cache", false
 			);
@@ -135,11 +137,6 @@ namespace TheNomad::SGame {
 			);
 
 			InitBaseStateCache();
-		}
-		void OnShutdown() {
-		}
-		void OnLevelStart() {
-			uint i;
 			
 			ConsolePrint( "Loading state data...\n" );
 			
@@ -177,11 +174,15 @@ namespace TheNomad::SGame {
 				m_AnimationCache.Add( anim.GetName(), anim );
 			}
 		}
-		void OnLevelEnd() {
+		void OnShutdown() {
 			m_StateCache.Clear();
 			m_AnimationCache.Clear();
 			m_States.Clear();
 			m_Animations.Clear();
+		}
+		void OnLevelStart() {
+		}
+		void OnLevelEnd() {
 		}
 		void OnSave() const {
 		}

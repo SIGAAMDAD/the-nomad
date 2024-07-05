@@ -459,7 +459,7 @@ void FBO_Init( void )
 		ri.Cvar_Set( "r_multisampleAmount", va( "%i", multisample ) );
 	}
 
-	if ( multisample /* r_multisampleType->i >= AntiAlias_2xMSAA && r_multisampleType->i <= AntiAlias_32xMSAA */ ) {
+	if ( multisample && r_multisampleType->i >= AntiAlias_2xMSAA && r_multisampleType->i <= AntiAlias_32xMSAA ) {
 		rg.renderFbo = FBO_Create( "_render", width, height );
 		FBO_CreateBuffer( rg.renderFbo, hdrFormat, 0, multisample );
 		FBO_CreateBuffer( rg.renderFbo, GL_DEPTH24_STENCIL8, 0, multisample );
@@ -491,6 +491,16 @@ void FBO_Init( void )
 		R_CheckFBO( rg.smaaWeightsFbo );
 	}
 	if ( multisample && r_multisampleType->i >= AntiAlias_2xSSAA && r_multisampleType->i <= AntiAlias_4xSSAA ) {
+		rg.renderFbo = FBO_Create( "_render", width, height );
+		FBO_CreateBuffer( rg.renderFbo, hdrFormat, 0, multisample );
+		FBO_CreateBuffer( rg.renderFbo, GL_DEPTH24_STENCIL8, 0, multisample );
+		if ( r_bloom->i ) {
+			GLuint buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+			FBO_CreateBuffer( rg.renderFbo, hdrFormat, 1, multisample );
+			nglDrawBuffers( 2, buffers );
+		}
+		R_CheckFBO( rg.renderFbo );
+
 		rg.ssaaResolveFbo = FBO_Create( "_ssaaResolve", glConfig.vidWidth, glConfig.vidHeight );
 		FBO_CreateBuffer( rg.ssaaResolveFbo, hdrFormat, 0, multisample );
 		R_CheckFBO( rg.ssaaResolveFbo );

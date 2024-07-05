@@ -431,6 +431,7 @@ bool CModuleLib::AddDefaultProcs( void ) const {
     RegisterStdString_Generic( g_pModuleLib->GetScriptEngine() );
     RegisterScriptHandle( m_pEngine );
     RegisterScriptAny( m_pEngine );
+    RegisterScriptParser( m_pEngine );
 
     CheckASCall( g_pModuleLib->GetScriptEngine()->SetDefaultNamespace( "TheNomad::GameSystem" ) );
     CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterface( "GameObject" ) );
@@ -606,8 +607,11 @@ CModuleLib::CModuleLib( void )
     CheckASCall( m_pEngine->SetEngineProperty( asEP_COMPILER_WARNINGS, true ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_OPTIMIZE_BYTECODE, true ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_INCLUDE_JIT_INSTRUCTIONS, ml_allowJIT->i ) );
+    CheckASCall( m_pEngine->SetEngineProperty( asEP_BUILD_WITHOUT_LINE_CUES, !ml_debugMode->i ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_REQUIRE_ENUM_SCOPE, true ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_USE_CHARACTER_LITERALS, true ) );
+    CheckASCall( m_pEngine->SetEngineProperty( asEP_ALLOW_IMPLICIT_HANDLE_TYPES, true ) );
+    CheckASCall( m_pEngine->SetEngineProperty( asEP_COPY_SCRIPT_SECTIONS, true ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_AUTO_GARBAGE_COLLECT, true ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_HEREDOC_TRIM_MODE, 0 ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_INIT_GLOBAL_VARS_AFTER_BUILD, true ) );

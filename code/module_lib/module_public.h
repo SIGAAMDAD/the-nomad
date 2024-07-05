@@ -205,6 +205,7 @@ using UtlList = eastl::list<T, Allocator>;
 #include "scriptlib/scriptstdstring.h"
 #include "scriptlib/scriptmath.h"
 #include "scriptlib/scripthandle.h"
+#include "scriptlib/scriptparser.h"
 #include "contextmgr.h"
 #include "module_jit.h"
 
