@@ -412,10 +412,6 @@ void SCR_UpdateScreen( void )
 
 	UI_Refresh( gi.realtime );
 
-	// draw imgui
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
-
 	if ( ui_debugOverlay->i ) {
 		re.EndFrame( &time_frontend, &time_backend, &gi.pc );
 	} else {

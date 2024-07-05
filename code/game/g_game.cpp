@@ -202,6 +202,12 @@ static void *G_RefImGuiMalloc( size_t size ) {
     return Z_Malloc( size, TAG_IMGUI );
 }
 
+static void G_RefImGuiDraw( void ) {
+    // draw imgui
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
+}
+
 //
 // G_RefImGuiInit: called during internal renderer initialization
 // renderContext can be either a SDL_GLContext or SDL_Renderer, or NULL if using D3D11, Vulkan, or Metal
@@ -490,6 +496,7 @@ static void G_InitRenderRef(void)
     import.ImGui_Init = G_RefImGuiInit;
     import.ImGui_Shutdown = G_RefImGuiShutdown;
     import.ImGui_NewFrame = G_RefImGuiNewFrame;
+    import.ImGui_Draw = G_RefImGuiDraw;
 
     import.Sys_LoadDLL = Sys_LoadDLL;
     import.Sys_CloseDLL = Sys_CloseDLL;
