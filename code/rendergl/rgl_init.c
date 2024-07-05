@@ -138,6 +138,7 @@ cvar_t *r_mapOverBrightBits;
 
 cvar_t *r_imageSharpenAmount;
 
+cvar_t *r_smaaEdgesType;
 cvar_t *r_showImages;
 
 cvar_t *r_printShaders;
@@ -874,6 +875,9 @@ static void R_Register( void )
 	r_drawSunRays = ri.Cvar_Get( "r_drawSunRays", "0", CVAR_SAVE | CVAR_LATCH );
 	r_sunlightMode = ri.Cvar_Get( "r_sunlightMode", "1", CVAR_SAVE | CVAR_LATCH );
 
+    r_smaaEdgesType = ri.Cvar_Get( "r_smaaEdgesType", "luma", CVAR_SAVE | CVAR_LATCH );
+    ri.Cvar_SetDescription( r_smaaEdgesType, "Sets SMAA anti-aliasing edges processing method. Can be luma, depth, or color." );
+
     r_useShaderCache = ri.Cvar_Get( "r_useShaderCache", "1", CVAR_LATCH | CVAR_SAVE );
     ri.Cvar_SetDescription( r_useShaderCache, "Caches GLSL shader objects for faster loading, requires GL_ARB_gl_spirv extension." );
 
@@ -1236,9 +1240,11 @@ static void R_InitGLContext( void )
     
     R_InitExtensions();
 
-    if ( glContext.ARB_sample_shading && glContext.ARB_framebuffer_object ) {
-        nglEnable( GL_SAMPLE_SHADING_ARB );
-        nglMinSampleShadingARB( 1.0f );
+    if ( glContext.ARB_sample_shading && r_multisampleType->i >= AntiAlias_2xSSAA && r_multisampleType->i <= AntiAlias_4xSSAA
+        && glContext.ARB_framebuffer_object )
+    {
+//        nglEnable( GL_SAMPLE_SHADING_ARB );
+//        nglMinSampleShadingARB( 0.5f );
     }
 }
 

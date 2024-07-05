@@ -1,5 +1,7 @@
 #include "rgl_local.h"
 
+//shaderCommands_t tess;
+
 static void R_InitRingbuffer( GLenum target, uint32_t elementSize, uint32_t segmentElements, glRingbuffer_t *rb );
 static uint32_t R_RotateRingbuffer( glRingbuffer_t *rb );
 static void R_ShutdownRingbuffer( GLenum target, glRingbuffer_t *rb );
@@ -152,6 +154,7 @@ void R_InitGPUBuffers( void )
 	rg.numBuffers = 0;
 
 	/*
+
 	vertexesSize  = sizeof( tess.xyz[0] );
 	vertexesSize += sizeof( tess.normal[0] );
 	vertexesSize += sizeof( tess.tangent[0] );
@@ -732,4 +735,70 @@ void RB_CommitDrawData( const void *verts, uint32_t numVerts, const void *indice
     backend.drawBatch.idxOffset += numIndices;
 }
 
+/*
+==============
+RB_UpdateTessVao
 
+Adapted from Tess_UpdateVBOs from xreal
+
+Update the default VAO to replace the client side vertex arrays
+==============
+*/
+/*
+void RB_UpdateTessVao( unsigned int attribBits )
+{
+//	GLimp_LogComment("--- RB_UpdateTessVao ---\n");
+
+	backend.pc.c_dynamicBufferDraws++;
+
+	// update the default VAO
+	if ( tess.numVertexes > 0 && tess.numVertexes <= SHADER_MAX_VERTEXES && tess.numIndexes > 0 && tess.numIndexes <= SHADER_MAX_INDEXES ) {
+		int attribIndex;
+		int attribUpload;
+
+		VBO_Bind( tess.vao );
+
+		// orphan old vertex buffer so we don't stall on it
+		nglBufferData( GL_ARRAY_BUFFER, tess.vao->vertex.size, NULL, GL_DYNAMIC_DRAW );
+
+		// if nothing to set, set everything
+		if ( !( attribBits & ATTRIB_BITS ) ) {
+			attribBits = ATTRIB_BITS;
+		}
+
+		attribUpload = attribBits;
+
+		for ( attribIndex = 0; attribIndex < ATTRIB_INDEX_COUNT; attribIndex++ ) {
+			uint32_t attribBit = 1 << attribIndex;
+			vertexAttrib_t *vAtb = &tess.vao->attribs[attribIndex];
+
+			if ( attribUpload & attribBit ) {
+				// note: tess has a VBO where stride == size
+				nglBufferSubData( GL_ARRAY_BUFFER, vAtb->offset, tess.numVertexes * vAtb->stride, tess.attribPointers[attribIndex] );
+			}
+
+			if ( attribBits & attribBit ) {
+				if ( !glContext.ARB_vertex_array_object ) {
+					nglVertexAttribPointer( attribIndex, vAtb->count, vAtb->type, vAtb->normalized, vAtb->stride, BUFFER_OFFSET( vAtb->offset ) );
+				}
+
+				if ( !( glState.vertexAttribsEnabled & attribBit ) ) {
+					nglEnableVertexAttribArray( attribIndex );
+					glState.vertexAttribsEnabled |= attribBit;
+				}
+			}
+			else {
+				if ( ( glState.vertexAttribsEnabled & attribBit ) ) {
+					nglDisableVertexAttribArray( attribIndex );
+					glState.vertexAttribsEnabled &= ~attribBit;
+				}
+			}
+		}
+
+		// orphan old index buffer so we don't stall on it
+		nglBufferData( GL_ELEMENT_ARRAY_BUFFER, tess.vao->index.size, NULL, GL_DYNAMIC_DRAW );
+
+		nglBufferSubData( GL_ELEMENT_ARRAY_BUFFER, 0, tess.numIndexes * sizeof( tess.indexes[0] ), tess.indexes );
+	}
+}
+*/

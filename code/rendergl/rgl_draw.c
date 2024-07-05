@@ -431,9 +431,8 @@ void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, con
 
         GLSL_SetUniformInt( sp, UNIFORM_COLORGEN, stageP->rgbGen );
         GLSL_SetUniformInt( sp, UNIFORM_ALPHAGEN, stageP->alphaGen );
-		if ( rg.world && rg.worldMapLoaded ) {
-			GLSL_SetUniformInt( sp, UNIFORM_GAMEPAUSED, ri.Cvar_VariableInteger( "g_paused" ) );
-		}
+		GLSL_SetUniformInt( sp, UNIFORM_GAMEPAUSED, ri.Cvar_VariableInteger( "g_paused" ) );
+		GLSL_SetUniformInt( sp, UNIFORM_ANTIALIASING, r_multisampleType->i );
 		GLSL_SetUniformFloat( sp, UNIFORM_SHARPENING, r_imageSharpenAmount->f );
 		GLSL_SetUniformInt( sp, UNIFORM_ANTIALIASING, r_multisampleType->i );
 		
@@ -483,6 +482,7 @@ void RB_IterateShaderStages( shader_t *shader )
 	int deformGen;
 	float deformParams[5];
 	uint32_t numLights;
+	qboolean horizontalBlur = qtrue;
 
 	numLights = backend.refdef.numDLights;
 	if ( !( backend.refdef.flags & RSF_NOWORLDMODEL ) && rg.world ) {
@@ -615,9 +615,8 @@ void RB_IterateShaderStages( shader_t *shader )
         GLSL_SetUniformInt( sp, UNIFORM_ALPHAGEN, stageP->alphaGen );
 		GLSL_SetUniformVec4( sp, UNIFORM_NORMAL_SCALE, stageP->normalScale );
 		GLSL_SetUniformVec4( sp, UNIFORM_SPECULAR_SCALE, stageP->specularScale );
-		if ( rg.world && rg.worldMapLoaded ) {
-			GLSL_SetUniformInt( sp, UNIFORM_GAMEPAUSED, ri.Cvar_VariableInteger( "g_paused" ) );
-		}
+		GLSL_SetUniformInt( sp, UNIFORM_GAMEPAUSED, ri.Cvar_VariableInteger( "g_paused" ) );
+		GLSL_SetUniformInt( sp, UNIFORM_ANTIALIASING, r_multisampleType->i );
 		GLSL_SetUniformInt( sp, UNIFORM_HARDWAREGAMMA, !r_ignorehwgamma->i );
 		GLSL_SetUniformFloat( sp, UNIFORM_GAMMA, r_gammaAmount->f );
 		GLSL_SetUniformInt( sp, UNIFORM_ANTIALIASING, r_multisampleType->i );
@@ -736,12 +735,8 @@ void RB_InstantQuad2( vec4_t quadVerts[4], vec2_t texCoords[4] )
         VectorCopy2( verts[i].st, texCoords[0] );
     }
 
-    backendData->indices[0] = 0;
-    backendData->indices[1] = 1;
-    backendData->indices[2] = 2;
-    backendData->indices[3] = 3;
-    backendData->indices[4] = 2;
-    backendData->indices[5] = 0;
+    nglVertex3f( 1.0f, 0.0f, 0.0f );
+	nglTexCoord2f( texCoords[1][0], texCoords[1][1] );
 
 	backend.drawBatch.vtxOffset = 4;
 	backend.drawBatch.idxOffset = 6;
@@ -807,3 +802,181 @@ void RB_InstantQuad( vec4_t quadVerts[4] )
 
 	RB_InstantQuad2(quadVerts, texCoords);
 }
+
+/*
+==============
+RB_BeginSurface
+
+We must set some things up before beginning any tesselation,
+because a surface may be forced to perform a RB_End due
+to overflow.
+==============
+*/
+#if 0
+void RB_BeginSurface( shader_t *shader ) {
+
+//	shader_t *state = ( shader->remappedShader ) ? shader->remappedShader : shader;
+	shader_t *state = shader;
+
+	tess.numIndexes = 0;
+	tess.firstIndex = 0;
+	tess.numVertexes = 0;
+	tess.shader = state;
+//	tess.dlightBits = 0;		// will be OR'd in by surface functions
+//	tess.pshadowBits = 0;       // will be OR'd in by surface functions
+	tess.xstages = state->stages;
+//	tess.numPasses = state->numUnfoggedPasses;
+//	tess.currentStageIteratorFunc = state->optimalStageIteratorFunc;
+//	tess.useInternalVao = qtrue;
+//	tess.useCacheVao = qfalse;
+
+	tess.shaderTime = backend.refdef.floatTime - tess.shader->timeOffset;
+	if ( tess.shader->clampTime && tess.shaderTime >= tess.shader->clampTime ) {
+		tess.shaderTime = tess.shader->clampTime;
+	}
+
+	RB_SetBatchBuffer( tess.vao, NULL, 0, NULL, 0 );
+
+//	if ( backend.viewParms.flags & VPF_SHADOWMAP) {
+//		tess.currentStageIteratorFunc = RB_StageIteratorGeneric;
+//	}
+}
+
+void RB_StageIteratorGeneric( void )
+{
+	const shaderCommands_t *input;
+	unsigned int vertexAttribs = 0;
+
+	input = &tess;
+
+	if ( !input->numVertexes || !input->numIndexes ) {
+		return;
+	}
+
+	vertexAttribs = input->shader->vertexAttribs;
+
+	backend.drawBuffer = input->vao;
+	backend.drawBatch.shader = input->shader;
+
+	RB_UpdateTessVao( vertexAttribs );
+
+	// set polygon offset if necessary
+	if ( input->shader->polygonOffset ) {
+		nglEnable( GL_POLYGON_OFFSET_FILL );
+	}
+
+	//
+	// render depth if in depthfill mode
+	//
+	if ( backend.depthFill ) {
+		RB_IterateShaderStages( input->shader );
+
+		//
+		// reset polygon offset
+		//
+		if ( input->shader->polygonOffset ) {
+			nglDisable( GL_POLYGON_OFFSET_FILL );
+		}
+
+		return;
+	}
+
+	//
+	// call shader function
+	//
+	RB_IterateShaderStages( input->shader );
+
+	//
+	// pshadows!
+	//
+	if ( glContext.ARB_framebuffer_object && r_shadows->i == 4 /* && tess.pshadowBits */
+		&& tess.shader->sort <= SS_OPAQUE && !( tess.shader->surfaceFlags & SURFACEPARM_NODLIGHT
+		/* ( SURF_NODLIGHT | SURFACEPARM_SKY ) */ ) )
+	{
+//		ProjectPshadowVBOGLSL();
+	}
+
+	//
+	// reset polygon offset
+	//
+	if ( input->shader->polygonOffset ) {
+		nglDisable( GL_POLYGON_OFFSET_FILL );
+	}
+}
+
+
+/*
+==============
+RB_CheckOverflow
+==============
+*/
+void RB_CheckOverflow( int verts, int indexes ) {
+	if ( tess.numVertexes + verts < SHADER_MAX_VERTEXES
+		&& tess.numIndexes + indexes < SHADER_MAX_INDEXES )
+	{
+		return;
+	}
+
+	RB_EndSurface();
+
+	if ( verts >= SHADER_MAX_VERTEXES ) {
+		ri.Error( ERR_DROP, "RB_CheckOverflow: verts > MAX (%d > %d)", verts, SHADER_MAX_VERTEXES );
+	}
+
+	if ( indexes >= SHADER_MAX_INDEXES ) {
+		ri.Error( ERR_DROP, "RB_CheckOverflow: indices > MAX (%d > %d)", indexes, SHADER_MAX_INDEXES );
+	}
+
+	RB_BeginSurface( tess.shader );
+}
+
+void RB_EndSurface( void )
+{
+	const shaderCommands_t *input;
+
+	input = &tess;
+
+	if ( input->numIndexes == 0 || input->numVertexes == 0 ) {
+		return;
+	}
+
+	if ( input->numIndexes >= SHADER_MAX_INDEXES - 1 ) {
+		ri.Error( ERR_DROP, "RB_EndSurface() - SHADER_MAX_INDEXES hit" );
+	}
+	if ( input->numVertexes >= SHADER_MAX_VERTEXES - 1 ) {
+		ri.Error( ERR_DROP, "RB_EndSurface() - SHADER_MAX_VERTEXES hit" );
+	}
+
+	if ( tess.shader == rg.shadowShader ) {
+		return;
+	}
+
+	//
+	// update performance counters
+	//
+	backend.pc.c_surfaces++;
+	backend.pc.c_bufferVertices += tess.numVertexes;
+	backend.pc.c_bufferIndices += tess.numIndexes;
+//	backend.pc.c_totalIndexes += tess.numIndexes * tess.numPasses;
+
+	//
+	// call off to shader specific tess end function
+	//
+//	tess.currentStageIteratorFunc();
+	RB_StageIteratorGeneric();
+
+	//
+	// draw debugging stuff
+	//
+	if ( r_showTris->i ) {
+		DrawTris();
+	}
+//	if ( r_showNormals->i ) {
+//		DrawNormals( input );
+//	}
+	// clear shader so we can tell we don't have any unclosed surfaces
+	tess.numIndexes = 0;
+	tess.numVertexes = 0;
+	tess.firstIndex = 0;
+}
+#endif

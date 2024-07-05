@@ -1589,9 +1589,86 @@ static void VideoMenu_Save( void )
 //	SDL_SetWindowPosition( SDL_window, vid_xpos->i, vid_ypos->i );
 }
 
+static bool PerformanceMenu_FBO_Save( void )
+{
+	bool restartFBO = false, restartVid = false;
+
+	Cvar_SetIntegerValue( "r_multisampleType", s_settingsMenu->performance.multisampleType );
+	switch ( s_settingsMenu->performance.multisampleType ) {
+	case AntiAlias_None:
+	case AntiAlias_TAA:
+	case AntiAlias_SMAA:
+	case AntiAlias_FXAA:
+	case AntiAlias_CSAA:
+		Cvar_Set( "r_multisampleAmount", "0" );
+		break;
+	case AntiAlias_2xSSAA:
+		Cvar_Set( "r_multisampleAmount", "2" );
+		break;
+	case AntiAlias_4xSSAA:
+		Cvar_Set( "r_multisampleAmount", "4" );
+		break;
+	case AntiAlias_2xMSAA:
+		Cvar_Set( "r_multisampleAmount", "2" );
+		break;
+	case AntiAlias_4xMSAA:
+		Cvar_Set( "r_multisampleAmount", "4" );
+		break;
+	case AntiAlias_8xMSAA:
+		Cvar_Set( "r_multisampleAmount", "8" );
+		break;
+	case AntiAlias_16xMSAA:
+		Cvar_Set( "r_multisampleAmount", "16" );
+		break;
+	case AntiAlias_32xMSAA:
+		Cvar_Set( "r_multisampleAmount", "32" );
+		break;
+	};
+
+	// if we're switching from simple multisampling to super sampling, that'll require a full
+	// vid_restart because of the resolution change
+	if ( ( s_settingsMenu->performance.multisampleType <= AntiAlias_32xMSAA
+		&& s_initial->performance.multisampleType >= AntiAlias_2xSSAA
+		&& s_initial->performance.multisampleType <= AntiAlias_4xSSAA )
+		||
+		( s_settingsMenu->performance.multisampleType >= AntiAlias_2xSSAA
+		&& s_settingsMenu->performance.multisampleType <= AntiAlias_4xSSAA
+		&& s_initial->performance.multisampleType <= AntiAlias_32xMSAA ) )
+	{
+		restartVid = true;
+	}
+
+	if ( s_settingsMenu->performance.multisampleType != s_initial->performance.multisampleType ) {
+		restartFBO = true;
+	}
+	if ( s_settingsMenu->performance.bloom != s_initial->performance.bloom ) {
+		restartFBO = true;
+	}
+	if ( s_settingsMenu->performance.ssao != s_initial->performance.ssao ) {
+		restartFBO = true;
+	}
+	if ( s_settingsMenu->advancedPerformance.postProcessing != s_initial->advancedPerformance.postProcessing ) {
+		restartFBO = true;
+	}
+
+	Cvar_SetIntegerValue( "r_hdr", s_settingsMenu->advancedPerformance.hdr );
+	Cvar_SetIntegerValue( "r_bloom", s_settingsMenu->performance.bloom );
+	Cvar_SetIntegerValue( "r_postProcess", s_settingsMenu->advancedPerformance.postProcessing );
+	Cvar_SetIntegerValue( "r_toneMap", s_settingsMenu->advancedPerformance.toneMapping );
+	Cvar_SetIntegerValue( "r_toneMapType", s_settingsMenu->advancedPerformance.toneMappingType );
+	Cvar_SetIntegerValue( "r_ssao", s_settingsMenu->performance.ssao );
+
+	if ( restartVid ) {
+		Cbuf_ExecuteText( EXEC_APPEND, "vid_restart\n" );
+	} else if ( restartFBO ) {
+		Cbuf_ExecuteText( EXEC_APPEND, "vid_restart_fbo\n" );
+	}
+	return restartVid;
+}
+
 static void PerformanceMenu_Save( void )
 {
-	bool needRestart = false, restartFBO = false;
+	bool needRestart = false;
 
 	// convert from simple stuff to the actual settings
 	if ( !s_settingsMenu->advancedSettings ) {
@@ -1725,19 +1802,10 @@ static void PerformanceMenu_Save( void )
 	Cvar_SetIntegerValue( "r_textureDetail", s_settingsMenu->performance.textureDetail );
 	Cvar_SetIntegerValue( "r_normalMapping", s_settingsMenu->advancedPerformance.normalMapping );
 	Cvar_SetIntegerValue( "r_pbr", s_settingsMenu->advancedPerformance.pbr );
-	Cvar_SetIntegerValue( "r_hdr", s_settingsMenu->advancedPerformance.hdr );
-	Cvar_SetIntegerValue( "r_bloom", s_settingsMenu->performance.bloom );
-	Cvar_SetIntegerValue( "r_postProcess", s_settingsMenu->advancedPerformance.postProcessing );
 	Cvar_SetIntegerValue( "r_vertexLight", s_settingsMenu->performance.vertexLighting );
 	Cvar_SetIntegerValue( "r_dynamiclight", s_settingsMenu->performance.dynamicLighting );
-	Cvar_SetIntegerValue( "r_toneMap", s_settingsMenu->advancedPerformance.toneMapping );
-	Cvar_SetIntegerValue( "r_toneMapType", s_settingsMenu->advancedPerformance.toneMappingType );
-	Cvar_SetIntegerValue( "r_ssao", s_settingsMenu->performance.ssao );
 
-	if ( !needRestart && restartFBO ) {
-		Cbuf_ExecuteText( EXEC_APPEND, "vid_restart_fbo\n" );
-	}
-	if ( needRestart ) {
+	if ( !PerformanceMenu_FBO_Save() && needRestart ) {
 		Cbuf_ExecuteText( EXEC_APPEND, "vid_restart\n" );
 	}
 }

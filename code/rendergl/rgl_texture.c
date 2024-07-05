@@ -2037,6 +2037,9 @@ static void RawImage_UploadTexture( GLuint texture, byte *data, int x, int y, in
 
 	dataFormat = PixelDataFormatFromInternalFormat(internalFormat);
 	dataType = picFormat == GL_RGBA16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_BYTE;
+	if ( internalFormat == GL_RGBA16F || internalFormat == GL_RGBA32F ) {
+		dataType = GL_FLOAT;
+	}
 
 	if ( internalFormat == GL_RGBA16F || internalFormat == GL_RGBA32F ) {
 		dataType = GL_FLOAT;
@@ -2052,7 +2055,7 @@ static void RawImage_UploadTexture( GLuint texture, byte *data, int x, int y, in
 			nglCompressedTexSubImage2D(GL_TEXTURE_2D, miplevel, x, y, width, height, picFormat, size, data);
 		}
 		else {
-			if (rgba8 && miplevel != 0 && r_colorMipLevels->i)
+			if ( rgba8 && miplevel != 0 && r_colorMipLevels->i && data )
 				R_BlendOverTexture((byte *)data, width * height, mipBlendColors[miplevel]);
 
 			if (rgba8 && rgtc)
@@ -2115,7 +2118,7 @@ static void Upload32( byte *data, int x, int y, int width, int height, GLenum pi
 	qboolean cubemap = !!(flags & IMGFLAG_CUBEMAP);
 
 	// These operations cannot be performed on non-rgba8 images.
-	if ( rgba8 && !cubemap && !( flags & IMGFLAG_FBO ) ) {
+	if ( rgba8 && !cubemap && ( ( flags & IMGFLAG_FBO ) && data ) ) {
 		c = width*height;
 		scan = data;
 
@@ -2865,16 +2868,6 @@ void R_CreateBuiltinTextures( void )
 
 		width = glConfig.vidWidth;
 		height = glConfig.vidHeight;
-		switch ( r_multisampleType->i ) {
-		case AntiAlias_2xSSAA:
-			width *= 2;
-			height *= 2;
-			break;
-		case AntiAlias_4xSSAA:
-			width *= 4;
-			height *= 4;
-			break;
-		};
 
 		hdrFormat = GL_RGBA8;
 		if ( r_hdr->i && glContext.ARB_texture_float ) {
