@@ -38,14 +38,13 @@ private:
 	void Clear( void );
 	const char *FindVar( const char *name );
 
+	void Tokenize( const char *pBuffer );
+
 	CScriptParser( void );
 	CScriptParser( const string_t& fileName );
 	~CScriptParser();
 
-	const char **pText;
-	const char *pTextPointer;
-	char *pBuffer;
-	uint32_t nLength;
+	UtlVector<string_t, string_t> m_Tokens;
 
 	mutable CThreadAtomic<int> nRefCount;
 	mutable qboolean bGCFlag;

@@ -62,6 +62,9 @@ CScriptParser& CScriptParser::operator=( const CScriptParser& other )
 
 bool CScriptParser::Load( const string_t& fileName )
 {
+    char *pBuffer;
+    uint64_t nLength;
+
     nLength = FS_LoadFile( fileName.c_str(), (void **)&pBuffer );
     if ( !nLength || !pBuffer ) {
         Con_Printf( COLOR_YELLOW "Error loading parse file '%s'\n", fileName.c_str() );
@@ -69,6 +72,11 @@ bool CScriptParser::Load( const string_t& fileName )
     }
 
     return true;
+}
+
+void CScriptParser::Tokenize( const char *pBuffer )
+{
+
 }
 
 int32_t CScriptParser::GetInt( const string_t& name )
