@@ -75,8 +75,6 @@ public:
 	int LoadFromCache( void );
 
     void ClearMemory( void );
-    asIScriptContext *GetContext( void );
-    asIScriptModule *GetModule( void );
     const string_t& GetName( void ) const;
 	const string_t& GetDescription( void ) const;
 
@@ -127,8 +125,6 @@ private:
 
 	asIScriptFunction *m_pFuncTable[NumFuncs];
 
-    asIScriptContext *m_pScriptContext;
-    asIScriptModule *m_pScriptModule;
 	qboolean m_bLoaded;
 
 	uint32_t m_nStateStack;

@@ -1,3 +1,30 @@
+menu/logo
+{
+    nomipmaps
+    nopicmip
+    {
+        texFilter bilinear
+        map GDRLogo.jpeg
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        tcGen texture
+        rgbGen vertex
+    }
+}
+
+menu/engineLogo
+{
+    nomipmaps
+    nopicmip
+    {
+        texFilter bilinear
+        map SIREngineLogo.jpg
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        tcGen texture
+        rgbGen vertex
+    }
+}
+
+
 menu/mainbackground
 {
     nomipmaps

@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "ui_lib.h"
 #include "../game/g_archive.h"
+#include "../rendercommon/imgui_impl_opengl3.h"
 
 #define ID_SINGEPLAYER      1
 #define ID_MODS             2
@@ -37,11 +38,15 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "rendercommon/imgui_internal.h"
 #endif
 
+#define EPILEPSY_WARNING_TITLE "WARNING: READ BEFORE PLAYING"
+
 typedef struct {
     menuframework_t menu;
     const CModuleCrashData *crashData;
     char message[MAXPRINTMSG];
 } errorMessage_t;
+
+static qboolean playedSplashScreen = qfalse;
 
 typedef struct {
     menuframework_t menu;
@@ -64,8 +69,26 @@ typedef struct {
     qboolean noMenu; // do we just want the scenery?
 } mainmenu_t;
 
+#define SPLASH_SCREEN_LOGO      0
+#define SPLASH_SCREEN_ENGINE    1
+#define SPLASH_SCREEN_WARNING   2
+
+typedef struct {
+    menuframework_t menu;
+
+    nhandle_t logoShader;
+    nhandle_t engineLogoShader;
+    int splashPhase; // company logo -> engine logo -> epilepsy warning
+
+    ImFont *PlaywriteCO;
+
+    uint64_t timeStart;
+    uint64_t lifeTime;
+} splashScreenMenu_t;
+
 static errorMessage_t *s_errorMenu;
 static mainmenu_t *s_main;
+static splashScreenMenu_t *s_splashScreen;
 
 static void MainMenu_EventCallback( void *item, int event )
 {
@@ -238,14 +261,105 @@ void MainMenu_Draw( void )
     }
 }
 
+static void TextCenterAlign( const char *text )
+{
+    float fontSize = ImGui::GetFontSize() * strlen( text ) / 2;
+    ImGui::SameLine( ImGui::GetWindowSize().x / 2 - fontSize + ( fontSize / 2 ) );
+    ImGui::TextUnformatted( text );
+    ImGui::NewLine();
+}
+
+static void SplashScreen_Draw( void )
+{
+    const uint64_t timeCurrent = Sys_Milliseconds();
+    static const char *epilespyWarning[] = {
+        "A very small percentage of individuals may experience epileptic seizures when exposed to certain light patterns or flashing lights.",
+        "",
+        "Exposure to certain patterns or backgrounds on a computer screen, or while playing video games, may induce an epileptic seizure in",
+        "these individuals. Certain conditions may induce previously undetected epileptic symptoms even in persons who have no history of",
+        "prior seizures of epilepsy.",
+        "",
+        "Please exercise caution."
+    };
+
+    if ( timeCurrent - s_splashScreen->timeStart > s_splashScreen->lifeTime || Key_AnyDown()
+        && s_splashScreen->splashPhase > SPLASH_SCREEN_LOGO )
+    {
+        if ( s_splashScreen->splashPhase >= SPLASH_SCREEN_WARNING ) {
+            playedSplashScreen = qtrue;
+            MainMenu_Cache();
+            return;
+        } else {
+            s_splashScreen->splashPhase++;
+            s_splashScreen->timeStart = timeCurrent;
+        }
+    }
+
+    ImGui::Begin( "##SplashScreen", NULL, MENU_DEFAULT_FLAGS );
+    ImGui::SetWindowPos( ImVec2( s_splashScreen->menu.x, s_splashScreen->menu.y ) );
+    ImGui::SetWindowSize( ImVec2( s_splashScreen->menu.width, s_splashScreen->menu.height ) );
+
+    ImGui::PushStyleColor( ImGuiCol_Text, colorWhite );
+
+    switch ( s_splashScreen->splashPhase ) {
+    case SPLASH_SCREEN_LOGO:
+        ImGui::SetCursorScreenPos( ImVec2( 356 * ui->scale, 200 * ui->scale ) );
+        ImGui::Image( (ImTextureID)(uintptr_t)s_splashScreen->logoShader, ImVec2( 528 * ui->scale, 228 * ui->scale ) );
+
+        ImGui::NewLine();
+        ImGui::NewLine();
+        
+        ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * 2.5f );
+        TextCenterAlign( "Copyright (C) 2021-2024 GDR Games, All Rights Reserved" );
+        break;
+    case SPLASH_SCREEN_ENGINE:
+        ImGui::SetCursorScreenPos( ImVec2( 400 * ui->scale, 16 * ui->scale ) );
+        ImGui::Image( (ImTextureID)(uintptr_t)s_splashScreen->engineLogoShader, ImVec2( 528 * ui->scale, 528 * ui->scale ) );
+
+        ImGui::NewLine();
+        ImGui::NewLine();
+        ImGui::NewLine();
+        ImGui::NewLine();
+        ImGui::NewLine();
+        
+        ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * 2.5f );
+        TextCenterAlign( "Powered By The SIR Engine" );
+        break;
+    case SPLASH_SCREEN_WARNING:
+        ImGui::SetCursorScreenPos( ImVec2( 256 * ui->scale, 300 * ui->scale ) );
+        ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * 2.5f );
+
+        ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
+        TextCenterAlign( EPILEPSY_WARNING_TITLE );
+        ImGui::PopStyleColor();
+
+
+        ImGui::NewLine();
+        ImGui::NewLine();
+        ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * 1.75f );
+        for ( const auto& it : epilespyWarning ) {
+            TextCenterAlign( it );
+        }
+        break;
+    default:
+        break;
+    };
+
+    ImGui::PopStyleColor();
+
+    ImGui::End();
+}
+
 void MainMenu_Cache( void )
 {
     if ( !ui->uiAllocated ) {
         s_main = (mainmenu_t *)Hunk_Alloc( sizeof( *s_main ), h_high );
         s_errorMenu = (errorMessage_t *)Hunk_Alloc( sizeof( *s_errorMenu ), h_high );
+        s_splashScreen = (splashScreenMenu_t *)Hunk_Alloc( sizeof( *s_splashScreen ), h_high );
     }
     memset( s_main, 0, sizeof( *s_main ) );
     memset( s_errorMenu, 0, sizeof( *s_errorMenu ) );
+    memset( s_splashScreen, 0, sizeof( *s_splashScreen ) );
 
     // check for errors
     Cvar_VariableStringBuffer( "com_errorMessage", s_errorMenu->message, sizeof( s_errorMenu->message ) );
@@ -264,6 +378,18 @@ void MainMenu_Cache( void )
         return;
     }
 
+    s_splashScreen->timeStart = Sys_Milliseconds();
+    s_splashScreen->lifeTime = 5000;
+    s_splashScreen->splashPhase = SPLASH_SCREEN_LOGO;
+    s_splashScreen->logoShader = re.RegisterShader( "menu/logo" );
+    s_splashScreen->engineLogoShader = re.RegisterShader( "menu/engineLogo" );
+
+    s_splashScreen->menu.draw = SplashScreen_Draw;
+    s_splashScreen->menu.x = 0;
+    s_splashScreen->menu.y = 0;
+    s_splashScreen->menu.width = ui->gpuConfig.vidWidth;
+    s_splashScreen->menu.height = ui->gpuConfig.vidHeight;
+
     s_main->font = FontCache()->AddFontToCache( "AlegreyaSC-Bold" );
     RobotoMono = FontCache()->AddFontToCache( "RobotoMono-Bold" );
 
@@ -277,11 +403,6 @@ void MainMenu_Cache( void )
     s_main->menu.fullscreen = qtrue;
     s_main->menu.draw = MainMenu_Draw;
     s_main->menu.flags = MENU_DEFAULT_FLAGS;
-
-//    s_main->table.generic.name = "##MainMenuOptionsTable";
-//    s_main->table.generic.type = MTYPE_TABLE;
-//    s_main->table.generic.id = ID_TABLE;
-//    s_main->table.columns = 2;
 
     s_main->singleplayer.generic.type = MTYPE_TEXT;
     s_main->singleplayer.generic.id = ID_SINGEPLAYER;
@@ -345,12 +466,19 @@ void MainMenu_Cache( void )
     Menu_AddItem( &s_main->menu, &s_main->credits );
     Menu_AddItem( &s_main->menu, &s_main->exitGame );
 
-    Key_SetCatcher( KEYCATCH_UI );
-    ui->menusp = 0;
-    UI_PushMenu( &s_main->menu );
-
     // add in background ambience
     Snd_AddLoopingTrack( Snd_RegisterSfx( "music/world/icy_gusts.wav" ) );
+
+    Key_SetCatcher( KEYCATCH_UI );
+    ui->menusp = 0;
+    if ( !playedSplashScreen ) {
+        Cvar_Set( "r_clearColor", "0.0 0.0 0.0 1.0" );
+        ui->menustate = UI_MENU_SPLASH;
+        UI_PushMenu( &s_splashScreen->menu );
+    } else {
+        Cvar_Set( "r_clearColor", "0.1 0.1 0.1 1.0" );
+        UI_PushMenu( &s_main->menu );
+    }
 }
 
 void UI_MainMenu( void ) {

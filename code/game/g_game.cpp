@@ -557,8 +557,7 @@ static void G_InitRenderer( void )
 
     // load the character sets
 //    gi.charSetShader = re.RegisterShader("gfx/bigchars");
-    gi.whiteShader = re.RegisterShader("white");
-    gi.consoleShader = re.RegisterShader("console");
+    gi.whiteShader = re.RegisterShader( "white" );
 
 //    g_console_field_width = ( ( gi.gpuConfig.vidWidth / smallchar_width ) ) - 2;
 

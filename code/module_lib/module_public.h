@@ -497,11 +497,11 @@ public:
     CModuleHandle *GetCurrentHandle( void ) {
         return m_pCurrentHandle;
     }
-    qboolean ShowCrashReport( void ) const {
-        return m_bCrashWindow;
+    asIScriptModule *GetScriptModule( void ) {
+        return m_pModule;
     }
-    const CModuleCrashData& GetCrashData( void ) const {
-        return m_CrashData;
+    asIScriptContext *GetScriptContext( void ) {
+        return m_pContext;
     }
 
     CDebugger *GetDebugger( void );
@@ -524,8 +524,8 @@ private:
     asCJITCompiler *m_pCompiler;
     CModuleHandle *m_pCurrentHandle;
 
-    CModuleCrashData m_CrashData;
-    qboolean m_bCrashWindow;
+    asIScriptModule *m_pModule;
+    asIScriptContext *m_pContext;
 };
 
 extern moduleImport_t moduleImport;

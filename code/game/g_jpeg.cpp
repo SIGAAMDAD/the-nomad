@@ -208,6 +208,7 @@ void G_LoadJPG( const char *filename, byte **pic, int32_t *width, int32_t *heigh
   row_stride = cinfo.output_width * cinfo.output_components;
 
   out = (byte *)Z_Malloc( memcount, TAG_STATIC );
+  memset( out, 0, memcount );
 
   *width = cinfo.output_width;
   *height = cinfo.output_height;

@@ -78,6 +78,7 @@ typedef enum : uint64_t {
     UI_MENU_PAUSE,
     UI_MENU_NONE,
     UI_MENU_DEMO,
+    UI_MENU_SPLASH,
 
     NUM_UI_MENUS
 } uiMenu_t;

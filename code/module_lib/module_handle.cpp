@@ -57,7 +57,7 @@ const moduleFunc_t funcDefs[NumFuncs] = {
     { "int ModuleOnRunTic( int )", ModuleOnRunTic, 1, qtrue },
     { "int ModuleOnSaveGame()", ModuleOnSaveGame, 0, qfalse },
     { "int ModuleOnLoadGame()", ModuleOnLoadGame, 0, qfalse },
-    { "int ModuleOnJoystickEvent( int, int, int, int, int, int )", ModuleOnJoystickEvent, 6, qfalse }
+    { "int ModuleOnJoystickEvent( int, int, int, int, int, int )", ModuleOnJoystickEvent, 6, qfalse },
 };
 
 CModuleHandle::CModuleHandle( const char *pName, const char *pDescription, const nlohmann::json& sourceFiles, int32_t moduleVersionMajor,
@@ -91,13 +91,8 @@ CModuleHandle::CModuleHandle( const char *pName, const char *pDescription, const
     }
 
     g_pModuleLib->SetHandle( this );
-    m_pScriptModule = g_pModuleLib->GetScriptEngine()->GetModule( pName, asGM_CREATE_IF_NOT_EXISTS );
     m_IncludePaths = eastl::move( includePaths );
     m_SourceFiles = eastl::move( sourceFiles );
-    
-    if ( !m_pScriptModule ) {
-        N_Error( ERR_DROP, "CModuleHandle::CModuleHandle: GetModule() failed on \"%s\"\n", pName );
-    }
 
     // add standard definitions
     g_pModuleLib->AddDefaultProcs();
@@ -121,11 +116,9 @@ CModuleHandle::CModuleHandle( const char *pName, const char *pDescription, const
         Build( sourceFiles );
     }
     
-    m_pScriptContext = g_pModuleLib->GetScriptEngine()->CreateContext();
     if ( !InitCalls() ) {
         return;
     }
-    m_pScriptContext->AddRef();
 
 //    m_pScriptModule->SetUserData( this );
     SaveToCache();
@@ -146,43 +139,7 @@ void CModuleHandle::LoadFunction( const string_t& moduleName, const string_t& fu
 
     path = FS_BuildOSPath( FS_GetHomePath(), NULL, va( "modules/%s", moduleName.c_str() ) );
 
-    auto it = m_DynamicModules.find( moduleName );
-    if ( it != m_DynamicModules.end() ) {
-        // the dynamic module has already been added, just find the function index
-        for ( auto& fn : it->second.funcs ) {
-            if ( N_streq( funcName.c_str(), fn->GetName() ) ) {
-                *pFunction = fn;
-            }
-        }
-    }
-
-    if ( ( pInfo = g_pModuleLib->GetModule( moduleName.c_str() ) ) != NULL ) {
-        Con_Printf( "Compiling dynamic module '%s'...\n", pInfo->m_szName );
-        const nlohmann::json& sourceFiles = pInfo->m_pHandle->GetSourceFiles();
-        for ( const auto& it : sourceFiles ) {
-            if ( !LoadSourceFile( it ) ) {
-                Con_Printf( COLOR_RED "Error compiling source file '%s'", it.get<string_t>().c_str() );
-                *pFunction = NULL; // FIXME: is this necessary?
-                break;
-            }
-        }
-
-        // get all the function pointers
-        DynamicModule_t dll;
-        memset( &dll, 0, sizeof( dll ) );
-        N_strncpyz( dll.name, moduleName.c_str(), sizeof( dll.name ) - 1 );
-        dll.funcs.reserve( pInfo->m_pHandle->m_pScriptModule->GetFunctionCount() );
-        for ( i = 0; i < pInfo->m_pHandle->m_pScriptModule->GetFunctionCount(); i++ ) {
-            dll.funcs.emplace_back( pInfo->m_pHandle->m_pScriptModule->GetFunctionByIndex( i ) );
-
-            if ( N_streq( pInfo->m_pHandle->m_pScriptModule->GetFunctionByIndex( i )->GetName(), funcName.c_str() ) ) {
-                *pFunction = pInfo->m_pHandle->m_pScriptModule->GetFunctionByIndex( i );
-            }
-        }
-
-        m_DynamicModules.try_emplace( moduleName, eastl::move( dll ) );
-        Con_Printf( "Added dynamic AngelScript module '%s'\n", moduleName.c_str() );
-    }
+    *pFunction = g_pModuleLib->GetScriptModule()->GetFunctionByName( funcName.c_str() );
 
     if ( !*pFunction ) {
         Con_Printf( COLOR_RED "Error loading dynamic function pointer \"%s\".\n", funcName.c_str() );
@@ -265,10 +222,9 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, int *pArgLis
 {
     uint32_t i;
     int retn;
-    
-    if ( !m_pScriptContext ) {
-        return -1;
-    }
+    asIScriptContext *pContext;
+
+    pContext = g_pModuleLib->GetScriptContext();
 
     PROFILE_BLOCK_BEGIN( va( "module '%s'", m_szName.c_str() ) );
 
@@ -279,7 +235,7 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, int *pArgLis
     // always ensure the handle is set for any calls into the engine that'll modify the module itself
     g_pModuleLib->SetHandle( this );
 
-    CheckASCall( m_pScriptContext->SetExceptionCallback( asFUNCTION( LogExceptionInfo ), this, asCALL_CDECL ) );
+    CheckASCall( pContext->SetExceptionCallback( asFUNCTION( LogExceptionInfo ), this, asCALL_CDECL ) );
 
     // prevent a nested call infinite recursion
     if ( m_nLastCallId == nCallId ) {
@@ -287,29 +243,29 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, int *pArgLis
     }
     m_nLastCallId = nCallId;
 
-    if ( m_pScriptContext->GetState() == asEXECUTION_ACTIVE ) {
+    if ( pContext->GetState() == asEXECUTION_ACTIVE ) {
         // we're running something right now, so push a new state and
         // call into that instead
-        CheckASCall( m_pScriptContext->PushState() );
-        CheckASCall( m_pScriptContext->Prepare( m_pFuncTable[ nCallId ] ) );
+        CheckASCall( pContext->PushState() );
+        CheckASCall( pContext->Prepare( m_pFuncTable[ nCallId ] ) );
 
         if ( ml_debugMode->i && g_pDebugger->m_pModule && g_pDebugger->m_pModule->m_pHandle == this ) {
-            CheckASCall( m_pScriptContext->SetLineCallback( asMETHOD( CDebugger, LineCallback ), g_pDebugger, asCALL_THISCALL ) );
+            CheckASCall( pContext->SetLineCallback( asMETHOD( CDebugger, LineCallback ), g_pDebugger, asCALL_THISCALL ) );
         }
     
         g_pModuleLib->SetHandle( this );
     
         for ( i = 0; i < nArgs; i++ ) {
-            CheckASCall( m_pScriptContext->SetArgDWord( i, pArgList[i] ) );
+            CheckASCall( pContext->SetArgDWord( i, pArgList[i] ) );
         }
         
         try {
-            retn = m_pScriptContext->Execute();
+            retn = pContext->Execute();
         } catch ( const ModuleException& e ) {
-            LogExceptionInfo( m_pScriptContext, this );
+            LogExceptionInfo( pContext, this );
         } catch ( const nlohmann::json::exception& e ) {
             const asIScriptFunction *pFunc;
-            pFunc = m_pScriptContext->GetExceptionFunction();
+            pFunc = pContext->GetExceptionFunction();
         
             N_Error( ERR_DROP,
                 "nlohmann::json::exception was thrown in module ->\n"
@@ -319,7 +275,7 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, int *pArgLis
                 " Line: %i\n"
                 " Error Message: %s\n"
                 " Id: %i\n"
-            , pFunc->GetModuleName(), pFunc->GetScriptSectionName(), pFunc->GetDeclaration(), m_pScriptContext->GetExceptionLineNumber(),
+            , pFunc->GetModuleName(), pFunc->GetScriptSectionName(), pFunc->GetDeclaration(), pContext->GetExceptionLineNumber(),
             e.what(), e.id );
         }
     
@@ -328,7 +284,7 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, int *pArgLis
         case asEXECUTION_ERROR:
         case asEXECUTION_EXCEPTION:
             // something happened in there, dunno what
-            LogExceptionInfo( m_pScriptContext, this );
+            LogExceptionInfo( pContext, this );
             break;
         case asEXECUTION_SUSPENDED:
         case asEXECUTION_FINISHED:
@@ -337,35 +293,36 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, int *pArgLis
             break;
         };
     
-        retn = (int)m_pScriptContext->GetReturnWord();
+        retn = (int)pContext->GetReturnWord();
     
         PROFILE_BLOCK_END;
 
-        CheckASCall( m_pScriptContext->PopState() );
+        CheckASCall( pContext->PopState() );
 
         return retn;
     }
-    CheckASCall( m_pScriptContext->Prepare( m_pFuncTable[ nCallId ] ) );
+    CheckASCall( pContext->Prepare( m_pFuncTable[ nCallId ] ) );
 
     g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_DETECT_GARBAGE, 1 );
 
     if ( ml_debugMode->i && g_pDebugger->m_pModule && g_pDebugger->m_pModule->m_pHandle == this ) {
-        CheckASCall( m_pScriptContext->SetLineCallback( asMETHOD( CDebugger, LineCallback ), g_pDebugger, asCALL_THISCALL ) );
+        CheckASCall( pContext->SetLineCallback( asMETHOD( CDebugger, LineCallback ), g_pDebugger, asCALL_THISCALL ) );
     }
 
     g_pModuleLib->SetHandle( this );
 
     for ( i = 0; i < nArgs; i++ ) {
-        CheckASCall( m_pScriptContext->SetArgDWord( i, pArgList[i] ) );
+        CheckASCall( pContext->SetArgDWord( i, pArgList[i] ) );
     }
     
+    retn = 0;
     try {
-        retn = m_pScriptContext->Execute();
+        retn = pContext->Execute();
     } catch ( const ModuleException& e ) {
-        LogExceptionInfo( m_pScriptContext, this );
+        LogExceptionInfo( pContext, this );
     } catch ( const nlohmann::json::exception& e ) {
         const asIScriptFunction *pFunc;
-        pFunc = m_pScriptContext->GetExceptionFunction();
+        pFunc = pContext->GetExceptionFunction();
     
         N_Error( ERR_DROP,
             "nlohmann::json::exception was thrown in module ->\n"
@@ -373,9 +330,9 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, int *pArgLis
             " Section Name: %s\n"
             " Function: %s\n"
             " Line: %i\n"
-            " Error MEssage: %s\n"
+            " Error Message: %s\n"
             " Id: %i\n"
-        ,  pFunc->GetModuleName(), pFunc->GetScriptSectionName(), pFunc->GetDeclaration(), m_pScriptContext->GetExceptionLineNumber(),
+        ,  pFunc->GetModuleName(), pFunc->GetScriptSectionName(), pFunc->GetDeclaration(), pContext->GetExceptionLineNumber(),
         e.what(), e.id );
     }
 
@@ -384,7 +341,7 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, int *pArgLis
     case asEXECUTION_ERROR:
     case asEXECUTION_EXCEPTION:
         // something happened in there, dunno what
-        LogExceptionInfo( m_pScriptContext, this );
+        LogExceptionInfo( pContext, this );
         break;
     case asEXECUTION_SUSPENDED:
     case asEXECUTION_FINISHED:
@@ -393,7 +350,7 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, int *pArgLis
         break;
     };
 
-    retn = (int)m_pScriptContext->GetReturnWord();
+    retn = (int)pContext->GetReturnWord();
 
     PROFILE_BLOCK_END;
 
@@ -437,7 +394,7 @@ bool CModuleHandle::InitCalls( void )
 
     for ( i = 0; i < NumFuncs; i++ ) {
         Con_DPrintf( "Checking if module has function '%s'...\n", funcDefs[i].name );
-        m_pFuncTable[i] = m_pScriptModule->GetFunctionByDecl( funcDefs[i].name );
+        m_pFuncTable[i] = g_pModuleLib->GetScriptModule()->GetFunctionByDecl( funcDefs[i].name );
         if ( m_pFuncTable[i] ) {
             Con_Printf( COLOR_GREEN "Module \"%s\" registered with proc '%s'.\n", m_szName.c_str(), funcDefs[i].name );
         } else {
@@ -709,7 +666,7 @@ void CModuleHandle::SaveToCache( void ) const {
     
     Con_Printf( "Saving compiled module \"%s\" bytecode...\n", m_szName.c_str() );
 
-    SaveCodeDataCache( m_szName, this, m_pScriptModule );
+    SaveCodeDataCache( m_szName, this, g_pModuleLib->GetScriptModule() );
 }
 
 int CModuleHandle::LoadFromCache( void ) {
@@ -721,7 +678,7 @@ int CModuleHandle::LoadFromCache( void ) {
 
     Con_Printf( "Loading compiled module \"%s\" bytecode...\n", m_szName.c_str() );
 
-    if ( !LoadCodeFromCache( m_szName, this, m_pScriptModule ) ) {
+    if ( !LoadCodeFromCache( m_szName, this, g_pModuleLib->GetScriptModule() ) ) {
         return -1; // just recompile it
     }
 
@@ -735,12 +692,8 @@ void CModuleHandle::ClearMemory( void )
 {
     uint64_t i;
 
-    if ( !m_pScriptModule || !m_pScriptContext ) {
-        return;
-    }
-
-    if ( m_pScriptContext->GetState() == asCONTEXT_ACTIVE ) {
-        m_pScriptContext->Abort();
+    if ( g_pModuleLib->GetScriptContext()->GetState() == asCONTEXT_ACTIVE ) {
+        g_pModuleLib->GetScriptContext()->Abort();
     }
 
     Con_Printf( "CModuleHandle::ClearMemory: clearing memory of '%s'...\n", m_szName.c_str() );
@@ -754,19 +707,7 @@ void CModuleHandle::ClearMemory( void )
 //    m_pEntryPoint->Release();
 //    m_pModuleObject->Release();
 
-    m_pScriptModule->UnbindAllImportedFunctions();
-    CheckASCall( m_pScriptContext->Unprepare() );
-
-    m_pScriptModule = NULL;
-    m_pScriptContext = NULL;
-}
-
-asIScriptContext *CModuleHandle::GetContext( void ) {
-    return m_pScriptContext;
-}
-
-asIScriptModule *CModuleHandle::GetModule( void ) {
-    return m_pScriptModule;
+    CheckASCall( g_pModuleLib->GetScriptContext()->Unprepare() );
 }
 
 const string_t& CModuleHandle::GetName( void ) const {

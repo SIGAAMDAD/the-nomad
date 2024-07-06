@@ -156,6 +156,7 @@ void R_LoadTGA( const char *name, byte **pic, int *width, int *height, int *chan
 
 
 	targa_rgba = ri.Malloc( numPixels );
+	memset( targa_rgba, 0, numPixels );
 
 	if (targa_header.id_length != 0)
 	{

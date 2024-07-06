@@ -127,6 +127,10 @@ namespace TheNomad::SGame {
 			return "EntityStateSystem";
 		}
 		void OnInit() {
+		}
+		void OnShutdown() {
+		}
+		void OnLevelStart() {
 			uint i;
 
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
@@ -155,6 +159,7 @@ namespace TheNomad::SGame {
 				m_States.Add( state );
 				m_StateCache.Add( state.GetName(), state );
 			}
+			m_StateInfos.Clear();
 
 			ConsolePrint( "Loading animation data...\n" );
 			
@@ -173,16 +178,13 @@ namespace TheNomad::SGame {
 				m_Animations.Add( anim );
 				m_AnimationCache.Add( anim.GetName(), anim );
 			}
+			m_AnimationInfos.Clear();
 		}
-		void OnShutdown() {
+		void OnLevelEnd() {
 			m_StateCache.Clear();
 			m_AnimationCache.Clear();
 			m_States.Clear();
 			m_Animations.Clear();
-		}
-		void OnLevelStart() {
-		}
-		void OnLevelEnd() {
 		}
 		void OnSave() const {
 		}
@@ -236,8 +238,8 @@ namespace TheNomad::SGame {
 			return @m_BaseStateCache;
 		}
 		
-		private array<json@> m_StateInfos;
-		private array<json@> m_AnimationInfos;
+		private array<parser@> m_StateInfos;
+		private array<parser@> m_AnimationInfos;
 		private dictionary m_StateCache;
 		private dictionary m_AnimationCache;
 		private array<EntityState> m_States;

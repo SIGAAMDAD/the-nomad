@@ -22,6 +22,13 @@ namespace TheNomad::SGame {
         void OnLevelEnd() {
         }
         void OnInit() {
+            json@ json = json();
+            if ( !json.ParseFile( "Config/nomadmain/hellbreaker.json" ) ) {
+                ConsoleWarning( "Couldn't load hellbreaker config, using default values.\n" );
+                return;
+            }
+
+
         }
         void OnShutdown() {
         }

@@ -1052,9 +1052,12 @@ typedef struct {
     GLuint      textureStack[MAX_TEXTURE_UNITS];
     GLuint      *textureStackPtr;
 
-    viewData_t viewData;
+    vec4_t      clearColor;
+    char        clearColorString[ MAX_CVAR_VALUE ];
 
-    uint32_t vertexAttribsEnabled;
+    viewData_t  viewData;
+
+    uint32_t    vertexAttribsEnabled;
 
     uint32_t    vaoId;
     uint32_t    vboId;
@@ -1439,6 +1442,8 @@ extern cvar_t *r_showImages;
 extern cvar_t *r_printShaders;
 extern cvar_t *r_paused;
 extern cvar_t *r_showTris;
+
+extern cvar_t *r_clearColor;
 
 extern cvar_t *r_useExtensions;
 extern cvar_t *r_allowLegacy;

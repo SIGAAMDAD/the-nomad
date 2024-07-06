@@ -30,7 +30,7 @@ static void Module_Debugger_PrintValue_f( void ) {
 		Con_Printf( "no active debugging module.\n" );
 		return;
 	}
-	g_pDebugger->PrintValue( Cmd_Argv( 1 ), g_pDebugger->m_pModule->m_pHandle->GetContext() );
+	g_pDebugger->PrintValue( Cmd_Argv( 1 ), g_pModuleLib->GetScriptContext() );
 }
 
 static void Module_Debugger_PrintCallstack_f( void ) {
@@ -38,7 +38,7 @@ static void Module_Debugger_PrintCallstack_f( void ) {
 		Con_Printf( "no active debugging module.\n" );
 		return;
 	}
-	g_pDebugger->PrintCallstack( g_pDebugger->m_pModule->m_pHandle->GetContext() );
+	g_pDebugger->PrintCallstack( g_pModuleLib->GetScriptContext() );
 }
 
 static void Module_Debugger_AddBreakPoint_f( void ) {
@@ -62,7 +62,7 @@ static void Module_Debugger_ListGlobals_f( void ) {
 		Con_Printf( "no active debugging module.\n" );
 		return;
 	}
-	g_pDebugger->ListGlobalVariables( g_pDebugger->m_pModule->m_pHandle->GetContext() );
+	g_pDebugger->ListGlobalVariables( g_pModuleLib->GetScriptContext() );
 }
 
 static void Module_Debugger_ListLocals_f( void ) {
@@ -70,7 +70,7 @@ static void Module_Debugger_ListLocals_f( void ) {
 		Con_Printf( "no active debugging module.\n" );
 		return;
 	}
-	g_pDebugger->ListLocalVariables( g_pDebugger->m_pModule->m_pHandle->GetContext() );
+	g_pDebugger->ListLocalVariables( g_pModuleLib->GetScriptContext() );
 }
 
 static void Module_Debugger_ListBreakPoints_f( void ) {
@@ -86,7 +86,7 @@ static void Module_Debugger_ListMemberProperties_f( void ) {
 		Con_Printf( "no active debugging module.\n" );
 		return;
 	}
-	g_pDebugger->ListMemberProperties( g_pDebugger->m_pModule->m_pHandle->GetContext() );
+	g_pDebugger->ListMemberProperties( g_pModuleLib->GetScriptContext() );
 }
 
 static void Module_Debugger_PrintHelp_f( void ) {
@@ -151,7 +151,7 @@ CDebugger::~CDebugger() {
 
 void CDebugger::CmdStepOut( void ) {
 	m_Action = STEP_OUT;
-	m_nLastCommandAtStackLevel = m_pModule->m_pHandle->GetContext()->GetCallstackSize();
+	m_nLastCommandAtStackLevel = g_pModuleLib->GetScriptContext()->GetCallstackSize();
 }
 
 void CDebugger::CmdContinue( void ) {
@@ -164,7 +164,7 @@ void CDebugger::CmdStepInto( void ) {
 
 void CDebugger::CmdStepOver( void ) {
 	m_Action = STEP_OVER;
-	m_nLastCommandAtStackLevel = g_pDebugger->m_pModule->m_pHandle->GetContext()->GetCallstackSize();
+	m_nLastCommandAtStackLevel = g_pModuleLib->GetScriptContext()->GetCallstackSize();
 }
 
 void CDebugger::CmdSetBreakPoint( void ) {

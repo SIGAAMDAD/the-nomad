@@ -1265,7 +1265,7 @@ static void AddScriptSectionToModule( asIScriptGeneric *pGeneric )
         return;
     }
 
-    CheckASCall( pHandle->m_pHandle->GetModule()->Build() );
+    CheckASCall( g_pModuleLib->GetScriptModule()->Build() );
 
     pGeneric->SetReturnDWord( true );
 }
@@ -1288,7 +1288,7 @@ static void LoadFunctionFromSection( asIScriptGeneric *pGeneric )
 
     Con_Printf( "Loading dynamic script function proc '%s' from '%s'...\n", szName, section.c_str() );
 
-    *pFunction = pHandle->m_pHandle->GetModule()->GetFunctionByName( szName );
+    *pFunction = g_pModuleLib->GetScriptModule()->GetFunctionByName( szName );
     if ( !*pFunction ) {
         Con_Printf( COLOR_YELLOW "Failed to load dynamic function proc '%s'.\n", szName );
     }
@@ -1338,7 +1338,7 @@ static bool IsModuleActive( const string_t *modName ) {
 }
 
 static void ModuleAssertion( bool bCheck ) {
-    asIScriptContext *pContext = g_pModuleLib->GetCurrentHandle()->GetContext();
+    asIScriptContext *pContext = g_pModuleLib->GetScriptContext();
     asIScriptFunction *pFunc = pContext->GetSystemFunction();
 
     if ( bCheck ) {

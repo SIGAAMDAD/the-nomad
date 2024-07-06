@@ -58,6 +58,7 @@ typedef struct
     void (*glEnable)( GLenum mode );
     void (*glDisable)( GLenum mode );
     void (*glClear)( GLenum mask );
+    void (*glClearColor)( GLfloat r, GLfloat g, GLfloat b, GLfloat a );
     void (*glGetIntegerv)( GLenum pname, GLint *data );
     void (*glBlendEquation)( GLenum mode );
     void (*glBlendFuncSeparate)( GLenum sfactorRGB, GLenum dfactorRGB, GLenum sfactorAlpha, GLenum dfactorAlpha );

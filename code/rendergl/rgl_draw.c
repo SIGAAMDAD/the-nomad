@@ -746,6 +746,8 @@ void RB_InstantQuad2( vec4_t quadVerts[4], vec2_t texCoords[4] )
 	backend.drawBatch.vtxOffset = 4;
 	backend.drawBatch.idxOffset = 6;
 
+	memcpy( backendData->verts, verts, sizeof( verts ) );
+
 	VBO_Bind( backend.drawBuffer );
 
 	// orphan the old index buffer so that we don't stall on it

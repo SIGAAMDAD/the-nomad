@@ -92,6 +92,8 @@ cvar_t *r_bloom;
 
 cvar_t *r_paused;
 
+cvar_t *r_clearColor;
+
 cvar_t *r_normalMapping;
 cvar_t *r_specularMapping;
 cvar_t *r_deluxeMapping;
@@ -1075,6 +1077,8 @@ static void R_Register( void )
     //
     // temporary variables that can change at any time
     //
+    r_clearColor = ri.Cvar_Get( "r_clearColor", "0.1 0.1 0.1 1.0", CVAR_TEMP );
+
     r_showTris = ri.Cvar_Get( "r_showTris", "0", CVAR_TEMP );
     ri.Cvar_SetDescription( r_showTris, "Draw outlines of polygons for bounding box debugging." );
 
@@ -1307,6 +1311,7 @@ static void R_InitImGui( void )
     import.glActiveTexture = nglActiveTexture;
     import.glAlphaFunc = nglAlphaFunc;
     import.glClear = nglClear;
+    import.glClearColor = nglClearColor;
 
     import.DrawShaderStages = RB_DrawShaderStages;
     import.GetTextureId = RE_GetTextureId;

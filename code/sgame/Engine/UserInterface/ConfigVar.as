@@ -38,5 +38,6 @@ namespace TheNomad::Engine::UserInterface {
         private string m_Name;
         private any m_Data;
         private DisplayType m_DisplayType;
+        private TheNomad::ConVar@ m_Data;
     };
 };

@@ -625,6 +625,11 @@ CModuleLib::CModuleLib( void )
     }
     m_pScriptBuilder->SetIncludeCallback( Module_IncludeCallback_f, NULL );
 
+    m_pModule = m_pEngine->GetModule( "GlobalModule", asGM_ALWAYS_CREATE );
+    Assert( m_pModule );
+
+    m_pContext = m_pEngine->CreateContext();
+
     //
     // load all the modules
     //
@@ -650,16 +655,18 @@ CModuleLib::CModuleLib( void )
 
     FS_FreeFileList( fileList );
 
+    /*
     // bind all the functions
     for ( i = 0; i < m_nModuleCount; i++ ) {
-        if ( !m_pLoadList[i].m_pHandle->GetModule() ) { // failed to compile or didn't have any source files
+        if ( !m_pLoadList[i].m_pHandle->IsValid() ) { // failed to compile or didn't have any source files
             continue;
         }
 
         // this might fail, yes but, it'll just crash automatically if we're missing a function, and not
         // all functions have to be imported
-        m_pLoadList[i].m_pHandle->GetModule()->BindAllImportedFunctions();
+        m_pLoadList[i].m_pHandle->IsValid()->BindAllImportedFunctions();
     }
+    */
 
     #undef CALL
 }

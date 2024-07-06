@@ -830,73 +830,70 @@ static void UI_DrawModuleDebugOverlay( void )
 	ImGui::Begin( "Module Debug", NULL, ImGuiWindowFlags_AlwaysAutoResize );
 
 	nModules = g_pModuleLib->GetModCount();
-	for ( i = 0; i < nModules; i++ ) {
-		pModule = g_pModuleLib->m_pModList[i].info->m_pHandle->GetModule();
+	pModule = g_pModuleLib->GetScriptModule();
+	
+	{
+		ImGui::SeparatorText( "Functions" );
+		for ( j = 0; j < pModule->GetFunctionCount(); j++ ) {
+			pFunction = pModule->GetFunctionByIndex( j );
+			ImGui::TextUnformatted( pFunction->GetDeclaration() );
+		}
 
-		if ( ImGui::CollapsingHeader( pModule->GetName() ) ) {
-			ImGui::SeparatorText( "Functions" );
-			for ( j = 0; j < pModule->GetFunctionCount(); j++ ) {
-				pFunction = pModule->GetFunctionByIndex( j );
-				ImGui::TextUnformatted( pFunction->GetDeclaration() );
-			}
+		ImGui::SeparatorText( "Imported Functions" );
+		for ( j = 0; j < pModule->GetImportedFunctionCount(); j++ ) {
+			ImGui::Text( "%s -> %s", pModule->GetImportedFunctionDeclaration( j ), pModule->GetImportedFunctionSourceModule( j ) );
+		}
 
-			ImGui::SeparatorText( "Imported Functions" );
-			for ( j = 0; j < pModule->GetImportedFunctionCount(); j++ ) {
-				ImGui::Text( "%s -> %s", pModule->GetImportedFunctionDeclaration( j ), pModule->GetImportedFunctionSourceModule( j ) );
-			}
+		ImGui::SeparatorText( "Global Variables" );
+		for ( j = 0; j < pModule->GetGlobalVarCount(); j++ ) {
+			const char *name, *nameSpace;
+			int typeId;
+			bool isConst;
 
-			ImGui::SeparatorText( "Global Variables" );
-			for ( j = 0; j < pModule->GetGlobalVarCount(); j++ ) {
-				const char *name, *nameSpace;
-				int typeId;
-				bool isConst;
-
-				pModule->GetGlobalVar( j, &name, &nameSpace, &typeId, &isConst );
+			pModule->GetGlobalVar( j, &name, &nameSpace, &typeId, &isConst );
 				
-				UI_DrawModuleGlobalVar( name, nameSpace, typeId, isConst, j, pModule );
+			UI_DrawModuleGlobalVar( name, nameSpace, typeId, isConst, j, pModule );
+		}
+
+		ImGui::SeparatorText( "Object Types" );
+		for ( j = 0; j < pModule->GetObjectTypeCount(); j++ ) {
+			asITypeInfo *pTypeInfo = pModule->GetObjectTypeByIndex( j );
+
+			ImGui::SeparatorText( pTypeInfo->GetName() );
+
+			ImGui::Indent();
+			ImGui::SeparatorText( "Behaviours" );
+			ImGui::Indent();
+			for ( n = 0; n < pTypeInfo->GetBehaviourCount(); n++ ) {
+				asEBehaviours behaviour;
+				ImGui::TextUnformatted( pTypeInfo->GetBehaviourByIndex( n, &behaviour )->GetDeclaration() );
 			}
+			ImGui::Unindent();
+			ImGui::Unindent();
 
-			ImGui::SeparatorText( "Object Types" );
-			for ( j = 0; j < pModule->GetObjectTypeCount(); j++ ) {
-				asITypeInfo *pTypeInfo = pModule->GetObjectTypeByIndex( j );
-
-				ImGui::SeparatorText( pTypeInfo->GetName() );
-
-				ImGui::Indent();
-				ImGui::SeparatorText( "Behaviours" );
-				ImGui::Indent();
-				for ( n = 0; n < pTypeInfo->GetBehaviourCount(); n++ ) {
-					asEBehaviours behaviour;
-					ImGui::TextUnformatted( pTypeInfo->GetBehaviourByIndex( n, &behaviour )->GetDeclaration() );
-				}
-				ImGui::Unindent();
-				ImGui::Unindent();
-
-				ImGui::Indent();
-				ImGui::SeparatorText( "Methods" );
-				ImGui::Indent();
-				for ( n = 0; n < pTypeInfo->GetMethodCount(); n++ ) {
-					ImGui::TextUnformatted( pTypeInfo->GetMethodByIndex( n )->GetDeclaration() );
-				}
-				ImGui::Unindent();
-				ImGui::Unindent();
-
-				ImGui::Indent();
-				ImGui::SeparatorText( "Properties" );
-				ImGui::Indent();
-				for ( n = 0; n < pTypeInfo->GetPropertyCount(); n++ ) {
-					const char *name;
-					bool isPrivate, isProtected, isRef;
-					int typeId, offset;
-
-					pTypeInfo->GetProperty( n, &name, &typeId, &isPrivate, &isProtected, &offset, &isRef );
-					ImGui::Text( "%s - (typeId) %i, (offset) %i, (isPrivate) %s, (isProtected) %s, (isReference) %s",
-						pTypeInfo->GetPropertyDeclaration( n ), typeId, offset, isPrivate ? "true" : "false",
-						isProtected ? "true" : "false", isRef ? "true" : "false" );
-				}
-				ImGui::Unindent();
-				ImGui::Unindent();
+			ImGui::Indent();
+			ImGui::SeparatorText( "Methods" );
+			ImGui::Indent();
+			for ( n = 0; n < pTypeInfo->GetMethodCount(); n++ ) {
+				ImGui::TextUnformatted( pTypeInfo->GetMethodByIndex( n )->GetDeclaration() );
 			}
+			ImGui::Unindent();
+			ImGui::Unindent();
+			
+			ImGui::Indent();
+			ImGui::SeparatorText( "Properties" );
+			ImGui::Indent();
+			for ( n = 0; n < pTypeInfo->GetPropertyCount(); n++ ) {
+				const char *name;
+				bool isPrivate, isProtected, isRef;
+				int typeId, offset;
+				pTypeInfo->GetProperty( n, &name, &typeId, &isPrivate, &isProtected, &offset, &isRef );
+				ImGui::Text( "%s - (typeId) %i, (offset) %i, (isPrivate) %s, (isProtected) %s, (isReference) %s",
+					pTypeInfo->GetPropertyDeclaration( n ), typeId, offset, isPrivate ? "true" : "false",
+					isProtected ? "true" : "false", isRef ? "true" : "false" );
+			}
+			ImGui::Unindent();
+			ImGui::Unindent();
 		}
 	}
 
@@ -1455,7 +1452,7 @@ extern "C" void UI_Refresh( int32_t realtime )
 		UI_DrawMenuBackground();
 	}
 
-	if ( ui_debugOverlay->i ) {
+	if ( ui_debugOverlay->i && ui->menustate != UI_MENU_SPLASH ) {
 		UI_DrawDebugOverlay();
 	}
 

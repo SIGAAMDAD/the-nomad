@@ -174,6 +174,7 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
     int width, height;
     unsigned clearBits;
 	int i;
+	char buf[ MAX_CVAR_VALUE ], *v[4];
     mat4_t matrix;
 	drawBufferCmd_t *cmd = NULL;
 
@@ -208,10 +209,27 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
         clearBits |= GL_STENCIL_BUFFER_BIT;
     }
 
+	if ( r_clearColor->s ) {
+		// track changes
+		if ( strcmp( r_clearColor->s, glState.clearColorString ) )  {
+			N_strncpyz( glState.clearColorString, r_clearColor->s, sizeof( glState.clearColorString ) );
+			N_strncpyz( buf, r_clearColor->s, sizeof( buf ) );
+			Com_Split( buf, v, 4, ' ' );
+			for ( i = 0; i < 4 ; i++ ) {
+				glState.clearColor[ i ] = N_atof( v[ i ] ) / 255.0f;
+				if ( glState.clearColor[ i ] > 1.0f ) {
+					glState.clearColor[ i ] = 1.0f;
+				} else if ( glState.clearColor[ i ] < 0.0f ) {
+					glState.clearColor[ i ] = 0.0f;
+				}
+			}
+		}
+	}
+
     // clear relevant buffers
     nglClear( clearBits );
 	nglActiveTexture( GL_TEXTURE0 );
-	nglClearColor( 0.1f, 0.1f, 0.1f, 1.0f );
+	nglClearColor( glState.clearColor[0], glState.clearColor[1], glState.clearColor[2], glState.clearColor[3] );
 
 	// setup basic state
 	nglEnable( GL_BLEND );
