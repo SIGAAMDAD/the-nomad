@@ -483,6 +483,7 @@ void FBO_Init( void )
 		}
 		R_CheckFBO( rg.renderFbo );
 
+	if ( multisample && r_multisampleType->i <= AntiAlias_32xMSAA && glContext.ARB_framebuffer_multisample ) {
 		rg.msaaResolveFbo = FBO_Create( "_msaaResolve", width, height );
 		FBO_CreateBuffer( rg.msaaResolveFbo, hdrFormat, 0, multisample );
 		FBO_CreateBuffer( rg.msaaResolveFbo, GL_DEPTH24_STENCIL8, 0, multisample );
@@ -517,6 +518,12 @@ void FBO_Init( void )
 		rg.ssaaResolveFbo = FBO_Create( "_ssaaResolve", glConfig.vidWidth, glConfig.vidHeight );
 		FBO_CreateBuffer( rg.ssaaResolveFbo, hdrFormat, 0, multisample );
 		R_CheckFBO( rg.ssaaResolveFbo );
+	}
+
+	if ( r_multisampleType->i >= AntiAlias_2xSSAA && r_multisampleType-> i<= AntiAlias_4xSSAA ) {
+		rg.ssaaFbo = FBO_Create( "_ssaa", glConfig.vidWidth, glConfig.vidHeight );
+		FBO_CreateBuffer( rg.ssaaFbo, GL_RGBA8, 0, 0 );
+		R_CheckFBO( rg.ssaaFbo );
 	}
 
 	// clear render buffer
@@ -566,7 +573,7 @@ void FBO_Init( void )
 			R_CheckFBO( rg.quarterFbo[i] );
 		}
 	}
-*/
+	*/
 
 	GL_CheckErrors();
 
@@ -909,16 +916,16 @@ void RB_BokehBlur(fbo_t *src, ivec4_t srcBox, fbo_t *dst, ivec4_t dstBox, float 
 			quarterBox[3] = -rg.quarterFbo[0]->height;
 
 			// create a quarter texture
-			//FBO_Blit(NULL, NULL, NULL, rg.quarterFbo[0], NULL, NULL, NULL, 0);
-			FBO_FastBlit(src, srcBox, rg.quarterFbo[0], quarterBox, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+			FBO_Blit(NULL, NULL, NULL, rg.quarterFbo[0], NULL, NULL, NULL, 0);
+			//FBO_FastBlit(src, srcBox, rg.quarterFbo[0], quarterBox, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 		}
 
 #ifndef HQ_BLUR
 		if (blur > 1.0f)
 		{
 			// create a 1/16th texture
-			//FBO_Blit(rg.quarterFbo[0], NULL, NULL, rg.textureScratchFbo[0], NULL, NULL, NULL, 0);
-			FBO_FastBlit(rg.quarterFbo[0], NULL, rg.textureScratchFbo[0], NULL, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+			FBO_Blit(rg.quarterFbo[0], NULL, NULL, rg.textureScratchFbo[0], NULL, NULL, NULL, 0);
+			//FBO_FastBlit(rg.quarterFbo[0], NULL, rg.textureScratchFbo[0], NULL, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 		}
 #endif
 

@@ -1438,7 +1438,7 @@ void GLSL_InitGPUShaders( void )
     GLSL_FinishGPUShader( &rg.imguiShader );
     numGenShaders++;
 
-    attribs = ATTRIB_POSITION | ATTRIB_NORMAL | ATTRIB_TANGENT | ATTRIB_TEXCOORD | ATTRIB_COLOR | ATTRIB_WORLDPOS;
+    attribs = ATTRIB_POSITION | ATTRIB_NORMAL | ATTRIB_TANGENT | ATTRIB_TEXCOORD | ATTRIB_WORLDPOS;
 
     extradefines[0] = '\0';
     N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_LIGHT\n" );

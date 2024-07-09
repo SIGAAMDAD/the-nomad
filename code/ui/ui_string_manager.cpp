@@ -94,11 +94,14 @@ int CUIStringManager::LoadTokenList( const char **text, language_t lang )
     char name[MAX_STRING_CHARS], value[MAX_STRING_CHARS];
     const char *tok;
     qboolean ignore;
+    uint64_t bytesUsed;
 
     if ( !stringHash[ lang ] ) {
         stringHash[ lang ] = (stringHash_t **)Hunk_Alloc( sizeof( stringHash_t ** ) * ui_maxLangStrings->i, h_high );
+        memset( stringHash[ lang ], 0, sizeof( *stringHash ) * ui_maxLangStrings->i );
     }
 
+    bytesUsed = 0;
     for ( i = 0; i < ui_maxLangStrings->i; i++ ) {
         ignore = qfalse;
 
@@ -141,10 +144,14 @@ int CUIStringManager::LoadTokenList( const char **text, language_t lang )
 
         N_strncpyz( value, tok, sizeof( value ) );
 
+        Con_Printf( "- Loaded key value string: '%s' = \"%s\"\n", name, value );
+
         size = 0;
         size += PAD( sizeof( *str ), sizeof( uintptr_t ) );
         size += PAD( strlen( name ) + 1, sizeof( uintptr_t ) );
         size += PAD( strlen( value ) + 1, sizeof( uintptr_t ) );
+
+        bytesUsed += size;
 
         str = (stringHash_t *)Hunk_Alloc( size, h_high );
         memset( str, 0, size );
@@ -154,11 +161,13 @@ int CUIStringManager::LoadTokenList( const char **text, language_t lang )
         str->next = stringHash[lang][hash];
         stringHash[lang][hash] = str;
 
-        strcpy( str->name, name );
-        strcpy( str->value, value );
+        N_strncpyz( str->name, name, strlen( name ) + 1 );
+        N_strncpyz( str->value, value, strlen( value ) + 1 );
 
         str->lang = lang;
     }
+
+    Con_Printf( "Allocated %lu bytes for ui language strings.\n", bytesUsed );
 
     return 1;
 }

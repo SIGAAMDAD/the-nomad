@@ -190,6 +190,7 @@ qboolean Sys_LowPhysicalMemory( void ) {
 }
 
 void Sys_Sleep( double msec ) {
+    SDL_Delay( msec );
 }
 
 void *Sys_AllocVirtualMemory( uint64_t nBytes ) {
@@ -217,7 +218,7 @@ qboolean Sys_SetAffinityMask( const uint64_t mask ) {
 }
 
 uint64_t Sys_GetAffinityMask( void ) {
-    return 0;
+    return 0x0;
 }
 
 void Sys_ClearDLLError( void ) {

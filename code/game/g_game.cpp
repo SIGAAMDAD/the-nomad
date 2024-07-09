@@ -184,11 +184,6 @@ static void G_RefImGuiNewFrame( void ) {
     ImGui::NewFrame();
 }
 
-static void G_RefImGuiDraw( void ) {
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
-}
-
 static void G_SetScaling(float factor, uint32_t captureWidth, uint32_t captureHeight)
 {
     if ( gi.con_factor != factor ) {
@@ -205,6 +200,12 @@ static void G_SetScaling(float factor, uint32_t captureWidth, uint32_t captureHe
 
 static void *G_RefImGuiMalloc( size_t size ) {
     return Z_Malloc( size, TAG_IMGUI );
+}
+
+static void G_RefImGuiDraw( void ) {
+    // draw imgui
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
 }
 
 //
@@ -1655,7 +1656,7 @@ static void G_InitRenderer_Cvars( void )
     r_multisampleAmount = Cvar_Get( "r_multisampleAmount", "2", CVAR_SAVE );
     Cvar_CheckRange( r_multisampleAmount, "0", "32", CVT_INT );
 
-	r_noborder = Cvar_Get( "r_noborder", "0", CVAR_ARCHIVE_ND );
+	r_noborder = Cvar_Get( "r_noborder", "0", CVAR_SAVE );
 	Cvar_CheckRange( r_noborder, "0", "1", CVT_INT );
 	Cvar_SetDescription( r_noborder, "Setting to 1 will remove window borders and title bar in windowed mode, hold ALT to drag & drop it with opened console." );
 
@@ -1733,7 +1734,7 @@ void G_Init( void )
     G_LoadSkins();
     
     // userinfo
-    Cvar_Get( "name", "The Ultimate Lad", CVAR_USERINFO | CVAR_ARCHIVE_ND );
+    Cvar_Get( "name", "The Ultimate Lad", CVAR_USERINFO | CVAR_SAVE );
     Cvar_Get( "skin", "raio", CVAR_USERINFO | CVAR_SAVE );
     Cvar_Get( "voice", "0", CVAR_USERINFO | CVAR_ARCHIVE_ND ); // for the future
     
