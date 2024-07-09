@@ -3,9 +3,12 @@
 namespace TheNomad::Engine::UserInterface {
     class ConfigManager {
         ConfigManager() {
+            m_ConfigSets.Reserve( TheNomad::SGame::sgame_ModList.Count() );
         }
 
         void Draw() {
+            
+
             for ( uint i = 0; i < m_ConfigSets.Count(); i++ ) {
                 
             }

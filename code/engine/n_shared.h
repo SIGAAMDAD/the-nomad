@@ -74,6 +74,17 @@ Platform Specific Preprocessors
 	#pragma intrinsic(fabs)
 	#pragma intrinsic(labs)
 
+	#ifdef WINVER
+		#undef WINVER
+		#define WINVER 0x0600
+	#endif
+	#ifdef _WIN32_WINNT
+		#undef _WIN32_WINNT
+		#define _WIN32_WINNT 0x0600
+	#endif
+	#define WIN32_LEAN_AND_MEAN
+	#include <windows.h>
+
 	#define DLL_EXT ".dll"
 	#define PATH_SEP '\\'
 	#define PATH_SEP_FOREIGN '/'
@@ -483,15 +494,28 @@ Compiler Macro Abstraction
 #endif
 
 #ifndef Q3_VM
-	#if defined (_MSC_VER) && !defined(__clang__)
+	#if !defined(__clang__)
 		typedef __int64 int64_t;
 		typedef __int32 int32_t;
 		typedef __int16 int16_t;
-		typedef __int8 int8_t;
+//		typedef __int8 int8_t;
 		typedef unsigned __int64 uint64_t;
 		typedef unsigned __int32 uint32_t;
 		typedef unsigned __int16 uint16_t;
 		typedef unsigned __int8 uint8_t;
+		#ifdef __cplusplus
+			// for THOSE people
+			namespace std {
+				typedef __int64 int64_t;
+				typedef __int32 int32_t;
+				typedef __int16 int16_t;
+//				typedef __int8 int8_t;
+				typedef unsigned __int64 uint64_t;
+				typedef unsigned __int32 uint32_t;
+				typedef unsigned __int16 uint16_t;
+				typedef unsigned __int8 uint8_t;
+			};
+		#endif
 	#else
 		#include <stdint.h>
 	#endif
@@ -990,7 +1014,7 @@ typedef struct {
 #define COLOR_WHITE		"^7"
 #define COLOR_RESET		"^8"
 
-#if defined(_NOMAD_DEBUG) && defined(__cplusplus)
+#if defined(_NOMAD_DEBUG) && defined(__cplusplus) && !defined(_WIN32)
 	#define USING_EASY_PROFILER
 	#include <easy/profiler.h>
 

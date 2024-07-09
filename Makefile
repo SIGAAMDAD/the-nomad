@@ -137,7 +137,8 @@ O             = bin/obj/unix
 endif
 QVM           = qvm
 SDIR          = code
-COMPILE_SRC   =$(CC) -std=c++17 $(CFLAGS) -o $@ -c $<
+VERSION_CC    =-std=c++17 -std=gnu++17
+COMPILE_SRC   =$(CC) $(CFLAGS) -o $@ -c $<
 COMPILE_C     =distcc gcc $(CFLAGS) -o $@ -c $<
 COMPILE_LIBSRC=$(CC) -fPIC -shared $(CFLAGS) -o $@ -c $<
 
@@ -417,29 +418,29 @@ endif
 	$(MAKE) $(EXE)
 
 $(O)/rendercommon/%.o: $(SDIR)/rendercommon/%.cpp
-	$(COMPILE_SRC)
+	$(COMPILE_SRC) $(VERSION_CC)
 $(O)/game/%.o: $(SDIR)/game/%.cpp
-	$(COMPILE_SRC)
+	$(COMPILE_SRC) $(VERSION_CC)
 $(O)/game/%.o: $(SDIR)/game/%.c
-	$(COMPILE_SRC)
+	$(COMPILE_SRC) $(VERSION_CC)
 $(O)/engine/%.o: $(SDIR)/engine/%.cpp
-	$(COMPILE_SRC)
+	$(COMPILE_SRC) $(VERSION_CC)
 $(O)/engine/%.o: $(SDIR)/system/%.cpp
-	$(COMPILE_SRC)
+	$(COMPILE_SRC) $(VERSION_CC)
 $(O)/engine/%.o: $(SDIR)/engine/%.c
-	$(COMPILE_SRC)
+	$(COMPILE_SRC) $(VERSION_CC)
 $(O)/ui/%.o: $(SDIR)/ui/%.cpp
-	$(COMPILE_SRC)
+	$(COMPILE_SRC) $(VERSION_CC)
 $(O)/ui/%.o: $(SDIR)/ui/menulib/%.cpp
-	$(COMPILE_SRC)
+	$(COMPILE_SRC) $(VERSION_CC)
 $(O)/sys/%.o: $(SYS_DIR)/%.cpp
-	$(COMPILE_SRC)
+	$(COMPILE_SRC) $(VERSION_CC)
 $(O)/sdl/%.o: $(SDIR)/sdl/%.cpp
-	$(COMPILE_SRC)
+	$(COMPILE_SRC) $(VERSION_CC)
 $(O)/module_lib/%.o: $(SDIR)/module_lib/%.cpp
-	$(COMPILE_SRC) -DMODULE_LIB
+	$(COMPILE_SRC) $(VERSION_CC) -DMODULE_LIB
 $(O)/module_lib/%.o: $(SDIR)/module_lib/scriptlib/%.cpp
-	$(COMPILE_SRC) -DMODULE_LIB
+	$(COMPILE_SRC) $(VERSION_CC) -DMODULE_LIB
 $(O)/angelscript/%.o: $(SDIR)/angelscript/%.cpp
 ifndef release
 	$(COMPILE_SRC) -DMODULE_LIB -DAS_DEBUG

@@ -71,6 +71,8 @@ constexpr GDR_INLINE bool operator!=( const CModuleAllocator& a, const eastl::al
 #include <EASTL/string_view.h>
 #include <EASTL/list.h>
 
+#include "scriptlib/script_cache_ids.h"
+
 #include "../engine/n_allocator.h"
 #include "../rendercommon/r_public.h"
 

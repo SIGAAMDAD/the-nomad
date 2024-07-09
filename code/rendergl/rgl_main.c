@@ -63,9 +63,15 @@ void RB_MakeViewMatrix( void )
         ri.Error( ERR_DROP, "R_RenderView: invalid orthographic matrix type" );
     };
 
-    ri.GLM_MakeVPM( ortho, &glState.viewData.camera.zoom, glState.viewData.zNear, glState.viewData.zFar, glState.viewData.camera.origin,
-        glState.viewData.camera.viewProjectionMatrix, glState.viewData.camera.projectionMatrix, glState.viewData.camera.viewMatrix,
-        viewFlags );
+    if ( r_drawMode->i == DRAWMODE_IMMEDIATE ) {
+        nglMatrixMode( GL_PROJECTION );
+        nglLoadIdentity();
+        nglOrtho( ortho[0], ortho[1], ortho[2], ortho[3], glState.viewData.zFar, glState.viewData.zNear );
+    } else {
+        ri.GLM_MakeVPM( ortho, &glState.viewData.camera.zoom, glState.viewData.zNear, glState.viewData.zFar, glState.viewData.camera.origin,
+            glState.viewData.camera.viewProjectionMatrix, glState.viewData.camera.projectionMatrix, glState.viewData.camera.viewMatrix,
+            viewFlags );
+    }
 }
 
 /*

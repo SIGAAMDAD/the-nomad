@@ -43,6 +43,11 @@ typedef ssize_t GLsizeiptr;
 typedef intptr_t GLintptr;
 #endif
 
+#ifndef __RGL_LOCAL__
+typedef uint32_t bufferType_t;
+typedef struct vertexBuffer_s vertexBuffer_t;
+#endif
+
 typedef struct
 {
     const GLubyte *(*glGetString)( GLenum name );
@@ -83,6 +88,10 @@ typedef struct
     void (*glUseProgram)( GLuint program );
     void (*glBindBuffer)( GLenum target, GLuint buffer );
     void (*glBindVertexArray)( GLuint array );
+    void *(*glMapBufferRange)( GLenum target, GLintptr offset, GLsizeiptr length, GLbitfield access );
+    void (*glBufferStorage)( GLenum target, GLsizeiptr size, const void *data, GLbitfield flags );
+    void (*glUnmapBuffer)( GLenum target );
+    void (*glInvalidateBufferData)( GLuint buffer );
     void (*glGenBuffers)( GLsizei n, GLuint *buffers );
     void (*glGenVertexArrays)( GLsizei n, GLuint *arrays );
     void (*glDeleteBuffers)( GLsizei n, const GLuint *buffers );
@@ -97,6 +106,9 @@ typedef struct
     void (*GetTextureId)( nhandle_t hShader, uint32_t stageNum, uint32_t *id );
     void (*DrawShaderStages)( nhandle_t hShader, uint32_t elementCount, uint32_t elementType, const void *offset, int32_t baseVertex );
     void *(*GetShaderByHandle)( nhandle_t hShader );
+    vertexBuffer_t *(*AllocateBuffer)( const char *name, void *vertices, uint32_t verticesSize, void *indices, uint32_t indicesSize,
+    	bufferType_t type );
+    void (*SetAttribPointers)( vertexBuffer_t *vbo, uint32_t attribBits );
 } imguiGL3Import_t;
 
 extern imguiGL3Import_t renderImport;

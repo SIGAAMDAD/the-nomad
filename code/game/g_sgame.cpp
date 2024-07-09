@@ -36,6 +36,8 @@ void G_InitSGame( void )
     // run a quick initialization
     g_pModuleLib->ModuleCall( sgvm, ModuleInit, 0 );
 
+    g_pModuleLib->RunModules( ModuleInit, 0 );
+
     timer.Stop();
     Con_Printf( "G_InitSGame: %5.5lf milliseconds\n", (double)timer.Milliseconds() );
 

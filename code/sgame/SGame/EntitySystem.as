@@ -299,7 +299,6 @@ namespace TheNomad::SGame {
 				// is hellbreaker available?
 				if ( sgame_HellbreakerOn.GetInt() == 1 && sgame_HellbreakerActive.GetInt() == 0 ) {
 					// ensure there's no recursion
-					@HellBreaker = cast<HellBreakerSystem@>( @TheNomad::GameSystem::AddSystem( HellBreakerSystem() ) );
 					TheNomad::Engine::CvarSet( "sgame_HellbreakerActive", "1" );
 					return; // startup the hellbreak
 				}

@@ -238,8 +238,8 @@ namespace TheNomad::SGame {
 			return @m_BaseStateCache;
 		}
 		
-		private array<parser@> m_StateInfos;
-		private array<parser@> m_AnimationInfos;
+		private array<json@> m_StateInfos;
+		private array<json@> m_AnimationInfos;
 		private dictionary m_StateCache;
 		private dictionary m_AnimationCache;
 		private array<EntityState> m_States;

@@ -13,7 +13,6 @@
 // The id for the context manager user data.
 // The add-ons have reserved the numbers 1000
 // through 1999 for this purpose, so we should be fine.
-const asPWORD CONTEXT_MGR = 1002;
 
 struct SContextInfo {
 	asUINT                    		sleepUntil;

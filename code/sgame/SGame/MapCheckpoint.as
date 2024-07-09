@@ -17,6 +17,9 @@ namespace TheNomad::SGame {
 			}
 			m_bPassed = true;
 		}
+
+		void Load( json@ data ) {
+		}
 		
 		uvec3 m_Origin = uvec3( 0 );
 		bool m_bPassed = false;

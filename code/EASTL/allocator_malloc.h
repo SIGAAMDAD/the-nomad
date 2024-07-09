@@ -100,7 +100,7 @@ namespace eastl
 
 		T* allocate(size_t n, size_t alignment, size_t alignmentOffset, int /*flags*/ = 0)
 		{
-			#ifdef EASTL_ALIGNED_MALLOC_AVAILABLE
+			#if defined(EASTL_ALIGNED_MALLOC_AVAILABLE) && !defined(_WIN32)
 				if((alignmentOffset % alignment) == 0) // We check for (offset % alignmnent == 0) instead of (offset == 0) because any block which is aligned on e.g. 64 also is aligned at an offset of 64 by definition. 
 					return (T *)memalign(alignment, n); // memalign is more consistently available than posix_memalign.
 			#else

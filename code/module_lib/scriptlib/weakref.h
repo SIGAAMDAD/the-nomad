@@ -21,14 +21,14 @@ public:
 	bool operator!=( const CScriptWeakRef& o ) const;
 
 	// Sets a new reference
-	CScriptWeakRef &Set(void *newRef);
+	CScriptWeakRef& Set( void *newRef );
 
 	// Returns the object if it is still alive
 	// This will increment the refCount of the returned object
 	void *Get() const;
 
 	// Returns true if the contained reference is the same
-	bool Equals(void *ref) const;
+	bool Equals( void *ref ) const;
 
 	// Returns the type of the reference held
 	asITypeInfo *GetRefType() const;

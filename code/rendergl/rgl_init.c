@@ -183,6 +183,7 @@ cvar_t *r_arb_texture_float;
 cvar_t *r_arb_sync;
 cvar_t *r_arb_shader_storage_buffer_object;
 cvar_t *r_arb_map_buffer_range;
+cvar_t *r_arb_pixel_buffer_object;
 
 cvar_t *r_screenshotJpegQuality;
 
@@ -795,6 +796,9 @@ static void R_Register( void )
     r_useExtensions = ri.Cvar_Get( "r_useExtensions", "1", CVAR_SAVE | CVAR_LATCH );
     ri.Cvar_SetDescription( r_useExtensions, "Use all of the OpenGL extensions your card is capable of." );
 
+    r_arb_pixel_buffer_object = ri.Cvar_Get( "r_arb_pixel_buffer_object", "0", CVAR_SAVE | CVAR_LATCH );
+    ri.Cvar_SetDescription( r_arb_pixel_buffer_object, "Enables pixel buffer objects." );
+
     r_arb_texture_compression = ri.Cvar_Get( "r_arb_texture_compression", "0", CVAR_SAVE | CVAR_LATCH );
     ri.Cvar_SetDescription( r_arb_texture_compression, "Enables texture compression." );
     r_arb_framebuffer_object = ri.Cvar_Get( "r_arb_framebuffer_object", "1", CVAR_SAVE | CVAR_LATCH );
@@ -1312,10 +1316,16 @@ static void R_InitImGui( void )
     import.glAlphaFunc = nglAlphaFunc;
     import.glClear = nglClear;
     import.glClearColor = nglClearColor;
+    import.glInvalidateBufferData = nglInvalidateBufferData;
+    import.glUnmapBuffer = nglUnmapBuffer;
+    import.glMapBufferRange = nglMapBufferRange;
+    import.glBufferStorage = nglBufferStorage;
 
     import.DrawShaderStages = RB_DrawShaderStages;
     import.GetTextureId = RE_GetTextureId;
-    import.GetShaderByHandle = (void *(*)( nhandle_t )) R_GetShaderByHandle;
+    import.GetShaderByHandle = (void *(*)( nhandle_t ))R_GetShaderByHandle;
+    import.AllocateBuffer = R_AllocateBuffer;
+    import.SetAttribPointers = VBO_SetVertexPointers;
 
     ri.ImGui_Init((void *)(uintptr_t)rg.imguiShader.programId, &import);
 }

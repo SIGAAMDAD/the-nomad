@@ -1294,26 +1294,6 @@ static void LoadFunctionFromSection( asIScriptGeneric *pGeneric )
     }
 }
 
-static void CopyMemory( asIScriptGeneric *pGeneric )
-{
-    CScriptArray *pDest = (CScriptArray *)pGeneric->GetArgObject( 0 );
-    const CScriptArray *pSource = (const CScriptArray *)pGeneric->GetArgObject( 1 );
-    uint32_t nCount = pGeneric->GetArgDWord( 2 );
-
-    if ( pDest->GetElementTypeId() != pSource->GetElementTypeId() ) {
-        throw ModuleException( "TheNomad::Util::CopyMemory: elementTypeId not the same for both arrays" );
-    }
-    if ( nCount > pSource->GetSize() ) {
-        nCount = pSource->GetSize();
-    }
-    if ( nCount > pDest->GetSize() ) {
-        nCount = pDest->GetSize();
-    }
-
-    memcpy( pDest->GetBuffer(), pSource->GetBuffer(),
-        g_pModuleLib->GetScriptEngine()->GetTypeInfoById( pDest->GetElementTypeId() )->GetSize() * nCount );
-}
-
 static void GetModuleList( CScriptArray *modList ) {
     const CModuleInfo *loadList = g_pModuleLib->GetLoadList();
 

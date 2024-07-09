@@ -1,6 +1,5 @@
 #include "g_game.h"
 #include "g_threads.h"
-#include <jemalloc/jemalloc.h>
 
 CRenderThread *g_pRenderThread;
 

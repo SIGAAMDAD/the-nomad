@@ -49,6 +49,10 @@ static void R_SetVertexPointers( const vertexAttrib_t attribs[ATTRIB_INDEX_COUNT
 	uint32_t attribBit, i;
 	const vertexAttrib_t *vAtb;
 
+	if ( r_drawMode->i < DRAWMODE_GPU ) {
+		return;
+	}
+
     for ( i = 0; i < ATTRIB_INDEX_COUNT; i++ ) {
 		attribBit = 1 << i;
 		vAtb = &attribs[i];
@@ -71,6 +75,10 @@ static void R_SetVertexPointers( const vertexAttrib_t attribs[ATTRIB_INDEX_COUNT
 
 void VBO_SetVertexPointers( vertexBuffer_t *vbo, uint32_t attribBits )
 {
+	if ( r_drawMode->i < DRAWMODE_GPU ) {
+		return;
+	}
+
 	// if nothing is set, set everything
 	if ( !( attribBits & ATTRIB_BITS ) ) {
 		attribBits = ATTRIB_BITS;
@@ -96,6 +104,10 @@ void VBO_SetVertexAttribPointers( vertexBuffer_t *vbo ) {
 static void R_ClearVertexPointers( void )
 {
 	uint32_t attribBit, i;
+
+	if ( r_drawMode->i < DRAWMODE_GPU ) {
+		return;
+	}
 
     for ( i = 0; i < ATTRIB_INDEX_COUNT; i++ ) {
 		attribBit = 1 << i;
@@ -399,7 +411,7 @@ static GLuint R_InitBufferStorage( GLenum target, GLsizei size, const GLvoid *da
 			nglBindBuffer( target, bufferId );
 		}
 		nglBufferStorage( target, size, data, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT );
-	} else if ( r_drawMode->i == DRAWMODE_GPU ) {
+	} else if ( r_drawMode->i == DRAWMODE_CLIENT || r_drawMode->i == DRAWMODE_GPU ) {
 		nglBufferDataARB( target, size, data, usage );
 	}
 	if ( ( err = nglGetError() ) != GL_NO_ERROR ) {
@@ -465,12 +477,14 @@ vertexBuffer_t *R_AllocateBuffer( const char *name, void *vertices, uint32_t ver
     buf->type = type;
 	N_strncpyz( buf->name, name, sizeof( buf->name ) );
 
-	nglGenVertexArrays( 1, &buf->vaoId );
-	if ( ( err = nglGetError() ) != GL_NO_ERROR ) {
-		ri.Error( ERR_DROP, "%s: Error generating OpenGL Vertex Array (0x%04x)", GL_ErrorString( err ), err );
-	}
+	if ( r_drawMode->i >= DRAWMODE_CLIENT ) {
+		nglGenVertexArrays( 1, &buf->vaoId );
+		if ( ( err = nglGetError() ) != GL_NO_ERROR ) {
+			ri.Error( ERR_DROP, "%s: Error generating OpenGL Vertex Array (0x%04x)", GL_ErrorString( err ), err );
+		}
 
-	nglBindVertexArray( buf->vaoId );
+		nglBindVertexArray( buf->vaoId );
+	}
 
 	buf->vertex.usage = BUF_GL_BUFFER;
 	buf->index.usage = BUF_GL_BUFFER;
@@ -522,7 +536,14 @@ void VBO_Bind( vertexBuffer_t *vbo )
 			nglEnableClientState( GL_COLOR_ARRAY );
 			nglEnableClientState( GL_VERTEX_ARRAY );
 			nglEnableClientState( GL_TEXTURE_COORD_ARRAY );
-			nglEnableClientState( GL_NORMAL_ARRAY );
+
+			nglBindVertexArray( vbo->vaoId );
+			nglBindBuffer( GL_ARRAY_BUFFER, vbo->vertex.id );
+			nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, vbo->index.id );
+
+			nglVertexPointer( 3, GL_FLOAT, sizeof( srfVert_t ), ( (srfVert_t *)vbo->vertex.data )->xyz );
+			nglTexCoordPointer( 2, GL_FLOAT, sizeof( srfVert_t ), ( (srfVert_t *)vbo->vertex.data )->st );
+			nglColorPointer( 4, GL_UNSIGNED_SHORT, sizeof( srfVert_t ), ( (srfVert_t *)vbo->vertex.data )->color );
 		} else if ( r_drawMode->i >= DRAWMODE_GPU ) {
 			nglBindVertexArray( vbo->vaoId );
 			nglBindBuffer( GL_ARRAY_BUFFER, vbo->vertex.id );
@@ -544,7 +565,7 @@ VBO_BindNull
 */
 void VBO_BindNull( void )
 {
-	ri.GLimp_LogComment("--- VBO_BindNull ---\n");
+	ri.GLimp_LogComment( "--- VBO_BindNull ---\n" );
 
 	if ( glState.currentVao ) {
 		glState.currentVao = NULL;
@@ -554,7 +575,11 @@ void VBO_BindNull( void )
 			nglDisableClientState( GL_COLOR_ARRAY );
 			nglDisableClientState( GL_VERTEX_ARRAY );
 			nglDisableClientState( GL_TEXTURE_COORD_ARRAY );
-			nglDisableClientState( GL_NORMAL_ARRAY );
+
+			nglBindBuffer( GL_ARRAY_BUFFER, 0 );
+			nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
+
+			nglBindVertexArray( 0 );
 		} else if ( r_drawMode->i >= DRAWMODE_GPU ) {
 	        nglBindVertexArray( 0 );
 			nglBindBuffer( GL_ARRAY_BUFFER, 0 );
@@ -697,6 +722,8 @@ void RB_FlushBatchBuffer( void )
 
 void RB_CommitDrawData( const void *verts, uint32_t numVerts, const void *indices, uint32_t numIndices )
 {
+	byte *data;
+
     if ( numVerts > backend.drawBatch.maxVertices / backend.drawBatch.vtxDataSize ) {
         ri.Error( ERR_DROP, "RB_CommitDrawData: numVerts > backend.drawBatch.maxVertices (%u > %li)", numVerts,
 			backend.drawBatch.maxVertices / backend.drawBatch.vtxDataSize );
@@ -720,12 +747,12 @@ void RB_CommitDrawData( const void *verts, uint32_t numVerts, const void *indice
 
     // we could be submitting either indices or vertices
     if ( verts ) {
-        memcpy( (byte *)backend.drawBatch.vertices + ( backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize ), verts,
-			numVerts * backend.drawBatch.vtxDataSize );
+		data = (byte *)( backend.drawBatch.vertices ) + ( backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize );
+        memcpy( data, verts, numVerts * backend.drawBatch.vtxDataSize );
     }
     if ( indices ) {
-        memcpy( (byte *)backend.drawBatch.indices + ( backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize ), indices,
-			numIndices * backend.drawBatch.idxDataSize );
+		data = (byte *)( backend.drawBatch.indices ) + ( backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize );
+        memcpy( data, indices, numIndices * backend.drawBatch.idxDataSize );
     }
 
     backend.drawBatch.vtxOffset += numVerts;

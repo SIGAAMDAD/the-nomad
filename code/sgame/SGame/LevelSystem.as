@@ -10,7 +10,6 @@
 #include "SGame/Sprite.as"
 #include "SGame/SpriteSheet.as"
 #include "SGame/GfxSystem.as"
-#include "SGame/HellBreakerSystem.as"
 
 namespace TheNomad::SGame {
     enum LevelRank {
@@ -178,6 +177,7 @@ namespace TheNomad::SGame {
 			m_LevelInfos.Clear();
 		}
 		void OnShutdown() {
+			m_LevelInfoDatas.Clear();
 		}
 		void OnRenderScene() {
 		}

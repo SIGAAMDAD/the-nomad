@@ -25,14 +25,29 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #pragma once
 
+#include "n_shared.h"
+
 #if defined( _WIN32 )
-	#define WIN32_LEAN_AND_MEAN
-	#ifdef _WIN32_WINNT
-		#undef _WIN32_WINNT
-	#endif
-	#define _WIN32_WINNT _WIN32_WINNT_WIN10
 	#include <synchapi.h>
 	#include <winbase.h>
+
+	#define USE_SRWLOCK
+
+	#if defined(__MINGW64__) || defined(__MINGW32__)
+		// for some reason, they have SRWLOCK defined in the headers, but not these
+		// functions
+
+		extern void InitializeSRWLock( PSRWLOCK );
+		extern void AcquireSRWLockExclusive( PSRWLOCK );
+		extern void AcquireSRWLockShared( PSRWLOCK );
+		extern void ReleaseSRWLockExclusive( PSRWLOCK );
+		extern void ReleaseSRWLockShared( PSRWLOCK );
+		extern void InitializeConditionVariable( PCONDITION_VARIABLE );
+		extern void SleepConditionVariableSRW( PCONDITION_VARIABLE, PSRWLOCK, DWORD, ULONG );
+		extern void SleepConditionVariableCS( PCONDITION_VARIABLE, PCRITICAL_SECTION, DWORD );
+		extern void WakeAllConditionVariable( PCONDITION_VARIABLE );
+		extern void WakeConditionVariable( PCONDITION_VARIABLE );
+	#endif
 
 	typedef void *HANDLE;
 	
@@ -300,9 +315,12 @@ public:
 	inline void WriteUnlock( void ) const { const_cast<CThreadRWMutex *>( this )->WriteUnlock(); }
 private:
 #ifdef _WIN32
+#ifdef USE_SRWLOCK
 	SRWLOCK m_hLock;
-//	CRITICAL_SECTION m_hLock;
 	CONDITION_VARIABLE m_hCondition;
+#else
+	CRITICAL_SECTION m_hLock;
+#endif
 #else
 	pthread_rwlock_t m_hRWLock;
 	pthread_mutex_t m_hMutex;
@@ -1087,8 +1105,11 @@ GDR_INLINE uint64_t CThreadLocalData::Flush( void )
 GDR_INLINE CThreadMutex::CThreadMutex( void )
 {
 #ifdef _WIN32
+#ifdef USE_SRWLOCK
 	InitializeSRWLock( &m_hLock );
-//	InitializeCriticalSection( &m_hLock );
+#else
+	InitializeCriticalSection( &m_hLock );
+#endif
 	m_hOwnerThread = 0;
 	m_nLockCount = 0;
 #else
@@ -1101,7 +1122,9 @@ GDR_INLINE CThreadMutex::CThreadMutex( void )
 GDR_INLINE CThreadMutex::~CThreadMutex()
 {
 #ifdef _WIN32
-//	DeleteCriticalSection( &m_hLock );
+#ifndef USE_SRWLOCK
+	DeleteCriticalSection( &m_hLock );
+#endif
 #else
 	pthread_mutexattr_destroy( &m_hAttrib );
 	pthread_mutex_destroy( &m_hMutex );
@@ -1126,8 +1149,11 @@ GDR_INLINE void CThreadMutex::Lock( void )
 		// already locked on current thread
 		m_nLockCount++;
 	} else {
+#ifdef USE_SRWLOCK
 		AcquireSRWLockExclusive( &m_hLock );
-//		EnterCriticalSection( &m_hLock );
+#else
+		EnterCriticalSection( &m_hLock );
+#endif
 		m_hOwnerThread = currentThreadId;
 		m_nLockCount = 1;
 	}
@@ -1144,8 +1170,11 @@ GDR_INLINE void CThreadMutex::Unlock( void )
 		
 		if ( m_nLockCount == 0 ) {
 			m_hOwnerThread = 0;
-//			LeaveCriticalSection( &m_hLock );
+#ifdef USE_SRWLOCK
 			ReleaseSRWLockExclusive( &m_hLock );
+#else
+			LeaveCriticalSection( &m_hLock );
+#endif
 		}
 	}
 #else
@@ -1261,7 +1290,7 @@ template<typename T>
 GDR_INLINE const T& CThreadAtomic<T>::load( MemoryOrder order ) const
 {
 #ifdef _WIN32
-	InterlockedExchangeAdd( &m_hValue, 0 );
+	InterlockedExchangeAdd( const_cast<volatile LONG *>( &m_hValue ), 0 );
 #else
 	__sync_fetch_and_add( const_cast<T *>( &m_hValue ), 0 );
 #endif
@@ -1347,9 +1376,12 @@ GDR_INLINE CThreadRWMutex::CThreadRWMutex( void )
 	m_nWaitingWriters = 0;
 	
 #ifdef _WIN32
+#ifdef USE_SRWLOCK
 	InitializeSRWLock( &m_hLock );
-//	InitializeCriticalSection( &m_hLock );
 	InitializeConditionVariable( &m_hCondition );
+#else
+	InitializeCriticalSection( &m_hLock );
+#endif
 #else
 	pthread_mutex_init( &m_hMutex, NULL );
 	pthread_rwlock_init( &m_hRWLock, NULL );
@@ -1360,7 +1392,9 @@ GDR_INLINE CThreadRWMutex::CThreadRWMutex( void )
 GDR_INLINE CThreadRWMutex::~CThreadRWMutex()
 {
 #ifdef _WIN32
-//	DeleteCriticalSection( &m_hLock );
+#ifndef USE_SRWLOCK
+	DeleteCriticalSection( &m_hLock );
+#endif
 #else
 	pthread_mutex_destroy( &m_hMutex );
 	pthread_rwlock_destroy( &m_hRWLock );
@@ -1371,18 +1405,29 @@ GDR_INLINE CThreadRWMutex::~CThreadRWMutex()
 GDR_INLINE void CThreadRWMutex::ReadLock( void )
 {
 #ifdef _WIN32
+#ifdef USE_SRWLOCK
 	AcquireSRWLockShared( &m_hLock );
-//	EnterCriticalSection( &m_hLock );
+#else
+	EnterCriticalSection( &m_hLock );
+#endif
 	
+#ifdef USE_SRWLOCK
 	while ( m_nActiveWriters || m_nWaitingWriters ) {
+#ifdef USE_SRWLOCK
 		SleepConditionVariableSRW( &m_hCondition, &m_hLock, INFINITE, CONDITION_VARIABLE_LOCKMODE_SHARED );
-//		SleepConditionVariableCS( &m_hCondition, &m_hLock, INFINITE );
+#else
+		SleepConditionVariableCS( &m_hCondition, &m_hLock, INFINITE );
+#endif
 	}
+#endif
 	
 	m_nReaders++;
-	
+
+#ifdef USE_SRWLOCK
 	ReleaseSRWLockShared( &m_hLock );
-//	LeaveCriticalSection( &m_hLock );
+#else
+	LeaveCriticalSection( &m_hLock );
+#endif
 #else
 	pthread_rwlock_rdlock( &m_hRWLock );
 	
@@ -1401,17 +1446,25 @@ GDR_INLINE void CThreadRWMutex::ReadLock( void )
 GDR_INLINE void CThreadRWMutex::ReadUnlock( void )
 {
 #ifdef _WIN32
+#ifdef USE_SRWLOCK
 	AcquireSRWLockShared( &m_hLock );
-//	EnterCriticalSection( &m_hLock );
-	
+#else
+	EnterCriticalSection( &m_hLock );
+#endif
+
 	m_nReaders--;
-	
+
+#ifdef USE_SRWLOCK
 	if ( m_nReaders && m_nWaitingWriters ) {
 		WakeAllConditionVariable( &m_hCondition );
 	}
+#endif
 	
+#ifdef USE_SRWLOCK
 	ReleaseSRWLockShared( &m_hLock );
-//	LeaveCriticalSection( &m_hLock );
+#else
+	LeaveCriticalSection( &m_hLock );
+#endif
 #else
 	pthread_rwlock_rdlock( &m_hRWLock );
 	
@@ -1430,21 +1483,30 @@ GDR_INLINE void CThreadRWMutex::ReadUnlock( void )
 GDR_INLINE void CThreadRWMutex::WriteLock( void )
 {
 #ifdef _WIN32
+#ifdef USE_SRWLOCK
 	AcquireSRWLockExclusive( &m_hLock );
-//	EnterCriticalSection( &m_hLock );
+#else
+	EnterCriticalSection( &m_hLock );
+#endif
 	
 	m_nWaitingWriters++;
-	
+
 	while ( m_nReaders || m_nActiveWriters ) {
+#ifdef USE_SRWLOCK
 		SleepConditionVariableSRW( &m_hCondition, &m_hLock, INFINITE, 0 );
-//		SleepConditionVariableCS( &m_hCondition, &m_hLock, INFINITE );
+#else
+		SleepConditionVariableCS( &m_hCondition, &m_hLock, INFINITE );
+#endif
 	}
 	
 	m_nWaitingWriters--;
 	m_nActiveWriters++;
-	
+
+#ifdef USE_SRWLOCK
 	ReleaseSRWLockExclusive( &m_hLock );
-//	LeaveCriticalSection( &m_hLock );
+#else
+	LeaveCriticalSection( &m_hLock );
+#endif
 #else
 	pthread_rwlock_wrlock( &m_hRWLock );
 	
@@ -1466,19 +1528,27 @@ GDR_INLINE void CThreadRWMutex::WriteLock( void )
 GDR_INLINE void CThreadRWMutex::WriteUnlock( void )
 {
 #ifdef _WIN32
+#ifdef USE_SRWLOCK
 	AcquireSRWLockExclusive( &m_hLock );
-//	EnterCriticalSection( &m_hLock );
+#else
+	EnterCriticalSection( &m_hLock );
+#endif
 	
 	m_nActiveWriters--;
 	
+#ifdef USE_SRWLOCK
 	if ( m_nWaitingWriters ) {
 		WakeConditionVariable( &m_hCondition );
 	} else {
 		WakeAllConditionVariable( &m_hCondition );
 	}
-	
+#endif
+
+#ifdef USE_SRWLOCK
 	ReleaseSRWLockExclusive( &m_hLock );
-//	LeaveCriticalSection( &m_hLock );
+#else
+	LeaveCriticalSection( &m_hLock );
+#endif
 #else
 	pthread_rwlock_wrlock( &m_hRWLock );
 	

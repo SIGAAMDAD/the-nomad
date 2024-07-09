@@ -1,7 +1,5 @@
 #include "scriptparser.h"
 
-static qboolean scriptLoaded = qfalse;
-
 CScriptParser *CScriptParser::Create( void ) {
     void *mem = Mem_ClearedAlloc( sizeof( CScriptParser ) );
     if ( !mem ) {
@@ -895,8 +893,6 @@ static void ScriptParser_Error( asIScriptGeneric *pGeneric ) {
 
 void RegisterScriptParser( asIScriptEngine *pEngine )
 {
-    scriptLoaded = qfalse;
-
     CheckASCall( pEngine->RegisterObjectType( "parser", sizeof( CScriptParser ), asOBJ_REF ) );
     
     CheckASCall( pEngine->RegisterObjectBehaviour( "parser", asBEHAVE_FACTORY, "parser@ f()", asFUNCTION( ScriptParser_Factory ), asCALL_GENERIC ) );

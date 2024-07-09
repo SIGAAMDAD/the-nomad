@@ -78,9 +78,8 @@ typedef struct {
 
     nhandle_t logoShader;
     nhandle_t engineLogoShader;
+    nhandle_t warningShader;
     int splashPhase; // company logo -> engine logo -> epilepsy warning
-
-    ImFont *PlaywriteCO;
 
     uint64_t timeStart;
     uint64_t lifeTime;
@@ -326,9 +325,10 @@ static void SplashScreen_Draw( void )
         TextCenterAlign( "Powered By The SIR Engine" );
         break;
     case SPLASH_SCREEN_WARNING:
-        ImGui::SetCursorScreenPos( ImVec2( 256 * ui->scale, 300 * ui->scale ) );
+        ImGui::SetCursorScreenPos( ImVec2( 156 * ui->scale, 300 * ui->scale ) );
         ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * 2.5f );
 
+        ImGui::Image( (ImTextureID)(uintptr_t)s_splashScreen->warningShader, ImVec2( 64 * ui->scale, 64 * ui->scale ) );
         ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
         TextCenterAlign( EPILEPSY_WARNING_TITLE );
         ImGui::PopStyleColor();
@@ -383,6 +383,7 @@ void MainMenu_Cache( void )
     s_splashScreen->splashPhase = SPLASH_SCREEN_LOGO;
     s_splashScreen->logoShader = re.RegisterShader( "menu/logo" );
     s_splashScreen->engineLogoShader = re.RegisterShader( "menu/engineLogo" );
+    s_splashScreen->warningShader = re.RegisterShader( "menusplashwarn" );
 
     s_splashScreen->menu.draw = SplashScreen_Draw;
     s_splashScreen->menu.x = 0;

@@ -45,19 +45,19 @@ const moduleFunc_t funcDefs[NumFuncs] = {
     { "int OnSaveGame()", ModuleOnSaveGame, 0, qfalse },
     { "int OnLoadGame()", ModuleOnLoadGame, 0, qfalse }
     */
-    { "int ModuleOnInit()", ModuleInit, 0, qtrue },
-    { "int ModuleOnShutdown()", ModuleShutdown, 0, qtrue },
-    { "int ModuleOnConsoleCommand()", ModuleCommandLine, 0, qfalse },
-    { "int ModuleDrawConfiguration()", ModuleDrawConfiguration, 0, qfalse },
-    { "int ModuleSaveConfiguration()", ModuleSaveConfiguration, 0, qfalse },
-    { "int ModuleOnKeyEvent( int, int )", ModuleOnKeyEvent, 2, qfalse },
-    { "int ModuleOnMouseEvent( int, int )", ModuleOnMouseEvent, 2, qfalse },
-    { "int ModuleOnLevelStart()", ModuleOnLevelStart, 0, qfalse },
-    { "int ModuleOnLevelEnd()", ModuleOnLevelEnd, 0, qfalse },
-    { "int ModuleOnRunTic( int )", ModuleOnRunTic, 1, qtrue },
-    { "int ModuleOnSaveGame()", ModuleOnSaveGame, 0, qfalse },
-    { "int ModuleOnLoadGame()", ModuleOnLoadGame, 0, qfalse },
-    { "int ModuleOnJoystickEvent( int, int, int, int, int, int )", ModuleOnJoystickEvent, 6, qfalse },
+    { "ModuleOnInit", ModuleInit, 0, qtrue, qfalse },
+    { "ModuleOnShutdown", ModuleShutdown, 0, qtrue, qfalse },
+    { "ModuleOnConsoleCommand", ModuleCommandLine, 0, qfalse, qfalse },
+    { "ModuleDrawConfiguration", ModuleDrawConfiguration, 0, qfalse, qtrue },
+    { "ModuleSaveConfiguration", ModuleSaveConfiguration, 0, qfalse, qtrue },
+    { "ModuleOnKeyEvent", ModuleOnKeyEvent, 2, qfalse, qfalse },
+    { "ModuleOnMouseEvent", ModuleOnMouseEvent, 2, qfalse, qfalse },
+    { "ModuleOnLevelStart", ModuleOnLevelStart, 0, qfalse, qfalse },
+    { "ModuleOnLevelEnd", ModuleOnLevelEnd, 0, qfalse, qfalse },
+    { "ModuleOnRunTic", ModuleOnRunTic, 1, qtrue, qfalse },
+    { "ModuleOnSaveGame", ModuleOnSaveGame, 0, qfalse, qfalse },
+    { "ModuleOnLoadGame", ModuleOnLoadGame, 0, qfalse, qfalse },
+    { "ModuleOnJoystickEvent", ModuleOnJoystickEvent, 6, qfalse, qfalse },
 };
 
 CModuleHandle::CModuleHandle( const char *pName, const char *pDescription, const nlohmann::json& sourceFiles, int32_t moduleVersionMajor,
@@ -86,10 +86,6 @@ CModuleHandle::CModuleHandle( const char *pName, const char *pDescription, const
         return;
     }
 
-    if ( ( error = g_pModuleLib->GetScriptBuilder()->StartNewModule( g_pModuleLib->GetScriptEngine(), pName ) ) != asSUCCESS ) {
-        N_Error( ERR_DROP, "CModuleHandle::CModuleHandle: failed to start module '%s' -- %s", pName, AS_PrintErrorString( error ) );
-    }
-
     g_pModuleLib->SetHandle( this );
     m_IncludePaths = eastl::move( includePaths );
     m_SourceFiles = eastl::move( sourceFiles );
@@ -115,13 +111,8 @@ CModuleHandle::CModuleHandle( const char *pName, const char *pDescription, const
     if ( error != 1 ) {
         Build( sourceFiles );
     }
-    
-    if ( !InitCalls() ) {
-        return;
-    }
 
 //    m_pScriptModule->SetUserData( this );
-    SaveToCache();
 
     m_nLastCallId = NumFuncs;
     m_bLoaded = qtrue;
@@ -150,21 +141,15 @@ void CModuleHandle::Build( const nlohmann::json& sourceFiles ) {
     int error;
 
     for ( const auto& it : sourceFiles ) {
-        if ( !LoadSourceFile( it ) ) {
-            N_Error( ERR_DROP, "CModuleHandle::Build: failed to compile source file '%s'", it.get<string_t>().c_str() );
+        const string_t& file = it;
+        if ( !LoadSourceFile( file ) ) {
+            // unless the game cannot run without it, we'll just scream at the console
+            if ( IsRequiredModule( m_szName.c_str() ) ) {
+                N_Error( ERR_DROP, "CModuleHandle::Build: failed to compile source file '%s'", file.c_str() );
+            } else {
+                Con_Printf( COLOR_RED "CModuleHandle::Build: failed to compile source file '%s'\n", file.c_str() );
+            }
         }
-    }
-
-    try {
-        if ( ( error = g_pModuleLib->GetScriptBuilder()->BuildModule() ) != asSUCCESS ) {
-            Con_Printf( COLOR_RED "ERROR: CModuleHandle::CModuleHandle: failed to build module '%s' -- %s\n", m_szName.c_str(), AS_PrintErrorString( error ) );
-
-            // clean cache to get rid of any old and/or corrupt code
-            Cbuf_ExecuteText( EXEC_APPEND, "ml.clean_scripCACHE_DIR t\n" );
-        }
-    } catch ( const std::exception& e ) {
-        Con_Printf( COLOR_RED "ERROR: std::exception thrown when loading module \"%s\", %s\n", m_szName.c_str(), e.what() );
-        return;
     }
 }
 
@@ -367,6 +352,7 @@ bool CModuleHandle::InitCalls( void )
 {
 //    asIScriptFunction *pFactory;
     uint32_t i;
+    const char *funcName;
 
     Con_Printf( "Initializing function procs...\n" );
 
@@ -393,21 +379,32 @@ bool CModuleHandle::InitCalls( void )
     memset( m_pFuncTable, 0, sizeof( m_pFuncTable ) );
 
     for ( i = 0; i < NumFuncs; i++ ) {
-        Con_DPrintf( "Checking if module has function '%s'...\n", funcDefs[i].name );
-        m_pFuncTable[i] = g_pModuleLib->GetScriptModule()->GetFunctionByDecl( funcDefs[i].name );
+        funcName = va( "%s::%s", m_szName.c_str(), funcDefs[i].name );
+
+        Con_DPrintf( "Checking if module has function '%s'...\n", funcName );
+        m_pFuncTable[i] = g_pModuleLib->GetScriptModule()->GetFunctionByName( funcName );
         if ( m_pFuncTable[i] ) {
-            Con_Printf( COLOR_GREEN "Module \"%s\" registered with proc '%s'.\n", m_szName.c_str(), funcDefs[i].name );
+            Con_Printf( COLOR_GREEN "Module \"%s\" registered with proc '%s'.\n", m_szName.c_str(), funcName );
         } else {
             if ( funcDefs[i].required ) {
-                Con_Printf( COLOR_RED "Module \"%s\" not registered with required proc '%s'.\n", m_szName.c_str(), funcDefs[i].name );
+                Con_Printf( COLOR_RED "Module \"%s\" not registered with required proc '%s'.\n", m_szName.c_str(), funcName );
                 return false;
             }
-            Con_Printf( COLOR_MAGENTA "Module \"%s\" not registered with proc '%s'.\n", m_szName.c_str(), funcDefs[i].name );
+            Con_Printf( COLOR_MAGENTA "Module \"%s\" not registered with proc '%s'.\n", m_szName.c_str(), funcName );
             continue;
         }
 
+        if ( funcDefs[i].mainOnly && m_pFuncTable[i] && !IsRequiredModule( m_szName.c_str() ) ) {
+            Con_Printf( COLOR_RED "Module \"%s\" has an exclusive proc, ignoring.\n", m_szName.c_str() );
+            m_pFuncTable[i] = NULL;
+            continue;
+        }
+        if ( m_pFuncTable[i]->GetReturnTypeId() != asTYPEID_INT32 ) {
+            Con_Printf( COLOR_RED "Module \"%s\" has proc '%s' but doesn't return an int.\n", m_szName.c_str(), funcName );
+            return false;
+        }
         if ( m_pFuncTable[i]->GetParamCount() != funcDefs[i].expectedArgs ) {
-            Con_Printf( COLOR_RED "Module \"%s\" has proc '%s' but not the correct args (%u).\n", m_szName.c_str(), funcDefs[i].name,
+            Con_Printf( COLOR_RED "Module \"%s\" has proc '%s' but not the correct args (%u).\n", m_szName.c_str(), funcName,
                 funcDefs[i].expectedArgs );
             return false;
         }
@@ -602,6 +599,13 @@ static void SaveCodeDataCache( const string_t& moduleName, const CModuleHandle *
     }
     FS_FClose( dataStream.m_hFile );
 
+    nLength = FS_LoadFile( va( CACHE_DIR "/%s_code.dat", moduleName.c_str() ), (void **)&pByteCode );
+    if ( !nLength || !pByteCode ) {
+
+    }
+    header.checksum = crc32_buffer( pByteCode, nLength );
+    FS_FreeFile( pByteCode );
+
     FS_WriteFile( va( CACHE_DIR "/%s_metadata.bin", moduleName.c_str() ), &header, sizeof( header ) );
 }
 
@@ -628,11 +632,13 @@ static bool LoadCodeFromCache( const string_t& moduleName, const CModuleHandle *
 
     pHandle->GetVersion( &versionMajor, &versionUpdate, &versionPatch );
 
-    //if ( header->checksum != checksum ) {
-    //    // recompile, updated checksum
-    //    Con_Printf( "Module script code '%s' changed, recompiling.\n", moduleName.c_str() );
-    //    return false;
-    //}
+    checksum = crc32_buffer( (const byte *)( header + 1 ), nLength - sizeof( *header ) );
+
+    if ( header->checksum != checksum ) {
+        // recompile, updated checksum
+        Con_Printf( "Module script code '%s' changed, recompiling.\n", moduleName.c_str() );
+        return false;
+    }
     if ( header->moduleVersionMajor != versionMajor || header->moduleVersionUpdate != versionUpdate
         || header->moduleVersionPatch != versionPatch )
     {

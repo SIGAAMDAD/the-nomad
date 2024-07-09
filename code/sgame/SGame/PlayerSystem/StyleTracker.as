@@ -117,8 +117,8 @@ namespace TheNomad::SGame {
 			
 			ImGui::Begin( "##StyleTrackerWindow", null, ImGui::MakeWindowFlags( ImGuiWindowFlags::NoTitleBar |
 				ImGuiWindowFlags::NoBackground | ImGuiWindowFlags::NoMove | ImGuiWindowFlags::NoResize ) );
-			ImGui::SetWindowSize( vec2() );
-			ImGui::SetWindowPos( vec2() );
+			ImGui::SetWindowSize( vec2( 128 * scale, 256 * scale ) );
+			ImGui::SetWindowPos( vec2( 728 * scale, 16 * scale ) );
 			
 			if ( TheNomad::GameSystem::GameManager.GetGameTic() - m_nTimeSinceLastPush > 8000 ) {
 				PopAction();

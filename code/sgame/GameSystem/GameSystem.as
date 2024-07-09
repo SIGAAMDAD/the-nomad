@@ -143,6 +143,7 @@ namespace TheNomad::GameSystem {
 	GameObject@ AddSystem( GameObject@ SystemHandle ) {
 		ConsolePrint( "Added GameObject System \"" + SystemHandle.GetName() + "\"\n" );
 		GameSystems.Add( @SystemHandle );
+		SystemHandle.OnInit();
 		return @SystemHandle;
 	}
 

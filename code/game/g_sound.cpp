@@ -7,8 +7,6 @@
 #include "../module_lib/module_memory.h"
 #define STB_VORBIS_NO_STDIO
 #define STB_VORBIS_NO_PUSHDATA_API // we're using the pulldata API
-#include <ogg/ogg.h>
-#include <vorbis/vorbisfile.h>
 #include "stb_vorbis.c"
 
 // AL_EXT_STATIC_BUFFER

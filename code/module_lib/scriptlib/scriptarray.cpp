@@ -49,7 +49,6 @@ static void RegisterScriptList_Generic(asIScriptEngine *engine);
 // We just define a number here that we assume nobody else is using for
 // object type user data. The add-ons have reserved the numbers 1000
 // through 1999 for this purpose, so we should be fine.
-const asPWORD ARRAY_CACHE = 1000;
 
 static void CleanupTypeInfoArrayCache(asITypeInfo *type)
 {

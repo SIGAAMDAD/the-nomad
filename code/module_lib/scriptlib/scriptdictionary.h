@@ -128,7 +128,6 @@ public:
 	// Get an array of all keys
 	CScriptArray *GetKeys( void ) const;
 
-	// STL style iterator
 	class CIterator
 	{
 	public:

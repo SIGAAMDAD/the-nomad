@@ -158,20 +158,19 @@ public:
 
 public:
     //  ==============================================================================
-	enum LexemType
-	{
-		IDENTIFIER,		//Names which can be expanded.
-		COMMA,			//,
-		SEMICOLON,
-		OPEN,			//{[(
-		CLOSE,			//}])
-		PREPROCESSOR,	//Begins with #
-		NEWLINE,
-		WHITESPACE,
-		IGNORE,
-		COMMENT,
-		STRING,
-		NUMBER
+	enum LexemType {
+		LEX_IDENTIFIER,		//Names which can be expanded.
+		LEX_COMMA,			//,
+		LEX_SEMICOLON,
+		LEX_OPEN,			//{[(
+		LEX_CLOSE,			//}])
+		LEX_PREPROCESSOR,	//Begins with #
+		LEX_NEWLINE,
+		LEX_WHITESPACE,
+		LEX_IGNORE,
+		LEX_COMMENT,
+		LEX_STRING,
+		LEX_NUMBER
 	}; //End enum LexemType
 
 	class Lexem

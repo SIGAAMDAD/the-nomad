@@ -4,7 +4,7 @@ menu/logo
     nopicmip
     {
         texFilter bilinear
-        map GDRLogo.jpeg
+        map GDRLogo.jpg
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         tcGen texture
         rgbGen vertex
@@ -24,6 +24,18 @@ menu/engineLogo
     }
 }
 
+menusplashwarn
+{
+    nomipmaps
+    nopicmip
+    {
+        texFilter bilinear
+        map warning.jpg
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        tcGen texture
+        rgbGen vertex
+    }
+}
 
 menu/mainbackground
 {

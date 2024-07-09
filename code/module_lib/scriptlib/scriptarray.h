@@ -20,37 +20,26 @@ struct SArrayCache {
 class CScriptArray
 {
 public:
-	// Set the memory functions that should be used by all CScriptArrays
 	static void SetMemoryFunctions( asALLOCFUNC_t allocFunc, asFREEFUNC_t freeFunc );
 
-	// Factory functions
 	static CScriptArray *Create( asITypeInfo *ot );
 	static CScriptArray *Create( asITypeInfo *ot, asUINT length );
 	static CScriptArray *Create( asITypeInfo *ot, asUINT length, void *defaultValue );
 	static CScriptArray *Create( asITypeInfo *ot, void *listBuffer );
 
-	// Memory management
 	void AddRef( void ) const;
 	void Release( void ) const;
 
-	// Type information
 	asITypeInfo *GetArrayObjectType() const;
 	int          GetArrayTypeId() const;
 	int          GetElementTypeId() const;
 
-	// Get the current size
 	asUINT GetSize( void ) const;
-
-	// Returns true if the array is empty
 	bool   IsEmpty( void ) const;
 
-	// Pre-allocates memory for elements
 	void   Reserve( asUINT maxElements );
-
-	// Resize the array
 	void   Resize( asUINT numElements );
 
-	// Get a pointer to an element. Returns 0 if out of bounds
 	void       *At( asUINT index );
 	const void *At( asUINT index ) const;
 
@@ -60,13 +49,10 @@ public:
 	// address of the handle. The refCount of the object will also be incremented
 	void  SetValue( asUINT index, void *value );
 
-	// Copy the contents of one array to another (only if the types are the same)
 	CScriptArray& operator=( const CScriptArray& );
 
-	// Compare two arrays
 	bool operator==( const CScriptArray& ) const;
 
-	// Array manipulation
 	void InsertAt( asUINT index, void *value );
 	void InsertAt( asUINT index, const CScriptArray& arr );
 	void InsertLast( void *value );
@@ -85,20 +71,18 @@ public:
 	int FindByRef( void *ref ) const;
 	int FindByRef( asUINT startAt, void *ref ) const;
 
-	// Return the address of internal buffer for direct manipulation of elements
 	void *GetBuffer( void );
 	const void *GetBuffer( void ) const;
 
 	void Clear( void );
 
-	// GC methods
 	int  GetRefCount( void );
 	void SetFlag( void );
 	bool GetFlag( void );
 	void EnumReferences( asIScriptEngine *pEngine );
 	void ReleaseAllHandles( asIScriptEngine *pEngine );
 protected:
-	mutable CThreadAtomic<int32_t> refCount;
+	mutable CThreadAtomic<int> refCount;
 	mutable bool    gcFlag;
 	asITypeInfo    *objType;
 	asIScriptFunction *subTypeHandleAssignFunc;

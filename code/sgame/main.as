@@ -7,6 +7,7 @@
 #include "SGame/CheatCodes.as"
 #include "Engine/Engine.as"
 #include "SGame/Cvars.as"
+#include "Engine/UserInterface/ConfigManager.as"
 
 namespace ImGui {
 	ImGuiWindowFlags MakeWindowFlags( uint flags ) {
@@ -14,11 +15,20 @@ namespace ImGui {
 	}
 };
 
+namespace nomadmain {
+
 //
 // LoadLevelAssets: caches level relevant data
 //
 void LoadLevelAssets() {
 	const string str = TheNomad::Engine::CvarVariableString( "skin" );
+
+	// NOTE: always load the sprite sheets after the info sprites
+	// doing it there causes a weird bug where the sprite's texture doesn't
+	// render correctly
+	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_torso", 512, 512, 32, 32 );
+	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_legs", 512, 512, 32, 32 );
+	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_arms", 512, 512, 32, 32 );
 }
 
 void InitCvars() {
@@ -86,13 +96,6 @@ void InitResources() {
 	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_torso" );
 	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_legs" );
 	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_arms" );
-
-	// NOTE: always load the sprite sheets after the info sprites
-	// doing it there causes a weird bug where the sprite's texture doesn't
-	// render correctly
-	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_torso", 512, 512, 32, 32 );
-	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_legs", 512, 512, 32, 32 );
-	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_arms", 512, 512, 32, 32 );
 
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/misc/passCheckpoint.ogg" );
 
@@ -192,10 +195,6 @@ int ModuleOnInit() {
 	// load assets
 	//
 	InitResources();
-
-	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
-		TheNomad::GameSystem::GameSystems[i].OnInit();
-	}
 
 	ConsolePrint( "--------------------\n" );
 
@@ -310,3 +309,5 @@ int ModuleOnRunTic( int msec ) {
 	
 	return TheNomad::SGame::GlobalState == TheNomad::SGame::GameState::StatsMenu ? 2 : 0;
 }
+
+};

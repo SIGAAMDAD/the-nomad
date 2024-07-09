@@ -2,7 +2,7 @@
 
 extern void R_GLDebug_Callback_ARB(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const GLvoid *userParam);
 
-void R_InitExtensions(void)
+void R_InitExtensions( void )
 {
 #ifdef _NOMAD_DEBUG
 #define NGL( ret, name, ... ) n ## name = (PFN ## name) ri.GL_GetProcAddress(#name);
@@ -74,6 +74,23 @@ void R_InitExtensions(void)
     }
 
     ri.Cvar_Set( "r_arb_sync", va( "%i", glContext.ARB_sync ) );
+
+    //
+    // ARB_pixel_buffer_object
+    //
+    ext = "GL_ARB_pixel_buffer_object";
+    glContext.ARB_pixel_buffer_object = qfalse;
+    if ( NGL_VERSION_ATLEAST( 4, 4 ) || R_HasExtension( ext ) ) {
+        glContext.ARB_pixel_buffer_object = r_arb_pixel_buffer_object->i;
+
+        if ( r_arb_pixel_buffer_object->i ) {
+            ri.Printf( PRINT_INFO, result[ EXT_IGNORE ], ext );
+        } else {
+            ri.Printf( PRINT_INFO, result[ EXT_USING ], ext );
+        }
+    } else {
+        ri.Printf( PRINT_INFO, result[ EXT_NOTFOUND ], ext );
+    }
 
     //
     // ARB_shader_storage_buffer_object

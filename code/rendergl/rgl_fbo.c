@@ -459,6 +459,19 @@ void FBO_Init( void )
 		ri.Cvar_Set( "r_multisampleAmount", va( "%i", multisample ) );
 	}
 
+	if ( glContext.ARB_pixel_buffer_object ) {
+		ri.Printf( PRINT_INFO, "Allocating pixel buffer object for framebuffer data streaming...\n" );
+
+		nglGenBuffers( 2, rg.pixelPackBuffer );
+		nglBindBuffer( GL_PIXEL_PACK_BUFFER, rg.pixelPackBuffer[0] );
+		nglBufferData( GL_PIXEL_PACK_BUFFER, width * height * 4, NULL, GL_STREAM_DRAW );
+		nglBindBuffer( GL_PIXEL_PACK_BUFFER, 0 );
+
+		nglBindBuffer( GL_PIXEL_PACK_BUFFER, rg.pixelPackBuffer[1] );
+		nglBufferData( GL_PIXEL_PACK_BUFFER, width * height * 4, NULL, GL_STREAM_DRAW );
+		nglBindBuffer( GL_PIXEL_PACK_BUFFER, 0 );
+	}
+
 	if ( multisample && r_multisampleType->i >= AntiAlias_2xMSAA && r_multisampleType->i <= AntiAlias_32xMSAA ) {
 		rg.renderFbo = FBO_Create( "_render", width, height );
 		FBO_CreateBuffer( rg.renderFbo, hdrFormat, 0, multisample );
@@ -600,6 +613,10 @@ void FBO_Shutdown( void )
 		if ( fbo->frameBuffer ) {
 			nglDeleteFramebuffers( 1, &fbo->frameBuffer );
 		}
+	}
+
+	if ( glContext.ARB_pixel_buffer_object ) {
+		nglDeleteBuffers( 2, rg.pixelPackBuffer );
 	}
 }
 
@@ -759,10 +776,28 @@ void FBO_FastBlit( fbo_t *src, ivec4_t srcBox, fbo_t *dst, ivec4_t dstBox, int b
 
 	GL_BindFramebuffer( GL_READ_FRAMEBUFFER, srcFb );
 	GL_BindFramebuffer( GL_DRAW_FRAMEBUFFER, dstFb );
-	nglBlitFramebuffer( srcBoxFinal[0], srcBoxFinal[1], srcBoxFinal[2], srcBoxFinal[3],
-	                      dstBoxFinal[0], dstBoxFinal[1], dstBoxFinal[2], dstBoxFinal[3],
-						  buffers, filter );
+	if ( glContext.ARB_pixel_buffer_object ) {
+		GLubyte *src;
 
+		rg.pixelPackBufferIndex = ( rg.pixelPackBufferIndex + 1 ) % 2;
+		rg.pixelPackBufferNextIndex = ( rg.pixelPackBufferIndex + 1 ) % 2;
+
+		nglBindBuffer( GL_PIXEL_PACK_BUFFER, rg.pixelPackBuffer[ rg.pixelPackBufferIndex ] );
+		nglReadPixels( 0, 0, dstBoxFinal[0], dstBoxFinal[1], GL_RGBA, GL_UNSIGNED_BYTE, NULL );
+		nglBindBuffer( GL_PIXEL_PACK_BUFFER, 0 );
+
+		nglBindBuffer( GL_PIXEL_PACK_BUFFER, rg.pixelPackBuffer[ rg.pixelPackBufferNextIndex ] );
+		src = (GLubyte *)nglMapBuffer( GL_PIXEL_PACK_BUFFER, GL_READ_ONLY );
+		if ( src ) {
+			nglUnmapBuffer( GL_PIXEL_PACK_BUFFER );
+		}
+		nglBindBuffer( GL_PIXEL_PACK_BUFFER, 0 );
+	}
+	else {
+		nglBlitFramebuffer( srcBoxFinal[0], srcBoxFinal[1], srcBoxFinal[2], srcBoxFinal[3],
+		                      dstBoxFinal[0], dstBoxFinal[1], dstBoxFinal[2], dstBoxFinal[3],
+							  buffers, filter );
+	}
 	GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
 	glState.currentFbo = NULL;
 }

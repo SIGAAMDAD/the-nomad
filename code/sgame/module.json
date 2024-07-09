@@ -4,6 +4,10 @@
     "Description": "nomadmain is the official module for The Nomad",
     "DependedModules": [],
     "IsDynamic": false,
+    "IncludePaths": [
+        "gamedata/modules/hellbreaker/",
+        "gamedata/modules/"
+    ],
     "SubModules": [
         "main.as"
     ],

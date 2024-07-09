@@ -10,7 +10,8 @@
 			"SpriteOffsetX": 0,
 			"SpriteOffsetY": 0,
 			"Width": 0.9,
-			"Height": 0.9
+			"Height": 0.9,
+			"PickupSfx": "sfx/misc/getpw.wav"
 		},
 		{
 			"Type": "Powerup",
@@ -22,7 +23,8 @@
 			"SpriteOffsetX": 0,
 			"SpriteOffsetY": 0,
 			"Width": 0.9,
-			"Height": 0.9
+			"Height": 0.9,
+			"PickupSfx": "sfx/misc/getpw.wav"
 		},
 		{
 			"Type": "Consumable",
@@ -33,7 +35,8 @@
 			"SpriteOffsetX": 0,
 			"SpriteOffsetY": 0,
 			"Width": 0.9,
-			"Height": 0.9
+			"Height": 0.9,
+			"PickupSfx": "sfx/misc/getitem.ogg"
 		},
 		{
 			"Type": "Consumable",
@@ -43,7 +46,8 @@
 			"SpriteOffsetX": 0,
 			"SpriteOffsetY": 0,
 			"Width": 0.9,
-			"Height": 0.9
+			"Height": 0.9,
+			"PickupSfx": "sfx/misc/getitem.ogg"
 		},
 		{
 			"Type": "Consumable",
@@ -53,7 +57,8 @@
 			"SpriteOffsetX": 0,
 			"SpriteOffsetY": 0,
 			"Width": 0.9,
-			"Height": 0.9
+			"Height": 0.9,
+			"PickupSfx": "sfx/misc/getitem.ogg"
 		},
 		{
 			"Type": "Consumable",
@@ -63,7 +68,8 @@
 			"SpriteOffsetX": 0,
 			"SpriteOffsetY": 0,
 			"Width": 0.9,
-			"Height": 0.9
+			"Height": 0.9,
+			"PickupSfx": "sfx/misc/getitem.ogg"
 		},
 		{
 			"Type": "Consumable",
@@ -73,7 +79,8 @@
 			"SpriteOffsetX": 0,
 			"SpriteOffsetY": 0,
 			"Width": 0.9,
-			"Height": 0.9
+			"Height": 0.9,
+			"PickupSfx": "sfx/misc/getitem.ogg"
 		}
 	]
 }

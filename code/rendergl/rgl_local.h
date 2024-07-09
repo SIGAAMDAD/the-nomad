@@ -72,7 +72,7 @@ typedef uint32_t glIndex_t;
 #define MAX_DRAW_INDICES (MAX_INT/sizeof(glIndex_t))
 
 // per drawcall batch
-#define MAX_BATCH_QUADS (1024*1024)
+#define MAX_BATCH_QUADS (10000)
 #define MAX_BATCH_VERTICES (MAX_BATCH_QUADS*4)
 #define MAX_BATCH_INDICES (MAX_BATCH_QUADS*6)
 
@@ -154,6 +154,7 @@ typedef struct
     qboolean ARB_shader_storage_buffer_object;
     qboolean NV_framebuffer_multisample_coverage;
     qboolean ARB_sample_shading;
+    qboolean ARB_pixel_buffer_object;
 } glContext_t;
 
 typedef struct {
@@ -1251,6 +1252,10 @@ typedef struct
 	float sawToothTable[FUNCTABLE_SIZE];
 	float inverseSawToothTable[FUNCTABLE_SIZE];
     qboolean vertexLightingAllowed;
+
+    GLuint pixelPackBuffer[2];
+    int pixelPackBufferIndex;
+    int pixelPackBufferNextIndex;
 } renderGlobals_t;
 
 extern renderGlobals_t rg;
@@ -1474,6 +1479,7 @@ extern cvar_t *r_imageUpsample;
 extern cvar_t *r_imageUpsampleMaxSize;
 
 // OpenGL extensions
+extern cvar_t *r_arb_pixel_buffer_object;
 extern cvar_t *r_arb_texture_compression;
 extern cvar_t *r_arb_framebuffer_object;
 extern cvar_t *r_arb_vertex_array_object;

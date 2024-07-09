@@ -14,8 +14,6 @@
 #include "scriptlib/scriptarray.h"
 #include "scriptlib/scriptdictionary.h"
 #include "scriptlib/scriptany.h"
-#define JEMALLOC_NO_RENAME
-#include <jemalloc/jemalloc.h>
 
 moduleImport_t moduleImport;
 
@@ -584,6 +582,7 @@ CModuleLib::CModuleLib( void )
     const char *path;
     char **fileList;
     uint64_t nFiles, i;
+    int error;
 
     if ( s_pModuleInstance && s_pModuleInstance->m_pEngine ) {
         return;
@@ -625,7 +624,11 @@ CModuleLib::CModuleLib( void )
     }
     m_pScriptBuilder->SetIncludeCallback( Module_IncludeCallback_f, NULL );
 
-    m_pModule = m_pEngine->GetModule( "GlobalModule", asGM_ALWAYS_CREATE );
+    if ( ( error = g_pModuleLib->GetScriptBuilder()->StartNewModule( g_pModuleLib->GetScriptEngine(), "GlobalModule" ) ) != asSUCCESS ) {
+        N_Error( ERR_DROP, "CModuleHandle::CModuleHandle: failed to start module 'GlobalModule' -- %s", AS_PrintErrorString( error ) );
+    }
+
+    m_pModule = m_pEngine->GetModule( "GlobalModule", asGM_CREATE_IF_NOT_EXISTS );
     Assert( m_pModule );
 
     m_pContext = m_pEngine->CreateContext();
@@ -667,6 +670,25 @@ CModuleLib::CModuleLib( void )
         m_pLoadList[i].m_pHandle->IsValid()->BindAllImportedFunctions();
     }
     */
+
+    try {
+        if ( ( error = g_pModuleLib->GetScriptBuilder()->BuildModule() ) != asSUCCESS ) {
+            N_Error( ERR_DROP, "Error building GlobalModule" );
+
+            // clean cache to get rid of any old and/or corrupt code
+            Cbuf_ExecuteText( EXEC_APPEND, "ml.clean_script_cache\n" );
+        }
+    } catch ( const std::exception& e ) {
+        Con_Printf( COLOR_RED "ERROR: std::exception thrown when compiling GlobalModule, %s\n", e.what() );
+        return;
+    }
+
+    for ( i = 0; i < m_nModuleCount; i++ ) {
+        m_pLoadList[i].m_pHandle->SaveToCache();
+        if ( !m_pLoadList[i].m_pHandle->InitCalls() ) {
+            Con_Printf( COLOR_YELLOW "WARNING: failed to initialize calling procs for module '%s'\n", m_pLoadList[i].m_szName );
+        }
+    }
 
     #undef CALL
 }

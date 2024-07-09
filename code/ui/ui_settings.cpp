@@ -52,9 +52,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define ID_AUDIO        2
 #define ID_CONTROLS     3
 #define ID_GAMEPLAY     4
-#define ID_TABLE        5
-#define ID_SETDEFAULTS  6
-#define ID_SAVECONFIG   7
+#define ID_MODS			5
+#define ID_TABLE        6
+#define ID_SETDEFAULTS  7
+#define ID_SAVECONFIG   8
 
 #define PRESET_LOW         0
 #define PRESET_NORMAL      1
@@ -237,6 +238,8 @@ typedef struct settingsMenu_s {
 	audioSettings_t audio;
 	controlsSettings_t controls;
 	gameplaySettings_t gameplay;
+
+	uint64_t currentModSettings;
 
 	char gpuMem0[64];
 	char gpuMem1[64];
@@ -1562,6 +1565,46 @@ static void GameplayMenu_Draw( void )
 			&s_settingsMenu->gameplay.pauseUnfocused, true );
 	}
 	ImGui::EndTable();
+}
+
+static void ModuleMenu_Draw( void )
+{
+	uint64_t i;
+	const char *name;
+	float scale;
+
+	scale = ImGui::GetFont()->Scale;
+
+	FontCache()->SetActiveFont( RobotoMono );
+
+	ImGui::SetCursorScreenPos( ImVec2( 0, 32 * ui->scale ) );
+    ImGui::BeginChild( ImGui::GetID( "SectionTree" ), ImVec2( 400 * ui->scale, 650 * ui->scale ), ImGuiChildFlags_None,
+        ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar
+        | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus );
+    FontCache()->SetActiveFont( RobotoMono );
+
+    ImGui::SeparatorText( "DATABASE" );
+    ImGui::SetWindowFontScale( ( scale * 1.8f ) * ui->scale );
+    for ( i = 0; i < g_pModuleLib->GetModCount(); i++ ) {
+    }
+    ImGui::EndChild();
+
+    ImGui::SetCursorScreenPos( ImVec2( 404 * ui->scale, 32 * ui->scale ) );
+    ImGui::BeginChild( ImGui::GetID( "EntryDraw" ), ImVec2( 700 * ui->scale, ( 768 - 64 ) * ui->scale ), ImGuiChildFlags_None,
+        MENU_DEFAULT_FLAGS );
+    if ( s_settingsMenu->currentModSettings ) {
+		name = g_pModuleLib->m_pModList[s_settingsMenu->currentModSettings].info->m_szName;
+
+        ImGui::SetWindowFontScale( scale * 1.5f );
+        FontCache()->SetActiveFont( AlegreyaSC );
+        ImGui::SeparatorText( name );
+		FontCache()->SetActiveFont( RobotoMono );
+		ImGui::SetWindowFontScale( scale * 1.0f );
+
+		g_pModuleLib->ModuleCall( g_pModuleLib->m_pModList[s_settingsMenu->currentModSettings].info, ModuleDrawConfiguration, 0 );
+    }
+    ImGui::EndChild();
+    ImGui::SetWindowFontScale( scale );
 }
 
 static void VideoMenu_Save( void )

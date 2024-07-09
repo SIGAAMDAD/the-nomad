@@ -1,12 +1,20 @@
 namespace TheNomad::SGame::InfoSystem {
+    class Phase {
+    };
+
     class BossInfo : InfoLoader {
         BossInfo() {
         }
 
-        bool Load( json@ json ) {
+        bool Load( json@ data ) {
+            if ( !base.Load( @data ) ) {
+                return false;
+            }
+            
             return true;
         }
 
-        array<AttackInfo@> attacks;
+        TheNomad::SGame::MobObject@ data = null;
+        MobInfo@ base = null;
     };
 };

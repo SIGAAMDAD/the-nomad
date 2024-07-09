@@ -64,18 +64,18 @@ const UtlString trivials = ",;\n\r\t [{(]})";
 
 const Preprocessor::LexemType trivial_types[] =
 {
-	Preprocessor::COMMA, 
-	Preprocessor::SEMICOLON, 
-	Preprocessor::NEWLINE, 
-	Preprocessor::WHITESPACE, 
-	Preprocessor::WHITESPACE, 
-	Preprocessor::WHITESPACE, 
-	Preprocessor::OPEN, 
-	Preprocessor::OPEN, 
-	Preprocessor::OPEN,
-	Preprocessor::CLOSE, 
-	Preprocessor::CLOSE, 
-	Preprocessor::CLOSE
+	Preprocessor::LEX_COMMA, 
+	Preprocessor::LEX_SEMICOLON, 
+	Preprocessor::LEX_NEWLINE, 
+	Preprocessor::LEX_WHITESPACE, 
+	Preprocessor::LEX_WHITESPACE, 
+	Preprocessor::LEX_WHITESPACE, 
+	Preprocessor::LEX_OPEN, 
+	Preprocessor::LEX_OPEN, 
+	Preprocessor::LEX_OPEN,
+	Preprocessor::LEX_CLOSE, 
+	Preprocessor::LEX_CLOSE, 
+	Preprocessor::LEX_CLOSE
 };
 
 static bool searchString(UtlString str, char in)
@@ -91,7 +91,7 @@ static bool isHex(char in) { return searchString(hexnumbers,in); }
 
 static char* parseIdentifier(char* start, char* end, Preprocessor::Lexem& out)
 {
-	out.type = Preprocessor::IDENTIFIER;
+	out.type = Preprocessor::LEX_IDENTIFIER;
 	out.value += *start;
 	while(true)
 	{
@@ -110,7 +110,7 @@ static char* parseIdentifier(char* start, char* end, Preprocessor::Lexem& out)
 
 static char* parseStringLiteral(char* start, char* end, Preprocessor::Lexem& out)
 {
-	out.type = Preprocessor::STRING;
+	out.type = Preprocessor::LEX_STRING;
 	out.value += *start;
 	while(true)
 	{
@@ -133,7 +133,7 @@ static char* parseCharacterLiteral(char* start, char* end, Preprocessor::Lexem& 
 {
 	++start;
 	if (start == end) return start;
-	out.type = Preprocessor::NUMBER;
+	out.type = Preprocessor::LEX_NUMBER;
 	if (*start == '\\')
 	{
 		++start;
@@ -194,7 +194,7 @@ static char* parseHexConstant(char* start, char* end, Preprocessor::Lexem& out)
 
 static char* parseNumber(char* start, char* end, Preprocessor::Lexem& out)
 {
-	out.type = Preprocessor::NUMBER;
+	out.type = Preprocessor::LEX_NUMBER;
 	out.value += *start;
 	while(true)
 	{
@@ -214,7 +214,7 @@ static char* parseNumber(char* start, char* end, Preprocessor::Lexem& out)
 
 static char* parseBlockComment(char* start, char* end, Preprocessor::Lexem& out)
 {
-	out.type = Preprocessor::COMMENT;
+	out.type = Preprocessor::LEX_COMMENT;
 	out.value += "/*";
 
 	int newlines = 0;
@@ -253,7 +253,7 @@ static char* parseBlockComment(char* start, char* end, Preprocessor::Lexem& out)
 
 static char* parseLineComment(char* start, char* end, Preprocessor::Lexem& out)
 {
-	out.type = Preprocessor::COMMENT;
+	out.type = Preprocessor::LEX_COMMENT;
 	out.value += "//";
 	
 	while(true)
@@ -282,7 +282,7 @@ static char* parseLexem(char* start, char* end, Preprocessor::Lexem& out)
 	if (current_char == '#')
 	{
 		start = parseIdentifier(start,end,out);
-		out.type = Preprocessor::PREPROCESSOR;
+		out.type = Preprocessor::LEX_PREPROCESSOR;
 		return start;
 	}
 	
@@ -301,7 +301,7 @@ static char* parseLexem(char* start, char* end, Preprocessor::Lexem& out)
 	}
 				
 	out.value = current_char;
-	out.type = Preprocessor::IGNORE;
+	out.type = Preprocessor::LEX_IGNORE;
 	return ++start;
 }
 
@@ -314,8 +314,8 @@ static int lex(char* begin, char* end, UtlList<Preprocessor::Lexem>& results)
 	{
 		Preprocessor::Lexem current_lexem;
 		begin = parseLexem(begin,end,current_lexem);
-		if (current_lexem.type != Preprocessor::WHITESPACE &&
-			current_lexem.type != Preprocessor::COMMENT ) results.push_back(current_lexem);
+		if (current_lexem.type != Preprocessor::LEX_WHITESPACE &&
+			current_lexem.type != Preprocessor::LEX_COMMENT ) results.push_back(current_lexem);
 		if (begin == end) return 0;
 	}
 };
@@ -325,7 +325,7 @@ static void printLexemList( Preprocessor::LexemList& out, UtlVector<char>& desti
 	bool need_a_space = false;
 	for (Preprocessor::LLITR ITR = out.begin(); ITR != out.end(); ++ITR)
 	{
-		if (ITR->type == Preprocessor::IDENTIFIER || ITR->type == Preprocessor::NUMBER) 
+		if (ITR->type == Preprocessor::LEX_IDENTIFIER || ITR->type == Preprocessor::LEX_NUMBER) 
 		{
 			if (need_a_space) destination.emplace_back( ' ' );
 			need_a_space = true;
@@ -358,7 +358,7 @@ static void setLineMacro(Preprocessor::DefineTable& define_table, unsigned int l
 {
 	Preprocessor::DefineEntry def;
 	Preprocessor::Lexem l;
-	l.type = Preprocessor::NUMBER;
+	l.type = Preprocessor::LEX_NUMBER;
 
     l.value.sprintf( "%u", line );
     def.lexems.emplace_back( l );
@@ -369,7 +369,7 @@ static void setFileMacro(Preprocessor::DefineTable& define_table, const UtlStrin
 {
 	Preprocessor::DefineEntry def;
 	Preprocessor::Lexem l;
-	l.type = Preprocessor::STRING;
+	l.type = Preprocessor::LEX_STRING;
 	l.value = va( "\"%s\"", file.c_str() );
 	def.lexems.emplace_back(l);
 	define_table["__FILE__"] = def;
@@ -515,11 +515,11 @@ Preprocessor::LLITR Preprocessor::parseStatement(Preprocessor::LLITR ITR, Prepro
 	while (ITR != END)
 	{
 		if (ITR->value == "," && depth == 0) return ITR;
-		if (ITR->type == Preprocessor::CLOSE && depth == 0) return ITR;
-		if (ITR->type == Preprocessor::SEMICOLON && depth == 0) return ITR;
+		if (ITR->type == Preprocessor::LEX_CLOSE && depth == 0) return ITR;
+		if (ITR->type == Preprocessor::LEX_SEMICOLON && depth == 0) return ITR;
 		dest.push_back(*ITR);
-		if (ITR->type == Preprocessor::OPEN) depth++;
-		if (ITR->type == Preprocessor::CLOSE) {
+		if (ITR->type == Preprocessor::LEX_OPEN) depth++;
+		if (ITR->type == Preprocessor::LEX_CLOSE) {
 			if (depth == 0) PrintErrorMessage("Mismatched braces while parsing statement.");
 			depth--;
 		}
@@ -620,7 +620,7 @@ void Preprocessor::parseDefine(Preprocessor::DefineTable& define_table, Preproce
 		return;
 	}
 	Lexem name = *def_lexems.begin();
-	if (name.type != Preprocessor::IDENTIFIER) 
+	if (name.type != Preprocessor::LEX_IDENTIFIER) 
 	{
 		PrintErrorMessage("Define's name was not an identifier.");
 		return;
@@ -631,7 +631,7 @@ void Preprocessor::parseDefine(Preprocessor::DefineTable& define_table, Preproce
 
 	if (!def_lexems.empty())
 	{
-		if (def_lexems.begin()->type == Preprocessor::PREPROCESSOR && def_lexems.begin()->value == "#")
+		if (def_lexems.begin()->type == Preprocessor::LEX_PREPROCESSOR && def_lexems.begin()->value == "#")
 		{
 			//Macro has arguments
 			def_lexems.pop_front();
@@ -650,7 +650,7 @@ void Preprocessor::parseDefine(Preprocessor::DefineTable& define_table, Preproce
 			int num_args = 0;
 			while(!def_lexems.empty() && def_lexems.begin()->value != ")")
 			{
-				if (def_lexems.begin()->type != Preprocessor::IDENTIFIER) 
+				if (def_lexems.begin()->type != Preprocessor::LEX_IDENTIFIER) 
 				{
 					PrintErrorMessage("Expected identifier.");
 					return;
@@ -698,8 +698,8 @@ Preprocessor::LLITR Preprocessor::parseIfDef(Preprocessor::LLITR ITR, Preprocess
 	bool found_end = false;
 	while (ITR != END)
 	{
-		if (ITR->type == Preprocessor::NEWLINE) newlines++;
-		else if (ITR->type == Preprocessor::PREPROCESSOR)
+		if (ITR->type == Preprocessor::LEX_NEWLINE) newlines++;
+		else if (ITR->type == Preprocessor::LEX_PREPROCESSOR)
 		{
 			if (ITR->value == "#endif" && depth == 0) 
 			{
@@ -720,7 +720,7 @@ Preprocessor::LLITR Preprocessor::parseIfDef(Preprocessor::LLITR ITR, Preprocess
 	while (newlines > 0)
 	{
 		--ITR;
-		ITR->type = Preprocessor::NEWLINE;
+		ITR->type = Preprocessor::LEX_NEWLINE;
 		ITR->value = "\n";
 		--newlines;
 	}
@@ -753,7 +753,7 @@ void Preprocessor::parsePragma(Preprocessor::LexemList& args)
 	UtlString p_args;
 	if (!args.empty())
 	{
-		if (args.begin()->type != Preprocessor::STRING) 
+		if (args.begin()->type != Preprocessor::LEX_STRING) 
 			PrintErrorMessage("Pragma parameter should be a string literal.");
 		p_args = removeQuotes(args.begin()->value);
 		args.pop_front();
@@ -811,17 +811,17 @@ void Preprocessor::recursivePreprocess(
 	Preprocessor::LexemList::iterator END = lexems.end();
 	while ( ITR != END )
 	{
-		if (ITR->type == Preprocessor::NEWLINE)
+		if (ITR->type == Preprocessor::LEX_NEWLINE)
 		{
 			current_line++;
 			lines_this_file++;
 			++ITR;
 			setLineMacro(define_table,lines_this_file);
 		}
-		else if (ITR->type == Preprocessor::PREPROCESSOR && ITR->value.find( "#include" ) == UtlString::npos )
+		else if (ITR->type == Preprocessor::LEX_PREPROCESSOR && ITR->value.find( "#include" ) == UtlString::npos )
 		{
 			Preprocessor::LLITR start_of_line = ITR;
-			Preprocessor::LLITR end_of_line = findLexem(ITR,END,NEWLINE);
+			Preprocessor::LLITR end_of_line = findLexem(ITR,END,LEX_NEWLINE);
 			Preprocessor::LexemList directive(start_of_line,end_of_line);
 			ITR = lexems.erase(start_of_line,end_of_line);
 			
@@ -894,7 +894,7 @@ void Preprocessor::recursivePreprocess(
 				PrintErrorMessage("Unknown directive.");
 			}
 		} 
-		else if (ITR->type == IDENTIFIER)
+		else if (ITR->type == LEX_IDENTIFIER)
 		{ 
 			ITR = expandDefine(ITR,END,lexems,define_table);
 		} 

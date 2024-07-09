@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "n_shared.h"
 #ifdef __cplusplus
 #include <glm/glm.hpp>
 #endif

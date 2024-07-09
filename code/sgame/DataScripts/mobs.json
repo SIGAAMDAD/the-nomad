@@ -79,6 +79,9 @@
 			"MoveSfx": "sfx/mobs/merc_move.ogg",
 			"Flags": "None",
 			"Speed": [ 1.0, 1.0, 2.0 ],
+			"Detection": {
+				
+			},
 			"AttackData": [
 				{
 					"Id": "MOB_MERC_ATTACK_SLAP",

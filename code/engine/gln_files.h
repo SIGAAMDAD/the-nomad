@@ -29,7 +29,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 * GLN_FILES: these definitions must stay the same in any "The Nomad" extension or project
 */
 
-#include <stdint.h>
 #include <stdlib.h>
 
 typedef float vec_t;
