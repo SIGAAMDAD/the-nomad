@@ -60,13 +60,13 @@ void InitCvars() {
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_QuickShotTime, "sgame_QuickShotTime", "100", CVAR_TEMP, false );
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_QuickShotMaxRange, "sgame_QuickShotMaxRange", "40", CVAR_TEMP, false );
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_PlayerHealBase, "sgame_PlayerHealBase", "0.05", CVAR_SAVE, true );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_BaseSpeed, "sgame_BaseSpeed", "1.5", CVAR_SAVE, true );
+	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_BaseSpeed, "sgame_BaseSpeed", "1.10", CVAR_SAVE, true );
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_GroundFriction, "sgame_GroundFriction", "1.0", CVAR_SAVE, true );
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_GroundFriction, "sgame_WaterFriction", "2.5", CVAR_SAVE, true );
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_AirFriction, "sgame_AirFriction", "0.5", CVAR_SAVE, true );
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_MaxSpeed, "sgame_MaxSpeed", "0.2", CVAR_TEMP, false );
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_ToggleHUD, "sgame_ToggleHUD", "1", CVAR_SAVE, true );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_Friction, "sgame_Friction", "0.5", CVAR_TEMP, true );
+	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_Friction, "sgame_Friction", "0.9", CVAR_TEMP, true );
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_Gravity, "sgame_Gravity", "0.9", CVAR_TEMP, true );
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_PlayerWidth, "sgame_PlayerWidth", "0.5", CVAR_TEMP, false );
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_PlayerHeight, "sgame_PlayerHeight", "2.0", CVAR_TEMP, false );

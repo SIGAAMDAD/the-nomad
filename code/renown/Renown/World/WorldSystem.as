@@ -12,6 +12,11 @@ namespace TheNomad::RenownSystem {
         void OnLevelEnd() {
         }
 
+        private void LoadBiomes() {
+        }
+        private void LoadSeasons() {
+        }
+
         private array<Biome@> m_Regions;
         private uint m_nSeason = 0;
     };

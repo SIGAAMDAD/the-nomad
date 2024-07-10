@@ -6,6 +6,18 @@ void Assert( const bool condition, const string& in msg ) {
 }
 
 namespace TheNomad::Util {
+	json@ LoadJSonFile( const string& in fileName ) {
+		json@ data;
+
+		@data = json();
+		if ( !data.ParseFile( fileName ) ) {
+			ConsoleWarning( "failed to load json file '" + fileName + "'\n" );
+			return null;
+		}
+
+		return @data;
+	}
+
 	void HapticRumble( uint nPlayerIndex, float nStrength, uint nTime ) {
 		TheNomad::Engine::CmdExecuteCommand( "in_haptic_rumble " + nPlayerIndex + " " + formatFloat( nStrength ) + " " + nTime +  "\n" );
 	}

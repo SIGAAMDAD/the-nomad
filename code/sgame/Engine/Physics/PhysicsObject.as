@@ -69,6 +69,7 @@ namespace TheNomad::Engine::Physics {
 		}
 		
 		void ApplyFriction() {
+			/*
 			vec3 vec;
 			float speed, newspeed, control;
 			float drop;
@@ -98,10 +99,21 @@ namespace TheNomad::Engine::Physics {
 				newspeed = 0.0f;
 			}
 			newspeed /= speed;
-			
+
 			m_Velocity[0] = m_Velocity[0] * newspeed;
 			m_Velocity[1] = m_Velocity[1] * newspeed;
 			m_Velocity[2] = m_Velocity[2] * newspeed;
+			*/
+			if ( m_Velocity[0] < 0.0f ) {
+				m_Velocity[0] = TheNomad::Util::Clamp( m_Velocity[0] + TheNomad::SGame::sgame_Friction.GetFloat(), m_Velocity[0], 0.0f );
+			} else if ( m_Velocity[0] > 0.0f ) {
+				m_Velocity[0] = TheNomad::Util::Clamp( m_Velocity[0] - TheNomad::SGame::sgame_Friction.GetFloat(), 0.0f, m_Velocity[0] );
+			}
+			if ( m_Velocity[1] < 0.0f ) {
+				m_Velocity[1] = TheNomad::Util::Clamp( m_Velocity[1] + TheNomad::SGame::sgame_Friction.GetFloat(), m_Velocity[1], 0.0f );
+			} else if ( m_Velocity[1] > 0.0f ) {
+				m_Velocity[1] = TheNomad::Util::Clamp( m_Velocity[1] - TheNomad::SGame::sgame_Friction.GetFloat(), 0.0f, m_Velocity[1] );
+			}
 		}
 		
 		void SetWaterLevel() {

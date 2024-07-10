@@ -68,8 +68,8 @@ namespace TheNomad::SGame {
 			
 //			if ( forward != 0.0f && side != 0.0f ) {
 //				if ( ( move_toggle % ( 16 + ( TheNomad::Engine::CvarVariableInteger( "com_maxfps" ) / 10 ) ) ) == 0.0f ) {
-					accel.y += forward * sgame_BaseSpeed.GetFloat();
-					accel.x += side * sgame_BaseSpeed.GetFloat();
+					accel.y += sgame_BaseSpeed.GetFloat() * forward;
+					accel.x += sgame_BaseSpeed.GetFloat() * side;
 //				}
 //			}
 
@@ -384,20 +384,14 @@ namespace TheNomad::SGame {
 		}
 
 		void KeyMove() {
-			float base = 1.10f;
+			float base = 1.25f;
 
 			forward = 0.0f;
 			side = 0.0f;
 			up = 0.0f;
-
-			if ( ( m_EntityData.key_MoveEast.msec != 0 || m_EntityData.key_MoveWest.msec != 0 )
-				&& ( m_EntityData.key_MoveNorth.msec != 0 || m_EntityData.key_MoveSouth.msec != 0 ) )
-			{
-				base = 1.7f;
-			}
 			
-			side += base * KeyState( m_EntityData.key_MoveEast );
-			side -= base * KeyState( m_EntityData.key_MoveWest );
+			side += KeyState( m_EntityData.key_MoveEast ) * base;
+			side -= KeyState( m_EntityData.key_MoveWest ) * base;
 			
 			up += 1.25f * KeyState( m_EntityData.key_Jump );
 			
