@@ -108,6 +108,42 @@ static void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL G_RefPrintf( int leve
     };
 }
 
+#if !defined(IMGUI_DISABLE_FILE_FUNCTIONS)
+ImFileHandle ImFileOpen(const char* filename, const char* mode) {
+    if ( mode[0] == 'w' ) {
+        if ( mode[1] == '+' || mode[1] == 'r' ) {
+            return FS_FOpenRW( filename );
+        } else if ( mode[1] == 'a' ) {
+            return FS_FOpenAppend( filename );
+        } else {
+            return FS_FOpenWrite( filename );
+        }
+    } else if ( mode[0] == 'r' ) {
+        if ( mode[1] == '+' || mode[1] == 'w' ) {
+            return FS_FOpenRW( filename );
+        } else {
+            return FS_FOpenRead( filename );
+        }
+    } else if ( mode[0] == 'a' ) {
+        return FS_FOpenAppend( filename );
+    }
+    return FS_FOpenAppend( filename );
+}
+bool ImFileClose( ImFileHandle file ) {
+    FS_FClose( file );
+    return true;
+}
+uint64_t ImFileGetSize( ImFileHandle file ) {
+    return FS_FileLength( file );
+}
+uint64_t ImFileRead(void* data, uint64_t size, uint64_t count, ImFileHandle file) {
+    return FS_Read( data, size * count, file );
+}
+uint64_t ImFileWrite(const void* data, uint64_t size, uint64_t count, ImFileHandle file) {
+    return FS_Write( data, size * count, file );
+}
+#endif
+
 static void *G_RefMalloc( uint64_t size ) {
     return Z_Malloc( size, TAG_RENDERER );
 }
@@ -224,8 +260,6 @@ static void G_RefImGuiInit( void *shaderData, const void *importData ) {
     IMGUI_CHECKVERSION();
     ImGui::SetAllocatorFunctions( (ImGuiMemAllocFunc)G_RefImGuiMalloc, (ImGuiMemFreeFunc)G_RefImGuiFree );
     ImGui::CreateContext();
-
-    ImGui::LogToFile( 4, LOG_DIR "/imgui_log.txt" );
 
     nLength = FS_LoadFile( LOG_DIR "/imgui.ini", &f.v );
     if ( !nLength || !f.v ) {

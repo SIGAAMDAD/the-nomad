@@ -1,6 +1,7 @@
 #include "SGame/InfoSystem/InfoDataManager.as"
 #include "SGame/InfoSystem/WeaponInfo.as"
 
+
 namespace TheNomad::SGame {
     class WeaponObject : EntityObject {
 		WeaponObject() {
@@ -222,6 +223,13 @@ namespace TheNomad::SGame {
 			m_Link.m_Bounds.m_nWidth = m_Info.width;
 			m_Link.m_Bounds.m_nHeight = m_Info.height;
 			m_Link.m_Bounds.MakeBounds( origin );
+		}
+
+		InfoSystem::ItemInfo@ GetItemInfo() {
+			return @m_Info;
+		}
+		const InfoSystem::ItemInfo@ GetItemInfo() const {
+			return @m_Info;
 		}
 
 		private InfoSystem::WeaponInfo@ m_Info = null;

@@ -158,13 +158,15 @@ void CModuleLib::LoadModule( const char *pModule )
             Con_Printf( COLOR_RED "ERROR: failed to load module configuration for \"%s\"!\n", pModule );
             return;
         } else {
-            parse = nlohmann::json::parse( f.b );
+            parse = nlohmann::json::parse( f.b, f.b + length );
         }
         FS_FreeFile( f.v );
         
     } catch ( const nlohmann::json::exception& e ) {
         Con_Printf( COLOR_RED "ERROR: failed to load module configuration for \"%s\"!\n\tid: %i\n\tmessage: %s\n", pModule, e.id, e.what() );
-        FS_FreeFile( f.v );
+        if ( f.v ) {
+            FS_FreeFile( f.v );
+        }
         return;
     }
 
@@ -430,34 +432,6 @@ bool CModuleLib::AddDefaultProcs( void ) const {
     RegisterScriptHandle( m_pEngine );
     RegisterScriptAny( m_pEngine );
     RegisterScriptParser( m_pEngine );
-
-    CheckASCall( g_pModuleLib->GetScriptEngine()->SetDefaultNamespace( "TheNomad::GameSystem" ) );
-    CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterface( "GameObject" ) );
-    CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterfaceMethod( "GameObject",
-        "void OnInit()" ) );
-    CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterfaceMethod( "GameObject",
-        "void OnShutdown()" ) );
-    CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterfaceMethod( "GameObject",
-        "void OnLevelStart()" ) );
-    CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterfaceMethod( "GameObject",
-        "void OnLevelEnd()" ) );
-    CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterfaceMethod( "GameObject",
-        "void OnRunTic()" ) );
-//  CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterfaceMethod( "GameObject",
-//      "void OnKeyEvent( uint key, uint down )" ) );
-//  CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterfaceMethod( "GameObject",
-//      "void OnMouseEvent( uint dx, uint dy )" ) );
-    CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterfaceMethod( "GameObject",
-        "void OnRenderScene()" ) );
-    CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterfaceMethod( "GameObject",
-        "bool OnConsoleCommand( const string& in )" ) );
-    CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterfaceMethod( "GameObject",
-        "void OnLoad()" ) );
-    CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterfaceMethod( "GameObject",
-        "void OnSave() const" ) );
-    CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterfaceMethod( "GameObject",
-        "const string& GetName() const" ) );
-    CheckASCall( g_pModuleLib->GetScriptEngine()->SetDefaultNamespace( "" ) );
 
     RegisterScriptDictionary( m_pEngine );
     RegisterScriptMath( m_pEngine );

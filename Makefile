@@ -341,8 +341,6 @@ SRC=\
 	$(O)/rendercommon/imgui_tables.o \
 	$(O)/rendercommon/imgui_impl_sdl2.o \
 	$(O)/rendercommon/imgui_impl_opengl3.o \
-	$(O)/rendercommon/implot.o \
-	$(O)/rendercommon/implot_items.o \
 	\
 	$(O)/ui/ui_confirm.o \
 	$(O)/ui/ui_main.o \

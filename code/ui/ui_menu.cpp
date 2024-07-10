@@ -214,7 +214,7 @@ static void Arrow_Draw( menuarrow_t *arrow )
 {
 	Assert( arrow->generic.type == MTYPE_ARROW );
 
-	if ( ImGui::ArrowButton( arrow->generic.name, arrow->direction ) ) {
+	if ( ImGui::ArrowButton( arrow->generic.name, (ImGuiDir)arrow->direction ) ) {
 		if ( !( arrow->generic.flags & QMF_SILENT ) ) {
 			Snd_PlaySfx( ui->sfx_select );
 		}

@@ -74,6 +74,13 @@ namespace TheNomad::SGame {
 			m_Link.m_Bounds.MakeBounds( origin );
 		}
 
+		InfoSystem::ItemInfo@ GetItemInfo() {
+			return @m_Info;
+		}
+		const InfoSystem::ItemInfo@ GetItemInfo() const {
+			return @m_Info;
+		}
+
 		private InfoSystem::ItemInfo@ m_Info = null;
 		private EntityObject@ m_Owner = null; // for applying effects
 	};

@@ -22,6 +22,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "../engine/n_shared.h"
 #include "../engine/n_common.h"
+#define STB_SPRINTF_IMPLEMENTATION
+#include "../game/stb_sprintf.h"
 
 // undefined symbol: CPU_flags when compiling dlls
 #if defined(GDR_DLLCOMPILE) || defined(UI_HARD_LINKED) || defined(SGAME_HARD_LINKED)

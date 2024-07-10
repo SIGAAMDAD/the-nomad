@@ -2903,8 +2903,8 @@ void R_CreateBuiltinTextures( void )
 
 			rg.smaaEdgesImage = R_CreateImage( "*smaaEdgesImage", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_RGBA8 );
 			rg.smaaWeightsImage = R_CreateImage( "*smaaWeightsImage", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_RGBA8 );
-			rg.smaaAreaImage = R_FindImageFile( "textures/effects/SearchTex.jpg", IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE );
-			rg.smaaSearchImage = R_FindImageFile( "textures/effects/AreaTexDX10.jpg", IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE );
+			rg.smaaAreaImage = R_FindImageFile( "textures/effects/SearchTex.dds", IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE );
+			rg.smaaSearchImage = R_FindImageFile( "textures/effects/AreaTexDX10.dds", IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE );
 		}
 
 		if ( r_bloom->i && r_hdr->i ) {

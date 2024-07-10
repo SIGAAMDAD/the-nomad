@@ -1,3 +1,4 @@
+#include "GameSystem/GameObject.as"
 #include "GameSystem/SaveSystem/LoadSection.as"
 #include "GameSystem/SaveSystem/SaveSection.as"
 #include "Engine/UserInterface/FontCache.as"
@@ -41,8 +42,9 @@ namespace TheNomad::GameSystem {
 		void OnShutdown() {
 		}
 
-		bool OnConsoleCommand( const string& in cmd ) {
-			return false;
+		void OnPlayerDeath( int ) {
+		}
+		void OnCheckpointPassed( uint ) {
 		}
 
 		void OnLoad() {

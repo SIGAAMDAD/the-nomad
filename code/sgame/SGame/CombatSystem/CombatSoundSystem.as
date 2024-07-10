@@ -47,6 +47,10 @@ namespace TheNomad::SGame {
 		const string& GetName() const {
 			return "CombatSoundSystem";
 		}
+		void OnPlayerDeath( int ) {
+		}
+		void OnCheckpointPassed( uint ) {
+		}
 		
 		private float m_nMusicVolume  0.0f;
 		private uint m_nDeltaTime = 0;
@@ -54,5 +58,5 @@ namespace TheNomad::SGame {
 		private const LevelInfoData@ m_Current = null;
 	};
 	
-	CombatSoundSystem@ CombatSoundManager;
+	CombatSoundSystem@ CombatSoundManager = null;
 };

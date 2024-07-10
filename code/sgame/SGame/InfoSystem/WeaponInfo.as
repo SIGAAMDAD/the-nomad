@@ -1,17 +1,18 @@
 #include "SGame/InfoSystem/InfoDataManager.as"
 
 namespace TheNomad::SGame::InfoSystem {
-    class WeaponInfo : InfoLoader {
+    class WeaponInfo : ItemInfo {
 		WeaponInfo() {
 		}
 		
 		bool Load( json@ json ) {
-			string type;
-			string shader;
 			uint i;
 			array<json@> props;
 			string ammo;
-			
+			string str;
+			string type;
+			bool useSpriteSheet = false;
+
 			if ( !json.get( "Name", name ) ) {
 				ConsoleWarning( "invalid weapon info, missing variable 'Name'\n" );
 				return false;
@@ -21,12 +22,31 @@ namespace TheNomad::SGame::InfoSystem {
 				return false;
 			} else {
 				if ( !InfoManager.GetWeaponTypes().TryGetValue( type, this.type ) ) {
-					GameError( "invalid weapon info, Id \"" + type + "\" wasn't found" );
+					GameError( "invalid weapon info, Type \"" + type + "\" wasn't found" );
 				}
 			}
-			if ( !json.get( "MagSize", magSize ) ) {
-				ConsoleWarning( "invalid weapon info, missing variable 'MagSize'\n" );
+			if ( !json.get( "Effect", effect ) ) {
+				ConsoleWarning( "invalid weapon info, missing variable 'Effect'\n" );
 				return false;
+			}
+			json.get( "Cost", cost );
+			if ( !json.get( "PickupSfx", str ) ) {
+				ConsoleWarning( "invalid weapon info, missing variable 'PickupSfx'\n" );
+				return false;
+			} else {
+				pickupSfx = TheNomad::Engine::ResourceCache.GetSfx( str );
+			}
+			if ( !json.get( "UseSfx", str ) ) {
+				ConsoleWarning( "invalid weapon info, missing variable 'UseSfx'\n" );
+				return false;
+			} else {
+				useSfx = TheNomad::Engine::ResourceCache.GetSfx( str );
+			}
+			if ( !json.get( "EquipSfx", str ) ) {
+				ConsoleWarning( "invalid weapon info, missing variable 'EquipSfx'\n" );
+				return false;
+			} else {
+				equipSfx = TheNomad::Engine::ResourceCache.GetSfx( str );
 			}
 			if ( !json.get( "Width", width ) ) {
 				ConsoleWarning( "invalid weapon info, missing variable 'Width'\n" );
@@ -34,6 +54,19 @@ namespace TheNomad::SGame::InfoSystem {
 			}
 			if ( !json.get( "Height", height ) ) {
 				ConsoleWarning( "invalid weapon info, missing variable 'Height'\n" );
+				return false;
+			}
+			if ( !json.get( "Icon", str ) ) {
+				ConsoleWarning( "invalid weapon info, missing variable 'Icon'\n" );
+				return false;
+			} else {
+				iconShader = TheNomad::Engine::ResourceCache.GetShader( str );
+			}
+
+			TheNomad::GameSystem::GetString( name + "_DESC", description );
+
+			if ( !json.get( "MagSize", magSize ) ) {
+				ConsoleWarning( "invalid weapon info, missing variable 'MagSize'\n" );
 				return false;
 			}
 			if ( !json.get( "Damage", damage ) ) {
@@ -44,20 +77,12 @@ namespace TheNomad::SGame::InfoSystem {
 				ConsoleWarning( "invalid weapon info, missing variable 'Range'\n" );
 				return false;
 			}
-			if ( !json.get( "Type", type ) ) {
-				ConsoleWarning( "invalid weapon info, missing variable 'Type'\n" );
-				return false;
-			}
 			if ( !json.get( "WeaponProperties", props ) ) {
 				ConsoleWarning( "invalid weapon info, missing variable 'WeaponProperties'\n" );
 				return false;
 			}
 			if ( !json.get( "AmmoType", ammo ) ) {
 				ConsoleWarning( "invalid weapon info, missing variable 'AmmoType'\n" );
-				return false;
-			}
-			if ( !json.get( "Icon", shader ) ) {
-				ConsoleWarning( "invalid weapon info, missing variable 'Icon'\n" );
 				return false;
 			}
 
@@ -96,26 +121,15 @@ namespace TheNomad::SGame::InfoSystem {
 				ConsoleWarning( "invalid weapon info, WeaponProperties are invalid ( None, abide by physics pls ;) )\n" );
 				return false;
 			}
-
-			iconShader = TheNomad::Engine::ResourceCache.GetShader( shader );
 			
 			return true;
 		}
 
-		string name;
-		int iconShader = FS_INVALID_HANDLE;
-		uint type = 0;
 		float damage = 0.0f;
 		float range = 0.0f;
 		uint magSize = 0; // maximum shots before cooldown
 		AmmoType ammoType = AmmoType::Invalid; // ammo types allowed
 		WeaponProperty weaponProps = WeaponProperty::None;
 		WeaponType weaponType = WeaponType::NumWeaponTypes;
-		float width = 0.0f;
-		float height = 0.0f;
-
-		TheNomad::Engine::SoundSystem::SoundEffect useSfx;
-		TheNomad::Engine::SoundSystem::SoundEffect pickupSfx;
-		TheNomad::Engine::SoundSystem::SoundEffect equipSfx;
 	};
 };

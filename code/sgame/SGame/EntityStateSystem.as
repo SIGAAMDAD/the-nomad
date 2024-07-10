@@ -194,8 +194,9 @@ namespace TheNomad::SGame {
 		}
 		void OnRunTic() {
 		}
-		bool OnConsoleCommand( const string& in cmd ) {
-			return false;
+		void OnPlayerDeath( int ) {
+		}
+		void OnCheckpointPassed( uint ) {
 		}
 
 		private void ListStateCache_f() {

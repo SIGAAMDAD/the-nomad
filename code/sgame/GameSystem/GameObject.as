@@ -3,12 +3,19 @@ namespace TheNomad::GameSystem {
     interface GameObject {
 		void OnInit();
 		void OnShutdown();
-		void OnLoad();
-		void OnSave() const;
-		void OnRunTic();
+
 		void OnLevelStart();
 		void OnLevelEnd();
-		bool OnConsoleCommand( const string& in );
+
+		void OnLoad();
+		void OnSave() const;
+
+		void OnPlayerDeath( int nPlayerIndex );
+		void OnCheckpointPassed( uint nCheckpointIndex );
+
+		void OnRunTic();
+		void OnRenderScene();
+
 		const string& GetName() const;
 	};
 };

@@ -3,8 +3,6 @@
 
 #pragma once
 
-#ifndef Q3_VM
-
 /*
 Standard Library
 */
@@ -75,8 +73,6 @@ Dependencies
 #include <glm/gtx/type_trait.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-//#include <nlohmann/json.hpp>
-
 #define USING_EASY_PROFILER
 #include <easy/profiler.h>
 #endif
@@ -86,8 +82,9 @@ Dependencies
 
 #endif
 
-#ifndef Q3_VM
 // SDL2, I don't trust SDL3
+#ifdef USE_SDL3
+#else
 #include <SDL2/SDL_syswm.h>
 #include <SDL2/SDL_video.h>
 #include <SDL2/SDL_keyboard.h>
@@ -105,6 +102,4 @@ Dependencies
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_thread.h>
 #include <SDL2/SDL_mutex.h>
-#endif
-
 #endif

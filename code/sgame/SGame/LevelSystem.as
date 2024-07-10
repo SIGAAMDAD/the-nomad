@@ -103,13 +103,13 @@ namespace TheNomad::SGame {
 
 				data.m_nIndex = i;
 
-				@rankS = @info["RankS"];
-				@rankA = @info["RankA"];
-				@rankB = @info["RankB"];
-				@rankC = @info["RankC"];
-				@rankD = @info["RankD"];
-				@rankF = @info["RankF"];
-				@rankU = @info["RankU"];
+				@rankS = @info[ "RankS" ];
+				@rankA = @info[ "RankA" ];
+				@rankB = @info[ "RankB" ];
+				@rankC = @info[ "RankC" ];
+				@rankD = @info[ "RankD" ];
+				@rankF = @info[ "RankF" ];
+				@rankU = @info[ "RankU" ];
 
 				//
 				// all rank infos must be present
@@ -183,6 +183,7 @@ namespace TheNomad::SGame {
 		}
 		void OnRunTic() {
 			MapCheckpoint@ cp = null;
+			uint checkpointIndex = 0;
 
 			if ( GlobalState == GameState::StatsMenu ) {
 				m_RankData.Draw( true, m_nLevelTimer );
@@ -194,32 +195,40 @@ namespace TheNomad::SGame {
 			//
 			
 			// check if we are passing it
-			if ( ( @cp = @PlayerPassedCheckpoint() ) !is null ) {
+			if ( ( @cp = @PlayerPassedCheckpoint( checkpointIndex ) ) !is null ) {
 				m_PassedCheckpointSfx.Play();
-				cp.m_bPassed = true;
+				cp.Activate( m_nLevelTimer );
 
 				DebugPrint( "Setting checkpoint " + m_CurrentCheckpoint + " to completed.\n" );
 
 				// done with the level?
 				if ( @cp is @m_MapData.GetCheckpoints()[ m_MapData.GetCheckpoints().Count() - 1 ] ) {
-					m_nEndTime = TheNomad::Engine::System::Milliseconds(); // kill the timer
+					CalcTotalLevelTime();
 					GlobalState = GameState::LevelFinish;
 					return;
 				}
 				
+				for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
+					TheNomad::GameSystem::GameSystems[i].OnCheckpointPassed( i );
+				}
+
+				// spawn everything
+				/*
 				for ( uint i = 0; i < cp.m_Spawns.Count(); i++ ) {
 					EntityManager.Spawn( cp.m_Spawns[i].m_nEntityType, cp.m_Spawns[i].m_nEntityId,
 						vec3( float( cp.m_Spawns[i].m_Origin.x ), float( cp.m_Spawns[i].m_Origin.y ),
 						float( cp.m_Spawns[i].m_Origin.z ) ), vec2( 0.0f, 0.0f ) );
 				}
+				*/
 				
 				TheNomad::Engine::CmdExecuteCommand( "sgame.save_game\n" );
 			}
 			
 			m_RankData.Draw( false, m_nLevelTimer );
 		}
-		bool OnConsoleCommand( const string& in cmd ) {
-			return false;
+		void OnPlayerDeath( int ) {
+		}
+		void OnCheckpointPassed( uint ) {
 		}
 		void OnLevelEnd() {
 			if ( m_Current.m_EndLevelScript.Length() != 0 ) {
@@ -247,8 +256,12 @@ namespace TheNomad::SGame {
 				for ( i = 0; i < m_LevelInfoDatas.Count(); i++ ) {
 					section.SaveString( "LevelNames" + i, m_LevelInfoDatas[i].m_Name );
 				}
+
+				// save checkpoint data
 				section.SaveUInt( "CurrentCheckpoint", m_CurrentCheckpoint );
-				section.SaveUInt( "Time", m_nLevelTimer );
+				for ( i = 0; i < m_MapData.GetCheckpoints().Count(); i++ ) {
+					section.SaveUInt64( "CheckpointTime_" + i, m_MapData.GetCheckpoints()[i].m_nTime );
+				}
 			}
 			
 			// save individual stats for each level
@@ -533,13 +546,24 @@ namespace TheNomad::SGame {
 			return true;
 		}
 
-		private MapCheckpoint@ PlayerPassedCheckpoint() {
+		private void CalcTotalLevelTime() {
+			uint64 total = 0;
+
+			for ( uint i = 0; i < m_MapData.GetCheckpoints().Count(); i++ ) {
+				total += m_MapData.GetCheckpoints()[i].m_nTime;
+			}
+
+			m_nLevelTimer = total;
+		}
+
+		private MapCheckpoint@ PlayerPassedCheckpoint( uint& out nCheckpointIndex ) {
 			const vec3 origin = EntityManager.GetActivePlayer().GetOrigin();
 			array<MapCheckpoint>@ checkpoints = @m_MapData.GetCheckpoints();
 			const uvec3 pos = uvec3( uint( origin.x ), uint( origin.y ), uint( origin.z ) );
 
 			for ( uint i = 0; i < checkpoints.Count(); i++ ) {
 				if ( checkpoints[i].m_Origin == pos && !checkpoints[i].m_bPassed ) {
+					nCheckpointIndex = i;
 					return @checkpoints[i];
 				}
 			}

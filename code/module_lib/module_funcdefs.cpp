@@ -20,6 +20,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 
+#include "../engine/n_shared.h"
 #include "module_public.h"
 #include <glm/gtc/type_ptr.hpp>
 #include <limits.h>

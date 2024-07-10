@@ -226,6 +226,7 @@ namespace TheNomad::SGame {
 
 		bool Load( const TheNomad::GameSystem::SaveSystem::LoadSection& in section ) override {
 			string skin;
+			array<InventoryStack@>@ slots;
 
 			LoadBase( section );
 
@@ -234,9 +235,6 @@ namespace TheNomad::SGame {
 			m_nHealth = section.LoadFloat( "health" );
 			m_nRage = section.LoadFloat( "rage" );
 
-			@m_LegState = @StateManager.GetStateForNum( section.LoadUInt( "legsStateId" ) );
-			@m_ArmState = @StateManager.GetStateForNum( section.LoadUInt( "armsStateId" ) );
-			@m_State = @StateManager.GetStateForNum( section.LoadUInt( "torsoStateId" ) );
 			m_CurrentWeapon = section.LoadInt( "currentWeapon" );
 			@m_LeftHandWeapon = @m_WeaponSlots[ section.LoadUInt( "leftHandSlot" ) ];
 			@m_RightHandWeapon = @m_WeaponSlots[ section.LoadUInt( "rightHandSlot" ) ];
@@ -248,10 +246,24 @@ namespace TheNomad::SGame {
 				m_WeaponSlots[i].Load( section );
 			}
 
+			@slots = @m_Inventory.GetSlots();
+			for ( uint i = 0; i < slots.Count(); i++ ) {
+				const uint count = section.LoadUInt( "itemSlotCount_" + i );
+
+				if ( count > 0 ) {
+					const uint type = section.LoadUInt( "itemSlotType_" + i );
+
+					if ( @slots[i] is null ) {
+						@slots[i] = InventoryStack( @InfoSystem::InfoManager.GetItemInfo( type ) );
+					}
+				}
+			}
+
 			return true;
 		}
 		void Save( const TheNomad::GameSystem::SaveSystem::SaveSection& in section ) const {
 			uint index;
+			const array<InventoryStack@>@ slots;
 
 			SaveBase( section );
 
@@ -259,10 +271,6 @@ namespace TheNomad::SGame {
 			section.SaveFloat( "health", m_nHealth );
 			section.SaveFloat( "rage", m_nRage );
 
-			
-			section.SaveUInt( "legsStateId", m_ArmState.GetID() );
-			section.SaveUInt( "armsStateId", m_LegState.GetID() );
-			section.SaveUInt( "torsoStateId", m_State.GetID() );
 			section.SaveInt( "currentWeapon", m_CurrentWeapon );
 
 			for ( index = 0; index < m_WeaponSlots.Count(); index++ ) {
@@ -283,6 +291,16 @@ namespace TheNomad::SGame {
 
 			for ( uint i = 0; i < m_WeaponSlots.Count(); i++ ) {
 				m_WeaponSlots[i].Save( section );
+			}
+
+			@slots = @m_Inventory.GetSlots();
+			for ( uint i = 0; i < slots.Count(); i++ ) {
+				if ( @slots[i] is null ) {
+					section.SaveUInt( "itemSlotCount_" + i, 0 );
+					continue;
+				}
+				section.SaveUInt( "itemSlotCount_" + i, slots[i].Count() );
+				section.SaveUInt( "itemSlotType_" + i, slots[i].GetItemType().type );
 			}
 		}
 		
@@ -344,6 +362,13 @@ namespace TheNomad::SGame {
 		const WeaponObject@ GetCurrentWeapon() const {
 			return @m_WeaponSlots[ m_CurrentWeapon ];
 		}
+
+		InventoryManager@ GetInventory() {
+			return @m_Inventory;
+		}
+		const InventoryManager@ GetInventory() const {
+			return @m_Inventory;
+		}
 		
 		void Think() override {
 			TheNomad::Engine::SoundSystem::SetWorldListener( m_Link.m_Origin );
@@ -353,9 +378,9 @@ namespace TheNomad::SGame {
 			}
 
 			if ( m_bUseWeapon ) {
-				m_nFrameDamage += GetCurrentWeapon().Use( cast<EntityObject@>( @this ), GetCurrentWeaponMode() );
+				m_nFrameDamage += GetCurrentWeapon().Use( cast<EntityObject>( @this ), GetCurrentWeaponMode() );
 			} else if ( m_bAltUseWeapon ) {
-				m_nFrameDamage += GetCurrentWeapon().UseAlt( cast<EntityObject@>( @this ), GetCurrentWeaponMode() );
+				m_nFrameDamage += GetCurrentWeapon().UseAlt( cast<EntityObject>( @this ), GetCurrentWeaponMode() );
 			}
 
 			m_Link.m_Bounds.m_nWidth = sgame_PlayerWidth.GetFloat();
@@ -545,6 +570,14 @@ namespace TheNomad::SGame {
 			slideSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/slide1.ogg" );
 
 			dashSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/dash.ogg" );
+
+			meleeSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/melee.wav" );
+
+			weaponChangeHandSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/weaponChangeHand.wav" );
+			weaponChangeModeSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/weaponChangeMode.wav" );
+
+			crouchDownSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/clothRuffle0.ogg" );
+			crouchUpSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/clothRuffle3.ogg" );
 		}
 
 		void Spawn( uint id, const vec3& in origin ) override {
@@ -719,13 +752,14 @@ namespace TheNomad::SGame {
 		private TheNomad::Engine::SoundSystem::SoundEffect counterParrySfx;
 		TheNomad::Engine::SoundSystem::SoundEffect beginQuickshotSfx;
 		TheNomad::Engine::SoundSystem::SoundEffect endQuickshotSfx;
-		TheNomad::Engine::SoundSystem::SoundEffect beginSlidingSfx;
 		TheNomad::Engine::SoundSystem::SoundEffect crouchDownSfx;
 		TheNomad::Engine::SoundSystem::SoundEffect crouchUpSfx;
 		TheNomad::Engine::SoundSystem::SoundEffect dashSfx;
 		TheNomad::Engine::SoundSystem::SoundEffect slideSfx0;
 		TheNomad::Engine::SoundSystem::SoundEffect slideSfx1;
-		TheNomad::Engine::SoundSystem::SoundEffect weaponFancySfx;
+		TheNomad::Engine::SoundSystem::SoundEffect weaponChangeModeSfx;
+		TheNomad::Engine::SoundSystem::SoundEffect weaponChangeHandSfx;
+		TheNomad::Engine::SoundSystem::SoundEffect meleeSfx;
 		private TheNomad::Engine::SoundSystem::SoundEffect painSfx0;
 		private TheNomad::Engine::SoundSystem::SoundEffect painSfx1;
 		private TheNomad::Engine::SoundSystem::SoundEffect painSfx2;

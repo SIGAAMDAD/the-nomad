@@ -81,6 +81,10 @@ namespace TheNomad::SGame {
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.Dash_Up_f ), "-dash", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Melee_Down_f ), "+melee", true );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Melee_Up_f ), "-melee", true );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.UseWeapon_Down_f ), "+useweap", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.UseWeapon_Up_f ), "-useweap", true );
@@ -136,6 +140,7 @@ namespace TheNomad::SGame {
 				return;
 			}
 
+			Util::HapticRumble( obj.GetPlayerIndex(), 0.40f, 800 );
 			obj.SetTimeSinceLastDash( 0 );
 			obj.SetDashing( true );
 		}
@@ -216,7 +221,6 @@ namespace TheNomad::SGame {
 		void SwitchWeaponWielding_Down_f() {
 			PlayrObject@ obj = GetPlayerIndex();
 
-			obj.weaponFancySfx.Play();
 			switch ( obj.GetHandsUsed() ) {
 			case 0:
 				obj.SwitchWeaponWielding( obj.GetLeftHandMode(), obj.GetRightHandMode(),
@@ -232,7 +236,7 @@ namespace TheNomad::SGame {
 		void SwitchWeaponMode_Down_f() {
 			PlayrObject@ obj = GetPlayerIndex();
 
-			obj.weaponFancySfx.Play();
+			obj.weaponChangeModeSfx.Play();
 			switch ( obj.GetHandsUsed() ) {
 			case 0:
 				obj.SwitchWeaponMode( obj.GetLeftHandMode(), @obj.GetLeftHandWeapon() );
@@ -254,6 +258,7 @@ namespace TheNomad::SGame {
 		void SwitchHand_Down_f() {
 			PlayrObject@ obj = GetPlayerIndex();
 			
+			obj.weaponChangeHandSfx.Play();
 			switch ( obj.GetHandsUsed() ) {
 			case 0:
 				obj.SetHandsUsed( 1 );
@@ -268,8 +273,12 @@ namespace TheNomad::SGame {
 		}
 		void Crouch_Down_f() {
 			PlayrObject@ obj = GetPlayerIndex();
-			if ( obj.key_MoveNorth.active || obj.key_MoveSouth.active || obj.key_MoveWest.active || obj.key_MoveEast.active ) {
-				obj.beginSlidingSfx.Play();
+			if ( obj.key_MoveNorth.active || obj.key_MoveSouth.active || obj.key_MoveEast.active || obj.key_MoveWest.active ) {
+				if ( ( Util::PRandom() & 2 ) == 1 ) {
+					obj.slideSfx0.Play();
+				} else {
+					obj.slideSfx1.Play();
+				}
 				obj.SetState( @StateManager.GetStateForNum( StateNum::ST_PLAYR_SLIDING ) );
 			} else {
 				obj.crouchDownSfx.Play();
@@ -279,7 +288,7 @@ namespace TheNomad::SGame {
 		void Crouch_Up_f() {
 			PlayrObject@ obj = GetPlayerIndex();
 			
-			if ( obj.IsCrouching() ) {
+			if ( obj.IsCrouching() || obj.IsSliding() ) {
 				obj.crouchUpSfx.Play();
 			}
 			obj.SetState( @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE ) );
@@ -288,6 +297,7 @@ namespace TheNomad::SGame {
 		void Melee_Down_f() {
 			PlayrObject@ obj = GetPlayerIndex();
 			
+			obj.meleeSfx.Play();
 			obj.SetParryBoxWidth( 0.0f );
 			obj.SetState( @StateManager.GetStateForNum( StateNum::ST_PLAYR_MELEE ) );
 		}

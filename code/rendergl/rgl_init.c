@@ -1655,6 +1655,7 @@ GDR_EXPORT renderExport_t *GDR_DECL GetRenderAPI( uint32_t version, refimport_t 
     re.LoadWorld = RE_LoadWorldMap;
     re.EndRegistration = RE_EndRegistration;
     
+    re.AddDynamicLightToScene = RE_AddDynamicLightToScene;
     re.AddPolyListToScene = RE_AddPolyListToScene;
     re.AddSpriteToScene = RE_AddSpriteToScene;
     re.AddPolyToScene = RE_AddPolyToScene;

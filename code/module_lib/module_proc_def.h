@@ -16,27 +16,27 @@ using uvec2 = glm::vec<2, unsigned, glm::packed_highp>;
 using uvec3 = glm::vec<3, unsigned, glm::packed_highp>;
 using uvec4 = glm::vec<4, unsigned, glm::packed_highp>;
 
-#define SCRIPT_CALLBACK( name ) void Script_##name( asIScriptGeneric *pGeneric );
-#define SCRIPT_CALLBACK_DEF( name ) void Script_##name( asIScriptGeneric *pGeneric )
+#define SCRIPT_CALLBACK( name ) void ScriptLib_##name( asIScriptGeneric *pGeneric );
+#define SCRIPT_CALLBACK_DEF( name ) void ScriptLib_##name( asIScriptGeneric *pGeneric )
 
 #define CALLBACK_BEGIN( nArgs ) Assert( pGeneric->GetArgCount() == nArgs ); int __script_arg_index = 0;
 
 template<typename T>
-inline T *ScriptCallbackParameterPtr( int& index, asIScriptGeneric *pGeneric ) {
+GDR_INLINE T *ScriptCallbackParameterPtr( int& index, asIScriptGeneric *pGeneric ) {
     T *value = (T *)pGeneric->GetArgAddress( index );
     index++;
     return value;
 }
 
 template<typename T>
-inline T *ScriptCallbackParameterObject( int& index, asIScriptGeneric *pGeneric ) {
+GDR_INLINE T *ScriptCallbackParameterObject( int& index, asIScriptGeneric *pGeneric ) {
     T *value = (T *)pGeneric->GetArgObject( index );
     index++;
     return value;
 }
 
 template<typename T, typename Fn>
-inline const T ScriptCallbackParameter( int& index, Fn&& fn ) {
+GDR_INLINE const T ScriptCallbackParameter( int& index, Fn&& fn ) {
     T value = (T)Fn( index );
     index++;
     return value;
@@ -91,8 +91,12 @@ inline const T ScriptCallbackParameter( int& index, Fn&& fn ) {
 #define RETURN_U64( value ) pGeneric->SetReturnQWord( value );
 #define RETURN_PTR( value ) pGeneric->SetReturnAddress( value );
 #define RETURN_BOOL( value ) pGeneric->SetReturnDWord( value );
+#define RETURN_FLOAT( value ) pGeneric->SetReturnFloat( value );
+#define RETURN_DOUBLE( value ) pGeneric->SetReturnDouble( value );
 #define GET_RETURN_DATA( type ) ( *(type *)pGeneric->GetAddressOfReturnLocation() )
+#define GET_RETURN_PTR( type ) ( *(type **)pGeneric->GetAddressOfReturnLocation() )
 #define CONSTRUCT_OBJECT( type, ... ) ::new ( pGeneric->GetAddressOfReturnLocation() ) type( __VA_ARGS__ );
+#define GET_OBJ( type ) ( (type *)pGeneric->GetObjectData() )
 
 //==============================================================
 // ImGui
@@ -132,6 +136,9 @@ SCRIPT_CALLBACK( CvarSet )
 SCRIPT_CALLBACK( CvarSetIntegerValue )
 SCRIPT_CALLBACK( CvarSetFloatValue )
 SCRIPT_CALLBACK( CvarSetStringValue )
+SCRIPT_CALLBACK( CmdArgc )
+SCRIPT_CALLBACK( CmdArgv )
+SCRIPT_CALLBACK( CmdArgs )
 
 //==============================================================
 // TheNomad::Engine::SoundSystem
@@ -142,21 +149,33 @@ SCRIPT_CALLBACK( RegisterTrack )
 SCRIPT_CALLBACK( PlaySfx )
 SCRIPT_CALLBACK( SetLoopingTrack )
 SCRIPT_CALLBACK( ClearLoopingTrack )
+SCRIPT_CALLBACK( AddLoopingTrack )
+SCRIPT_CALLBACK( ClearLoopingTracks )
 
 //==============================================================
 // TheNomad::Engine::FileSystem
 //
 
-SCRIPT_CALLBACK( OpenFileRead )
-SCRIPT_CALLBACK( OpenFileWrite )
-SCRIPT_CALLBACK( OpenFileRW )
-SCRIPT_CALLBACK( OpenFileAppend )
-SCRIPT_CALLBACK( OpenFileMode )
+SCRIPT_CALLBACK( MakeDir )
+SCRIPT_CALLBACK( RemoveDir )
+SCRIPT_CALLBACK( RemoveFile )
+SCRIPT_CALLBACK( GetGamePath )
+SCRIPT_CALLBACK( GetHomePath )
+SCRIPT_CALLBACK( GetBasePath )
+SCRIPT_CALLBACK( GetBaseGameDir )
+SCRIPT_CALLBACK( ModuleOpenFileRead )
+SCRIPT_CALLBACK( ModuleOpenFileWrite )
+SCRIPT_CALLBACK( ModuleOpenFileRW )
+SCRIPT_CALLBACK( ModuleOpenFileAppend )
+SCRIPT_CALLBACK( ModuleOpenFileMode )
+SCRIPT_CALLBACK( ModuleOpenFile )
 SCRIPT_CALLBACK( CloseFile )
-SCRIPT_CALLBACK( LoadFile )
+SCRIPT_CALLBACK( LoadFileBuffer )
+SCRIPT_CALLBACK( LoadFileString )
 SCRIPT_CALLBACK( GetFileLength )
 SCRIPT_CALLBACK( GetFilePosition )
 SCRIPT_CALLBACK( SetFilePosition )
+SCRIPT_CALLBACK( FileExists )
 SCRIPT_CALLBACK( ListFiles )
 SCRIPT_CALLBACK( WriteInt8 )
 SCRIPT_CALLBACK( WriteInt16 )
@@ -199,8 +218,17 @@ SCRIPT_CALLBACK( RegisterSprite )
 //
 
 SCRIPT_CALLBACK( BBoxAssign )
+SCRIPT_CALLBACK( BBoxOpAddAssign )
+SCRIPT_CALLBACK( BBoxOpAdd )
+SCRIPT_CALLBACK( BBoxOpSubAssign )
+SCRIPT_CALLBACK( BBoxOpSub )
+SCRIPT_CALLBACK( BBoxOpIndex )
+SCRIPT_CALLBACK( BBoxCompare )
+SCRIPT_CALLBACK( BoundsIntersect )
+SCRIPT_CALLBACK( BoundsIntersectPoint )
+SCRIPT_CALLBACK( BoundsIntersectRay )
+SCRIPT_CALLBACK( BoundsIntersectLine )
 
-SCRIPT_CALLBACK( SetCameraPos )
 SCRIPT_CALLBACK( GetString )
 SCRIPT_CALLBACK( GetGPUConfig )
 
@@ -219,10 +247,17 @@ SCRIPT_CALLBACK( GetTileData )
 
 SCRIPT_CALLBACK( GetModuleList )
 SCRIPT_CALLBACK( IsModuleActive )
-SCRIPT_CALLBACK( StrICmp )
+
 SCRIPT_CALLBACK( BoundsIntersect )
+SCRIPT_CALLBACK( BoundsIntersectSphere )
+SCRIPT_CALLBACK( BoundsIntersectPoint )
 
 SCRIPT_CALLBACK( ConsolePrint )
 SCRIPT_CALLBACK( GameError )
+
+SCRIPT_CALLBACK( StrICmp )
+SCRIPT_CALLBACK( StrICmpn )
+SCRIPT_CALLBACK( StrCmp )
+SCRIPT_CALLBACK( StrCmpn )
 
 #endif

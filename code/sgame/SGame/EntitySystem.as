@@ -233,12 +233,9 @@ namespace TheNomad::SGame {
 			m_EntityList.Clear();
 			@m_ActivePlayer = null;
 		}
-		bool OnConsoleCommand( const string& in cmd ) {
-			if ( Util::StrICmp( cmd, "sgame.list_items" ) == 0 ) {
-				ListActiveItems();
-			}
-
-			return false;
+		void OnPlayerDeath( int ) {
+		}
+		void OnCheckpointPassed( uint ) {
 		}
 		
 		private EntityObject@ AllocEntity( TheNomad::GameSystem::EntityType type, uint id, const vec3& in origin, const vec2& in size ) {

@@ -30,13 +30,19 @@ namespace TheNomad::SGame::InfoSystem {
 				ConsoleWarning( "invalid item info, missing variable 'PickupSfx'\n" );
 				return false;
 			} else {
-				pickupSfx.Set( str );
+				pickupSfx = TheNomad::Engine::ResourceCache.GetSfx( str );
 			}
 			if ( !json.get( "UseSfx", str ) ) {
 				ConsoleWarning( "invalid item info, missing variable 'UseSfx'\n" );
 				return false;
 			} else {
-				useSfx.Set( str );
+				useSfx = TheNomad::Engine::ResourceCache.GetSfx( str );
+			}
+			if ( !json.get( "EquipSfx", str ) ) {
+				ConsoleWarning( "invalid item info, missing variable 'EquipSfx'\n" );
+				return false;
+			} else {
+				equipSfx = TheNomad::Engine::ResourceCache.GetSfx( str );
 			}
 			if ( !json.get( "Width", width ) ) {
 				ConsoleWarning( "invalid item info, missing variable 'Width'\n" );
@@ -72,5 +78,6 @@ namespace TheNomad::SGame::InfoSystem {
 
 		TheNomad::Engine::SoundSystem::SoundEffect pickupSfx;
 		TheNomad::Engine::SoundSystem::SoundEffect useSfx;
+		TheNomad::Engine::SoundSystem::SoundEffect equipSfx;
 	};
 };

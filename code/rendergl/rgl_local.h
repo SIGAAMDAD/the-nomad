@@ -419,8 +419,8 @@ typedef enum {
 
 typedef struct dlight_s
 {
-    vec4_t color;
-    vec3_t pos;
+    vec3_t color;
+    vec3_t origin;
 
     float brightness;
     float diffuse;
@@ -1655,6 +1655,7 @@ void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t num
 void RE_AddPolyListToScene( const poly_t *polys, uint32_t numPolys );
 void RE_RenderScene( const renderSceneRef_t *fd );
 void RE_AddEntityToScene( const renderEntityRef_t *ent );
+void RE_AddDynamicLightToScene( const vec3_t origin, float brightness, const vec3_t color );
 void RE_BeginScene( const renderSceneRef_t *fd );
 void RE_EndScene( void );
 void RE_ClearScene( void );

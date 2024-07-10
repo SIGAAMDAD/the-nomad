@@ -127,6 +127,26 @@ void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t num
     r_numPolys++;
 }
 
+void RE_AddDynamicLightToScene( const vec3_t origin, float brightness, const vec3_t color )
+{
+    dlight_t *dl;
+
+    if ( !rg.registered ) {
+        return;
+    }
+    if ( r_numDLights >= r_maxDLights->i ) {
+        return;
+    }
+    if ( brightness <= 0.0f ) {
+        return;
+    }
+
+    dl = &backendData->dlights[ r_numDLights++ ];
+    VectorCopy( dl->origin, origin );
+    VectorCopy( dl->color, color );
+    dl->brightness = brightness;
+}
+
 void RE_AddPolyListToScene( const poly_t *polys, uint32_t numPolys )
 {
     uint32_t i;

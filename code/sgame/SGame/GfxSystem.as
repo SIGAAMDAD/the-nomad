@@ -5,7 +5,7 @@ namespace TheNomad::SGame {
 		
 		void Spawn( const vec3& in org, uint lifeTime, const SpriteSheet@ spriteSheet, const ivec2& in spriteOffset ) {
 			origin = org;
-			startTime = TheNomad::GameSystem::GameManager.GetGameTic();
+			startTime = TheNomad::Engine::System::Milliseconds();
 			this.lifeTime = lifeTime;
 			this.spriteOffset = spriteOffset;
 			@this.spriteSheet = @spriteSheet;
@@ -15,7 +15,7 @@ namespace TheNomad::SGame {
 			origin += vel;
 			TheNomad::Engine::Renderer::AddSpriteToScene( origin, spriteSheet.GetShader(),
 				spriteOffset.y * spriteSheet.GetSpriteCountX() + spriteOffset.x, false );
-			if ( TheNomad::GameSystem::GameManager.GetGameTic() - startTime >= lifeTime ) {
+			if ( TheNomad::Engine::System::Milliseconds() - startTime >= lifeTime ) {
 				GfxManager.FreeMarkPoly( @this );
 			}
 		}
@@ -23,11 +23,11 @@ namespace TheNomad::SGame {
 		vec3 origin = vec3( 0.0f );
 		vec3 vel = vec3( 0.0f );
 		ivec2 spriteOffset = ivec2( 0 );
-		const SpriteSheet@ spriteSheet;
-		uint startTime;
-		uint lifeTime;
-		MarkPoly@ next;
-		MarkPoly@ prev;
+		const SpriteSheet@ spriteSheet = null;
+		uint64 startTime = 0;
+		uint64 lifeTime = 0;
+		MarkPoly@ next = null;
+		MarkPoly@ prev = null;
 	};
 	
 	class GfxSystem : TheNomad::GameSystem::GameObject {
@@ -36,10 +36,7 @@ namespace TheNomad::SGame {
 
 		void OnInit() {
 			const uint numGfx = sgame_GfxDetail.GetInt() * 15;
-
-			for ( uint i = 0; i < numGfx; i++ ) {
-				m_PolyList.Add( MarkPoly() );
-			}
+			m_PolyList.Resize( numGfx );
 
 			@m_ActiveMarkPolys.next = @m_ActiveMarkPolys;
 			@m_ActiveMarkPolys.prev = @m_ActiveMarkPolys;
@@ -62,8 +59,9 @@ namespace TheNomad::SGame {
 				m_PolyList[i].RunTic();
 			}
 		}
-		bool OnConsoleCommand( const string& in cmd ) {
-			return false;
+		void OnPlayerDeath( int ) {
+		}
+		void OnCheckpointPassed( uint ) {
 		}
 		void OnLevelStart() {
 			// ensure we have the correct amount of polygons allocated

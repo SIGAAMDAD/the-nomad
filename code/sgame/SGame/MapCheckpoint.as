@@ -11,18 +11,20 @@ namespace TheNomad::SGame {
 		void AddSpawn( MapSpawn@ spawn ) {
 			m_Spawns.Add( @spawn );
 		}
-		void Activate() {
+		void Activate( uint64 nLevelTime ) {
 			for ( uint i = 0; i < m_Spawns.Count(); i++ ) {
 				m_Spawns[i].Activate(); 
 			}
 			m_bPassed = true;
+			m_nTime = TheNomad::Engine::System::Milliseconds() - nLevelTime;
 		}
 
 		void Load( json@ data ) {
 		}
 		
-		uvec3 m_Origin = uvec3( 0 );
-		bool m_bPassed = false;
 		array<MapSpawn@> m_Spawns;
+		uvec3 m_Origin = uvec3( 0 );
+		uint64 m_nTime = 0;
+		bool m_bPassed = false;
 	};
 };

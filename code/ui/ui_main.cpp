@@ -29,7 +29,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../rendercommon/imgui_impl_opengl3.h"
 #include "../rendercommon/imgui_internal.h"
 #include "../game/imgui_memory_editor.h"
-#include "../rendercommon/implot.h"
 //#include "RobotoMono-Bold.h"
 #define FPS_FRAMES 60
 
@@ -403,10 +402,6 @@ extern "C" void UI_Shutdown( void )
 
 	if ( FontCache() ) {
 		FontCache()->ClearCache();
-	}
-
-	if ( ui_debugOverlay && ui_debugOverlay->i ) {
-		ImPlot::DestroyContext();
 	}
 
     Cmd_RemoveCommand( "ui.cache" );
@@ -929,10 +924,6 @@ static void UI_DrawDebugOverlay( void )
 	ImGui::ShowMetricsWindow();
 	ImGui::ShowDebugLogWindow();
 
-	if ( !ImPlot::GetCurrentContext() ) {
-		ImPlot::CreateContext();
-	}
-
 	if ( ImGui::Begin( "GPU Debug##DebugOverlayGPUDriver" ) ) {
 		char *p;
 		char str[256];
@@ -963,16 +954,6 @@ static void UI_DrawDebugOverlay( void )
 		ImGui::Text( "Frame Time: %u", gpu_FrameTime );
 		ImGui::Text( "BackEnd Frame Time: %lu", time_backend );
 		ImGui::Text( "FrontEnd Frame Time: %lu", time_frontend );
-
-		if ( ImPlot::BeginPlot( "GPU Profiler" ) ) {
-			ImPlot::SetupAxes( "Time (ms)", "Frame Time (MS)" );
-			ImPlot::SetupAxesLimits( 0.0f, 1000.0f, 0.0f, 60.0f );
-			ImPlot::PushStyleVar( ImPlotStyleVar_FillAlpha, 0.25f );
-			ImPlot::PlotShaded( "Renderer FrontEnd Time", frameTimes, gpu_FrontEndPreviousTimes, FPS_FRAMES );
-			ImPlot::PlotShaded( "Renderer BackeEnd Time", frameTimes, gpu_BackEndPreviousTimes, FPS_FRAMES );
-			ImPlot::PopStyleVar();
-			ImPlot::EndPlot();
-		}
 
 		ImGui::TextUnformatted( "Extensions Used:" );
 		if ( Cvar_VariableInteger( "r_arb_shader_storage_buffer_object" ) ) {
@@ -1100,15 +1081,6 @@ static void UI_DrawDebugOverlay( void )
 		ImGui::Text( "Current Physical Memory: %lu", physMem );
 		ImGui::Text( "Peak Virtual Memory: %lu", peakVirt );
 		ImGui::Text( "Peak Physical Memory: %lu", peakPhys );
-
-		if ( ImPlot::BeginPlot( "Profiler" ) ) {
-			ImPlot::SetupAxes( "Time (ms)", "Frame Time (Engine)" );
-			ImPlot::SetupAxesLimits( 0.0f, 1000.0f, 0.0f, 60.0f );
-			ImPlot::PushStyleVar( ImPlotStyleVar_FillAlpha, 0.25f );
-			ImPlot::PlotShaded( "Frame Time", frameTimes, previousTimes, FPS_FRAMES );
-			ImPlot::PopStyleVar();
-			ImPlot::EndPlot();
-		}
 		
 		ImGui::End();
 	}
@@ -1203,10 +1175,6 @@ extern "C" void UI_Init( void )
     UI_SetActiveMenu( UI_MENU_MAIN );
 
 	ui->uiAllocated = qtrue;
-
-	if ( ui_debugOverlay->i ) {
-		ImPlot::CreateContext();
-	}
 
 	// are we running a demo?
 	if ( FS_FOpenFileRead( "demokey.txt", NULL ) > 0 ) {

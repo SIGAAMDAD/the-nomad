@@ -482,6 +482,7 @@ void FBO_Init( void )
 			nglDrawBuffers( 2, buffers );
 		}
 		R_CheckFBO( rg.renderFbo );
+	}
 
 	if ( multisample && r_multisampleType->i <= AntiAlias_32xMSAA && glContext.ARB_framebuffer_multisample ) {
 		rg.msaaResolveFbo = FBO_Create( "_msaaResolve", width, height );
@@ -521,9 +522,9 @@ void FBO_Init( void )
 	}
 
 	if ( r_multisampleType->i >= AntiAlias_2xSSAA && r_multisampleType-> i<= AntiAlias_4xSSAA ) {
-		rg.ssaaFbo = FBO_Create( "_ssaa", glConfig.vidWidth, glConfig.vidHeight );
-		FBO_CreateBuffer( rg.ssaaFbo, GL_RGBA8, 0, 0 );
-		R_CheckFBO( rg.ssaaFbo );
+		rg.ssaaResolveFbo = FBO_Create( "_ssaa", glConfig.vidWidth, glConfig.vidHeight );
+		FBO_CreateBuffer( rg.ssaaResolveFbo, GL_RGBA8, 0, 0 );
+		R_CheckFBO( rg.ssaaResolveFbo );
 	}
 
 	// clear render buffer

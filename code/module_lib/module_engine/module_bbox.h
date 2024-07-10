@@ -194,7 +194,7 @@ bool CModuleBoundBox::LineIntersection( const glm::vec3& start, const glm::vec3&
 	return true;
 }
 
-bool CModuleBoundBox::RayIntersection( const glm::vec3& start, const glm::vec3& dir, float &scale ) const {
+bool CModuleBoundBox::RayIntersection( const glm::vec3& start, const glm::vec3& dir, float& scale ) const {
 	int i, ax0, ax1, ax2, side, inside;
 	float f;
 	glm::vec3 hit;

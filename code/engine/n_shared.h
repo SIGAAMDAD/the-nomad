@@ -494,7 +494,7 @@ Compiler Macro Abstraction
 #endif
 
 #ifndef Q3_VM
-	#if !defined(__clang__)
+	#if !defined(__clang__) && defined(_WIN32)
 		typedef __int64 int64_t;
 		typedef __int32 int32_t;
 		typedef __int16 int16_t;
@@ -525,9 +525,11 @@ Compiler Macro Abstraction
 		// abstracting this to make it portable
 		int N_vsnprintf( char *str, size_t size, const char *format, va_list ap );
 	#else
-		#define N_vsnprintf vsnprintf
+		#define N_vsnprintf stbsp_vsnprintf
 	#endif
 #endif
+
+#include "../game/stb_sprintf.h"
 
 int GDR_ATTRIBUTE((format(printf, 3, 4))) GDR_DECL Com_snprintf(char *dest, uint32_t size, const char *format, ...);
 

@@ -572,7 +572,7 @@ void FS_VM_CloseFiles( handleOwner_t owner )
 	}
 }
 
-void FS_VM_FClose(fileHandle_t f, handleOwner_t owner)
+void FS_VM_FClose( fileHandle_t f, handleOwner_t owner )
 {
 	if ( !FS_VM_ValidateParms( __func__, f, owner ) ) {
 		return;
@@ -1049,12 +1049,12 @@ fileHandle_t FS_FOpenAppend( const char *path )
 	f = &handles[fd];
 	FS_InitHandle( f );
 
-	fp = Sys_FOpen( ospath, "wb" );
+	fp = Sys_FOpen( ospath, "a" );
 	if ( !fp ) {
 		if ( FS_CreatePath( ospath ) ) {
 			return FS_INVALID_HANDLE;
 		}
-		fp = Sys_FOpen( ospath, "wb" );
+		fp = Sys_FOpen( ospath, "a" );
 		if ( !fp ) {
 			return FS_INVALID_HANDLE;
 		}

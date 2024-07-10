@@ -18,10 +18,11 @@
 #define GDR_DEBUG
 #endif
 
+#include "../engine/n_shared.h"
+
 //---- Define assertion handler. Defaults to calling assert().
 // If your macro uses multiple statements, make sure is enclosed in a 'do { .. } while (0)' block so it can be used as a single statement.
-#define IM_ASSERT(_EXPR)
-//#define IM_ASSERT(_EXPR)  ((void)(_EXPR))     // Disable asserts
+#define IM_ASSERT(_EXPR)  ((void)(_EXPR))     // Disable asserts
 
 //---- Define attributes of all API symbols declarations, e.g. for DLL under Windows
 // Using Dear ImGui via a shared library is not recommended, because of function call overhead and because we don't guarantee backward nor forward ABI compatibility.
@@ -89,13 +90,30 @@
 #define IM_VEC2_CLASS_EXTRA                                                     \
         constexpr ImVec2(const MyVec2& f) : x(f.x), y(f.y) {}                   \
         operator MyVec2() const { return MyVec2(x,y); }
-
-#define IM_VEC4_CLASS_EXTRA                                                     \
-        constexpr ImVec4(const MyVec4& f) : x(f.x), y(f.y), z(f.z), w(f.w) {}   \
-        operator MyVec4() const { return MyVec4(x,y,z,w); }
 */
+#define IM_VEC4_CLASS_EXTRA                                                     \
+        constexpr ImVec4(const vec_t *f) : x(f[0]), y(f[1]), z(f[2]), w(f[3]) {}
+
 //---- ...Or use Dear ImGui's own very basic math operators.
 #define IMGUI_DEFINE_MATH_OPERATORS
+
+struct ImVec3
+{
+    float                                   x, y, z;
+    constexpr ImVec3()                      : x(0.0f), y(0.0f), z(0.0f) { }
+    constexpr ImVec3(float _x, float _y, float _z) : x(_x), y(_y), z(_z) { }
+    float& operator[] (size_t idx)          { IM_ASSERT(idx == 0 || idx == 1 || idx == 2); return ((float*)(void*)(char*)this)[idx]; } // We very rarely use this [] operator, so the assert overhead is fine.
+    float  operator[] (size_t idx) const    { IM_ASSERT(idx == 0 || idx == 1 || idx == 2); return ((const float*)(const void*)(const char*)this)[idx]; }
+};
+
+#if !defined(IMGUI_DISABLE_FILE_FUNCTIONS)
+typedef fileHandle_t ImFileHandle;
+IMGUI_API ImFileHandle      ImFileOpen(const char* filename, const char* mode);
+IMGUI_API bool              ImFileClose( ImFileHandle file );
+IMGUI_API uint64_t          ImFileGetSize( ImFileHandle file);
+IMGUI_API uint64_t          ImFileRead(void* data, uint64_t size, uint64_t count, ImFileHandle file);
+IMGUI_API uint64_t          ImFileWrite(const void* data, uint64_t size, uint64_t count, ImFileHandle file);
+#endif
 
 //---- Use 32-bit vertex indices (default is 16-bit) is one way to allow large meshes with more than 64K vertices.
 // Your renderer backend will need to support it (most example renderer backends support both 16/32-bit indices).

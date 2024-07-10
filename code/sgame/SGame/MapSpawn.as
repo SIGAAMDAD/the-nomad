@@ -16,12 +16,15 @@ namespace TheNomad::SGame {
 			}
 			
 			m_bUsed = true;
+			EntityManager.Spawn( m_nEntityType, m_nEntityId,
+				vec3( float( m_Origin.x ), float( m_Origin.y ),
+				float( m_Origin.z ) ), vec2( 0.0f, 0.0f ) );
 		}
 		
-		uvec3 m_Origin;
-		MapCheckpoint@ m_Checkpoint;
-		TheNomad::GameSystem::EntityType m_nEntityType;
-		uint m_nEntityId;
-		bool m_bUsed;
+		uvec3 m_Origin = uvec3( 0 );
+		MapCheckpoint@ m_Checkpoint = null;
+		TheNomad::GameSystem::EntityType m_nEntityType = TheNomad::GameSystem::EntityType::Item;
+		uint m_nEntityId = 0;
+		bool m_bUsed = false;
 	};
 };

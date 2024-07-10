@@ -7,7 +7,7 @@ void Assert( const bool condition, const string& in msg ) {
 
 namespace TheNomad::Util {
 	void HapticRumble( uint nPlayerIndex, float nStrength, uint nTime ) {
-		TheNomad::Engine::CmdExecuteCommand( "in_haptic_rumble " + nPlayerIndex + " " + nStrength + " " + nTime +  "\n" );
+		TheNomad::Engine::CmdExecuteCommand( "in_haptic_rumble " + nPlayerIndex + " " + formatFloat( nStrength ) + " " + nTime +  "\n" );
 	}
 
 	/*

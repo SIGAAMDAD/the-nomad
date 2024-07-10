@@ -30,12 +30,8 @@ namespace TheNomad::SGame {
 			// load the checkpoints
 			//
 			for ( i = 0; i < nCheckpoints; i++ ) {
-				MapCheckpoint cp;
-				
 				TheNomad::GameSystem::GetCheckpointData( xyz, i );
-				cp = MapCheckpoint( xyz );
-				
-				m_Checkpoints.Add( cp );
+				m_Checkpoints.Add( MapCheckpoint( xyz ) );
 			}
 			
 			//
