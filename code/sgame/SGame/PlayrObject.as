@@ -132,8 +132,18 @@ namespace TheNomad::SGame {
 		}
 
 		bool IsSliding() const {
-			return m_State.GetID() == StateNum::ST_PLAYR_SLIDING;
+			return m_bSliding;
 		}
+		void SetSliding( bool bSliding ) {
+			m_bSliding = bSliding;
+		}
+		uint64 GetTimeSinceLastSlide() const {
+			return TheNomad::Engine::System::Milliseconds() - m_nTimeSinceSlide;
+		}
+		void ResetSlide() {
+			m_nTimeSinceSlide = TheNomad::Engine::System::Milliseconds();
+		}
+		
 		bool IsCrouching() const {
 			return m_State.GetID() == StateNum::ST_PLAYR_CROUCHING;
 		}
@@ -147,15 +157,14 @@ namespace TheNomad::SGame {
 		void SetDashing( bool bDashing ) {
 			m_bDashing = bDashing;
 		}
-
-		int GetTimeSinceLastDash() const {
-			return m_nTimeSinceDash;
+		uint64 GetTimeSinceLastDash() const {
+			return TheNomad::Engine::System::Milliseconds() - m_nTimeSinceDash;
 		}
-		void SetTimeSinceLastDash( int time ) {
+		void SetTimeSinceLastDash( uint64 time ) {
 			m_nTimeSinceDash = time;
 		}
 		void ResetDash() {
-			m_nTimeSinceDash = 1000;
+			m_nTimeSinceDash = TheNomad::Engine::System::Milliseconds();
 		}
 
 		void SetUsingWeapon( bool bUseWeapon ) {
@@ -795,9 +804,12 @@ namespace TheNomad::SGame {
 		private EntityState@ m_LegState = null;
 		private int m_LegsFacing = 0;
 
-		private int m_nTimeSinceDash = 1000;
-		private int m_nDashCounter = 0;
+		private uint64 m_nTimeSinceDash = 1000;
+		private uint m_nDashCounter = 0;
 		private bool m_bDashing = false;
+
+		private uint64 m_nTimeSinceSlide = 1000;
+		private bool m_bSliding = false;
 
 		private bool m_bEmoting = false;
 		

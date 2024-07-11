@@ -1239,7 +1239,7 @@ static void PerformanceMenu_DrawBasic( void )
 	SettingsMenu_MultiAdjustable( "TEXTURE FILTERING", "TextureFiltering",
 		"Sets the type of texture filtering",
 		s_settingsMenu->advancedPerformance.anisotropyTypes, s_settingsMenu->advancedPerformance.numAnisotropyTypes,
-		&s_settingsMenu->advancedPerformance.anisotropicFilter, true );
+		&s_settingsMenu->performance.textureFilter, true );
 	
 	ImGui::TableNextRow();
 	

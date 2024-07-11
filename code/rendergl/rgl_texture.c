@@ -1996,7 +1996,11 @@ static GLenum PixelDataFormatFromInternalFormat( GLenum internalFormat )
 
 static int PixelDataFormatIsValidCompressed( GLenum format )
 {
-	switch (format) {
+	switch ( format ) {
+	case GL_COMPRESSED_RGB8_ETC2:
+	case GL_COMPRESSED_RGB_FXT1_3DFX:
+	case GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2:
+	case GL_COMPRESSED_RGB_ARB:
 	case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
 	case GL_COMPRESSED_SRGB_S3TC_DXT1_EXT:
 	case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
@@ -2050,9 +2054,9 @@ static void RawImage_UploadTexture( GLuint texture, byte *data, int x, int y, in
 		lastMip = (width == 1 && height == 1) || !mipmap;
 		size = CalculateTextureSize(width, height, picFormat);
 
-		if (!rgba && !(flags & IMGFLAG_NO_COMPRESSION) && PixelDataFormatIsValidCompressed(picFormat)) {
-			GL_LogComment("glCompressedTexSubImage2D(GL_TEXTURE_2D, %lu, %i, %i, %i, %i, 0x%04x, %lu, %p)", miplevel, x, y, width, height, picFormat, size, data);
-			nglCompressedTexSubImage2D(GL_TEXTURE_2D, miplevel, x, y, width, height, picFormat, size, data);
+		if ( !rgba && !(flags & IMGFLAG_NO_COMPRESSION) && PixelDataFormatIsValidCompressed( picFormat ) ) {
+			GL_LogComment( "glCompressedTexSubImage2D(GL_TEXTURE_2D, %lu, %i, %i, %i, %i, 0x%04x, %lu, %p)", miplevel, x, y, width, height, picFormat, size, data );
+			nglCompressedTexSubImage2D( GL_TEXTURE_2D, miplevel, x, y, width, height, picFormat, size, data );
 		}
 		else {
 			if ( rgba8 && miplevel != 0 && r_colorMipLevels->i && data )

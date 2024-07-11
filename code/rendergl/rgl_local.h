@@ -406,7 +406,7 @@ typedef struct {
     byte *data;
     qboolean externalBuffer;
     uint32_t id;
-    uint32_t binding;
+    int32_t binding;
     uint64_t size;
 } uniformBuffer_t;
 

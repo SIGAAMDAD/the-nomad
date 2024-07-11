@@ -761,6 +761,9 @@ void CSoundManager::Init( void )
 }
 
 void CSoundManager::PlaySound( CSoundSource *snd ) {
+    if ( !snd ) {
+        return;
+    }
     if ( gi.state == GS_LEVEL ) {
         vec3_t pos;
         alGetListenerfv( AL_POSITION, pos );

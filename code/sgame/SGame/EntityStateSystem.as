@@ -13,9 +13,7 @@ namespace TheNomad::SGame {
 		
 		ST_PLAYR_IDLE,
 		ST_PLAYR_CROUCHING,
-		ST_PLAYR_SLIDING,
 		ST_PLAYR_DOUBLEJUMP,
-		ST_PLAYR_DASH,
 		ST_PLAYR_MELEE,
 		ST_PLAYR_COMBAT,
 		ST_PLAYR_DEAD,
@@ -108,9 +106,7 @@ namespace TheNomad::SGame {
 			m_BaseStateCache.Add( "ST_MOB_DEAD", StateNum::ST_MOB_DEAD );
 			m_BaseStateCache.Add( "ST_PLAYR_IDLE", StateNum::ST_PLAYR_IDLE );
 			m_BaseStateCache.Add( "ST_PLAYR_CROUCHING", StateNum::ST_PLAYR_CROUCHING );
-			m_BaseStateCache.Add( "ST_PLAYR_SLIDING", StateNum::ST_PLAYR_SLIDING );
 			m_BaseStateCache.Add( "ST_PLAYR_DOUBLEJUMP", StateNum::ST_PLAYR_DOUBLEJUMP );
-			m_BaseStateCache.Add( "ST_PLAYR_DASH", StateNum::ST_PLAYR_DASH );
 			m_BaseStateCache.Add( "ST_PLAYR_MELEE", StateNum::ST_PLAYR_MELEE );
 			m_BaseStateCache.Add( "ST_PLAYR_COMBAT", StateNum::ST_PLAYR_COMBAT );
 			m_BaseStateCache.Add( "ST_PLAYR_DEAD", StateNum::ST_PLAYR_DEAD );

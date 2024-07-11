@@ -128,27 +128,6 @@ namespace TheNomad::SGame {
 			}
 			return @m_PlayerData[ 0 ];
 		}
-		
-		void Dash_Down_f() {
-			PlayrObject@ obj = GetPlayerIndex();
-			const int time = TheNomad::Engine::System::Milliseconds();
-			const int lastDash = obj.GetTimeSinceLastDash();
-
-			// wait at little bit before launching another dash
-			if ( time - lastDash < 500 ) {
-				obj.SetTimeSinceLastDash( lastDash + time );
-				return;
-			}
-
-			Util::HapticRumble( obj.GetPlayerIndex(), 0.40f, 800 );
-			obj.SetTimeSinceLastDash( 0 );
-			obj.SetDashing( true );
-		}
-		void Dash_Up_f() {
-			PlayrObject@ obj = GetPlayerIndex();
-			
-			obj.SetDashing( false );
-		}
 
 		void MoveNorth_Down_f() { GetPlayerIndex().key_MoveNorth.Down(); }
 		void MoveNorth_Up_f() { GetPlayerIndex().key_MoveNorth.Up(); }
@@ -271,15 +250,42 @@ namespace TheNomad::SGame {
 				break; // can't switch if we're using both hands for one weapon
 			};
 		}
+		void Dash_Down_f() {
+			PlayrObject@ obj = GetPlayerIndex();
+
+			// wait at little bit before launching another dash
+			if ( obj.GetTimeSinceLastDash() < 1000 ) {
+				return;
+			}
+
+			obj.dashSfx.Play();
+			Util::HapticRumble( obj.GetPlayerIndex(), 0.40f, 700 );
+			obj.ResetDash();
+			obj.SetDashing( true );
+		}
+		void Dash_Up_f() {
+			PlayrObject@ obj = GetPlayerIndex();
+			
+			obj.SetDashing( false );
+		}
 		void Crouch_Down_f() {
 			PlayrObject@ obj = GetPlayerIndex();
+
 			if ( obj.key_MoveNorth.active || obj.key_MoveSouth.active || obj.key_MoveEast.active || obj.key_MoveWest.active ) {
-				if ( ( Util::PRandom() & 2 ) == 1 ) {
+				// wait at little bit before launching another slide
+				if ( obj.GetTimeSinceLastSlide() < 1000 ) {
+					return;
+				}
+
+				if ( ( Util::PRandom() & 1 ) == 1 ) {
 					obj.slideSfx0.Play();
 				} else {
 					obj.slideSfx1.Play();
 				}
-				obj.SetState( @StateManager.GetStateForNum( StateNum::ST_PLAYR_SLIDING ) );
+				
+				Util::HapticRumble( obj.GetPlayerIndex(), 0.40f, 500 );
+				obj.ResetSlide();
+				obj.SetSliding( true );
 			} else {
 				obj.crouchDownSfx.Play();
 				obj.SetState( @StateManager.GetStateForNum( StateNum::ST_PLAYR_CROUCHING ) );

@@ -61,6 +61,7 @@ namespace TheNomad::SGame {
 		}
 		
 		private void WalkMove() {
+			float speed;
 			const uint gameTic = TheNomad::GameSystem::GameManager.GetGameTic();
 			vec3 accel = m_EntityData.GetPhysicsObject().GetAcceleration();
 			
@@ -68,20 +69,25 @@ namespace TheNomad::SGame {
 			
 //			if ( forward != 0.0f && side != 0.0f ) {
 //				if ( ( move_toggle % ( 16 + ( TheNomad::Engine::CvarVariableInteger( "com_maxfps" ) / 10 ) ) ) == 0.0f ) {
-					accel.y += sgame_BaseSpeed.GetFloat() * forward;
-					accel.x += sgame_BaseSpeed.GetFloat() * side;
 //				}
 //			}
 
+			accel.y += forward * sgame_BaseSpeed.GetFloat();
+			accel.x += side * sgame_BaseSpeed.GetFloat();
+
 			if ( m_EntityData.IsDashing() ) {
-				accel.y += 5.5f * forward;
-				accel.x += 5.5f * side;
-				m_EntityData.dashSfx.Play();
-				m_EntityData.SetDashing( false );
+				accel.y += 1.25f * forward;
+				accel.x += 1.25f * side;
+				if ( m_EntityData.GetTimeSinceLastDash() > 700 ) {
+					m_EntityData.SetDashing( false );
+				}
 			}
-			else if ( m_EntityData.IsSliding() ) {
-				accel.y += 2.25f * forward;
-				accel.x += 2.25f * side;
+			if ( m_EntityData.IsSliding() ) {
+				accel.y += 0.25f * forward;
+				accel.x += 0.25f * side;
+				if ( m_EntityData.GetTimeSinceLastSlide() > 500 ) {
+					m_EntityData.SetSliding( false );
+				}
 			}
 
 			const uint tile = LevelManager.GetMapData().GetTile( m_EntityData.GetOrigin(), m_EntityData.GetBounds() );
@@ -390,9 +396,9 @@ namespace TheNomad::SGame {
 			side = 0.0f;
 			up = 0.0f;
 			
-			side += KeyState( m_EntityData.key_MoveEast ) * base;
-			side -= KeyState( m_EntityData.key_MoveWest ) * base;
-			
+			side += base * KeyState( m_EntityData.key_MoveEast );
+			side -= base * KeyState( m_EntityData.key_MoveWest );
+
 			up += 1.25f * KeyState( m_EntityData.key_Jump );
 			
 			forward -= base * KeyState( m_EntityData.key_MoveNorth );

@@ -891,7 +891,7 @@ static void GLSL_InitUniforms( shaderProgram_t *program )
 	program->uniformBuffer = (char *)ri.Hunk_Alloc( uniformBufferSize, h_low );
 
     for ( i = 0; i < UNIFORM_COUNT; i++ ) {
-        if ( program->uniforms[i] != -1 && uniformsInfo[i].type == GLSL_BUFFER ) {
+        if ( uniformsInfo[i].type == GLSL_BUFFER ) {
             *( (GLuint *)( program->uniformBuffer + program->uniformBufferOffsets[ i ] ) ) =
                 nglGetUniformBlockIndex( program->programId, uniformsInfo[i].name );
         }
@@ -1100,15 +1100,14 @@ void GLSL_LinkUniformToShader( shaderProgram_t *program, uint32_t uniformNum, un
         target = GL_UNIFORM_BUFFER;
     }
 
-    if ( uniforms[ uniformNum ] == -1 ) {
-        ri.Printf( PRINT_WARNING, "GLSL_LinkUniformToShader: uniformBuffer %s not in program '%s'\n", buffer->name, program->name );
-        return;
-    }
-
     GLSL_UseProgram( program );
     nglBindBufferARB( target, buffer->id );
 
-    buffer->binding = *compare;
+    buffer->binding = nglGetUniformBlockIndex( program->programId, uniformsInfo[ uniformNum ].name );
+    if ( buffer->binding == -1 ) {
+        ri.Printf( PRINT_WARNING, "GLSL_LinkUniformToShader: uniformBuffer %s not in program '%s'\n", buffer->name, program->name );
+        return;
+    }
     nglUniformBlockBinding( program->programId, buffer->binding, program->numBuffers );
     nglBindBufferRangeARB( target, 0, buffer->id, 0, buffer->size );
     nglBindBufferBaseARB( target, 0, buffer->id );
