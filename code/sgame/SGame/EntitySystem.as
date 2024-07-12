@@ -571,6 +571,10 @@ namespace TheNomad::SGame {
 			ConsolePrint( "\n" );
 			ConsolePrint( "[PLAYER STATE]\n" );
 			ConsolePrint( "Origin: [ " + m_ActivePlayer.GetOrigin().x + ", " + m_ActivePlayer.GetOrigin().y + " ]\n" );
+			ConsolePrint( "LegState: " + m_ActivePlayer.GetLegState().GetName() + "\n" );
+			if ( @m_ActivePlayer.GetLegState().GetAnimation() is null ) {
+				ConsolePrint( "LegAnimation: didn't load\n" );
+			}
 		}
 		private void ListActiveItems() {
 //			ConsolePrint( "Active Game Items:\n" );

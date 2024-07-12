@@ -1417,10 +1417,9 @@ static void R_UnloadWorld_f( void ) {
     R_UnloadLevelShaders();
     R_UnloadLevelTextures();
 
-    memset( rg.sheets + rg.world->firstLevelSpriteSheet, 0, sizeof( *rg.sheets ) * rg.world->levelSpriteSheets );
     rg.numSpriteSheets = rg.world->firstLevelSpriteSheet;
 
-//    ri.Cmd_ExecuteCommand( "snd.unload_level" );
+    ri.Cmd_ExecuteCommand( "snd.unload_level" );
 
     rg.world = NULL;
     rg.worldMapLoaded = qfalse;

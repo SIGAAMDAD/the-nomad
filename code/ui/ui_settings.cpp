@@ -704,6 +704,14 @@ static void SettingsMenu_TabBar( void ) {
 			ImGui::EndTabItem();
 		}
 		SfxFocused( "Gameplay" );
+		if ( ImGui::BeginTabItem( "Mods" ) ) {
+			if ( s_settingsMenu->lastChild != ID_MODS ) {
+				s_settingsMenu->lastChild = ID_MODS;
+				Snd_PlaySfx( ui->sfx_select );
+			}
+			ImGui::EndTabItem();
+		}
+		SfxFocused( "Mods" );
 
 		ImGui::PopStyleColor( 3 );
 		ImGui::EndTabBar();
@@ -1577,20 +1585,23 @@ static void ModuleMenu_Draw( void )
 
 	FontCache()->SetActiveFont( RobotoMono );
 
-	ImGui::SetCursorScreenPos( ImVec2( 0, 32 * ui->scale ) );
-    ImGui::BeginChild( ImGui::GetID( "SectionTree" ), ImVec2( 400 * ui->scale, 650 * ui->scale ), ImGuiChildFlags_None,
+	ImGui::SetCursorScreenPos( ImVec2( 0, 64 * ui->scale ) );
+    ImGui::BeginChild( ImGui::GetID( "MODSMENUEDIT" ), ImVec2( 400 * ui->scale, 550 * ui->scale ), ImGuiChildFlags_None,
         ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar
         | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus );
     FontCache()->SetActiveFont( RobotoMono );
 
-    ImGui::SeparatorText( "DATABASE" );
+    ImGui::SeparatorText( "MODS" );
     ImGui::SetWindowFontScale( ( scale * 1.8f ) * ui->scale );
     for ( i = 0; i < g_pModuleLib->GetModCount(); i++ ) {
+		ImGui::TextUnformatted( g_pModuleLib->m_pModList[i].info->m_szName );
+//		ImGui::Selectable( va( "%s##ModuleSelectionSettings%lu", g_pModuleLib->m_pModList[i].info->m_szName, i ),
+//			( s_settingsMenu->currentModSettings == i ) );
     }
     ImGui::EndChild();
 
-    ImGui::SetCursorScreenPos( ImVec2( 404 * ui->scale, 32 * ui->scale ) );
-    ImGui::BeginChild( ImGui::GetID( "EntryDraw" ), ImVec2( 700 * ui->scale, ( 768 - 64 ) * ui->scale ), ImGuiChildFlags_None,
+    ImGui::SetCursorScreenPos( ImVec2( 404 * ui->scale, 64 * ui->scale ) );
+    ImGui::BeginChild( ImGui::GetID( "EntryDraw" ), ImVec2( 700 * ui->scale, ( 768 - 128 ) * ui->scale ), ImGuiChildFlags_None,
         MENU_DEFAULT_FLAGS );
     if ( s_settingsMenu->currentModSettings ) {
 		name = g_pModuleLib->m_pModList[s_settingsMenu->currentModSettings].info->m_szName;
@@ -1893,6 +1904,12 @@ static void GameplayMenu_Save( void )
 	Cvar_SetIntegerValue( "sgame_ToggleHUD", s_settingsMenu->gameplay.toggleHUD );
 }
 
+static void ModuleMenu_Save( void )
+{
+	g_pModuleLib->ModuleCall( sgvm, ModuleSaveConfiguration, 0 );
+	g_pModuleLib->RunModules( ModuleSaveConfiguration, 0 );
+}
+
 static void PerformanceMenu_SetDefault( void )
 {
 	int i;
@@ -2059,6 +2076,9 @@ static void SettingsMenu_Draw( void )
 	case ID_GAMEPLAY:
 		GameplayMenu_Draw();
 		break;
+	case ID_MODS:
+		ModuleMenu_Draw();
+		break;
 	};
 
 	if ( s_settingsMenu->modified ) {
@@ -2118,6 +2138,9 @@ static void SettingsMenu_Draw( void )
 				break;
 			case ID_GAMEPLAY:
 				GameplayMenu_Save();
+				break;
+			case ID_MODS:
+				ModuleMenu_Save();
 				break;
 			};
 			SettingsMenu_GetInitial();

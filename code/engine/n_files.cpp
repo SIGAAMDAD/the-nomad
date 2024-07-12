@@ -38,8 +38,8 @@ typedef struct {
 } bffheader_t;
 
 // tunables
-//#define USE_BFF_CACHE
-//#define USE_BFF_CACHE_FILE // cache the bff archives into a file for faster load times
+#define USE_BFF_CACHE
+#define USE_BFF_CACHE_FILE // cache the bff archives into a file for faster load times
 
 //#define USE_HANDLE_CACHE
 #define MAX_CACHED_HANDLES 528
@@ -1523,6 +1523,20 @@ BFF FILE LOADING
 ==========================================================
 */
 
+uint64_t FS_BFFHashSize( uint32_t fileCount )
+{
+	uint64_t hashSize;
+
+	for ( hashSize = 2; hashSize < MAX_FILEHASH_SIZE; hashSize <<= 1 ) {
+		if ( hashSize >= fileCount ) {
+			break;
+		}
+	}
+
+	return hashSize;
+}
+
+
 #ifdef USE_BFF_CACHE
 
 #define BFF_HASH_SIZE 512
@@ -2189,19 +2203,6 @@ static void FS_LoadCache( void )
 #endif // USE_BFF_CACHE_FILE
 
 #endif // USE_BFF_CACHE
-
-uint64_t FS_BFFHashSize( uint32_t fileCount )
-{
-	uint64_t hashSize;
-
-	for ( hashSize = 2; hashSize < MAX_FILEHASH_SIZE; hashSize <<= 1 ) {
-		if ( hashSize >= fileCount ) {
-			break;
-		}
-	}
-
-	return hashSize;
-}
 
 /*
 ==========================================================
@@ -4287,7 +4288,7 @@ static void FS_ListBFF_f(void)
 	}
 }
 
-static void FS_ShowDir_f(void)
+static void FS_ShowDir_f( void )
 {
 	char **list;
 	uint64_t numfiles;
@@ -4302,7 +4303,7 @@ static void FS_ShowDir_f(void)
 	Sys_FreeFileList(list);
 }
 
-static void FS_AddMod_f(void)
+static void FS_AddMod_f( void )
 {
 	const char *moddir, *modname;
 	
@@ -4403,7 +4404,7 @@ void FS_Restart( void )
 	// busted and error out now, rather than getting an unreadable
 	// graphics screen when the font fails to load
 	if ( FS_LoadFile( "default.cfg", NULL ) <= 0 ) {
-		if (lastValidBase[0]) {
+		if ( lastValidBase[0] ) {
 			Cvar_Set( "fs_basepath", lastValidBase );
 			Cvar_Set( "fs_game", lastValidGame );
 			lastValidBase[0] = '\0';

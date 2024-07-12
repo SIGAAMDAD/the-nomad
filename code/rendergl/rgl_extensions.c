@@ -326,7 +326,7 @@ void R_InitExtensions( void )
     //
     ext = "GL_ARB_texture_compression_rgtc";
     if (R_HasExtension(ext)) {
-        qboolean useRgtc = r_arb_texture_compression->i >= 1;
+        qboolean useRgtc = r_arb_texture_compression->i >= 2;
         if (useRgtc)
             glContext.textureCompressionRef |= TCR_RGTC;
         
@@ -343,9 +343,10 @@ void R_InitExtensions( void )
     //
     ext = "GL_ARB_texture_compression_bptc";
     if (R_HasExtension(ext)) {
-        qboolean useBptc = r_arb_texture_compression->i >= 2;
-        if (useBptc)
+        qboolean useBptc = r_arb_texture_compression->i >= 3;
+        if ( useBptc ) {
             glContext.textureCompressionRef |= TCR_BPTC;
+        }
         
         ri.Printf(PRINT_INFO, result[useBptc], ext);
     }

@@ -62,7 +62,7 @@ namespace TheNomad::SGame {
 		
 		private void WalkMove() {
 			float speed;
-			const uint gameTic = TheNomad::GameSystem::GameManager.GetGameTic();
+			const uint64 gameTic = TheNomad::GameSystem::GameManager.GetGameTic();
 			vec3 accel = m_EntityData.GetPhysicsObject().GetAcceleration();
 			
 			KeyMove();
@@ -71,7 +71,6 @@ namespace TheNomad::SGame {
 //				if ( ( move_toggle % ( 16 + ( TheNomad::Engine::CvarVariableInteger( "com_maxfps" ) / 10 ) ) ) == 0.0f ) {
 //				}
 //			}
-
 			accel.y += forward * sgame_BaseSpeed.GetFloat();
 			accel.x += side * sgame_BaseSpeed.GetFloat();
 
@@ -226,8 +225,10 @@ namespace TheNomad::SGame {
 			// set legs direction
 			if ( side > 0 ) {
 				m_EntityData.SetLegsFacing( FACING_RIGHT );
+				m_EntityData.SetArmsFacing( FACING_RIGHT );
 			} else if ( side < 0 ) {
 				m_EntityData.SetLegsFacing( FACING_LEFT );
+				m_EntityData.SetArmsFacing( FACING_LEFT );
 			}
 
 			//
@@ -236,15 +237,18 @@ namespace TheNomad::SGame {
 			if ( TheNomad::Engine::CvarVariableInteger( "in_mode" ) == 0 ) {
 				// mouse & keyboard
 				// position torso facing wherever the mouse is
-				const uvec2 mousePos = TheNomad::GameSystem::GameManager.GetMousePos();
+				const ivec2 mousePos = TheNomad::GameSystem::GameManager.GetMousePos();
 				const int screenWidth = TheNomad::GameSystem::GameManager.GetGPUConfig().screenWidth;
 				const int screenHeight = TheNomad::GameSystem::GameManager.GetGPUConfig().screenHeight;
 				
 				float angle = atan2( float( mousePos.y ) - float( screenHeight / 2 ),
 					float( screenHeight / 2 ) - float( mousePos.x ) );
-//				TheNomad::GameSystem::DirType dir = Util::Angle2Dir( angle );
+				if ( angle < 0.0f ) {
+					angle = -angle;
+				}
+				TheNomad::GameSystem::DirType dir = Util::Angle2Dir( angle );
 				
-				switch ( m_EntityData.GetDirection() ) {
+				switch ( dir ) {
 				case TheNomad::GameSystem::DirType::North:
 //					m_EntityData.SetFacing( FACING_UP );
 					m_EntityData.SetFacing( FACING_RIGHT );
@@ -269,6 +273,8 @@ namespace TheNomad::SGame {
 				};
 			}
 			else {
+				TheNomad::Engine::GetJoystickAngle( m_EntityData.GetPlayerIndex(), m_nJoystickAngle, m_JoystickPosition );
+
 				if ( side > 0 ) {
 					m_EntityData.SetFacing( FACING_RIGHT );
 				} else if ( side < 0 ) {
@@ -332,6 +338,7 @@ namespace TheNomad::SGame {
 			SetMovementDir();
 
 			TheNomad::Engine::UserInterface::SetActiveFont( TheNomad::Engine::UserInterface::Font_RobotoMono );
+
 			ImGui::Begin( "Debug Player Movement", null, ImGuiWindowFlags::AlwaysAutoResize );
 			ImGui::Text( "Velocity: [ " + m_EntityData.GetVelocity().x + ", " + m_EntityData.GetVelocity().y + " ]" );
 			ImGui::Text( "CameraPos: [ " + Game_CameraPos.x + ", " + Game_CameraPos.y + " ]" );
@@ -344,6 +351,8 @@ namespace TheNomad::SGame {
 			ImGui::Text( "West MSec: " + m_EntityData.key_MoveWest.msec );
 			ImGui::Separator();
 			ImGui::Text( "Torso Direction: " + m_EntityData.GetFacing() );
+			ImGui::Text( "Legs Direction: " + m_EntityData.GetLegsFacing() );
+			ImGui::Text( "Arms Direction: " + m_EntityData.GetArmsFacing() );
 			ImGui::Separator();
 			ImGui::Text( "Bounding Box" );
 			{
@@ -355,6 +364,11 @@ namespace TheNomad::SGame {
 				ImGui::Text( "maxs[0]: " + maxs.x );
 				ImGui::Text( "maxs[1]: " + maxs.y );
 			}
+			ImGui::Separator();
+			ImGui::Text( "LegState: " + m_EntityData.GetLegState().GetName() );
+			ImGui::Text( "LegAnimation:" );
+			ImGui::Text( "  Frame: " + m_EntityData.GetLegState().GetAnimation().GetFrame() );
+			ImGui::Text( "  NumFrames: " + m_EntityData.GetLegState().GetAnimation().NumFrames() );
 			ImGui::Separator();
 			ImGui::Text( "GameTic: " + gameTic );
 			ImGui::End();
@@ -377,11 +391,13 @@ namespace TheNomad::SGame {
 			if ( key.active ) {
 				// still down
 				if ( key.downtime <= 0 ) {
-					msec = TheNomad::GameSystem::GameManager.GetGameTic();
+//					msec = TheNomad::GameSystem::GameManager.GetGameTic();
+					msec = TheNomad::Engine::System::Milliseconds();
 				} else {
-					msec += TheNomad::GameSystem::GameManager.GetGameTic() - key.downtime;
+					msec += TheNomad::Engine::System::Milliseconds() - key.downtime;
+//					msec += TheNomad::GameSystem::GameManager.GetGameTic() - key.downtime;
 				}
-				key.downtime = TheNomad::GameSystem::GameManager.GetGameTic();
+				key.downtime = TheNomad::Engine::System::Milliseconds();
 			}
 
 			val = Util::Clamp( float( msec ) / float( frame_msec ), float( 0 ), float( 1 ) );
@@ -418,8 +434,12 @@ namespace TheNomad::SGame {
 				westmove = Util::Clamp( side * KeyState( m_EntityData.key_MoveWest ), -sgame_MaxSpeed.GetFloat(), sgame_MaxSpeed.GetFloat() );
 			}
 		}
+
+		ivec2 m_JoystickPosition = ivec2( 0 );
 		
 		PlayrObject@ m_EntityData = null;
+
+		float m_nJoystickAngle = 0.0f;
 		
 		float forward = 0.0f;
 		float side = 0.0f;

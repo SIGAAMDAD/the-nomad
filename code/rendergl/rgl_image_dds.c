@@ -271,9 +271,8 @@ void R_LoadDDS ( const char *filename, byte **pic, int *width, int *height, GLen
 	//
 	// parse header and dx10 header if available
 	//
-	ddsHeader = (ddsHeader_t *)(buffer.b + 4);
-	if ((ddsHeader->pixelFormatFlags & DDSPF_FOURCC) && ddsHeader->fourCC == EncodeFourCC("DX10"))
-	{
+	ddsHeader = (ddsHeader_t *)( buffer.b + 4 );
+	if ((ddsHeader->pixelFormatFlags & DDSPF_FOURCC) && ddsHeader->fourCC == EncodeFourCC("DX10")) {
 		if (len < 4 + sizeof(*ddsHeader) + sizeof(*ddsHeaderDxt10))
 		{
 			ri.Printf(PRINT_INFO, "File %s indicates a DX10 header it is too small to contain.\n", filename);
@@ -387,59 +386,98 @@ void R_LoadDDS ( const char *filename, byte **pic, int *width, int *height, GLen
 			case DXGI_FORMAT_R8G8B8A8_SNORM:
 				*picFormat = GL_RGBA8;
 				break;
-
+			
+			case DXGI_FORMAT_R8G8_B8G8_UNORM:
+				*picFormat = GL_RGB8;
+				break;
+			
 			default:
 				ri.Printf(PRINT_INFO, "DDS File %s has unsupported DXGI format %d.\n", filename, ddsHeaderDxt10->dxgiFormat);
 				ri.FS_FreeFile(buffer.v);
 				return;
 				break;
-		}
+		};
 	}
 	else
 	{
 		if (ddsHeader->pixelFormatFlags & DDSPF_FOURCC)
 		{
-			if (ddsHeader->fourCC == EncodeFourCC("DXT1"))
+			if ( ddsHeader->fourCC == EncodeFourCC( "DXT1" ) ) {
 				*picFormat = GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
-			else if (ddsHeader->fourCC == EncodeFourCC("DXT2"))
+			} else if ( ddsHeader->fourCC == EncodeFourCC( "DXT2" ) ) {
 				*picFormat = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
-			else if (ddsHeader->fourCC == EncodeFourCC("DXT3"))
+			} else if ( ddsHeader->fourCC == EncodeFourCC( "DXT3" ) ) {
 				*picFormat = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
-			else if (ddsHeader->fourCC == EncodeFourCC("DXT4"))
+			} else if ( ddsHeader->fourCC == EncodeFourCC( "DXT4" ) ) {
 				*picFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-			else if (ddsHeader->fourCC == EncodeFourCC("DXT5"))
+			} else if ( ddsHeader->fourCC == EncodeFourCC( "DXT5" ) ) {
 				*picFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-			else if (ddsHeader->fourCC == EncodeFourCC("ATI1"))
+			} else if ( ddsHeader->fourCC == EncodeFourCC( "ATI1" ) ) {
 				*picFormat = GL_COMPRESSED_RED_RGTC1;
-			else if (ddsHeader->fourCC == EncodeFourCC("BC4U"))
+			} else if ( ddsHeader->fourCC == EncodeFourCC( "BC4U" ) ) {
 				*picFormat = GL_COMPRESSED_RED_RGTC1;
-			else if (ddsHeader->fourCC == EncodeFourCC("BC4S"))
+			} else if ( ddsHeader->fourCC == EncodeFourCC( "BC4S" ) ) {
 				*picFormat = GL_COMPRESSED_SIGNED_RED_RGTC1;
-			else if (ddsHeader->fourCC == EncodeFourCC("ATI2"))
+			} else if ( ddsHeader->fourCC == EncodeFourCC( "ATI2" ) ) {
 				*picFormat = GL_COMPRESSED_RG_RGTC2;
-			else if (ddsHeader->fourCC == EncodeFourCC("BC5U"))
+			} else if ( ddsHeader->fourCC == EncodeFourCC( "BC5U" ) ) {
 				*picFormat = GL_COMPRESSED_RG_RGTC2;
-			else if (ddsHeader->fourCC == EncodeFourCC("BC5S"))
+			} else if ( ddsHeader->fourCC == EncodeFourCC( "BC5S" ) ) {
 				*picFormat = GL_COMPRESSED_SIGNED_RG_RGTC2;
-			else
-			{
-				ri.Printf(PRINT_INFO, "DDS File %s has unsupported FourCC.\n", filename);
+			}
+			else {
+				char fourCC[5];
+
+				fourCC[0] = ( (char *)&ddsHeader->fourCC )[0];
+				fourCC[1] = ( (char *)&ddsHeader->fourCC )[1];
+				fourCC[2] = ( (char *)&ddsHeader->fourCC )[2];
+				fourCC[3] = ( (char *)&ddsHeader->fourCC )[3];
+				fourCC[4] = 0;
+
+				ri.Printf( PRINT_INFO, "DDS File %s has unsupported FourCC '%s' (%u).\n", filename, fourCC, ddsHeader->fourCC );
 				ri.FS_FreeFile(buffer.v);
 				return;
 			}
 		}
-		else if (ddsHeader->pixelFormatFlags == (DDSPF_RGB | DDSPF_ALPHAPIXELS)
-			&& ddsHeader->rgbBitCount == 32
-			&& ddsHeader->rBitMask == 0x000000ff
-			&& ddsHeader->gBitMask == 0x0000ff00
-			&& ddsHeader->bBitMask == 0x00ff0000
-			&& ddsHeader->aBitMask == 0xff000000)
+		else if ( ddsHeader->pixelFormatFlags & ( DDSPF_RGB | DDSPF_ALPHAPIXELS ) )
 		{
-			*picFormat = GL_RGBA8;
+			if ( ddsHeader->rgbBitCount == 32
+				&& ddsHeader->rBitMask == 0x000000ff
+				&& ddsHeader->gBitMask == 0x0000ff00
+				&& ddsHeader->bBitMask == 0x00ff0000
+				&& ddsHeader->aBitMask == 0xff000000 )
+			{
+				*picFormat = GL_RGBA8;
+			}
+			else if ( ddsHeader->rgbBitCount == 32
+				&& ddsHeader->rBitMask == 0x000000ff
+				&& ddsHeader->gBitMask == 0x0000ff00
+				&& ddsHeader->bBitMask == 0x00ff0000
+				&& ddsHeader->aBitMask == 0xff000000 )
+			{
+				*picFormat = GL_BGRA_EXT;
+			}
+			else if ( ddsHeader->rgbBitCount == 24
+				&& ddsHeader->rBitMask == 0x000000ff
+				&& ddsHeader->gBitMask == 0x0000ff00
+				&& ddsHeader->bBitMask == 0x00ff0000 )
+			{
+				*picFormat = GL_BGR;
+			}
+			else if ( ddsHeader->rgbBitCount == 24
+				&& ddsHeader->rBitMask == 0x000000ff
+				&& ddsHeader->gBitMask == 0x0000ff00
+				&& ddsHeader->bBitMask == 0x00ff0000 )
+			{
+				*picFormat = GL_RGB8;
+			}
+			else if ( ddsHeader->rgbBitCount == 8 ) {
+				*picFormat = GL_LUMINANCE;
+			}
 		}
 		else
 		{
-			ri.Printf(PRINT_INFO, "DDS File %s has unsupported RGBA format.\n", filename);
+			ri.Printf( PRINT_INFO, "DDS File %s has unsupported RGBA format. (flags: %u)\n", filename, ddsHeader->pixelFormatFlags );
 			ri.FS_FreeFile(buffer.v);
 			return;
 		}

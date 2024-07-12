@@ -265,12 +265,6 @@ void G_SetActiveMap( nhandle_t hMap, uint32_t *nCheckpoints, uint32_t *nSpawns, 
 		N_Error( ERR_DROP, "G_SetActiveMap: invalid parameter" );
 	}
 
-	// set the marker before loading any map assets
-	Hunk_SetMark();
-	
-	// set the marker before loading any map assets
-    Hunk_SetMark();
-
 	info = &gi.mapCache.info;
 	if ( !G_LoadLevelFile( gi.mapCache.mapList[ hMap - 1 ], info ) ) {
 		N_Error( ERR_DROP, "G_SetActiveMap: failed to load map level file '%s'", gi.mapCache.mapList[ hMap - 1 ] );

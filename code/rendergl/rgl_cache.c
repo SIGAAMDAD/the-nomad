@@ -623,6 +623,8 @@ void R_ShutdownBuffer( vertexBuffer_t *vbo )
 		nglDeleteVertexArrays( 1, &vbo->vaoId );
 	}
 
+	rg.numBuffers--;
+
 	glState.memstats.numBuffers--;
 	glState.memstats.estBufferMemUsed -= ( vbo->vertex.size + vbo->index.size );
 	memset( vbo, 0, sizeof( *vbo ) );

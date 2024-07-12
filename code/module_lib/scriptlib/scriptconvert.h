@@ -73,6 +73,9 @@ public:
         char buf[64];
         return strtoul( str->c_str(), (char **)&buf, 10 );
     }
+    static bool StringToBool( const string_t *str ) {
+        return *str == "true" ? true : false;
+    }
 
     template<typename T>
     static uint16_t ToUShort( T v ) { return (uint16_t)v; }
@@ -194,7 +197,7 @@ public:
         CheckASCall( pEngine->RegisterObjectMethod( "Convert", "uint16 ToUShort( uint64 ) const", WRAP_FN( CScriptConvert::ToUShort<uint64_t> ), asCALL_GENERIC ) );
         CheckASCall( pEngine->RegisterObjectMethod( "Convert", "uint16 ToUShort( bool ) const", WRAP_FN( CScriptConvert::ToUShort<bool> ), asCALL_GENERIC ) );
 
-        CheckASCall( pEngine->RegisterObjectMethod( "Convert", "bool ToBool( const string& in ) const", WRAP_FN( CScriptConvert::StringToUInt ), asCALL_GENERIC ) );
+        CheckASCall( pEngine->RegisterObjectMethod( "Convert", "bool ToBool( const string& in ) const", WRAP_FN( CScriptConvert::StringToBool ), asCALL_GENERIC ) );
         CheckASCall( pEngine->RegisterObjectMethod( "Convert", "bool ToBool( float ) const", WRAP_FN( CScriptConvert::ToBool<float> ), asCALL_GENERIC ) );
         CheckASCall( pEngine->RegisterObjectMethod( "Convert", "bool ToBool( double ) const", WRAP_FN( CScriptConvert::ToBool<double> ), asCALL_GENERIC ) );
         CheckASCall( pEngine->RegisterObjectMethod( "Convert", "bool ToBool( int8 ) const", WRAP_FN( CScriptConvert::ToBool<int8_t> ), asCALL_GENERIC ) );

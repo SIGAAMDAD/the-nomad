@@ -291,6 +291,8 @@ qboolean Cbuf_Wait( void );
 
 const char* GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL va( const char *format, ... );
 
+void Com_JoystickGetAngle( int joystickIndex, float *angle, ivec2_t joystickPosition );
+
 typedef enum {
 	EXEC_NOW = 0,
 	EXEC_INSERT,

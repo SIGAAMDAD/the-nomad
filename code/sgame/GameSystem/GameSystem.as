@@ -109,20 +109,20 @@ namespace TheNomad::GameSystem {
 			return 0;
 		}
 
-		void SetMousePos( const uvec2& in mousePos ) {
+		void SetMousePos( const ivec2& in mousePos ) {
 			m_MousePos = mousePos;
 		}
-		uvec2& GetMousePos() {
+		ivec2& GetMousePos() {
 			return m_MousePos;
 		}
-		const uvec2& GetMousePos() const {
+		const ivec2& GetMousePos() const {
 			return m_MousePos;
 		}
 
 		private TheNomad::Engine::Renderer::GPUConfig m_GPUConfig;
 
 		// input
-		private uvec2 m_MousePos = uvec2( 0 );
+		private ivec2 m_MousePos = ivec2( 0 );
 		private int m_JoystickSide = 0;
 		private int m_JoystickForward = 0;
 		private int m_JoystickUp = 0;

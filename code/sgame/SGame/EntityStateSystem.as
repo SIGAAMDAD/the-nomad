@@ -12,7 +12,6 @@ namespace TheNomad::SGame {
 		ST_MOB_DEAD,
 		
 		ST_PLAYR_IDLE,
-		ST_PLAYR_CROUCHING,
 		ST_PLAYR_DOUBLEJUMP,
 		ST_PLAYR_MELEE,
 		ST_PLAYR_COMBAT,
@@ -34,6 +33,7 @@ namespace TheNomad::SGame {
 
 		// legs in air states
 		ST_PLAYR_LEGS_IDLE_AIR,
+		ST_PLAYR_LEGS_MOVE_AIR,
 		ST_PLAYR_LEGS_FALL_AIR,
 		ST_PLAYR_LEGS_STUN_AIR,
 
@@ -66,20 +66,6 @@ namespace TheNomad::SGame {
 			
 			return @values;
 		}
-		
-		private void LoadAnimationsFromFile( const string& in modName ) {
-			array<json@>@ animations;
-			
-			@animations = @LoadJSonFile( modName, "animations", "AnimationInfo" );
-			if ( @animations is null ) {
-				return;
-			}
-			
-			ConsolePrint( "Got " + animations.Count() + " animation infos from \"" + modName + "\"\n" );
-			for ( uint i = 0; i < animations.Count(); i++ ) {
-				m_AnimationInfos.Add( @animations[i] );
-			}
-		}
 
 		private void LoadStatesFromFile( const string& in modName ) {
 			array<json@>@ states;
@@ -105,7 +91,6 @@ namespace TheNomad::SGame {
 			m_BaseStateCache.Add( "ST_MOB_FLEE", StateNum::ST_MOB_FLEE );
 			m_BaseStateCache.Add( "ST_MOB_DEAD", StateNum::ST_MOB_DEAD );
 			m_BaseStateCache.Add( "ST_PLAYR_IDLE", StateNum::ST_PLAYR_IDLE );
-			m_BaseStateCache.Add( "ST_PLAYR_CROUCHING", StateNum::ST_PLAYR_CROUCHING );
 			m_BaseStateCache.Add( "ST_PLAYR_DOUBLEJUMP", StateNum::ST_PLAYR_DOUBLEJUMP );
 			m_BaseStateCache.Add( "ST_PLAYR_MELEE", StateNum::ST_PLAYR_MELEE );
 			m_BaseStateCache.Add( "ST_PLAYR_COMBAT", StateNum::ST_PLAYR_COMBAT );
@@ -115,6 +100,7 @@ namespace TheNomad::SGame {
 			m_BaseStateCache.Add( "ST_PLAYR_LEGS_MOVE_GROUND", StateNum::ST_PLAYR_LEGS_MOVE_GROUND );
 			m_BaseStateCache.Add( "ST_PLAYR_LEGS_STUN_GROUND", StateNum::ST_PLAYR_LEGS_STUN_GROUND );
 			m_BaseStateCache.Add( "ST_PLAYR_LEGS_IDLE_AIR", StateNum::ST_PLAYR_LEGS_IDLE_AIR );
+			m_BaseStateCache.Add( "ST_PLAYR_LEGS_MOVE_AIR", StateNum::ST_PLAYR_LEGS_MOVE_AIR );
 			m_BaseStateCache.Add( "ST_PLAYR_LEGS_FALL_AIR", StateNum::ST_PLAYR_LEGS_FALL_AIR );
 			m_BaseStateCache.Add( "ST_PLAYR_LEGS_STUN_AIR", StateNum::ST_PLAYR_LEGS_STUN_AIR );
 		}
@@ -131,9 +117,6 @@ namespace TheNomad::SGame {
 
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.ListStateCache_f ), "sgame.state_cache", false
-			);
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.ListAnimationsCache_f ), "sgame.animation_cache", false
 			);
 
 			InitBaseStateCache();
@@ -152,35 +135,16 @@ namespace TheNomad::SGame {
 					continue;
 				}
 
-				m_States.Add( state );
-				m_StateCache.Add( state.GetName(), state );
+				m_States.Add( @state );
+				m_StateCache.Add( state.GetName(), @state );
 			}
 			m_StateInfos.Clear();
 
-			ConsolePrint( "Loading animation data...\n" );
-			
-			for ( i = 0; i < sgame_ModList.Count(); i++ ) {
-				LoadAnimationsFromFile( sgame_ModList[i] );
-			}
-			
-			for ( i = 0; i < m_AnimationInfos.Count(); i++ ) {
-				Animation@ anim = Animation();
-
-				if ( !anim.Load( @m_AnimationInfos[i] ) ) {
-					ConsoleWarning( "failed to load animation info at " + i + "\n" );
-					continue;
-				}
-
-				m_Animations.Add( anim );
-				m_AnimationCache.Add( anim.GetName(), anim );
-			}
-			m_AnimationInfos.Clear();
+			TheNomad::Engine::CmdExecuteCommand( "sgame.state_cache\n" );
 		}
 		void OnLevelEnd() {
 			m_StateCache.Clear();
-			m_AnimationCache.Clear();
 			m_States.Clear();
-			m_Animations.Clear();
 		}
 		void OnSave() const {
 		}
@@ -205,17 +169,6 @@ namespace TheNomad::SGame {
 			}
 			ConsolePrint( "----------------------------------------\n" );
 		}
-
-		private void ListAnimationsCache_f() {
-			ConsolePrint( "\n" );
-			ConsolePrint( "ENTITY ANIMATION CACHE\n" );
-			ConsolePrint( "----------------------------------------\n" );
-			for ( uint i = 0; i < m_Animations.Count(); i++ ) {
-				m_Animations[i].Log();
-				ConsolePrint( "\n" );
-			}
-			ConsolePrint( "----------------------------------------\n" );
-		}
 		
 		EntityState@ GetStateById( const string& in name ) {
 			EntityState@ state = null;
@@ -236,11 +189,8 @@ namespace TheNomad::SGame {
 		}
 		
 		private array<json@> m_StateInfos;
-		private array<json@> m_AnimationInfos;
 		private dictionary m_StateCache;
-		private dictionary m_AnimationCache;
-		private array<EntityState> m_States;
-		private array<Animation> m_Animations;
+		private array<EntityState@> m_States;
 		private EntityState m_NullState;
 
 		// technically const

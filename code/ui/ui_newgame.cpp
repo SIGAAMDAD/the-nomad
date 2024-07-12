@@ -66,6 +66,9 @@ static void BeginNewGame( void )
     Cvar_Set( "sgame_SaveName", s_newGame->saveName );
     Cvar_Set( "mapname", *gi.mapCache.mapList );
 
+    // set the marker before loading any map assets
+	Hunk_SetMark();
+
     memset( s_newGame->saveName, 0, sizeof( s_newGame->saveName ) );
 
     // start a new game

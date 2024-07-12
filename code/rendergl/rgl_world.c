@@ -323,7 +323,7 @@ void RE_LoadWorldMap( const char *filename )
     r_worldData.levelSpriteSheets = 0;
     r_worldData.levelTextures = 0;
 
-//    ri.Cmd_ExecuteCommand( "snd.startup_level" );
+    ri.Cmd_ExecuteCommand( "snd.startup_level" );
 
     // load into heap
     R_LoadTileset( &mheader->lumps[LUMP_SPRITES], theader );

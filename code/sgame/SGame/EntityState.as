@@ -21,11 +21,14 @@ namespace TheNomad::SGame {
 			ConsolePrint( "Tics: " + m_nTics + "\n" );
 			ConsolePrint( "Id: " + m_nStateNum + m_nStateOffset + "\n" );
 			ConsolePrint( "Sprite Offset: [" + m_SpriteOffset.x + ", " + m_SpriteOffset.y + "]\n" );
+			ConsolePrint( "[Animation]\n" );
+			m_Animation.Log();
 		}
 
 		bool Load( json@ data ) {
 			array<json@> values;
 			string base;
+			json@ anim;
 
 			if ( !data.get( "Id", m_Name ) ) {
 				ConsoleWarning( "invalid state info, missing variable 'Id'\n" );
@@ -83,6 +86,17 @@ namespace TheNomad::SGame {
 				ConsoleWarning( "EntityState::Load: next state is null\n" );
 			}
 
+			@anim = @data[ "Animation" ];
+			if ( @anim is null ) {
+				ConsoleWarning( "invalid state info, missing variable 'Animation'\n" );
+				return false;
+			} else {
+				if ( !m_Animation.Load( @anim ) ) {
+					return false;
+				}
+				m_Animation.SetState( @this );
+			}
+
 			ConsolePrint( "State \"" + m_Name + "\" registered with ID " + m_nStateNum + " and offset of " + m_nStateOffset +
 				", with next state \"" + m_NextState.m_Name + "\" with " + m_nTics + " tics\n" );
 
@@ -94,48 +108,43 @@ namespace TheNomad::SGame {
 		}
 
 		void Reset() {
-			m_nTicker = 0;
+			m_nTicker = TheNomad::Engine::System::Milliseconds();
 		}
 		
 		const uvec2& GetSpriteOffset() const {
 			return m_SpriteOffset;
 		}
 		bool Done() const {
-			return m_nTicker >= m_nTics;
+			return TheNomad::Engine::System::Milliseconds() - m_nTicker >= m_nTics;
 		}
 		uint GetTics() const {
 			return m_nTicker;
 		}
 		EntityState@ Run() {
-			m_nTicker += TheNomad::Engine::CvarVariableInteger( "com_maxfps" ) / 60;
-			if ( m_nTicker >= m_nTics ) {
+			if ( TheNomad::Engine::System::Milliseconds() - m_nTicker > m_nTics ) {
+				Reset();
 				return @m_NextState !is null ? @m_NextState : @StateManager.GetStateForNum( ( m_nStateNum + m_nStateOffset ) + 1 );
 			}
-			if ( @m_Animation !is null ) {
-				m_Animation.Run();
-			}
+			m_Animation.Run();
 			return @this;
 		}
 		EntityState@ Cycle() {
-			return m_NextState;
+			return @m_NextState;
 		}
-		Animation@ GetAnimation() {
+		const Animation@ GetAnimation() const {
 			return @m_Animation;
-		}
-		void SetAnimation( Animation@ anim ) {
-			@m_Animation = @anim;
 		}
 		
 		// static data
 		private string m_Name;
 		private uvec2 m_SpriteOffset = uvec2( 0 );
 		private EntityState@ m_NextState = null;
-		private Animation@ m_Animation = null;
-		private uint m_nTics = 0;
+		private Animation m_Animation;
+		private uint64 m_nTics = 0;
 		private uint m_nStateNum = 0;
 		private uint m_nStateOffset = 0;
 
 		// runtime data
-		private uint m_nTicker = 0;
+		private uint64 m_nTicker = 0;
 	};
 };

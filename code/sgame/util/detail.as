@@ -1,3 +1,5 @@
+#include "Engine/Constants.as"
+
 // essentially assert() but in angelscript
 void Assert( const bool condition, const string& in msg ) {
 	if ( !condition ) {
@@ -16,6 +18,77 @@ namespace TheNomad::Util {
 		}
 
 		return @data;
+	}
+
+	float CubicLerp( float a0, float a1, float w ) {
+		if ( w < 0.0f ) {
+			return a0;
+		}
+		if ( w > 1.0f ) {
+			return a1;
+		}
+		return ( a1 - a0 ) * w+ a0;
+	}
+
+	float SmoothstepLerp( float a0, float a1, float w ) {
+		if ( w < 0.0f ) {
+			return a0;
+		}
+		if ( w > 1.0f ) {
+			return a1;
+		}
+		return ( a1 - a0 ) * ( 3.0f - w * 2.0f ) * w * w + a0;
+	}
+
+	//
+	// I did not write this, it came from psuedo code on wikipedia
+	//
+	vec2 randomGradient( int x, int y ) {
+		// No precomupted gradients mean this works for any number of grid coordinates
+		const uint w = 8 * TheNomad::Engine::Constants::SIZEOF_UINT;
+		const uint s = w / 2; // rotation width
+		uint a = uint( x );
+		uint b = uint( y );
+		float random;
+
+		a *= 3284157443; b ^= a << s | a >> w - s;
+		b *= 1911520717; a ^= a << s | b >> w - s;
+		a *= 2048417325;
+
+		random = a * ( M_PI / ~( ~0 >> 1 ) ); // in [0, 2*PI]
+
+		return vec2( cos( random ), sin( random ) );
+	}
+
+	float dotGridGradient( float ix, float iy, float x, float y ) {
+		const vec2 gradient = randomGradient( int( ix ), int( iy ) );
+
+		const float dx = x - float( ix );
+		const float dy = y - float( iy );
+
+		return ( dx * gradient.x + dy * gradient.y );
+	}
+
+	float PerlinNoise( float x, float y ) {
+		int x0 = int( floor( x ) );
+		int x1 = x0 + 1;
+		int y0 = int( floor( y ) );
+		int y1 = y0 + 1;
+
+		float sx = x - float( x0 );
+		float sy = y - float( y0 );
+		
+		float n0, n1, ix0, ix1;
+		
+		n0 = dotGridGradient( x0, y0, x, y );
+		n1 = dotGridGradient( x1, y0, x, y );
+		ix0 = CubicLerp( n0, n1, sx );
+
+		n0 = dotGridGradient( x0, y1, x, y );
+		n1 = dotGridGradient( x1, y1, x, y );
+		ix1 = CubicLerp( n0, n1, sy );
+
+		return CubicLerp( ix0, ix1, sy );
 	}
 
 	void HapticRumble( uint nPlayerIndex, float nStrength, uint nTime ) {
@@ -569,7 +642,7 @@ namespace TheNomad::Util {
 		} else if ( angle >= 292.5f && angle <= 337.5f ) {
 			return TheNomad::GameSystem::DirType::NorthWest;
 		} else {
-			DebugPrint( "Angle2Dir: funny angle " + formatFloat( angle ) + "\n" );
+			ConsoleWarning( "Angle2Dir: funny angle " + angle + "\n" );
 		}
 		return TheNomad::GameSystem::DirType::North;
 	}

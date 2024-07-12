@@ -59,6 +59,23 @@ static qboolean mouse_focus;
 static uint64_t in_eventTime = 0;
 
 
+void Com_JoystickGetAngle( int joystickIndex, float *angle, ivec2_t joystickPosition )
+{
+	int16_t x, y;
+	int deltaX, deltaY;
+
+	x = SDL_JoystickGetAxis( sticks[ joystickIndex ], 0 );
+	y = SDL_JoystickGetAxis( sticks[ joystickIndex ], 1 );
+
+	deltaX = joystickPosition[0] - x;
+	deltaY = joystickPosition[1] - y;
+
+	joystickPosition[0] = x;
+	joystickPosition[1] = y;
+
+	*angle = RAD2DEG( atan2( -deltaX, -deltaY ) );
+}
+
 /*
 ===============
 IN_PrintKey
@@ -730,11 +747,9 @@ static void IN_InitJoystick( void )
 		Con_Printf( COLOR_YELLOW "WARNING: too many input devices for split-screen coop, setting to maximum of %i\n", total );
 		numInputDevices = total;
 	}
-	cv = Cvar_Get( "in_numInputDevices", "0", CVAR_TEMP );
+	cv = Cvar_Get( "in_numInputDevices", va( "%i", numInputDevices ), CVAR_TEMP | CVAR_NODEFAULT );
 	Cvar_CheckRange( cv, "0", "4", CVT_INT );
 	Cvar_SetDescription( cv, "Sets the number of input devices that are handled by the engine.\nNOTE: only used for split-screen co-op." );
-
-	Cvar_SetIntegerValue( "in_numInputDevices", numInputDevices );
 
 	for ( i = 0; i < numInputDevices; i++ ) {
 		sticks[i] = SDL_JoystickOpen( i );

@@ -266,6 +266,10 @@ void UI_SetActiveMenu( uiMenu_t menu )
 
 	switch ( menu ) {
 	case UI_MENU_NONE:
+		// reset colors
+		ImGui::GetCurrentContext()->ColorStack.clear();
+		ImGui::StyleColorsDark();
+
 		FontCache()->SetActiveFont( RobotoMono );
 		UI_ForceMenuOff();
 		Key_SetCatcher( Key_GetCatcher() | KEYCATCH_SGAME );

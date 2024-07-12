@@ -145,8 +145,12 @@ namespace TheNomad::SGame {
 		}
 		
 		bool IsCrouching() const {
-			return m_State.GetID() == StateNum::ST_PLAYR_CROUCHING;
+			return m_bCrouching;
 		}
+		void SetCrouching( bool bCrouching ) {
+			m_bCrouching = bCrouching;
+		}
+
 		bool IsDoubleJumping() const {
 			return m_State.GetID() == StateNum::ST_PLAYR_DOUBLEJUMP;
 		}
@@ -231,6 +235,29 @@ namespace TheNomad::SGame {
 
 		void SetLegsFacing( int facing ) {
 			m_LegsFacing = facing;
+		}
+		void SetArmsFacing( int facing ) {
+			m_ArmsFacing = facing;
+		}
+		int GetLegsFacing() const {
+			return m_LegsFacing;
+		}
+		int GetArmsFacing() const {
+			return m_ArmsFacing;
+		}
+
+		EntityState@ GetLegState() {
+			return @m_LegState;
+		}
+		EntityState@ GetArmState() {
+			return @m_ArmState;
+		}
+
+		const EntityState@ GetLegState() const {
+			return @m_LegState;
+		}
+		const EntityState@ GetArmState() const {
+			return @m_ArmState;
 		}
 
 		bool Load( const TheNomad::GameSystem::SaveSystem::LoadSection& in section ) override {
@@ -416,6 +443,9 @@ namespace TheNomad::SGame {
 				}
 			}
 
+			@m_LegState = @m_LegState.Run();
+			@m_ArmState = @m_ArmState.Run();
+
 			m_HudData.Draw();
 		}
 		
@@ -469,7 +499,7 @@ namespace TheNomad::SGame {
 		}
 		
 		void MakeSound() {
-			if ( m_State.GetID() == StateNum::ST_PLAYR_CROUCHING ) {
+			if ( m_bCrouching ) {
 				return;
 			}
 			
@@ -643,7 +673,7 @@ namespace TheNomad::SGame {
 		}
 
 		uint GetSpriteId( SpriteSheet@ sheet, EntityState@ state ) const {
-			return state.GetSpriteOffset().y * sheet.GetSpriteCountX() + state.GetSpriteOffset().x
+			return ( state.GetSpriteOffset().y * sheet.GetSpriteCountX() + state.GetSpriteOffset().x )
 				+ state.GetAnimation().GetFrame();
 		}
 
@@ -653,6 +683,7 @@ namespace TheNomad::SGame {
 			//
 			// draw the legs
 			//
+			/*
 			if ( m_PhysicsObject.GetVelocity() == Vec3Origin ) {
 				// not moving at all, just draw idle legs
 				if ( !Pmove.groundPlane ) {
@@ -686,6 +717,13 @@ namespace TheNomad::SGame {
 					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_MOVE_GROUND );
 				}
 			}
+			*/
+
+			if ( m_PhysicsObject.GetVelocity() == vec3( 0.0f ) ) {
+				@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_GROUND );
+			} else {
+				@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_MOVE_GROUND );
+			}
 
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.sheetNum = m_LegSpriteSheet.GetShader();
@@ -708,14 +746,16 @@ namespace TheNomad::SGame {
 		void Draw() override {
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 
+			@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE );
+
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.sheetNum = m_SpriteSheet.GetShader();
-			refEntity.spriteId = 0 + m_Facing;
+			refEntity.spriteId = GetSpriteId( @m_SpriteSheet, @m_State ) + m_Facing;
 			refEntity.scale = 2.0f;
 			refEntity.Draw();
 
-//			DrawLegs();
-//			DrawArms();
+			DrawLegs();
+			DrawArms();
 		}
 
 		KeyBind key_MoveNorth;
@@ -810,6 +850,8 @@ namespace TheNomad::SGame {
 
 		private uint64 m_nTimeSinceSlide = 1000;
 		private bool m_bSliding = false;
+
+		private bool m_bCrouching = false;
 
 		private bool m_bEmoting = false;
 		

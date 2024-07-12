@@ -5,7 +5,7 @@ menu/logo
     {
         texFilter bilinear
         map GDRLogo.jpg
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        blendFunc GL_ONE GL_ONE
         tcGen texture
         rgbGen vertex
     }

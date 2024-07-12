@@ -274,6 +274,7 @@ int ModuleOnLevelEnd() {
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnLevelEnd();
 	}
+	TheNomad::Engine::ResourceCache.ClearCache();
 	return 1;
 }
 
@@ -287,7 +288,6 @@ int ModuleOnKeyEvent( int key, int down ) {
 }
 
 int ModuleOnMouseEvent( int dx, int dy ) {
-	TheNomad::GameSystem::GameManager.SetMousePos( uvec2( dx, dy ) );
 	return 0;
 }
 
@@ -301,6 +301,7 @@ int ModuleOnRunTic( int msec ) {
 		return 3;
 	}
 
+	TheNomad::GameSystem::GameManager.SetMousePos( TheNomad::Engine::GetMousePosition() );
 	TheNomad::GameSystem::GameManager.SetMsec( TheNomad::Engine::System::Milliseconds() );
 
 	// if we're paused, then just draw the stuff, don't run anything else

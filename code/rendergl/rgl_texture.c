@@ -1620,11 +1620,9 @@ static GLenum RawImage_GetFormat( const byte *data, uint32_t numPixels, GLenum p
 		if ( ( type == IMGTYPE_NORMALHEIGHT ) && RawImage_HasAlpha( data, numPixels ) ) {
 			if ( !forceNoCompression && glContext.textureCompressionRef & TCR_BPTC ) {
 				internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM_ARB;
-			}
-			else if ( !forceNoCompression && glContext.textureCompression == TC_S3TC_ARB ) {
+			} else if ( !forceNoCompression && glContext.textureCompression == TC_S3TC_ARB ) {
 				internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-			}
-			else if ( r_textureBits->i == 16 ) {
+			} else if ( r_textureBits->i == 16 ) {
 				if ( r_hdr->i ) {
 					internalFormat = GL_RGBA16F;
 				} else {
@@ -1899,6 +1897,9 @@ static void RawImage_UploadToRgtc2Texture( uint32_t mipLevel, int x, int y, int 
 	hBlocks = (height + 3) / 4;
 	size = wBlocks * hBlocks * 16;
 
+	compressedData = data;
+
+#if 0
 	p = compressedData = ri.Hunk_AllocateTempMemory(size);
 	for (iy = 0; iy < height; iy += 4) {
 		int oh = MIN(4, height - iy);
@@ -1926,6 +1927,7 @@ static void RawImage_UploadToRgtc2Texture( uint32_t mipLevel, int x, int y, int 
 			}
 		}
 	}
+#endif
 
 	// FIXME: Won't work for x/y that aren't multiples of 4.
 	if (subImage) {
@@ -1938,7 +1940,7 @@ static void RawImage_UploadToRgtc2Texture( uint32_t mipLevel, int x, int y, int 
 		nglCompressedTexImage2D(GL_TEXTURE_2D, mipLevel, GL_COMPRESSED_RG_RGTC2, width, height, 0, size, compressedData);
 	}
 
-	ri.Hunk_FreeTempMemory(compressedData);
+//	ri.Hunk_FreeTempMemory(compressedData);
 }
 
 static uint64_t CalculateTextureSize( int width, int height, GLenum picFormat) 
@@ -1973,7 +1975,7 @@ static uint64_t CalculateTextureSize( int width, int height, GLenum picFormat)
 	case GL_RGBA16:
 		return numPixels * 8;
 	default:
-		ri.Printf(PRINT_INFO, "Unsupported texture format 0x%08x\n", picFormat);
+		ri.Printf( PRINT_INFO, "Unsupported texture format 0x%08x\n", picFormat );
 		return 0;
 	};
 
@@ -2021,6 +2023,10 @@ static int PixelDataFormatIsValidCompressed( GLenum format )
 	case GL_COMPRESSED_LUMINANCE_LATC1_EXT:
 	case GL_COMPRESSED_SIGNED_LUMINANCE_ALPHA_LATC2_EXT:
 	case GL_COMPRESSED_SIGNED_LUMINANCE_LATC1_EXT:
+	case GL_COMPRESSED_RGBA_FXT1_3DFX:
+	case GL_COMPRESSED_SRGB8_ETC2:
+	case GL_RGBA8_EXT:
+	case GL_RGB8_EXT:
 		return qtrue;
 	default:
 		break;
@@ -2028,11 +2034,11 @@ static int PixelDataFormatIsValidCompressed( GLenum format )
 	return qfalse;
 };
 
-static void RawImage_UploadTexture( GLuint texture, byte *data, int x, int y, int width, int height, GLenum target, GLenum picFormat,
-	int numMips, GLenum internalFormat, imgType_t type, imgFlags_t flags, qboolean subtexture )
+static void RawImage_UploadTexture( const char *ext, GLuint texture, byte *data, int x, int y, int width, int height, GLenum target,
+	GLenum picFormat, int numMips, GLenum internalFormat, imgType_t type, imgFlags_t flags, qboolean subtexture )
 {
 	GLenum dataFormat, dataType;
-	qboolean rgtc = internalFormat == GL_COMPRESSED_RG_RGTC2;
+	qboolean rgtc = PixelDataFormatIsValidCompressed( internalFormat ) && N_streq( ext, "dds" );
 	qboolean rgba8 = picFormat == GL_RGBA8 || picFormat == GL_SRGB8_ALPHA8_EXT;
 	qboolean rgba = rgba8 || picFormat == GL_RGBA16;
 	qboolean mipmap = !!(flags & IMGFLAG_MIPMAP);
@@ -2158,7 +2164,8 @@ static void Upload32( byte *data, int x, int y, int width, int height, GLenum pi
 	if (cubemap) {
 		for (i = 0; i < 6; i++) {
 			int w2 = width, h2 = height;
-			RawImage_UploadTexture(image->id, data, x, y, width, height, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, picFormat, numMips, internalFormat, type, flags, qfalse);
+			RawImage_UploadTexture( COM_GetExtension( image->imgName ), image->id, data, x, y, width, height,
+				GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, picFormat, numMips, internalFormat, type, flags, qfalse );
 			for (c = numMips; c; c--) {
 				data += CalculateTextureSize(w2, h2, picFormat);
 				w2 = MAX(1, w2 >> 1);
@@ -2167,7 +2174,8 @@ static void Upload32( byte *data, int x, int y, int width, int height, GLenum pi
 		}
 	}
 	else {
-		RawImage_UploadTexture( image->id, data, x, y, width, height, GL_TEXTURE_2D, picFormat, numMips, internalFormat, type, flags, qfalse );
+		RawImage_UploadTexture( COM_GetExtension( image->imgName ), image->id, data, x, y, width, height, GL_TEXTURE_2D,
+			picFormat, numMips, internalFormat, type, flags, qfalse );
 	}
 
 }

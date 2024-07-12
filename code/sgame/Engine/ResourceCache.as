@@ -2,7 +2,7 @@ namespace TheNomad::Engine {
     class ResourceManager {
         ResourceManager() {
         }
-
+        
         int GetShader( const string& in shader ) {
             int64 ret;
             if ( !m_ShaderCache.TryGetValue( shader, ret ) ) {

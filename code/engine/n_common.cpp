@@ -1943,7 +1943,7 @@ void Com_Init( char *commandLine )
 #endif
 
 	Cmd_AddCommand( "shutdown", Com_Shutdown_f );
-	Cmd_AddCommand( "game_restart", Com_GameRestart_f );
+//	Cmd_AddCommand( "game_restart", Com_GameRestart_f );
 	Cmd_AddCommand( "quit", Com_Quit_f );
 	Cmd_AddCommand( "exit", Com_Quit_f ); // really just added for convenience...
 	Cmd_AddCommand( "writecfg", Com_WriteConfig_f );

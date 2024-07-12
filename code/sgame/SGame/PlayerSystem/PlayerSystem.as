@@ -8,6 +8,7 @@
 #include "SGame/PlayerSystem/BladeMode.as"
 #include "SGame/PlayerSystem/QuickShot.as"
 #include "SGame/PlayerSystem/QuickTimeEvent.as"
+#include "SGame/PlayerSystem/ScreenShake.as"
 
 // misc
 #include "SGame/PlayerSystem/PMoveData.as"

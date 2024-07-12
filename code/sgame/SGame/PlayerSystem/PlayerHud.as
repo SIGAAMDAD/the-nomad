@@ -60,12 +60,14 @@ namespace TheNomad::SGame {
 
 			m_HealthBar.size.x = ( 350 * ( health * 0.01f ) ) * scale;
 
-			ImGui::PushStyleColor( ImGuiCol::FrameBg, vec4( 0.0f, 1.0f, 0.0f, 1.0f ) );
-			ImGui::PushStyleColor( ImGuiCol::FrameBgActive, vec4( 0.0f, 1.0f, 0.0f, 1.0f ) );
-			ImGui::PushStyleColor( ImGuiCol::FrameBgHovered, vec4( 0.0f, 1.0f, 0.0f, 1.0f ) );
+			const vec4 healthColor = GetHealthColor( health );
+
+			ImGui::PushStyleColor( ImGuiCol::FrameBg, healthColor );
+			ImGui::PushStyleColor( ImGuiCol::FrameBgActive, healthColor );
+			ImGui::PushStyleColor( ImGuiCol::FrameBgHovered, healthColor );
 
 			ImGui::SetWindowFontScale( 2.0f * scale );
-			ImGui::ProgressBar( health, vec2( 350 * scale, 26 * scale ), formatFloat( health ) + "%" );
+			ImGui::DragFloat( "HEALTH", health );
 			ImGui::SetWindowFontScale( 1.0f );
 
 			ImGui::PopStyleColor( 3 );
@@ -78,12 +80,12 @@ namespace TheNomad::SGame {
 
 			m_RageBar.size.x = ( 350 * ( rage * 0.01f ) ) * scale;
 
-			ImGui::PushStyleColor( ImGuiCol::FrameBg, vec4( 0.0f, 1.0f, 0.0f, 1.0f ) );
-			ImGui::PushStyleColor( ImGuiCol::FrameBgActive, vec4( 0.0f, 1.0f, 0.0f, 1.0f ) );
-			ImGui::PushStyleColor( ImGuiCol::FrameBgHovered, vec4( 0.0f, 1.0f, 0.0f, 1.0f ) );
+			ImGui::PushStyleColor( ImGuiCol::FrameBg, vec4( 1.0f, 0.0f, 0.0f, 1.0f ) );
+			ImGui::PushStyleColor( ImGuiCol::FrameBgActive, vec4( 1.0f, 0.0f, 0.0f, 1.0f ) );
+			ImGui::PushStyleColor( ImGuiCol::FrameBgHovered, vec4( 1.0f, 0.0f, 0.0f, 1.0f ) );
 
 			ImGui::SetWindowFontScale( 2.0f * scale );
-			ImGui::ProgressBar( rage, vec2( 350 * scale, 26 * scale ), formatFloat( rage ) + "%" );
+			ImGui::DragFloat( "RAGE", rage );
 			ImGui::SetWindowFontScale( 1.0f );
 
 			ImGui::PopStyleColor( 3 );
@@ -91,14 +93,15 @@ namespace TheNomad::SGame {
 		
 		private void DrawStatusBars() const {
 			const ivec2 screenSize = TheNomad::GameSystem::GameManager.GetScreenSize();
+			const float scale = TheNomad::GameSystem::GameManager.GetUIScale();
 
 			ImGui::Begin( "##StatusBars", null, ImGui::MakeWindowFlags( ImGuiWindowFlags::NoResize | ImGuiWindowFlags::NoMove
 				| ImGuiWindowFlags::NoCollapse | ImGuiWindowFlags::NoBackground | ImGuiWindowFlags::NoTitleBar
 				| ImGuiWindowFlags::NoScrollbar ) );
 			ImGui::SetWindowPos( vec2( 0.0f, 0.0f ) );
-			ImGui::SetWindowSize( vec2( float( screenSize.x ), float( screenSize.y ) ) );
+			ImGui::SetWindowSize( vec2( float( 350 * scale ), float( screenSize.y ) ) );
 			DrawHealthBar();
-//			DrawRageBar();
+			DrawRageBar();
 			ImGui::End();
 		}
 		

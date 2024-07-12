@@ -364,7 +364,7 @@ namespace TheNomad::SGame {
 		//!
 		void OnLevelStart() {
 			int difficulty;
-			
+
 			// get the level index
 			m_nIndex = TheNomad::Engine::CvarVariableInteger( "g_levelIndex" );
 			difficulty = sgame_Difficulty.GetInt();

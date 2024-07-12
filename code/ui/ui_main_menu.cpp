@@ -281,9 +281,7 @@ static void SplashScreen_Draw( void )
         "Please exercise caution."
     };
 
-    if ( timeCurrent - s_splashScreen->timeStart > s_splashScreen->lifeTime || Key_AnyDown()
-        && s_splashScreen->splashPhase > SPLASH_SCREEN_LOGO )
-    {
+    if ( timeCurrent - s_splashScreen->timeStart > s_splashScreen->lifeTime ) {
         if ( s_splashScreen->splashPhase >= SPLASH_SCREEN_WARNING ) {
             playedSplashScreen = qtrue;
             MainMenu_Cache();
@@ -379,7 +377,7 @@ void MainMenu_Cache( void )
     }
 
     s_splashScreen->timeStart = Sys_Milliseconds();
-    s_splashScreen->lifeTime = 5000;
+    s_splashScreen->lifeTime = 3500;
     s_splashScreen->splashPhase = SPLASH_SCREEN_LOGO;
     s_splashScreen->logoShader = re.RegisterShader( "menu/logo" );
     s_splashScreen->engineLogoShader = re.RegisterShader( "menu/engineLogo" );

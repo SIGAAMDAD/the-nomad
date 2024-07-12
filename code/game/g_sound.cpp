@@ -890,6 +890,9 @@ CSoundSource *CSoundManager::InitSource( const char *filename, int64_t tag )
     src->SetVolume();
 
     m_nSources++;
+    if ( gi.mapLoaded ) {
+        sndManager->m_nLevelSources++;
+    }
 
     m_hAllocLock.Unlock();
 
@@ -1363,8 +1366,10 @@ void Snd_UnloadLevel_f( void ) {
     int i;
     
     for ( i = 0; i < sndManager->m_nLevelSources; i++ ) {
+        if ( !sndManager->GetSource( sndManager->m_nFirstLevelSource + i ) ) {
+            continue;
+        }
         sndManager->GetSource( sndManager->m_nFirstLevelSource + i )->Shutdown();
-        sndManager->GetSource( sndManager->m_nFirstLevelSource + i ) = NULL;
     }
 }
 

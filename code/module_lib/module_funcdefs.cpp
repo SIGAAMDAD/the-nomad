@@ -1368,6 +1368,22 @@ static void CmdExecuteCommand( asIScriptGeneric *pGeneric ) {
     Cbuf_ExecuteText( EXEC_APPEND, cmd->c_str() );
 }
 
+static void GetJoystickAngle( asIScriptGeneric *pGeneric ) {
+    int joystickIndex = pGeneric->GetArgDWord( 0 );
+    float *angle = (float *)pGeneric->GetArgAddress( 1 );
+    ivec2 *joystickPosition = (ivec2 *)pGeneric->GetArgObject( 2 );
+
+    Com_JoystickGetAngle( joystickIndex, angle, (ivec_t *)glm::value_ptr( *joystickPosition ) );
+}
+
+static void GetMousePosition( asIScriptGeneric *pGeneric ) {
+    int x, y;
+    
+    SDL_GetMouseState( &x, &y );
+
+    new ( pGeneric->GetAddressOfReturnLocation() ) ivec2( x, y );
+}
+
 static void GetString( asIScriptGeneric *pGeneric ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
     string_t *value = (string_t *)pGeneric->GetArgObject( 1 );
@@ -1408,7 +1424,11 @@ static void ImGui_PushStyleColor_U32( ImGuiCol idx, ImU32 col ) {
     ImGui::PushStyleColor( idx, col );
 }
 
-static void ImGui_PushStyleColor_V4( ImGuiCol idx, const vec4 *col ) {
+static void ImGui_PushStyleColor_V4( asIScriptGeneric *pGeneric )
+{
+    const ImGuiCol idx = (ImGuiCol)pGeneric->GetArgDWord( 0 );
+    const vec4 *col = (const vec4 *)pGeneric->GetArgObject( 1 );
+
     ImGui::PushStyleColor( idx, ImVec4( col->r, col->g, col->b, col->a ) );
 }
 
@@ -1495,6 +1515,38 @@ static void ImGui_TextColored( const vec4 *color, const string_t *text ) {
 }
 #pragma GCC diagnostic pop
 
+static void ImGui_DragInt( asIScriptGeneric *pGeneric ) {
+    const string_t *label = (const string_t *)pGeneric->GetArgObject( 0 );
+    int32_t v = (int32_t)pGeneric->GetArgDWord( 1 );
+    float speed = pGeneric->GetArgFloat( 2 );
+    int32_t min = (int32_t)pGeneric->GetArgDWord( 3 );
+    int32_t max = (int32_t)pGeneric->GetArgDWord( 4 );
+    const string_t *format = (const string_t *)pGeneric->GetArgObject( 5 );
+    ImGuiSliderFlags flags = pGeneric->GetArgDWord( 6 );
+
+    if ( ImGui::DragInt( label->c_str(), &v, speed, min, max, format->c_str(), flags ) ) {
+        *(int32_t *)pGeneric->GetAddressOfReturnLocation() = v;
+    } else {
+        *(int32_t *)pGeneric->GetAddressOfReturnLocation() = pGeneric->GetArgDWord( 1 );
+    }
+}
+
+static void ImGui_DragFloat( asIScriptGeneric *pGeneric ) {
+    const string_t *label = (const string_t *)pGeneric->GetArgObject( 0 );
+    float v = (int32_t)pGeneric->GetArgFloat( 1 );
+    float speed = pGeneric->GetArgFloat( 2 );
+    float min = (int32_t)pGeneric->GetArgFloat( 3 );
+    float max = (int32_t)pGeneric->GetArgFloat( 4 );
+    const string_t *format = (const string_t *)pGeneric->GetArgObject( 5 );
+    ImGuiSliderFlags flags = pGeneric->GetArgDWord( 6 );
+
+    if ( ImGui::DragFloat( label->c_str(), &v, speed, min, max, format->c_str(), flags ) ) {
+        *(float *)pGeneric->GetAddressOfReturnLocation() = v;
+    } else {
+        *(float *)pGeneric->GetAddressOfReturnLocation() = pGeneric->GetArgFloat( 1 );
+    }
+}
+
 static void ImGui_SliderInt( asIScriptGeneric *pGeneric ) {
     const string_t *label = (const string_t *)pGeneric->GetArgObject( 0 );
     int32_t v = (int32_t)pGeneric->GetArgDWord( 1 );
@@ -1572,7 +1624,9 @@ static void ImGui_ProgressBar( asIScriptGeneric *pGeneric ) {
     const vec2& size = *(const vec2 *)pGeneric->GetArgObject( 1 );
     const string_t *overlay = (const string_t *)pGeneric->GetArgObject( 2 );
 
+    ImGui::PushStyleColor( ImGuiCol_FrameBg, ImVec4( 0.0f, 1.0f, 0.0f, 1.0f ) );
     ImGui::ProgressBar( fraction, ImVec2( size.x, size.y ), overlay->c_str() );
+    ImGui::PopStyleColor();
 }
 
 /*
@@ -2134,6 +2188,7 @@ void ModuleLib_Register_Engine( void )
         REGISTER_ENUM_VALUE( "ImGuiInputTextFlags", "EnterReturnsTrue", ImGuiInputTextFlags_EnterReturnsTrue );
         REGISTER_ENUM_VALUE( "ImGuiInputTextFlags", "AllowTabInput", ImGuiInputTextFlags_AllowTabInput );
         REGISTER_ENUM_VALUE( "ImGuiInputTextFlags", "CtrlEnterForNewLine", ImGuiInputTextFlags_CtrlEnterForNewLine );
+        REGISTER_ENUM_VALUE( "ImGuiInputTextFlags", "ReadOnly", ImGuiInputTextFlags_ReadOnly );
 
         REGISTER_ENUM_TYPE( "ImGuiDir" );
         REGISTER_ENUM_VALUE( "ImGuiDir", "Left", ImGuiDir_Left );
@@ -2187,8 +2242,9 @@ void ModuleLib_Register_Engine( void )
         );
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::TableNextColumn()", ImGui::TableNextColumn, ( void ), bool );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::TableNextRow( int = 0, float = 0 )", ImGui::TableNextRow, ( ImGuiTableRowFlags, float ), void );
-        REGISTER_GLOBAL_FUNCTION( "void ImGui::PushStyleColor( ImGuiCol, const vec4& in )", ImGui_PushStyleColor_V4, ( ImGuiCol, const vec4 * ), void );
-        REGISTER_GLOBAL_FUNCTION( "void ImGui::PushStyleColor( ImGuiCol, const uint32 )", ImGui_PushStyleColor_U32, ( ImGuiCol, const ImU32 ), void );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+                "void ImGui::PushStyleColor( ImGuiCol, const vec4& in )", asFUNCTION( ImGui_PushStyleColor_V4 ), asCALL_GENERIC );
+//        REGISTER_GLOBAL_FUNCTION( "void ImGui::PushStyleColor( ImGuiCol, const uint32 )", ImGui_PushStyleColor_U32, ( ImGuiCol, const ImU32 ), void );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::PopStyleColor( int = 1 )", ImGui::PopStyleColor, ( int ), void );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::Text( const string& in )", ImGui_Text, ( const string_t * ), void );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::TextColored( const vec4& in, const string& in )", ImGui_TextColored, ( const vec4 *, const string_t * ), void );
@@ -2224,6 +2280,14 @@ void ModuleLib_Register_Engine( void )
             "bool ImGui::SliderAngle( const string& in, float& out, float = -360.0f, float = 360.0f, int = 0 )", asFUNCTION( ImGui_SliderAngle ),
             asCALL_GENERIC
         );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+            "int ImGui::DragInt( const string& in, int, float = 1.0f, int = 0, int = 0, const string& in = \"%d\", int = 0 )", asFUNCTION( ImGui_DragInt ),
+            asCALL_GENERIC
+        );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+            "float ImGui::DragFloat( const string& in, float, float = 1.0f, float = 0.0f, float = 0.0f, const string& in = \"%f\", int = 0 )", asFUNCTION( ImGui_DragFloat ),
+            asCALL_GENERIC
+        );
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::ColorEdit3( const string& in, vec3& in, int = 0 )", ImGui_ColorEdit3, ( const string_t *, vec3 *, int ), bool );
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::ColorEdit4( const string& in, vec4& in, int = 0 )", ImGui_ColorEdit4, ( const string_t *, vec4 *, int ), bool );
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::Button( const string& in, const vec2& in = vec2( 0.0f ) )", ImGui_Button, ( const string_t *, const vec2 * ), bool );
@@ -2257,13 +2321,16 @@ void ModuleLib_Register_Engine( void )
         g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "string TheNomad::Engine::CvarVariableString( const string& in )",
             asFUNCTION( CvarVariableString ), asCALL_GENERIC );
 
-        REGISTER_GLOBAL_FUNCTION( "uint TheNomad::Engine::CmdArgc()", WRAP_FN( Cmd_Argc ) );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdArgvFixed( int8[]& in, uint )", WRAP_FN( CmdArgvFixed ) );
+        REGISTER_GLOBAL_FUNCTION( "uint TheNomad::Engine::CmdArgc()", asFUNCTION( CmdArgc ) );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdArgvFixed( int8[]& in, uint )", asFUNCTION( CmdArgvFixed ) );
         REGISTER_GLOBAL_FUNCTION( "string TheNomad::Engine::CmdArgv( uint )", asFUNCTION( CmdArgv ) );
-        REGISTER_GLOBAL_FUNCTION( "string TheNomad::Engine::CmdArgs( uint )", WRAP_FN( CmdArgs ) );
+        REGISTER_GLOBAL_FUNCTION( "string TheNomad::Engine::CmdArgs( uint )", asFUNCTION( CmdArgs ) );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdAddCommand( const string& in )", asFUNCTION( CmdAddCommand ) );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdRemoveCommand( const string& in )", WRAP_FN( CmdRemoveCommand ) );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdRemoveCommand( const string& in )", asFUNCTION( CmdRemoveCommand ) );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdExecuteCommand( const string& in )", asFUNCTION( CmdExecuteCommand ) );
+
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::GetJoystickAngle( int, float& out, ivec2& out )", asFUNCTION( GetJoystickAngle ) );
+        REGISTER_GLOBAL_FUNCTION( "const ivec2 TheNomad::Engine::GetMousePosition()", asFUNCTION( GetMousePosition ) );
 
         REGISTER_ENUM_TYPE( "KeyNum" );
         REGISTER_ENUM_VALUE( "KeyNum", "A", KEY_A );
