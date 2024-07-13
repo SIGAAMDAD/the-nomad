@@ -11,35 +11,34 @@
     			"TicRate": "0",
     			"FlipFlop": "false",
     			"Frames": "0",
-    			"Shader": "sprites/player/raio_torso"
+    			"Shader": "sprites/player/raio_torso",
+                "SpriteAdvance": "0"
             }
         },
         {
             "Id": "player_ground_idle",
-            "Tics": "1000",
+            "Tics": "900",
             "BaseNum": "ST_PLAYR_LEGS_IDLE_GROUND",
             "Entity": "player",
             "NextState": "this",
             "SpriteOffset": [ 0, 0 ],
             "Animation": {
-    			"TicRate": "1000",
+    			"TicRate": "290",
     			"FlipFlop": "false",
-    			"Frames": "3",
-    			"Shader": "sprites/player/raio_torso"
+    			"Frames": "3"
             }
         },
         {
             "Id": "player_ground_move",
-            "Tics": "10",
+            "Tics": "1000",
             "BaseNum": "ST_PLAYR_LEGS_MOVE_GROUND",
             "Entity": "player",
             "NextState": "player_ground_idle",
-            "SpriteOffset": [ 1, 0 ],
+            "SpriteOffset": [ 3, 0 ],
             "Animation": {
-    			"TicRate": "600",
-    			"FlipFlop": "true",
-    			"Frames": "2",
-    			"Shader": "sprites/player/raio_legs"
+    			"TicRate": "100",
+    			"FlipFlop": "false",
+    			"Frames": "3"
             }
         },
         {
@@ -52,8 +51,7 @@
             "Animation": {
     			"TicRate": "1",
     			"FlipFlop": "false",
-    			"Frames": "1",
-    			"Shader": "sprites/player/raio_legs"
+    			"Frames": "1"
             }
         },
         {
@@ -66,8 +64,7 @@
             "Animation": {
     			"TicRate": "1",
     			"FlipFlop": "false",
-    			"Frames": "1",
-    			"Shader": "sprites/player/raio_legs"
+    			"Frames": "1"
             }
         },
         {
@@ -80,8 +77,20 @@
             "Animation": {
     			"TicRate": "1",
     			"FlipFlop": "false",
-    			"Frames": "1",
-    			"Shader": "sprites/player/raio_legs"
+    			"Frames": "1"
+            }
+        },
+        {
+            "Id": "player_slide",
+            "Tics": "500",
+            "BaseNum": "ST_PLAYR_LEGS_SLIDE",
+            "Entity": "player",
+            "NextState": "player_ground_idle",
+            "SpriteOffset": [ 7, 0 ],
+            "Animation": {
+                "TicRate": "500",
+                "FlipFlop": "false",
+                "Frames": "0"
             }
         }
     ]

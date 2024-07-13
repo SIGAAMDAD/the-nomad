@@ -92,6 +92,8 @@ static void G_ListMods( const char *pSaveFile, uint64_t nMods, fileHandle_t hFil
 
 static ngdfield_t *G_LoadArchiveField( ngdsection_read_t *section, const char *pSaveFile, fileHandle_t hFile )
 {
+	PROFILE_FUNCTION();
+
 	uint64_t size;
 	int32_t nameLength;
 	int32_t dataSize;
@@ -188,6 +190,8 @@ static ngdfield_t *G_LoadArchiveField( ngdsection_read_t *section, const char *p
 
 qboolean CGameArchive::LoadArchiveFile( const char *filename, uint64_t index )
 {
+	PROFILE_FUNCTION();
+
 	ngdheader_t header;
     int i, j;
 	int32_t nameLength, numFields;
@@ -300,6 +304,8 @@ static void G_SaveGame_f( void )
 
 CGameArchive::CGameArchive( void )
 {
+	PROFILE_FUNCTION();
+
 	uint64_t i, numFiles;
 	char **fileList;
 
@@ -481,7 +487,7 @@ void CGameArchive::SaveFloat( const char *name, float data ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
 	}
 
-	AddField( name, FT_FLOAT, &data, sizeof(data) );
+	AddField( name, FT_FLOAT, &data, sizeof( data ) );
 }
 
 void CGameArchive::SaveByte( const char *name, uint8_t data ) {
@@ -489,28 +495,28 @@ void CGameArchive::SaveByte( const char *name, uint8_t data ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
 	}
 	
-	AddField( name, FT_UCHAR, &data, sizeof(data) );
+	AddField( name, FT_UCHAR, &data, sizeof( data ) );
 }
 void CGameArchive::SaveUShort( const char *name, uint16_t data ) {
 	if ( !name ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
 	}
 	
-	AddField( name, FT_USHORT, &data, sizeof(data) );
+	AddField( name, FT_USHORT, &data, sizeof( data ) );
 }
 void CGameArchive::SaveUInt( const char *name, uint32_t data ) {
 	if ( !name ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
 	}
 	
-	AddField( name, FT_UINT, &data, sizeof(data) );
+	AddField( name, FT_UINT, &data, sizeof( data ) );
 }
 void CGameArchive::SaveULong( const char *name, uint64_t data ) {
 	if ( !name ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
 	}
 	
-	AddField( name, FT_ULONG, &data, sizeof(data) );
+	AddField( name, FT_ULONG, &data, sizeof( data ) );
 }
 
 void CGameArchive::SaveChar( const char *name, int8_t data ) {
@@ -518,28 +524,28 @@ void CGameArchive::SaveChar( const char *name, int8_t data ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
 	}
 	
-	AddField( name, FT_CHAR, &data, sizeof(data) );
+	AddField( name, FT_CHAR, &data, sizeof( data ) );
 }
 void CGameArchive::SaveShort( const char *name, int16_t data ) {
 	if ( !name ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
 	}
 	
-	AddField( name, FT_SHORT, &data, sizeof(data) );
+	AddField( name, FT_SHORT, &data, sizeof( data ) );
 }
 void CGameArchive::SaveInt( const char *name, int32_t data ) {
 	if ( !name ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
 	}
 	
-	AddField( name, FT_INT, &data, sizeof(data) );
+	AddField( name, FT_INT, &data, sizeof( data ) );
 }
 void CGameArchive::SaveLong( const char *name, int64_t data ) {
 	if ( !name ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
 	}
 	
-	AddField( name, FT_LONG, &data, sizeof(data) );
+	AddField( name, FT_LONG, &data, sizeof( data ) );
 }
 
 void CGameArchive::SaveVec2( const char *name, const vec2_t data ) {
@@ -547,7 +553,7 @@ void CGameArchive::SaveVec2( const char *name, const vec2_t data ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
 	}
 	
-	AddField( name, FT_VECTOR2, data, sizeof(vec2_t) );
+	AddField( name, FT_VECTOR2, data, sizeof( data ) );
 }
 
 void CGameArchive::SaveVec3( const char *name, const vec3_t data ) {
@@ -555,7 +561,7 @@ void CGameArchive::SaveVec3( const char *name, const vec3_t data ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
 	}
 	
-	AddField( name, FT_VECTOR3, data, sizeof(vec3_t) );
+	AddField( name, FT_VECTOR3, data, sizeof( data ) );
 }
 
 void CGameArchive::SaveVec4( const char *name, const vec4_t data ) {
@@ -563,7 +569,7 @@ void CGameArchive::SaveVec4( const char *name, const vec4_t data ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
 	}
 	
-	AddField( name, FT_VECTOR4, data, sizeof(vec4_t) );
+	AddField( name, FT_VECTOR4, data, sizeof( data ) );
 }
 
 void CGameArchive::SaveCString( const char *name, const char *data ) {

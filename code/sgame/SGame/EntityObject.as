@@ -8,6 +8,7 @@ namespace TheNomad::SGame {
 	const int FACING_LEFT = 1;
 	const int FACING_UP = 2;
 	const int FACING_DOWN = 3;
+	const int NUMFACING = 2;
 
     class EntityObject {
 		EntityObject( TheNomad::GameSystem::EntityType type, uint id, const vec3& in origin ) {

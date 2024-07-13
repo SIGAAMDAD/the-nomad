@@ -860,7 +860,7 @@ static void Con_DrawSolidConsole( float frac, qboolean open )
 		ImGui::Begin( "##ConsoleWindowBackground", NULL, windowFlags | ImGuiWindowFlags_NoBackground );
 		ImGui::SetWindowPos( ImVec2( -16, -16 ) );
 		ImGui::SetWindowSize( ImVec2( gi.gpuConfig.vidWidth + 16, height + 54 ) );
-		ImGui::Image( (ImTextureID)(uintptr_t)re.RegisterShader( "console" ), ImVec2( (float)gi.gpuConfig.vidWidth, height ) );
+		ImGui::Image( (ImTextureID)(uintptr_t)gi.consoleShader, ImVec2( (float)gi.gpuConfig.vidWidth, height ) );
 		ImGui::End();
 	}
 

@@ -40,6 +40,8 @@ cvar_t *in_nograb;
 
 static int GLimp_CreateBaseWindow( gpuConfig_t *config )
 {
+    PROFILE_FUNCTION();
+    
     uint32_t windowFlags;
     uint32_t contextFlags;
     int32_t depthBits, stencilBits, colorBits;

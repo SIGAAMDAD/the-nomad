@@ -36,8 +36,8 @@ namespace TheNomad::Engine {
             }
             return int( ret );
         }
-        TheNomad::SGame::SpriteSheet@ GetSpriteSheet( const string& in shader, uint spriteWidth, uint spriteHeight,
-            uint sheetWidth, uint sheetHeight )
+        TheNomad::SGame::SpriteSheet@ GetSpriteSheet( const string& in shader, uint sheetWidth, uint sheetHeight,
+            uint spriteWidth, uint spriteHeight )
         {
             TheNomad::SGame::SpriteSheet@ ret;
             if ( !m_SpriteSheetCache.TryGetValue( shader, @ret ) ) {

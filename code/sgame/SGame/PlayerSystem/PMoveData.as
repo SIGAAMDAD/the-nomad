@@ -1,6 +1,9 @@
 namespace TheNomad::SGame {
 	const uint PMF_JUMP_HELD      = 0x01;
 	const uint PMF_BACKWARDS_JUMP = 0x02;
+
+	const uint DASH_DURATION = 300;
+	const uint SLIDE_DURATION = 500;
 	
 	const float JUMP_VELOCITY = 2.5f;
 	const float OVERCLIP = 1.5f;
@@ -77,14 +80,14 @@ namespace TheNomad::SGame {
 			if ( m_EntityData.IsDashing() ) {
 				accel.y += 1.25f * forward;
 				accel.x += 1.25f * side;
-				if ( m_EntityData.GetTimeSinceLastDash() > 700 ) {
+				if ( m_EntityData.GetTimeSinceLastDash() > DASH_DURATION ) {
 					m_EntityData.SetDashing( false );
 				}
 			}
 			if ( m_EntityData.IsSliding() ) {
 				accel.y += 0.25f * forward;
 				accel.x += 0.25f * side;
-				if ( m_EntityData.GetTimeSinceLastSlide() > 500 ) {
+				if ( m_EntityData.GetTimeSinceLastSlide() > SLIDE_DURATION ) {
 					m_EntityData.SetSliding( false );
 				}
 			}
@@ -391,11 +394,9 @@ namespace TheNomad::SGame {
 			if ( key.active ) {
 				// still down
 				if ( key.downtime <= 0 ) {
-//					msec = TheNomad::GameSystem::GameManager.GetGameTic();
 					msec = TheNomad::Engine::System::Milliseconds();
 				} else {
 					msec += TheNomad::Engine::System::Milliseconds() - key.downtime;
-//					msec += TheNomad::GameSystem::GameManager.GetGameTic() - key.downtime;
 				}
 				key.downtime = TheNomad::Engine::System::Milliseconds();
 			}

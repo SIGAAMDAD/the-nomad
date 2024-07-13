@@ -322,11 +322,17 @@ vec3 blur( vec3 color )
 }
 
 void main() {
+    // calculate a slight x offset, otherwise we get some black line bleeding
+    // going on
+    ivec2 texSize = textureSize( u_DiffuseMap, 0 );
+    float sOffset = ( 1.0 / ( float( texSize.x ) ) * 0.75 );
+    vec2 texCoord = vec2( v_TexCoords.x + sOffset, v_TexCoords.y );
+
     if ( u_AntiAliasing == AntiAlias_FXAA ) {
-        vec2 fragCoord = v_TexCoords * u_ScreenSize;
+        vec2 fragCoord = texCoord * u_ScreenSize;
         a_Color = applyFXAA( u_DiffuseMap, fragCoord, u_ScreenSize );
     } else {
-        a_Color = sharpenImage( u_DiffuseMap, v_TexCoords );
+        a_Color = sharpenImage( u_DiffuseMap, texCoord );
     }
     if ( a_Color.a == 0.0 ) {
         discard;

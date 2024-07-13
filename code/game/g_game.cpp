@@ -1879,6 +1879,8 @@ void G_Init( void )
 #endif
     Cvar_Get( "g_guid", "", CVAR_USERINFO | CVAR_ROM | CVAR_PROTECTED );
 
+    gi.consoleShader = re.RegisterShader( "console" );
+
     Con_Printf( "----- Game State Initialization Complete ----\n" );
 }
 

@@ -51,7 +51,7 @@ namespace TheNomad::SGame {
 			return m_MFlags;
 		}
 		
-		private void DoAttack( InfoSystem::AttackInfo@ atk ) {
+		protected void DoAttack( InfoSystem::AttackInfo@ atk ) {
 			TheNomad::GameSystem::RayCast@ rayData = null;
 			
 			switch ( atk.attackMethod ) {
@@ -158,7 +158,7 @@ namespace TheNomad::SGame {
 			};
 		}
 		
-		private void SetTarget( EntityObject@ newTarget ) {
+		protected void SetTarget( EntityObject@ newTarget ) {
 			@m_Target = @newTarget;
 			m_PhysicsObject.SetAngle( atan2( m_Link.m_Origin.x - m_Target.GetOrigin().x, m_Link.m_Origin.y - m_Target.GetOrigin().y ) );
 			m_Direction = Util::Angle2Dir( m_PhysicsObject.GetAngle() );
@@ -166,7 +166,7 @@ namespace TheNomad::SGame {
 			DebugPrint( "Set mob target to " + m_Target.GetEntityNum() + "\n" );
 		}
 		
-		private void ShuffleDirection() {
+		protected void ShuffleDirection() {
 			if ( m_Direction == TheNomad::GameSystem::DirType::North ) {
 				m_Direction = TheNomad::GameSystem::DirType::Inside;
 			} else {
@@ -175,7 +175,7 @@ namespace TheNomad::SGame {
 			m_PhysicsObject.SetAngle( Util::Dir2Angle( m_Direction ) );
 		}
 		
-		private float GetSpeed() const {
+		protected float GetSpeed() const {
 			float value;
 			
 			switch ( m_Direction ) {
@@ -203,7 +203,7 @@ namespace TheNomad::SGame {
 			return value;
 		}
 		
-		private bool CheckCollision() const {
+		protected bool CheckCollision() const {
 			TheNomad::GameSystem::RayCast ray;
 			
 			ray.m_nLength = Util::VectorLength( m_Info.speed );
@@ -225,7 +225,7 @@ namespace TheNomad::SGame {
 			return true;
 		}
 		
-		private void TryMove() {
+		protected void TryMove() {
 			if ( CheckCollision() ) {
 				return;
 			}
@@ -261,7 +261,7 @@ namespace TheNomad::SGame {
 			}
 		}
 		
-		private bool SightCheck() {
+		protected bool SightCheck() {
 			if ( ( m_Info.flags & InfoSystem::MobFlags::Blind ) != 0 ) {
 				return false;
 			}
@@ -322,7 +322,7 @@ namespace TheNomad::SGame {
 			return true;
 		}
 		
-		private bool SoundCheck() {
+		protected bool SoundCheck() {
 			if ( ( m_Info.flags & InfoSystem::MobFlags::Deaf ) != 0 ) {
 				return false;
 			}
@@ -336,10 +336,10 @@ namespace TheNomad::SGame {
 		//
 		//===========================================================
 		
-		private void FearThink() {
+		protected void FearThink() {
 			
 		}
-		private void ChaseThink() {
+		protected void ChaseThink() {
 			if ( !SightCheck() ) {
 				if ( !SoundCheck() ) {
 					@m_Target = null;
@@ -350,7 +350,7 @@ namespace TheNomad::SGame {
 
 			}
 		}
-		private void FightThink() {
+		protected void FightThink() {
 			if ( @m_Target is null ) {
 				// if there's no target, or if the target went out of sight,
 				// then pursue
@@ -442,7 +442,7 @@ namespace TheNomad::SGame {
 			m_nAttackTime += TheNomad::Engine::CvarVariableInteger( "com_maxfps" ) / 60;
 		}
 		
-		private void IdleThink() {
+		protected void IdleThink() {
 			// move around a little
 			TryMove();
 			
@@ -469,20 +469,20 @@ namespace TheNomad::SGame {
 			m_State.Reset();
 		}
 
-		private InfoSystem::AttackInfo@ m_CurrentAttack = null;
-		private EntityObject@ m_Target = null;
-		private InfoSystem::MobInfo@ m_Info = null;
-		private InfoSystem::MobFlags m_MFlags = InfoSystem::MobFlags( 0 );
+		protected InfoSystem::AttackInfo@ m_CurrentAttack = null;
+		protected EntityObject@ m_Target = null;
+		protected InfoSystem::MobInfo@ m_Info = null;
+		protected InfoSystem::MobFlags m_MFlags = InfoSystem::MobFlags( 0 );
 
-		private TheNomad::Engine::SoundSystem::SoundEffect m_DetectSfx;
+		protected TheNomad::Engine::SoundSystem::SoundEffect m_DetectSfx;
 		
 		// stealth tracking
-		private uint m_nLastAlertTime = 0;
-		private uint m_nAlertLevel = 0;
+		protected uint m_nLastAlertTime = 0;
+		protected uint m_nAlertLevel = 0;
 		
 		// attack data
-		private bool m_bIsAttacking = false;
-		private uint m_nAttackTime = 0;
-		private uint m_nLastAttackTime = 0;
+		protected bool m_bIsAttacking = false;
+		protected uint m_nAttackTime = 0;
+		protected uint m_nLastAttackTime = 0;
 	};
 };

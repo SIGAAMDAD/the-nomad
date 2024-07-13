@@ -14,7 +14,23 @@ namespace TheNomad::Engine::UserInterface {
             return @m_DrawFunc;
         }
 
-        private DrawConfig@ m_DrawFunc = null;
+        void Draw() {
+            if ( @m_DrawFunc !is null ) {
+                m_DrawFunc();
+                return;
+            }
+
+            for ( uint i = 0; i < m_Vars.Count(); i++ ) {
+                m_Vars[i].Draw();
+            }
+        }
+
+        void AddVar( ConfigVar@ var ) {
+            m_Vars.Add( @var );
+        }
+
         private string m_Name;
+        private DrawConfig@ m_DrawFunc = null;
+        private array<ConfigVar@> m_Vars;
     };
 };

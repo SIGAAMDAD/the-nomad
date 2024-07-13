@@ -616,10 +616,12 @@ namespace TheNomad::SGame {
 			weaponChangeModeSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/weaponChangeMode.wav" );
 
 			crouchDownSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/clothRuffle0.ogg" );
-			crouchUpSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/clothRuffle3.ogg" );
+			crouchUpSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/clothRuffle1.ogg" );
 		}
 
 		void Spawn( uint id, const vec3& in origin ) override {
+			int i;
+
 			//
 			// init all player data
 			//
@@ -638,11 +640,11 @@ namespace TheNomad::SGame {
 
 			m_HudData.Init( @this );
 
-			m_PhysicsObject.Init( cast<EntityObject@>( @this ) );
+			m_PhysicsObject.Init( cast<EntityObject>( @this ) );
 			m_PhysicsObject.SetAngle( Util::Dir2Angle( TheNomad::GameSystem::DirType::East ) );
 
 			@m_SpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/" +
-				TheNomad::Engine::CvarVariableString( "skin" ) + "_torso", 32, 32, 512, 512 );
+				TheNomad::Engine::CvarVariableString( "skin" ) + "_torso", 512, 512, 32, 32 );
 			if ( @m_SpriteSheet is null ) {
 				GameError( "PlayrObject::Spawn: failed to load torso sprite sheet" );
 			}
@@ -652,10 +654,18 @@ namespace TheNomad::SGame {
 			}
 			m_Facing = FACING_RIGHT;
 
-			@m_LegSpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/"
-				+ TheNomad::Engine::CvarVariableString( "skin" ) + "_legs", 32, 32, 512, 512 );
-			if ( @m_LegSpriteSheet is null ) {
-				GameError( "PlayrObject::Spawn: failed to load leg sprite sheet" );
+			for ( i = 0; i < NUMFACING; i++ ) {
+				@m_LegSpriteSheet[ i ] = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/"
+					+ TheNomad::Engine::CvarVariableString( "skin" ) + "_legs_" + i, 512, 512, 32, 32 );
+				if ( @m_LegSpriteSheet[ i ] is null ) {
+					GameError( "PlayrObject::Spawn: failed to load leg sprite sheet" );
+				}
+
+				@m_ArmSpriteSheet[ i ] = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/"
+					+ TheNomad::Engine::CvarVariableString( "skin" ) + "_arms_" + i, 512, 512, 32, 32 );
+				if ( @m_ArmSpriteSheet[ i ] is null ) {
+					GameError( "PlayrObject::Spawn: failed to load arm sprite sheet" );
+				}
 			}
 			@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_GROUND );
 			if ( @m_LegState is null ) {
@@ -663,18 +673,16 @@ namespace TheNomad::SGame {
 			}
 			m_LegsFacing = FACING_RIGHT;
 
-			@m_ArmSpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/"
-				+ TheNomad::Engine::CvarVariableString( "skin" ) + "_arms", 32, 32, 512, 512 );
-			if ( @m_ArmSpriteSheet is null ) {
-				GameError( "PlayrObject::Spawn: failed to load arm sprite sheet" );
-			}
 			@m_ArmState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_IDLE );
+			if ( @m_ArmState is null ) {
+				GameError( "PlayrObject::Spawn: failed to load idle arm state" );
+			}
 			m_ArmsFacing = FACING_RIGHT;
 		}
 
 		uint GetSpriteId( SpriteSheet@ sheet, EntityState@ state ) const {
-			return ( state.GetSpriteOffset().y * sheet.GetSpriteCountX() + state.GetSpriteOffset().x )
-				+ state.GetAnimation().GetFrame();
+			const uint offset = state.GetSpriteOffset().y * sheet.GetSpriteCountX() + state.GetSpriteOffset().x;
+			return offset + state.GetAnimation().GetFrame();
 		}
 
 		private void DrawLegs() {
@@ -721,13 +729,15 @@ namespace TheNomad::SGame {
 
 			if ( m_PhysicsObject.GetVelocity() == vec3( 0.0f ) ) {
 				@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_GROUND );
+			} else if ( m_bSliding ) {
+				@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_SLIDE );
 			} else {
 				@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_MOVE_GROUND );
 			}
 
 			refEntity.origin = m_Link.m_Origin;
-			refEntity.sheetNum = m_LegSpriteSheet.GetShader();
-			refEntity.spriteId = GetSpriteId( @m_LegSpriteSheet, @m_LegState ) + m_LegsFacing;
+			refEntity.sheetNum = m_LegSpriteSheet[ m_LegsFacing ].GetShader();
+			refEntity.spriteId = GetSpriteId( @m_LegSpriteSheet[ m_LegsFacing ], @m_LegState );
 			refEntity.scale = 2.0f;
 			refEntity.Draw();
 		}
@@ -736,8 +746,8 @@ namespace TheNomad::SGame {
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 
 			refEntity.origin = m_Link.m_Origin;
-			refEntity.sheetNum = m_ArmSpriteSheet.GetShader();
-			refEntity.spriteId = GetSpriteId( @m_ArmSpriteSheet, @m_ArmState ) + m_ArmsFacing;
+			refEntity.sheetNum = m_ArmSpriteSheet[ m_ArmsFacing ].GetShader();
+			refEntity.spriteId = GetSpriteId( @m_ArmSpriteSheet[ m_ArmsFacing ], @m_ArmState );
 			refEntity.scale = 2.0f;
 			refEntity.Draw();
 		}
@@ -836,19 +846,19 @@ namespace TheNomad::SGame {
 		private float m_nHealMult = 0.0f;
 		private float m_nHealMultDecay = 1.0f;
 		
-		private SpriteSheet@ m_ArmSpriteSheet = null;
+		private SpriteSheet@[] m_ArmSpriteSheet( NUMFACING );
 		private EntityState@ m_ArmState = null;
 		private int m_ArmsFacing = 0;
 
-		private SpriteSheet@ m_LegSpriteSheet = null;
+		private SpriteSheet@[] m_LegSpriteSheet( NUMFACING );
 		private EntityState@ m_LegState = null;
 		private int m_LegsFacing = 0;
 
-		private uint64 m_nTimeSinceDash = 1000;
+		private uint64 m_nTimeSinceDash = 0;
 		private uint m_nDashCounter = 0;
 		private bool m_bDashing = false;
 
-		private uint64 m_nTimeSinceSlide = 1000;
+		private uint64 m_nTimeSinceSlide = 0;
 		private bool m_bSliding = false;
 
 		private bool m_bCrouching = false;

@@ -7,7 +7,6 @@
 #include "SGame/CheatCodes.as"
 #include "Engine/Engine.as"
 #include "SGame/Cvars.as"
-#include "Engine/UserInterface/ConfigManager.as"
 
 namespace ImGui {
 	ImGuiWindowFlags MakeWindowFlags( uint flags ) {
@@ -21,14 +20,6 @@ namespace nomadmain {
 // LoadLevelAssets: caches level relevant data
 //
 void LoadLevelAssets() {
-	const string str = TheNomad::Engine::CvarVariableString( "skin" );
-
-	// NOTE: always load the sprite sheets after the info sprites
-	// doing it there causes a weird bug where the sprite's texture doesn't
-	// render correctly
-	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_torso", 512, 512, 32, 32 );
-	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_legs", 512, 512, 32, 32 );
-	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_arms", 512, 512, 32, 32 );
 }
 
 void InitCvars() {
@@ -94,15 +85,27 @@ void InitResources() {
 
 	str = TheNomad::Engine::CvarVariableString( "skin" );
 	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_torso" );
-	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_legs" );
-	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_arms" );
+	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_legs_0" );
+	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_legs_1" );
+	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_arms_0" );
+	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_arms_1" );
+
+//	const string str = TheNomad::Engine::CvarVariableString( "skin" );
+
+	// NOTE: always load the sprite sheets after the info sprites
+	// doing it there causes a weird bug where the sprite's texture doesn't
+	// render correctly
+	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_torso", 512, 512, 32, 32 );
+	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_legs_0", 512, 512, 32, 32 );
+	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_legs_1", 512, 512, 32, 32 );
+	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_arms_0", 512, 512, 32, 32 );
+	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_arms_1", 512, 512, 32, 32 );
 
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/misc/getitem.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/misc/getpw.wav" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/misc/passCheckpoint.ogg" );
 
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/mobs/detect.ogg" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/mobs/detectMeme.ogg" );
+	TheNomad::Engine::ResourceCache.GetSfx( "sfx/mobs/alert.ogg" );
 
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/death1.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/death2.ogg" );

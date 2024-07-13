@@ -368,6 +368,8 @@ qboolean CGameWorld::CheckWallHit( const vec3_t origin, dirtype_t dir )
 
 void CGameWorld::CastRay( ray_t *ray )
 {
+	PROFILE_FUNCTION();
+
     float dx, sx;
 	float dy, sy;
 	float err;

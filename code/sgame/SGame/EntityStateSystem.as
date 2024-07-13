@@ -28,6 +28,7 @@ namespace TheNomad::SGame {
 		
 		// legs on ground states
 		ST_PLAYR_LEGS_IDLE_GROUND,
+		ST_PLAYR_LEGS_SLIDE,
 		ST_PLAYR_LEGS_MOVE_GROUND,
 		ST_PLAYR_LEGS_STUN_GROUND,
 
@@ -97,6 +98,7 @@ namespace TheNomad::SGame {
 			m_BaseStateCache.Add( "ST_PLAYR_DEAD", StateNum::ST_PLAYR_DEAD );
 			m_BaseStateCache.Add( "ST_PLAYR_QUICKSHOT", StateNum::ST_PLAYR_QUICKSHOT );
 			m_BaseStateCache.Add( "ST_PLAYR_LEGS_IDLE_GROUND", StateNum::ST_PLAYR_LEGS_IDLE_GROUND );
+			m_BaseStateCache.Add( "ST_PLAYR_LEGS_SLIDE", StateNum::ST_PLAYR_LEGS_SLIDE );
 			m_BaseStateCache.Add( "ST_PLAYR_LEGS_MOVE_GROUND", StateNum::ST_PLAYR_LEGS_MOVE_GROUND );
 			m_BaseStateCache.Add( "ST_PLAYR_LEGS_STUN_GROUND", StateNum::ST_PLAYR_LEGS_STUN_GROUND );
 			m_BaseStateCache.Add( "ST_PLAYR_LEGS_IDLE_AIR", StateNum::ST_PLAYR_LEGS_IDLE_AIR );
@@ -109,17 +111,16 @@ namespace TheNomad::SGame {
 			return "EntityStateSystem";
 		}
 		void OnInit() {
+			InitBaseStateCache();
+
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.ListStateCache_f ), "sgame.state_cache", false
+			);
 		}
 		void OnShutdown() {
 		}
 		void OnLevelStart() {
 			uint i;
-
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.ListStateCache_f ), "sgame.state_cache", false
-			);
-
-			InitBaseStateCache();
 			
 			ConsolePrint( "Loading state data...\n" );
 			

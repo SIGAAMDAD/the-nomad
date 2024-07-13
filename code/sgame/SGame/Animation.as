@@ -24,17 +24,14 @@ namespace TheNomad::SGame {
 				m_nCurrentFrame += m_nTicker;
 
 				if ( m_bOscillate ) {
-					if ( m_nTicRate > 0 ) {
-						if ( m_nCurrentFrame >= m_nNumFrames ) {
-							m_nTicker = -m_nTicker;
-						}
-					} else {
-						if ( m_nCurrentFrame <= 0 ) {
-							m_nTicker = -m_nTicker;
-						}
+					if ( m_nCurrentFrame >= m_nNumFrames ) {
+						m_nTicker = -1;
+					} else if ( m_nCurrentFrame < 0 ) {
+						m_nCurrentFrame = 0;
+						m_nTicker = 1;
 					}
 				} else {
-					if ( m_nCurrentFrame > int( m_nNumFrames ) ) {
+					if ( m_nCurrentFrame >= int( m_nNumFrames ) ) {
 						m_nCurrentFrame = 0;
 					}
 				}
@@ -43,7 +40,7 @@ namespace TheNomad::SGame {
 		
 		bool Load( json@ json ) {
 			string base;
-			
+
 			if ( !json.get( "TicRate", base ) ) {
 				ConsoleWarning( "invalid animation info, missing variable 'TicRate'\n" );
 				return false;

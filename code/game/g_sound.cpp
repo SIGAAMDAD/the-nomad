@@ -652,6 +652,8 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
 
 void CSoundManager::Init( void )
 {
+    PROFILE_FUNCTION();
+    
     memset( this, 0, sizeof( *this ) );
 
     // no point in initializing OpenAL if sound is disabled with snd_noSound

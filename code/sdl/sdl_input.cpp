@@ -409,6 +409,86 @@ static void IN_GobbleMouseEvents( void )
 	}
 }
 
+#pragma pack(push, 1)
+typedef struct {
+	char reserved[2];
+	int16_t imageType;
+	int16_t numImages;
+	int8_t width;
+	int8_t height;
+	int16_t hotspotX;
+	int16_t hotspotY;
+	int32_t biSize;
+	int32_t biWidth;
+	int32_t biHeight;
+	int16_t biBitCount;
+	int32_t biCompression;
+	int32_t biSizeImage;
+	int32_t biXPelsPerMeter;
+	int32_t biYPelsPerMeter;
+	int32_t biClrUsed;
+	int32_t biClrImportant;
+} curHeader_t;
+#pragma pack(pop)
+
+static uint32_t *LoadCursorFile( const char *name )
+{
+#ifdef _WIN32
+
+#else
+	fileHandle_t fh;
+	uint32_t *data, offset;
+	uint8_t origin;
+	char buf[4];
+	curHeader_t header;
+	int y, x;
+
+	fh = FS_FOpenRead( va( "%s/cursors/%s.cur", FS_GetBaseGameDir(), name ) );
+	if ( fh == FS_INVALID_HANDLE ) {
+		Con_Printf( "Error loading cursors/%s.cur\n", name );
+		return NULL;
+	}
+
+	if ( !FS_Read( &header, sizeof( header ), fh ) ) {
+		Con_Printf( "Error reading %lu bytes from file 'cursors/%s.cur'!\n", name );
+		return NULL;
+	}
+
+	origin = ( header.biHeight > 0 ? 0 : 1 );
+	header.biWidth = header.width;
+	header.biHeight = header.height;
+	data = (uint32_t *)Hunk_AllocateTempMemory( header.biWidth * header.biHeight );
+
+	for ( y = 0; y < header.biHeight; y++ ) {
+		for ( x = 0; x < header.biWidth; x++ ) {
+			offset = ( ( origin == 1 ? y : header.biHeight - 1 - y ) * header.biWidth ) + x;
+
+			switch ( header.biBitCount ) {
+			case 24:
+				FS_Read( &data[ offset ], 3, fh );
+				break;
+			case 32:
+				FS_Read( &data[ offset ], 4, fh );
+				break;
+			};
+		}
+	}
+
+	FS_FClose( fh );
+
+	return data;
+#endif
+}
+
+static void IN_LoadMouseIcons( void )
+{
+#ifdef _WIN32
+
+#else
+
+#endif
+}
+
 /*
 static void IN_LoadMouseIcons( void )
 {

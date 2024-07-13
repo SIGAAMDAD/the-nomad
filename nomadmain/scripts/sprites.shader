@@ -10,25 +10,49 @@ sprites/players/raio_torso
     }
 }
 
-sprites/players/raio_legs
+sprites/players/raio_legs_0
 {
     nopicmip
     nomipmaps
     {
         texFilter nearest
-        map textures/sprites/players/raio_legs.tga
+        map textures/sprites/players/raio_legs_0.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
 }
 
-sprites/players/raio_arms
+sprites/players/raio_legs_1
 {
     nopicmip
     nomipmaps
     {
         texFilter nearest
-        map textures/sprites/players/raio_arms.tga
+        map textures/sprites/players/raio_legs_1.tga
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        rgbGen vertex
+    }
+}
+
+sprites/players/raio_arms_0
+{
+    nopicmip
+    nomipmaps
+    {
+        texFilter nearest
+        map textures/sprites/players/raio_arms_0.tga
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        rgbGen vertex
+    }
+}
+
+sprites/players/raio_arms_1
+{
+    nopicmip
+    nomipmaps
+    {
+        texFilter nearest
+        map textures/sprites/players/raio_arms_1.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
