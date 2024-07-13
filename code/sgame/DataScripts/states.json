@@ -94,6 +94,32 @@
             }
         },
         {
+            "Id": "player_arms_idle",
+            "Tics": "1000",
+            "BaseNum": "ST_PLAYR_ARMS_IDLE",
+            "Entity": "player",
+            "NextState": "this",
+            "SpriteOffset": [ 0, 0 ],
+            "Animation": {
+    			"TicRate": "0",
+    			"FlipFlop": "false",
+    			"Frames": "0"
+            }
+        },
+        {
+            "Id": "player_arms_move",
+            "Tics": "900",
+            "BaseNum": "ST_PLAYR_ARMS_MOVE",
+            "Entity": "player",
+            "NextState": "player_arms_idle",
+            "SpriteOffset": [ 1, 0 ],
+            "Animation": {
+    			"TicRate": "200",
+    			"FlipFlop": "false",
+    			"Frames": "2"
+            }
+        },
+        {
             "Id": "dash_thruster_flame",
             "Tics": "1000",
             "BaseNum": "ST_GFX_ANIMATION",

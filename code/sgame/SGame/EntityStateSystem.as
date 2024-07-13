@@ -100,6 +100,13 @@ namespace TheNomad::SGame {
 			m_BaseStateCache.Add( "ST_PLAYR_COMBAT", StateNum::ST_PLAYR_COMBAT );
 			m_BaseStateCache.Add( "ST_PLAYR_DEAD", StateNum::ST_PLAYR_DEAD );
 			m_BaseStateCache.Add( "ST_PLAYR_QUICKSHOT", StateNum::ST_PLAYR_QUICKSHOT );
+			m_BaseStateCache.Add( "ST_PLAYR_ARMS_IDLE", StateNum::ST_PLAYR_ARMS_IDLE );
+			m_BaseStateCache.Add( "ST_PLAYR_ARMS_MOVE", StateNum::ST_PLAYR_ARMS_MOVE );
+			m_BaseStateCache.Add( "ST_PLAYR_ARMS_MELEE", StateNum::ST_PLAYR_ARMS_MELEE );
+			m_BaseStateCache.Add( "ST_PLAYR_ARMS_PARRY", StateNum::ST_PLAYR_ARMS_PARRY );
+			m_BaseStateCache.Add( "ST_PLAYR_ARMS_BLADE_IDLE", StateNum::ST_PLAYR_ARMS_BLADE_IDLE );
+			m_BaseStateCache.Add( "ST_PLAYR_ARMS_BLADE_READY", StateNum::ST_PLAYR_ARMS_BLADE_READY );
+			m_BaseStateCache.Add( "ST_PLAYR_ARMS_STUN", StateNum::ST_PLAYR_ARMS_STUN );
 			m_BaseStateCache.Add( "ST_PLAYR_LEGS_IDLE_GROUND", StateNum::ST_PLAYR_LEGS_IDLE_GROUND );
 			m_BaseStateCache.Add( "ST_PLAYR_LEGS_SLIDE", StateNum::ST_PLAYR_LEGS_SLIDE );
 			m_BaseStateCache.Add( "ST_PLAYR_LEGS_MOVE_GROUND", StateNum::ST_PLAYR_LEGS_MOVE_GROUND );
