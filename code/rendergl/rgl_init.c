@@ -1268,7 +1268,7 @@ static void RE_GetTextureId( nhandle_t hShader, uint32_t stageNum, uint32_t *id 
         return;
     }
 
-    *id = shader->stages[stageNum]->bundle[0].image->id;
+    *id = shader->stages[stageNum]->bundle[0].image[0]->id;
 }
 
 static void R_InitImGui( void )
@@ -1607,7 +1607,7 @@ void *RE_GetImGuiTextureData( nhandle_t hShader )
         return NULL;
     }
 
-    return (void *)(intptr_t)shader->stages[0]->bundle[0].image->id;
+    return (void *)(intptr_t)shader->stages[0]->bundle[0].image[0]->id;
 }
 
 void R_VertexLighting( qboolean allowed )

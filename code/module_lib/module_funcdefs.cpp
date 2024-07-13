@@ -890,7 +890,7 @@ static void AddSpriteToScene( asIScriptGeneric *pGeneric ) {
     const vec3& origin = *(const vec3 *)pGeneric->GetArgObject( 0 );
     const nhandle_t hSpriteSheet = (nhandle_t)pGeneric->GetArgDWord( 1 );
     const nhandle_t hSprite = (nhandle_t)pGeneric->GetArgDWord( 2 );
-    const bool bNoSpriteSheet = (bool)pGeneric->GetArgDWord( 3 );
+    const qboolean bNoSpriteSheet = (qboolean)pGeneric->GetArgDWord( 3 );
 
     re.AddSpriteToScene( (vec_t *)glm::value_ptr( origin ), hSpriteSheet, hSprite, bNoSpriteSheet );
 }

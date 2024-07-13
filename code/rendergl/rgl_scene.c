@@ -63,7 +63,7 @@ void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t
 
     poly->verts = vtx;
     poly->numVerts = 4;
-    if ( !bNoSpriteSheet ) {
+    if ( !bNoSpriteSheet || hSprite != -1 ) {
         poly->hShader = rg.sheets[hSpriteSheet]->hShader;
     } else {
         // singular shader
@@ -175,14 +175,10 @@ void RE_AddEntityToScene( const renderEntityRef_t *ent )
         ri.Printf( PRINT_DEVELOPER, "RE_AddEntityToScene: MAX_RENDER_ENTITIES hit, dropping entity\n" );
         return;
     }
-    if ( ent->sheetNum >= rg.numSpriteSheets || !rg.sheets[ ent->sheetNum ] ) {
-        ri.Printf( PRINT_DEVELOPER, "RE_AddEntityToScene: invalid sheetNum\n" );
-        return;
-    }
     if ( !rg.world ) {
         ri.Error( ERR_DROP, "RE_AddEntityToScene: only use when a world is loaded" );
     }
-    if ( ent->spriteId >= rg.sheets[ ent->sheetNum ]->numSprites ) {
+    if ( ent->sheetNum != -1 && ent->spriteId >= rg.sheets[ ent->sheetNum ]->numSprites ) {
         ri.Printf( PRINT_DEVELOPER, "RE_AddEntityToScene: invalid spriteId\n" );
         return;
     }
@@ -240,10 +236,10 @@ void RE_ProcessEntities( void )
         poly->rotation = refEntity->e.rotation;
 
         if ( refEntity->e.sheetNum == -1 ) {
-            VectorSet2( verts[0].uv, 1, 0 );
-            VectorSet2( verts[1].uv, 1, 1 );
-            VectorSet2( verts[2].uv, 0, 1 );
-            VectorSet2( verts[3].uv, 0, 0 );
+            VectorSet2( verts[0].uv, 0, 0 );
+            VectorSet2( verts[1].uv, 1, 0 );
+            VectorSet2( verts[2].uv, 1, 1 );
+            VectorSet2( verts[3].uv, 0, 1 );
         } else {
             for ( j = 0; j < 4; j++ ) {
                 VectorCopy2( verts->uv, rg.sheets[ refEntity->e.sheetNum ]->sprites[ refEntity->e.spriteId ].texCoords[j] );

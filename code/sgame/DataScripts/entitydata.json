@@ -12,7 +12,8 @@
         { "Id": 3, "Name": "item_ammopack" },
         { "Id": 4, "Name": "item_shellpack" },
         { "Id": 5, "Name": "item_grenadepack" },
-        { "Id": 6, "Name": "item_rocketpack" }
+        { "Id": 6, "Name": "item_rocketpack" },
+        { "Id": 7, "Name": "gfx" }
     ],
     "AmmoData": [
         { "Id": 7, "Name": "ammo_rifle" },

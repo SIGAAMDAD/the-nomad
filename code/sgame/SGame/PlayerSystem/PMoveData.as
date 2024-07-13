@@ -77,9 +77,19 @@ namespace TheNomad::SGame {
 			accel.y += forward * sgame_BaseSpeed.GetFloat();
 			accel.x += side * sgame_BaseSpeed.GetFloat();
 
+			if ( forward != 0.0f || side != 0.0f ) {
+				GfxManager.AddDustPoly( m_EntityData.GetOrigin(), vec3( 0.2f, 0.2f, 0.0f ), 200,
+					@TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/smokePuff", 64, 64, 64, 64 ), ivec2( 0 ) );
+			}
+
 			if ( m_EntityData.IsDashing() ) {
 				accel.y += 1.25f * forward;
 				accel.x += 1.25f * side;
+
+				vec3 origin = m_EntityData.GetOrigin();
+				GfxManager.AddDustPoly( origin, vec3( 0.0f ), DASH_DURATION,
+					@TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/effects/fireBlast", 480, 384, 64, 64 ), ivec2( 0 ) );
+
 				if ( m_EntityData.GetTimeSinceLastDash() > DASH_DURATION ) {
 					m_EntityData.SetDashing( false );
 				}
@@ -227,9 +237,11 @@ namespace TheNomad::SGame {
 		void SetMovementDir() {
 			// set legs direction
 			if ( side > 0 ) {
+				m_EntityData.SetFacing( FACING_RIGHT );
 				m_EntityData.SetLegsFacing( FACING_RIGHT );
 				m_EntityData.SetArmsFacing( FACING_RIGHT );
 			} else if ( side < 0 ) {
+				m_EntityData.SetFacing( FACING_LEFT );
 				m_EntityData.SetLegsFacing( FACING_LEFT );
 				m_EntityData.SetArmsFacing( FACING_LEFT );
 			}
@@ -251,6 +263,7 @@ namespace TheNomad::SGame {
 				}
 				TheNomad::GameSystem::DirType dir = Util::Angle2Dir( angle );
 				
+				/*
 				switch ( dir ) {
 				case TheNomad::GameSystem::DirType::North:
 //					m_EntityData.SetFacing( FACING_UP );
@@ -274,6 +287,7 @@ namespace TheNomad::SGame {
 					GameError( "PMoveData::RunTic: Invalid DirType " + uint( m_EntityData.GetDirection() ) );
 					break;
 				};
+				*/
 			}
 			else {
 				TheNomad::Engine::GetJoystickAngle( m_EntityData.GetPlayerIndex(), m_nJoystickAngle, m_JoystickPosition );

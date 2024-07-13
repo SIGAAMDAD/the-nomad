@@ -52,7 +52,7 @@ console
     {
         texFilter bilinear
         map gfx/console02.jpg
-        //map textures/sfx/firegorre3.tga
+        //map gfx/effects/firegorre3.tga
         blendFunc add
         tcMod turb 0 .1 0 .1
         tcMod scale 2 1
@@ -68,19 +68,43 @@ gfx/hud/blood_screen
     nopicmip
     nomipmaps
     {
-        map textures/hud/PAIN1.png
+        texFilter bilinear
+        map textures/hud/PAIN1.tga
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        rgbGen vertex
+        tcGen vertex
+    }
+    {
+        texFilter bilinear
+        map textures/hud/ARBLS1.tga
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        rgbGen vertex
+        tcMod scroll 0.0 -0.9
+    }
+    {
+        texFilter bilinear
+        map textures/hud/ARBLS2.tga
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        rgbGen vertex
+        tcMod scroll 0.0 -0.4
+    }
+    {
+        texFilter bilinear
+        map textures/hud/ARBLS3.tga
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        rgbGen vertex
+        tcMod scroll 0.0 -0.25
+    }
+    {
+        texFilter bilinear
+        map textures/hud/ARBLS4.tga
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
     {
-        map textures/hud/ARBLS1.png
-        rgbGen vertex
-    }
-    {
-        map textures/hud/ARBLS2.png
-        rgbGen vertex
-    }
-    {
-        map textures/hud/ARBLS3.png
+        texFilter bilinear
+        map textures/hud/ARBLS5.tga
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
 }
@@ -260,6 +284,28 @@ icons/icona_smoke
     }
 }
 
+gfx/effects/flame
+{
+    nomipmaps
+    nopicmip
+    {
+		animMap 10 gfx/effects/flame1.tga gfx/effects/flame2.tga gfx/effects/flame3.tga gfx/effects/flame4.tga gfx/effects/flame5.tga gfx/effects/flame6.tga gfx/effects/flame7.tga gfx/effects/flame8.tga
+		blendFunc GL_ONE GL_ONE
+		rgbGen wave inverseSawtooth 0 1 0 10
+	}	
+	{
+		animMap 10 gfx/effects/flame2.tga gfx/effects/flame3.tga gfx/effects/flame4.tga gfx/effects/flame5.tga gfx/effects/flame6.tga gfx/effects/flame7.tga gfx/effects/flame8.tga gfx/effects/flame1.tga
+		blendFunc GL_ONE GL_ONE
+		rgbGen wave sawtooth 0 1 0 10
+	}
+	{
+		map gfx/effects/flameball.jpg
+		blendFunc GL_ONE GL_ONE
+		rgbGen wave sin .6 .2 0 .6	
+	}
+}
+
+
 //
 // hud elements
 //
@@ -425,14 +471,16 @@ waterBubble
 	}
 }
 
-smokePuff
+gfx/env/smokePuff
 {
-	entityMergable		// allow all the sprites to be merged together
+    nomipmaps
+    nopicmip
+//	entityMergable		// allow all the sprites to be merged together
 	{
-		map gfx/misc/smokepuff3.tga
+		map gfx/env/smokepuff3.tga
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		rgbGen		vertex
-		alphaGen	vertex
+//		alphaGen	vertex
 	}
 }
 
@@ -464,4 +512,16 @@ lightningBolt
                 tcmod scale  -1.3 -1
 		tcMod scroll -7.2 0
 	}
+}
+
+gfx/effects/fireBlast
+{
+    nopicmip
+    nomipmaps
+    {
+        texFilter nearest
+        map gfx/effects/fire.tga
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        rgbGen vertex
+    }
 }

@@ -8,11 +8,13 @@ namespace TheNomad::SGame {
 		}
 		
 		void Init( PlayrObject@ parent ) {
+			const ivec2 screenSize = TheNomad::GameSystem::GameManager.GetScreenSize();
+
 			@m_Parent = @parent;
 			
 			// init shaders
 			m_BloodScreenSplatter.origin = vec2( 0.0f, 0.0f );
-			m_BloodScreenSplatter.size = vec2( 0.0f, 0.0f );
+			m_BloodScreenSplatter.size = vec2( screenSize.x, screenSize.y );
 			m_BloodScreenSplatter.hShader = TheNomad::Engine::ResourceCache.GetShader( "gfx/hud/blood_screen" );
 			
 			m_HealthBar.origin = vec2( 0.0f, 0.0f );
@@ -34,6 +36,8 @@ namespace TheNomad::SGame {
 		private const vec4 GetHealthColor( float health ) const {
 			if ( health < 60.0f && health > 35.0f ) {
 				return colorYellow;
+			} else if ( health >= 10.0f && health <= 35.0f ) {
+				return colorRed;	
 			} else if ( health < 10.0f ) {
 				return vec4( 0.5f, 0.35f, 0.05f, 1.0f ); // brown
 			} else {
@@ -53,7 +57,12 @@ namespace TheNomad::SGame {
 			const ivec2 screenSize = TheNomad::GameSystem::GameManager.GetScreenSize();
 			const float health = m_Parent.GetHealth();
 			
-			if ( health < 10.0f ) {
+			if ( health < 30.0f ) {
+//				m_Shake.Start( 2000, 20.5f, 20.5f );
+				Util::HapticRumble( m_Parent.GetPlayerIndex(), 0.20f, 100 );
+
+				m_BloodScreenSplatter.origin = vec2( 0.0f, 0.0f );
+				m_BloodScreenSplatter.size = vec2( screenSize.x, screenSize.y );
 				// draw a red overlay if we're really low on health
 				m_BloodScreenSplatter.Draw();
 			}
@@ -105,17 +114,19 @@ namespace TheNomad::SGame {
 			ImGui::End();
 		}
 		
-		void Draw() const {
+		void Draw() {
 			if ( sgame_ToggleHUD.GetInt() == 0 || Engine::CvarVariableInteger( "g_paused" ) == 1 ) {
 				return; // don't draw it
 			}
-			
+
 			uint time;
 			const vec2 screenSize = vec2( TheNomad::GameSystem::GameManager.GetGPUConfig().screenWidth,
 				TheNomad::GameSystem::GameManager.GetGPUConfig().screenHeight );
-						
+			
 			DrawStatusBars();
 			DrawMouseReticle();
+
+			m_Shake.OnRunTic();
 		}
 		
 		private HudOverlay m_RageBar;
@@ -128,5 +139,7 @@ namespace TheNomad::SGame {
 		
 		private SpriteSheet@ m_WeaponIcons = null;
 		private PlayrObject@ m_Parent = null;
+
+		private ScreenShake m_Shake;
 	};
 };

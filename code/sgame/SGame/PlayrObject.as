@@ -445,8 +445,6 @@ namespace TheNomad::SGame {
 
 			@m_LegState = @m_LegState.Run();
 			@m_ArmState = @m_ArmState.Run();
-
-			m_HudData.Draw();
 		}
 		
 		private float GetGfxDirection() const {
@@ -635,6 +633,9 @@ namespace TheNomad::SGame {
 			m_nHealMult = 0.0f;
 			m_nHealMultDecay = LevelManager.GetDifficultyScale();
 
+			@m_hDustTrailShader = TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/smokePuff", 64, 64, 64, 64 );
+//			@m_DashTrailShader = TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/effects/flame", 128, 256, 128, 256 );
+
 			InitLoadout();
 			CacheSfx();
 
@@ -766,6 +767,8 @@ namespace TheNomad::SGame {
 
 			DrawLegs();
 			DrawArms();
+
+			m_HudData.Draw();
 		}
 
 		KeyBind key_MoveNorth;
@@ -802,7 +805,8 @@ namespace TheNomad::SGame {
 		
 		private QuickShot m_QuickShot;
 
-		private TheNomad::Engine::Renderer::PolyVert[] verts( 4 );
+		SpriteSheet@ m_hDustTrailShader = null;
+		SpriteSheet@ m_DashTrailShader = null;
 		
 		//
 		// sound effects

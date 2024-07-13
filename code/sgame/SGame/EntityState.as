@@ -55,7 +55,9 @@ namespace TheNomad::SGame {
 			} else {
 				if ( Util::StrICmp( base, "player" ) == 0 ) {
 					m_nStateOffset = 0;
-				} else if ( !InfoSystem::InfoManager.GetMobTypes().TryGetValue( base, m_nStateOffset ) ) {
+				} else if ( InfoSystem::InfoManager.GetMobTypes().TryGetValue( base, m_nStateOffset ) ) {
+				} else if ( InfoSystem::InfoManager.GetItemTypes().TryGetValue( base, m_nStateOffset ) ) {
+				} else {
 					GameError( "invalid state info, Entity \"" + base + "\" doesn't exist" );
 				}
 			}

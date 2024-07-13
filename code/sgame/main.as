@@ -83,6 +83,9 @@ void InitResources() {
 	TheNomad::SGame::InfoSystem::InfoManager.LoadAmmoInfos();
 	TheNomad::SGame::InfoSystem::InfoManager.LoadWeaponInfos();
 
+	TheNomad::Engine::ResourceCache.GetShader( "gfx/env/smokePuff" );
+//	TheNomad::Engine::ResourceCache.GetShader( "gfx/effects/flame" );
+
 	str = TheNomad::Engine::CvarVariableString( "skin" );
 	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_torso" );
 	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_legs_0" );
@@ -199,6 +202,7 @@ int ModuleOnInit() {
 	@TheNomad::SGame::InfoSystem::InfoManager = TheNomad::SGame::InfoSystem::InfoDataManager();
 	@TheNomad::SGame::EntityManager = cast<TheNomad::SGame::EntitySystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::EntitySystem() ) );
 	@TheNomad::SGame::StateManager = cast<TheNomad::SGame::EntityStateSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::EntityStateSystem() ) );
+	@TheNomad::SGame::GfxManager = cast<TheNomad::SGame::GfxSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::GfxSystem() ) );
 
 	TheNomad::SGame::InitCheatCodes();
 	TheNomad::SGame::ScreenData.Init();
@@ -227,6 +231,7 @@ int ModuleOnShutdown() {
 	@TheNomad::SGame::StateManager = null;
 	@TheNomad::SGame::InfoSystem::InfoManager = null;
 	@TheNomad::Engine::FileSystem::FileManager = null;
+	@TheNomad::SGame::GfxManager = null;
 	TheNomad::GameSystem::GameSystems.Clear();
 
 	TheNomad::Engine::ResourceCache.ClearCache();

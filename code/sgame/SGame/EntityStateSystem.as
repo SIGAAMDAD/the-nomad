@@ -10,6 +10,8 @@ namespace TheNomad::SGame {
 		ST_MOB_FIGHT_MISSILE,
 		ST_MOB_FLEE,
 		ST_MOB_DEAD,
+
+		ST_GFX_ANIMATION,
 		
 		ST_PLAYR_IDLE,
 		ST_PLAYR_DOUBLEJUMP,
@@ -91,6 +93,7 @@ namespace TheNomad::SGame {
 			m_BaseStateCache.Add( "ST_MOB_FIGHT_MISSILE", StateNum::ST_MOB_FIGHT_MISSILE );
 			m_BaseStateCache.Add( "ST_MOB_FLEE", StateNum::ST_MOB_FLEE );
 			m_BaseStateCache.Add( "ST_MOB_DEAD", StateNum::ST_MOB_DEAD );
+			m_BaseStateCache.Add( "ST_GFX_ANIMATION", StateNum::ST_GFX_ANIMATION );
 			m_BaseStateCache.Add( "ST_PLAYR_IDLE", StateNum::ST_PLAYR_IDLE );
 			m_BaseStateCache.Add( "ST_PLAYR_DOUBLEJUMP", StateNum::ST_PLAYR_DOUBLEJUMP );
 			m_BaseStateCache.Add( "ST_PLAYR_MELEE", StateNum::ST_PLAYR_MELEE );

@@ -675,8 +675,6 @@ static void IN_HapticRumble( void )
 		return;
 	}
 
-	Con_DPrintf( "Activating haptic rumble: %0.02f %ums device %i\n", strength, length, device );
-
 	if ( SDL_HapticRumblePlay( haptics[device], strength, length ) != 0 ) {
 		Con_Printf( "Haptic rumble failed: %s\n", SDL_GetError() );
 	}

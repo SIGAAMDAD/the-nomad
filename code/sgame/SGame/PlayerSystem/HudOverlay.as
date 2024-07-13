@@ -7,8 +7,13 @@ namespace TheNomad::SGame {
 		}
 		
 		void Draw() const {
-			Engine::Renderer::SetColor( color );
-			Engine::Renderer::DrawImage( origin.x, origin.y, size.x, size.y, 0, 0, 1, 1, hShader );
+			ImGui::Begin( "##HudOverlay" + hShader, null, ImGui::MakeWindowFlags( ImGuiWindowFlags::NoResize | ImGuiWindowFlags::NoMove
+				| ImGuiWindowFlags::NoCollapse | ImGuiWindowFlags::NoBackground | ImGuiWindowFlags::NoTitleBar
+				| ImGuiWindowFlags::NoScrollbar ) );
+			ImGui::SetWindowSize( size );
+			ImGui::SetWindowPos( origin );
+			ImGui::Image( hShader, origin, size );
+			ImGui::End();
 		}
 		
 		vec4 color = vec4( 1.0f ); // default to white

@@ -742,7 +742,7 @@ typedef struct {
 #define LIGHTMAP_INDEX_OFFSET		2
 
 typedef struct {
-	texture_t		*image;
+	texture_t		*image[MAX_IMAGE_ANIMATIONS];
 	uint32_t		numImageAnimations;
 	double			imageAnimationSpeed;	// -EC- set to double
 

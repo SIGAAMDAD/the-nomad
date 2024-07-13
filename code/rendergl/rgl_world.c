@@ -100,7 +100,7 @@ static void R_GenerateTexCoords( tile2d_info_t *info )
         ri.Error( ERR_DROP, "RE_LoadWorldMap: failed to load shader for '%s'", r_worldData.name );
     }
 
-    image = r_worldData.shader->stages[0]->bundle[0].image;
+    image = r_worldData.shader->stages[0]->bundle[0].image[0];
 
     info->tileCountX = image->width / info->tileWidth;
     info->tileCountY = image->height / info->tileHeight;

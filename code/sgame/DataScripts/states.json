@@ -92,6 +92,19 @@
                 "FlipFlop": "false",
                 "Frames": "0"
             }
+        },
+        {
+            "Id": "dash_thruster_flame",
+            "Tics": "1000",
+            "BaseNum": "ST_GFX_ANIMATION",
+            "Entity": "gfx",
+            "NextState": "this",
+            "SpriteOffset": [ 0, 0 ],
+            "Animation": {
+                "TicRate": "100",
+                "FlipFlop": "false",
+                "Frames": "5"
+            }
         }
     ]
 }
