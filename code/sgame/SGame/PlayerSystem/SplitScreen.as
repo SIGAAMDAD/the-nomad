@@ -296,15 +296,13 @@ namespace TheNomad::SGame {
 		
 		void Melee_f() {
 			PlayrObject@ obj = GetPlayerIndex();
-			
-			if ( TheNomad::Engine::CmdArgv( 0 )[0] == '+' ) {
+		
+			if ( TheNomad::Engine::CmdArgv( 0 )[0] == '+' &&
+				@obj.GetArmState() is @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_IDLE ) )
+			{
 				obj.meleeSfx.Play();
 				obj.SetParryBoxWidth( 0.0f );
-				obj.SetState( @StateManager.GetStateForNum( StateNum::ST_PLAYR_MELEE ) );
-			}
-			else {
-				// technically this allows animation canceling
-				GetPlayerIndex().SetState( @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE ) );
+				obj.SetArmState( StateNum::ST_PLAYR_ARMS_MELEE );
 			}
 		}
 		void NextWeapon_f() {

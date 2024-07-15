@@ -34,7 +34,7 @@ void R_InitNextFrame( void )
     r_numPolyVerts = 0;
 }
 
-void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t hSprite, qboolean bNoSpriteSheet )
+void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hShader )
 {
     srfPoly_t *poly;
     polyVert_t *vtx;
@@ -63,26 +63,13 @@ void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t
 
     poly->verts = vtx;
     poly->numVerts = 4;
-    if ( !bNoSpriteSheet || hSprite != -1 ) {
-        poly->hShader = rg.sheets[hSpriteSheet]->hShader;
-    } else {
-        // singular shader
-        poly->hShader = hSpriteSheet;
-    }
-    poly->scale = 1.0f;
-    poly->rotation = 0.0f;
+    poly->hShader = hShader;
 
-    if ( !bNoSpriteSheet ) {
-        VectorCopy2( vtx[0].uv, rg.sheets[ hSpriteSheet ]->sprites[ hSprite ].texCoords[0] );
-        VectorCopy2( vtx[1].uv, rg.sheets[ hSpriteSheet ]->sprites[ hSprite ].texCoords[1] );
-        VectorCopy2( vtx[2].uv, rg.sheets[ hSpriteSheet ]->sprites[ hSprite ].texCoords[2] );
-        VectorCopy2( vtx[3].uv, rg.sheets[ hSpriteSheet ]->sprites[ hSprite ].texCoords[3] );
-    } else {
-        VectorSet2( vtx[0].uv, 1, 0 );
-        VectorSet2( vtx[1].uv, 1, 1 );
-        VectorSet2( vtx[2].uv, 0, 1 );
-        VectorSet2( vtx[3].uv, 0, 0 );
-    }
+    VectorSet2( vtx[0].uv, 0, 0 );
+    VectorSet2( vtx[1].uv, 1, 0 );
+    VectorSet2( vtx[2].uv, 1, 1 );
+    VectorSet2( vtx[3].uv, 0, 1 );
+
     VectorCopy( vtx[0].worldPos, pos );
     VectorCopy( vtx[1].worldPos, pos );
     VectorCopy( vtx[2].worldPos, pos );
@@ -118,8 +105,6 @@ void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t num
     poly->verts = vt;
     poly->hShader = hShader;
     poly->numVerts = numVerts;
-    poly->rotation = 0.0f;
-    poly->scale = 1.0f;
 
     memcpy( vt, verts, sizeof( *vt ) * numVerts );
 
@@ -205,6 +190,8 @@ void RE_ProcessEntities( void )
     srfPoly_t *poly;
     uint64_t i, j;
     uint64_t maxVerts;
+    float angle;
+    float s, c;
 
     if ( !r_numEntities || !backend.refdef.numEntities || ( backend.refdef.flags & RSF_ORTHO_BITS ) != RSF_ORTHO_TYPE_WORLD ) {
         return;
@@ -226,14 +213,14 @@ void RE_ProcessEntities( void )
         origin[2] = refEntity->e.origin[2];
 
         poly->verts = verts;
-        if ( refEntity->e.sheetNum == -1 ) {
+        if ( refEntity->e.sheetNum == -1 || !rg.sheets[ refEntity->e.sheetNum ] ) {
             poly->hShader = refEntity->e.spriteId;
         } else {
             poly->hShader = rg.sheets[ refEntity->e.sheetNum ]->hShader;
         }
         poly->numVerts = 4;
-        poly->scale = refEntity->e.scale;
-        poly->rotation = refEntity->e.rotation;
+
+        ri.GLM_TransformToGL( origin, xyz, refEntity->e.scale, refEntity->e.rotation, glState.viewData.camera.viewProjectionMatrix );
 
         if ( refEntity->e.sheetNum == -1 ) {
             VectorSet2( verts[0].uv, 0, 0 );
@@ -242,12 +229,15 @@ void RE_ProcessEntities( void )
             VectorSet2( verts[3].uv, 0, 1 );
         } else {
             for ( j = 0; j < 4; j++ ) {
-                VectorCopy2( verts->uv, rg.sheets[ refEntity->e.sheetNum ]->sprites[ refEntity->e.spriteId ].texCoords[j] );
-                VectorCopy( verts->worldPos, origin );
-                verts++;
-                r_numPolyVerts++;
+                VectorCopy2( verts[ j ].uv, rg.sheets[ refEntity->e.sheetNum ]->sprites[ refEntity->e.spriteId ].texCoords[j] );
             }
         }
+        for ( j = 0; j < 4; j++ ) {
+            VectorCopy( verts[j].worldPos, origin );
+            VectorCopy( verts[j].xyz, xyz[j] );
+        }
+        verts += 4;
+        r_numPolyVerts += 4;
 
         refEntity++;
         poly++;

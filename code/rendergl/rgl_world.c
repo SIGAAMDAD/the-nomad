@@ -95,6 +95,7 @@ static void R_GenerateTexCoords( tile2d_info_t *info )
         texture[ strlen( texture ) - 1 ] = '\0';
     }
 
+    R_FindImageFile( info->texture, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE );
     r_worldData.shader = R_GetShaderByHandle( RE_RegisterShader( texture ) );
     if ( r_worldData.shader == rg.defaultShader ) {
         ri.Error( ERR_DROP, "RE_LoadWorldMap: failed to load shader for '%s'", r_worldData.name );
@@ -163,6 +164,7 @@ void R_InitWorldBuffer( void )
     else {
         r_worldData.buffer = R_AllocateBuffer( "worldDrawBuffer", NULL, MAX_BATCH_VERTICES * sizeof(drawVert_t), NULL,
                                             MAX_BATCH_INDICES * sizeof(glIndex_t), BUFFER_FRAME );
+        return;
     }
     attribs = r_worldData.buffer->attribs;
 

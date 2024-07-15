@@ -7,6 +7,7 @@
 #include "SGame/CheatCodes.as"
 #include "Engine/Engine.as"
 #include "SGame/Cvars.as"
+#include "config.as"
 
 namespace ImGui {
 	ImGuiWindowFlags MakeWindowFlags( uint flags ) {
@@ -64,6 +65,7 @@ void InitCvars() {
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_SwimSpeed, "sgame_SwimSpeed", "1.0", CVAR_TEMP, false );
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_AirSpeed, "sgame_AirSpeed", "2.5", CVAR_TEMP, false );
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_SaveLastUsedWeaponModes, "sgame_SaveLastUsedWeaponModes", "0", CVAR_SAVE, true );
+	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_Blood, "sgame_Blood", "1", CVAR_SAVE, false );
 }
 
 //

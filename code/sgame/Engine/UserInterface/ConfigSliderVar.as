@@ -25,9 +25,13 @@ namespace TheNomad::Engine::UserInterface {
         }
 
         void Draw() {
+            ImGui::Text( m_Name );
+
+            ImGui::TableNextColumn();
+
             switch ( m_nType ) {
             case 0: {
-                float value = ImGui::SliderFloat( name, m_nValue, m_nMinValue, m_nMaxValue );
+                float value = ImGui::SliderFloat( m_Name + "##" + m_Id, m_nValue, m_nMinValue, m_nMaxValue );
                 if ( value != m_nValue ) {
                     m_bModified = true;
                     m_nValue = value;
@@ -35,16 +39,18 @@ namespace TheNomad::Engine::UserInterface {
                     m_bModified = false;
                 }
                 break; }
-            case 1:
-                int value = ImGui::SliderInt( name, int( m_nValue ), int( m_nMinValue ), int( m_nMaxValue ) );
+            case 1: {
+                int value = ImGui::SliderInt( m_Name + "##" + m_Id, int( m_nValue ), int( m_nMinValue ), int( m_nMaxValue ) );
                 if ( value != int( m_nValue ) ) {
                     m_bModified = true;
                     m_nValue = value;
                 } else {
                     m_bModified = false;
                 }
-                break;
+                break; }
             };
+
+            ImGui::TableNextRow();
         }
         void Save() {
             TheNomad::Engine::CvarSet( m_Id, Convert().ToString( m_nValue ) );

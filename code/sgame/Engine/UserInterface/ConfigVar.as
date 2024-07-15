@@ -1,3 +1,5 @@
+#include "Engine/UserInterface/ConfigVarBase.as"
+
 namespace TheNomad::Engine::UserInterface {
     //
     // ConfigVar: the bridge between ImGui and the modder
@@ -13,11 +15,16 @@ namespace TheNomad::Engine::UserInterface {
             m_Name = name;
 
             // TODO: ensure we don't add duplicate cvars
-        #ifdef _NOMAD_DEBUG
+        #if defined(_NOMAD_DEBUG)
             TheNomad::CvarManager.AddCvar( @tmp, id, value, flags, true );
         #else
             TheNomad::CvarManager.AddCvar( @tmp, id, value, flags, false );
         #endif
+        }
+
+        void Draw() {
+        }
+        void Save() {
         }
 
         protected string m_Id;

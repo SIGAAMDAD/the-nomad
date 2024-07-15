@@ -327,7 +327,7 @@ gfx/bloodSplatter0
 {
     nopicmip
     {
-        clampmap gfx/bloodSplatter0.tga
+        clampmap gfx/env/blood_spurt.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen identityLighting
         alphaGen vertex

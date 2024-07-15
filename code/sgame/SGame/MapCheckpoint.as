@@ -16,7 +16,7 @@ namespace TheNomad::SGame {
 				m_Spawns[i].Activate(); 
 			}
 			m_bPassed = true;
-			m_nTime = TheNomad::Engine::System::Milliseconds() - nLevelTime;
+			m_nTime = TheNomad::GameSystem::GameManager.GetGameTic() - nLevelTime;
 		}
 
 		void Load( json@ data ) {

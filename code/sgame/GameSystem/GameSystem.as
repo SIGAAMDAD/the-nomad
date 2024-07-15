@@ -23,7 +23,7 @@ namespace TheNomad::GameSystem {
 		}
 
 		void OnInit() {
-			m_nGameMsec = 0;
+			m_nGameTic = 0;
 			m_nDeltaTics = 0;
 
 			// cache redundant calculations
@@ -67,10 +67,10 @@ namespace TheNomad::GameSystem {
 			return ivec2( m_GPUConfig.screenWidth, m_GPUConfig.screenHeight );
 		}
 		
-		uint GetDeltaTics() const {
+		uint64 GetDeltaTics() const {
 			return m_nDeltaTics;
 		}
-		uint GetGameTic() const {
+		uint64 GetGameTic() const {
 			return m_nGameTic;
 		}
 		float GetUIScale() const {
@@ -79,10 +79,7 @@ namespace TheNomad::GameSystem {
 		float GetUIBias() const {
 			return m_nUIBias;
 		}
-		uint GetGameMsec() const {
-			return m_nGameMsec;
-		}
-		void SetMsec( uint msec ) {
+		void SetMsec( uint64 msec ) {
 			m_nDeltaTics = msec - m_nGameTic;
 			m_nGameTic = msec;
 		}
@@ -131,9 +128,8 @@ namespace TheNomad::GameSystem {
 		private int m_JoystichPitch = 0;
 
 		// timing
-		private uint m_nDeltaTics = 0;
-		private uint m_nGameMsec = 0;
-		private uint m_nGameTic = 0;
+		private uint64 m_nDeltaTics = 0;
+		private uint64 m_nGameTic = 0;
 
 		// rendering
 		private float m_nUIBias = 0;

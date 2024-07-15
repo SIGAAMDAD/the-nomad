@@ -12,6 +12,11 @@
 #include "../rendercommon/imgui_impl_sdl2.h"
 #include <SDL2/SDL_image.h>
 
+#ifdef _WIN32
+#else
+#include <X11/Xcursor/Xcursor.h>
+#endif
+
 #define CTRL(a) ((a)-'a'+1)
 
 static cvar_t *in_keyboardDebug;
@@ -24,8 +29,8 @@ SDL_GameController *gamepads[MAX_COOP_PLAYERS];
 SDL_Haptic *haptics[MAX_COOP_PLAYERS];
 SDL_Joystick *sticks[MAX_COOP_PLAYERS];
 
-//static SDL_Cursor *mouse_cursor_active, *mouse_cursor;
-//qboolean sdlImageActive = qfalse;
+static SDL_Cursor *mouse_cursor_active, *mouse_cursor;
+qboolean sdlImageActive = qfalse;
 
 
 static qboolean mouseAvailable = qfalse;
@@ -409,6 +414,7 @@ static void IN_GobbleMouseEvents( void )
 	}
 }
 
+/*
 #pragma pack(push, 1)
 typedef struct {
 	char reserved[2];
@@ -431,27 +437,32 @@ typedef struct {
 } curHeader_t;
 #pragma pack(pop)
 
-static uint32_t *LoadCursorFile( const char *name )
+static void LoadCursorFile( const char *name )
 {
 #ifdef _WIN32
 
 #else
 	fileHandle_t fh;
 	uint32_t *data, offset;
+	uint16_t maskBytesPerLine;
+	uint16_t maskBytes;
+	char *mask;
 	uint8_t origin;
-	char buf[4];
+	char *buf;
+	uint8_t *bits, *p;
 	curHeader_t header;
 	int y, x;
+	SDL_Surface *surface;
 
 	fh = FS_FOpenRead( va( "%s/cursors/%s.cur", FS_GetBaseGameDir(), name ) );
 	if ( fh == FS_INVALID_HANDLE ) {
 		Con_Printf( "Error loading cursors/%s.cur\n", name );
-		return NULL;
+		return;
 	}
 
 	if ( !FS_Read( &header, sizeof( header ), fh ) ) {
 		Con_Printf( "Error reading %lu bytes from file 'cursors/%s.cur'!\n", name );
-		return NULL;
+		return;
 	}
 
 	origin = ( header.biHeight > 0 ? 0 : 1 );
@@ -474,9 +485,37 @@ static uint32_t *LoadCursorFile( const char *name )
 		}
 	}
 
+	maskBytesPerLine = header.biWidth / 8;
+	maskBytes = maskBytesPerLine * header.biHeight;
+
+	mask = (char *)Hunk_AllocateTempMemory( maskBytes );
+
+	FS_Read( mask, maskBytes, fh );
 	FS_FClose( fh );
 
-	return data;
+	buf = (char *)alloca( maskBytesPerLine );
+
+	for ( x = 0; x < maskBytes; x += maskBytesPerLine ) {
+		for ( y = 0; y < maskBytesPerLine; y++ ) {
+			buf[y] = mask[ x + maskBytesPerLine - 1 - y ];
+		}
+		// copy the reversed line
+		for ( y = 0; y < maskBytesPerLine; y++ ) {
+			mask[ x + y ] = buf[ y ];
+		}
+	}
+
+	p = bits = (uint8_t *)Z_Malloc( maskBytes * 8, TAG_STATIC );
+	for ( x = 0; x < maskBytes; x++ ) {
+		for ( y = 0; y < 8; y++ ) {
+			*p++ = ( mask[ x ] & ( 1 << y ) ) ? 1 : 0;
+		}
+	}
+	Hunk_FreeTempMemory( mask );
+
+	eastl::reverse( bits, bits + ( maskBytes * 8 ) );
+
+	surface = SDL_CreateRGBSurfaceFrom( data, header.biWidth, header.biHeight, 0, 0, )
 #endif
 }
 
@@ -488,8 +527,8 @@ static void IN_LoadMouseIcons( void )
 
 #endif
 }
+*/
 
-/*
 static void IN_LoadMouseIcons( void )
 {
 	SDL_Surface *image;
@@ -537,7 +576,6 @@ static void IN_LoadMouseIcons( void )
 		SDL_FreeSurface( image );
 	}
 }
-*/
 
 /*
 ===============
@@ -548,6 +586,12 @@ static void IN_ActivateMouse( void )
 {
 	if ( !mouseAvailable ) {
 		return;
+	}
+
+	if ( keys[ KEY_MOUSE_LEFT ].down ) {
+		SDL_SetCursor( mouse_cursor_active );
+	} else {
+		SDL_SetCursor( mouse_cursor );
 	}
 
 	if ( !mouseActive ) {
@@ -1548,7 +1592,6 @@ void IN_Init( void )
 		return;
 	}
 
-	/*
 	Con_Printf( "Calling IMG_Init( IMG_INIT_PNG | IMG_INIT_JPG )...\n" );
 	if ( IMG_Init( IMG_INIT_PNG | IMG_INIT_JPG ) == 0 ) {
 		Con_Printf( "IMG_Init( IMG_INIT_PNG ) failed: %s\n", SDL_GetError() );
@@ -1557,7 +1600,6 @@ void IN_Init( void )
 		Con_Printf( "IMG_Init( IMG_INIT_PNG | IMG_INIT_JPG ) passed.\n" );
 		sdlImageActive = qtrue;
 	}
-	*/
 
 	Con_DPrintf( "\n------- Input Initialization -------\n" );
 
@@ -1637,12 +1679,10 @@ void IN_Init( void )
 	Cmd_AddCommand( "in_haptic_rumble", IN_HapticRumble );
 
 	// FIXME: dont load mouse icons on console
-	/*
 	IN_LoadMouseIcons();
-	if ( in_mode->i == 0 && mouse_cursor ) {
+	if ( mouse_cursor ) {
 		SDL_SetCursor( mouse_cursor );
 	}
-	*/
 
 	Con_DPrintf( "------------------------------------\n" );
 }

@@ -37,12 +37,14 @@ in vec2 v_TexCoords;
 in vec3 v_FragPos;
 in vec4 v_Color;
 in vec3 v_WorldPos;
+in vec3 v_Position;
 
 uniform sampler2D u_DiffuseMap;
 uniform float u_GammaAmount;
 uniform bool u_GamePaused;
 uniform bool u_HardwareGamma;
 uniform int u_AntiAliasing;
+uniform vec3 u_ViewOrigin;
 
 #if defined(USE_LIGHT)
 uniform vec3 u_AmbientColor;
@@ -324,6 +326,72 @@ vec4 sharpenImage( sampler2D tex, vec2 pos )
 	return clamp(colorInput, 0.0,1.0);
 }
 
+/*
+float CalcLayeredFogFactor()
+{
+    vec3 CameraProj = u_ViewOrigin;
+    CameraProj.z = 0.0;
+
+    vec3 PixelProj = v_WorldPos;
+    PixelProj.z = 0.0;
+
+    float deltaDistance = length( CameraProj - PixelProj ) / u_FogEnd;
+
+    float deltaY = 0.0;
+    float densityIntegral = 0.0;
+
+    if ( u_ViewOrigin.z > u_LayeredFogTop ) { // camera is above the top of the fog
+        if ( v_WorldPos.z < u_LayeredFogTop ) { // the is inside the fog
+            deltaY = ( u_LayeredFogTop - v_WorldPos.z ) / u_LayeredFogTop;
+            densityIntegral = deltaY * deltaY * 0.5;
+        }
+    } else {
+        if ( v_WorldPos.z < u_LayeredFogTop ) {
+            deltaY = abs( u_ViewOrigin.z - v_WorldPos.z ) / u_LayeredFogTop;
+            float deltaCamera = ( u_LayeredFogTop - u_ViewOrigin.z ) / u_LayeredFogTop;
+            float densityIntegralCamera = deltaCamera * deltaCamera * 0.5;
+            float deltaPixel = ( u_LayeredFogTop - v_WorldPos.z ) / u_LayeredFogTop;
+            float densityIntegralPixel = deltaPixel * deltaPixel * 0.5;
+            densityIntegral = abs( densityIntegralCamera - densityIntegralPixel );
+        } else {
+            deltaY = ( u_LayeredFogTop - u_ViewOrigin.z ) / u_LayeredFogTop;
+            densityIntegral = deltaY * deltaY * 0.5;
+        }
+    }
+
+    float fogDensity = 0.0;
+
+    if ( deltaY != 0.0 ) {
+        fogDensity = ( sqrt( 1.0 + ( ( deltaDistance / deltaY ) * ( deltaDistance / deltaY ) ) ) ) * densityIntegral;
+    }
+
+    float fogFactor = exp( -fogDensity );
+
+    return fogFactor;
+}
+*/
+
+vec3 CalcFogFactor() {
+    vec3 rayDir = v_Position - u_ViewOrigin;
+    float dist = length( rayDir );
+
+    const float maxFogHeight = 900;
+    const float c = 1.0;
+    const float b = 1.0;
+
+    if ( v_Position.z >= maxFogHeight - 1 / c ) {
+        return vec3( 1.0 );
+    }
+
+    float distInFog = dist * ( maxFogHeight - v_Position.z ) / ( v_Position.z - u_ViewOrigin.z );
+
+    float fogAmount = ( log( distInFog * c ) - 1 ) * b;
+
+    fogAmount = clamp( fogAmount, 0, 1 );
+
+    return mix( a_Color.rgb, vec3( 1.0 ), fogAmount );
+}
+
 void main() {
     if ( u_AntiAliasing == AntiAlias_FXAA ) {
         vec2 fragCoord = v_TexCoords * u_ScreenSize;
@@ -331,6 +399,8 @@ void main() {
     } else {
         a_Color = sharpenImage( u_DiffuseMap, v_TexCoords );
     }
+
+    a_Color.rgb *= CalcFogFactor();
 
     ApplyLighting();
 

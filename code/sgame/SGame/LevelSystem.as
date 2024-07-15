@@ -425,7 +425,7 @@ namespace TheNomad::SGame {
 				}
 			}
 			
-			m_nLevelTimer = TheNomad::Engine::System::Milliseconds();
+			m_nLevelTimer = TheNomad::GameSystem::GameManager.GetGameTic();
 
 			m_PassedCheckpointSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/misc/passCheckpoint.ogg" );
 		}
@@ -575,7 +575,7 @@ namespace TheNomad::SGame {
 				return;
 			}
 			m_bPaused = true;
-			m_nPauseTimer = TheNomad::Engine::System::Milliseconds();
+			m_nPauseTimer = TheNomad::GameSystem::GameManager.GetGameTic();
 		}
 		void Resume() {
 			if ( !m_bPaused ) {
@@ -587,7 +587,7 @@ namespace TheNomad::SGame {
 			* ===========] pause [================================
 			* level time | delta | level time = level time + delta
 			*/
-			const uint64 delta = TheNomad::Engine::System::Milliseconds() - m_nPauseTimer;
+			const uint64 delta = TheNomad::GameSystem::GameManager.GetGameTic() - m_nPauseTimer;
 			m_nLevelTimer += delta;
 		}
 

@@ -7,6 +7,7 @@ out vec2 v_TexCoords;
 out vec3 v_FragPos;
 out vec4 v_Color;
 out vec3 v_WorldPos;
+out vec3 v_Position;
 
 uniform mat4 u_ModelViewProjection;
 uniform vec4 u_BaseColor;
@@ -136,6 +137,7 @@ void main()
 #endif
     v_Color = u_VertColor * a_Color + u_BaseColor;
 	v_WorldPos = a_WorldPos;
+	v_Position = a_Position;
 
 	v_FragPos = vec4( u_ModelViewProjection * vec4( a_Position, 1.0 ) ).xyz;
 

@@ -92,7 +92,9 @@ namespace TheNomad::Util {
 	}
 
 	void HapticRumble( uint nPlayerIndex, float nStrength, uint nTime ) {
-		TheNomad::Engine::CmdExecuteCommand( "in_haptic_rumble " + nPlayerIndex + " " + formatFloat( nStrength ) + " " + nTime +  "\n" );
+		if ( TheNomad::Engine::CvarVariableInteger( "in_mode" ) == 1 ) {
+			TheNomad::Engine::CmdExecuteCommand( "in_haptic_rumble " + nPlayerIndex + " " + formatFloat( nStrength ) + " " + nTime +  "\n" );
+		}
 	}
 
 	/*

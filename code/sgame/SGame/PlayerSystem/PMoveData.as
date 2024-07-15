@@ -69,26 +69,38 @@ namespace TheNomad::SGame {
 			vec3 accel = m_EntityData.GetPhysicsObject().GetAcceleration();
 			
 			KeyMove();
-			
-//			if ( forward != 0.0f && side != 0.0f ) {
-//				if ( ( move_toggle % ( 16 + ( TheNomad::Engine::CvarVariableInteger( "com_maxfps" ) / 10 ) ) ) == 0.0f ) {
-//				}
-//			}
-			accel.y += forward * sgame_BaseSpeed.GetFloat();
-			accel.x += side * sgame_BaseSpeed.GetFloat();
+
+			if ( backPedal ) {
+				speed = 0.95f;
+			} else {
+				speed = sgame_BaseSpeed.GetFloat();
+			}
+
+			accel.y += forward * speed;
+			accel.x += side * speed;
 
 			if ( forward != 0.0f || side != 0.0f ) {
-				GfxManager.AddDustPoly( m_EntityData.GetOrigin(), vec3( 0.2f, 0.2f, 0.0f ), 200,
-					@TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/smokePuff", 64, 64, 64, 64 ), ivec2( 0 ) );
+				if ( ( gameTic % 10 ) == 0 ) {
+					vec3 origin;
+					vec3 vel;
+
+					origin = m_EntityData.GetOrigin();
+					vel.y = -0.01f;
+					if ( m_EntityData.GetFacing() == FACING_LEFT ) {
+						origin.x += 0.15f;
+						vel.x = 0.1f;
+					} else if ( m_EntityData.GetFacing() == FACING_RIGHT ) {
+						origin.x -= 0.15f;
+						vel.x = -0.1f;
+					}
+
+					GfxManager.AddDustPoly( origin, vel, 500, m_EntityData.m_hDustTrailShader );
+				}
 			}
 
 			if ( m_EntityData.IsDashing() ) {
 				accel.y += 1.25f * forward;
 				accel.x += 1.25f * side;
-
-				vec3 origin = m_EntityData.GetOrigin();
-				GfxManager.AddDustPoly( origin, vec3( 0.0f ), DASH_DURATION,
-					@TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/effects/fireBlast", 480, 384, 64, 64 ), ivec2( 0 ) );
 
 				if ( m_EntityData.GetTimeSinceLastDash() > DASH_DURATION ) {
 					m_EntityData.SetDashing( false );
@@ -256,12 +268,32 @@ namespace TheNomad::SGame {
 				const int screenWidth = TheNomad::GameSystem::GameManager.GetGPUConfig().screenWidth;
 				const int screenHeight = TheNomad::GameSystem::GameManager.GetGPUConfig().screenHeight;
 				
-				float angle = atan2( float( mousePos.y ) - float( screenHeight / 2 ),
-					float( screenHeight / 2 ) - float( mousePos.x ) );
-				if ( angle < 0.0f ) {
-					angle = -angle;
+				float angle = Util::DEG2RAD( atan2( ( screenHeight / 2 ) - float( mousePos.y ),
+					float( mousePos.x ) - ( screenWidth / 2 ) ) );
+				m_nJoystickAngle = angle;
+
+				backPedal = false;
+				if ( mousePos.x < screenWidth / 2 ) {
+					m_EntityData.SetFacing( FACING_LEFT );
+					m_EntityData.SetLegsFacing( FACING_LEFT );
+					m_EntityData.SetArmsFacing( FACING_LEFT );
+					if ( side > 0 ) {
+						m_EntityData.SetFacing( FACING_LEFT );
+						m_EntityData.SetLegsFacing( FACING_LEFT );
+						m_EntityData.SetArmsFacing( FACING_LEFT );
+						backPedal = true;
+					}
+				} else if ( mousePos.x > screenWidth / 2 ) {
+					m_EntityData.SetFacing( FACING_RIGHT );
+					m_EntityData.SetLegsFacing( FACING_RIGHT );
+					m_EntityData.SetArmsFacing( FACING_RIGHT );
+					if ( side < 0 ) {
+						m_EntityData.SetFacing( FACING_RIGHT );
+						m_EntityData.SetLegsFacing( FACING_RIGHT );
+						m_EntityData.SetArmsFacing( FACING_RIGHT );
+						backPedal = true;
+					}
 				}
-				TheNomad::GameSystem::DirType dir = Util::Angle2Dir( angle );
 				
 				/*
 				switch ( dir ) {
@@ -321,7 +353,7 @@ namespace TheNomad::SGame {
 			
 			frametime = uint( float( gameTic * 0.0001f ) );
 			
-			frame_msec = TheNomad::Engine::System::Milliseconds() - old_frame_msec;
+			frame_msec = TheNomad::GameSystem::GameManager.GetGameTic() - old_frame_msec;
 			
 			// if running over 1000fps, act as if each frame is 1ms
 			// prevents divisions by zero
@@ -334,7 +366,7 @@ namespace TheNomad::SGame {
 			if ( frame_msec > 200 ) {
 				frame_msec = 200;
 			}
-			old_frame_msec = TheNomad::Engine::System::Milliseconds();
+			old_frame_msec = TheNomad::GameSystem::GameManager.GetGameTic();
 			
 			if ( up < 1.0f ) {
 				// not holding jump
@@ -357,6 +389,7 @@ namespace TheNomad::SGame {
 			TheNomad::Engine::UserInterface::SetActiveFont( TheNomad::Engine::UserInterface::Font_RobotoMono );
 
 			ImGui::Begin( "Debug Player Movement", null, ImGuiWindowFlags::AlwaysAutoResize );
+			ImGui::SetWindowPos( vec2( 16, 128 ) );
 			ImGui::Text( "Velocity: [ " + m_EntityData.GetVelocity().x + ", " + m_EntityData.GetVelocity().y + " ]" );
 			ImGui::Text( "CameraPos: [ " + Game_CameraPos.x + ", " + Game_CameraPos.y + " ]" );
 			ImGui::Text( "Forward: " + forward );
@@ -382,10 +415,16 @@ namespace TheNomad::SGame {
 				ImGui::Text( "maxs[1]: " + maxs.y );
 			}
 			ImGui::Separator();
+			ImGui::Text( "Arm Angle: " + m_nJoystickAngle );
+			ImGui::Separator();
 			ImGui::Text( "LegState: " + m_EntityData.GetLegState().GetName() );
 			ImGui::Text( "LegAnimation:" );
 			ImGui::Text( "  Frame: " + m_EntityData.GetLegState().GetAnimation().GetFrame() );
 			ImGui::Text( "  NumFrames: " + m_EntityData.GetLegState().GetAnimation().NumFrames() );
+			ImGui::Text( "ArmState: " + m_EntityData.GetArmState().GetName() );
+			ImGui::Text( "ArmAnimation:" );
+			ImGui::Text( "  Frame: " + m_EntityData.GetArmState().GetAnimation().GetFrame() );
+			ImGui::Text( "  NumFrames: " + m_EntityData.GetArmState().GetAnimation().NumFrames() );
 			ImGui::Separator();
 			ImGui::Text( "GameTic: " + gameTic );
 			ImGui::End();
@@ -408,11 +447,11 @@ namespace TheNomad::SGame {
 			if ( key.active ) {
 				// still down
 				if ( key.downtime <= 0 ) {
-					msec = TheNomad::Engine::System::Milliseconds();
+					msec = TheNomad::GameSystem::GameManager.GetGameTic();
 				} else {
-					msec += TheNomad::Engine::System::Milliseconds() - key.downtime;
+					msec += TheNomad::GameSystem::GameManager.GetGameTic() - key.downtime;
 				}
-				key.downtime = TheNomad::Engine::System::Milliseconds();
+				key.downtime = TheNomad::GameSystem::GameManager.GetGameTic();
 			}
 
 			val = Util::Clamp( float( msec ) / float( frame_msec ), float( 0 ), float( 1 ) );
@@ -487,5 +526,6 @@ namespace TheNomad::SGame {
 		TheNomad::Engine::SoundSystem::SoundEffect moveMetal3;
 		
 		bool groundPlane = false;
+		bool backPedal = false;
 	};
 };

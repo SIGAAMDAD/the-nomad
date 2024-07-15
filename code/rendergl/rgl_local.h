@@ -452,8 +452,6 @@ typedef struct {
     nhandle_t       hShader;
     uint32_t        numVerts;
     polyVert_t      *verts; // later becomes a drawVert_t
-    float           scale;
-    float           rotation;
 } srfPoly_t;
 
 typedef struct {
@@ -1650,7 +1648,7 @@ void R_DrawWorld( void );
 // rgl_scene.c
 //
 void RB_InstantQuad( vec4_t quadVerts[4] );
-void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t hSprite, qboolean bNoSpriteSheet );
+void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hShader );
 void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts );
 void RE_AddPolyListToScene( const poly_t *polys, uint32_t numPolys );
 void RE_RenderScene( const renderSceneRef_t *fd );

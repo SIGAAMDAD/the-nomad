@@ -26,6 +26,14 @@ namespace TheNomad::Engine::SoundSystem {
             PlayWorldSfx( origin, m_hSfx );
         }
 
+        int opConv() const {
+            return m_hSfx;
+        }
+
+        int opImplConv() const {
+            return m_hSfx;
+        }
+
         private int m_hSfx = FS_INVALID_HANDLE;
     };
 };

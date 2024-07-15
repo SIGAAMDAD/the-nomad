@@ -235,18 +235,6 @@ void R_DrawPolys( void )
 		{
 			RB_FlushBatchBuffer();
 		}
-        if ( backend.refdef.polys[i].numVerts == 4 && ( backend.refdef.flags & RSF_ORTHO_BITS ) == RSF_ORTHO_TYPE_WORLD ) {
-            vec3_t origin;
-
-            VectorCopy( origin, backend.refdef.polys[i].verts[0].worldPos );
-            ri.GLM_TransformToGL( origin, xyz, backend.refdef.polys[i].scale, backend.refdef.polys[i].rotation,
-                glState.viewData.camera.viewProjectionMatrix );
-            
-
-            for ( j = 0; j < backend.refdef.polys[i].numVerts; ++j ) {
-                VectorCopy( backend.refdef.polys[i].verts[j].xyz, xyz[j] );
-            }
-        }
         
 		// generate fan indexes into the buffer
 		for ( j = 0; j < backend.refdef.polys[i].numVerts - 2; j++ ) {

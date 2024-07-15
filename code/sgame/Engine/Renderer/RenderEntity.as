@@ -5,7 +5,7 @@ namespace TheNomad::Engine::Renderer {
 
 		void Draw() const {
 			AddEntityToScene( sheetNum, spriteId, renderfx, lightingOrigin, origin, frame, flags, color, shaderTexCoord, shaderTime,
-				rotation, scale );
+				radius, rotation, scale );
 		}
 
         // texturing
@@ -22,14 +22,14 @@ namespace TheNomad::Engine::Renderer {
 
 	    // misc
 	    uint32		color;
-	    vec2		shaderTexCoord;	// texture coordinates used by tcMod entity modifiers
+	    vec2		shaderTexCoord = 0.0f; // texture coordinates used by tcMod entity modifiers
 
     	// subtracted from refdef time to control effect start times
-    	float		shaderTime;
+    	float		shaderTime = 0.0f;
 
     	// extra sprite information
-//    	float		radius;
-    	float		rotation;
-        float       scale;
+    	float		radius = 0.0f;
+    	float		rotation = 0.0f;
+        float       scale = 0.0f;
     };
 };

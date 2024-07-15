@@ -636,6 +636,8 @@ void RB_IterateShaderStages( shader_t *shader )
 			}
 		}
 
+		GLSL_SetUniformVec3( sp, UNIFORM_VIEWORIGIN, glState.viewData.camera.origin );
+
         {
 			vec4_t baseColor;
 			vec4_t vertColor;

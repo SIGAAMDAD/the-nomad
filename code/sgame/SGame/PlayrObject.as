@@ -389,6 +389,8 @@ namespace TheNomad::SGame {
 				};
 				
 				Util::HapticRumble( m_nControllerIndex, 0.50f, 300 );
+
+				GfxManager.Bleed( m_Link.m_Origin );
 			}
 		}
 		
@@ -445,6 +447,10 @@ namespace TheNomad::SGame {
 
 			@m_LegState = @m_LegState.Run();
 			@m_ArmState = @m_ArmState.Run();
+		}
+
+		void SetArmState( StateNum num ) {
+			@m_ArmState = @StateManager.GetStateForNum( num );
 		}
 		
 		private float GetGfxDirection() const {
@@ -617,6 +623,11 @@ namespace TheNomad::SGame {
 			crouchUpSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/clothRuffle1.ogg" );
 		}
 
+		private void CacheGfx() {
+			m_hBloodFxShader = TheNomad::Engine::ResourceCache.GetShader( "gfx/bloodSplatter0" );
+			m_hDustTrailShader = TheNomad::Engine::ResourceCache.GetShader( "gfx/env/smokePuff" );
+		}
+
 		void Spawn( uint id, const vec3& in origin ) override {
 			int i;
 
@@ -633,9 +644,7 @@ namespace TheNomad::SGame {
 			m_nHealMult = 0.0f;
 			m_nHealMultDecay = LevelManager.GetDifficultyScale();
 
-			@m_hDustTrailShader = TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/smokePuff", 64, 64, 64, 64 );
-//			@m_DashTrailShader = TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/effects/flame", 128, 256, 128, 256 );
-
+			CacheGfx();
 			InitLoadout();
 			CacheSfx();
 
@@ -733,7 +742,11 @@ namespace TheNomad::SGame {
 			} else if ( m_bSliding ) {
 				@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_SLIDE );
 			} else {
-				@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_MOVE_GROUND );
+				if ( Pmove.backPedal ) {
+					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_BACKPEDAL );
+				} else {
+					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_MOVE_GROUND );
+				}
 			}
 
 			refEntity.origin = m_Link.m_Origin;
@@ -746,10 +759,8 @@ namespace TheNomad::SGame {
 		private void DrawArms() {
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 
-			if ( m_PhysicsObject.GetVelocity() == Vec3Origin ) {
+			if ( m_ArmState.Done() && @m_ArmState !is @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_IDLE ) ) {
 				@m_ArmState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_IDLE );
-			} else {
-				@m_ArmState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_MOVE );
 			}
 
 			refEntity.origin = m_Link.m_Origin;
@@ -811,8 +822,9 @@ namespace TheNomad::SGame {
 		
 		private QuickShot m_QuickShot;
 
-		SpriteSheet@ m_hDustTrailShader = null;
-		SpriteSheet@ m_DashTrailShader = null;
+		int m_hDustTrailShader = FS_INVALID_HANDLE;
+		int m_hDashTrailShader = FS_INVALID_HANDLE;
+		int m_hBloodFxShader = FS_INVALID_HANDLE;
 		
 		//
 		// sound effects
@@ -871,6 +883,7 @@ namespace TheNomad::SGame {
 		private uint64 m_nTimeSinceSlide = 0;
 		private bool m_bSliding = false;
 
+		bool m_bMeleeActive = false;
 		private bool m_bCrouching = false;
 
 		private bool m_bEmoting = false;

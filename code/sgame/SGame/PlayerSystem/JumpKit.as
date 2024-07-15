@@ -4,12 +4,12 @@ namespace TheNomad::SGame {
 
     class JumpKit {
         void ResetDash() {
-            m_nTimeSinceDash = TheNomad::Engine::System::Milliseconds();
+            m_nTimeSinceDash = TheNomad::GameSystem::GameManager.GetGameTic();
             m_nTimeSinceLastUse = m_nTimeSinceDash;
             m_nJumpKitCharges--;
         }
         uint64 GetTimeSinceLastDash() const {
-            return TheNomad::Engine::System::Milliseconds() - m_nTimeSinceDash;
+            return TheNomad::GameSystem::GameManager.GetGameTic() - m_nTimeSinceDash;
         }
         void SetDashing( bool bDashing ) {
             m_bDashing = bDashing;
@@ -19,8 +19,8 @@ namespace TheNomad::SGame {
         }
 
         void RunTic() {
-            if ( TheNomad::Engine::System::Milliseconds() - m_nTimeSinceLastUse > 5000 && m_nJumpKitCharges < 6 ) {
-                m_nTimeSinceLastUse = TheNomad::Engine::System::Milliseconds();
+            if ( TheNomad::GameSystem::GameManager.GetGameTic() - m_nTimeSinceLastUse > 5000 && m_nJumpKitCharges < 6 ) {
+                m_nTimeSinceLastUse = TheNomad::GameSystem::GameManager.GetGameTic();
                 m_nJumpKitCharges++;
             }
         }

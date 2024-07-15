@@ -33,6 +33,7 @@ namespace TheNomad::SGame {
 		ST_PLAYR_LEGS_SLIDE,
 		ST_PLAYR_LEGS_MOVE_GROUND,
 		ST_PLAYR_LEGS_STUN_GROUND,
+		ST_PLAYR_LEGS_BACKPEDAL,
 
 		// legs in air states
 		ST_PLAYR_LEGS_IDLE_AIR,
@@ -111,6 +112,7 @@ namespace TheNomad::SGame {
 			m_BaseStateCache.Add( "ST_PLAYR_LEGS_SLIDE", StateNum::ST_PLAYR_LEGS_SLIDE );
 			m_BaseStateCache.Add( "ST_PLAYR_LEGS_MOVE_GROUND", StateNum::ST_PLAYR_LEGS_MOVE_GROUND );
 			m_BaseStateCache.Add( "ST_PLAYR_LEGS_STUN_GROUND", StateNum::ST_PLAYR_LEGS_STUN_GROUND );
+			m_BaseStateCache.Add( "ST_PLAYR_LEGS_BACKPEDAL", StateNum::ST_PLAYR_LEGS_BACKPEDAL );
 			m_BaseStateCache.Add( "ST_PLAYR_LEGS_IDLE_AIR", StateNum::ST_PLAYR_LEGS_IDLE_AIR );
 			m_BaseStateCache.Add( "ST_PLAYR_LEGS_MOVE_AIR", StateNum::ST_PLAYR_LEGS_MOVE_AIR );
 			m_BaseStateCache.Add( "ST_PLAYR_LEGS_FALL_AIR", StateNum::ST_PLAYR_LEGS_FALL_AIR );

@@ -14,7 +14,7 @@ namespace TheNomad::Engine {
             }
             return int( ret );
         }
-        int GetSfx( const string& in sfx ) {
+        TheNomad::Engine::SoundSystem::SoundEffect GetSfx( const string& in sfx ) {
             int64 ret;
             if ( !m_SfxCache.TryGetValue( sfx, ret ) ) {
                 ret = TheNomad::Engine::SoundSystem::RegisterSfx( sfx );
@@ -23,11 +23,11 @@ namespace TheNomad::Engine {
                 }
                 m_SfxCache.Add( sfx, ret );
             }
-            return int( ret );
+            return TheNomad::Engine::SoundSystem::SoundEffect( int( ret ) );
         }
         int GetTrack( const string& in npath ) {
             int64 ret;
-            if ( !m_MusicCache.Contains( npath ) ) {
+            if ( !m_MusicCache.TryGetValue( npath, ret ) ) {
                 ret = TheNomad::Engine::SoundSystem::RegisterTrack( npath );
                 if ( ret != -1 ) {
                     ConsolePrint( "- Loaded music \"" + npath + "\".\n" );

@@ -10,19 +10,23 @@ TheNomad::Engine::UserInterface::ConfigButtonVar@ sgame_AdaptiveSoundtrack;
 TheNomad::Engine::UserInterface::ConfigListVar@ sgame_GfxDetail;
 TheNomad::Engine::UserInterface::ConfigListVar@ sgame_Difficulty;
 
+namespace nomadmain {
+
 //
 // ConfigInit: initializes all sgame relevant configuration variables
 //
 void ConfigInit() {
-    @sgame_AdaptiveSoundtrack =
-        TheNomad::Engine::UserInterface::ConfigButtonVar( "Adaptive Soundtrack", "sgame_AdaptiveSoundtrack", true, CVAR_SAVE );
+//    @sgame_AdaptiveSoundtrack =
+//        TheNomad::Engine::UserInterface::ConfigButtonVar( "Adaptive Soundtrack", "sgame_AdaptiveSoundtrack", true, CVAR_SAVE );
     @sgame_GfxDetail =
-        TheNomad::Engine::UserInterface::ConfigListVar( "Gfx Detail", "sgame_GfxDetail", 2, { "None", "Low", "Medium", "High" }, CVAR_SAVE );
+        TheNomad::Engine::UserInterface::ConfigListVar( "Gfx Detail", "sgame_GfxDetail", { "None", "Low", "Medium", "High" }, 2, CVAR_SAVE );
     @sgame_Difficulty =
-        TheNomad::Engine::UserInterface::ConfigListVar( "Difficulty", "sgame_Difficulty", 2, {}, CVAR_SAVE );
+        TheNomad::Engine::UserInterface::ConfigListVar( "Difficulty", "sgame_Difficulty",
+            { "Very Easy", "Easy", "Normal", "Hard", "Very Hard", "Meme Mode" }, 2, CVAR_SAVE );
     
-    sgame_Config.AddVar( @sgame_AdaptiveSoundtrack );
-    sgame_Config.AddVar( @sgame_MaxGfx );
+//    sgame_Config.AddVar( @sgame_AdaptiveSoundtrack );
+//    sgame_Config.AddVar( @sgame_MaxGfx );
+    sgame_Config.AddVar( @sgame_GfxDetail );
     sgame_Config.AddVar( @sgame_Difficulty );
 }
 
@@ -44,9 +48,13 @@ int ModuleDrawConfiguration() {
         ImGui::Text( "You CHOSE This, No Pullin' Out Now!" );
     }
     */
+
+    sgame_Config.Draw();
     return 1;
 }
 
 int ModuleSaveConfiguration() {
     return 1;
 }
+
+};

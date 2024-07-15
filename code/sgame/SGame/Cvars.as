@@ -9,6 +9,7 @@ namespace TheNomad::SGame {
 	ConVar sgame_GfxDetail;
 	ConVar sgame_Difficulty;
 	ConVar sgame_DebugMode;
+	ConVar sgame_Blood;
 
 	//
 	// sound system

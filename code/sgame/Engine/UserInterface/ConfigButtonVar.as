@@ -7,9 +7,8 @@ namespace TheNomad::Engine::UserInterface {
         }
 
         void Draw() {
-            if ( ImGui::RadioButton( name,  ) ) {
-                
-            }
+        }
+        void Save() {
         }
 
         private bool m_bValue = false;

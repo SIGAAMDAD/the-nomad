@@ -172,7 +172,7 @@ typedef struct {
 	void (*ClearScene)( void );
     void (*BeginScene)( const renderSceneRef_t *fd );
     void (*EndScene)( void );
-    void (*AddSpriteToScene)( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t hSprite, qboolean bNoSpriteSheet );
+    void (*AddSpriteToScene)( const vec3_t origin, nhandle_t hShader );
     void (*AddPolyToScene)( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts );
     void (*AddPolyListToScene)( const poly_t *polys, uint32_t numPolys );
     void (*AddEntityToScene)( const renderEntityRef_t *ent );

@@ -13,7 +13,8 @@
         { "Id": 4, "Name": "item_shellpack" },
         { "Id": 5, "Name": "item_grenadepack" },
         { "Id": 6, "Name": "item_rocketpack" },
-        { "Id": 7, "Name": "gfx" }
+        { "Id": 7, "Name": "gfx_dash" },
+        { "Id": 8, "Name": "gfx_slide" }
     ],
     "AmmoData": [
         { "Id": 7, "Name": "ammo_rifle" },

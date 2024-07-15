@@ -402,17 +402,10 @@ static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, float scale, flo
 {
     glm::mat4 mvp, model;
     glm::vec4 pos;
-    qboolean rotated;
 
-//    if ( rotation != 0.0f ) {
-//        model = glm::translate( glm::mat4( 1.0f ), glm::vec3( world[0], world[1], world[2] ) )
-//                * glm::scale( glm::mat4( 1.0f ), glm::vec3( scale, scale, 0.0f ) )
-//                * glm::rotate( glm::mat4( 1.0f ), (float)DEG2RAD( rotation ), glm::vec3( 0, 0, 1 ) );
-//    }
-//    else {
-        model = glm::translate( glm::mat4( 1.0f ), glm::vec3( world[0], world[1], world[2] ) )
-                * glm::scale( glm::mat4( 1.0f ), glm::vec3( scale, scale, 0.0f ) );
-//    }
+    model = glm::translate( glm::mat4( 1.0f ), glm::vec3( world[0], world[1], world[2] ) )
+            * glm::scale( glm::mat4( 1.0f ), glm::vec3( scale, scale, 0.0f ) )
+            * glm::rotate( glm::mat4( 1.0f ), (float)DEG2RAD( rotation ), glm::vec3( 0, 0, 1 ) );
     mvp = gi.viewProjectionMatrix * model;
 
     const glm::vec4 positions[4] = {
@@ -430,41 +423,8 @@ static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, float scale, flo
     };
 
     for ( uint32_t i = 0; i < 4; i++ ) {
-        rotated = qfalse;
-        if ( rotation != 0.0f ) {
-            float angle = DEG2RAD( rotation );
-            if ( angle < 0.0f ) {
-                angle = -angle;
-            }
-            switch ( Angle2Dir( angle ) ) {
-            case DIR_SOUTH:
-            case DIR_NORTH_WEST:
-            case DIR_SOUTH_WEST:
-            case DIR_WEST: {
-                if ( i == 0 || i == 3 || i == 2 ) {
-                    const glm::mat4 m = mvp * glm::rotate( glm::mat4( 1.0f ), angle, glm::vec3( 0, 0, 1 ) );
-                    pos = m * positions[i];
-                    VectorCopy( xyz[i], pos );
-                    rotated = qtrue;
-                }
-                break; }
-            case DIR_NORTH:
-            case DIR_NORTH_EAST:
-            case DIR_SOUTH_EAST:
-            case DIR_EAST: {
-                if ( i == 3 || i == 1 || i == 2 ) {
-                    const glm::mat4 m = mvp * glm::rotate( glm::mat4( 1.0f ), -angle, glm::vec3( 0, 0, 1 ) );
-                    pos = m * positions[i];
-                    VectorCopy( xyz[i], pos );
-                    rotated = qtrue;
-                }
-                break; }
-            };
-        }
-        if ( !rotated ) {
-            pos = mvp * positions[i];
-            VectorCopy( xyz[i], pos );
-        }
+        pos = mvp * positions[i];
+        VectorCopy( xyz[i], pos );
     }
 }
 

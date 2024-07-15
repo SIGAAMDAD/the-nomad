@@ -60,7 +60,7 @@ typedef struct {
 	floatint_t	shaderTime;			// -EC- set to union
 
 	// extra sprite information
-//	float		radius;
+	float		radius;
 	float		rotation;
 	float		scale;
 } renderEntityRef_t;

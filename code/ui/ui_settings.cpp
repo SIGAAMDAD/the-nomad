@@ -1585,35 +1585,39 @@ static void ModuleMenu_Draw( void )
 
 	FontCache()->SetActiveFont( RobotoMono );
 
-	ImGui::SetCursorScreenPos( ImVec2( 0, 64 * ui->scale ) );
-    ImGui::BeginChild( ImGui::GetID( "MODSMENUEDIT" ), ImVec2( 400 * ui->scale, 550 * ui->scale ), ImGuiChildFlags_None,
+	ImGui::SetCursorScreenPos( ImVec2( 0, 168 * ui->scale ) );
+    ImGui::BeginChild( ImGui::GetID( "MODSMENUEDIT" ), ImVec2( 200 * ui->scale, 460 * ui->scale ), ImGuiChildFlags_None,
         ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar
         | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus );
     FontCache()->SetActiveFont( RobotoMono );
 
     ImGui::SeparatorText( "MODS" );
-    ImGui::SetWindowFontScale( ( scale * 1.8f ) * ui->scale );
+    ImGui::SetWindowFontScale( scale );
     for ( i = 0; i < g_pModuleLib->GetModCount(); i++ ) {
-		ImGui::TextUnformatted( g_pModuleLib->m_pModList[i].info->m_szName );
-//		ImGui::Selectable( va( "%s##ModuleSelectionSettings%lu", g_pModuleLib->m_pModList[i].info->m_szName, i ),
-//			( s_settingsMenu->currentModSettings == i ) );
+//		ImGui::TextUnformatted( g_pModuleLib->m_pModList[i].info->m_szName );
+		if ( ImGui::Selectable( va( "%s##ModuleSelectionSettings%lu", g_pModuleLib->m_pModList[i].info->m_szName, i ),
+			( s_settingsMenu->currentModSettings == i ) ) )
+		{
+			Snd_PlaySfx( ui->sfx_select );
+			s_settingsMenu->currentModSettings = i;
+		}
     }
     ImGui::EndChild();
 
-    ImGui::SetCursorScreenPos( ImVec2( 404 * ui->scale, 64 * ui->scale ) );
-    ImGui::BeginChild( ImGui::GetID( "EntryDraw" ), ImVec2( 700 * ui->scale, ( 768 - 128 ) * ui->scale ), ImGuiChildFlags_None,
+    ImGui::SetCursorScreenPos( ImVec2( 208 * ui->scale, 168 * ui->scale ) );
+    ImGui::BeginChild( ImGui::GetID( "EntryDraw" ), ImVec2( 400 * ui->scale, 460 * ui->scale ), ImGuiChildFlags_None,
         MENU_DEFAULT_FLAGS );
-    if ( s_settingsMenu->currentModSettings ) {
-		name = g_pModuleLib->m_pModList[s_settingsMenu->currentModSettings].info->m_szName;
 
-        ImGui::SetWindowFontScale( scale * 1.5f );
-        FontCache()->SetActiveFont( AlegreyaSC );
-        ImGui::SeparatorText( name );
-		FontCache()->SetActiveFont( RobotoMono );
-		ImGui::SetWindowFontScale( scale * 1.0f );
+	name = g_pModuleLib->m_pModList[s_settingsMenu->currentModSettings].info->m_szName;
 
-		g_pModuleLib->ModuleCall( g_pModuleLib->m_pModList[s_settingsMenu->currentModSettings].info, ModuleDrawConfiguration, 0 );
-    }
+    ImGui::SetWindowFontScale( scale * 1.5f );
+    FontCache()->SetActiveFont( AlegreyaSC );
+    ImGui::SeparatorText( name );
+	FontCache()->SetActiveFont( RobotoMono );
+	ImGui::SetWindowFontScale( scale * 1.0f );
+
+	g_pModuleLib->ModuleCall( g_pModuleLib->m_pModList[s_settingsMenu->currentModSettings].info, ModuleDrawConfiguration, 0 );
+
     ImGui::EndChild();
     ImGui::SetWindowFontScale( scale );
 }

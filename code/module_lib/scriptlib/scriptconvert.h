@@ -106,6 +106,7 @@ public:
         CheckASCall( pEngine->RegisterObjectMethod( "Convert", "uint64 FromHexString( const string& in ) const", WRAP_FN( CScriptConvert::HexStringToULong ), asCALL_GENERIC ) );
 
         CheckASCall( pEngine->RegisterObjectMethod( "Convert", "string ToString( bool ) const", WRAP_FN( CScriptConvert::BoolToString ), asCALL_GENERIC ) );
+        CheckASCall( pEngine->RegisterObjectMethod( "Convert", "string ToString( float ) const", WRAP_FN( CScriptConvert::FloatToString ), asCALL_GENERIC ) );
         CheckASCall( pEngine->RegisterObjectMethod( "Convert", "string ToString( int64 ) const", WRAP_FN( CScriptConvert::LongToString ), asCALL_GENERIC ) );
         CheckASCall( pEngine->RegisterObjectMethod( "Convert", "string ToString( uint64 ) const", WRAP_FN( CScriptConvert::ULongToString ), asCALL_GENERIC ) );
         CheckASCall( pEngine->RegisterObjectMethod( "Convert", "string ToString( int32 ) const", WRAP_FN( CScriptConvert::IntToString ), asCALL_GENERIC ) );

@@ -1421,6 +1421,8 @@ static void R_UnloadWorld_f( void ) {
 
     ri.Cmd_ExecuteCommand( "snd.unload_level" );
 
+    memset( rg.world, 0, sizeof( *rg.world ) );
+
     rg.world = NULL;
     rg.worldMapLoaded = qfalse;
 }

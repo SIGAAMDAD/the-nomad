@@ -859,8 +859,9 @@ static void AddEntityToScene( asIScriptGeneric *pGeneric ) {
     uint32_t color = pGeneric->GetArgDWord( 7 );
 	const vec2& shaderTexCoord = *(const vec2 *)pGeneric->GetArgObject( 8 );
     float shaderTime = pGeneric->GetArgFloat( 9 );
-	float rotation = pGeneric->GetArgFloat( 10 );
-	float scale = pGeneric->GetArgFloat( 11 );
+    float radius = pGeneric->GetArgFloat( 10 );
+	float rotation = pGeneric->GetArgFloat( 11 );
+	float scale = pGeneric->GetArgFloat( 12 );
 
     memset( &refEntity, 0, sizeof( refEntity ) );
     VectorCopy( refEntity.origin, origin );
@@ -871,6 +872,7 @@ static void AddEntityToScene( asIScriptGeneric *pGeneric ) {
     refEntity.renderfx = renderfx;
     refEntity.frame = frame;
     refEntity.flags = flags;
+    refEntity.radius = radius;
     refEntity.rotation = rotation;
     refEntity.scale = scale;
     refEntity.shaderTime.f = shaderTime;
@@ -888,11 +890,9 @@ static void AddSpriteToScene( asIScriptGeneric *pGeneric ) {
     CThreadAutoLock<CThreadMutex> lock( g_hRenderLock );
 
     const vec3& origin = *(const vec3 *)pGeneric->GetArgObject( 0 );
-    const nhandle_t hSpriteSheet = (nhandle_t)pGeneric->GetArgDWord( 1 );
-    const nhandle_t hSprite = (nhandle_t)pGeneric->GetArgDWord( 2 );
-    const qboolean bNoSpriteSheet = (qboolean)pGeneric->GetArgDWord( 3 );
+    const nhandle_t hShader = (nhandle_t)pGeneric->GetArgDWord( 1 );
 
-    re.AddSpriteToScene( (vec_t *)glm::value_ptr( origin ), hSpriteSheet, hSprite, bNoSpriteSheet );
+    re.AddSpriteToScene( (vec_t *)glm::value_ptr( origin ), hShader );
 }
 
 static void RegisterShader( asIScriptGeneric *pGeneric ) {
@@ -2592,10 +2592,10 @@ void ModuleLib_Register_Engine( void )
             REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::ClearScene()", asFUNCTION( ClearScene ) );
             g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::Renderer::RenderScene( uint, uint, uint, uint, uint, uint )", asFUNCTION( ModuleLib_RenderScene ), asCALL_GENERIC );
             g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::Renderer::AddEntityToScene( int, int, int, const vec3& in, const vec3& in, uint64,"
-                " uint32, uint32, const vec2& in, float, float, float )",
+                " uint32, uint32, const vec2& in, float, float, float, float )",
                 asFUNCTION( AddEntityToScene ), asCALL_GENERIC );
             REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddPolyToScene( int, const TheNomad::Engine::Renderer::PolyVert[]& in )", WRAP_FN_PR( AddPolyToScene, ( nhandle_t, const CScriptArray * ), void ) );
-            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddSpriteToScene( const vec3& in, int, int, bool )", asFUNCTION( AddSpriteToScene ) );
+            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddSpriteToScene( const vec3& in, int )", asFUNCTION( AddSpriteToScene ) );
             REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::Renderer::RegisterShader( const string& in )", asFUNCTION( RegisterShader ) );
             g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "int TheNomad::Engine::Renderer::RegisterSpriteSheet( const string& in, uint, uint, uint, uint )", asFUNCTION( ModuleLib_RegisterSpriteSheet ), asCALL_GENERIC );
             REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::Renderer::RegisterSprite( int, uint )", WRAP_FN( RegisterSprite ) );

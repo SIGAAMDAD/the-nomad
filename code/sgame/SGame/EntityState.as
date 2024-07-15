@@ -110,20 +110,20 @@ namespace TheNomad::SGame {
 		}
 
 		void Reset() {
-			m_nTicker = TheNomad::Engine::System::Milliseconds();
+			m_nTicker = TheNomad::GameSystem::GameManager.GetGameTic();
 		}
 		
 		const uvec2& GetSpriteOffset() const {
 			return m_SpriteOffset;
 		}
 		bool Done() const {
-			return TheNomad::Engine::System::Milliseconds() - m_nTicker >= m_nTics;
+			return TheNomad::GameSystem::GameManager.GetGameTic() - m_nTicker >= m_nTics;
 		}
-		uint GetTics() const {
+		uint64 GetTics() const {
 			return m_nTicker;
 		}
 		EntityState@ Run() {
-			if ( TheNomad::Engine::System::Milliseconds() - m_nTicker > m_nTics ) {
+			if ( TheNomad::GameSystem::GameManager.GetGameTic() - m_nTicker > m_nTics ) {
 				Reset();
 				return @m_NextState !is null ? @m_NextState : @StateManager.GetStateForNum( ( m_nStateNum + m_nStateOffset ) + 1 );
 			}

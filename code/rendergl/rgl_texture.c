@@ -3083,6 +3083,6 @@ void R_UnloadLevelTextures( void )
 		nglDeleteTextures( 1, &rg.textures[ j + rg.world->firstLevelTexture ]->id );
 		rg.textures[ j + rg.world->firstLevelTexture ] = NULL;
 	}
-//	memset( rg.textures + rg.world->firstLevelTexture, 0, sizeof( *rg.textures ) * rg.world->levelTextures );
+	memset( rg.textures + rg.world->firstLevelTexture, 0, sizeof( *rg.textures ) * rg.world->levelTextures );
 	rg.numTextures = rg.world->firstLevelTexture;
 }

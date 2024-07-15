@@ -19,20 +19,27 @@ namespace TheNomad::SGame {
 		}
 		
 		void Run() {
-			if ( TheNomad::Engine::System::Milliseconds() - m_nOldTic > m_nTicRate ) {
-				m_nOldTic = TheNomad::Engine::System::Milliseconds();
-				m_nCurrentFrame += m_nTicker;
+			if ( TheNomad::GameSystem::GameManager.GetGameTic() - m_nOldTic > m_nTicRate ) {
+				m_nOldTic = TheNomad::GameSystem::GameManager.GetGameTic();
 
-				if ( m_bOscillate ) {
-					if ( m_nCurrentFrame >= m_nNumFrames ) {
-						m_nTicker = -1;
-					} else if ( m_nCurrentFrame < 0 ) {
-						m_nCurrentFrame = 0;
-						m_nTicker = 1;
+				if ( m_bReverse ) {
+					m_nCurrentFrame--;
+					if ( m_nCurrentFrame < 0 ) {
+						m_nCurrentFrame = m_nNumFrames - 1;
 					}
 				} else {
-					if ( m_nCurrentFrame >= int( m_nNumFrames ) ) {
-						m_nCurrentFrame = 0;
+					m_nCurrentFrame += m_nTicker;
+					if ( m_bOscillate ) {
+						if ( m_nCurrentFrame >= m_nNumFrames ) {
+							m_nTicker = -1;
+						} else if ( m_nCurrentFrame < 0 ) {
+							m_nCurrentFrame = 0;
+							m_nTicker = 1;
+						}
+					} else {
+						if ( m_nCurrentFrame >= int( m_nNumFrames ) ) {
+							m_nCurrentFrame = 0;
+						}
 					}
 				}
 			}
@@ -56,7 +63,15 @@ namespace TheNomad::SGame {
 				return false;
 			}
 			m_nNumFrames = Convert().ToUInt( base );
+			if ( !json.get( "Reverse", base ) ) {
+				ConsoleWarning( "invalid animation info, missing variable 'Reverse'\n" );
+				return false;
+			}
+			m_bReverse = Convert().ToBool( base );
 
+			if ( m_bReverse ) {
+				m_nTicker = -1;
+			}
 			if ( m_nNumFrames == 0 ) {
 				m_nTicker = 0;
 			}
@@ -79,5 +94,6 @@ namespace TheNomad::SGame {
 		private int m_nTicker = 0;
 		private int m_nCurrentFrame = 0;
 		private bool m_bOscillate = false;
+		private bool m_bReverse = false;
 	};
 };
