@@ -1452,11 +1452,8 @@ void R_Init( void )
 
     // clear all globals
     memset( &rg, 0, sizeof( rg ) );
-    memset( &glState, 0, sizeof( glState ) );
     memset( &backend, 0, sizeof( backend ) );
-    memset( &glConfig, 0, sizeof( glConfig ) );
-    memset( &glContext, 0, sizeof( glContext ) );
-
+    
     glState.viewData.camera.zoom = 1.0f;
     screenshotFrame = qfalse;
 
