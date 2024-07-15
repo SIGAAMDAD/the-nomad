@@ -1496,13 +1496,16 @@ void R_Init( void )
 
     nglGenQueries( 3, rg.queries );
 
-    if ( glContext.ARB_framebuffer_object ) {
+    if ( glContext.ARB_framebuffer_object && !rg.numFBOs ) {
         FBO_Init();
     }
     
-    GLSL_InitGPUShaders();
-
-    R_InitGPUBuffers();
+    if ( !rg.numPrograms ) {
+        GLSL_InitGPUShaders();
+    }
+    if ( !rg.numBuffers ) {
+        R_InitGPUBuffers();
+    }
 
     R_InitShaders();
 
@@ -1554,9 +1557,6 @@ void RE_Shutdown( refShutdownCode_t code )
         nglDeleteSamplers( MAX_TEXTURE_UNITS, rg.samplers );
 
         R_DeleteTextures();
-        R_ShutdownGPUBuffers();
-        FBO_Shutdown();
-        GLSL_ShutdownGPUShaders();
 
         ri.ImGui_Shutdown();
     }
@@ -1565,16 +1565,17 @@ void RE_Shutdown( refShutdownCode_t code )
     if ( code != REF_KEEP_CONTEXT ) {
         ri.GLimp_Shutdown( code == REF_UNLOAD_DLL ? qtrue : qfalse );
 
+        R_ShutdownGPUBuffers();
+        GLSL_ShutdownGPUShaders();
+
         memset( &glConfig, 0, sizeof(glConfig) );
         memset( &glState, 0, sizeof(glState) );
-        memset( &backend, 0, sizeof(backend) );
         memset( &glContext, 0, sizeof(glContext) );
     }
 
     // free everything
     ri.FreeAll();
-    memset( &rg, 0, sizeof( rg ) );
-    backendData = NULL;
+    rg.registered = qfalse;
 }
 
 /*

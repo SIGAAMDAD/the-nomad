@@ -50,8 +50,6 @@ void CRenderThread::AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteShee
     while ( m_bRendering.load() || m_bSubmitting.load() )
         ;
     
-    m_bSubmitting.store( true );
-    re.AddSpriteToScene( origin, hSpriteSheet, hSprite, bNoSpriteSheet );
     m_bSubmitting.store( false );
 }
 
