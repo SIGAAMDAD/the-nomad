@@ -2207,85 +2207,32 @@ qboolean R_HasExtension( const char *ext )
 	return ( ( *ptr == ' ' ) || ( *ptr == '\0' ) );  // verify its complete string.
 }
 
+#define NUM_ANTIALIAS_TYPES 11
+#define NUM_ANISOTROPY_TYPES 5
+#define NUM_HUD_OPTIONS 4
+#define NUM_VSYNC_TYPES 3
+#define NUM_WINDOW_MODES 4
+#define NUM_WINDOW_SIZES 22
+#define NUM_TEXTURE_FILTERS 4
+#define NUM_TEXTURE_DETAILS 5
+
 void SettingsMenu_Cache( void )
 {
 	char str[MAXPRINTMSG];
 	char *p;
 	int i;
 
-	static const char *s_multisampleTypes[] = {
-		strManager->ValueForKey( "GAMEUI_NONE" )->value,
-	    strManager->ValueForKey( "GAMEUI_2X_MSAA" )->value,
-	    strManager->ValueForKey( "GAMEUI_4X_MSAA" )->value,
-	    strManager->ValueForKey( "GAMEUI_8X_MSAA" )->value,
-	    strManager->ValueForKey( "GAMEUI_16X_MSAA" )->value,
-	    strManager->ValueForKey( "GAMEUI_32X_MSAA" )->value,
-	    strManager->ValueForKey( "GAMEUI_2X_SSAA" )->value,
-	    strManager->ValueForKey( "GAMEUI_4X_SSAA" )->value,
-		strManager->ValueForKey( "GAMEUI_TAA" )->value,
-		strManager->ValueForKey( "GAMEUI_SMAA" )->value,
-		strManager->ValueForKey( "GAMEUI_FXAA" )->value
-	};
-	static const char *s_anisotropyTypes[] = {
-	    strManager->ValueForKey( "GAMEUI_ANISOTROPIC2X" )->value,
-	    strManager->ValueForKey( "GAMEUI_ANISOTROPIC4X" )->value,
-	    strManager->ValueForKey( "GAMEUI_ANISOTROPIC8X" )->value,
-	    strManager->ValueForKey( "GAMEUI_ANISOTROPIC16X" )->value,
-		strManager->ValueForKey( "GAMEUI_ANISOTROPIC32X" )->value
-	};
-	static const char *s_textureDetail[] = {
-	    strManager->ValueForKey( "GAMEUI_TEXDETAIL_VERYLOW" )->value,
-		strManager->ValueForKey( "GAMEUI_TEXDETAIL_LOW" )->value,
-		strManager->ValueForKey( "GAMEUI_TEXDETAIL_MEDIUM" )->value,
-		strManager->ValueForKey( "GAMEUI_TEXDETAIL_HIGH" )->value,
-		strManager->ValueForKey( "GAMEUI_TEXDETAIL_ULTRA" )->value,
-	};
-	static const char *s_textureFilters[] = {
-	    strManager->ValueForKey( "GAMEUI_BILINEAR" )->value,
-	    strManager->ValueForKey( "GAMEUI_NEAREST" )->value,
-	    strManager->ValueForKey( "GAMEUI_LINEARNEAREST" )->value,
-	    strManager->ValueForKey( "GAMEUI_NEARESTLINEAR" )->value
-	};
+	static const char *s_multisampleTypes[ NUM_ANTIALIAS_TYPES ];
+	static const char *s_anisotropyTypes[ NUM_ANISOTROPY_TYPES ];
+	static const char *s_textureDetail[ NUM_TEXTURE_DETAILS ];
+	static const char *s_textureFilters[ NUM_TEXTURE_FILTERS ];
 	static const char *s_toneMappingTypes[] = {
 	    "Reinhard",
 	    "Exposure"
 	};
-	static const char *s_windowSizes[] = {
-		strManager->ValueForKey( "GAMEUI_WINDOW_NATIVE" )->value,
-		strManager->ValueForKey( "GAMEUI_WINDOW_CUSTOM" )->value,
-		strManager->ValueForKey( "GAMEUI_WINDOW_1024X768" )->value,
-	    strManager->ValueForKey( "GAMEUI_WINDOW_1280X720" )->value,
-	    strManager->ValueForKey( "GAMEUI_WINDOW_1280X800" )->value,
-	    strManager->ValueForKey( "GAMEUI_WINDOW_1280X1024" )->value,
-	    strManager->ValueForKey( "GAMEUI_WINDOW_1440X900" )->value,
-	    strManager->ValueForKey( "GAMEUI_WINDOW_1440X960" )->value,
-	    strManager->ValueForKey( "GAMEUI_WINDOW_1600X900" )->value,
-	    strManager->ValueForKey( "GAMEUI_WINDOW_1600X1200" )->value,
-	    strManager->ValueForKey( "GAMEUI_WINDOW_1600X1050" )->value,
-	    strManager->ValueForKey( "GAMEUI_WINDOW_1920X800" )->value,
-	    strManager->ValueForKey( "GAMEUI_WINDOW_1920X1080" )->value,
-	    strManager->ValueForKey( "GAMEUI_WINDOW_1920X1200" )->value,
-	    strManager->ValueForKey( "GAMEUI_WINDOW_1920X1280" )->value,
-	    strManager->ValueForKey( "GAMEUI_WINDOW_2560X1080" )->value,
-	    strManager->ValueForKey( "GAMEUI_WINDOW_2560X1440" )->value,
-	    strManager->ValueForKey( "GAMEUI_WINDOW_2560X1600" )->value,
-	    strManager->ValueForKey( "GAMEUI_WINDOW_2880X1620" )->value,
-	    strManager->ValueForKey( "GAMEUI_WINDOW_3200X1800" )->value,
-	    strManager->ValueForKey( "GAMEUI_WINDOW_3840X1600" )->value,
-	    strManager->ValueForKey( "GAMEUI_WINDOW_3840X2160" )->value
-	};
-	static const char *s_vsync[] = {
-		strManager->ValueForKey( "GAMEUI_VSYNC_ADAPTIVE" )->value,
-		strManager->ValueForKey( "GAMEUI_DISABLED" )->value,
-		strManager->ValueForKey( "GAMEUI_ENABLED" )->value
-	};
-	static const char *difficulties[ NUMDIFS - 1 ] = {
-        difficultyTable[ DIF_NOOB ].name,
-        difficultyTable[ DIF_RECRUIT ].name,
-        difficultyTable[ DIF_MERC ].name,
-        difficultyTable[ DIF_NOMAD ].name,
-        difficultyTable[ DIF_BLACKDEATH ].name
-    };
+	static const char *s_windowSizes[ NUM_WINDOW_SIZES ];
+	static const char *s_vsync[ NUM_VSYNC_TYPES ];
+	static const char *difficulties[ NUMDIFS - 1 ];
 	static const char *s_mouseTypes[] = {
 		"dot",
 		"circle & dot",
@@ -2298,12 +2245,7 @@ void SettingsMenu_Cache( void )
 		"GPU Buffered (OpenGL 3.3)",
 		"GPU To Client Mapping (OpenGL 4.5)"
 	};
-	static const char *s_hudOptions[] = {
-		strManager->ValueForKey( "MENU_HUD" )->value,
-		strManager->ValueForKey( "MENU_ADVANCED_HUD" )->value,
-		strManager->ValueForKey( "MENU_HUD_STYLE" )->value,
-		strManager->ValueForKey( "MENU_HUD_PSTATS" )->value
-	};
+	static const char *s_hudOptions[ NUM_HUD_OPTIONS ];
 	static const char *s_presetLabels[] = {
 		"Low",
 		"Normal",
@@ -2316,17 +2258,79 @@ void SettingsMenu_Cache( void )
 		"OFF",
 		"ON"
 	};
-	static const char *s_windowModes[] = {
-		strManager->ValueForKey( "GAMEUI_MODE_WINDOWED" )->value,
-		strManager->ValueForKey( "GAMEUI_MODE_BORDERLESS_WINDOWED" )->value,
-		strManager->ValueForKey( "GAMEUI_MODE_FULLSCREEN" )->value,
-		strManager->ValueForKey( "GAMEUI_MODE_BORDERLESS_FULLSCREEN" )->value
-	};
+	static const char *s_windowModes[ NUM_WINDOW_MODES ];
+
+	s_multisampleTypes[0] = strManager->ValueForKey( "GAMEUI_NONE" )->value;
+	s_multisampleTypes[1] = strManager->ValueForKey( "GAMEUI_2X_MSAA" )->value;
+	s_multisampleTypes[2] = strManager->ValueForKey( "GAMEUI_4X_MSAA" )->value;
+	s_multisampleTypes[3] = strManager->ValueForKey( "GAMEUI_8X_MSAA" )->value;
+	s_multisampleTypes[4] = strManager->ValueForKey( "GAMEUI_16X_MSAA" )->value;
+	s_multisampleTypes[5] = strManager->ValueForKey( "GAMEUI_32X_MSAA" )->value;
+	s_multisampleTypes[6] = strManager->ValueForKey( "GAMEUI_2X_SSAA" )->value;
+	s_multisampleTypes[7] = strManager->ValueForKey( "GAMEUI_4X_SSAA" )->value;
+	s_multisampleTypes[8] = strManager->ValueForKey( "GAMEUI_TAA" )->value;
+	s_multisampleTypes[9] = strManager->ValueForKey( "GAMEUI_SMAA" )->value;
+	s_multisampleTypes[10] = strManager->ValueForKey( "GAMEUI_FXAA" )->value;
+
+	s_anisotropyTypes[0] = strManager->ValueForKey( "GAMEUI_ANISOTROPIC2X" )->value;
+	s_anisotropyTypes[1] = strManager->ValueForKey( "GAMEUI_ANISOTROPIC4X" )->value;
+	s_anisotropyTypes[2] = strManager->ValueForKey( "GAMEUI_ANISOTROPIC8X" )->value;
+	s_anisotropyTypes[3] = strManager->ValueForKey( "GAMEUI_ANISOTROPIC16X" )->value;
+	s_anisotropyTypes[4] = strManager->ValueForKey( "GAMEUI_ANISOTROPIC32X" )->value;
+
+	s_vsync[0] = strManager->ValueForKey( "GAMEUI_VSYNC_ADAPTIVE" )->value;
+	s_vsync[1] = strManager->ValueForKey( "GAMEUI_DISABLED" )->value;
+	s_vsync[2] = strManager->ValueForKey( "GAMEUI_ENABLED" )->value;
+
+	s_textureFilters[0] = strManager->ValueForKey( "GAMEUI_BILINEAR" )->value;
+	s_textureFilters[1] = strManager->ValueForKey( "GAMEUI_NEAREST" )->value;
+	s_textureFilters[2] = strManager->ValueForKey( "GAMEUI_LINEARNEAREST" )->value;
+	s_textureFilters[3] = strManager->ValueForKey( "GAMEUI_NEARESTLINEAR" )->value;
+
+	s_textureDetail[0] = strManager->ValueForKey( "GAMEUI_TEXDETAIL_VERYLOW" )->value;
+	s_textureDetail[1] = strManager->ValueForKey( "GAMEUI_TEXDETAIL_LOW" )->value;
+	s_textureDetail[2] = strManager->ValueForKey( "GAMEUI_TEXDETAIL_MEDIUM" )->value;
+	s_textureDetail[3] = strManager->ValueForKey( "GAMEUI_TEXDETAIL_HIGH" )->value;
+	s_textureDetail[4] = strManager->ValueForKey( "GAMEUI_TEXDETAIL_ULTRA" )->value;
+
+	s_windowSizes[0] = strManager->ValueForKey( "GAMEUI_WINDOW_NATIVE" )->value;
+	s_windowSizes[1] = strManager->ValueForKey( "GAMEUI_WINDOW_CUSTOM" )->value;
+	s_windowSizes[2] = strManager->ValueForKey( "GAMEUI_WINDOW_1024X768" )->value;
+	s_windowSizes[3] = strManager->ValueForKey( "GAMEUI_WINDOW_1280X720" )->value;
+	s_windowSizes[4] = strManager->ValueForKey( "GAMEUI_WINDOW_1280X800" )->value;
+	s_windowSizes[5] = strManager->ValueForKey( "GAMEUI_WINDOW_1280X1024" )->value;
+	s_windowSizes[6] = strManager->ValueForKey( "GAMEUI_WINDOW_1440X900" )->value;
+	s_windowSizes[7] = strManager->ValueForKey( "GAMEUI_WINDOW_1440X960" )->value;
+	s_windowSizes[8] = strManager->ValueForKey( "GAMEUI_WINDOW_1600X900" )->value;
+	s_windowSizes[9] = strManager->ValueForKey( "GAMEUI_WINDOW_1600X1200" )->value;
+	s_windowSizes[10] = strManager->ValueForKey( "GAMEUI_WINDOW_1600X1050" )->value;
+	s_windowSizes[11] = strManager->ValueForKey( "GAMEUI_WINDOW_1920X800" )->value;
+	s_windowSizes[12] = strManager->ValueForKey( "GAMEUI_WINDOW_1920X1080" )->value;
+	s_windowSizes[13] = strManager->ValueForKey( "GAMEUI_WINDOW_1920X1200" )->value;
+	s_windowSizes[14] = strManager->ValueForKey( "GAMEUI_WINDOW_1920X1280" )->value;
+	s_windowSizes[15] = strManager->ValueForKey( "GAMEUI_WINDOW_2560X1080" )->value;
+	s_windowSizes[16] = strManager->ValueForKey( "GAMEUI_WINDOW_2560X1440" )->value;
+	s_windowSizes[17] = strManager->ValueForKey( "GAMEUI_WINDOW_2560X1600" )->value;
+	s_windowSizes[18] = strManager->ValueForKey( "GAMEUI_WINDOW_2880X1620" )->value;
+	s_windowSizes[19] = strManager->ValueForKey( "GAMEUI_WINDOW_3200X1800" )->value;
+	s_windowSizes[20] = strManager->ValueForKey( "GAMEUI_WINDOW_3840X1600" )->value;
+	s_windowSizes[21] = strManager->ValueForKey( "GAMEUI_WINDOW_3840X2160" )->value;
+
+	s_hudOptions[0] = strManager->ValueForKey( "MENU_HUD" )->value;
+	s_hudOptions[1] = strManager->ValueForKey( "MENU_ADVANCED_HUD" )->value;
+	s_hudOptions[2] = strManager->ValueForKey( "MENU_HUD_STYLE" )->value;
+	s_hudOptions[3] = strManager->ValueForKey( "MENU_HUD_PSTATS" )->value;
+
+	s_windowModes[0] = strManager->ValueForKey( "GAMEUI_MODE_WINDOWED" )->value;
+	s_windowModes[1] = strManager->ValueForKey( "GAMEUI_MODE_BORDERLESS_WINDOWED" )->value;
+	s_windowModes[2] = strManager->ValueForKey( "GAMEUI_MODE_FULLSCREEN" )->value;
+	s_windowModes[3] = strManager->ValueForKey( "GAMEUI_MODE_BORDERLESS_FULLSCREEN" )->value;
 
 	if ( !ui->uiAllocated ) {
 		s_settingsMenu = (settingsMenu_t *)Hunk_Alloc( sizeof( *s_settingsMenu ), h_high );
 		SettingsMenu_InitPresets();
 	}
+
 	s_settingsMenu->hintLabel = NULL;
 	s_settingsMenu->hintMessage = NULL;
 	

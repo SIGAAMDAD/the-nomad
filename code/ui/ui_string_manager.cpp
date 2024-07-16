@@ -28,14 +28,32 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 CUIStringManager *strManager;
 
+static void UI_StringKeyValue_f( void )
+{
+    const char *key;
+    const stringHash_t *str;
+
+    if ( Cmd_Argc() < 2 ) {
+        Con_Printf( "usage: ui.string_key_value <key>\n" );
+        return;
+    }
+
+    key = Cmd_Argv( 1 );
+    str = strManager->ValueForKey( key );
+
+    Con_Printf( "\"%s\" = \"%s\"\n", str->name, str->value );
+}
+
 void CUIStringManager::Init( void ) {
     numLanguages = 0;
     memset( stringHash, 0, sizeof( stringHash ) );
+    Cmd_AddCommand( "ui.string_key_value", UI_StringKeyValue_f );
 }
 
 void CUIStringManager::Shutdown( void ) {
     numLanguages = 0;
     memset( stringHash, 0, sizeof( stringHash ) );
+    Cmd_RemoveCommand( "ui.string_key_value" );
 }
 
 static language_t StringToLanguage( const char *tok )
@@ -60,7 +78,7 @@ void CUIStringManager::AddString( const char *key, const char *value )
 
     if ( !stringHash[ ui_language->i ] ) {
         // ensure allocated
-        stringHash[ ui_language->i ] = (stringHash_t **)Hunk_Alloc( sizeof( stringHash_t ** ) * ui_maxLangStrings->i, h_high );
+        stringHash[ ui_language->i ] = (stringHash_t **)Hunk_Alloc( sizeof( stringHash_t ** ) * ui_maxLangStrings->i, h_low );
     }
 
     keyLength = strlen( key ) + 1;
@@ -70,7 +88,7 @@ void CUIStringManager::AddString( const char *key, const char *value )
     size += PAD( keyLength, sizeof( uintptr_t ) );
     size += PAD( strlen( value ) + 1, sizeof( uintptr_t ) );
     
-    str = (stringHash_t *)Hunk_Alloc( size, h_high );
+    str = (stringHash_t *)Hunk_Alloc( size, h_low );
     memset( str, 0, size );
     str->name = (char *)( str + 1 );
     str->value = (char *)( str->name + keyLength );
@@ -97,7 +115,7 @@ int CUIStringManager::LoadTokenList( const char **text, language_t lang )
     uint64_t bytesUsed;
 
     if ( !stringHash[ lang ] ) {
-        stringHash[ lang ] = (stringHash_t **)Hunk_Alloc( sizeof( stringHash_t ** ) * ui_maxLangStrings->i, h_high );
+        stringHash[ lang ] = (stringHash_t **)Hunk_Alloc( sizeof( stringHash_t ** ) * ui_maxLangStrings->i, h_low );
         memset( stringHash[ lang ], 0, sizeof( *stringHash ) * ui_maxLangStrings->i );
     }
 
@@ -144,8 +162,6 @@ int CUIStringManager::LoadTokenList( const char **text, language_t lang )
 
         N_strncpyz( value, tok, sizeof( value ) );
 
-        Con_Printf( "- Loaded key value string: '%s' = \"%s\"\n", name, value );
-
         size = 0;
         size += PAD( sizeof( *str ), sizeof( uintptr_t ) );
         size += PAD( strlen( name ) + 1, sizeof( uintptr_t ) );
@@ -153,7 +169,7 @@ int CUIStringManager::LoadTokenList( const char **text, language_t lang )
 
         bytesUsed += size;
 
-        str = (stringHash_t *)Hunk_Alloc( size, h_high );
+        str = (stringHash_t *)Hunk_Alloc( size, h_low );
         memset( str, 0, size );
         str->name = (char *)( str + 1 );
         str->value = (char *)( str->name + strlen( name ) + 1 );
@@ -161,8 +177,10 @@ int CUIStringManager::LoadTokenList( const char **text, language_t lang )
         str->next = stringHash[lang][hash];
         stringHash[lang][hash] = str;
 
-        N_strncpyz( str->name, name, strlen( name ) + 1 );
-        N_strncpyz( str->value, value, strlen( value ) + 1 );
+        N_strncpyz( str->name, name, sizeof( name ) - 1 );
+        N_strncpyz( str->value, value, sizeof( value ) - 1 );
+
+        Con_Printf( "- Loaded key value string: '%s' = \"%s\"\n", str->name, str->value );
 
         str->lang = lang;
     }
@@ -291,10 +309,15 @@ uint64_t CUIStringManager::NumLangsLoaded( void ) const {
 const stringHash_t *CUIStringManager::AllocErrorString( const char *key ) {
     stringHash_t *str;
     uint64_t size, hash;
-    char value[MAX_STRING_CHARS];
+    char value[2048];
+
+    if ( strlen( key ) >= sizeof( value ) ) {
+        N_Error( ERR_DROP, "CUIStringManager::AllocErrorString: key '%s' too long", key );
+    }
 
     // [TheNomad] 7/4/24
     // fixed up string manager having an aneurysm on vid_restart
+    memset( value, 0, sizeof( value ) );
     Com_snprintf( value, sizeof( value ) - 1, "ERROR: %s variable has not been set before.", key );
 
     size = 0;
@@ -302,7 +325,7 @@ const stringHash_t *CUIStringManager::AllocErrorString( const char *key ) {
     size += PAD( strlen( key ) + 1, sizeof( uintptr_t ) );
     size += PAD( strlen( value ) + 1, sizeof( uintptr_t ) );
 
-    str = (stringHash_t *)Hunk_Alloc( size, h_high );
+    str = (stringHash_t *)Hunk_Alloc( size, h_low );
     memset( str, 0, size );
     str->name = (char *)( str + 1 );
     str->value = (char *)( str->name + strlen( key ) + 1 );
@@ -315,6 +338,8 @@ const stringHash_t *CUIStringManager::AllocErrorString( const char *key ) {
 
     str->next = stringHash[ ui_language->i ][hash];
     stringHash[ ui_language->i ][hash] = str;
+
+    Con_Printf( "Allocated key value error string: \"%s\"\n", str->value );
 
     return str;
 }

@@ -16,6 +16,9 @@ const dirtype_t inversedirs[NUMDIRS] = {
 	DIR_NULL, // inside
 };
 
+static bbox_t *wallBounds;
+static uint64_t nWalls;
+
 static uint64_t CopyLump( void **dest, uint32_t lump, uint64_t size, bmf_t *header ) {
     uint64_t length, fileofs;
 
@@ -25,10 +28,46 @@ static uint64_t CopyLump( void **dest, uint32_t lump, uint64_t size, bmf_t *head
     if ( length % size ) {
         N_Error( ERR_DROP, "CopyLump: funny lump size" );
     }
-    *dest = Hunk_Alloc( length, h_low );
+    *dest = Hunk_Alloc( length, h_high );
     memcpy( *dest, (byte *)header + fileofs, length );
 
     return length / size;
+}
+
+static float CM_GetWallLength( dirtype_t dir, int x, int y, const mapinfo_t *info )
+{
+	const maptile_t *tile;
+	float length;
+	int deltaX, deltaY;
+
+	length = 0.0f;
+	
+	switch ( dir ) {
+	case DIR_NORTH:
+		deltaY = -1;
+		deltaX = 0;
+		break;
+	case DIR_SOUTH:
+		deltaY = 1;
+		deltaX = 0;
+		break;
+	case DIR_WEST:
+		deltaY = 0;
+		deltaX = -1;
+		break;
+	case DIR_EAST:
+		deltaY = 0;
+		deltaX = 1;
+		break;
+	};
+
+	for ( ; y < info->height; y += deltaY ) {
+		for ( ; x < info->width; x += deltaX ) {
+			tile = &info->tiles[ y * info->width + x ];
+		}
+	}
+
+	return length;
 }
 
 static qboolean G_LoadLevelFile( const char *filename, mapinfo_t *info )
@@ -39,6 +78,10 @@ static qboolean G_LoadLevelFile( const char *filename, mapinfo_t *info )
     } f;
     bmf_t *header;
     uint64_t size;
+	uint64_t i;
+	ivec2_t *coords, *p;
+	int x, y;
+	const byte nowall[NUMDIRS] = { 0 };
 
     size = FS_LoadFile( filename, &f.v );
     if ( !size || !f.v ) {
@@ -72,6 +115,35 @@ static qboolean G_LoadLevelFile( const char *filename, mapinfo_t *info )
 	info->numLights = CopyLump( (void **)&info->lights, LUMP_LIGHTS, sizeof( maplight_t ), header );
 	info->numSecrets = CopyLump( (void **)&info->secrets, LUMP_SECRETS, sizeof( mapsecret_t ), header );
 	info->numLevels = 1;
+
+	nWalls = 0;
+	for ( y = 0; y < info->height; y++ ) {
+		for ( x = 0; x < info->width; x++ ) {
+			if ( memcmp( info->tiles[ y * info->width + x ].sides, nowall, sizeof( nowall ) ) != 0 ) {
+				nWalls++;
+			}
+		}
+	}
+	p = coords = (ivec2_t *)alloca( sizeof( *coords ) * nWalls );
+	for ( y = 0; y < info->height; y++ ) {
+		for ( x = 0; x < info->width; x++ ) {
+			if ( memcmp( info->tiles[ y * info->width + x ].sides, nowall, sizeof( nowall ) ) != 0 ) {
+				VectorSet2( *p, x, y );
+				p++;
+			}
+		}
+	}
+	
+	wallBounds = (bbox_t *)Hunk_Alloc( nWalls * sizeof( *wallBounds ), h_high );
+	for ( i = 0; i < nWalls; i++ ) {
+		// 9.84375
+		if ( memcmp( info->tiles[ coords[i][1] * info->width + coords[i][0] ].sides, nowall, sizeof( nowall ) ) != 0 ) {
+			VectorSet( wallBounds[i].mins, coords[i][0] * 10, coords[i][1] * 10, 0.0f );
+			VectorSet( wallBounds[i].maxs, coords[i][0] * 10 + 10, coords[i][1] * 10 + 10, 0.0f );
+			Con_Printf( "Generating wall at %ix%i\n", coords[i][0] * 10, coords[i][1] * 10 );
+		}
+	}
+	Con_Printf( "Generated %lu walls.\n", nWalls );
 
     FS_FreeFile( f.v );
 
@@ -162,14 +234,12 @@ void G_SetMap_f( void ) {
 	if ( !mapname[0] ) {
 		// clear it
 		Cvar_Set( "mapname", "" );
-		Cbuf_ExecuteText( EXEC_NOW, "unloadworld" );
 
 		gi.mapLoaded = qfalse;
 		gi.state = GS_INACTIVE;
 		gi.mapCache.currentMapLoaded = FS_INVALID_HANDLE;
 
-		// clear all allocated map data memory
-		Hunk_ClearToMark();
+		Cbuf_ExecuteText( EXEC_APPEND, "vid_restart keep_context\n" );
 		return;
 	}
 
@@ -231,7 +301,8 @@ void G_GetSpawnData( uvec3_t xyz, uint32_t *type, uint32_t *id, uint32_t nIndex,
 	*id = info->spawns[ nIndex ].entityid;
 	*pCheckpointIndex = info->spawns[ nIndex ].checkpoint;
 
-	Con_DPrintf( "spawn[%u] has checkpoint %u\n", nIndex, info->spawns[nIndex].checkpoint );
+	Con_DPrintf( "spawn[%u] has checkpoint %u (%u:%u)\n", nIndex, info->spawns[nIndex].checkpoint,
+		info->spawns[nIndex].entitytype, info->spawns[nIndex].entityid );
 }
 
 void G_GetTileData( uint32_t *pTiles, uint32_t nLevel ) {
@@ -324,20 +395,12 @@ qboolean CGameWorld::CheckWallHit( const vec3_t origin, dirtype_t dir )
     VectorCopy( p, origin );
 	VectorCopy( tmp, p );
 
-	/*
 	ray_t ray;
 
 	memset( &ray, 0, sizeof( ray ) );
 	VectorCopy( ray.start, origin );
 	ray.angle = Dir2Angle( dir );
-	ray.length = 1.0f;
-
-	CastRay( &ray );
-	if ( ray.entityNumber == ENTITYNUM_WALL ) {
-		Con_Printf( "Hit a wall\n" );
-		return qtrue;
-	}
-	*/
+	ray.length = 2.0f;
 
 	switch ( dir ) {
 	case DIR_NORTH:
@@ -354,15 +417,16 @@ qboolean CGameWorld::CheckWallHit( const vec3_t origin, dirtype_t dir )
 		break;
 	};
 
-	if ( tmp[0] < 0 || tmp[1] < 0 ) {
+	if ( tmp[1] < 0 || tmp[0] < 0 ) {
 		return qfalse;
 	}
 
-	if ( m_pMapInfo->tiles[ tmp[1] * m_pMapInfo->width + tmp[0] ].sides[inversedirs[ dir ]]
-		|| m_pMapInfo->tiles[ tmp[1] * m_pMapInfo->width + tmp[0] ].sides[ DIR_NULL ] )
+	if ( m_pMapInfo->tiles[ tmp[1] * m_pMapInfo->width + tmp[0] ].sides[ DIR_NULL ]
+		|| m_pMapInfo->tiles[ tmp[1] * m_pMapInfo->width + tmp[0] ].sides[ inversedirs[ dir ] ] )
 	{
 		return qtrue;
 	}
+
 	return qfalse;
 }
 
@@ -379,9 +443,10 @@ void CGameWorld::CastRay( ray_t *ray )
 	ivec3_t end;
 	vec3_t pos;
 	dirtype_t rayDir;
+	uint64_t i;
 	
 	// calculate the endpoint
-	angle2 = DEG2RAD( ray->angle );
+	angle2 = ray->angle;
 	ray->end[0] = ray->start[0] + ray->length * cos( angle2 );
 	ray->end[1] = ray->start[1] + ray->length * sin( angle2 );
 	ray->end[2] = ray->start[2]; // just elevation
@@ -401,14 +466,28 @@ void CGameWorld::CastRay( ray_t *ray )
 				return;
 			}
 		}
-		VectorCopy( pos, ray->origin );
-//		Sys_SnapVector( pos );
-		rayDir = inversedirs[ DirFromPoint( pos ) ];
 
-        if ( ray->origin[0] >= ray->end[0] || ray->origin[1] >= ray->end[1] ) {
+		if ( ray->origin[0] >= ray->end[0] || ray->origin[1] >= ray->end[1] ) {
 			ray->entityNumber = ENTITYNUM_INVALID;
 			break;
-		} else if ( m_pMapInfo->tiles[ (unsigned)pos[1] * m_pMapInfo->width + (unsigned)pos[0] ].sides[ rayDir ]
+		}
+
+		for ( i = 0; i < nWalls; i++ ) {
+			if ( BoundsIntersectPoint( &wallBounds[i], ray->origin ) ) {
+				ray->entityNumber = ENTITYNUM_WALL;
+				return;
+			}
+		}
+
+		VectorCopy( pos, ray->origin );
+		Sys_SnapVector( pos );
+		pos[0] /= 10;
+		pos[1] /= 10;
+		rayDir = inversedirs[ Angle2Dir( angle2 ) ];
+
+		Con_Printf( "Checking dir %i\n", (int)rayDir );
+
+		if ( m_pMapInfo->tiles[ (unsigned)pos[1] * m_pMapInfo->width + (unsigned)pos[0] ].sides[ rayDir ]
 			|| m_pMapInfo->tiles[ (unsigned)pos[1] * m_pMapInfo->width + (unsigned)pos[0] ].sides[ DIR_NULL ] )
 		{
 			// hit a wall

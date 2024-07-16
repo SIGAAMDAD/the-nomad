@@ -322,6 +322,7 @@ dirtype_t Angle2Dir( float angle ) {
 
 float Dir2Angle( dirtype_t dir ) {
 	switch ( dir ) {
+	case DIR_NULL:
 	case DIR_NORTH:
 		return 0.0f;
 	case DIR_NORTH_EAST:
@@ -891,12 +892,12 @@ qboolean BoundsIntersectSphere( const bbox_t *bounds,
 qboolean BoundsIntersectPoint( const bbox_t *bounds,
 		const vec3_t origin )
 {
-	if ( origin[0] > bounds->maxs[0] ||
-		origin[0] < bounds->mins[0] ||
-		origin[1] > bounds->maxs[1] ||
-		origin[1] < bounds->mins[1] ||
+	if ( origin[0] < bounds->maxs[0] ||
+		origin[0] > bounds->mins[0] ||
+		origin[1] < bounds->maxs[1] ||
+		origin[1] > bounds->mins[1] ||
 		origin[2] > bounds->maxs[2] ||
-		origin[2] < bounds->mins[2])
+		origin[2] < bounds->mins[2] )
 	{
 		return qfalse;
 	}

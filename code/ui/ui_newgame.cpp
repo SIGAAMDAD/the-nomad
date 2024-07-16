@@ -66,9 +66,6 @@ static void BeginNewGame( void )
     Cvar_Set( "sgame_SaveName", s_newGame->saveName );
     Cvar_Set( "mapname", *gi.mapCache.mapList );
 
-    // set the marker before loading any map assets
-	Hunk_SetMark();
-
     memset( s_newGame->saveName, 0, sizeof( s_newGame->saveName ) );
 
     // start a new game
@@ -393,6 +390,7 @@ void NewGameMenu_Cache( void )
     uint64_t i;
     int seed;
     uint64_t hardestIndex, numHardestStrings;
+    static const char *difficulties[NUMDIFS];
 
     if ( !ui->uiAllocated ) {
         s_newGame = (newGameMenu_t *)Hunk_Alloc( sizeof( *s_newGame ), h_high );
@@ -409,14 +407,12 @@ void NewGameMenu_Cache( void )
     hardestIndex = Q_rand( &seed ) % numHardestStrings;
     hardest = strManager->ValueForKey( va( "SP_DIFF_THE_MEMES_%lu", hardestIndex ) );
 
-    static const char *difficulties[NUMDIFS] = {
-        difficultyTable[ DIF_NOOB ].name,
-        difficultyTable[ DIF_RECRUIT ].name,
-        difficultyTable[ DIF_MERC ].name,
-        difficultyTable[ DIF_NOMAD ].name,
-        difficultyTable[ DIF_BLACKDEATH ].name,
-        hardest->value
-    };
+    difficulties[ DIF_NOOB ] = strManager->ValueForKey( "SP_DIFF_VERY_EASY" )->value;
+    difficulties[ DIF_RECRUIT ] = strManager->ValueForKey( "SP_DIFF_EASY" )->value;
+    difficulties[ DIF_MERC ] = strManager->ValueForKey( "SP_DIFF_MEDIUM" )->value;
+    difficulties[ DIF_NOMAD ] = strManager->ValueForKey( "SP_DIFF_HARD" )->value;
+    difficulties[ DIF_BLACKDEATH ] = strManager->ValueForKey( "SP_DIFF_VERY_HARD" )->value;
+    difficulties[ DIF_HARDEST ] = hardest->value;
 
     s_newGame->title = strManager->ValueForKey( "SP_NEWGAME" );
     s_newGame->newGameSaveNamePrompt = strManager->ValueForKey( "SP_SAVE_NAME_PROMPT" );

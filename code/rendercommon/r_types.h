@@ -98,7 +98,7 @@ typedef enum {
 	AntiAlias_SMAA,
 	AntiAlias_FXAA,
 	
-	AntiAlias_CSAA,
+	AntiAlias_CSAA
 } antialiasType_t;
 
 typedef enum {

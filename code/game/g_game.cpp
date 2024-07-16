@@ -657,7 +657,7 @@ static void G_Vid_Restart( refShutdownCode_t code )
     Snd_Shutdown();
 
     // shutdown VMs
-    G_ShutdownVMs( qfalse );
+    G_ShutdownVMs( qtrue );
 
     // shutdown the renderer and clear the renderer interface
 	G_ShutdownRenderer( code ); // REF_KEEP_CONTEXT, REF_KEEP_WINDOW, REF_DESTROY_WINDOW
@@ -1238,9 +1238,12 @@ static void G_PlayDemo_f( void )
 
 static void G_Vid_Restart_f( void )
 {
-    if ( N_stricmp( Cmd_Argv( 1 ), "keep_window" ) == 0 || N_stricmp( Cmd_Argv( 1 ), "fast" ) == 0 ) {
+    if ( !N_stricmp( Cmd_Argv( 1 ), "keep_window" ) || !N_stricmp( Cmd_Argv( 1 ), "fast" ) ) {
         // fast path: keep window
         G_Vid_Restart( REF_KEEP_WINDOW );
+    } else if ( !N_stricmp( Cmd_Argv( 1 ), "keep_context" ) ) {
+        // fast path: keep context
+        G_Vid_Restart( REF_KEEP_CONTEXT );
     } else {
         if ( gi.lastVidRestart ) {
             if ( abs( (long)( gi.lastVidRestart - Sys_Milliseconds() ) ) < 500 ) {
@@ -1270,7 +1273,7 @@ static void G_Snd_Restart_f( void )
 }
 
 static void G_VM_Restart_f( void ) {
-    G_ShutdownVMs( qfalse );
+    G_ShutdownVMs( qtrue );
 
     G_InitUI();
     G_InitSGame();
@@ -1781,6 +1784,8 @@ void G_Init( void )
 
     G_ClearState();
 
+    G_InitPhysics();
+
     G_InitRenderer_Cvars();
 
     G_LoadSkins();
@@ -1869,6 +1874,8 @@ void G_Shutdown( qboolean quit )
     G_ShutdownRenderer( quit ? REF_UNLOAD_DLL : REF_DESTROY_WINDOW );
 
     SteamApp_Shutdown();
+
+    G_ShutdownPhysics();
 
     if ( quit ) {
         remove( "nomad.pid" );

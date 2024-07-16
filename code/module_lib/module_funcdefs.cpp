@@ -956,7 +956,7 @@ static void CheckWallHit( asIScriptGeneric *pGeneric ) {
     const vec3& origin = *(const vec3 *)pGeneric->GetArgObject( 0 );
     const dirtype_t dir = (const dirtype_t)pGeneric->GetArgDWord( 1 );
 
-    pGeneric->SetReturnDWord( g_world->CheckWallHit( (const float *)glm::value_ptr( origin ), dir ) );
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = g_world->CheckWallHit( (const float *)glm::value_ptr( origin ), dir );
 }
 
 static void LoadMap( asIScriptGeneric *pGeneric ) {

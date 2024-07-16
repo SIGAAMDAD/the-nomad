@@ -55,7 +55,7 @@ menu/mainbackground
         tcGen texture
         rgbGen vertex
     }
-    elif ( $r_textureDetail == 3 || $r_textureDetail == 4 ) {
+    elif ( $r_textureDetail > 2 ) {
         texFilter bilinear
         map textures/menu/high/fromeaglespeak.jpg
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
@@ -304,6 +304,12 @@ menu/accept_1
     if  ( $r_textureDetail < 2 ) {
         texFilter bilinear
         map textures/menu/low/accept_1.tga
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        rgbGen vertex
+    }
+    elif ( $r_textureDetail == 2 ) {
+        texFilter bilinear
+        map textures/menu/standard/accept_1.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }

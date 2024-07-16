@@ -152,6 +152,43 @@ namespace TheNomad::Engine::Physics {
 				}
 			}
         }
+
+		private TheNomad::GameSystem::DirType CalcMoveDir() const {
+			if ( m_Velocity.x < 0.0f ) {
+				if ( m_Velocity.y < 0.0f ) {
+					return TheNomad::GameSystem::DirType::NorthWest;
+				} else if ( m_Velocity.y > 0.0f ) {
+					return TheNomad::GameSystem::DirType::SouthWest;
+				} else {
+					return TheNomad::GameSystem::DirType::West;
+				}
+			} else if ( m_Velocity.x > 0.0f ) {
+				if ( m_Velocity.y < 0.0f ) {
+					return TheNomad::GameSystem::DirType::NorthEast;
+				} else if ( m_Velocity.y > 0.0f ) {
+					return TheNomad::GameSystem::DirType::SouthEast;
+				} else {
+					return TheNomad::GameSystem::DirType::East;
+				}
+			} else if ( m_Velocity.y < 0.0f ) {
+				if ( m_Velocity.x < 0.0f ) {
+					return TheNomad::GameSystem::DirType::NorthWest;
+				} else if ( m_Velocity.x > 0.0f ) {
+					return TheNomad::GameSystem::DirType::NorthEast;
+				} else {
+					return TheNomad::GameSystem::DirType::North;
+				}
+			}  else if ( m_Velocity.y > 0.0f ) {
+				if ( m_Velocity.x < 0.0f ) {
+					return TheNomad::GameSystem::DirType::SouthWest;
+				} else if ( m_Velocity.x > 0.0f ) {
+					return TheNomad::GameSystem::DirType::SouthEast;
+				} else {
+					return TheNomad::GameSystem::DirType::South;
+				}
+			}
+			return TheNomad::GameSystem::DirType::Inside;
+		}
 		
 		void OnRunTic() {
 			const uint gameTic = TheNomad::GameSystem::GameManager.GetDeltaTics();
@@ -181,7 +218,7 @@ namespace TheNomad::Engine::Physics {
 			
 			// apply gravity
 			if ( m_Velocity.z > 0.0f ) {
-				m_Velocity.z -= TheNomad::SGame::sgame_Gravity.GetFloat() * gameTic;
+				m_Velocity.z -= TheNomad::SGame::sgame_Gravity.GetFloat();
 			}
 
 			TheNomad::GameSystem::BBox bounds;
@@ -191,13 +228,16 @@ namespace TheNomad::Engine::Physics {
 			const array<TheNomad::SGame::EntityObject@>@ entList = @TheNomad::SGame::EntityManager.GetEntities();
 			for ( uint i = 0; i < entList.Count(); i++ ) {
 				if ( Util::BoundsIntersect( bounds, entList[i].GetBounds() ) && @m_EntityData !is @entList[i] ) {
+					m_Velocity = 0.0f;
 					m_Acceleration = 0.0f;
 					return; // clip
 				}
 			}
 
-			if ( TheNomad::GameSystem::CheckWallHit( origin, m_EntityData.GetDirection() ) ) {
+			const vec3 tmp = origin + m_Velocity;
+			if ( TheNomad::GameSystem::CheckWallHit( tmp, CalcMoveDir() ) ) {
 				m_Acceleration = 0.0f;
+				m_Velocity = 0.0f;
 				return;
 			}
 			

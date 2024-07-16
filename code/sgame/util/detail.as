@@ -602,6 +602,7 @@ namespace TheNomad::Util {
 	float Dir2Angle( TheNomad::GameSystem::DirType dir ) {
 		switch ( dir ) {
 		case TheNomad::GameSystem::DirType::North:
+		case TheNomad::GameSystem::DirType::Inside:
 			return 0.0f;
 		case TheNomad::GameSystem::DirType::NorthEast:
 			return 45.0f;

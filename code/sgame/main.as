@@ -209,11 +209,6 @@ int ModuleOnInit() {
 	TheNomad::SGame::InitCheatCodes();
 	TheNomad::SGame::ScreenData.Init();
 
-	//
-	// load assets
-	//
-	InitResources();
-
 	ConsolePrint( "--------------------\n" );
 
 	return 1;
@@ -272,6 +267,11 @@ int ModuleOnLoadGame() {
 }
 
 int ModuleOnLevelStart() {
+	//
+	// load assets
+	//
+	InitResources();
+
 	TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::InLevel;
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnLevelStart();

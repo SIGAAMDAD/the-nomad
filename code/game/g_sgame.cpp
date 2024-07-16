@@ -11,7 +11,8 @@ void G_ShutdownSGame( void )
         return;
     }
 
-    sgvm->m_pHandle->ClearMemory();
+    g_pModuleLib->ModuleCall( sgvm, ModuleShutdown, 0 );
+    g_pModuleLib->RunModules( ModuleShutdown, 0 );
     
     sgvm = NULL;
     FS_VM_CloseFiles( H_SGAME );

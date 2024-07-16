@@ -1623,18 +1623,9 @@ static GLenum RawImage_GetFormat( const byte *data, uint32_t numPixels, GLenum p
 			} else if ( !forceNoCompression && glContext.textureCompression == TC_S3TC_ARB ) {
 				internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 			} else if ( r_textureBits->i == 16 ) {
-				if ( r_hdr->i ) {
-					internalFormat = GL_RGBA16F;
-				} else {
-					internalFormat = GL_RGBA4;
-				}
-			}
-			else if ( r_textureBits->i == 32 ) {
-				if ( r_hdr->i ) {
-					internalFormat = GL_RGBA32F;
-				} else {
-					internalFormat = GL_RGBA8;
-				}
+				internalFormat = GL_RGBA4;
+			} else if ( r_textureBits->i == 32 ) {
+				internalFormat = GL_RGBA8;
 			}
 			else {
 				switch ( r_textureDetail->i ) {
@@ -1643,22 +1634,10 @@ static GLenum RawImage_GetFormat( const byte *data, uint32_t numPixels, GLenum p
 					internalFormat = GL_RGBA4;
 					break;
 				case TexDetail_Normie:
+				case TexDetail_ExpensiveShitWeveGotHere:
+				case TexDetail_GPUvsGod:
 					internalFormat = GL_RGBA8;
 					break;
-				case TexDetail_ExpensiveShitWeveGotHere: {
-					if ( r_hdr->i ) {
-						internalFormat = GL_RGBA16F;
-					} else {
-						internalFormat = GL_RGBA8;
-					}
-					break; }
-				case TexDetail_GPUvsGod: {
-					if ( r_hdr->i ) {
-						internalFormat = GL_RGBA32F;
-					} else {
-						internalFormat = GL_RGBA8;
-					}
-					break; }
 				};
 			}
 		}
@@ -1673,18 +1652,10 @@ static GLenum RawImage_GetFormat( const byte *data, uint32_t numPixels, GLenum p
 				internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 			}
 			else if ( r_textureBits->i == 16 ) {
-				if ( r_hdr->i ) {
-					internalFormat = GL_RGB16F;
-				} else {
-					internalFormat = GL_RGB5;
-				}
+				internalFormat = GL_RGB5;
 			}
 			else if ( r_textureBits->i == 32 ) {
-				if ( r_hdr->i ) {
-					internalFormat = GL_RGB32F;
-				} else {
-					internalFormat = GL_RGB8;
-				}
+				internalFormat = GL_RGB8;
 			}
 			else {
 				switch ( r_textureDetail->i ) {
@@ -1693,22 +1664,10 @@ static GLenum RawImage_GetFormat( const byte *data, uint32_t numPixels, GLenum p
 					internalFormat = GL_RGB5;
 					break;
 				case TexDetail_Normie:
+				case TexDetail_ExpensiveShitWeveGotHere:
+				case TexDetail_GPUvsGod:
 					internalFormat = GL_RGB8;
 					break;
-				case TexDetail_ExpensiveShitWeveGotHere: {
-					if ( r_hdr->i ) {
-						internalFormat = GL_RGB16F;
-					} else {
-						internalFormat = GL_RGB8;
-					}
-					break; }
-				case TexDetail_GPUvsGod: {
-					if ( r_hdr->i ) {
-						internalFormat = GL_RGB32F;
-					} else {
-						internalFormat = GL_RGB8;
-					}
-					break; }
 				};
 			}
 		}
@@ -1744,18 +1703,10 @@ static GLenum RawImage_GetFormat( const byte *data, uint32_t numPixels, GLenum p
 					internalFormat = GL_RGB4_S3TC;
 				}
 				else if ( r_textureBits->i == 16 ) {
-					if ( r_hdr->i ) {
-						internalFormat = GL_RGB16F;
-					} else {
-						internalFormat = GL_RGB5;
-					}
+					internalFormat = GL_RGB5;
 				}
 				else if ( r_textureBits->i == 32 ) {
-					if ( r_hdr->i ) {
-						internalFormat = GL_RGB32F;
-					} else {
-						internalFormat = GL_RGB8;
-					}
+					internalFormat = GL_RGB8;
 				}
 				else {
 					switch ( r_textureDetail->i ) {
@@ -1764,22 +1715,10 @@ static GLenum RawImage_GetFormat( const byte *data, uint32_t numPixels, GLenum p
 						internalFormat = GL_RGB4;
 						break;
 					case TexDetail_Normie:
+					case TexDetail_ExpensiveShitWeveGotHere:
+					case TexDetail_GPUvsGod:
 						internalFormat = GL_RGB8;
 						break;
-					case TexDetail_ExpensiveShitWeveGotHere: {
-						if ( r_hdr->i ) {
-							internalFormat = GL_RGB16F;
-						} else {
-							internalFormat = GL_RGB8;
-						}
-						break; }
-					case TexDetail_GPUvsGod: {
-						if ( r_hdr->i ) {
-							internalFormat = GL_RGB32F;
-						} else {
-							internalFormat = GL_RGB8;
-						}
-						break; }
 					};
 				}
 			}
@@ -1800,18 +1739,10 @@ static GLenum RawImage_GetFormat( const byte *data, uint32_t numPixels, GLenum p
 					internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 				}
 				else if ( r_textureBits->i == 16 ) {
-					if ( r_hdr->i ) {
-						internalFormat = GL_RGBA16F;
-					} else {
-						internalFormat = GL_RGBA4;
-					}
+					internalFormat = GL_RGBA4;
 				}
 				else if ( r_textureBits->i == 32 ) {
-					if ( r_hdr->i ) {
-						internalFormat = GL_RGBA32F;
-					} else {
-						internalFormat = GL_RGBA8;
-					}
+					internalFormat = GL_RGBA8;
 				}
 				else {
 					switch ( r_textureDetail->i ) {
@@ -1820,22 +1751,10 @@ static GLenum RawImage_GetFormat( const byte *data, uint32_t numPixels, GLenum p
 						internalFormat = GL_RGBA4;
 						break;
 					case TexDetail_Normie:
+					case TexDetail_ExpensiveShitWeveGotHere:
+					case TexDetail_GPUvsGod:
 						internalFormat = GL_RGBA8;
 						break;
-					case TexDetail_ExpensiveShitWeveGotHere: {
-						if ( r_hdr->i ) {
-							internalFormat = GL_RGBA16F;
-						} else {
-							internalFormat = GL_RGBA8;
-						}
-						break; }
-					case TexDetail_GPUvsGod: {
-						if ( r_hdr->i ) {
-							internalFormat = GL_RGBA32F;
-						} else {
-							internalFormat = GL_RGBA8;
-						}
-						break; }
 					};
 				}
 			}
@@ -2292,6 +2211,7 @@ static texture_t *R_CreateImage2( const char *name, byte *pic, int width, int he
 	// set all necessary parameters
 	nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, glWrapClampMode );
 	nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, glWrapClampMode );
+	nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0 );
 
 	// set anisotropy
 	if ( r_arb_texture_filter_anisotropic->i ) {
@@ -3074,15 +2994,14 @@ void R_UnloadLevelTextures( void )
 	for ( i = 0; i < FILE_HASH_SIZE; i++ ) {
 		for ( j = 0; j < rg.world->levelTextures; j++ ) {
 			if ( hashTable[i] == rg.textures[ j + rg.world->firstLevelTexture ] && hashTable[i] ) {
+				nglDeleteTextures( 1, &rg.textures[ j + rg.world->firstLevelTexture ]->id );
 				hashTable[i]->next = NULL;
 				hashTable[i] = NULL;
+				rg.textures[ j + rg.world->firstLevelTexture ] = NULL;
 			}
 		}
 	}
-	for ( j = 0; j < rg.world->levelTextures; j++ ) {
-		nglDeleteTextures( 1, &rg.textures[ j + rg.world->firstLevelTexture ]->id );
-		rg.textures[ j + rg.world->firstLevelTexture ] = NULL;
-	}
-	memset( rg.textures + rg.world->firstLevelTexture, 0, sizeof( *rg.textures ) * rg.world->levelTextures );
 	rg.numTextures = rg.world->firstLevelTexture;
+
+	GL_BindNullTextures();
 }

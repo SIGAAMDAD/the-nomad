@@ -112,7 +112,7 @@ USE_OPENGL_API=1
 USE_VULKAN_API=0
 
 INCLUDE       =-Idependencies/include/ -Idependencies/include/EA/ -Ideps/squirrel/include -Ideps/squall/ $(OS_INCLUDE) \
-	-I. -Icode/ -I/usr/local/mono-2.0 -Ideps/
+	-I. -Icode/ -I/usr/local/mono-2.0 -Ideps/ -I/usr/include/PhysX
 VERSION_DEFINE=-D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPDATE) -D_NOMAD_VERSION_PATCH=$(VERSION_PATCH)
 ERRORS        =-Werror=return-type
 
@@ -171,7 +171,8 @@ LDLIBS= \
 		-lzip \
 		-lSDL2_image \
 		-Wl,-rpath='.' \
-		-ljpeg -lsteam_api
+		-ljpeg -lsteam_api \
+		libbox2d.a
 
 ifndef release
 LDLIBS+=-leasy_profiler
@@ -225,65 +226,6 @@ GAME_DIR=$(O)/game
 
 COMPILE_SRC=$(CC) $(CFLAGS) -o $@ -c $<
 
-#JPGOBJ=\
-	$(O)/libjpeg/jaricom.o \
-  	$(O)/libjpeg/jcapimin.o \
-  	$(O)/libjpeg/jcapistd.o \
-  	$(O)/libjpeg/jcarith.o \
-  	$(O)/libjpeg/jccoefct.o  \
-  	$(O)/libjpeg/jccolor.o \
-  	$(O)/libjpeg/jcdctmgr.o \
-  	$(O)/libjpeg/jchuff.o   \
-  	$(O)/libjpeg/jcinit.o \
-  	$(O)/libjpeg/jcmainct.o \
-  	$(O)/libjpeg/jcmarker.o \
-  	$(O)/libjpeg/jcmaster.o \
-  	$(O)/libjpeg/jcomapi.o \
-  	$(O)/libjpeg/jcparam.o \
-  	$(O)/libjpeg/jcprepct.o \
-  	$(O)/libjpeg/jcsample.o \
-  	$(O)/libjpeg/jctrans.o \
-  	$(O)/libjpeg/jdapimin.o \
-  	$(O)/libjpeg/jdapistd.o \
-  	$(O)/libjpeg/jdarith.o \
-  	$(O)/libjpeg/jdatadst.o \
-  	$(O)/libjpeg/jdatasrc.o \
-  	$(O)/libjpeg/jdcoefct.o \
-  	$(O)/libjpeg/jdcolor.o \
-  	$(O)/libjpeg/jddctmgr.o \
-  	$(O)/libjpeg/jdhuff.o \
-  	$(O)/libjpeg/jdinput.o \
-  	$(O)/libjpeg/jdmainct.o \
-  	$(O)/libjpeg/jdmarker.o \
-  	$(O)/libjpeg/jdmaster.o \
-  	$(O)/libjpeg/jdmerge.o \
-  	$(O)/libjpeg/jdpostct.o \
-  	$(O)/libjpeg/jdsample.o \
-  	$(O)/libjpeg/jdtrans.o \
-  	$(O)/libjpeg/jerror.o \
-  	$(O)/libjpeg/jfdctflt.o \
-  	$(O)/libjpeg/jfdctfst.o \
-  	$(O)/libjpeg/jfdctint.o \
-  	$(O)/libjpeg/jidctflt.o \
-  	$(O)/libjpeg/jidctfst.o \
-  	$(O)/libjpeg/jidctint.o \
-  	$(O)/libjpeg/jmemmgr.o \
-  	$(O)/libjpeg/jmemnobs.o \
-  	$(O)/libjpeg/jquant1.o \
-  	$(O)/libjpeg/jquant2.o \
-  	$(O)/libjpeg/jutils.o
-
-
-#$(O)/game/snd_adpcm.o \
-#$(O)/game/snd_codec_ogg.o \
-#$(O)/game/snd_codec_wav.o \
-#$(O)/game/snd_codec.o \
-#$(O)/game/snd_dma.o \
-#$(O)/game/snd_main.o \
-#$(O)/game/snd_mem.o \
-#$(O)/game/snd_mix.o \
-#$(O)/game/snd_wavelet.o \
-
 SRC=\
 	$(O)/game/g_game.o \
 	$(O)/game/g_sgame.o \
@@ -297,6 +239,7 @@ SRC=\
 	$(O)/game/g_jpeg.o \
 	$(O)/game/g_threads.o \
 	$(O)/game/g_sound.o \
+	$(O)/game/g_physics.o \
 	\
 	$(O)/module_lib/module_memory.o \
 	$(O)/module_lib/module_main.o \
