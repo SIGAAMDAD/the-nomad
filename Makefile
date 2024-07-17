@@ -239,7 +239,6 @@ SRC=\
 	$(O)/game/g_jpeg.o \
 	$(O)/game/g_threads.o \
 	$(O)/game/g_sound.o \
-	$(O)/game/g_physics.o \
 	\
 	$(O)/module_lib/module_memory.o \
 	$(O)/module_lib/module_main.o \

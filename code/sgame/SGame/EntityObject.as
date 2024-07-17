@@ -56,6 +56,9 @@ namespace TheNomad::SGame {
 		uint GetEntityNum() const {
 			return m_Link.m_nEntityNumber;
 		}
+		AttackEffect GetDebuff() const {
+			return m_Debuff;
+		}
 		TheNomad::GameSystem::BBox& GetBounds() {
 			return m_Link.m_Bounds;
 		}
@@ -114,6 +117,9 @@ namespace TheNomad::SGame {
 		//
 		// setters
 		//
+		void SetDebuff( AttackEffect effect ) {
+			m_Debuff = effect;
+		}
 		void SetHealth( float nHealth ) {
 			m_nHealth = nHealth;
 		}

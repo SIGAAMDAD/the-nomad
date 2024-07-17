@@ -70,11 +70,7 @@ namespace TheNomad::SGame {
 			
 			KeyMove();
 
-			if ( backPedal ) {
-				speed = 0.95f;
-			} else {
-				speed = sgame_BaseSpeed.GetFloat();
-			}
+			speed = sgame_BaseSpeed.GetFloat();
 
 			accel.y += forward * speed;
 			accel.x += side * speed;
@@ -277,22 +273,10 @@ namespace TheNomad::SGame {
 					m_EntityData.SetFacing( FACING_LEFT );
 					m_EntityData.SetLegsFacing( FACING_LEFT );
 					m_EntityData.SetArmsFacing( FACING_LEFT );
-					if ( side > 0 ) {
-						m_EntityData.SetFacing( FACING_LEFT );
-						m_EntityData.SetLegsFacing( FACING_LEFT );
-						m_EntityData.SetArmsFacing( FACING_LEFT );
-						backPedal = true;
-					}
 				} else if ( mousePos.x > screenWidth / 2 ) {
 					m_EntityData.SetFacing( FACING_RIGHT );
 					m_EntityData.SetLegsFacing( FACING_RIGHT );
 					m_EntityData.SetArmsFacing( FACING_RIGHT );
-					if ( side < 0 ) {
-						m_EntityData.SetFacing( FACING_RIGHT );
-						m_EntityData.SetLegsFacing( FACING_RIGHT );
-						m_EntityData.SetArmsFacing( FACING_RIGHT );
-						backPedal = true;
-					}
 				}
 				
 				/*
@@ -367,6 +351,17 @@ namespace TheNomad::SGame {
 				frame_msec = 200;
 			}
 			old_frame_msec = TheNomad::GameSystem::GameManager.GetGameTic();
+
+			if ( m_EntityData.GetDebuff() == AttackEffect::Knockback ) {
+				m_EntityData.GetPhysicsObject().SetAcceleration( m_EntityData.GetVelocity() );
+				m_EntityData.GetPhysicsObject().OnRunTic();
+
+				if ( m_EntityData.GetVelocity() == Vec3Origin ) {
+					m_EntityData.SetDebuff( AttackEffect::None );
+				}
+
+				return;
+			}
 			
 			if ( up < 1.0f ) {
 				// not holding jump
@@ -527,6 +522,5 @@ namespace TheNomad::SGame {
 		TheNomad::Engine::SoundSystem::SoundEffect moveMetal3;
 		
 		bool groundPlane = false;
-		bool backPedal = false;
 	};
 };

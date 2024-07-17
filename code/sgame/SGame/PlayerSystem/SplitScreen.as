@@ -297,9 +297,12 @@ namespace TheNomad::SGame {
 		void Melee_f() {
 			PlayrObject@ obj = GetPlayerIndex();
 		
-			if ( TheNomad::Engine::CmdArgv( 0 )[0] == '+' &&
-				@obj.GetArmState() is @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_IDLE ) )
-			{
+			if ( TheNomad::Engine::CmdArgv( 0 )[0] == '+' ) {
+				if ( @obj.GetArmState() is @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_MELEE )
+					&& !obj.GetArmState().Done() )
+				{
+					return;
+				}
 				obj.meleeSfx.Play();
 				obj.SetParryBoxWidth( 0.0f );
 				obj.SetArmState( StateNum::ST_PLAYR_ARMS_MELEE );

@@ -133,7 +133,6 @@ namespace TheNomad::SGame {
 				ent.m_nStartTime = TheNomad::GameSystem::GameManager.GetGameTic();
 				ent.m_nLifeTime = 1000;
 				ent.m_Velocity = vec3( 0.05f, -0.03f, 0.0f );
-				ent.m_RefEntity.scale = 0.2f;
 
 				ent.m_Origin = vec3( x, y, origin.z );
 				ent.m_hShader = TheNomad::Engine::ResourceCache.GetShader( "gfx/bloodSplatter0" );

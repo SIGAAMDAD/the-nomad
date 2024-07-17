@@ -742,11 +742,7 @@ namespace TheNomad::SGame {
 			} else if ( m_bSliding ) {
 				@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_SLIDE );
 			} else {
-				if ( Pmove.backPedal ) {
-					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_BACKPEDAL );
-				} else {
-					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_MOVE_GROUND );
-				}
+				@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_MOVE_GROUND );
 			}
 
 			refEntity.origin = m_Link.m_Origin;
@@ -759,9 +755,15 @@ namespace TheNomad::SGame {
 		private void DrawArms() {
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 
-			if ( m_ArmState.Done() && @m_ArmState !is @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_IDLE ) ) {
-				@m_ArmState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_IDLE );
+			if ( m_ArmState.Done() && @m_ArmState !is @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_MOVE )
+				&& m_PhysicsObject.GetVelocity() != Vec3Origin )
+			{
+				@m_ArmState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_MOVE );
 			}
+
+//			if ( m_ArmState.Done() && @m_ArmState !is @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_IDLE ) ) {
+//				@m_ArmState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_IDLE );
+//			}
 
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.sheetNum = m_ArmSpriteSheet[ m_ArmsFacing ].GetShader();

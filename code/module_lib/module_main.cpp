@@ -648,7 +648,6 @@ CModuleLib::CModuleLib( void )
     try {
         if ( ( error = g_pModuleLib->GetScriptBuilder()->BuildModule() ) != asSUCCESS ) {
             N_Error( ERR_DROP, "Error building GlobalModule" );
-
             // clean cache to get rid of any old and/or corrupt code
             Cbuf_ExecuteText( EXEC_APPEND, "ml.clean_script_cache\n" );
         }

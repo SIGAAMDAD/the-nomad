@@ -422,12 +422,6 @@ void Con_ToggleConsole_f( void );
 
 void HandleEvents( void );
 
-//
-// g_physics.cpp
-//
-void G_InitPhysics( void );
-void G_ShutdownPhysics( void );
-
 // platform-specific
 void GLimp_InitGamma( gpuConfig_t *config );
 void GLimp_SetGamma( unsigned char red[256], unsigned char green[256], unsigned char blue[256] );

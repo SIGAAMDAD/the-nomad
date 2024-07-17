@@ -61,6 +61,9 @@ namespace TheNomad::SGame {
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.GivePlayerItem_f ), "sgame.give_player_item", true
 			);
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.KnockbackPlayer_f ), "sgame.knockback_player", true
+			);
 		}
 		
 		void OnInit() {
@@ -366,6 +369,11 @@ namespace TheNomad::SGame {
 			return true;
 		}
 
+		void ApplyKnockback( EntityObject@ ent, const vec3& in dir ) {
+			ent.SetVelocity( dir );
+			ent.SetDebuff( AttackEffect::Knockback );
+		}
+
 		bool EntityIntersectsLine( const vec3& in origin, const vec3& in end ) {
 			for ( uint i = 0; i < m_EntityList.Count(); i++ ) {
 				if ( BoundsIntersectLine( origin, end, m_EntityList[i].GetBounds() ) ) {
@@ -435,6 +443,7 @@ namespace TheNomad::SGame {
 			}
 		}
 		void ApplyEntityEffect( EntityObject@ attacker, EntityObject@ target, AttackEffect effect ) {
+			target.SetDebuff( effect );
 		}
 		
 		//
@@ -520,23 +529,25 @@ namespace TheNomad::SGame {
 		}
 
 		void Effect_EntityKnockback_f() {
-			// sgame.effect_entity_knockback <attacker_num>
+			// sgame.effect_entity_knockback <attacker_num> <target_num>
 
-			EntityObject@ target, attacker;
+			EntityObject@ target = null;
+			EntityObject@ attacker = null;
 			const uint attackerNum = Convert().ToUInt( Engine::CmdArgv( 1 ) );
+			const uint targetNum = Convert().ToUInt( Engine::CmdArgv( 2 ) );
 
 			@attacker = GetEntityForNum( attackerNum );
-			if ( attacker is null ) {
+			if ( @attacker is null ) {
 				GameError( "Effect_EntityKnockback_f triggered on null attacker" );
 			}
 
-			@target = cast<MobObject@>( @attacker ).GetTarget();
-			if ( target is null ) {
+			@target = GetEntityForNum( targetNum );
+			if ( @target is null ) {
 				ConsoleWarning( "Effect_EntityKnockback_f triggered but no target\n" );
 				return;
 			}
 
-			ApplyEntityEffect( attacker, target, AttackEffect::Knockback );
+			ApplyEntityEffect( @attacker, @target, AttackEffect::Knockback );
 		}
 
 		void Effect_EntityImmolate_f() {
@@ -598,6 +609,13 @@ namespace TheNomad::SGame {
 		//
 		// developer commands
 		//
+
+		void KnockbackPlayer_f() {
+			const float amountX = Convert().ToFloat( TheNomad::Engine::CmdArgv( 1 ) );
+			const float amountY = Convert().ToFloat( TheNomad::Engine::CmdArgv( 2 ) );
+
+			ApplyKnockback( cast<EntityObject>( @m_ActivePlayer ), vec3( amountX, amountY, 0.0f ) );
+		}
 
 		void GivePlayerItem_f() {
 			

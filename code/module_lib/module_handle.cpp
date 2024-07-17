@@ -599,13 +599,6 @@ static void SaveCodeDataCache( const string_t& moduleName, const CModuleHandle *
     }
     FS_FClose( dataStream.m_hFile );
 
-    nLength = FS_LoadFile( va( CACHE_DIR "/%s_code.dat", moduleName.c_str() ), (void **)&pByteCode );
-    if ( !nLength || !pByteCode ) {
-
-    }
-    header.checksum = crc32_buffer( pByteCode, nLength );
-    FS_FreeFile( pByteCode );
-
     FS_WriteFile( va( CACHE_DIR "/%s_metadata.bin", moduleName.c_str() ), &header, sizeof( header ) );
 }
 
@@ -614,14 +607,13 @@ static bool LoadCodeFromCache( const string_t& moduleName, const CModuleHandle *
     const char *path;
     uint64_t nLength;
     asCodeCacheHeader_t *header;
-    uint32_t checksum;
-    byte *pByteCode;
     int32_t versionMajor, versionUpdate, versionPatch;
     uint64_t i;
 
     path = va( CACHE_DIR "/%s_metadata.bin", moduleName.c_str() );
     nLength = FS_LoadFile( path, (void **)&header );
     if ( !nLength || !header ) {
+        Con_DPrintf( "Error opening '%s/%s_metadata.bin'\n", CACHE_DIR, moduleName.c_str() );
         return false;
     }
 
@@ -632,13 +624,6 @@ static bool LoadCodeFromCache( const string_t& moduleName, const CModuleHandle *
 
     pHandle->GetVersion( &versionMajor, &versionUpdate, &versionPatch );
 
-    checksum = crc32_buffer( (const byte *)( header + 1 ), nLength - sizeof( *header ) );
-
-    if ( header->checksum != checksum ) {
-        // recompile, updated checksum
-        Con_Printf( "Module script code '%s' changed, recompiling.\n", moduleName.c_str() );
-        return false;
-    }
     if ( header->moduleVersionMajor != versionMajor || header->moduleVersionUpdate != versionUpdate
         || header->moduleVersionPatch != versionPatch )
     {

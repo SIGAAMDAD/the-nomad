@@ -1784,8 +1784,6 @@ void G_Init( void )
 
     G_ClearState();
 
-    G_InitPhysics();
-
     G_InitRenderer_Cvars();
 
     G_LoadSkins();
@@ -1874,8 +1872,6 @@ void G_Shutdown( qboolean quit )
     G_ShutdownRenderer( quit ? REF_UNLOAD_DLL : REF_DESTROY_WINDOW );
 
     SteamApp_Shutdown();
-
-    G_ShutdownPhysics();
 
     if ( quit ) {
         remove( "nomad.pid" );
