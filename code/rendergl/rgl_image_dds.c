@@ -483,8 +483,8 @@ void R_LoadDDS ( const char *filename, byte **pic, int *width, int *height, GLen
 		}
 	}
 
-	*pic = ri.Malloc(len);
-	memcpy(*pic, data, len);
+	*pic = ri.Malloc( len );
+	memcpy( *pic, data, len );
 
 	ri.FS_FreeFile(buffer.v);
 }

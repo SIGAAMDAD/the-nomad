@@ -348,12 +348,12 @@ void Module_ASMessage_f( const asSMessageInfo *pMsg, void *param )
 
 #ifdef _NOMAD_DEBUG
 void *AS_Alloc( size_t nSize, const char *pFilename, uint32_t lineNumber ) {
-//    return Z_Malloc( nSize, TAG_MODULES );
+//    return Hunk_Alloc( nSize, h_high );
     return Mem_Alloc( nSize );
 }
 #else
 void *AS_Alloc( size_t nSize ) {
-//    return Z_Malloc( nSize, TAG_MODULES );
+//    return Hunk_Alloc( nSize, h_high );
     return Mem_Alloc( nSize );
 }
 #endif
@@ -589,11 +589,11 @@ CModuleLib::CModuleLib( void )
     CheckASCall( m_pEngine->SetEngineProperty( asEP_HEREDOC_TRIM_MODE, 0 ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_INIT_GLOBAL_VARS_AFTER_BUILD, true ) );
 
-    m_pScriptBuilder = new ( Hunk_Alloc( sizeof( *m_pScriptBuilder ), h_low ) ) CScriptBuilder();
-    g_pDebugger = new ( Hunk_Alloc( sizeof( *g_pDebugger ), h_low ) ) CDebugger();
+    m_pScriptBuilder = new ( Hunk_Alloc( sizeof( *m_pScriptBuilder ), h_high ) ) CScriptBuilder();
+    g_pDebugger = new ( Hunk_Alloc( sizeof( *g_pDebugger ), h_high ) ) CDebugger();
 
     if ( ml_allowJIT->i ) {
-        m_pCompiler = new ( Hunk_Alloc( sizeof( *m_pCompiler ), h_low ) ) asCJITCompiler();
+        m_pCompiler = new ( Hunk_Alloc( sizeof( *m_pCompiler ), h_high ) ) asCJITCompiler();
         CheckASCall( m_pEngine->SetJITCompiler( m_pCompiler ) );
     }
     m_pScriptBuilder->SetIncludeCallback( Module_IncludeCallback_f, NULL );
@@ -710,7 +710,7 @@ CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *
     // FIXME: angelscript's thread manager is fucking broken on unix (stalls forever)
     asSetGlobalMemoryFunctions( AS_Alloc, AS_Free );
 
-    g_pModuleLib = new ( Hunk_Alloc( sizeof( *g_pModuleLib ), h_low ) ) CModuleLib();
+    g_pModuleLib = new ( Hunk_Alloc( sizeof( *g_pModuleLib ), h_high ) ) CModuleLib();
 
     Con_Printf( "--------------------\n" );
 

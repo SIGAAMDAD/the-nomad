@@ -63,11 +63,11 @@ namespace TheNomad::SGame {
 				ray.m_Start = m_Link.m_Origin;
 				ray.m_nLength = atk.range;
 				ray.m_nAngle = m_PhysicsObject.GetAngle();
-				ray.m_nEntityNumber = 0;
+				ray.m_nEntityNumber = ENTITYNUM_INVALID;
 
 				ray.Cast();
 
-				if ( ray.m_nEntityNumber == EntityManager.NumEntities() ) {
+				if ( ray.m_nEntityNumber == ENTITYNUM_INVALID ) {
 					return; // got nothing
 				}
 				break; }
@@ -82,12 +82,12 @@ namespace TheNomad::SGame {
 			
 			if ( atk.effect.Length() > 0 ) {
 				// apply effects
-				TheNomad::Engine::CmdExecuteCommand( atk.effect + " " + m_Link.m_nEntityNumber + "\n" );
+				TheNomad::Engine::CmdExecuteCommand( atk.effect + " " + m_Link.m_nEntityNumber + " " + m_Target.GetEntityNum() + "\n" );
 			}
 			
 			m_CurrentAttack.sound.Play();
 			
-			EntityManager.DamageEntity( cast<EntityObject@>( @this ), @rayData );
+			EntityManager.DamageEntity( cast<EntityObject>( @this ), @rayData );
 		}
 		
 		void Spawn( uint id, const vec3& in origin ) {

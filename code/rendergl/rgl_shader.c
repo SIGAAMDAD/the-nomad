@@ -2179,13 +2179,11 @@ static shader_t *FinishShader(void)
 //				pStage->adjustColorsForFog = ACFF_MODULATE_RGB;
 			}
 			// strict blend
-			else if ( ( blendSrcBits == GLS_SRCBLEND_SRC_ALPHA ) && ( blendDstBits == GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA ) )
-			{
+			else if ( ( blendSrcBits == GLS_SRCBLEND_SRC_ALPHA ) && ( blendDstBits == GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA ) ) {
 //				pStage->adjustColorsForFog = ACFF_MODULATE_ALPHA;
 			}
 			// premultiplied alpha
-			else if ( ( blendSrcBits == GLS_SRCBLEND_ONE ) && ( blendDstBits == GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA ) )
-			{
+			else if ( ( blendSrcBits == GLS_SRCBLEND_ONE ) && ( blendDstBits == GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA ) ) {
 //				pStage->adjustColorsForFog = ACFF_MODULATE_RGBA;
 			} else {
 				// we can't adjust this one correctly, so it won't be exactly correct in fog
@@ -2223,24 +2221,28 @@ static shader_t *FinishShader(void)
 	//
 	// if we are in r_vertexLight mode, never use a lightmap texture
 	//
-	if ( stage > 1 && ( (r_vertexLight->i && rg.vertexLightingAllowed) || glConfig.hardwareType == GLHW_PERMEDIA2 ) ) {
+	/*
+	if ( stage > 1 && ( (r_vertexLight->i && rg.vertexLightingAllowed ) || glConfig.hardwareType == GLHW_PERMEDIA2 ) ) {
 		VertexLightingCollapse();
 		hasLightmapStage = qfalse;
 	}
+	*/
 
 	//
 	// look for multitexture potential
 	//
 	stage = CollapseStagesToGLSL();
 
+	/*
 	if ( shader.lightmapIndex >= 0 && !hasLightmapStage ) {
-		if (vertexLightmap) {
+		if ( vertexLightmap ) {
 			ri.Printf( PRINT_DEVELOPER, "WARNING: shader '%s' has VERTEX forced lightmap!\n", shader.name );
 		} else {
 			ri.Printf( PRINT_DEVELOPER, "WARNING: shader '%s' has lightmap but no lightmap stage!\n", shader.name );
 			shader.lightmapIndex = LIGHTMAP_NONE;
 		}
 	}
+	*/
 
 	FindLightingStages();
 

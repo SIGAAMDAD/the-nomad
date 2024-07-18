@@ -946,7 +946,7 @@ void Z_InitMemory( void )
 	// configure the memory manager.
 
 	// allocate the random block zone
-	cv = Cvar_Get("com_zoneMegs", VSTR(MAINZONE_DEFSIZE), CVAR_LATCH | CVAR_SAVE);
+	cv = Cvar_Get( "com_zoneMegs", VSTR( MAINZONE_DEFSIZE ), CVAR_LATCH | CVAR_SAVE );
 	Cvar_CheckRange( cv, "1", NULL, CVT_INT );
 	Cvar_SetDescription( cv, "Initial amount of memory (RAM) allocated for the main block zone (in MB)." );
 
@@ -1102,6 +1102,30 @@ static void Zone_Stats( const char *name, const memzone_t *z, qboolean printDeta
 	}
 }
 
+const char *Com_MemSize( uint64_t size ) {
+	const char *suffix;
+	static char str[64];
+
+	suffix = "bytes";
+
+	if ( size > 1024 ) {
+		size /= 1024;
+		suffix = "Kb";
+	}
+	if ( size > 1024 ) {
+		size /= 1024;
+		suffix = "Mb";
+	}
+	if ( size > 1024 ) {
+		size /= 1024;
+		suffix = "Gb";
+	}
+
+	Com_snprintf( str, sizeof( str ) - 1, "%lu %s", size, suffix );
+
+	return str;
+}
+
 /*
 =================
 Com_Meminfo_f
@@ -1111,62 +1135,126 @@ static void Com_Meminfo_f( void )
 {
 	zone_stats_t st;
 	uint64_t unused;
+	const char *format;
 
-	Con_Printf( "%8lu bytes total hunk\n", hunksize );
-	Con_Printf( "\n" );
-	Con_Printf( "%8lu low mark\n", hunk_low.mark );
-	Con_Printf( "%8lu low permanent\n", hunk_low.permanent );
-	if ( hunk_low.temp != hunk_low.permanent ) {
-		Con_Printf( "%8li low temp\n", hunk_low.temp );
-	}
-	Con_Printf( "%8lu low tempHighwater\n", hunk_low.tempHighwater );
-	Con_Printf( "\n" );
-	Con_Printf( "%8lu high mark\n", hunk_high.mark );
-	Con_Printf( "%8lu high permanent\n", hunk_high.permanent );
-	if ( hunk_high.temp != hunk_high.permanent ) {
-		Con_Printf( "%8lu high temp\n", hunk_high.temp );
-	}
-	Con_Printf( "%8lu high tempHighwater\n", hunk_high.tempHighwater );
-	Con_Printf( "\n" );
-	Con_Printf( "%8lu total hunk in use\n", hunk_low.permanent + hunk_high.permanent );
-	unused = 0;
-	if ( hunk_low.tempHighwater > hunk_low.permanent ) {
-		unused += hunk_low.tempHighwater - hunk_low.permanent;
-	}
-	if ( hunk_high.tempHighwater > hunk_high.permanent ) {
-		unused += hunk_high.tempHighwater - hunk_high.permanent;
-	}
-	Con_Printf( "%8lu unused highwater\n", unused );
-	Con_Printf( "\n" );
+	format = Cmd_Argv( 1 );
 
-	Zone_Stats( "main", mainzone, !N_stricmp( Cmd_Argv( 1 ), "main" ) || !N_stricmp( Cmd_Argv( 1 ), "all" ), &st );
-	Con_Printf( "%8lu bytes total main zone\n\n", mainzone->size );
-	Con_Printf( "%8lu bytes in %lu main zone blocks%s\n", st.zoneBytes, st.zoneBlocks,
-		st.zoneSegments > 1 ? va( " and %lu segments", st.zoneSegments ) : "" );
-	Con_Printf( "        %8lu bytes in renderer\n", st.rendererBytes );
-	Con_Printf( "        %8lu bytes in game\n", st.gameBytes );
-	Con_Printf( "        %8lu bytes in imgui\n", st.imguiBytes );
-	Con_Printf( "        %8lu bytes in filesystem\n", st.filesystemBytes );
-	Con_Printf( "        %8lu bytes in resources\n", st.resourceBytes );
-	Con_Printf( "        %8lu bytes in modules\n", st.moduleBytes );
-	Con_Printf( "        %8lu bytes in save file cache\n", st.archiveFileBytes );
-	Con_Printf( "        %8lu bytes in sound effects\n", st.sfxBytes );
-	Con_Printf( "        %8lu bytes in music\n", st.musicBytes );
-	Con_Printf( "        %8lu bytes in leaked hunk memory\n", st.hunkLeftOverBytes );
-	Con_Printf( "        %8lu bytes in other\n", st.zoneBytes - ( st.rendererBytes + st.gameBytes + st.imguiBytes + st.filesystemBytes +
-																	st.hunkLeftOverBytes + st.resourceBytes ) );
-	Con_Printf( "        %8lu bytes in %lu free blocks\n", st.freeBytes, st.freeBlocks );
-	if ( st.freeBlocks > 1 ) {
-		Con_Printf( "        (largest: %lu bytes, smallest: %lu bytes)\n\n", st.freeLargest, st.freeSmallest );
-	}
+	if ( !*format ) {
+		Con_Printf( "%8lu bytes total hunk\n", hunksize );
+		Con_Printf( "\n" );
+		Con_Printf( "%8lu low mark\n", hunk_low.mark );
+		Con_Printf( "%8lu low permanent\n", hunk_low.permanent );
+		if ( hunk_low.temp != hunk_low.permanent ) {
+			Con_Printf( "%8li low temp\n", hunk_low.temp );
+		}
+		Con_Printf( "%8lu low tempHighwater\n", hunk_low.tempHighwater );
+		Con_Printf( "\n" );
+		Con_Printf( "%8lu high mark\n", hunk_high.mark );
+		Con_Printf( "%8lu high permanent\n", hunk_high.permanent );
+		if ( hunk_high.temp != hunk_high.permanent ) {
+			Con_Printf( "%8lu high temp\n", hunk_high.temp );
+		}
+		Con_Printf( "%8lu high tempHighwater\n", hunk_high.tempHighwater );
+		Con_Printf( "\n" );
+		Con_Printf( "%8lu total hunk in use\n", hunk_low.permanent + hunk_high.permanent );
+		unused = 0;
+		if ( hunk_low.tempHighwater > hunk_low.permanent ) {
+			unused += hunk_low.tempHighwater - hunk_low.permanent;
+		}
+		if ( hunk_high.tempHighwater > hunk_high.permanent ) {
+			unused += hunk_high.tempHighwater - hunk_high.permanent;
+		}
+		Con_Printf( "%8lu unused highwater\n", unused );
+		Con_Printf( "\n" );
 
-	Zone_Stats( "small", smallzone, !N_stricmp( Cmd_Argv( 1 ), "small" ) || !N_stricmp( Cmd_Argv( 1 ), "all" ), &st );
-	Con_Printf( "%8lu bytes total small zone\n\n", smallzone->size );
-	Con_Printf( "%8lu bytes in %lu small zone blocks%s\n", st.zoneBytes, st.zoneBlocks,
-		st.zoneSegments > 1 ? va( " and %lu segments", st.zoneSegments ) : "" );
-	Con_Printf( "        %8lu bytes in %lu free blocks\n", st.freeBytes, st.freeBlocks );
-	if ( st.freeBlocks > 1 ) {
-		Con_Printf( "        (largest: %lu bytes, smallest: %lu bytes)\n\n", st.freeLargest, st.freeSmallest );
+		Zone_Stats( "main", mainzone, !N_stricmp( Cmd_Argv( 1 ), "main" ) || !N_stricmp( Cmd_Argv( 1 ), "all" ), &st );
+		Con_Printf( "%8lu bytes total main zone\n\n", mainzone->size );
+		Con_Printf( "%8lu bytes in %lu main zone blocks%s\n", st.zoneBytes, st.zoneBlocks,
+			st.zoneSegments > 1 ? va( " and %lu segments", st.zoneSegments ) : "" );
+		Con_Printf( "        %8lu bytes in renderer\n", st.rendererBytes );
+		Con_Printf( "        %8lu bytes in game\n", st.gameBytes );
+		Con_Printf( "        %8lu bytes in imgui\n", st.imguiBytes );
+		Con_Printf( "        %8lu bytes in filesystem\n", st.filesystemBytes );
+		Con_Printf( "        %8lu bytes in resources\n", st.resourceBytes );
+		Con_Printf( "        %8lu bytes in modules\n", st.moduleBytes );
+		Con_Printf( "        %8lu bytes in save file cache\n", st.archiveFileBytes );
+		Con_Printf( "        %8lu bytes in sound effects\n", st.sfxBytes );
+		Con_Printf( "        %8lu bytes in music\n", st.musicBytes );
+		Con_Printf( "        %8lu bytes in leaked hunk memory\n", st.hunkLeftOverBytes );
+		Con_Printf( "        %8lu bytes in other\n", st.zoneBytes - ( st.rendererBytes + st.gameBytes + st.imguiBytes + st.filesystemBytes +
+																		st.hunkLeftOverBytes + st.resourceBytes ) );
+		Con_Printf( "        %8lu bytes in %lu free blocks\n", st.freeBytes, st.freeBlocks );
+		if ( st.freeBlocks > 1 ) {
+			Con_Printf( "        (largest: %lu bytes, smallest: %lu bytes)\n\n", st.freeLargest, st.freeSmallest );
+		}
+
+		Zone_Stats( "small", smallzone, !N_stricmp( Cmd_Argv( 1 ), "small" ) || !N_stricmp( Cmd_Argv( 1 ), "all" ), &st );
+		Con_Printf( "%8lu bytes total small zone\n\n", smallzone->size );
+		Con_Printf( "%8lu bytes in %lu small zone blocks%s\n", st.zoneBytes, st.zoneBlocks,
+			st.zoneSegments > 1 ? va( " and %lu segments", st.zoneSegments ) : "" );
+		Con_Printf( "        %8lu bytes in %lu free blocks\n", st.freeBytes, st.freeBlocks );
+		if ( st.freeBlocks > 1 ) {
+			Con_Printf( "        (largest: %lu bytes, smallest: %lu bytes)\n\n", st.freeLargest, st.freeSmallest );
+		}
+	}
+	else if ( *format == '-' && *( format + 1 ) == 'h' ) {
+		Con_Printf( "%-8s total hunk\n", Com_MemSize( hunksize ) );
+		Con_Printf( "\n" );
+		Con_Printf( "%-8s low mark\n", Com_MemSize( hunk_low.mark ) );
+		Con_Printf( "%-8s low permanent\n", Com_MemSize( hunk_low.permanent ) );
+		if ( hunk_low.temp != hunk_low.permanent ) {
+			Con_Printf( "%-8s low temp\n", Com_MemSize( hunk_low.temp ) );
+		}
+		Con_Printf( "%-8s low tempHighwater\n", Com_MemSize( hunk_low.tempHighwater ) );
+		Con_Printf( "\n" );
+		Con_Printf( "%-8s high mark\n", Com_MemSize( hunk_high.mark ) );
+		Con_Printf( "%-8s high permanent\n", Com_MemSize( hunk_high.permanent ) );
+		if ( hunk_high.temp != hunk_high.permanent ) {
+			Con_Printf( "%-8s high temp\n", Com_MemSize( hunk_high.temp ) );
+		}
+		Con_Printf( "%-8s high tempHighwater\n", Com_MemSize( hunk_high.tempHighwater ) );
+		Con_Printf( "\n" );
+		Con_Printf( "%-8s total hunk in use\n", Com_MemSize( hunk_low.permanent + hunk_high.permanent ) );
+
+		unused = 0;
+		if ( hunk_low.tempHighwater > hunk_low.permanent ) {
+			unused += hunk_low.tempHighwater - hunk_low.permanent;
+		}
+		if ( hunk_high.tempHighwater > hunk_high.permanent ) {
+			unused += hunk_high.tempHighwater - hunk_high.permanent;
+		}
+		Con_Printf( "%-8s unused highwater\n", Com_MemSize( unused ) );
+		Con_Printf( "\n" );
+
+		Zone_Stats( "main", mainzone, !N_stricmp( Cmd_Argv( 1 ), "main" ) || !N_stricmp( Cmd_Argv( 1 ), "all" ), &st );
+		Con_Printf( "%-8s total main zone\n\n", Com_MemSize( mainzone->size ) );
+		Con_Printf( "%-8s in %lu main zone blocks%s\n", Com_MemSize( st.zoneBytes ), st.zoneBlocks,
+			st.zoneSegments > 1 ? va( " and %lu segments", st.zoneSegments ) : "" );
+		Con_Printf( "        %-8s in renderer\n", Com_MemSize( st.rendererBytes ) );
+		Con_Printf( "        %-8s in game\n", Com_MemSize( st.gameBytes ) );
+		Con_Printf( "        %-8s in imgui\n", Com_MemSize( st.imguiBytes ) );
+		Con_Printf( "        %-8s in filesystem\n", Com_MemSize( st.filesystemBytes ) );
+		Con_Printf( "        %-8s in resources\n", Com_MemSize( st.resourceBytes ) );
+		Con_Printf( "        %-8s in modules\n", Com_MemSize( st.moduleBytes ) );
+		Con_Printf( "        %-8s in save file cache\n", Com_MemSize( st.archiveFileBytes ) );
+		Con_Printf( "        %-8s in sound effects\n", Com_MemSize( st.sfxBytes ) );
+		Con_Printf( "        %-8s in music\n", Com_MemSize( st.musicBytes ) );
+		Con_Printf( "        %-8s in leaked hunk memory\n", Com_MemSize( st.hunkLeftOverBytes ) );
+		Con_Printf( "        %-8s in other\n", Com_MemSize( st.zoneBytes - ( st.rendererBytes + st.gameBytes + st.imguiBytes + st.filesystemBytes +
+																		st.hunkLeftOverBytes + st.resourceBytes ) ) );
+		Con_Printf( "        %-8s in %lu free blocks\n", Com_MemSize( st.freeBytes ), st.freeBlocks );
+		if ( st.freeBlocks > 1 ) {
+			Con_Printf( "        (largest: %s, smallest: %s)\n\n", Com_MemSize( st.freeLargest ), Com_MemSize( st.freeSmallest ) );
+		}
+
+		Zone_Stats( "small", smallzone, !N_stricmp( Cmd_Argv( 1 ), "small" ) || !N_stricmp( Cmd_Argv( 1 ), "all" ), &st );
+		Con_Printf( "%-8s total small zone\n\n", Com_MemSize( smallzone->size ) );
+		Con_Printf( "%-8s in %lu small zone blocks%s\n", Com_MemSize( st.zoneBytes ), st.zoneBlocks,
+			st.zoneSegments > 1 ? va( " and %lu segments", st.zoneSegments ) : "" );
+		Con_Printf( "        %-8s in %lu free blocks\n", Com_MemSize( st.freeBytes ), st.freeBlocks );
+		if ( st.freeBlocks > 1 ) {
+			Con_Printf( "        (largest: %s, smallest: %s)\n\n", Com_MemSize( st.freeLargest ), Com_MemSize( st.freeSmallest ) );
+		}
 	}
 }
 
@@ -1642,32 +1730,44 @@ void *Hunk_Alloc (uint64_t size, ha_pref where)
 	return buf;
 }
 
-void Hunk_SmallLog(void)
+void Hunk_SmallLog( void )
 {
 	hunkblock_t *h;
 	char buf[4096];
 	uint64_t size, locsize, numBlocks;
 
-	if (!logfile || !FS_Initialized())
+	if ( !logfile || !FS_Initialized() ) {
 		return;
+	}
 	
 	size = 0;
 	numBlocks = 0;
-	Com_snprintf(buf, sizeof(buf), "\r\n================\r\nHunk Small log\r\n================\r\n");
-	FS_Write(buf, strlen(buf), logfile);
-	for (h = hunkblocks; h; h = h->next) {
+	Com_snprintf( buf, sizeof( buf ) - 1, "\r\n================\r\nHunk Small log\r\n================\r\n" );
+	FS_Write( buf, strlen( buf ), logfile );
+	for ( h = hunkblocks; h; h = h->next ) {
 		size += h->size;
 		numBlocks++;
-		Com_snprintf(buf, sizeof(buf), "size = %8lu: %s\r\n", h->size, h->name);
-		FS_Write(buf, strlen(buf), logfile);
+		Com_snprintf( buf, sizeof( buf ) - 1, "size = %8lu: %s\r\n", h->size, h->name );
+		FS_Write( buf, strlen( buf ), logfile );
 	}
-	Com_snprintf(buf, sizeof(buf), "%lu total hunk memory\r\n", size);
-	FS_Write(buf, strlen(buf), logfile);
-	Com_snprintf(buf, sizeof(buf), "%lu total hunk blocks\r\n", numBlocks);
+	Com_snprintf( buf, sizeof( buf ) - 1, "%lu total hunk memory\r\n", size );
+	FS_Write( buf, strlen( buf ), logfile );
+	Com_snprintf( buf, sizeof( buf ) - 1, "%lu total hunk blocks\r\n", numBlocks );
 }
 
 void Hunk_Log( void ) {
 	Hunk_SmallLog();
+}
+
+static void *hunkptr = NULL;
+static void Hunk_Free_f( void ) {
+	if ( !Cvar_VariableInteger( "com_exitFlag" ) ) {
+		Con_Printf( "DONT\n" );
+		return;
+	}
+	if ( hunkptr != NULL ) {
+		free( hunkptr );
+	}
 }
 
 void Hunk_InitMemory( void )
@@ -1688,7 +1788,7 @@ void Hunk_InitMemory( void )
 	Cvar_SetDescription( cv, "The size of the hunk memory segment." );
 
 	hunksize = cv->i * 1024 * 1024;
-	hunkbase = (byte *)calloc( hunksize + ( com_cacheLine - 1 ), 1 );
+	hunkptr = hunkbase = (byte *)calloc( hunksize + ( com_cacheLine - 1 ), 1 );
 	if ( !hunkbase ) {
 		Sys_SetError( ERR_OUT_OF_MEMORY );
 		N_Error( ERR_FATAL, "Hunk data failed to allocate %lu megs", hunksize / (1024*1024) );
@@ -1698,6 +1798,7 @@ void Hunk_InitMemory( void )
 	hunkbase = (byte *)PADP( hunkbase, com_cacheLine );
 	Hunk_Clear();
 
+	Cmd_AddCommand( "hunkfree", Hunk_Free_f );
 	Cmd_AddCommand( "meminfo", Com_Meminfo_f );
 	Cmd_AddCommand( "zonelog", Z_LogHeap );
 	Cmd_AddCommand( "hunklog", Hunk_Log );

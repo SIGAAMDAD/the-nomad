@@ -152,6 +152,7 @@ void ApplyLighting() {
     }
 #endif
 //    a_Color.rgb = texture( u_DiffuseMap, v_TexCoords ).rgb;
+    a_Color.rgb *= u_AmbientColor;
 }
 
 void texcoords( vec2 fragCoord, vec2 resolution, out vec2 v_rgbNW, out vec2 v_rgbNE, out vec2 v_rgbSW,
@@ -326,7 +327,8 @@ void main() {
     // going on
     ivec2 texSize = textureSize( u_DiffuseMap, 0 );
     float sOffset = ( 1.0 / ( float( texSize.x ) ) * 0.75 );
-    vec2 texCoord = vec2( v_TexCoords.x + sOffset, v_TexCoords.y );
+    float tOffset = ( 1.0 / ( float( texSize.y ) ) * 0.75 );
+    vec2 texCoord = vec2( v_TexCoords.x + sOffset, v_TexCoords.y + tOffset );
 
     if ( u_AntiAliasing == AntiAlias_FXAA ) {
         vec2 fragCoord = texCoord * u_ScreenSize;
@@ -338,7 +340,7 @@ void main() {
         discard;
     }
 
-    ApplyLighting();
+//    ApplyLighting();
 
 #if defined(USE_HDR)
 #if !defined(USE_EXPOSURE_TONE_MAPPING)

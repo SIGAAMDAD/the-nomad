@@ -41,35 +41,10 @@ in vec3 v_Position;
 
 uniform sampler2D u_DiffuseMap;
 uniform float u_GammaAmount;
-uniform bool u_GamePaused;
-uniform bool u_HardwareGamma;
+//uniform bool u_GamePaused;
+//uniform bool u_HardwareGamma;
 uniform int u_AntiAliasing;
 uniform vec3 u_ViewOrigin;
-
-#if defined(USE_LIGHT)
-uniform vec3 u_AmbientColor;
-uniform float u_AmbientIntensity;
-#endif
-
-#if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
-uniform vec4 u_SpecularScale;
-uniform vec4 u_NormalScale;
-uniform int u_NumLights;
-
-struct Light {
-    vec4 color;
-    uvec2 origin;
-    float brightness;
-    float range;
-    float linear;
-    float quadratic;
-    float constant;
-    int type;
-};
-layout( std140, binding = 0 ) uniform u_LightBuffer {
-    Light u_LightData[MAX_MAP_LIGHTS];
-};
-#endif
 
 #if defined(USE_EXPOSURE_TONE_MAPPING)
 uniform float u_CameraExposure;
@@ -84,8 +59,29 @@ uniform sampler2D u_SpecularMap;
 #endif
 
 #if defined(USE_SHADOWMAP)
-uniform sampler2D u_ShadowMap;
+//uniform sampler2D u_ShadowMap;
 #endif
+
+struct Light {
+    vec4 color;
+    uvec2 origin;
+    float brightness;
+    float range;
+    float linear;
+    float quadratic;
+    float constant;
+    int type;
+};
+layout( std140, binding = 0 ) uniform u_LightBuffer {
+    Light u_LightData[MAX_MAP_LIGHTS];
+};
+
+uniform vec3 u_AmbientColor;
+//uniform vec4 u_SpecularScale;
+//uniform vec4 u_NormalScale;
+uniform int u_NumLights;
+
+//uniform Light u_LightData[MAX_MAP_LIGHTS];
 
 uniform vec2 u_ScreenSize;
 uniform float u_SharpenAmount;
@@ -174,7 +170,6 @@ vec4 applyFXAA( sampler2D tex, vec2 fragCoord, vec2 resolution ) {
 	return fxaa( tex, fragCoord, resolution, v_rgbNW, v_rgbNE, v_rgbSW, v_rgbSE, v_rgbM );
 }
 
-#if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
 //
 // CalcPointLight: don't modify, straight from Valden
 //
@@ -211,7 +206,6 @@ vec3 CalcPointLight( Light light ) {
 
     return diffuse + specular;
 }
-#endif
 
 float CalcLightAttenuation(float point, float normDist)
 {
@@ -251,16 +245,14 @@ void CalcNormal() {
 }
 
 void ApplyLighting() {
-    a_Color = texture( u_DiffuseMap, v_TexCoords );
     CalcNormal();
 #if defined(USE_SPECULARMAP)
     if ( u_NumLights == 0 ) {
         a_Color.rgb += texture( u_SpecularMap, v_TexCoords ).rgb;
     }
 #endif
-#if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
     for ( int i = 0; i < u_NumLights; i++ ) {
-        switch ( lights[i].type ) {
+        switch ( u_LightData[i].type ) {
         case POINT_LIGHT:
             a_Color.rgb += CalcPointLight( u_LightData[i] );
             break;
@@ -268,8 +260,8 @@ void ApplyLighting() {
             break;
         };
     }
-#endif
-    a_Color.rgb += texture( u_DiffuseMap, v_TexCoords ).rgb;
+//    a_Color.rgb += texture( u_DiffuseMap, v_TexCoords ).rgb;
+    a_Color.rgb *= u_AmbientColor;
 }
 
 #define sharp_clamp 0.000  //[0.000 to 1.000] Limits maximum amount of sharpening a pixel recieves - Default is 0.035
@@ -393,14 +385,21 @@ vec3 CalcFogFactor() {
 }
 
 void main() {
+    // calculate a slight x offset, otherwise we get some black line bleeding
+    // going on
+    ivec2 texSize = textureSize( u_DiffuseMap, 0 );
+    float sOffset = ( 1.0 / ( float( texSize.x ) ) * 0.75 );
+    float tOffset = ( 1.0 / ( float( texSize.y ) ) * 0.75 );
+    vec2 texCoord = vec2( v_TexCoords.x + sOffset, v_TexCoords.y + tOffset );
+
     if ( u_AntiAliasing == AntiAlias_FXAA ) {
-        vec2 fragCoord = v_TexCoords * u_ScreenSize;
+        vec2 fragCoord = texCoord * u_ScreenSize;
         a_Color = applyFXAA( u_DiffuseMap, fragCoord, u_ScreenSize );
     } else {
-        a_Color = sharpenImage( u_DiffuseMap, v_TexCoords );
+        a_Color = sharpenImage( u_DiffuseMap, texCoord );
     }
 
-    a_Color.rgb *= CalcFogFactor();
+//    a_Color.rgb *= CalcFogFactor();
 
     ApplyLighting();
 
@@ -417,15 +416,13 @@ void main() {
 	// check whether fragment output is higher than threshold, if so output as brightness color
 	float brightness = dot( a_Color.rgb, vec3( 0.2126, 0.7152, 0.0722 ) );
 	if ( brightness > 1.0 ) {
-		a_BrightColor = vec4( a_Color.rgb, 1.0 );
+        a_BrightColor = vec4( a_Color.rgb, 1.0 );
 	} else {
 		a_BrightColor = vec4( 0.0, 0.0, 0.0, 1.0 );
 	}
 #endif
-    if ( u_HardwareGamma ) {
-        a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
-    }
-    if ( u_GamePaused ) {
-        a_Color.rgb = vec3( 0.75, 0.75, 0.75 );
-    }
+    a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
+//    if ( u_GamePaused ) {
+//        a_Color.rgb = vec3( 0.75, 0.75, 0.75 );
+//    }
 }

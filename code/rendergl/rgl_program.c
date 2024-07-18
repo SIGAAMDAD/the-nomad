@@ -585,18 +585,22 @@ static int GLSL_LoadGPUShaderText(const char *name, const char *fallback, GLenum
 
 static void GLSL_ShowProgramUniforms(GLuint program)
 {
-	uint32_t        i, count, size;
+	uint32_t        i, j, count, size;
 	GLenum			type;
 	char            uniformName[1000];
 
 	// query the number of active uniforms
-	nglGetProgramiv(program, GL_ACTIVE_UNIFORMS, &count);
+	nglGetProgramiv( program, GL_ACTIVE_UNIFORMS, &count );
 
 	// Loop over each of the active uniforms, and set their value
-	for (i = 0; i < count; i++) {
-		nglGetActiveUniform(program, i, sizeof(uniformName), NULL, &size, &type, uniformName);
+	for ( i = 0; i < count; i++ ) {
+		nglGetActiveUniform( program, i, sizeof(uniformName), NULL, &size, &type, uniformName );
+        
+        if ( N_stristr( uniformName, "u_LightData" ) ) {
+            continue;
+        }
 
-//		ri.Printf(PRINT_DEVELOPER, "active uniform: '%s'\n", uniformName);
+		ri.Printf( PRINT_DEVELOPER, "active uniform: '%s'\n", uniformName );
 	}
 }
 
@@ -888,7 +892,7 @@ static void GLSL_InitUniforms( shaderProgram_t *program )
 		};
 	}
 
-	program->uniformBuffer = (char *)ri.Hunk_Alloc( uniformBufferSize, h_low );
+	program->uniformBuffer = (char *)ri.Malloc( uniformBufferSize );
 
     for ( i = 0; i < UNIFORM_COUNT; i++ ) {
         if ( uniformsInfo[i].type == GLSL_BUFFER ) {
@@ -1068,7 +1072,8 @@ void GLSL_ShaderBufferData( shaderProgram_t *shader, uint32_t uniformNum, unifor
     bufferObject = buffer ? buffer->id : 0;
     target = r_arb_shader_storage_buffer_object->i ? GL_SHADER_STORAGE_BUFFER : GL_UNIFORM_BUFFER;
 
-    if ( uniforms[ uniformNum ] == -1 ) {
+    if ( buffer->binding == -1 ) {
+        ri.Printf( PRINT_WARNING, "Bad binding for uniform buffer '%s'\n", buffer->name );
         return;
     }
 
@@ -1077,15 +1082,31 @@ void GLSL_ShaderBufferData( shaderProgram_t *shader, uint32_t uniformNum, unifor
         return;
     }
 
-    if ( glState.uboId != bufferObject ) {
-        nglBindBufferARB( target, bufferObject );
-        glState.uboId = bufferObject;
-        glState.currentUbo = buffer;
+    nglBindBuffer( GL_UNIFORM_BUFFER, buffer->id );
+
+    if ( uniformNum == UNIFORM_LIGHTDATA ) {
+        shaderLight_t data;
+        const maplight_t *light;
+        uint32_t i;
+
+        light = rg.world->lights;
+
+//        for ( i = 0; i < rg.world->numLights; i++ ) {
+//            VectorCopy4( data.color, light[i].color );
+//            data.origin[0] = light[i].origin[0];
+//            data.origin[1] = light[i].origin[1];
+//            data.brightness = light[i].brightness;
+//            data.range = light[i].range;
+//            data.constant = light[i].constant;
+//            data.linear = light[i].linear;
+//            data.quadratic = light[i].quadratic;
+//            data.type = light[i].type;
+//            nglBufferSubData( GL_UNIFORM_BUFFER, sizeof( data ) * i, sizeof( data ), &data );
+//        }
+        nglBufferSubData( GL_UNIFORM_BUFFER, 0, buffer->size, buffer->data );
     }
 
-    if ( buffer ) {
-        nglBufferSubDataARB( target, 0, buffer->size, buffer->data );
-    }
+    nglBindBuffer( GL_UNIFORM_BUFFER, 0 );
 }
 
 void GLSL_LinkUniformToShader( shaderProgram_t *program, uint32_t uniformNum, uniformBuffer_t *buffer )
@@ -1101,18 +1122,19 @@ void GLSL_LinkUniformToShader( shaderProgram_t *program, uint32_t uniformNum, un
     }
 
     GLSL_UseProgram( program );
-    nglBindBufferARB( target, buffer->id );
 
     buffer->binding = nglGetUniformBlockIndex( program->programId, uniformsInfo[ uniformNum ].name );
     if ( buffer->binding == -1 ) {
         ri.Printf( PRINT_WARNING, "GLSL_LinkUniformToShader: uniformBuffer %s not in program '%s'\n", buffer->name, program->name );
         return;
     }
-    nglUniformBlockBinding( program->programId, buffer->binding, program->numBuffers );
-    nglBindBufferRangeARB( target, 0, buffer->id, 0, buffer->size );
-    nglBindBufferBaseARB( target, 0, buffer->id );
+//    nglUniformBlockBinding( program->programId, buffer->binding, program->numBuffers );
 
-    nglBindBufferARB( target, 0 );
+    nglBindBuffer( GL_UNIFORM_BUFFER, buffer->id );
+    nglBindBufferRange( GL_UNIFORM_BUFFER, 0, buffer->id, 0, buffer->size );
+    nglBindBufferBase( GL_UNIFORM_BUFFER, 0, buffer->id );
+    nglBindBuffer( GL_UNIFORM_BUFFER, 0 );
+
     GL_CheckErrors();
     
     GLSL_UseProgram( NULL );
@@ -1135,7 +1157,7 @@ uniformBuffer_t *GLSL_InitUniformBuffer( const char *name, byte *buffer, uint64_
         ri.Error( ERR_FATAL, "GLSL_InitUniformBuffer: name '%s' too long", name );
     }
 
-    // this should happen
+    // this should never happen
     if ( rg.numUniformBuffers == MAX_UNIFORM_BUFFERS ) {
         ri.Error( ERR_FATAL, "GLSL_InitUniformBuffer: MAX_UNIFORM_BUFFERS hit" );
     }
@@ -1165,12 +1187,10 @@ uniformBuffer_t *GLSL_InitUniformBuffer( const char *name, byte *buffer, uint64_
     }
 
     // generate buffer
-    nglGenBuffersARB( 1, &buf->id );
-    nglBindBufferARB( target, buf->id );
-
-    nglBufferDataARB( target, bufSize, buffer, GL_STATIC_DRAW );
-
-    nglBindBufferARB( target, 0 );
+    nglGenBuffers( 1, &buf->id );
+    nglBindBuffer( target, buf->id );
+    nglBufferData( target, bufSize, buffer, GL_STATIC_DRAW );
+    nglBindBuffer( target, 0 );
 
     GLSL_UseProgram( NULL );
 
@@ -1244,11 +1264,11 @@ void GLSL_InitGPUShaders( void )
 
         GLSL_InitUniforms( &rg.genericShader[i] );
 
+        GLSL_FinishGPUShader( &rg.genericShader[i] );
+
         if ( !fastLight ) {
             GLSL_LinkUniformToShader( &rg.genericShader[i], UNIFORM_LIGHTDATA, rg.lightData );
         }
-
-        GLSL_FinishGPUShader( &rg.genericShader[i] );
 
         numGenShaders++;
     }
@@ -1380,12 +1400,11 @@ void GLSL_InitGPUShaders( void )
         }
 
         GLSL_InitUniforms( &rg.lightallShader[i] );
+        GLSL_FinishGPUShader( &rg.lightallShader[i] );
 
         if ( !fastLight && lightType ) {
             GLSL_LinkUniformToShader( &rg.lightallShader[i], UNIFORM_LIGHTDATA, rg.lightData );
         }
-
-        GLSL_FinishGPUShader( &rg.lightallShader[i] );
 
         numLightShaders++;
     }
@@ -1444,16 +1463,20 @@ void GLSL_InitGPUShaders( void )
     N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define MAX_MAP_LIGHTS %i\n", MAX_MAP_LIGHTS ) );
     N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define POINT_LIGHT %i\n", LIGHT_POINT ) );
     N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define DIRECTION_LIGHT %i\n", LIGHT_DIRECTIONAL ) );
-    if ( !GLSL_InitGPUShader( &rg.tileShader, "tile", attribs, qtrue, NULL, qtrue, fallbackShader_tile_vp, fallbackShader_tile_fp ) ) {
+    if ( r_normalMapping->i ) {
+        N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_NORMALMAP\n" );
+    }
+    if ( r_specularMapping->i ) {
+        N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_SPECULARMAP\n" );
+    }
+    if ( !GLSL_InitGPUShader( &rg.tileShader, "tile", attribs, qtrue, extradefines, qtrue, fallbackShader_tile_vp, fallbackShader_tile_fp ) ) {
         ri.Error( ERR_FATAL, "Could not load tile shader!" );
     }
     GLSL_InitUniforms( &rg.tileShader );
-
-    if ( !( !r_normalMapping->i || !r_specularMapping->i || !r_parallaxMapping->i ) ) {
-        GLSL_LinkUniformToShader( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData );
-    }
-
     GLSL_FinishGPUShader( &rg.tileShader );
+
+    GLSL_LinkUniformToShader( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData );
+
     numGenShaders++;
 
     attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD;

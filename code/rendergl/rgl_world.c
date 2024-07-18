@@ -239,8 +239,9 @@ static void R_ProcessLights( void )
         return;
     }
 
-    lights = (shaderLight_t *)ri.Hunk_Alloc( sizeof( *lights ) * r_worldData.numLights, h_low );
+    ri.Printf( PRINT_DEVELOPER, "Processing %u lights\n", r_worldData.numLights );
 
+    lights = (shaderLight_t *)rg.lightData->data;
     data = r_worldData.lights;
     for ( i = 0; i < r_worldData.numLights; i++ ) {
         VectorCopy4( lights[i].color, data[i].color );
@@ -253,7 +254,7 @@ static void R_ProcessLights( void )
         lights[i].type = data[i].type;
     }
 
-    memcpy( rg.lightData->data, lights, sizeof( *lights ) * r_worldData.numLights );
+//    memcpy( rg.lightData->data, lights, sizeof( *lights ) * r_worldData.numLights );
 }
 
 void RE_LoadWorldMap( const char *filename )
@@ -317,6 +318,10 @@ void RE_LoadWorldMap( const char *filename )
     r_worldData.width = mheader->mapWidth;
     r_worldData.height = mheader->mapHeight;
     r_worldData.numTiles = r_worldData.width * r_worldData.height;
+
+    ri.Printf( PRINT_INFO, "Loaded map '%s', %ix%i, ambientLightColor: ( %f, %f, %f )\n", r_worldData.name,
+        r_worldData.width, r_worldData.height, r_worldData.ambientLightColor[0], r_worldData.ambientLightColor[1],
+        r_worldData.ambientLightColor[2] );
 
     r_worldData.firstLevelShader = rg.numShaders;
     r_worldData.firstLevelSpriteSheet = rg.numSpriteSheets;

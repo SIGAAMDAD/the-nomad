@@ -140,7 +140,6 @@ static qboolean G_LoadLevelFile( const char *filename, mapinfo_t *info )
 		if ( memcmp( info->tiles[ coords[i][1] * info->width + coords[i][0] ].sides, nowall, sizeof( nowall ) ) != 0 ) {
 			VectorSet( wallBounds[i].mins, coords[i][0] * 10, coords[i][1] * 10, 0.0f );
 			VectorSet( wallBounds[i].maxs, coords[i][0] * 10 + 10, coords[i][1] * 10 + 10, 0.0f );
-			Con_Printf( "Generating wall at %ix%i\n", coords[i][0] * 10, coords[i][1] * 10 );
 		}
 	}
 	Con_Printf( "Generated %lu walls.\n", nWalls );
@@ -393,33 +392,38 @@ qboolean CGameWorld::CheckWallHit( const vec3_t origin, dirtype_t dir )
     vec3_t p;
 	ivec3_t tmp;
     VectorCopy( p, origin );
-	VectorCopy( tmp, p );
-
-	ray_t ray;
-
-	memset( &ray, 0, sizeof( ray ) );
-	VectorCopy( ray.start, origin );
-	ray.angle = Dir2Angle( dir );
-	ray.length = 2.0f;
 
 	switch ( dir ) {
 	case DIR_NORTH:
-		tmp[1]--;
+		p[1] -= 1.0f;
 		break;
 	case DIR_SOUTH:
-		tmp[1]++;
-		break;
-	case DIR_WEST:
-		tmp[0]--;
+		p[1] += 1.0f;
 		break;
 	case DIR_EAST:
-		tmp[0]++;
+		p[0] += 1.0f;
+		break;
+	case DIR_NORTH_EAST:
+		p[0] += 1.0f;
+		p[1] -= 1.0f;
+		break;
+	case DIR_NORTH_WEST:
+		p[1] -= 1.0f;
+		break;
+	case DIR_SOUTH_EAST:
+		p[0] += 1.0f;
+		p[1] += 1.0f;
+		break;
+	case DIR_SOUTH_WEST:
+		p[1] += 1.0f;
 		break;
 	};
 
-	if ( tmp[1] < 0 || tmp[0] < 0 ) {
-		return qfalse;
-	}
+	Sys_SnapVector( p );
+	VectorCopy( tmp, p );
+
+	tmp[0] = Com_Clamp( 0, m_pMapInfo->width, tmp[0] );
+	tmp[1] = Com_Clamp( 0, m_pMapInfo->height, tmp[1] );
 
 	if ( m_pMapInfo->tiles[ tmp[1] * m_pMapInfo->width + tmp[0] ].sides[ DIR_NULL ]
 		|| m_pMapInfo->tiles[ tmp[1] * m_pMapInfo->width + tmp[0] ].sides[ inversedirs[ dir ] ] )
@@ -487,9 +491,7 @@ void CGameWorld::CastRay( ray_t *ray )
 
 		Con_Printf( "Checking dir %i\n", (int)rayDir );
 
-		if ( m_pMapInfo->tiles[ (unsigned)pos[1] * m_pMapInfo->width + (unsigned)pos[0] ].sides[ rayDir ]
-			|| m_pMapInfo->tiles[ (unsigned)pos[1] * m_pMapInfo->width + (unsigned)pos[0] ].sides[ DIR_NULL ] )
-		{
+		if ( CheckWallHit( pos, Angle2Dir( angle2 ) ) ) {
 			// hit a wall
 			ray->entityNumber = ENTITYNUM_WALL;
 			break;

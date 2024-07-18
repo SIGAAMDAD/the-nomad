@@ -160,7 +160,6 @@ typedef struct {
 	int textureDetail;
 	int textureFilter;
 
-	int vertexLighting;
 	int dynamicLighting;
 	int bloom;
 	int ssao;
@@ -538,21 +537,18 @@ static void SettingsMenu_InitPresets( void ) {
 	s_settingsMenu->presets[ PRESET_LOW ].basic.multisampleType = AntiAlias_2xMSAA;
 	s_settingsMenu->presets[ PRESET_LOW ].basic.textureDetail = TexDetail_IntegratedGPU;
 	s_settingsMenu->presets[ PRESET_LOW ].basic.textureFilter = TEXFILTER_ANISOTROPY4;
-	s_settingsMenu->presets[ PRESET_LOW ].basic.vertexLighting = qtrue;
 	s_settingsMenu->presets[ PRESET_LOW ].basic.dynamicLighting = qfalse;
 	s_settingsMenu->presets[ PRESET_LOW ].basic.bloom = qfalse;
 
 	s_settingsMenu->presets[ PRESET_NORMAL ].basic.multisampleType = AntiAlias_4xMSAA;
 	s_settingsMenu->presets[ PRESET_NORMAL ].basic.textureDetail = TexDetail_Normie;
 	s_settingsMenu->presets[ PRESET_NORMAL ].basic.textureFilter = TEXFILTER_ANISOTROPY2;
-	s_settingsMenu->presets[ PRESET_NORMAL ].basic.vertexLighting = qtrue;
-	s_settingsMenu->presets[ PRESET_NORMAL ].basic.dynamicLighting = qfalse;
+	s_settingsMenu->presets[ PRESET_NORMAL ].basic.dynamicLighting = qtrue;
 	s_settingsMenu->presets[ PRESET_NORMAL ].basic.bloom = qtrue;
 
 	s_settingsMenu->presets[ PRESET_HIGH ].basic.multisampleType = AntiAlias_16xMSAA;
 	s_settingsMenu->presets[ PRESET_HIGH ].basic.textureDetail = TexDetail_ExpensiveShitWeveGotHere;
 	s_settingsMenu->presets[ PRESET_HIGH ].basic.textureFilter = TEXFILTER_ANISOTROPY16;
-	s_settingsMenu->presets[ PRESET_HIGH ].basic.vertexLighting = qtrue;
 	s_settingsMenu->presets[ PRESET_HIGH ].basic.dynamicLighting = qtrue;
 	s_settingsMenu->presets[ PRESET_HIGH ].basic.bloom = qtrue;
 
@@ -560,15 +556,13 @@ static void SettingsMenu_InitPresets( void ) {
 	s_settingsMenu->presets[ PRESET_QUALITY ].basic.multisampleType = AntiAlias_32xMSAA;
 	s_settingsMenu->presets[ PRESET_QUALITY ].basic.textureDetail = TexDetail_GPUvsGod;
 	s_settingsMenu->presets[ PRESET_QUALITY ].basic.textureFilter = TEXFILTER_ANISOTROPY32;
-	s_settingsMenu->presets[ PRESET_QUALITY ].basic.vertexLighting = qtrue;
 	s_settingsMenu->presets[ PRESET_QUALITY ].basic.dynamicLighting = qtrue;
 	s_settingsMenu->presets[ PRESET_QUALITY ].basic.bloom = qtrue;
 	
-	// looks the worst but gets the best framerate
+	// looks the worst but gets the best framerate and much less memory consumption
 	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.multisampleType = AntiAlias_None;
 	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.textureDetail = TexDetail_MSDOS;
 	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.textureFilter = TEXFILTER_ANISOTROPY2;
-	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.vertexLighting = qfalse;
 	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.dynamicLighting = qfalse;
 	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.bloom = qfalse;
 }
@@ -578,7 +572,6 @@ static void SettingsMenu_SetPreset( const preset_t *preset )
 	s_settingsMenu->performance.multisampleType = preset->basic.multisampleType;
 	s_settingsMenu->performance.textureDetail = preset->basic.textureDetail;
 	s_settingsMenu->performance.textureFilter = preset->basic.textureFilter;
-	s_settingsMenu->performance.vertexLighting = preset->basic.vertexLighting;
 	s_settingsMenu->performance.dynamicLighting = preset->basic.dynamicLighting;
 	s_settingsMenu->performance.bloom = preset->basic.bloom;
 }
@@ -1265,13 +1258,6 @@ static void PerformanceMenu_DrawBasic( void )
 	
 	ImGui::TableNextRow();
 
-	SettingsMenu_MultiAdjustable( "VERTEX LIGHTING", "VertexLighting",
-		"Enables per-vertex software lighting",
-		s_settingsMenu->performance.onoff, 2,
-		&s_settingsMenu->performance.vertexLighting, true );
-		
-	ImGui::TableNextRow();
-
 	SettingsMenu_MultiAdjustable( "DYNAMIC LIGHTING", "DynamicLighting",
 		"Enables per-pixel hardware accelerated lighting, slower than vertex lighting, but much higher quality",
 		s_settingsMenu->performance.onoff, 2,
@@ -1388,12 +1374,6 @@ static void PerformanceMenu_DrawAdvanced( void )
 	}
 	if ( ImGui::CollapsingHeader( "Lighting" ) ) {
 		ImGui::BeginTable( "##PerformanceSettingsMenuConfigTableLighting", 2 );
-
-		SettingsMenu_MultiAdjustable( "VERTEX LIGHTING", "VertexLighting",
-			"Enables per-vertex software lighting", s_settingsMenu->performance.onoff, 2,
-			&s_settingsMenu->performance.vertexLighting, true );
-
-		ImGui::TableNextRow();
 
 		SettingsMenu_MultiAdjustable( "DYNAMIC LIGHTING", "DynamicLighting",
 			"Enables per-pixel hardware accelerated lighting, slower than vertex lighting, but much higher quality",
@@ -1643,7 +1623,16 @@ static void VideoMenu_Save( void )
 		? SDL_WINDOW_FULLSCREEN_DESKTOP : 0 );
 	SDL_SetWindowSize( SDL_window, r_vidModes[ s_settingsMenu->video.windowResolution - 2 ].width,
 		r_vidModes[ s_settingsMenu->video.windowResolution - 2 ].height );
-	SDL_SetWindowBordered( SDL_window, (SDL_bool)( s_settingsMenu->video.windowMode % 2 != 0 ) );
+	switch ( s_settingsMenu->video.windowMode ) {
+	case WINDOWMODE_BORDERLESS_FULLSCREEN:
+	case WINDOWMODE_BORDERLESS_WINDOWED:
+		SDL_SetWindowBordered( SDL_window, SDL_TRUE );
+		break;
+	case WINDOWMODE_WINDOWED:
+	case WINDOWMODE_FULLSCREEN:
+		SDL_SetWindowBordered( SDL_window, SDL_FALSE );
+		break;
+	};
 //	SDL_SetWindowPosition( SDL_window, vid_xpos->i, vid_ypos->i );
 }
 
@@ -1742,6 +1731,7 @@ static void PerformanceMenu_Save( void )
 			s_settingsMenu->advancedPerformance.postProcessing = qtrue;
 		}
 
+/*
 		switch ( s_settingsMenu->performance.textureFilter ) {
 		case TEXFILTER_ANISOTROPY2:
 			s_settingsMenu->advancedPerformance.anisotropicFilter = 0;
@@ -1759,6 +1749,7 @@ static void PerformanceMenu_Save( void )
 			s_settingsMenu->advancedPerformance.anisotropicFilter = 4;
 			break;
 		};
+*/
 	}
 
 	if ( s_settingsMenu->advancedPerformance.normalMapping != s_initial->advancedPerformance.normalMapping ) {
@@ -1855,12 +1846,10 @@ static void PerformanceMenu_Save( void )
 	};
 
 	Cvar_Set( "r_textureMode", s_settingsMenu->performance.textureFilters[ s_settingsMenu->performance.textureFilter ] );
-	Cvar_SetIntegerValue( "r_vertexLight", s_settingsMenu->performance.vertexLighting );
 	Cvar_SetIntegerValue( "r_dynamiclight", s_settingsMenu->performance.dynamicLighting );
 	Cvar_SetIntegerValue( "r_textureDetail", s_settingsMenu->performance.textureDetail );
 	Cvar_SetIntegerValue( "r_normalMapping", s_settingsMenu->advancedPerformance.normalMapping );
 	Cvar_SetIntegerValue( "r_pbr", s_settingsMenu->advancedPerformance.pbr );
-	Cvar_SetIntegerValue( "r_vertexLight", s_settingsMenu->performance.vertexLighting );
 	Cvar_SetIntegerValue( "r_dynamiclight", s_settingsMenu->performance.dynamicLighting );
 
 	if ( !PerformanceMenu_FBO_Save() && needRestart ) {
@@ -1938,7 +1927,6 @@ static void PerformanceMenu_SetDefault( void )
 	};
 
 	s_settingsMenu->performance.dynamicLighting = Cvar_VariableInteger( "r_dynamiclight" );
-	s_settingsMenu->performance.vertexLighting = Cvar_VariableInteger( "r_vertexLight" );
 	s_settingsMenu->performance.multisampleType = Cvar_VariableInteger( "r_multisampleType" );
 	s_settingsMenu->performance.ssao = Cvar_VariableInteger( "r_ssao" );
 	s_settingsMenu->advancedPerformance.depthMapping = Cvar_VariableInteger( "r_parallaxMapping" );

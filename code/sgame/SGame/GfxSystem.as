@@ -11,6 +11,10 @@ namespace TheNomad::SGame {
 		void OnShutdown() {
 		}
 
+		TheNomad::Engine::Renderer::PolyVert[]@ GetVerts() {
+			return @m_DrawVerts;
+		}
+
 		void OnLoad() {
 		}
 		void OnSave() const {
@@ -106,38 +110,31 @@ namespace TheNomad::SGame {
 		//
 		// GfxSystem::Bleed: this is a spurt of blood when an entity gets hit
 		//
-		void Bleed( const vec3& in origin ) {
-			TheNomad::Engine::Renderer::LocalEntity@ ent;
-			uint numGfx = 0;
+		TheNomad::Engine::Renderer::LocalEntity@ Bleed( const vec3& in origin ) {
+			TheNomad::Engine::Renderer::LocalEntity@ ent = null;
 
 			if ( sgame_Blood.GetInt() == 0 ) {
-				return;
+				return null;
 			}
 
-			numGfx = ( Util::PRandom() & 15 ) + 1;
+			float x, y;
+			const uint randX = Util::PRandom();
+			const uint randY = Util::PRandom();
 
-			for ( uint i = 0; i < numGfx; i++ ) {
-				float x, y;
-				const uint randX = Util::PRandom();
-				const uint randY = Util::PRandom();
+			@ent = AllocLocalEntity();
 
-				@ent = AllocLocalEntity();
+			x = origin.x - ( 1.25f / ( randX == 0 ? 1 : randX ) );
+			y = origin.y - ( 1.25f / ( randY == 0 ? 1 : randY ) );
 
-				if ( ( i % 2 ) == 0 ) {
-					x = origin.x + ( 1.25f / ( randX == 0 ? 1 : randX ) );
-				} else {
-					x = origin.x - ( 1.25f / ( randX == 0 ? 1 : randX ) );
-				}
-				y = origin.y - ( 1.25f / ( randY == 0 ? 1 : randY ) );
+			ent.m_nStartTime = TheNomad::GameSystem::GameManager.GetGameTic();
+			ent.m_nLifeTime = 1000;
+			ent.m_Velocity = vec3( 0.05f, -0.03f, 0.0f );
 
-				ent.m_nStartTime = TheNomad::GameSystem::GameManager.GetGameTic();
-				ent.m_nLifeTime = 1000;
-				ent.m_Velocity = vec3( 0.05f, -0.03f, 0.0f );
+			ent.m_Origin = vec3( x, y - 0.2f, 0.0f );
+			ent.m_hShader = TheNomad::Engine::ResourceCache.GetShader( "gfx/bloodSplatter0" );
+			ent.m_bGravity = true;
 
-				ent.m_Origin = vec3( x, y, origin.z );
-				ent.m_hShader = TheNomad::Engine::ResourceCache.GetShader( "gfx/bloodSplatter0" );
-				ent.m_bGravity = true;
-			}
+			return @ent;
 		}
 
 		void SmokePuff( const vec3& in origin, const vec3& in vel ) {
@@ -170,6 +167,10 @@ namespace TheNomad::SGame {
 		private array<TheNomad::Engine::Renderer::LocalEntity> m_LocalEnts;
 		private TheNomad::Engine::Renderer::LocalEntity m_ActiveLocalEnts;
 		private TheNomad::Engine::Renderer::LocalEntity@ m_FreeLocalEnts = null;
+
+		// a single pre-allocated array of polys cuz angelscript won't let me use
+		// stack allocated arrays
+		private TheNomad::Engine::Renderer::PolyVert[] m_DrawVerts( 4 );
 
 		private bool m_bAllowGfx = true;
 	};

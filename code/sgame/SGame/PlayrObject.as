@@ -3,6 +3,8 @@
 #include "SGame/PlayerSystem/PlayerSystem.as"
 
 namespace TheNomad::SGame {
+	const float HEAL_MULT_BASE = 0.001f;
+
 	const uint[] sgame_WeaponModeList = {
 		uint( InfoSystem::WeaponProperty::OneHandedBlade | InfoSystem::WeaponProperty::TwoHandedBlade ),
 		uint( InfoSystem::WeaponProperty::OneHandedBlunt | InfoSystem::WeaponProperty::TwoHandedBlunt ),
@@ -41,6 +43,10 @@ namespace TheNomad::SGame {
 			}
 		}
 		*/
+
+		bool opCmp( const PlayrObject& in other ) const {
+			return @this == @other;
+		}
 		
 		void SwitchWeaponWielding( InfoSystem::WeaponProperty& in hand, InfoSystem::WeaponProperty& in otherHand,
 			WeaponObject@ weapon, WeaponObject@ other )
@@ -434,14 +440,16 @@ namespace TheNomad::SGame {
 			}
 
 			if ( m_nHealth < 100.0f ) {
-				m_nHealth += m_nHealMult * sgame_PlayerHealBase.GetFloat();
-				m_nHealMult -= m_nHealMultDecay;
+				m_nHealth += m_nHealMult;
 
+				if ( m_nHealMult > HEAL_MULT_BASE ) {
+					m_nHealMult -= m_nHealMultDecay;
+					if ( m_nHealMult < HEAL_MULT_BASE ) {
+						m_nHealMult = HEAL_MULT_BASE;
+					}
+				}
 				if ( m_nHealth > 100.0f ) {
 					m_nHealth = 100.0f;
-				}
-				if ( m_nHealMult < 0.0f ) {
-					m_nHealMult = 0.0f;
 				}
 			}
 
@@ -641,7 +649,6 @@ namespace TheNomad::SGame {
 			m_nHealth = 100.0f;
 			m_nRage = 100.0f;
 			m_Direction = Util::Angle2Dir( m_PhysicsObject.GetAngle() );
-			m_nHealMult = 0.0f;
 			m_nHealMultDecay = LevelManager.GetDifficultyScale();
 
 			CacheGfx();
@@ -688,6 +695,8 @@ namespace TheNomad::SGame {
 				GameError( "PlayrObject::Spawn: failed to load idle arm state" );
 			}
 			m_ArmsFacing = FACING_RIGHT;
+
+//			@GoreManager = cast<GoreSystem>( @TheNomad::GameSystem::AddSystem( GoreSystem() ) );
 		}
 
 		uint GetSpriteId( SpriteSheet@ sheet, EntityState@ state ) const {
@@ -867,8 +876,8 @@ namespace TheNomad::SGame {
 		private float m_nDamageMult = 0.0f;
 		private float m_nRage = 0.0f;
 
-		private float m_nHealMult = 0.0f;
-		private float m_nHealMultDecay = 1.0f;
+		private float m_nHealMult = HEAL_MULT_BASE;
+		private float m_nHealMultDecay = HEAL_MULT_BASE;
 		
 		private SpriteSheet@[] m_ArmSpriteSheet( NUMFACING );
 		private EntityState@ m_ArmState = null;

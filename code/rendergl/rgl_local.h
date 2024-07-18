@@ -531,7 +531,7 @@ typedef struct {
 } vertexAttrib_t;
 
 typedef struct {
-    char name[MAX_GDR_PATH];
+    char name[MAX_NPATH];
 
     uint32_t vaoId;
     bufferType_t type;
@@ -958,10 +958,12 @@ typedef struct {
 } viewData_t;
 
 typedef struct {
-    char baseName[MAX_GDR_PATH];
-    char name[MAX_GDR_PATH];
+    char baseName[MAX_NPATH];
+    char name[MAX_NPATH];
 
     vec3_t ambientLightColor;
+
+    qboolean drawing;
 
     uint32_t levelTextures;
     uint32_t levelShaders;

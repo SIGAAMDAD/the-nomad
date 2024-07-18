@@ -1026,7 +1026,7 @@ static void R_Register( void )
     ri.Cvar_CheckRange( r_mappedBuffers, "0", "1", CVT_INT );
     ri.Cvar_SetDescription( r_mappedBuffers, "Toggles whether or not vertex and index buffer data is mapped into cpu memory." );
 
-    r_vertexLight = ri.Cvar_Get( "r_vertexLight", "0", CVAR_SAVE | CVAR_LATCH );
+    r_vertexLight = ri.Cvar_Get( "r_vertexLight", "0", CVAR_SAVE | CVAR_DEV );
 	ri.Cvar_SetDescription( r_vertexLight, "Set to 1 to use vertex light instead of lightmaps, collapse all multi-stage shaders into single-stage ones, might cause rendering artifacts." );
     
 

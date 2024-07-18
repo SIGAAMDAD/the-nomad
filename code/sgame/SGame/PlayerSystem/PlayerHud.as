@@ -76,7 +76,18 @@ namespace TheNomad::SGame {
 			ImGui::PushStyleColor( ImGuiCol::FrameBgHovered, healthColor );
 
 			ImGui::SetWindowFontScale( 2.0f * scale );
-			ImGui::DragFloat( "HEALTH", health );
+
+			ImGui::PushStyleColor( ImGuiCol::Text, vec4( 0.0f ) );
+			ImGui::DragFloat( "HEALTH", 0.0f );
+			ImGui::PopStyleColor();
+
+			ImGui::SameLine( 16 * scale );
+
+			ImGui::Text( formatFloat( health, "%.4f" ) );
+
+			ImGui::SameLine( 256 * scale );
+			ImGui::Text( "HEALTH" );
+
 			ImGui::SetWindowFontScale( 1.0f );
 
 			ImGui::PopStyleColor( 3 );
@@ -94,7 +105,18 @@ namespace TheNomad::SGame {
 			ImGui::PushStyleColor( ImGuiCol::FrameBgHovered, vec4( 1.0f, 0.0f, 0.0f, 1.0f ) );
 
 			ImGui::SetWindowFontScale( 2.0f * scale );
-			ImGui::DragFloat( "RAGE", rage );
+
+			ImGui::PushStyleColor( ImGuiCol::Text, vec4( 0.0f ) );
+			ImGui::DragFloat( "RAGE", 0.0f );
+			ImGui::PopStyleColor();
+
+			ImGui::SameLine( 16 * scale );
+
+			ImGui::Text( formatFloat( rage, "%.4f" ) );
+
+			ImGui::SameLine( 256 * scale );
+			ImGui::Text( "RAGE" );
+
 			ImGui::SetWindowFontScale( 1.0f );
 
 			ImGui::PopStyleColor( 3 );

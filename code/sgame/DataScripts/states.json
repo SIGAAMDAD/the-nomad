@@ -128,7 +128,7 @@
         },
         {
             "Id": "player_arms_move",
-            "Tics": "200",
+            "Tics": "100",
             "BaseNum": "ST_PLAYR_ARMS_MOVE",
             "Entity": "player",
             "NextState": "player_arms_idle",
@@ -142,7 +142,7 @@
         },
         {
             "Id": "player_arms_melee",
-            "Tics": "700",
+            "Tics": "1000",
             "BaseNum": "ST_PLAYR_ARMS_MELEE",
             "Entity": "player",
             "NextState": "player_arms_idle",

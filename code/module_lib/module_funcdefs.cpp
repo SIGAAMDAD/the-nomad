@@ -35,6 +35,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "module_engine/module_bbox.h"
 #include "module_engine/module_linkentity.h"
 #include "module_engine/module_polyvert.h"
+#include "module_engine/module_polyquad.h"
 #include "module_engine/module_raycast.h"
 #include "../system/sys_timer.h"
 #include "scriptlib/scriptjson.h"
@@ -820,13 +821,43 @@ static void SysMilliseconds( asIScriptGeneric *pGeneric ) {
     pGeneric->SetReturnQWord( Sys_Milliseconds() );
 }
 
+static void ScriptPolyQuad_Construct( asIScriptGeneric *pGeneric ) {
+    new ( pGeneric->GetAddressOfReturnLocation() ) CModulePolyQuad();
+}
+
+static void ScriptPolyQuad_CopyConstruct( asIScriptGeneric *pGeneric ) {
+    CModulePolyQuad *obj = (CModulePolyQuad *)pGeneric->GetObjectData();
+    const CModulePolyQuad *other = (CModulePolyQuad *)pGeneric->GetArgObject( 0 );
+
+    new ( obj ) CModulePolyQuad( *other );
+    pGeneric->SetReturnAddress( obj );
+}
+
+static void ScriptPolyQuad_Destruct( asIScriptGeneric *pGeneric ) {
+    ( (CModulePolyQuad *)pGeneric->GetObjectData() )->~CModulePolyQuad();
+}
+
+static void ScriptPolyQuad_OpAssign( asIScriptGeneric *pGeneric ) {
+    CModulePolyQuad *obj = (CModulePolyQuad *)pGeneric->GetObjectData();
+    const CModulePolyQuad *other = (CModulePolyQuad *)pGeneric->GetArgObject( 0 );
+
+    new ( obj ) CModulePolyQuad( *other );
+    pGeneric->SetReturnAddress( obj );
+}
+
+static void ScriptPolyQuad_OpIndex( asIScriptGeneric *pGeneric ) {
+    CModulePolyQuad *obj = (CModulePolyQuad *)pGeneric->GetObjectData();
+    const int index = pGeneric->GetArgDWord( 0 );
+
+    pGeneric->SetReturnAddress( &obj->Get( index ) );
+}
+
 static void LoadWorld( asIScriptGeneric *pGeneric ) {
     const string_t *npath = (const string_t *)pGeneric->GetArgObject( 0 );
     re.LoadWorld( npath->c_str() );
 }
 
 static void ClearScene( asIScriptGeneric *pGeneric ) {
-    CThreadAutoLock<CThreadMutex> lock( g_hRenderLock );
     re.ClearScene();
 }
 
@@ -842,7 +873,6 @@ DEFINE_CALLBACK( RenderScene ) {
     refdef.flags = pGeneric->GetArgDWord( 4 );
     refdef.time = pGeneric->GetArgDWord( 5 );
 
-    CThreadAutoLock<CThreadMutex> lock( g_hRenderLock );
     re.RenderScene( &refdef );
 }
 
@@ -877,17 +907,70 @@ static void AddEntityToScene( asIScriptGeneric *pGeneric ) {
     refEntity.scale = scale;
     refEntity.shaderTime.f = shaderTime;
 
-    CThreadAutoLock<CThreadMutex> lock( g_hRenderLock );
     re.AddEntityToScene( &refEntity );
 }
 
+static void AddLineToScene( asIScriptGeneric *pGeneric ) {
+    nhandle_t hShader = (nhandle_t)pGeneric->GetArgDWord( 0 );
+    const CModulePolyQuad *quad = (const CModulePolyQuad *)pGeneric->GetArgObject( 1 );
+
+    polyVert_t *verts;
+    const CModulePolyVert *vtx;
+    int numVerts, i;
+
+    numVerts = 2;
+    vtx = &quad->Get( 0 );
+    verts = (polyVert_t *)alloca( sizeof( *verts ) * numVerts );
+    for ( i = 0; i < numVerts; i++ ) {
+        VectorCopy( verts[i].xyz, vtx[i].m_Origin );
+        VectorCopy( verts[i].worldPos, vtx[i].m_WorldPos );
+        VectorCopy2( verts[i].uv, vtx[i].m_TexCoords );
+        verts[i].modulate = vtx[i].m_Color;
+    }
+
+    re.AddPolyToScene( hShader, verts, numVerts );
+}
+
+static void AddQuadToScene( asIScriptGeneric *pGeneric ) {
+    nhandle_t hShader = (nhandle_t)pGeneric->GetArgDWord( 0 );
+    const CModulePolyQuad *quad = (const CModulePolyQuad *)pGeneric->GetArgObject( 1 );
+
+    polyVert_t *verts;
+    const CModulePolyVert *vtx;
+    int numVerts, i;
+
+    numVerts = quad->Count();
+    vtx = &quad->Get( 0 );
+    verts = (polyVert_t *)alloca( sizeof( *verts ) * numVerts );
+    for ( i = 0; i < numVerts; i++ ) {
+        VectorCopy( verts[i].xyz, vtx[i].m_Origin );
+        VectorCopy( verts[i].worldPos, vtx[i].m_WorldPos );
+        VectorCopy2( verts[i].uv, vtx[i].m_TexCoords );
+        verts[i].modulate = vtx[i].m_Color;
+    }
+
+    re.AddPolyToScene( hShader, verts, numVerts );
+}
+
 static void AddPolyToScene( nhandle_t hShader, const CScriptArray *pPolyList ) {
-    CThreadAutoLock<CThreadMutex> lock( g_hRenderLock );
-    re.AddPolyToScene( hShader, (const polyVert_t *)pPolyList->GetBuffer(), pPolyList->GetSize() );
+    polyVert_t *verts;
+    const CModulePolyVert *vtx;
+    int numVerts, i;
+
+    numVerts = pPolyList->GetSize();
+    vtx = (const CModulePolyVert *)pPolyList->GetBuffer();
+    verts = (polyVert_t *)alloca( sizeof( *verts ) * numVerts );
+    for ( i = 0; i < numVerts; i++ ) {
+        VectorCopy( verts[i].xyz, vtx[i].m_Origin );
+        VectorCopy( verts[i].worldPos, vtx[i].m_WorldPos );
+        VectorCopy2( verts[i].uv, vtx[i].m_TexCoords );
+        verts[i].modulate = vtx[i].m_Color;
+    }
+
+    re.AddPolyToScene( hShader, verts, numVerts );
 }
 
 static void AddSpriteToScene( asIScriptGeneric *pGeneric ) {
-    CThreadAutoLock<CThreadMutex> lock( g_hRenderLock );
 
     const vec3& origin = *(const vec3 *)pGeneric->GetArgObject( 0 );
     const nhandle_t hShader = (nhandle_t)pGeneric->GetArgDWord( 1 );
@@ -2567,7 +2650,7 @@ void ModuleLib_Register_Engine( void )
                 "TheNomad::Engine::Renderer::GPUConfig", "uint32 screenHeight", offsetof( CModuleGPUConfig, gpuConfig ), offsetof( gpuConfig_t, vidHeight ) ) );
             CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterObjectProperty(
                 "TheNomad::Engine::Renderer::GPUConfig", "bool isFullscreen", offsetof( CModuleGPUConfig, gpuConfig ), offsetof( gpuConfig_t, isFullscreen ) ) );
-
+            
             REGISTER_OBJECT_TYPE( "PolyVert", CModulePolyVert, asOBJ_VALUE );
 
             REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Engine::Renderer::PolyVert", asBEHAVE_CONSTRUCT, "void f()", WRAP_CON( CModulePolyVert, ( void ) ) );
@@ -2589,11 +2672,29 @@ void ModuleLib_Register_Engine( void )
             REGISTER_OBJECT_PROPERTY( "TheNomad::Engine::Renderer::PolyVert", "vec2 uv", offsetof( CModulePolyVert, m_TexCoords ) );
             REGISTER_OBJECT_PROPERTY( "TheNomad::Engine::Renderer::PolyVert", "uint32 color", offsetof( CModulePolyVert, m_Color ) );
 
+            REGISTER_OBJECT_TYPE( "PolyQuad", CModulePolyQuad, asOBJ_VALUE );
+            
+            REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Engine::Renderer::PolyQuad", asBEHAVE_CONSTRUCT, "void f()", asFUNCTION( ScriptPolyQuad_Construct ) );
+            REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Engine::Renderer::PolyQuad", asBEHAVE_CONSTRUCT, "void f( const TheNomad::Engine::Renderer::PolyQuad& in )", asFUNCTION( ScriptPolyQuad_CopyConstruct ) );
+            REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Engine::Renderer::PolyQuad", asBEHAVE_DESTRUCT, "void f()", asFUNCTION( ScriptPolyQuad_Destruct ) );
+
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod(
+                "TheNomad::Engine::Renderer::PolyQuad", "TheNomad::Engine::Renderer::PolyQuad& opAssign()",
+                asFUNCTION( ScriptPolyQuad_OpAssign ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod(
+                "TheNomad::Engine::Renderer::PolyQuad", "TheNomad::Engine::Renderer::PolyVert& opIndex( int )",
+                asFUNCTION( ScriptPolyQuad_OpIndex ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod(
+                "TheNomad::Engine::Renderer::PolyQuad", "const TheNomad::Engine::Renderer::PolyVert& opIndex( int ) const",
+                asFUNCTION( ScriptPolyQuad_OpIndex ), asCALL_GENERIC );
+
             REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::ClearScene()", asFUNCTION( ClearScene ) );
             g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::Renderer::RenderScene( uint, uint, uint, uint, uint, uint )", asFUNCTION( ModuleLib_RenderScene ), asCALL_GENERIC );
             g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::Renderer::AddEntityToScene( int, int, int, const vec3& in, const vec3& in, uint64,"
                 " uint32, uint32, const vec2& in, float, float, float, float )",
                 asFUNCTION( AddEntityToScene ), asCALL_GENERIC );
+            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddQuadToScene( int, const TheNomad::Engine::Renderer::PolyQuad& in )", asFUNCTION( AddQuadToScene ) );
+            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddLineToScene( int, const TheNomad::Engine::Renderer::PolyQuad& in )", asFUNCTION( AddLineToScene ) );
             REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddPolyToScene( int, const TheNomad::Engine::Renderer::PolyVert[]& in )", WRAP_FN_PR( AddPolyToScene, ( nhandle_t, const CScriptArray * ), void ) );
             REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddSpriteToScene( const vec3& in, int )", asFUNCTION( AddSpriteToScene ) );
             REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::Renderer::RegisterShader( const string& in )", asFUNCTION( RegisterShader ) );

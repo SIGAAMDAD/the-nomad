@@ -119,7 +119,7 @@ void RE_AddDynamicLightToScene( const vec3_t origin, float brightness, const vec
     if ( !rg.registered ) {
         return;
     }
-    if ( r_numDLights >= r_maxDLights->i ) {
+    if ( r_numDLights >= r_maxDLights->i || !r_dynamiclight->i ) {
         return;
     }
     if ( brightness <= 0.0f ) {
@@ -179,6 +179,11 @@ void RE_AddEntityToScene( const renderEntityRef_t *ent )
     backendData->entities[ r_numEntities ].e = *ent;
 
     r_numEntities++;
+}
+
+void RE_ProcessDLights( void )
+{
+    
 }
 
 void RE_ProcessEntities( void )

@@ -298,6 +298,7 @@ void R_DrawWorld( void )
     RB_SetBatchBuffer( rg.world->buffer, rg.world->vertices, sizeof( drawVert_t ), rg.world->indices, sizeof( glIndex_t ) );
 
     backend.drawBatch.shader = rg.world->shader;
+    rg.world->drawing = qtrue;
 
     vtx = rg.world->vertices;
 
@@ -362,6 +363,7 @@ void R_DrawWorld( void )
 
     // flush it we have anything left in there
     RB_FlushBatchBuffer();
+    rg.world->drawing = qfalse;
 }
 
 void R_RenderView( const viewData_t *parms )

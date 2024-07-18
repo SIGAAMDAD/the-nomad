@@ -513,7 +513,7 @@ void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, con
 
 void RB_IterateShaderStages( shader_t *shader )
 {
-    uint32_t i;
+    uint32_t i, j;
 	int deformGen;
 	float deformParams[5];
 	uint32_t numLights;
@@ -543,52 +543,53 @@ void RB_IterateShaderStages( shader_t *shader )
             break;
 		}
 
-		if ( backend.depthFill ) {
-			if ( stageP->glslShaderGroup == rg.lightallShader ) {
-				int index = 0;
+		if ( rg.world && rg.world->drawing ) {
+			sp = &rg.tileShader;
+		}
+		else {
+			if ( backend.depthFill ) {
+				if ( stageP->glslShaderGroup == rg.lightallShader ) {
+					int index = 0;
 
-				if ( stageP->stateBits & GLS_ATEST_BITS ) {
-					index |= LIGHTDEF_USE_TCGEN_AND_TCMOD;
+					if ( stageP->stateBits & GLS_ATEST_BITS ) {
+						index |= LIGHTDEF_USE_TCGEN_AND_TCMOD;
+					}
+
+					sp = &stageP->glslShaderGroup[ index ];
+				} else {
+					int shaderAttribs = 0;
+
+					if ( backend.drawBatch.shader->numDeforms && !ShaderRequiresCPUDeforms( backend.drawBatch.shader ) ) {
+						shaderAttribs |= GENERICDEF_USE_DEFORM_VERTEXES;
+					}
+					if ( stageP->stateBits ) {
+						shaderAttribs |= GENERICDEF_USE_TCGEN_AND_TCMOD;
+					}
+
+					sp = &rg.genericShader[ shaderAttribs ];
+				}
+			}
+			else if ( stageP->glslShaderGroup == rg.lightallShader ) {
+				int index = stageP->glslShaderIndex;
+
+				if ( r_sunlightMode->i && ( glState.viewData.flags & RSF_USE_SUNLIGHT ) && ( index & LIGHTDEF_LIGHTTYPE_MASK ) ) {
+					index |= LIGHTDEF_USE_SHADOWMAP;
+				}
+
+				if ( r_lightmap->i && ( ( index & LIGHTDEF_LIGHTTYPE_MASK ) == LIGHTDEF_USE_LIGHTMAP ) ) {
+					index = LIGHTDEF_USE_TCGEN_AND_TCMOD;
 				}
 
 				sp = &stageP->glslShaderGroup[ index ];
-			} else {
-				int shaderAttribs = 0;
-
-				if ( backend.drawBatch.shader->numDeforms && !ShaderRequiresCPUDeforms( backend.drawBatch.shader ) ) {
-					shaderAttribs |= GENERICDEF_USE_DEFORM_VERTEXES;
-				}
-				if ( stageP->stateBits ) {
-					shaderAttribs |= GENERICDEF_USE_TCGEN_AND_TCMOD;
-				}
-
-				sp = &rg.genericShader[ shaderAttribs ];
+				backend.pc.c_lightallDraws++;
 			}
-		}
-		else if ( stageP->glslShaderGroup == rg.lightallShader ) {
-			int index = stageP->glslShaderIndex;
-
-			if ( r_sunlightMode->i && ( glState.viewData.flags & RSF_USE_SUNLIGHT ) && ( index & LIGHTDEF_LIGHTTYPE_MASK ) ) {
-				index |= LIGHTDEF_USE_SHADOWMAP;
+			else {
+				sp = GLSL_GetGenericShaderProgram( i );
+				backend.pc.c_genericDraws++;
 			}
-
-			if ( r_lightmap->i && ( ( index & LIGHTDEF_LIGHTTYPE_MASK ) == LIGHTDEF_USE_LIGHTMAP ) ) {
-				index = LIGHTDEF_USE_TCGEN_AND_TCMOD;
-			}
-
-			sp = &stageP->glslShaderGroup[ index ];
-			backend.pc.c_lightallDraws++;
-		}
-		else {
-			sp = GLSL_GetGenericShaderProgram( i );
-			backend.pc.c_genericDraws++;
 		}
 
         GLSL_UseProgram( sp );
-
-		if ( rg.world && rg.world->numLights ) {
-			GLSL_ShaderBufferData( sp, UNIFORM_LIGHTDATA, rg.lightData );
-		}
 
 		GLSL_SetUniformInt( sp, UNIFORM_NUM_LIGHTS, numLights );
         GLSL_SetUniformMatrix4( sp, UNIFORM_MODELVIEWPROJECTION, glState.viewData.camera.viewProjectionMatrix );
@@ -684,7 +685,7 @@ void RB_IterateShaderStages( shader_t *shader )
 					GLSL_SetUniformFloat( sp, UNIFORM_EXPOSURE, r_autoExposure->f );
 				}
 
-				if ( stageP->bundle[0].image[0] ) {
+				if ( stageP->bundle[0].image[TB_NORMALMAP] ) {
 					GL_BindTexture( 1, stageP->bundle[0].image[TB_NORMALMAP] );
 					GLSL_SetUniformInt( sp, UNIFORM_NORMAL_MAP, 1 );
 				} else if ( r_normalMapping->i ) {
@@ -692,7 +693,7 @@ void RB_IterateShaderStages( shader_t *shader )
 					GLSL_SetUniformInt( sp, UNIFORM_NORMAL_MAP, 1 );
 				}
 
-				if ( stageP->bundle[0].image[0] ) {
+				if ( stageP->bundle[0].image[TB_SPECULARMAP] ) {
 					GL_BindTexture( 2, stageP->bundle[0].image[TB_SPECULARMAP] );
 					GLSL_SetUniformInt( sp, UNIFORM_SPECULAR_MAP, 2 );
 				} else if ( r_specularMapping->i ) {
@@ -709,14 +710,25 @@ void RB_IterateShaderStages( shader_t *shader )
 		GL_BindTexture( TB_DIFFUSEMAP, stageP->bundle[0].image[TB_DIFFUSEMAP] );
         GLSL_SetUniformInt( sp, UNIFORM_DIFFUSE_MAP, 0 );
 
-		if ( r_vertexLight->i || r_dynamiclight->i ) {
-			if ( rg.world && !( backend.refdef.flags & RSF_NOWORLDMODEL ) ) {
-				GLSL_SetUniformVec3( sp, UNIFORM_AMBIENTLIGHT, rg.world->ambientLightColor );
-			} else {
-				vec3_t ambient;
-				VectorSet( ambient, 0, 0, 0 );
-				GLSL_SetUniformVec3( sp, UNIFORM_AMBIENTLIGHT, ambient );
-			}
+		if ( rg.world && !( backend.refdef.flags & RSF_NOWORLDMODEL ) ) {
+			GLSL_SetUniformVec3( sp, UNIFORM_AMBIENTLIGHT, rg.world->ambientLightColor );
+			GLSL_SetUniformInt( sp, UNIFORM_NUM_LIGHTS, rg.world->numLights );
+
+//			for ( j = 0; j < rg.world->numLights; j++ ) {
+//				nglUniform3fv( nglGetUniformLocation( sp->programId, va( "u_LightData[%i].color", j ) ), 1, rg.world->lights[j].color );
+//				nglUniform2uiv( nglGetUniformLocation( sp->programId, va( "u_LightData[%i].origin", j ) ), 1, rg.world->lights[j].origin );
+//				nglUniform1f( nglGetUniformLocation( sp->programId, va( "u_LightData[%i].brightness", j ) ), rg.world->lights[j].brightness );
+//				nglUniform1f( nglGetUniformLocation( sp->programId, va( "u_LightData[%i].constant", j ) ), rg.world->lights[j].constant );
+//				nglUniform1f( nglGetUniformLocation( sp->programId, va( "u_LightData[%i].linear", j ) ), rg.world->lights[j].linear );
+//				nglUniform1f( nglGetUniformLocation( sp->programId, va( "u_LightData[%i].quadratic", j ) ), rg.world->lights[j].quadratic );
+//				nglUniform1f( nglGetUniformLocation( sp->programId, va( "u_LightData[%i].range", j ) ), rg.world->lights[j].range );
+//				nglUniform1i( nglGetUniformLocation( sp->programId, va( "u_LightData[%i].type", j ) ), rg.world->lights[j].type );
+//			}
+			GLSL_ShaderBufferData( sp, UNIFORM_LIGHTDATA, rg.lightData );
+		} else {
+			vec3_t ambient;
+			VectorSet( ambient, 1, 1, 1 );
+			GLSL_SetUniformVec3( sp, UNIFORM_AMBIENTLIGHT, ambient );
 		}
 
         //

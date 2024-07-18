@@ -267,8 +267,7 @@ namespace TheNomad::SGame {
 				float angle = Util::DEG2RAD( atan2( ( screenHeight / 2 ) - float( mousePos.y ),
 					float( mousePos.x ) - ( screenWidth / 2 ) ) );
 				m_nJoystickAngle = angle;
-
-				backPedal = false;
+				
 				if ( mousePos.x < screenWidth / 2 ) {
 					m_EntityData.SetFacing( FACING_LEFT );
 					m_EntityData.SetLegsFacing( FACING_LEFT );

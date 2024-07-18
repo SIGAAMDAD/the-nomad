@@ -258,6 +258,10 @@ void GDR_NORETURN Sys_Exit( int code )
 
     Sys_ConsoleInputShutdown();
 
+	Cvar_Set( "com_exitFlag", "1" );
+	Cbuf_ExecuteText( EXEC_NOW, "hunkfree\n" );
+	Cvar_Set( "com_exitFlag", "0" );
+
     if ( code == -1 ) {
         exit( EXIT_FAILURE );
     }

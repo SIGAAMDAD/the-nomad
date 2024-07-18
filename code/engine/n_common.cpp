@@ -1902,6 +1902,8 @@ void Com_Init( char *commandLine )
 	com_affinityMask->modified = qfalse;
 #endif
 
+	Cvar_Get( "com_exitFlag", "0", CVAR_TEMP | CVAR_CHEAT );
+
 	com_timescale = Cvar_Get( "timescale", "1", CVAR_CHEAT );
 	Cvar_CheckRange( com_timescale, "0", NULL, CVT_FLOAT );
 	Cvar_SetDescription( com_timescale, "System timing factor:\n < 1: Slows the game down\n = 1: Regular speed\n > 1: Speeds the game up" );
