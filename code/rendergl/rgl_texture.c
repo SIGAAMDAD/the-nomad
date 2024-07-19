@@ -2853,6 +2853,21 @@ void R_CreateBuiltinTextures( void )
 		} else {
 			rg.renderDepthImage  = R_CreateImage( "*renderdepth",  NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_DEPTH_COMPONENT24 );
 		}
+
+		/*
+		{
+			int max = gl_filter_max;
+			int min = gl_filter_min;
+			gl_filter_max = GL_LINEAR;
+			gl_filter_min = GL_LINEAR;
+
+			rg.blurImage[0] = R_CreateImage( "*blurImage0", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_RGBA16F );
+			rg.blurImage[0] = R_CreateImage( "*blurImage1", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_RGBA16F );
+			
+			gl_filter_max = max;
+			gl_filter_min = min;
+		}
+		*/
 		/*
 		rg.textureDepthImage = R_CreateImage( "*texturedepth", NULL, PSHADOW_MAP_SIZE, PSHADOW_MAP_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_DEPTH_COMPONENT24 );
 

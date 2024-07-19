@@ -16,7 +16,7 @@ uniform bool u_GamePaused;
 uniform bool u_HardwareGamma;
 uniform int u_AntiAliasing;
 
-#if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
+//#if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
 uniform vec4 u_SpecularScale;
 uniform vec4 u_NormalScale;
 uniform int u_NumLights;
@@ -37,10 +37,10 @@ struct Light {
 layout( std140, binding = 0 ) uniform u_LightBuffer {
     Light u_LightData[MAX_MAP_LIGHTS];
 };
-#endif
+//#endif
 
 #if defined(USE_HDR) && defined(USE_EXPOSURE_TONE_MAPPING)
-uniform float u_Exposure;
+uniform float u_CameraExposure;
 #endif
 
 #if defined(USE_NORMALMAP)
@@ -57,23 +57,6 @@ uniform sampler2D u_ShadowMap;
 
 uniform int u_AlphaTest;
 
-float CalcLightAttenuation(float point, float normDist)
-{
-	// zero light at 1.0, approximating q3 style
-	// also don't attenuate directional light
-	float attenuation = (0.5 * normDist - 1.5) * point + 1.0;
-
-	// clamp attenuation
-#if defined(NO_LIGHT_CLAMP)
-	attenuation = max(attenuation, 0.0);
-#else
-	attenuation = clamp(attenuation, 0.0, 1.0);
-#endif
-
-	return attenuation;
-}
-
-#if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
 //
 // CalcPointLight: don't modify, straight from Valden
 //
@@ -110,7 +93,22 @@ vec3 CalcPointLight( Light light ) {
 
     return diffuse + specular;
 }
-#endif
+
+float CalcLightAttenuation(float point, float normDist)
+{
+	// zero light at 1.0, approximating q3 style
+	// also don't attenuate directional light
+	float attenuation = (0.5 * normDist - 1.5) * point + 1.0;
+
+	// clamp attenuation
+	#if defined(NO_LIGHT_CLAMP)
+	attenuation = max(attenuation, 0.0);
+	#else
+	attenuation = clamp(attenuation, 0.0, 1.0);
+	#endif
+
+	return attenuation;
+}
 
 vec3 CalcDiffuse(vec3 diffuseAlbedo, float NH, float EH, float roughness)
 {
@@ -140,7 +138,6 @@ void ApplyLighting() {
         a_Color.rgb += texture( u_SpecularMap, v_TexCoords ).rgb;
     }
 #endif
-#if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
     for ( int i = 0; i < u_NumLights; i++ ) {
         switch ( u_LightData[i].type ) {
         case POINT_LIGHT:
@@ -150,8 +147,7 @@ void ApplyLighting() {
             break;
         };
     }
-#endif
-//    a_Color.rgb = texture( u_DiffuseMap, v_TexCoords ).rgb;
+//    a_Color.rgb += texture( u_DiffuseMap, v_TexCoords ).rgb;
     a_Color.rgb *= u_AmbientColor;
 }
 
@@ -340,15 +336,15 @@ void main() {
         discard;
     }
 
-//    ApplyLighting();
+    ApplyLighting();
 
 #if defined(USE_HDR)
 #if !defined(USE_EXPOSURE_TONE_MAPPING)
 	// reinhard tone mapping
 	a_Color.rgb = a_Color.rgb / ( a_Color.rgb + vec3( 1.0 ) );
 #else
-	// exposure tone mapping //  BROKEN
-//	a_Color.rgb = vec3( 1.0 ) - exp( -a_Color.rgb * u_Exposure );
+	// exposure tone mapping
+	a_Color.rgb = vec3( 1.0 ) - exp( -a_Color.rgb * u_CameraExposure );
 #endif
 
 #if defined(USE_BLOOM)

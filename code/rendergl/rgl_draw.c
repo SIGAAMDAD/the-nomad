@@ -685,16 +685,16 @@ void RB_IterateShaderStages( shader_t *shader )
 					GLSL_SetUniformFloat( sp, UNIFORM_EXPOSURE, r_autoExposure->f );
 				}
 
-				if ( stageP->bundle[0].image[TB_NORMALMAP] ) {
-					GL_BindTexture( 1, stageP->bundle[0].image[TB_NORMALMAP] );
+				if ( stageP->bundle[UNIFORM_NORMAL_MAP].image[0] ) {
+					GL_BindTexture( 1, stageP->bundle[UNIFORM_NORMAL_MAP].image[0] );
 					GLSL_SetUniformInt( sp, UNIFORM_NORMAL_MAP, 1 );
 				} else if ( r_normalMapping->i ) {
 					GL_BindTexture( 1, rg.whiteImage );
 					GLSL_SetUniformInt( sp, UNIFORM_NORMAL_MAP, 1 );
 				}
 
-				if ( stageP->bundle[0].image[TB_SPECULARMAP] ) {
-					GL_BindTexture( 2, stageP->bundle[0].image[TB_SPECULARMAP] );
+				if ( stageP->bundle[TB_SPECULARMAP].image[0] ) {
+					GL_BindTexture( 2, stageP->bundle[TB_SPECULARMAP].image[0] );
 					GLSL_SetUniformInt( sp, UNIFORM_SPECULAR_MAP, 2 );
 				} else if ( r_specularMapping->i ) {
 					GL_BindTexture( 2, rg.whiteImage );
@@ -707,7 +707,7 @@ void RB_IterateShaderStages( shader_t *shader )
 			ri.Error( ERR_DROP, "RB_IterateShaderStages: shader has missing diffuseMap stage texture" );
 		}
 
-		GL_BindTexture( TB_DIFFUSEMAP, stageP->bundle[0].image[TB_DIFFUSEMAP] );
+		GL_BindTexture( TB_DIFFUSEMAP, stageP->bundle[TB_DIFFUSEMAP].image[0] );
         GLSL_SetUniformInt( sp, UNIFORM_DIFFUSE_MAP, 0 );
 
 		if ( rg.world && !( backend.refdef.flags & RSF_NOWORLDMODEL ) ) {

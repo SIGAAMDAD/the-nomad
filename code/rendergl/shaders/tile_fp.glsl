@@ -41,8 +41,8 @@ in vec3 v_Position;
 
 uniform sampler2D u_DiffuseMap;
 uniform float u_GammaAmount;
-//uniform bool u_GamePaused;
-//uniform bool u_HardwareGamma;
+uniform bool u_GamePaused;
+uniform bool u_HardwareGamma;
 uniform int u_AntiAliasing;
 uniform vec3 u_ViewOrigin;
 
@@ -59,7 +59,7 @@ uniform sampler2D u_SpecularMap;
 #endif
 
 #if defined(USE_SHADOWMAP)
-//uniform sampler2D u_ShadowMap;
+uniform sampler2D u_ShadowMap;
 #endif
 
 struct Light {
@@ -77,11 +77,9 @@ layout( std140, binding = 0 ) uniform u_LightBuffer {
 };
 
 uniform vec3 u_AmbientColor;
-//uniform vec4 u_SpecularScale;
-//uniform vec4 u_NormalScale;
+uniform vec4 u_SpecularScale;
+uniform vec4 u_NormalScale;
 uniform int u_NumLights;
-
-//uniform Light u_LightData[MAX_MAP_LIGHTS];
 
 uniform vec2 u_ScreenSize;
 uniform float u_SharpenAmount;
@@ -384,6 +382,34 @@ vec3 CalcFogFactor() {
     return mix( a_Color.rgb, vec3( 1.0 ), fogAmount );
 }
 
+vec3 blur( vec3 color )
+{
+    float weight[5] = float[]( 0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216 );
+//    float weight[5] = float[]( 0.0, 0.0, 0.1, 0.0, 0.001 );
+    vec2 tex_offset = 1.0 / textureSize( u_DiffuseMap, 0 );
+    vec3 result = color * weight[0];
+
+    for ( int i = 0; i < 10; i++ ) {
+        for ( int h = 0; h < 2; h++ ) {
+            bool horizontal = h == 1;
+            if ( horizontal ) {
+                for ( int i = 1; i < 5; ++i ) {
+                    result += texture( u_DiffuseMap, v_TexCoords + vec2( tex_offset.x * i, 0.0 ) ).rgb * weight[i];
+                    result += texture( u_DiffuseMap, v_TexCoords - vec2( tex_offset.x * i, 0.0 ) ).rgb * weight[i];
+                }
+            }
+            else {
+                for( int i = 1; i < 5; ++i ) {
+                    result += texture( u_DiffuseMap, v_TexCoords + vec2( 0.0, tex_offset.y * i ) ).rgb * weight[i];
+                    result += texture( u_DiffuseMap, v_TexCoords - vec2( 0.0, tex_offset.y * i ) ).rgb * weight[i];
+                }
+            }
+        }
+    }
+
+    return result;
+}
+
 void main() {
     // calculate a slight x offset, otherwise we get some black line bleeding
     // going on
@@ -417,12 +443,13 @@ void main() {
 	float brightness = dot( a_Color.rgb, vec3( 0.2126, 0.7152, 0.0722 ) );
 	if ( brightness > 1.0 ) {
         a_BrightColor = vec4( a_Color.rgb, 1.0 );
+        a_Color.rgb = blur( a_Color.rgb );
 	} else {
 		a_BrightColor = vec4( 0.0, 0.0, 0.0, 1.0 );
 	}
 #endif
     a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
-//    if ( u_GamePaused ) {
-//        a_Color.rgb = vec3( 0.75, 0.75, 0.75 );
-//    }
+    if ( u_GamePaused ) {
+        a_Color.rgb *= vec3( 0.3, 0.3, 0.3 );
+    }
 }

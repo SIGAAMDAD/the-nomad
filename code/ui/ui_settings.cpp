@@ -118,7 +118,6 @@ typedef struct {
 	int windowResolution;
 	int windowWidth;
 	int windowHeight;
-//	int maxFPS;
 
 	float gamma;
 	float exposure;
@@ -531,26 +530,53 @@ static void SettingsMenu_InitPresets( void ) {
 	s_settingsMenu->presets = (preset_t *)Hunk_Alloc( sizeof( *s_settingsMenu->presets ) * NUM_PRESETS, h_high );
 	s_settingsMenu->preset = PRESET_NORMAL;
 
-	memset( &s_settingsMenu->presets[ PRESET_CUSTOM ], 0, sizeof( performanceSettings_t ) );
+	memset( s_settingsMenu->presets, 0, sizeof( performanceSettings_t ) * NUM_PRESETS );
 
 	// some quality but more optimized just for playability
-	s_settingsMenu->presets[ PRESET_LOW ].basic.multisampleType = AntiAlias_2xMSAA;
+	s_settingsMenu->presets[ PRESET_LOW ].basic.multisampleType = AntiAlias_FXAA;
 	s_settingsMenu->presets[ PRESET_LOW ].basic.textureDetail = TexDetail_IntegratedGPU;
 	s_settingsMenu->presets[ PRESET_LOW ].basic.textureFilter = TEXFILTER_ANISOTROPY4;
 	s_settingsMenu->presets[ PRESET_LOW ].basic.dynamicLighting = qfalse;
 	s_settingsMenu->presets[ PRESET_LOW ].basic.bloom = qfalse;
+	s_settingsMenu->presets[ PRESET_LOW ].basic.ssao = qfalse;
+	s_settingsMenu->presets[ PRESET_LOW ].advanced.normalMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_LOW ].advanced.specularMapping = qfalse;
+	s_settingsMenu->presets[ PRESET_LOW ].advanced.depthMapping = qfalse;
+	s_settingsMenu->presets[ PRESET_LOW ].advanced.hdr = qfalse;
+	s_settingsMenu->presets[ PRESET_LOW ].advanced.pbr = qfalse;
+	s_settingsMenu->presets[ PRESET_LOW ].advanced.toneMapping = qfalse;
+	s_settingsMenu->presets[ PRESET_LOW ].advanced.toneMappingType = 0;
+	s_settingsMenu->presets[ PRESET_LOW ].advanced.bufferMode = DRAWMODE_GPU;
 
 	s_settingsMenu->presets[ PRESET_NORMAL ].basic.multisampleType = AntiAlias_4xMSAA;
 	s_settingsMenu->presets[ PRESET_NORMAL ].basic.textureDetail = TexDetail_Normie;
 	s_settingsMenu->presets[ PRESET_NORMAL ].basic.textureFilter = TEXFILTER_ANISOTROPY2;
 	s_settingsMenu->presets[ PRESET_NORMAL ].basic.dynamicLighting = qtrue;
 	s_settingsMenu->presets[ PRESET_NORMAL ].basic.bloom = qtrue;
+	s_settingsMenu->presets[ PRESET_NORMAL ].basic.ssao = qfalse;
+	s_settingsMenu->presets[ PRESET_NORMAL ].advanced.normalMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_NORMAL ].advanced.specularMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_NORMAL ].advanced.depthMapping = qfalse;
+	s_settingsMenu->presets[ PRESET_NORMAL ].advanced.hdr = qfalse;
+	s_settingsMenu->presets[ PRESET_NORMAL ].advanced.pbr = qfalse;
+	s_settingsMenu->presets[ PRESET_NORMAL ].advanced.toneMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_NORMAL ].advanced.toneMappingType = 0;
+	s_settingsMenu->presets[ PRESET_NORMAL ].advanced.bufferMode = DRAWMODE_MAPPED;
 
 	s_settingsMenu->presets[ PRESET_HIGH ].basic.multisampleType = AntiAlias_16xMSAA;
 	s_settingsMenu->presets[ PRESET_HIGH ].basic.textureDetail = TexDetail_ExpensiveShitWeveGotHere;
 	s_settingsMenu->presets[ PRESET_HIGH ].basic.textureFilter = TEXFILTER_ANISOTROPY16;
 	s_settingsMenu->presets[ PRESET_HIGH ].basic.dynamicLighting = qtrue;
 	s_settingsMenu->presets[ PRESET_HIGH ].basic.bloom = qtrue;
+	s_settingsMenu->presets[ PRESET_HIGH ].basic.ssao = qtrue;
+	s_settingsMenu->presets[ PRESET_HIGH ].advanced.normalMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_HIGH ].advanced.specularMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_HIGH ].advanced.depthMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_HIGH ].advanced.hdr = qtrue;
+	s_settingsMenu->presets[ PRESET_HIGH ].advanced.pbr = qfalse;
+	s_settingsMenu->presets[ PRESET_HIGH ].advanced.toneMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_HIGH ].advanced.toneMappingType = 0;
+	s_settingsMenu->presets[ PRESET_HIGH ].advanced.bufferMode = DRAWMODE_MAPPED;
 
 	// highest quality rendering, no care for performance
 	s_settingsMenu->presets[ PRESET_QUALITY ].basic.multisampleType = AntiAlias_32xMSAA;
@@ -558,6 +584,15 @@ static void SettingsMenu_InitPresets( void ) {
 	s_settingsMenu->presets[ PRESET_QUALITY ].basic.textureFilter = TEXFILTER_ANISOTROPY32;
 	s_settingsMenu->presets[ PRESET_QUALITY ].basic.dynamicLighting = qtrue;
 	s_settingsMenu->presets[ PRESET_QUALITY ].basic.bloom = qtrue;
+	s_settingsMenu->presets[ PRESET_QUALITY ].basic.ssao = qtrue;
+	s_settingsMenu->presets[ PRESET_QUALITY ].advanced.normalMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_QUALITY ].advanced.specularMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_QUALITY ].advanced.depthMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_QUALITY ].advanced.hdr = qtrue;
+	s_settingsMenu->presets[ PRESET_QUALITY ].advanced.pbr = qtrue;
+	s_settingsMenu->presets[ PRESET_QUALITY ].advanced.toneMapping = qtrue;
+	s_settingsMenu->presets[ PRESET_QUALITY ].advanced.toneMappingType = 1;
+	s_settingsMenu->presets[ PRESET_QUALITY ].advanced.bufferMode = DRAWMODE_MAPPED;
 	
 	// looks the worst but gets the best framerate and much less memory consumption
 	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.multisampleType = AntiAlias_None;
@@ -565,15 +600,25 @@ static void SettingsMenu_InitPresets( void ) {
 	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.textureFilter = TEXFILTER_ANISOTROPY2;
 	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.dynamicLighting = qfalse;
 	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.bloom = qfalse;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.ssao = qfalse;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].advanced.normalMapping = qfalse;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].advanced.specularMapping = qfalse;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].advanced.depthMapping = qfalse;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].advanced.hdr = qfalse;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].advanced.pbr = qfalse;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].advanced.toneMapping = qfalse;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].advanced.toneMappingType = 0;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].advanced.bufferMode = DRAWMODE_GPU;
 }
 
 static void SettingsMenu_SetPreset( const preset_t *preset )
 {
-	s_settingsMenu->performance.multisampleType = preset->basic.multisampleType;
-	s_settingsMenu->performance.textureDetail = preset->basic.textureDetail;
-	s_settingsMenu->performance.textureFilter = preset->basic.textureFilter;
-	s_settingsMenu->performance.dynamicLighting = preset->basic.dynamicLighting;
 	s_settingsMenu->performance.bloom = preset->basic.bloom;
+	s_settingsMenu->performance.dynamicLighting = preset->basic.dynamicLighting;
+	s_settingsMenu->performance.multisampleType = preset->basic.multisampleType;
+	s_settingsMenu->performance.textureFilter = preset->basic.textureFilter;
+	s_settingsMenu->performance.textureDetail = preset->basic.textureDetail;
+	s_settingsMenu->performance.ssao = preset->basic.ssao;
 }
 
 static inline void SfxFocused( const void *item ) {
@@ -1392,7 +1437,6 @@ static void PerformanceMenu_Draw( void )
 
 	ImGui::BeginTable( "##PerformanceSettingsMenuConfigTable", 2 );
 	{
-		/*
 		preset = s_settingsMenu->preset;
 		SettingsMenu_MultiAdjustable( "Preset", "GraphicsPresets",
 			"",
@@ -1404,7 +1448,6 @@ static void PerformanceMenu_Draw( void )
 		}
 
 		ImGui::TableNextRow();
-		*/
 
 		SettingsMenu_MultiAdjustable( "ADVANCED SETTINGS", "AdvancedSettings",
 			"Shows advanced settings, don't use if you aren't familiar with graphics programming.",
@@ -1626,11 +1669,11 @@ static void VideoMenu_Save( void )
 	switch ( s_settingsMenu->video.windowMode ) {
 	case WINDOWMODE_BORDERLESS_FULLSCREEN:
 	case WINDOWMODE_BORDERLESS_WINDOWED:
-		SDL_SetWindowBordered( SDL_window, SDL_TRUE );
+		SDL_SetWindowBordered( SDL_window, SDL_FALSE );
 		break;
 	case WINDOWMODE_WINDOWED:
 	case WINDOWMODE_FULLSCREEN:
-		SDL_SetWindowBordered( SDL_window, SDL_FALSE );
+		SDL_SetWindowBordered( SDL_window, SDL_TRUE );
 		break;
 	};
 //	SDL_SetWindowPosition( SDL_window, vid_xpos->i, vid_ypos->i );
@@ -2005,6 +2048,34 @@ static void GameplayMenu_SetDefault( void )
 	s_settingsMenu->gameplay.pauseUnfocused = Cvar_VariableInteger( "com_pauseUnfocused" );
 }
 
+static qboolean SettingsMenu_PresetCustom( void )
+{
+	const preset_t *p;
+
+	p = &s_settingsMenu->presets[ s_settingsMenu->preset ];
+
+	if ( s_settingsMenu->performance.bloom != p->basic.bloom ) {
+		return qtrue;
+	}
+	if ( s_settingsMenu->performance.dynamicLighting != p->basic.dynamicLighting ) {
+		return qtrue;
+	}
+	if ( s_settingsMenu->performance.textureFilter != p->basic.textureFilter ) {
+		return qtrue;
+	}
+	if ( s_settingsMenu->performance.textureDetail != p->basic.textureDetail ) {
+		return qtrue;
+	}
+	if ( s_settingsMenu->performance.ssao != p->basic.ssao ) {
+		return qtrue;
+	}
+	if ( s_settingsMenu->performance.multisampleType != p->basic.multisampleType ) {
+		return qtrue;
+	}
+
+	return qfalse;
+}
+
 static void SettingsMenu_Draw( void )
 {
 	const int windowFlags = MENU_DEFAULT_FLAGS;
@@ -2073,7 +2144,7 @@ static void SettingsMenu_Draw( void )
 		break;
 	};
 
-	if ( s_settingsMenu->modified ) {
+	if ( SettingsMenu_PresetCustom() ) {
 		s_settingsMenu->preset = PRESET_CUSTOM;
 	}
 	if ( !ImGui::IsAnyItemHovered() ) {

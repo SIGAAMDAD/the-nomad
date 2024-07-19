@@ -130,6 +130,8 @@ static uniformInfo_t uniformsInfo[UNIFORM_COUNT] = {
     { "u_SearchTexture",        GLSL_INT },
     { "u_EdgesTexture",         GLSL_INT },
     { "u_BlendTexture",         GLSL_INT },
+
+    { "u_BlurHorizontal",       GLSL_INT },
 };
 
 //static shaderProgram_t *hashTable[MAX_RENDER_SHADERS];
@@ -1083,29 +1085,8 @@ void GLSL_ShaderBufferData( shaderProgram_t *shader, uint32_t uniformNum, unifor
     }
 
     nglBindBuffer( GL_UNIFORM_BUFFER, buffer->id );
-
-    if ( uniformNum == UNIFORM_LIGHTDATA ) {
-        shaderLight_t data;
-        const maplight_t *light;
-        uint32_t i;
-
-        light = rg.world->lights;
-
-//        for ( i = 0; i < rg.world->numLights; i++ ) {
-//            VectorCopy4( data.color, light[i].color );
-//            data.origin[0] = light[i].origin[0];
-//            data.origin[1] = light[i].origin[1];
-//            data.brightness = light[i].brightness;
-//            data.range = light[i].range;
-//            data.constant = light[i].constant;
-//            data.linear = light[i].linear;
-//            data.quadratic = light[i].quadratic;
-//            data.type = light[i].type;
-//            nglBufferSubData( GL_UNIFORM_BUFFER, sizeof( data ) * i, sizeof( data ), &data );
-//        }
-        nglBufferSubData( GL_UNIFORM_BUFFER, 0, buffer->size, buffer->data );
-    }
-
+    nglBufferData( GL_UNIFORM_BUFFER, buffer->size, NULL, GL_STATIC_DRAW );
+    nglBufferSubData( GL_UNIFORM_BUFFER, 0, buffer->size, buffer->data );
     nglBindBuffer( GL_UNIFORM_BUFFER, 0 );
 }
 

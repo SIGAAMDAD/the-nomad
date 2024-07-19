@@ -208,6 +208,7 @@ void R_DrawPolys( void )
 	if ( !r_numPolys && !r_numPolyVerts ) {
 	    return;
 	}
+    rg.world->drawing = qtrue;
 
     RB_SetBatchBuffer( backend.drawBuffer, backendData->verts, sizeof( srfVert_t ), backendData->indices, sizeof( glIndex_t ) );
 
@@ -217,8 +218,6 @@ void R_DrawPolys( void )
     poly = backend.refdef.polys;
     oldShader = poly->hShader;
     backend.drawBatch.shader = R_GetShaderByHandle( oldShader );
-	
-    GLSL_UseProgram( &rg.genericShader[0] );
 
     assert( backend.refdef.polys );
 
@@ -255,13 +254,11 @@ void R_DrawPolys( void )
 		}
 		
 		for ( j = 0; j < backend.refdef.polys[i].numVerts; j++ ) {
-//            ri.Printf( PRINT_INFO, "verts[%i]: %f, %f, %f\n", j, backendData->verts[ backend.drawBatch.vtxOffset + j ].xyz[0],
-//                backendData->verts[ backend.drawBatch.vtxOffset + j ].xyz[1], backendData->verts[ backend.drawBatch.vtxOffset + j ].xyz[2] );
 			VectorCopy( backendData->verts[ backend.drawBatch.vtxOffset ].xyz, backend.refdef.polys[i].verts[j].xyz );
 			VectorCopy2( backendData->verts[ backend.drawBatch.vtxOffset ].st, backend.refdef.polys[i].verts[j].uv );
-
 			VectorCopy2( backendData->verts[ backend.drawBatch.vtxOffset ].lightmap, backend.refdef.polys[i].verts[j].uv );
 			VectorCopy( backendData->verts[ backend.drawBatch.vtxOffset ].worldPos, backend.refdef.polys[i].verts[j].worldPos );
+//            VectorCopy4( backendData->verts[ backend.drawBatch.vtxOffset ].color, backend.refdef.polys[i].verts[j].modulate );
 //			R_CalcTangentVectors( (drawVert_t *)&vtx[j] );
 			backend.drawBatch.vtxOffset++;
 		}
@@ -269,6 +266,7 @@ void R_DrawPolys( void )
 	
 	// flush out anything remaining
 	RB_FlushBatchBuffer();
+    rg.world->drawing = qfalse;
 }
 
 void R_DrawWorld( void )

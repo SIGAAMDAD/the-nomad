@@ -441,6 +441,7 @@ namespace TheNomad::SGame {
 
 			if ( m_nHealth < 100.0f ) {
 				m_nHealth += m_nHealMult;
+				m_nRage -= m_nHealMult; // rage is essentially just converted mana
 
 				if ( m_nHealMult > HEAL_MULT_BASE ) {
 					m_nHealMult -= m_nHealMultDecay;
@@ -452,6 +453,7 @@ namespace TheNomad::SGame {
 					m_nHealth = 100.0f;
 				}
 			}
+			m_nRage = Util::Clamp( m_nRage, 0.0f, m_nRage );
 
 			@m_LegState = @m_LegState.Run();
 			@m_ArmState = @m_ArmState.Run();
@@ -647,7 +649,7 @@ namespace TheNomad::SGame {
 			m_Link.m_nEntityId = 0;
 			m_Link.m_nEntityNumber = m_nControllerIndex;
 			m_nHealth = 100.0f;
-			m_nRage = 100.0f;
+			m_nRage = 100.0f; // he's always angry
 			m_Direction = Util::Angle2Dir( m_PhysicsObject.GetAngle() );
 			m_nHealMultDecay = LevelManager.GetDifficultyScale();
 

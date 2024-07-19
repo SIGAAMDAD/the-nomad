@@ -213,6 +213,9 @@ void RE_ProcessEntities( void )
             break;
         }
 
+//        refEntity->e.origin[0] = Com_Clamp( 0.0f, rg.world->width, refEntity->e.origin[0] );
+//        refEntity->e.origin[1] = Com_Clamp( 0.0f, rg.world->height, refEntity->e.origin[1] );
+
         origin[0] = refEntity->e.origin[0];
         origin[1] = rg.world->height - refEntity->e.origin[1];
         origin[2] = refEntity->e.origin[2];
@@ -237,8 +240,10 @@ void RE_ProcessEntities( void )
                 VectorCopy2( verts[ j ].uv, rg.sheets[ refEntity->e.sheetNum ]->sprites[ refEntity->e.spriteId ].texCoords[j] );
             }
         }
+
         for ( j = 0; j < 4; j++ ) {
-            VectorCopy( verts[j].worldPos, origin );
+            VectorSet( verts[j].worldPos, refEntity->e.origin[0], refEntity->e.origin[1], refEntity->e.origin[2] );
+//            VectorCopy( verts[j].worldPos, refEntity->e.origin );
             VectorCopy( verts[j].xyz, xyz[j] );
         }
         verts += 4;

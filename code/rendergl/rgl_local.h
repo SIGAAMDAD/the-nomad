@@ -359,6 +359,8 @@ typedef enum {
     UNIFORM_EDGES_TEXTURE,
     UNIFORM_BLEND_TEXTURE,
 
+    UNIFORM_BLUR_HORIZONTAL,
+
     UNIFORM_COUNT
 } uniform_t;
 
@@ -417,8 +419,7 @@ typedef enum {
     DL_DIR,         // directional light
 } dlightType_t; 
 
-typedef struct dlight_s
-{
+typedef struct dlight_s {
     vec3_t color;
     vec3_t origin;
 
@@ -1158,6 +1159,7 @@ typedef struct
     texture_t               *smaaAreaImage;
     texture_t               *smaaSearchImage;
     texture_t               *smaaWeightsImage;
+    texture_t               *blurImage[2];
 	
 	texture_t				*textureDepthImage;
 
@@ -1179,6 +1181,7 @@ typedef struct
     fbo_t                   *smaaWeightsFbo;
     fbo_t                   *smaaBlendFbo;
     fbo_t                   *ssaaResolveFbo;
+    fbo_t                   *blurFbo[2];
 //	fbo_t                   *renderCubeFbo;
 
 	shader_t				*defaultShader;
@@ -1233,15 +1236,12 @@ typedef struct
     shaderProgram_t calclevels4xShader[2];
     shaderProgram_t down4xShader;
 	shaderProgram_t bokehShader;
+    shaderProgram_t blurShader;
 	shaderProgram_t tonemapShader;
     shaderProgram_t textureColorShader;
     shaderProgram_t smaaEdgesShader;
     shaderProgram_t smaaWeightsShader;
     shaderProgram_t smaaBlendShader;
-
-    shaderProgram_t smaaEdges;
-    shaderProgram_t smaaBlending;
-    shaderProgram_t smaaWeights;
 
     qboolean beganQuery;
 
