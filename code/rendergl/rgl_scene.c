@@ -243,7 +243,6 @@ void RE_ProcessEntities( void )
 
         for ( j = 0; j < 4; j++ ) {
             VectorSet( verts[j].worldPos, refEntity->e.origin[0], refEntity->e.origin[1], refEntity->e.origin[2] );
-//            VectorCopy( verts[j].worldPos, refEntity->e.origin );
             VectorCopy( verts[j].xyz, xyz[j] );
         }
         verts += 4;

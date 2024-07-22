@@ -109,6 +109,7 @@ static void PauseMenu_EventCallback( void *ptr, int event )
         gi.state = GS_INACTIVE;
         g_pModuleLib->ModuleCall( sgvm, ModuleOnLevelEnd, 0 );
         g_pModuleLib->RunModules( ModuleOnLevelEnd, 0 );
+        Cvar_SetIntegerValue( "g_paused", 0 );
         Cbuf_ExecuteText( EXEC_APPEND, "setmap\n" ); // setting an empty mapname will unload the level
         break;
     default:

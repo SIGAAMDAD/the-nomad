@@ -6,13 +6,13 @@
         { "Name": "mob_death", "Id": 100 }
     ],
     "ItemData": [
-        { "Id": 0, "Name": "powerup_a" },
-        { "Id": 1, "Name": "powerup_b" },
-        { "Id": 2, "Name": "item_stimpack" },
-        { "Id": 3, "Name": "item_ammopack" },
-        { "Id": 4, "Name": "item_shellpack" },
-        { "Id": 5, "Name": "item_grenadepack" },
-        { "Id": 6, "Name": "item_rocketpack" },
+        { "Id": 0, "Name": "item_stimpack" },
+        { "Id": 1, "Name": "item_ammopack" },
+        { "Id": 2, "Name": "item_shellpack" },
+        { "Id": 3, "Name": "item_grenadepack" },
+        { "Id": 4, "Name": "item_rocketpack" },
+        { "Id": 5, "Name": "powerup_a" },
+        { "Id": 6, "Name": "powerup_b" },
         { "Id": 7, "Name": "gfx_dash" },
         { "Id": 8, "Name": "gfx_slide" }
     ],

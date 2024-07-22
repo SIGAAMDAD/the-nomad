@@ -194,6 +194,8 @@ int ModuleOnInit() {
 
 	InitCvars();
 
+	ConfigInit();
+
 	TheNomad::Util::GetModuleList( TheNomad::SGame::sgame_ModList );
 	ConsolePrint( TheNomad::SGame::sgame_ModList.Count() + " total mods registered.\n" );
 

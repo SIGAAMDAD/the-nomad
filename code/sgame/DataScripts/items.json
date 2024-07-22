@@ -36,7 +36,9 @@
 			"SpriteOffsetY": 0,
 			"Width": 0.9,
 			"Height": 0.9,
-			"PickupSfx": "sfx/misc/getitem.ogg"
+			"PickupSfx": "sfx/misc/getitem.ogg",
+			"UseSfx": "sfx/players/StimPack_Activate1.wav",
+			"EquipSfx": "sfx/misc/getitem.ogg"
 		},
 		{
 			"Type": "Consumable",

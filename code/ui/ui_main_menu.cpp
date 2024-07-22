@@ -466,7 +466,8 @@ void MainMenu_Cache( void )
     Menu_AddItem( &s_main->menu, &s_main->exitGame );
 
     // add in background ambience
-    Snd_AddLoopingTrack( Snd_RegisterSfx( "music/world/icy_gusts.wav" ) );
+    Snd_AddLoopingTrack( Snd_RegisterTrack( "music/world/icy_gusts.wav" ) );
+    Snd_AddLoopingTrack( Snd_RegisterTrack( "music/warcrimes_are_permitted.ogg" ), ( 5*60 ) + 15 );
 
     Key_SetCatcher( KEYCATCH_UI );
     ui->menusp = 0;

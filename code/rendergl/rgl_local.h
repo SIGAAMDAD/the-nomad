@@ -348,11 +348,8 @@ typedef enum {
     UNIFORM_SHARPENING,
 
     UNIFORM_LIGHTDATA,
-    UNIFORM_HARDWAREGAMMA,
 
     UNIFORM_GAMEPAUSED,
-
-    UNIFORM_ANTIALIASING,
 
     UNIFORM_AREA_TEXTURE,
     UNIFORM_SEARCH_TEXTURE,
@@ -360,6 +357,18 @@ typedef enum {
     UNIFORM_BLEND_TEXTURE,
 
     UNIFORM_BLUR_HORIZONTAL,
+
+    UNIFORM_HARDWAREGAMMA,
+    UNIFORM_ANTIALIASING,
+    UNIFORM_USE_HDR,
+    UNIFORM_USE_PBR,
+    UNIFORM_TONEMAPPING,
+    UNIFORM_USE_BLOOM,
+
+    UNIFORM_FRAGMENTDATA,
+    UNIFORM_GRAPHICSCONFIG,
+    UNIFORM_SAMPLERS,
+    UNIFORM_VERTEXINPUT,
 
     UNIFORM_COUNT
 } uniform_t;
@@ -1198,6 +1207,10 @@ typedef struct
 	texture_t				**deluxemaps;
 
     uniformBuffer_t         *lightData;
+    uniformBuffer_t         *fragData;
+    uniformBuffer_t         *graphicsConfigData;
+    uniformBuffer_t         *samplersData;
+    uniformBuffer_t         *vertexInput;
 
     uniformBuffer_t *uniformBuffers[MAX_UNIFORM_BUFFERS];
     uint64_t numUniformBuffers;
@@ -1479,6 +1492,7 @@ extern cvar_t *r_maxEntities;
 extern cvar_t *r_maxDLights;
 
 extern cvar_t *r_useShaderCache;
+extern cvar_t *r_useUniformBuffers;
 
 extern cvar_t *r_imageUpsampleType;
 extern cvar_t *r_imageUpsample;

@@ -16,13 +16,11 @@ void Snd_Shutdown( void );
 void Snd_Update( int msec );
 sfxHandle_t Snd_RegisterTrack( const char *npath );
 sfxHandle_t Snd_RegisterSfx( const char *npath );
-void Snd_SetLoopingTrack( sfxHandle_t handle );
-void Snd_ClearLoopingTrack( void );
 void Snd_PlayWorldSfx( const vec3_t origin, sfxHandle_t hSfx );
 void Snd_SetWorldListener( const vec3_t origin );
 
 void Snd_ClearLoopingTracks( void );
-void Snd_AddLoopingTrack( sfxHandle_t handle );
+void Snd_AddLoopingTrack( sfxHandle_t handle, uint64_t timeOffset = 0 );
 
 void Snd_StartupThread( int msec );
 void Snd_JoinThread( void );

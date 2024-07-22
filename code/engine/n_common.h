@@ -255,6 +255,7 @@ int32_t Key_GetKey( const char *binding );
 qboolean Key_GetOverstrikeMode( void );
 void Key_SetOverstrikeMode( qboolean overstrike );
 void Key_WriteBindings( fileHandle_t f );
+void Key_SetBinding( uint32_t keynum, const char *binding );
 
 typedef struct
 {

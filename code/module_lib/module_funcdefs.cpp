@@ -2523,8 +2523,6 @@ void ModuleLib_Register_Engine( void )
 			// could this be a class, YES, but I won't force it on the modder
 			
 			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::PlaySfx( int )", WRAP_FN( Snd_PlaySfx ) );
-			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::SetLoopingTrack( int )", WRAP_FN( Snd_SetLoopingTrack ) );
-			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::ClearLoopingTrack()", WRAP_FN( Snd_ClearLoopingTrack ) );
             REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::AddLoopingTrack( int )", WRAP_FN( Snd_AddLoopingTrack ) );
 			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::ClearLoopingTracks()", WRAP_FN( Snd_ClearLoopingTracks ) );
 			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::SoundSystem::RegisterSfx( const string& in )", WRAP_FN( SndRegisterSfx ) );

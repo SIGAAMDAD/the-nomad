@@ -172,6 +172,7 @@ cvar_t *r_imageUpsample;
 cvar_t *r_imageUpsampleMaxSize;
 
 cvar_t *r_useShaderCache;
+cvar_t *r_useUniformBuffers;
 
 // OpenGL extensions
 cvar_t *r_arb_texture_compression;
@@ -902,6 +903,8 @@ static void R_Register( void )
     r_bloom = ri.Cvar_Get( "r_bloom", "1", CVAR_LATCH | CVAR_SAVE );
     ri.Cvar_SetDescription( r_bloom, "Enables framebuffer based bloom to make light sources stand out, requires \\r_hdr." );
 
+    r_useUniformBuffers = ri.Cvar_Get( "r_useUniformBuffers", "0", CVAR_SAVE | CVAR_LATCH );
+    ri.Cvar_SetDescription( r_useUniformBuffers, "Enables the usage of uniform buffers for a more performant shader data transmission." );
     r_normalMapping = ri.Cvar_Get( "r_normalMapping", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_normalMapping, "Enable normal maps for materials that support it." );
 	r_specularMapping = ri.Cvar_Get( "r_specularMapping", "1", CVAR_SAVE | CVAR_LATCH );
@@ -1448,7 +1451,7 @@ void R_Init( void )
 {
     GLenum error;
 
-    ri.Printf(PRINT_INFO, "---------- RE_Init ----------\n");
+    ri.Printf( PRINT_INFO, "---------- RE_Init ----------\n" );
 
     // clear all globals
     memset( &rg, 0, sizeof( rg ) );

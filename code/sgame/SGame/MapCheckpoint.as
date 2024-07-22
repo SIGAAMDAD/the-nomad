@@ -12,9 +12,13 @@ namespace TheNomad::SGame {
 			m_Spawns.Add( @spawn );
 		}
 		void Activate( uint64 nLevelTime ) {
+			if ( m_bPassed ) {
+				return;
+			}
 			for ( uint i = 0; i < m_Spawns.Count(); i++ ) {
 				m_Spawns[i].Activate(); 
 			}
+			m_Spawns.Clear();
 			m_bPassed = true;
 			m_nTime = TheNomad::GameSystem::GameManager.GetGameTic() - nLevelTime;
 		}

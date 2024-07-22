@@ -266,9 +266,11 @@ namespace TheNomad::SGame {
 				return;
 			}
 
-			const uint64 now = TheNomad::Engine::System::Milliseconds();
-
-			m_TimeMilliseconds = now - timer;
+			if ( !endOfLevel ) {
+				m_TimeMilliseconds = TheNomad::GameSystem::GameManager.GetGameTic() - timer;
+			} else {
+				m_TimeMilliseconds = timer;
+			}
 			m_TimeSeconds = m_TimeMilliseconds / 10000;
 			m_TimeMinutes = m_TimeMilliseconds / 60000;
 			

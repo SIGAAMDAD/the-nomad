@@ -329,6 +329,10 @@ namespace TheNomad::SGame {
 		
 		private void RenderScene( const uvec2& in scenePos, const uvec2& in sceneSize, const vec3& in origin ) {
 			const uint flags = RSF_ORTHO_TYPE_WORLD;
+
+			if ( @LevelManager.GetMapData() is null ) {
+				return;
+			}
 			
 			// snap to the player's position
 			// if we're in photomode, ignore

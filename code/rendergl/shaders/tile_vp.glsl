@@ -9,6 +9,26 @@ out vec4 v_Color;
 out vec3 v_WorldPos;
 out vec3 v_Position;
 
+#if defined(USE_UBO)
+
+layout( std140, binding = 0 ) uniform u_VertexInput {
+	mat4 u_ModelViewProjection;
+	mat4 u_ModelMatrix;
+	vec4 u_BaseColor;
+	vec4 u_VertColor;
+	vec4 u_DiffuseTexMatrix;
+	vec4 u_DiffuseTexOffTurb;
+	vec3 u_TCGen0Vector0;
+	vec3 u_TCGen0Vector1;
+	vec3 u_WorldPos;
+	vec3 u_DirectedLight;
+	int u_TCGen0;
+	int u_ColorGen;
+	int u_AlphaGen;
+};
+
+#else
+
 uniform mat4 u_ModelViewProjection;
 uniform vec4 u_BaseColor;
 uniform vec4 u_VertColor;
@@ -33,8 +53,10 @@ uniform vec3 u_TCGen0Vector1;
 uniform vec3 u_WorldPos;
 #endif
 
+#endif
+
 #if defined(USE_RGBAGEN)
-vec4 CalcColor(vec3 position, vec3 normal)
+vec4 CalcColor( vec3 position, vec3 normal )
 {
 	vec4 color = u_VertColor * a_Color + u_BaseColor;
 	

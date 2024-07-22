@@ -241,6 +241,8 @@ namespace TheNomad::SGame {
 				}
 			}
 
+			CalcTotalLevelTime();
+
 			@m_MapData = null;
 			@m_Current = null;
 		}

@@ -247,6 +247,7 @@ typedef struct settingsMenu_s {
 	const char *hintMessage;
 
 	const void *focusedItem;
+	const void *currentItem;
 
 	qboolean modified;
 } settingsMenu_t;
@@ -630,6 +631,16 @@ static inline void SfxFocused( const void *item ) {
 	}
 }
 
+static inline void SfxActivated( const void *item )
+{
+	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) && ImGui::IsItemDeactivated() ) {
+		if ( s_settingsMenu->currentItem != item ) {
+			s_settingsMenu->currentItem = item;
+			Snd_PlaySfx( ui->sfx_select );
+		}
+	}
+}
+
 static void SettingsMenu_GetGPUMemoryInfo( void )
 {
 	const char *memSuffix;
@@ -974,6 +985,15 @@ static int32_t SettingsMenu_GetBindIndex( const char *bind )
 	return -1;
 }
 
+static void SettingsMenu_GetNewBindings( void )
+{
+	int i;
+
+	for ( i = 0; i < NUMKEYBINDS; i++ ) {
+		s_settingsMenu->controls.keybinds[i].bind1 = Key_GetKey( s_settingsMenu->controls.keybinds[i].command );
+	}
+}
+
 static void SettingsMenu_Rebind( void )
 {
     int32_t bind;
@@ -1026,9 +1046,14 @@ static void SettingsMenu_Rebind( void )
                     
                     if ( ret == 0 ) {
 						Snd_PlaySfx( ui->sfx_select );
+						s_settingsMenu->controls.rebindKey = NULL;
+						s_settingsMenu->controls.rebindIndex = 0;
                     } else {
 						s_settingsMenu->controls.rebindKey->bind1 = i;
+						s_settingsMenu->controls.keybinds[ index ].bind1 = -1;
 						Snd_PlaySfx( ui->sfx_select );
+						s_settingsMenu->controls.rebindKey = NULL;
+						s_settingsMenu->controls.rebindIndex = 0;
 					}
 					ImGui::End();
 					return;
@@ -1043,9 +1068,14 @@ static void SettingsMenu_Rebind( void )
                     
                     if ( ret == 0 ) {
 						Snd_PlaySfx( ui->sfx_select );
+						s_settingsMenu->controls.rebindKey = NULL;
+						s_settingsMenu->controls.rebindIndex = 0;
                     } else {
 						s_settingsMenu->controls.rebindKey->bind2 = i;
+						s_settingsMenu->controls.keybinds[ index ].bind2 = -1;
 						Snd_PlaySfx( ui->sfx_select );
+						s_settingsMenu->controls.rebindKey = NULL;
+						s_settingsMenu->controls.rebindIndex = 0;
 					}
 					ImGui::End();
 					return;
@@ -1057,12 +1087,11 @@ static void SettingsMenu_Rebind( void )
 			} else if ( s_settingsMenu->controls.rebindIndex == 2 ) {
 				s_settingsMenu->controls.keybinds[i].bind2 = i;
 			}
-            Cbuf_ExecuteText( EXEC_APPEND, va( "bind \"%s\" \"%s\"\n",
-                Key_KeynumToString( i ),
-                s_settingsMenu->controls.rebindKey->command ) );
 
 			s_settingsMenu->controls.rebindKey = NULL;
 			s_settingsMenu->controls.rebindIndex = 0;
+
+			SettingsMenu_GetNewBindings();
 			ImGui::End();
 			return;
         }
@@ -1160,7 +1189,7 @@ static void ControlsMenu_DrawBindings( int group )
 		}
 		SettingsMenu_Text( s_settingsMenu->controls.keybinds[i].label, NULL );
 		ImGui::TableNextColumn();
-		if ( ImGui::Button( bind ) ) {
+		if ( ImGui::Button( va( "%s##Binding%i", bind, i ) ) ) {
 			Snd_PlaySfx( ui->sfx_select );
 			s_settingsMenu->controls.rebindKey = &s_settingsMenu->controls.keybinds[i];
 			s_settingsMenu->controls.rebindIndex = 1;
@@ -1922,12 +1951,11 @@ static void ControlsMenu_Save( void )
 		bind = &s_settingsMenu->controls.keybinds[i];
 
 		if ( bind->bind1 != -1 ) {
-			Cbuf_ExecuteText( EXEC_APPEND, va( "bind \"%s\" \"%s\"\n", Key_GetBinding( s_defaultKeybinds[i].bind1 ),
-				s_defaultKeybinds[i].command ) );
-		}
-		if ( bind->bind2 != -1 ) {
-			Cbuf_ExecuteText( EXEC_APPEND, va( "bind \"%s\" \"%s\"\n", Key_GetBinding( s_defaultKeybinds[i].bind2 ),
-				s_defaultKeybinds[i].command ) );
+			Key_SetBinding( bind->bind1, bind->command );
+
+			if ( bind->bind2 != -1 ) {
+				Key_SetBinding( bind->bind2, bind->command );
+			}
 		}
 	}
 }
@@ -2022,20 +2050,47 @@ static void AudioMenu_SetDefault( void )
 	s_settingsMenu->audio.maxSoundChannels = Cvar_VariableInteger( "snd_maxSoundChannels" );
 }
 
+static void Controls_GetKeyAssignment( const char *command, int *twokeys )
+{
+	int count;
+	int j;
+	const char *b;
+
+	twokeys[0] = twokeys[1] = -1;
+	count = 0;
+
+	for ( j = 0; j < 256; j++ ) {
+		b = Key_GetBinding( j );
+		if ( !b || !*b ) {
+			continue;
+		}
+		if ( !N_stricmp( b, command ) ) {
+			twokeys[ count ] = j;
+			count++;
+			if ( count == 2 ) {
+				break;
+			}
+		}
+	}
+}
+
 static void ControlsMenu_SetDefault( void )
 {
 	int i;
+	int twokeys[2];
 
 	s_settingsMenu->controls.mouseAcceleration = Cvar_VariableInteger( "g_mouseAcceleration" );
 	s_settingsMenu->controls.mouseSensitivity = Cvar_VariableFloat( "g_mouseSensitivity" );
 
 	memcpy( s_settingsMenu->controls.keybinds, s_defaultKeybinds, sizeof( s_defaultKeybinds ) );
-	for ( i = 0; i < arraylen( s_defaultKeybinds ); i++ ) {
-//		s_settingsMenu->controls.keybinds[i].bind1 = s_defaultKeybinds[i].defaultBind1;
-//		s_settingsMenu->controls.keybinds[i].bind2 = s_defaultKeybinds[i].defaultBind2;
+	for ( i = 0; i < NUMKEYBINDS; i++ ) {
+		s_settingsMenu->controls.keybinds[i].bind1 = s_settingsMenu->controls.keybinds[i].defaultBind1;
+		s_settingsMenu->controls.keybinds[i].bind2 = s_settingsMenu->controls.keybinds[i].defaultBind2;
 
-		s_settingsMenu->controls.keybinds[i].bind1 = Key_GetKey( s_defaultKeybinds[i].command );
-		s_settingsMenu->controls.keybinds[i].bind2 = -1;
+		Controls_GetKeyAssignment( s_settingsMenu->controls.keybinds[i].command, twokeys );
+
+		s_settingsMenu->controls.keybinds[i].bind1 = twokeys[0];
+		s_settingsMenu->controls.keybinds[i].bind2 = twokeys[1];
 	}
 }
 

@@ -122,9 +122,6 @@ static uniformInfo_t uniformsInfo[UNIFORM_COUNT] = {
     { "u_SharpenAmount",        GLSL_FLOAT },
     { "u_LightBuffer",          GLSL_BUFFER },
     { "u_GamePaused",           GLSL_INT },
-    { "u_HardwareGamma",        GLSL_INT },
-
-    { "u_AntiAliasing",         GLSL_INT },
 
     { "u_AreaTexture",          GLSL_INT },
     { "u_SearchTexture",        GLSL_INT },
@@ -132,6 +129,22 @@ static uniformInfo_t uniformsInfo[UNIFORM_COUNT] = {
     { "u_BlendTexture",         GLSL_INT },
 
     { "u_BlurHorizontal",       GLSL_INT },
+
+    // all of the uniforms below are for
+    // replacing the #define that requires
+    // a vid_restart
+
+    { "u_AntiAliasing",         GLSL_INT },
+    { "u_HardwareGamma",        GLSL_INT },
+    { "u_HDR",                  GLSL_INT },
+    { "u_PBR",                  GLSL_INT },
+    { "u_ToneMap",              GLSL_INT },
+    { "u_Bloom",                GLSL_INT },
+
+    { "u_FragDataBuffer",       GLSL_BUFFER },
+    { "u_GraphicsConfig",       GLSL_BUFFER },
+    { "u_Samplers",             GLSL_BUFFER },
+    { "u_VertexInput",          GLSL_BUFFER },
 };
 
 //static shaderProgram_t *hashTable[MAX_RENDER_SHADERS];
@@ -699,8 +712,16 @@ static void GLSL_PrepareHeader(GLenum shaderType, const GLchar *extra, char *des
     N_strcat( dest, size,
                             va( "#ifndef AntiAliasingType_t\n"
                                 "#define AntiAlias_FXAA %i\n"
+                                "#define AntiAlias_SMAA %i\n"
                                 "#endif\n"
-                            , AntiAlias_FXAA ) );
+                            , AntiAlias_FXAA, AntiAlias_SMAA ) );
+    
+    N_strcat( dest, size,
+                            va( "#ifndef ToneMapType_t\n"
+                                "#define ToneMap_Disabled -1\n"
+                                "#define ToneMap_Reinhard 1\n"
+                                "#define ToneMap_Exposure 2\n"
+                                "#endif\n" ) );
 
     fbufWidthScale = 1.0f / ((float)glConfig.vidWidth);
 	fbufHeightScale = 1.0f / ((float)glConfig.vidHeight);
@@ -1192,7 +1213,12 @@ void GLSL_InitGPUShaders( void )
 
     ri.Printf( PRINT_INFO, "---- GLSL_InitGPUShaders ----\n" );
 
+    // force a uniform buffer with lighting data otherwise we run out of shader constant registers
     rg.lightData = GLSL_InitUniformBuffer( "u_LightBuffer", NULL, sizeof( shaderLight_t ) * MAX_MAP_LIGHTS );
+
+    if ( r_useUniformBuffers->i ) {
+        rg.vertexInput = GLSL_InitUniformBuffer( "u_VertexInput", NULL, sizeof( mat4_t ) );
+    }
 
     R_IssuePendingRenderCommands();
 
@@ -1226,17 +1252,10 @@ void GLSL_InitGPUShaders( void )
             N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_RGBAGEN\n" );
 //        }
         if ( r_multisampleType->i == AntiAlias_SMAA ) {
-            N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_SMAA\n" );
             N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_LUMA_SMAA_EDGE\n" );
         }
-        if ( r_bloom->i ) {
-            N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_BLOOM\n" );
-        }
-        if ( r_toneMap->i && r_toneMapType->i == 1 ) {
-            N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_EXPOSURE_TONE_MAPPING\n" );
-        }
-        if ( r_hdr->i ) {
-            N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_HDR\n" );
+        if ( r_useUniformBuffers->i ) {
+            N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_UBO\n" );
         }
 
         if ( !GLSL_InitGPUShader( &rg.genericShader[i], "generic", attribs, qtrue, extradefines, qtrue, fallbackShader_generic_vp, fallbackShader_generic_fp ) ) {
@@ -1293,17 +1312,6 @@ void GLSL_InitGPUShaders( void )
             if ( fastLight ) {
                 N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_FAST_LIGHT\n" );
             }
-
-            if ( r_bloom->i && r_postProcess->i && r_arb_framebuffer_object->i ) {
-                N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_BLOOM\n" );
-            }
-            if ( r_toneMap->i && r_toneMapType->i == 1 ) {
-                N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_EXPOSURE_TONE_MAPPING\n" );
-            }
-            if ( r_hdr->i && r_postProcess->i && r_arb_framebuffer_object->i ) {
-                N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_HDR\n" );
-            }
-
             switch ( lightType ) {
             case LIGHTDEF_USE_LIGHTMAP: {
                 N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_LIGHTMAP\n" );
@@ -1359,6 +1367,9 @@ void GLSL_InitGPUShaders( void )
 			    N_strcat( extradefines, sizeof( extradefines ) - 1, "#define GLOSS_IS_SHININESS\n" );
 				break;
 			};
+        }
+        if ( r_useUniformBuffers->i ) {
+            N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_UBO\n" );
         }
 
         if ( i & LIGHTDEF_USE_SHADOWMAP ) {
@@ -1449,6 +1460,12 @@ void GLSL_InitGPUShaders( void )
     }
     if ( r_specularMapping->i ) {
         N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_SPECULARMAP\n" );
+    }
+    if ( r_parallaxMapping->i ) {
+        N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_PARALLAXMAP\n" );
+    }
+    if ( r_useUniformBuffers->i ) {
+        N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_UBO\n" );
     }
     if ( !GLSL_InitGPUShader( &rg.tileShader, "tile", attribs, qtrue, extradefines, qtrue, fallbackShader_tile_vp, fallbackShader_tile_fp ) ) {
         ri.Error( ERR_FATAL, "Could not load tile shader!" );

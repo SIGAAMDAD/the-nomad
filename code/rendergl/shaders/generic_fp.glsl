@@ -1,8 +1,6 @@
 #if !defined(GLSL_LEGACY)
 layout( location = 0 ) out vec4 a_Color;
-#if defined(USE_BLOOM) && defined(USE_HDR)
 layout( location = 1 ) out vec4 a_BrightColor;
-#endif
 #endif
 
 in vec2 v_TexCoords;
@@ -16,13 +14,17 @@ uniform bool u_GamePaused;
 uniform bool u_HardwareGamma;
 uniform int u_AntiAliasing;
 
-//#if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
 uniform vec4 u_SpecularScale;
 uniform vec4 u_NormalScale;
 uniform int u_NumLights;
 
 uniform vec3 u_AmbientColor;
-uniform float u_AmbientIntensity;
+
+uniform float u_CameraExposure;
+uniform bool u_HDR;
+uniform bool u_PBR;
+uniform bool u_Bloom;
+uniform int u_ToneMap;
 
 struct Light {
     vec4 color;
@@ -37,11 +39,6 @@ struct Light {
 layout( std140, binding = 0 ) uniform u_LightBuffer {
     Light u_LightData[MAX_MAP_LIGHTS];
 };
-//#endif
-
-#if defined(USE_HDR) && defined(USE_EXPOSURE_TONE_MAPPING)
-uniform float u_CameraExposure;
-#endif
 
 #if defined(USE_NORMALMAP)
 uniform sampler2D u_NormalMap;
@@ -79,7 +76,7 @@ vec3 CalcPointLight( Light light ) {
     float spec = pow( max( dot( v_WorldPos, reflectDir ), 0.0 ), 1.0 );
 
 #if defined(USE_SPECULARMAP)
-    vec3 specular = spec * texture( u_SpecularMap, v_TexCoords ).rgb;
+    vec3 specular = spec * texture2D( u_SpecularMap, v_TexCoords ).rgb;
 #else
     vec3 specular = vec3( 0.0 );
 #endif
@@ -110,7 +107,7 @@ float CalcLightAttenuation(float point, float normDist)
 	return attenuation;
 }
 
-vec3 CalcDiffuse(vec3 diffuseAlbedo, float NH, float EH, float roughness)
+vec3 CalcDiffuse( vec3 diffuseAlbedo, float NH, float EH, float roughness )
 {
 #if defined(USE_BURLEY)
 	// modified from https://disney-animation.s3.amazonaws.com/library/s2012_pbs_disney_brdf_notes_v2.pdf
@@ -125,7 +122,7 @@ vec3 CalcDiffuse(vec3 diffuseAlbedo, float NH, float EH, float roughness)
 
 void CalcNormal() {
 #if defined(USE_NORMALMAP)
-    vec3 normal = texture( u_NormalMap, v_TexCoords ).rgb;
+    vec3 normal = texture2D( u_NormalMap, v_TexCoords ).rgb;
     normal = normalize( normal * 2.0 - 1.0 );
     a_Color.rgb *= normal * 0.5 + 0.5;
 #endif
@@ -135,7 +132,7 @@ void ApplyLighting() {
     CalcNormal();
 #if defined(USE_SPECULARMAP)
     if ( u_NumLights == 0 ) {
-        a_Color.rgb += texture( u_SpecularMap, v_TexCoords ).rgb;
+        a_Color.rgb += texture2D( u_SpecularMap, v_TexCoords ).rgb;
     }
 #endif
     for ( int i = 0; i < u_NumLights; i++ ) {
@@ -147,7 +144,6 @@ void ApplyLighting() {
             break;
         };
     }
-//    a_Color.rgb += texture( u_DiffuseMap, v_TexCoords ).rgb;
     a_Color.rgb *= u_AmbientColor;
 }
 
@@ -294,8 +290,7 @@ vec4 sharpenImage( sampler2D tex, vec2 pos )
 
 vec3 blur( vec3 color )
 {
-//    float weight[5] = float[] (0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216);
-    float weight[5] = float[]( 0.0, 0.0, 0.1, 0.0, 0.001 );
+    float weight[5] = float[]( 0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216 );
     vec2 tex_offset = 1.0 / textureSize( u_DiffuseMap, 0 );
     vec3 result = color * weight[0];
 
@@ -303,14 +298,14 @@ vec3 blur( vec3 color )
         bool horizontal = h == 1;
         if ( horizontal ) {
             for ( int i = 1; i < 5; ++i ) {
-                result += texture( u_DiffuseMap, v_TexCoords + vec2( tex_offset.x * i, 0.0 ) ).rgb * weight[i];
-                result += texture( u_DiffuseMap, v_TexCoords - vec2( tex_offset.x * i, 0.0 ) ).rgb * weight[i];
+                result += texture2D( u_DiffuseMap, v_TexCoords + vec2( tex_offset.x * i, 0.0 ) ).rgb * weight[i];
+                result += texture2D( u_DiffuseMap, v_TexCoords - vec2( tex_offset.x * i, 0.0 ) ).rgb * weight[i];
             }
         }
         else {
             for( int i = 1; i < 5; ++i ) {
-                result += texture( u_DiffuseMap, v_TexCoords + vec2( 0.0, tex_offset.y * i ) ).rgb * weight[i];
-                result += texture( u_DiffuseMap, v_TexCoords - vec2( 0.0, tex_offset.y * i ) ).rgb * weight[i];
+                result += texture2D( u_DiffuseMap, v_TexCoords + vec2( 0.0, tex_offset.y * i ) ).rgb * weight[i];
+                result += texture2D( u_DiffuseMap, v_TexCoords - vec2( 0.0, tex_offset.y * i ) ).rgb * weight[i];
             }
         }
     }
@@ -338,30 +333,29 @@ void main() {
 
     ApplyLighting();
 
-#if defined(USE_HDR)
-#if !defined(USE_EXPOSURE_TONE_MAPPING)
-	// reinhard tone mapping
-	a_Color.rgb = a_Color.rgb / ( a_Color.rgb + vec3( 1.0 ) );
-#else
-	// exposure tone mapping
-	a_Color.rgb = vec3( 1.0 ) - exp( -a_Color.rgb * u_CameraExposure );
-#endif
+    if ( u_HDR ) {
+        if ( u_ToneMap == ToneMap_Reinhard ) {
+        	// reinhard tone mapping
+        	a_Color.rgb = a_Color.rgb / ( a_Color.rgb + vec3( 1.0 ) );
+        } else if ( u_ToneMap == ToneMap_Exposure ) {
+        	// exposure tone mapping
+        	a_Color.rgb = vec3( 1.0 ) - exp( -a_Color.rgb * u_CameraExposure );
+        }
+    }
 
-#if defined(USE_BLOOM)
-	// check whether fragment output is higher than threshold, if so output as brightness color
-	float brightness = dot( a_Color.rgb, vec3( 0.2126, 0.7152, 0.0722 ) );
-	if ( brightness > 1.0 ) {
-		a_BrightColor = vec4( a_Color.rgb, 1.0 );
-	} else {
-		a_BrightColor = vec4( 0.0, 0.0, 0.0, 1.0 );
-	}
-#endif
-#endif
+    if ( u_Bloom ) {
+    	// check whether fragment output is higher than threshold, if so output as brightness color
+    	float brightness = dot( a_Color.rgb, vec3( 0.1, 0.1, 0.1 ) );
+    	if ( brightness > 1.0 ) {
+    		a_BrightColor = vec4( a_Color.rgb, 1.0 );
+    	} else {
+    		a_BrightColor = vec4( 0.0, 0.0, 0.0, 1.0 );
+    	}
+    }
 	a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
     a_Color.rgb *= v_Color.rgb;
-//    a_Color.rgb = blur( a_Color.rgb );
 
     if ( u_GamePaused ) {
-        a_Color.rgb = vec3( 0.75, 0.75, 0.75 );
+        a_Color.rgb = vec3( a_Color.rg * 0.2, 0.5 );
     }
 }

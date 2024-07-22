@@ -45,6 +45,7 @@ typedef struct {
     nhandle_t accept_1;
 
     qboolean acceptHovered;
+    const void *focusedItem;
 } newGameMenu_t;
 
 #define ID_BEGINGAME        1
@@ -52,6 +53,15 @@ typedef struct {
 #define ID_DIFFICULTY       3
 
 static newGameMenu_t *s_newGame;
+
+static void SfxFocused( const void *ptr ) {
+    if ( ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone ) ) {
+        if ( s_newGame->focusedItem != ptr ) {
+            s_newGame->focusedItem = ptr;
+            Snd_PlaySfx( ui->sfx_move );
+        }
+    }
+}
 
 static void BeginNewGame( void )
 {
@@ -106,6 +116,7 @@ static void NewGameMenu_Draw_FixedSlots( void )
                 Snd_PlaySfx( ui->sfx_select );
             }
         }
+        SfxFocused( "SinglePlayerNewInput" );
 
         ImGui::TableNextRow();
 
@@ -119,6 +130,7 @@ static void NewGameMenu_Draw_FixedSlots( void )
                 s_newGame->diff = DIF_HARDEST;
             }
         }
+        SfxFocused( "DifficultyArrowLeft" );
         ImGui::SameLine();
         if ( ImGui::BeginCombo( "##SinglePlayerMenuDifficultyConfigList", s_newGame->difficultyList[ (int)s_newGame->diff ] ) ) {
             if ( ImGui::IsItemActivated() && ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
@@ -138,6 +150,7 @@ static void NewGameMenu_Draw_FixedSlots( void )
     			Snd_PlaySfx( ui->sfx_select );
     		}
         }
+        SfxFocused( "DifficultyList" );
         ImGui::SameLine();
         if ( ImGui::ArrowButton( "##DifficultySinglePlayerMenuConfigRight", ImGuiDir_Right ) ) {
             Snd_PlaySfx( ui->sfx_select );
@@ -146,6 +159,7 @@ static void NewGameMenu_Draw_FixedSlots( void )
                 s_newGame->diff = DIF_NOOB;
             }
         }
+        SfxFocused( "DifficultyArrowRight" );
 
         ImGui::TableNextRow();
 
@@ -159,6 +173,7 @@ static void NewGameMenu_Draw_FixedSlots( void )
                 s_newGame->selectedSaveSlot = Cvar_VariableInteger( "g_maxSaveSlots" ) - 1;
             }
         }
+        SfxFocused( "SaveSlotArrowLeft" );
         ImGui::SameLine();
         if ( ImGui::BeginCombo( "##SinglePlayerMenuSaveSlotConfigList", s_newGame->slotNames[ s_newGame->selectedSaveSlot ] ) ) {
             if ( ImGui::IsItemActivated() && ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
@@ -178,6 +193,7 @@ static void NewGameMenu_Draw_FixedSlots( void )
 		    	Snd_PlaySfx( ui->sfx_select );
 		    }
         }
+        SfxFocused( "SaveSlotList" );
         ImGui::SameLine();
         if ( ImGui::ArrowButton( "##SaveSlotSinglePlayerMenuConfigRight", ImGuiDir_Right ) ) {
             Snd_PlaySfx( ui->sfx_select );
@@ -186,6 +202,7 @@ static void NewGameMenu_Draw_FixedSlots( void )
                 s_newGame->selectedSaveSlot = 0;
             }
         }
+        SfxFocused( "SaveSlotArrowRight" );
     }
     ImGui::EndTable();
 }
