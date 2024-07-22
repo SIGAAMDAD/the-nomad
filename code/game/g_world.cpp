@@ -370,15 +370,12 @@ void CGameWorld::Init( mapinfo_t *info )
 
 void CGameWorld::LinkEntity( linkEntity_t *ent )
 {
-	m_hLock.WriteLock();
 	m_nEntities++;
 
     m_ActiveEnts.prev->next = ent;
 	ent->prev = m_ActiveEnts.prev;
 	ent->next = &m_ActiveEnts;
 	m_ActiveEnts.prev = ent;
-	
-	m_hLock.WriteUnlock();
 }
 
 void CGameWorld::UnlinkEntity( linkEntity_t *ent )

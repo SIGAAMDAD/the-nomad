@@ -2226,7 +2226,7 @@ static texture_t *R_CreateImage2( const char *name, byte *pic, int width, int he
 	case GL_DEPTH_COMPONENT32_ARB:
 		// Fix for sampling depth buffer on old nVidia cards.
 		// from http://www.idevgames.com/forums/thread-4141-post-34844.html#pid34844
-		nglTexParameteri( GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_LUMINANCE );
+		nglTexParameteri( GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE_ARB, GL_LUMINANCE );
 		nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 		nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 		break;
@@ -2461,8 +2461,7 @@ static const imageExtToLoaderMap_t imageLoaders[] = {
 	{ "jpg",  R_LoadJPG },
 	{ "jpeg", R_LoadJPG },
 	{ "pcx",  R_LoadPCX },
-	{ "bmp",  R_LoadBMP },
-	{ "webp", R_LoadWebp }
+	{ "bmp",  R_LoadBMP }
 };
 
 static const int numImageLoaders = arraylen( imageLoaders );

@@ -31,22 +31,22 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 	#include <synchapi.h>
 	#include <winbase.h>
 
-	#define USE_SRWLOCK
+//	#define USE_SRWLOCK
 
 	#if defined(__MINGW64__) || defined(__MINGW32__)
 		// for some reason, they have SRWLOCK defined in the headers, but not these
 		// functions
 
-		extern void InitializeSRWLock( PSRWLOCK );
-		extern void AcquireSRWLockExclusive( PSRWLOCK );
-		extern void AcquireSRWLockShared( PSRWLOCK );
-		extern void ReleaseSRWLockExclusive( PSRWLOCK );
-		extern void ReleaseSRWLockShared( PSRWLOCK );
-		extern void InitializeConditionVariable( PCONDITION_VARIABLE );
-		extern void SleepConditionVariableSRW( PCONDITION_VARIABLE, PSRWLOCK, DWORD, ULONG );
-		extern void SleepConditionVariableCS( PCONDITION_VARIABLE, PCRITICAL_SECTION, DWORD );
-		extern void WakeAllConditionVariable( PCONDITION_VARIABLE );
-		extern void WakeConditionVariable( PCONDITION_VARIABLE );
+		extern WINBASEAPI WINAPI void InitializeSRWLock( PSRWLOCK );
+		extern WINBASEAPI WINAPI void AcquireSRWLockExclusive( PSRWLOCK );
+		extern WINBASEAPI WINAPI void AcquireSRWLockShared( PSRWLOCK );
+		extern WINBASEAPI WINAPI void ReleaseSRWLockExclusive( PSRWLOCK );
+		extern WINBASEAPI WINAPI void ReleaseSRWLockShared( PSRWLOCK );
+		extern WINBASEAPI WINAPI void InitializeConditionVariable( PCONDITION_VARIABLE );
+		extern WINBASEAPI WINBOOL WINAPI SleepConditionVariableSRW( PCONDITION_VARIABLE, PSRWLOCK, DWORD, ULONG );
+		extern WINBASEAPI WINBOOL WINAPI SleepConditionVariableCS( PCONDITION_VARIABLE, PCRITICAL_SECTION, DWORD );
+		extern WINBASEAPI WINAPI void WakeAllConditionVariable( PCONDITION_VARIABLE );
+		extern WINBASEAPI WINAPI void WakeConditionVariable( PCONDITION_VARIABLE );
 	#endif
 
 	typedef void *HANDLE;
@@ -179,7 +179,11 @@ public:
 	GDR_INLINE bool TryLock( void ) const { return const_cast<CThreadMutex *>( this )->TryLock(); }
 private:
 #ifdef _WIN32
+#ifdef USE_SRWLOCK
 	SRWLOCK m_hLock;
+#else
+	CRITICAL_SECTION m_hLock;
+#endif
 	DWORD m_hOwnerThread;
 #else
 	pthread_mutex_t m_hMutex;
@@ -317,10 +321,10 @@ private:
 #ifdef _WIN32
 #ifdef USE_SRWLOCK
 	SRWLOCK m_hLock;
-	CONDITION_VARIABLE m_hCondition;
 #else
 	CRITICAL_SECTION m_hLock;
 #endif
+	CONDITION_VARIABLE m_hCondition;
 #else
 	pthread_rwlock_t m_hRWLock;
 	pthread_mutex_t m_hMutex;

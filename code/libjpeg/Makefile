@@ -9,7 +9,7 @@ OS_INCLUDE=-I/usr/x86_64-w64-mingw32/include/
 COMPILER  =distcc x86_64-w64-mingw32-gcc
 LIB_PREFIX=dependencies/libs/windows
 DLL_EXT   =dll
-O         =bin/obj/win32
+O         =bin/obj/win64
 endif
 
 ifndef release

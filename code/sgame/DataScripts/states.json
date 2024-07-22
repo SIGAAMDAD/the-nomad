@@ -153,34 +153,6 @@
                 "Frames": "2",
                 "Reverse": "false"
             }
-        },
-        {
-            "Id": "dash_thruster_flame",
-            "Tics": "1000",
-            "BaseNum": "ST_GFX_ANIMATION",
-            "Entity": "gfx_dash",
-            "NextState": "this",
-            "SpriteOffset": [ 0, 0 ],
-            "Animation": {
-                "TicRate": "100",
-                "FlipFlop": "false",
-                "Frames": "5",
-                "Reverse": "false"
-            }
-        },
-        {
-            "Id": "slide_cloud",
-            "Tics": "1000",
-            "BaseNum": "ST_GFX_ANIMATION",
-            "Entity": "gfx_slide",
-            "NextState": "this",
-            "SpriteOffset": [ 0, 0 ],
-            "Animation": {
-                "TicRate": "50",
-                "FlipFlop": "false",
-                "Frames": "10",
-                "Reverse": "false"
-            }
         }
     ]
 }

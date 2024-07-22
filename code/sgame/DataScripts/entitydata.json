@@ -12,9 +12,7 @@
         { "Id": 3, "Name": "item_grenadepack" },
         { "Id": 4, "Name": "item_rocketpack" },
         { "Id": 5, "Name": "powerup_a" },
-        { "Id": 6, "Name": "powerup_b" },
-        { "Id": 7, "Name": "gfx_dash" },
-        { "Id": 8, "Name": "gfx_slide" }
+        { "Id": 6, "Name": "powerup_b" }
     ],
     "AmmoData": [
         { "Id": 7, "Name": "ammo_rifle" },

@@ -1406,7 +1406,13 @@ void Snd_Init( void )
     Cvar_CheckRange( snd_debugPrint, "0", "1", CVT_INT );
     Cvar_SetDescription( snd_debugPrint, "Toggles OpenAL-soft debug messages." );
 
+#ifdef _WIN32
+    Com_StartupVariable( "s_noSound" );
+    snd_noSound = Cvar_Get( "s_noSound", "1", CVAR_LATCH );
+#else
+    Com_StartupVariable( "s_noSound" );
     snd_noSound = Cvar_Get( "s_noSound", "0", CVAR_LATCH );
+#endif
 
     snd_device = Cvar_Get( "snd_device", "default", CVAR_LATCH | CVAR_SAVE );
     Cvar_SetDescription( snd_device, "the audio device to use ('default' for the default audio device)" );

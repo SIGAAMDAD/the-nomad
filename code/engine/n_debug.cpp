@@ -83,6 +83,8 @@ static CDebugSession g_debugSession;
 
 #define MAX_SYMBOL_LENGTH 4096
 
+extern fileHandle_t logfile;
+
 #ifdef POSIX
 #define MAX_STACKTRACE_FILESIZE 8192
 
@@ -91,8 +93,6 @@ static void bt_error_callback( void *data, const char *msg, int errnum )
     fprintf(stdout, "libbacktrace ERROR: %d - %s\n", errnum, msg);
     g_debugSession.m_bBacktraceError = true;
 }
-
-extern fileHandle_t logfile;
 
 static void bt_syminfo_callback( void *data, uintptr_t pc, const char *symname,
 								 uintptr_t symval, uintptr_t symsize )

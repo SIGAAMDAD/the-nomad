@@ -4,8 +4,8 @@ COMPILER  =distcc g++ -std=c++17
 LIB_PREFIX=dependencies/libs/linux
 O         =bin/obj/unix
 else
-OS_INCLUDE=-I/usr/x86_64-w64-mingw32/include/
-COMPILER  =distcc x86_64-w64-mingw-g++ -std=c++17
+OS_INCLUDE=-I/usr/x86_64-w64-mingw32/include/ -Idependencies/include/ -Ideps/glm/ -Icode/libsdl/include/
+COMPILER  =distcc x86_64-w64-mingw32-g++ -std=c++17
 LIB_PREFIX=dependencies/libs/windows
 O         =bin/obj/win64
 endif
@@ -43,7 +43,14 @@ OPTIMIZERS    =\
 CC       =$(COMPILER)
 CFLAGS   =$(FTYPE) $(DEFINES) $(INCLUDE) $(OPTIMIZERS) -fPIC
 SDIR     =code
+
+ifdef win32
+LIB      =TheNomad.ASLib.x64.lib
+COMPILE_LIB=x86_64-w64-mingw32-ar
+else
 LIB      =TheNomad.ASLib.x64.a
+COMPILE_LIB=ar
+endif
 
 all: $(LIB)
 
@@ -82,7 +89,7 @@ $(O)/angelscript/%.o: $(SDIR)/angelscript/%.cpp
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 $(LIB): $(INTERNAL_OBJS)
-	ar rcs $(LIB) $(INTERNAL_OBJS)
+	$(COMPILE_LIB) rcs $(LIB) $(INTERNAL_OBJS)
 
 clean:
 	rm -rf $(INTERNAL_OBJS)

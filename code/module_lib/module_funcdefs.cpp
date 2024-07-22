@@ -49,8 +49,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // c++ compatible wrappers around angelscript engine function calls
 //
 
-static CThreadMutex g_hRenderLock;
-
 #define REQUIRE_ARG_COUNT( amount ) \
     Assert( pGeneric->GetArgCount() == amount )
 #define DEFINE_CALLBACK( name ) \
@@ -806,7 +804,7 @@ static void KeyGetBinding( asIScriptGeneric *pGeneric ) {
 }
 
 static void KeyIsDown( asIScriptGeneric *pGeneric ) {
-    pGeneric->SetReturnDWord( Key_IsDown( pGeneric->GetArgDWord( 0 ) ) );
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = Key_IsDown( pGeneric->GetArgDWord( 0 ) );
 }
 
 static void KeyAnyDown( asIScriptGeneric *pGeneric ) {
@@ -1103,23 +1101,23 @@ static void SetCameraPos( asIScriptGeneric *pGeneric ) {
     G_SetCameraData( (const vec_t *)pos, zoom, rotation );
 }
 
-static nhandle_t OpenFileRead( const string_t *fileName ) {
+static nhandle_t ModuleOpenFileRead( const string_t *fileName ) {
     return FS_VM_FOpenRead( fileName->c_str(), H_SGAME );
 }
 
-static nhandle_t OpenFileWrite( const string_t *fileName ) {
+static nhandle_t ModuleOpenFileWrite( const string_t *fileName ) {
     return FS_VM_FOpenWrite( fileName->c_str(), H_SGAME );
 }
 
-static nhandle_t OpenFileAppend( const string_t *fileName ) {
+static nhandle_t ModuleOpenFileAppend( const string_t *fileName ) {
     return FS_VM_FOpenAppend( fileName->c_str(), H_SGAME );
 }
 
-static nhandle_t OpenFileRW( const string_t *fileName ) {
+static nhandle_t ModuleOpenFileRW( const string_t *fileName ) {
     return FS_VM_FOpenRW( fileName->c_str(), H_SGAME );
 }
 
-static uint64_t OpenFile( const string_t *fileName, fileHandle_t *hFile, fileMode_t mode ) {
+static uint64_t ModuleOpenFile( const string_t *fileName, fileHandle_t *hFile, fileMode_t mode ) {
     return FS_VM_FOpenFile( fileName->c_str(), hFile, mode, H_SGAME );
 }
 
@@ -2537,11 +2535,11 @@ void ModuleLib_Register_Engine( void )
 			
 			// could this be a class, YES, but I won't force it on the modder
 			
-			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::FileSystem::OpenFileRead( const string& in )", WRAP_FN( OpenFileRead ) );
-			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::FileSystem::OpenFileWrite( const string& in )", WRAP_FN( OpenFileWrite ) );
-			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::FileSystem::OpenFileAppend( const string& in )", WRAP_FN( OpenFileAppend ) );
-            REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::FileSystem::OpenFileRW( const string& in )", WRAP_FN( OpenFileRW ) );
-			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::OpenFile( const string& in, int, int& out )", WRAP_FN( OpenFile ) );
+			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::FileSystem::OpenFileRead( const string& in )", WRAP_FN( ModuleOpenFileRead ) );
+			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::FileSystem::OpenFileWrite( const string& in )", WRAP_FN( ModuleOpenFileWrite ) );
+			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::FileSystem::OpenFileAppend( const string& in )", WRAP_FN( ModuleOpenFileAppend ) );
+            REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::FileSystem::OpenFileRW( const string& in )", WRAP_FN( ModuleOpenFileRW ) );
+			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::OpenFile( const string& in, int, int& out )", WRAP_FN( ModuleOpenFile ) );
 			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::FileSystem::CloseFile( int )", WRAP_FN( CloseFile ) );
 			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::GetLength( int )", WRAP_FN( GetFileLength ) );
 			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::GetPosition( int )", WRAP_FN( GetFilePosition ) );

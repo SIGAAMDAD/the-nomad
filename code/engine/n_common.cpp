@@ -212,92 +212,64 @@ void Com_WriteCrashReport( void )
 	cvar_t *var;
 	const char *match;
 	FILE *fp;
-	fileHandle_t f;
-	
 	extern cvar_t *cvar_vars;
-
-	auto FPrintf = [&]( const char *fmt, ... ) -> void {
-		va_list argptr;
-		if ( FS_Initialized() && f != FS_INVALID_HANDLE ) {
-			char str[MAXPRINTMSG];
-			int len;
-
-			va_start( argptr, fmt );
-			len = N_vsnprintf( str, sizeof( str ) - 1, fmt, argptr );
-			va_end( argptr );
-
-			FS_Write( str, len, f );
-		} else {
-			va_start( argptr, fmt );
-			vfprintf( fp, fmt, argptr );
-			va_end( argptr );
-		}
-	};
 
     ctime = time( NULL );
     t = localtime( &ctime );
     strftime( timestr, sizeof( timestr ) - 1, "%d%m%Y_%S%M%H", t );
 
     Cvar_VariableStringBuffer( "com_errorMessage", msg, sizeof( msg ) - 1 );
-    Com_snprintf( path, sizeof( path ) - 1, "crashreport_%s.txt", timestr );
-
-	if ( FS_Initialized() ) {
-		f = FS_FOpenWrite( va( LOG_DIR "/CrashReports/%s", path ) );
-		if ( f == FS_INVALID_HANDLE ) {
-			Con_Printf( COLOR_RED "Error creating file %s in write-only mode!\n", path );
+    Com_snprintf( path, sizeof( path ) - 1, "%s/%s/" LOG_DIR "/CrashReports/crashreport_%s.txt", FS_GetHomePath(), FS_GetBaseGameDir(), timestr );
+	
+	fp = fopen( path, "w" );
+	if ( !fp ) {
+	    fprintf( stderr, "Error creating file %s in write-only mode!\n", path );
+		if ( logfile != FS_INVALID_HANDLE && FS_Initialized() ) {
+			FS_Printf( logfile, "Error creating file %s in write-only mode!\n", path );
 		}
 		return;
-	} else {
-		fp = fopen( path, "w" );
-		if ( !fp ) {
-		    fprintf( stderr, "Error creating file %s in write-only mode!\n", path );
-			if ( logfile != FS_INVALID_HANDLE && FS_Initialized() ) {
-				FS_Printf( logfile, "Error creating file %s in write-only mode!\n", path );
-			}
-			return;
-		}
 	}
 
 	strftime( timestr, sizeof( timestr ) - 1, "%d/%m/%Y %S:%M:%H", t );
 
-    FPrintf( "[ERROR INFO]\n" );
-	FPrintf( "Time: %s\n", timestr );
-    FPrintf( "Message: %s\n", msg );
+    fprintf( fp, "[ERROR INFO]\n" );
+	fprintf( fp, "Time: %s\n", timestr );
+    fprintf( fp, "Message: %s\n", msg );
     if ( gi.state == GS_LEVEL ) {
-        FPrintf( "MapName: %s\n", gi.mapCache.info.name );
-        FPrintf( "SaveName: %s\n", Cvar_VariableString( "sgame_SaveName" ) );
+        fprintf( fp, "MapName: %s\n", gi.mapCache.info.name );
+        fprintf( fp, "SaveName: %s\n", Cvar_VariableString( "sgame_SaveName" ) );
     }
     else if ( gi.state == GS_MENU ) {
-        FPrintf( "ActiveMenu: %i\n", ui->menustate );
+        fprintf( fp, "ActiveMenu: %i\n", ui->menustate );
     }
-    FPrintf( "StackTrace:\n" );
+    fprintf( fp, "StackTrace:\n" );
     Sys_DebugStacktraceFile( MAX_STACKTRACE_FRAMES, fp );
-	FPrintf( "\n" );
+	fprintf( fp, "\n" );
 
-    FPrintf( "[ENGINE INFO]\n" );
-	FPrintf( "Version String: " GLN_VERSION "\n" );
+    fprintf( fp, "[ENGINE INFO]\n" );
+	fprintf( fp, "Version String: " GLN_VERSION "\n" );
 	if ( FS_Initialized() && ui ) {
-		FPrintf( "Demo: %i\n", ui->demoVersion );
+		fprintf( fp, "Demo: %i\n", ui->demoVersion );
 	}
-    FPrintf( "Architecture: " ARCH_STRING "\n" );
-    FPrintf( "Operating System: " OS_STRING "\n" );
-    FPrintf( "CPU: %s\n", sys_cpuString->s );
-    FPrintf( "Build Information:\n" );
-	FPrintf( "\tC++ Version: %li\n", __cplusplus );
-	FPrintf( "\tCompiler: " COMPILER_STRING "\n" );
-	FPrintf( "\tCompiler Version: %lu", (uint64_t)EA_COMPILER_VERSION );
+    fprintf( fp, "Architecture: " ARCH_STRING "\n" );
+    fprintf( fp, "Operating System: " OS_STRING "\n" );
+    fprintf( fp, "CPU: %s\n", sys_cpuString->s );
+    fprintf( fp, "Build Information:\n" );
+	fprintf( fp, "\tC++ Version: %li\n", __cplusplus );
+	fprintf( fp, "\tCompiler: " COMPILER_STRING "\n" );
+	fprintf( fp, "\tCompiler Version: %lu", (uint64_t)EA_COMPILER_VERSION );
 #ifdef USE_CPU_AFFINITY
-    FPrintf( "\tUSE_CPU_AFFINITY\n" );
+    fprintf( fp, "\tUSE_CPU_AFFINITY\n" );
 #endif
 #ifdef USE_OPENGL_API
-	FPrintf( "\tUSE_OPENGL_API\n" );
+	fprintf( fp, "\tUSE_OPENGL_API\n" );
 #endif
 #ifdef USE_VULKAN_API
-	FPrintf( "\tUSE_VULKAN_API\n" );
+	fprintf( fp, "\tUSE_VULKAN_API\n" );
 #endif
-	FPrintf( "\n" );
+	fprintf( fp, "\n" );
 
-    FPrintf( "[CVAR INFO]\n" );
+    fprintf( fp, "[CVAR INFO]\n" );
 	for ( var = cvar_vars; var; var = var->next ) {
         if ( !var->name || ( match && !Com_Filter( match, var->name ) ) ) {
 			continue;
@@ -307,58 +279,58 @@ void Com_WriteCrashReport( void )
 		}
 
 		if ( var->flags & CVAR_SERVERINFO ) {
-			FPrintf( "S" );
+			fprintf( fp, "S" );
 		} else {
-			FPrintf( " " );
+			fprintf( fp, " " );
 		}
 		if ( var->flags & CVAR_SYSTEMINFO ) {
-			FPrintf( "s" );
+			fprintf( fp, "s" );
 		} else {
-			FPrintf( " " );
+			fprintf( fp, " " );
 		}
 		if ( var->flags & CVAR_USERINFO ) {
-			FPrintf( "U" );
+			fprintf( fp, "U" );
 		} else {
-			FPrintf( " " );
+			fprintf( fp, " " );
 		}
 		if ( var->flags & CVAR_ROM ) {
-			FPrintf( "R" );
+			fprintf( fp, "R" );
 		} else {
-			FPrintf( " " );
+			fprintf( fp, " " );
 		}
 		if ( var->flags & CVAR_INIT ) {
-			FPrintf( "I" );
+			fprintf( fp, "I" );
 		} else {
-			FPrintf( " ");
+			fprintf( fp, " ");
 		}
 		if ( var->flags & CVAR_SAVE ) {
-			FPrintf( "A" );
+			fprintf( fp, "A" );
 		} else {
-			FPrintf( " " );
+			fprintf( fp, " " );
 		}
 		if ( var->flags & CVAR_LATCH ) {
-			FPrintf( "L" );
+			fprintf( fp, "L" );
 		} else {
-			FPrintf( " " );
+			fprintf( fp, " " );
 		}
 		if ( var->flags & CVAR_CHEAT ) {
-			FPrintf( "C" );
+			fprintf( fp, "C" );
 		} else {
-			FPrintf( " " );
+			fprintf( fp, " " );
 		}
 		if ( var->flags & CVAR_USER_CREATED ) {
-			FPrintf( "?" );
+			fprintf( fp, "?" );
 		} else {
-			FPrintf( " " );
+			fprintf( fp, " " );
 		}
 
-		FPrintf( " %s \"%s\"\n", var->name, var->s );
+		fprintf( fp, " %s \"%s\"\n", var->name, var->s );
     }
 
-    FPrintf( "\n" );
-    FPrintf( "[FILESYSTEM INFO]\n" );
-    FPrintf( "Referenced BFFs: %s\n", FS_ReferencedBFFNames() );
-    FPrintf( "Loaded BFFs: %s\n", FS_LoadedBFFNames() );
+    fprintf( fp, "\n" );
+    fprintf( fp, "[FILESYSTEM INFO]\n" );
+    fprintf( fp, "Referenced BFFs: %s\n", FS_ReferencedBFFNames() );
+    fprintf( fp, "Loaded BFFs: %s\n", FS_LoadedBFFNames() );
 
 	fclose( fp );
 

@@ -104,6 +104,14 @@ namespace TheNomad::SGame {
 
 			CalcLevelStats();
 
+			// add bonus
+			if ( collateralScore == 0 ) {
+				totalScore += 1000;
+			}
+			if ( numDeaths == 0 ) {
+				totalScore += 1000;
+			}
+
 			// absolute perfection
 			if ( AllRanksAre( LevelRank::RankS ) && collateralScore == 0 ) {
 				total_Rank = LevelRank::RankS;
@@ -152,7 +160,7 @@ namespace TheNomad::SGame {
 			TheNomad::Engine::UserInterface::SetActiveFont( TheNomad::Engine::UserInterface::Font_RobotoMono );
 			ImGui::SetWindowFontScale( fontScale * 2.0f );
 
-			ImGui::Text( TheNomad::Engine::CvarVariableString( "mapname" ) );
+			ImGui::Text( LevelManager.GetLevelName() );
 			
 			ImGui::BeginTable( "##LevelStatsNumbersEndOfLevel", 2 );
 			{
@@ -209,24 +217,32 @@ namespace TheNomad::SGame {
 
 				ImGui::TableNextColumn();
 
-				ImGui::Text( "-" );
+				ImGui::Text( "- " );
 				ImGui::SameLine();
-				ImGui::PushStyleColor( ImGuiCol::Text, colorRed );
-				ImGui::Text( formatUInt( collateralScore ) );
-				ImGui::PopStyleColor();
-				ImGui::SameLine();
-				ImGui::Text( "COLLATERAL" );
+				if ( collateralScore > 0 ) {
+					ImGui::PushStyleColor( ImGuiCol::Text, colorRed );
+					ImGui::Text( formatUInt( collateralScore ) );
+					ImGui::PopStyleColor();
+					ImGui::SameLine();
+					ImGui::Text( " COLLATERAL" );
+				} else {
+					ImGui::PushStyleColor( ImGuiCol::Text, colorGreen );
+					ImGui::Text( "NO CLEANUP (+1000)" );
+					ImGui::PopStyleColor();
+				}
 
-				ImGui::Text( "-" );
+				ImGui::Text( "- " );
 				ImGui::SameLine();
 				if ( numDeaths > 0 ) {
 					ImGui::PushStyleColor( ImGuiCol::Text, colorRed );
 					ImGui::Text( formatUInt( numDeaths ) );
 					ImGui::PopStyleColor();
 					ImGui::SameLine();
-					ImGui::Text( "DEATHS" );
+					ImGui::Text( " DEATHS" );
 				} else {
+					ImGui::PushStyleColor( ImGuiCol::Text, colorGreen );
 					ImGui::Text( "NO RESTARTS (+1000)" );
+					ImGui::PopStyleColor();
 				}
 
 				ImGui::TableNextColumn();
@@ -259,11 +275,12 @@ namespace TheNomad::SGame {
 				| ImGuiWindowFlags::NoResize );
 			const float scale = TheNomad::GameSystem::GameManager.GetUIScale();
 
-			if ( !TheNomad::Engine::IsKeyDown( TheNomad::Engine::KeyNum::Tab )
-				&& !TheNomad::Engine::IsKeyDown( TheNomad::Engine::KeyNum::GamePad_Back )
-				&& GlobalState != GameState::StatsMenu )
-			{
-				return;
+			if ( GlobalState != GameState::StatsMenu ) {
+				if ( !TheNomad::Engine::IsKeyDown( TheNomad::Engine::KeyNum::Tab )
+					&& !TheNomad::Engine::IsKeyDown( TheNomad::Engine::KeyNum::GamePad_Back ) )
+				{
+					return;
+				}
 			}
 
 			if ( !endOfLevel ) {
@@ -271,7 +288,7 @@ namespace TheNomad::SGame {
 			} else {
 				m_TimeMilliseconds = timer;
 			}
-			m_TimeSeconds = m_TimeMilliseconds / 10000;
+			m_TimeSeconds = m_TimeMilliseconds / 1000;
 			m_TimeMinutes = m_TimeMilliseconds / 60000;
 			
 			if ( endOfLevel ) {
@@ -392,7 +409,7 @@ namespace TheNomad::SGame {
 			return rank;
 		}
 
-		int m_TimeMilliseconds = 0;
+		uint64 m_TimeMilliseconds = 0;
 		int64 m_TimeSeconds = 0;
 		int64 m_TimeMinutes = 0;
 

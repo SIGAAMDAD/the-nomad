@@ -44,6 +44,8 @@
 
 void GDR_DECL Sys_SetStatus( const char *format, ... );
 
+extern SDL_Window *SDL_window;
+
 static field_t console;
 
 typedef struct
@@ -123,10 +125,10 @@ static int GetTimerMsec( void )
 		if ( com_maxfps->i ) {
 			msec = 1000 / com_maxfps->i;
 		}
-//		if ( Cvar_VariableIntegerValue( "com_maxfpsUnfocused" ) ) {
-//			msec = 1000 / Cvar_VariableIntegerValue( "com_maxfpsUnfocused" );
-//		}
-		if ( G_WindowMinimized() ) {
+		if ( Cvar_VariableInteger( "com_maxfpsUnfocused" ) ) {
+			msec = 1000 / Cvar_VariableInteger( "com_maxfpsUnfocused" );
+		}
+		if ( !( SDL_GetWindowFlags( SDL_window ) & SDL_WINDOW_MINIMIZED ) ) {
 			return 0;
 		}
 	}

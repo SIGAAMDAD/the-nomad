@@ -9,6 +9,8 @@
 
 WinVars_t g_wv;
 
+extern SDL_Window *SDL_window;
+
 cvar_t *in_forceCharset;
 cvar_t *in_mouse;
 cvar_t *in_logitechbug;
@@ -73,9 +75,9 @@ bool Sys_IsInDebugSession( void ) {
 
 static VOID CALLBACK WinEventProc( HWINEVENTHOOK h_WinEventHook, DWORD dwEvent, HWND hWnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime )
 {
-	if ( G_GetSDLWindow() )
+	if ( SDL_window )
 	{
-		if ( !G_WindowMinimized() )// disable topmost window style
+		if ( !( SDL_GetWindowFlags( SDL_window ) & SDL_WINDOW_MINIMIZED ) )// disable topmost window style
 		{
 			SetWindowPos( g_wv.hWnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE );
 		}
@@ -119,8 +121,8 @@ void WIN_Minimize( void ) {
 
 #ifdef FAST_MODE_SWITCH
 	// move game window to background
-	if ( !G_WindowMinimized() ) {
-		if ( G_GetSDLWindow() )
+	if ( !( SDL_GetWindowFlags( SDL_window ) & SDL_WINDOW_MINIMIZED ) ) {
+		if ( SDL_window )
 			SetForegroundWindow( GetDesktopWindow() );
 		// and wait some time before minimizing
 		if ( !uTimerM )
@@ -229,7 +231,7 @@ int Sys_MessageBox(const char *title, const char *text, bool ShowOkAndCancelButt
         { SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 0, "Cancel"  },
     };
 
-    boxData.window = G_GetSDLWindow();
+    boxData.window = SDL_window;
     boxData.title = title;
     boxData.message = text;
     boxData.numbuttons = ShowOkAndCancelButton ? 2 : 1;
@@ -877,7 +879,7 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM  wParam, LPARAM lParam 
 		VID_AppActivate( active );
 		Win_AddHotkey();
 
-//		if ( !G_WindowMinimized() ) {
+//		if ( !( SDL_GetWindowFlags( SDL_window ) & SDL_WINDOW_MINIMIZED ) ) {
 //			if ( gw_active ) {
 //				SetGameDisplaySettings();
 //				if ( re.SetColorMappings )
@@ -908,7 +910,7 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM  wParam, LPARAM lParam 
 		// after ALT+TAB, even if we selected other window we may receive WM_ACTIVATE 1 and then WM_ACTIVATE 0
 		// if we set HWND_TOPMOST in VID_AppActivate() other window will be not visible despite obtained input focus
 		// so delay HWND_TOPMOST setup to make sure we have no such bogus activation
-		if ( !G_WindowMinimized() ) {
+		if ( !( SDL_GetWindowFlags( SDL_window ) & SDL_WINDOW_MINIMIZED ) ) {
 			if ( uTimerT ) {
 				KillTimer( g_wv.hWnd, uTimerT );
 			}
@@ -927,14 +929,14 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM  wParam, LPARAM lParam 
 		break;
 
 	case WM_MOVE:
-		if ( !G_GetSDLWindow() || G_WindowMinimized() || !focused )
+		if ( !SDL_window || SDL_GetWindowFlags( SDL_window ) & SDL_WINDOW_MINIMIZED || !focused )
 			break;
 
 		GetWindowRect( hWnd, &g_wv.winRect );
 		g_wv.winRectValid = qtrue;
 		UpdateMonitorInfo( &g_wv.winRect );
 
-		if ( !G_WindowMinimized() )	{
+		if ( !( SDL_GetWindowFlags( SDL_window ) & SDL_WINDOW_MINIMIZED ) )	{
 			Cvar_SetIntegerValue( "vid_xpos", g_wv.winRect.left );
 			Cvar_SetIntegerValue( "vid_ypos", g_wv.winRect.top );
 			vid_xpos->modified = qfalse;
@@ -943,7 +945,7 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM  wParam, LPARAM lParam 
 		break;
 
 	case WM_SIZE:
-		if ( G_GetSDLWindow() && focused && !G_WindowMinimized() ) {
+		if ( SDL_window && focused && !( SDL_GetWindowFlags( SDL_window ) & SDL_WINDOW_MINIMIZED ) ) {
 			GetWindowRect( hWnd, &g_wv.winRect );
 			g_wv.winRectValid = qtrue;
 			UpdateMonitorInfo( &g_wv.winRect );
@@ -1024,7 +1026,7 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM  wParam, LPARAM lParam 
 		// check for left/right modifiers
 		if ( Win_CheckHotkeyMod() )
 		{
-			if ( G_GetSDLWindow() )
+			if ( SDL_window )
 			{
 				if ( ( re.CanMinimize && re.CanMinimize() ) )
 					WIN_Minimize();
@@ -1088,8 +1090,8 @@ static const int s_scantokey[ 128 ] =
 	'b',    'n',    'm',    ',',    '.',    '/',  KEY_SHIFT,  '*', 
 	KEY_ALT,  ' ',KEY_CAPSLOCK, KEY_F1,   KEY_F2,   KEY_F3,   KEY_F4,  KEY_F5,    // 3 
 	KEY_F6, KEY_F7,  KEY_F8,   KEY_F9,  KEY_F10, KEY_PAUSE, KEY_SCROLLOCK, KEY_HOME, 
-	KEY_UP,KEY_PAGEUP,KEY_KP_MINUS,KEY_LEFT,KEY_KP_5,KEY_RIGHT,KEY_KP_PLUS,KEY_END, //4 
-	KEY_DOWN,KEY_PAGEDOWN,KEY_INSERT,KEY_DELETE, 0,      0,      0,    KEY_F11, 
+	KEY_UPARROW,KEY_PAGEUP,KEY_KP_MINUS,KEY_LEFTARROW,KEY_KP_5,KEY_RIGHTARROW,KEY_KP_PLUS,KEY_END, //4 
+	KEY_DOWNARROW,KEY_PAGEDOWN,KEY_INSERT,KEY_DELETE, 0,      0,      0,    KEY_F11, 
 	KEY_F12,  0  ,    0  ,    0  ,    0  ,  KEY_MENU,   0  ,    0,     // 5
 	0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0, 
 	0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0,     // 6 
@@ -1182,6 +1184,72 @@ static int MapChar( WPARAM wParam, byte scancode )
 	}
 }
 
+void Sys_GetRAMUsage( uint64_t *curVirt, uint64_t *curPhys, uint64_t *peakVirt, uint64_t *peakPhys )
+{
+}
+
+
+#if 0
+// Measure the processor clock speed by sampling the cycle count, waiting
+// for some fraction of a second, then measuring the elapsed number of cycles.
+static int64_T CalculateClockSpeed( void )
+{
+#if defined( _X360 ) || defined(_PS3)
+	// Xbox360 and PS3 have the same clock speed and share a lot of characteristics on PPU
+	return 3200000000LL;
+#else	
+#if defined( _WIN32 )
+	LARGE_INTEGER waitTime, startCount, curCount;
+	CCycleCount start, end;
+
+	// Take 1/32 of a second for the measurement.
+	QueryPerformanceFrequency( &waitTime );
+	int scale = 5;
+	waitTime.QuadPart >>= scale;
+
+	QueryPerformanceCounter( &startCount );
+	start.Sample();
+	do
+	{
+		QueryPerformanceCounter( &curCount );
+	}
+	while ( curCount.QuadPart - startCount.QuadPart < waitTime.QuadPart );
+	end.Sample();
+
+	return (end.m_Int64 - start.m_Int64) << scale;
+#elif defined(POSIX)
+	uint64 CalculateCPUFreq(); // from cpu_linux.cpp
+	int64 freq =(int64)CalculateCPUFreq();
+	if ( freq == 0 ) // couldn't calculate clock speed
+	{
+		Error( "Unable to determine CPU Frequency\n" );
+	}
+	return freq;
+#else
+	#error "Please implement Clock Speed function for this platform"
+#endif
+#endif
+}
+#endif
+
+double Sys_CalculateCPUFreq( void )
+{
+	return 0;
+}
+
+/*
+=================
+Sys_SendKeyEvents
+
+Platform-dependent event handling
+=================
+*/
+void Sys_SendKeyEvents( void )
+{
+	HandleEvents();
+}
+
+
 
 /*
 ================
@@ -1271,7 +1339,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
 	// done before Com/Sys_Init since we need this for error output
 	Sys_InitConsole();
-//	Sys_CreateConsole( con_title, xpos, ypos, useXYpos );
+	Sys_CreateConsole( con_title, xpos, ypos, useXYpos );
 
 	// no abort/retry/fail errors
 //	SetErrorMode( SEM_FAILCRITICALERRORS );

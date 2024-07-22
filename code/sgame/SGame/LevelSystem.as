@@ -204,6 +204,7 @@ namespace TheNomad::SGame {
 				// done with the level?
 				if ( @cp is @m_MapData.GetCheckpoints()[ m_MapData.GetCheckpoints().Count() - 1 ] ) {
 					CalcTotalLevelTime();
+					m_RankData.CalcTotalLevelStats();
 					GlobalState = GameState::LevelFinish;
 					return;
 				}
@@ -211,15 +212,6 @@ namespace TheNomad::SGame {
 				for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 					TheNomad::GameSystem::GameSystems[i].OnCheckpointPassed( i );
 				}
-
-				// spawn everything
-				/*
-				for ( uint i = 0; i < cp.m_Spawns.Count(); i++ ) {
-					EntityManager.Spawn( cp.m_Spawns[i].m_nEntityType, cp.m_Spawns[i].m_nEntityId,
-						vec3( float( cp.m_Spawns[i].m_Origin.x ), float( cp.m_Spawns[i].m_Origin.y ),
-						float( cp.m_Spawns[i].m_Origin.z ) ), vec2( 0.0f, 0.0f ) );
-				}
-				*/
 				
 				TheNomad::Engine::CmdExecuteCommand( "sgame.save_game\n" );
 			}
@@ -240,11 +232,6 @@ namespace TheNomad::SGame {
 					TheNomad::Engine::CmdExecuteCommand( script );
 				}
 			}
-
-			CalcTotalLevelTime();
-
-			@m_MapData = null;
-			@m_Current = null;
 		}
 		void OnSave() const {
 			const LevelStats@ stats;
@@ -291,7 +278,7 @@ namespace TheNomad::SGame {
 					save.SaveUInt( "DeathsRank", uint( stats.deaths_Rank ) );
 					
 					save.SaveBool( "CleanRun", stats.isClean );
-					save.SaveUInt( "Time", uint( stats.m_TimeMilliseconds ) );
+					save.SaveUInt64( "Time", stats.m_TimeMilliseconds );
 					
 					save.SaveUInt( "NumKills", stats.numKills );
 					save.SaveUInt( "StylePoints", stats.stylePoints );
@@ -347,9 +334,9 @@ namespace TheNomad::SGame {
 					stats.deaths_Rank = LevelRank( section.LoadUInt( "DeathsRank" ) );
 
 					stats.isClean = section.LoadBool( "CleanRun" );
-					stats.m_TimeMilliseconds = section.LoadUInt( "Time" );
+					stats.m_TimeMilliseconds = section.LoadUInt64( "Time" );
 					stats.m_TimeSeconds = stats.m_TimeMilliseconds / 1000;
-					stats.m_TimeMinutes = stats.m_TimeMinutes / 60000;
+					stats.m_TimeMinutes = stats.m_TimeMilliseconds / 60000;
 					
 					stats.numKills = section.LoadUInt( "NumKills" );
 					stats.stylePoints = section.LoadUInt( "StylePoints" );
@@ -620,6 +607,9 @@ namespace TheNomad::SGame {
 		}
 		LevelInfoData@ GetCurrentData() {
 			return @m_Current;
+		}
+		const string GetLevelName() const {
+			return @m_Current !is null ? m_Current.m_Name : "N/A";
 		}
 		
 		private uint64 m_nEndTime = 0;

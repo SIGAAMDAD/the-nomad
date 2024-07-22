@@ -4,7 +4,7 @@ COMPILE_PLATFORM=$(shell uname | sed -e 's/_.*//' | tr '[:upper:]' '[:lower:]' |
 ifndef release
 DEBUGDEF  =-D_NOMAD_DEBUG
 ifdef win32
-FTYPE     =-Og -g3
+FTYPE     =-Og -g
 else
 FTYPE     =-Og -g
 endif
@@ -126,12 +126,16 @@ OPTIMIZERS    =\
 			-finline-small-functions \
 
 CFLAGS        =$(FTYPE) -Wno-unused-result $(DEFINES) $(INCLUDE) $(OPTIMIZERS)
+ifdef win32
+CFLAGS+=-Wno-unused-function -Wno-format -Wno-unused-variable
+endif
 ifndef release
 CFLAGS        +=-Wall
 endif
 CC            =$(COMPILER)
 ifdef win32
 O             = bin/obj/win64
+CFLAGS       += -Icode/libsdl/include/
 else
 O             = bin/obj/unix
 endif
@@ -187,23 +191,26 @@ SYS_DIR=$(SDIR)/unix
 else
 INCLUDE+=-Ideps/ -Ideps/glm -Icode/libsdl/include
 LDLIBS=-L. \
-		-lSDL2 \
-		-lOpenAL32 \
-		-lopengl32 \
-		-lsndfile \
 		-lgdi32 \
 		-lmingw32 \
 		-lwinmm \
 		-lcomctl32 \
 		-limagehlp \
 		-lpsapi \
-		-ljpeg-9 \
-		-lEASTL \
+		-Wl,-rpath='.' \
+		libEASTL.lib \
 		-lmsvcrt \
 		-lvcruntime140d \
 		-lvcruntime140_1d \
+		-lSDL2 \
+		-lSDL2_image \
+		OpenAL32.lib \
+		-lopengl32 \
+		-lsndfile \
 		/usr/x86_64-w64-mingw32/lib/libmsvcrt.a \
-		-ljpeg \
+		-ljpeg-9 \
+		-lsteam_api64 \
+		TheNomad.ASLib.x64.lib \
 
 ifndef release
 LDLIBS+=-ldbghelp

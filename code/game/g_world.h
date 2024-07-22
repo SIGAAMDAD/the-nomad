@@ -30,8 +30,6 @@ private:
     linkEntity_t m_ActiveEnts;
     mapinfo_t *m_pMapInfo;
     uint32_t m_nEntities;
-
-    CThreadRWMutex m_hLock;
 };
 
 #define ENTITYNUM_INVALID (unsigned)( ~0 )

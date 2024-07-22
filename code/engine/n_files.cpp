@@ -5,7 +5,6 @@
 #include "../system/sys_thread.h"
 #include "gln_files.h"
 #include "unzip.h"
-#include <zip.h>
 
 // every time a new demo bff file is built, this checksum must be updated.
 // the easiest way to get it is to just run the game and see what it spits out
@@ -20,6 +19,10 @@ static const uint32_t bff_checksums[] = {
 #endif
 
 //#define USE_ZIP
+
+#ifdef USE_ZIP
+#include <zip.h>
+#endif
 
 #define MAX_FILE_HANDLES 1024
 #define MAX_FILEHASH_SIZE 256

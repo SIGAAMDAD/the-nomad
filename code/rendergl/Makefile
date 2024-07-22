@@ -5,7 +5,7 @@ LIB_PREFIX=dependencies/libs/linux
 DLL_EXT   =so
 O         =bin/obj/unix
 else
-OS_INCLUDE=-I/usr/x86_64-w64-mingw32/include/
+OS_INCLUDE=-I/usr/x86_64-w64-mingw32/include/ -Icode/libsdl/include/
 COMPILER  =distcc x86_64-w64-mingw32-gcc
 LIB_PREFIX=dependencies/libs/windows
 DLL_EXT   =dll
@@ -73,7 +73,6 @@ INTERNAL_OBJS=\
 	$(O)/rendergl/r_image_pcx.o \
 	$(O)/rendergl/r_image_png.o \
 	$(O)/rendergl/r_image_tga.o \
-	$(O)/rendergl/r_image_webp.o \
 	$(O)/rendergl/r_noise.o \
 	$(O)/rendergl/n_shared.o \
 	$(O)/rendergl/n_math.o \
@@ -87,7 +86,7 @@ $(O)/rendergl/%.o: $(SDIR)/rendercommon/%.c
 	$(CC) $(CFLAGS) -shared -fPIC -o $@ -c $<
 
 $(LIB): $(INTERNAL_OBJS)
-	$(CC) $(CFLAGS) $(INTERNAL_OBJS) -shared -fPIC -o $(LIB) -lm -lwebp
+	$(CC) $(CFLAGS) $(INTERNAL_OBJS) -shared -fPIC -o $(LIB) -lm
 
 clean:
 	rm -rf $(INTERNAL_OBJS)
