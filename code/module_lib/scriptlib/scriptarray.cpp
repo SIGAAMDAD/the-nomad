@@ -657,15 +657,16 @@ void CScriptArray::Reserve(asUINT nItems)
 	}
 
 	if ( buffer->capacity < nItems ) {
-		DoAllocate( nItems, buffer->size );
+		DoAllocate( nItems, 0 );
 	}
 }
 
 void CScriptArray::Resize(asUINT numElements)
 {
-	if( !CheckMaxSize(numElements) )
+	if( !CheckMaxSize(numElements) || ( buffer->capacity == numElements && buffer->size == numElements ) ) {
 		return;
-
+	}
+	
 	DoAllocate( (int)numElements - (int)buffer->size, (asUINT)-1 );
 }
 
