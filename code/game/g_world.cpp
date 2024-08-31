@@ -251,6 +251,7 @@ void G_SetMap_f( void ) {
 
     gi.mapCache.currentMapLoaded = hMap;
 	gi.mapLoaded = qtrue;
+	gi.state = GS_LEVEL;
 
 	Cvar_Set( "mapname", gi.mapCache.info.name );
 

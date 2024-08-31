@@ -5,79 +5,78 @@
 #include <SDL2/SDL.h>
 
 typedef struct {
-    menuframework_t menu;
-
-    nhandle_t discordShader;
-    nhandle_t sitesShader;
+	menuframework_t menu;
 } demoMenu_t;
 
 static demoMenu_t *s_demo;
 
 // NOTE: this will change with each major version
 #define DEMO_STRING \
-    "Thank you very much for playing this demo of \"The Nomad\"! :)\n" \
-    "More levels and a full alpha/early-acccess versions are in development.\n" \
-    "If you would like to stay update, check out the discord for updates or the weekly dev blog.\n"
+	"Thank you very much for playing this demo of \"The Nomad\"! :)\n" \
+	"More levels and a full alpha/early-acccess versions are in\n" \
+	"development. If you would like to stay update, check out\n" \
+	"the discord for updates or the dev blog.\n"
 
 static void DemoMenu_Draw( void )
 {
-    const int windowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
-        | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoCollapse;
-    bool done;
+	const int windowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
+		| ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoCollapse;
+	bool done;
 
-    done = true;
+	done = true;
 
-    ImGui::Begin( "##DemoMenu", NULL, windowFlags );
-    ImGui::SetWindowFontScale( 2.5f * gi.scale );
-    ImGui::SetWindowPos( ImVec2( 100 * gi.scale, 200 * gi.scale ) );
+	ImGui::Begin( "##DemoMenu", NULL, windowFlags );
+	ImGui::SetWindowFontScale( 2.5f * ui->scale );
+	ImGui::SetWindowPos( ImVec2( 100 * ui->scale, 200 * ui->scale ) );
 
-    ImGui::TextUnformatted( DEMO_STRING );
-    ImGui::NewLine();
+	ImGui::TextUnformatted( DEMO_STRING );
+	ImGui::NewLine();
 
-    ImGui::Image( (ImTextureID)(uintptr_t)s_demo->discordShader, ImVec2( 256 * ui->scale, 256 * ui->scale ) );
-    if ( ImGui::IsItemClicked() ) {
-        Snd_PlaySfx( ui->sfx_select );
-        done = false;
-        // TODO:
-    }
+	if ( ImGui::Button( "DISCORD SERVER" ) ) {
+		Snd_PlaySfx( ui->sfx_select );
+		done = false;
+		// TODO:
+	}
 
-    ImGui::SameLine();
+	ImGui::SameLine( 528.0f * ui->scale );
 
-    ImGui::Image( (ImTextureID)(uintptr_t)s_demo->sitesShader, ImVec2( 256 * ui->scale, 256 * ui->scale ) );
-    if ( ImGui::IsItemClicked() ) {
-        Snd_PlaySfx( ui->sfx_select );
-        SDL_OpenURL( "https://sites.google.com/view/gdrgames" );
-        done = false;
-    }
+	if ( ImGui::Button( "WEBSITE" ) ) {
+		Snd_PlaySfx( ui->sfx_select );
+		SDL_OpenURL( "https://sites.google.com/view/gdrgames" );
+		done = false;
+	}
 
-    ImGui::End();
+	ImGui::NewLine();
 
-    if ( Key_AnyDown() && done ) {
-        UI_PopMenu();
-        UI_ForceMenuOff();
-        ui->menusp = 0;
+	done = ImGui::Button( "DONE" );
 
-        UI_SetActiveMenu( UI_MENU_MAIN );
-        return;
-    }
+	ImGui::End();
+
+	if ( done ) {
+		UI_PopMenu();
+		UI_ForceMenuOff();
+		ui->menusp = 0;
+
+		Cbuf_ExecuteText( EXEC_APPEND, "setmap\n" );
+		UI_SetActiveMenu( UI_MENU_MAIN );
+		return;
+	}
 }
 
 void DemoMenu_Cache( void )
 {
-    if ( !ui->uiAllocated ) {
-        s_demo = (demoMenu_t *)Hunk_Alloc( sizeof( *s_demo ), h_high );
-    }
-    memset( s_demo, 0, sizeof( *s_demo ) );
+	if ( !ui->uiAllocated ) {
+		s_demo = (demoMenu_t *)Hunk_Alloc( sizeof( *s_demo ), h_high );
+	}
+	memset( s_demo, 0, sizeof( *s_demo ) );
 
-    s_demo->menu.draw = DemoMenu_Draw;
-    s_demo->menu.fullscreen = qfalse;
-
-    s_demo->discordShader = re.RegisterShader( "menu/demo/discordIcon" );
-    s_demo->sitesShader = re.RegisterShader( "menu/demo/sitesIcon" );
+	s_demo->menu.draw = DemoMenu_Draw;
+	s_demo->menu.fullscreen = qtrue;
+	ui->menubackShader = re.RegisterShader( "menu/mainbackground" );
 }
 
 void UI_DemoMenu( void )
 {
-    DemoMenu_Cache();
-    UI_PushMenu( &s_demo->menu );
+	DemoMenu_Cache();
+	UI_PushMenu( &s_demo->menu );
 }

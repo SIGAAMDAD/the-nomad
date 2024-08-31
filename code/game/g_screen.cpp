@@ -401,7 +401,6 @@ void SCR_UpdateScreen( void )
 			Cvar_Set( "g_paused", "1" );
 
 			// we're only doing this for the demo
-			Cbuf_ExecuteText( EXEC_APPEND, "setmap\n" );
 			gi.state = GS_MENU;
 			break;
 		};

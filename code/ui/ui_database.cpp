@@ -167,9 +167,10 @@ void DataBaseMenu_Draw( void )
 
 	const bool filtersActive = memcmp( s_dataBase->filters, emptyFilters, sizeof( *emptyFilters ) * s_dataBase->numSections ) != 0;
 
-	ImGui::Begin( "##DataBaseMenu", NULL, MENU_DEFAULT_FLAGS );
+	ImGui::Begin( "##DataBaseMenu", NULL, MENU_DEFAULT_FLAGS & ~( ImGuiWindowFlags_NoBackground ) );
 	ImGui::SetWindowPos( ImVec2( s_dataBase->menu.x, s_dataBase->menu.y ) );
 	ImGui::SetWindowSize( ImVec2( s_dataBase->menu.width, s_dataBase->menu.height ) );
+	ImGui::PushStyleColor( ImGuiCol_WindowBg, colorDarkSlateBlue );
 
 	UI_EscapeMenuToggle();
 	if ( UI_MenuTitle( s_dataBase->menu.name ) ) {
@@ -222,7 +223,7 @@ void DataBaseMenu_Draw( void )
 		MENU_DEFAULT_FLAGS );
 	if ( s_dataBase->currentEntry ) {
 		const string_t& name = s_dataBase->currentEntry->at( "name" );
-		ImGui::SetWindowFontScale( scale * 1.5f );
+		ImGui::SetWindowFontScale( ( scale * 1.5f ) * ui->scale );
 		FontCache()->SetActiveFont( AlegreyaSC );
 		ImGui::SeparatorText( name.c_str() );
 
@@ -230,6 +231,7 @@ void DataBaseMenu_Draw( void )
 	}
 	ImGui::EndChild();
 	ImGui::SetWindowFontScale( scale );
+	ImGui::PopStyleColor();
 
 	ImGui::End();
 }

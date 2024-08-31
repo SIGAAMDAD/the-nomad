@@ -49,6 +49,8 @@ static void CreditsMenu_Draw( void )
     ImGui::SetWindowPos( ImVec2( s_credits->menu.x, s_credits->menu.y ) );
     ImGui::SetWindowSize( ImVec2( s_credits->menu.width, s_credits->menu.height ) );
 
+    ImGui::PushStyleColor( ImGuiCol_Text, colorCyan );
+
     UI_EscapeMenuToggle();
     if ( UI_MenuTitle( s_credits->menu.name, s_credits->menu.titleFontScale ) ) {
         UI_PopMenu();
@@ -80,6 +82,8 @@ static void CreditsMenu_Draw( void )
     ImGui::NewLine();
 
     ImGui::TextUnformatted( "Sincerely, Your Resident Fiend,\nNoah Van Til" );
+
+    ImGui::PopStyleColor();
 
     ImGui::End();
 }

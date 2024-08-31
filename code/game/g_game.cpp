@@ -895,7 +895,7 @@ void G_ShutdownRenderer( refShutdownCode_t code )
 static void G_Vid_Restart( refShutdownCode_t code )
 {
     PROFILE_FUNCTION();
-
+    
     // clear and mute all sounds until next registration
     Snd_Shutdown();
 
