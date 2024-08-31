@@ -3758,6 +3758,10 @@ void FS_FClose( fileHandle_t f )
 		unzCloseCurrentFile( p->data.chunk );
 #else
 		p->data.chunk->bytesRead = 0;
+		if ( p->data.chunk->buf ) {
+			Z_Free( p->data.chunk->buf );
+			p->data.chunk->buf = NULL;
+		}
 #endif
 		p->data.stream = NULL;
 		p->bffFile = qfalse;

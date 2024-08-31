@@ -1413,6 +1413,10 @@ extern "C" void UI_Refresh( int32_t realtime )
 		UI_DrawGPUStats();
 	}
 
+	ImGuiIO& io = ImGui::GetIO();
+	io.DisplaySize.x = r_customWidth->i;
+	io.DisplaySize.y = r_customHeight->i;
+
 	if ( !( Key_GetCatcher() & KEYCATCH_UI ) ) {
 		return;
 	}

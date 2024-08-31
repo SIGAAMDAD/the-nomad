@@ -108,8 +108,9 @@ VERSION_UPDATE= 1
 VERSION_PATCH = 0
 VERSION_STRING= $(VERSION).$(VERSION_UPDATE).$(VERSION_PATCH)
 
-USE_OPENGL_API=1
-USE_VULKAN_API=0
+USE_OPENGL_API		=1
+USE_RENDERER_DLOPEN	=1
+USE_VULKAN_API		=0
 
 INCLUDE       =-Idependencies/include/ -Idependencies/include/EA/ -Ideps/squirrel/include -Ideps/squall/ $(OS_INCLUDE) \
 	-I. -Icode/ -I/usr/local/mono-2.0 -Ideps/ -I/usr/include/PhysX
@@ -150,12 +151,16 @@ ifeq ($(VM_CANNOT_COMPILE),true)
 	DEFINES+=-DVM_CANNOT_COMPILE
 endif
 
-ifdef USE_OPENGL_API
+ifeq ($(USE_OPENGL_API),1)
 DEFINES += -DUSE_OPENGL_API
 endif
 
-ifdef USE_VULKAN_API
+ifeq ($(USE_VULKAN_API),1)
 DEFINES += -DUSE_VULKAN_API
+endif
+
+ifeq ($(USE_RENDERER_DLOPEN),1)
+DEFINES += -DUSE_RENDERER_DLOPEN
 endif
 
 ifndef win32

@@ -3,6 +3,7 @@
 #include "win_local.h"
 #include "sys_win32.h"
 #include <errhandlingapi.h>
+#include <wincrypt.h>
 #include <processthreadsapi.h>
 
 uint64_t Sys_Milliseconds( void )

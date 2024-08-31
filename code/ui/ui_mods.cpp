@@ -74,9 +74,6 @@ static const module_t *GetModuleFromName( const char *pName )
     return NULL;
 }
 
-static void ModsMenu_LoadMod( module_t *mod ) {
-}
-
 qboolean ModsMenu_IsModuleActive( const char *pName ) {
     uint32_t i;
 
@@ -486,4 +483,6 @@ void UI_ModsMenu( void )
 {
 	Key_SetCatcher( KEYCATCH_UI );
 	UI_PushMenu( &mods->menu );
+
+	Cbuf_ExecuteText( EXEC_APPEND, "snd.play_track \"\"\n");
 }

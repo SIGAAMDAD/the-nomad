@@ -190,6 +190,7 @@ static void Field_Paste( ImGuiInputTextCallbackData *data ) {
 static int Field_Callback( ImGuiInputTextCallbackData *data )
 {
 	Field_CharEvent( data, (int)data->EventChar );
+	return 1;
 }
 
 static void Field_Draw( menufield_t *edit )

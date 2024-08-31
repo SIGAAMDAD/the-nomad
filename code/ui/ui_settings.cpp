@@ -1678,6 +1678,15 @@ static void VideoMenu_Save( void )
 {
 	extern SDL_Window *SDL_window;
 
+	if ( ( s_settingsMenu->video.windowMode >= WINDOWMODE_FULLSCREEN ) != r_fullscreen->i ) {
+		Cbuf_ExecuteText( EXEC_APPEND, "vid_restart fast\n" );
+	}
+	else if ( r_vidModes[ s_settingsMenu->video.windowResolution - 2 ].width != r_customWidth->i
+		|| r_vidModes[ s_settingsMenu->video.windowResolution - 2 ].height != r_customHeight->i )
+	{
+		Cbuf_ExecuteText( EXEC_APPEND, "vid_restart fast\n" );
+	}
+
 	Cvar_SetIntegerValue( "r_fullscreen", s_settingsMenu->video.windowMode >= WINDOWMODE_FULLSCREEN );
 	Cvar_SetIntegerValue( "r_noborder", s_settingsMenu->video.windowMode % 2 != 0 );
 	Cvar_SetIntegerValue( "r_customWidth", s_settingsMenu->video.windowWidth );
@@ -1691,10 +1700,10 @@ static void VideoMenu_Save( void )
 	if ( !N_stricmp( g_renderer->s, "opengl" ) ) {
 		SDL_GL_SetSwapInterval( s_settingsMenu->video.vsync - 1 );
 	}
-	SDL_SetWindowFullscreen( SDL_window, s_settingsMenu->video.windowMode >= WINDOWMODE_FULLSCREEN
-		? SDL_WINDOW_FULLSCREEN_DESKTOP : 0 );
-	SDL_SetWindowSize( SDL_window, r_vidModes[ s_settingsMenu->video.windowResolution - 2 ].width,
-		r_vidModes[ s_settingsMenu->video.windowResolution - 2 ].height );
+
+	Cvar_SetIntegerValue( "r_customWidth", r_vidModes[ s_settingsMenu->video.windowResolution - 2 ].width );
+	Cvar_SetIntegerValue( "r_customHeight", r_vidModes[ s_settingsMenu->video.windowResolution - 2 ].height );
+
 	switch ( s_settingsMenu->video.windowMode ) {
 	case WINDOWMODE_BORDERLESS_FULLSCREEN:
 	case WINDOWMODE_BORDERLESS_WINDOWED:

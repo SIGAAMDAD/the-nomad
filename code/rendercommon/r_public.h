@@ -69,7 +69,11 @@ typedef struct {
     void (*Sys_FreeFileList)(char **list);
 
     void (GDR_DECL *Printf)(int level, const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 2, 3)));
-    void GDR_NORETURN (GDR_DECL *Error)(errorCode_t code, const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 2, 3)));
+#ifdef _WIN32
+    void (GDR_DECL *Error)(errorCode_t code, const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 2, 3)));
+#else
+    void GDR_NORETURN(GDR_DECL* Error)(errorCode_t code, const char* fmt, ...) GDR_ATTRIBUTE((format(printf, 2, 3)));
+#endif
 
     void (*Cvar_VariableStringBuffer)(const char *name, char *buffer, uint64_t bufferSize);
     void (*Cvar_VariableStringBufferSafe)(const char *name, char *buffer, uint64_t bufferSize, uint32_t flag);
@@ -210,6 +214,14 @@ typedef struct {
 } renderExport_t;
 
 extern refimport_t ri;
-typedef renderExport_t *(GDR_DECL *GetRenderAPI_t)(uint32_t version, refimport_t *import);
+
+// this is the only function actually exported at the linker level
+// If the module can't init to a valid rendering state, NULL will be
+// returned.
+#ifdef USE_RENDERER_DLOPEN
+typedef renderExport_t *(GDR_DECL *GetRenderAPI_t)( uint32_t version, refimport_t *rimp );
+#else
+renderExport_t *GetRenderAPI( uint32_t version, refimport_t* rimp );
+#endif
 
 #endif

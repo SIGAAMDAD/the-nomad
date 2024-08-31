@@ -9,6 +9,11 @@
 #define STB_VORBIS_NO_PUSHDATA_API // we're using the pulldata API
 #include "stb_vorbis.c"
 
+#ifdef _WIN32
+#pragma comment(lib, "OpenAL32.lib")
+#pragma comment(lib, "sndfile.lib")
+#endif
+
 #include "warcrimes.cpp"
 
 // AL_EXT_STATIC_BUFFER
@@ -45,349 +50,349 @@ cvar_t *snd_device;
 #define ALCall(x) x; AL_CheckError(#x)
 
 typedef struct {
-    const char *name;
-    const void *buffer;
-    uint64_t length;
+	const char *name;
+	const void *buffer;
+	uint64_t length;
 } specialSongs_t;
 
 static constexpr const specialSongs_t specialSongs[] = {
-    // any warcrimes in-game committed whilst this is playing are forgiven
-    { "warcrimes_are_permitted.ogg", gamedata_music_warcrimes_ogg, GAMEDATA_MUSIC_WARCRIMES_OGG_LEN }
+	// any warcrimes in-game committed whilst this is playing are forgiven
+	{ "warcrimes_are_permitted.ogg", gamedata_music_warcrimes_ogg, GAMEDATA_MUSIC_WARCRIMES_OGG_LEN }
 };
 
 static void AL_CheckError( const char *op )
 {
-    ALenum error;
+	ALenum error;
 
-    error = alGetError();
-    switch ( error ) {
-    case AL_OUT_OF_MEMORY:
-    #ifdef _NOMAD_DEBUG
-        N_Error( ERR_FATAL, "alGetError() -- 0x%04x, AL_OUT_OF_MEMORY after '%s'", AL_OUT_OF_MEMORY, op );
-    #else
-        Con_Printf( COLOR_RED "WARNING: alGetError() -- 0x%04x, AL_OUT_OF_MEMORY after '%s'\n", AL_OUT_OF_MEMORY, op );
-        Con_Printf( "Dumping stacktrace of 64 frames...\n" );
-        Sys_DebugStacktrace( 64 );
-    #endif
-        break;
-    case AL_INVALID_ENUM:
-    #ifdef _NOMAD_DEBUG
-        N_Error( ERR_FATAL, "alGetError() -- 0x%04x, AL_ILLEGAL_ENUM after '%s'", AL_INVALID_ENUM, op );
-    #else
-        Con_Printf( COLOR_RED "WARNING: alGetError() -- 0x%04x, AL_INVALID_ENUM after '%s'\n", AL_INVALID_ENUM, op );
-        Con_Printf( "Dumping stacktrace of 64 frames...\n" );
-        Sys_DebugStacktrace( 64 );
-    #endif
-        break;
-    case AL_INVALID_OPERATION:
-    #ifdef _NOMAD_DEBUG
-        N_Error( ERR_FATAL, "alGetError() -- 0x%04x, AL_INVALID_OPERATION after '%s'", AL_INVALID_OPERATION, op );
-    #else
-        Con_Printf( COLOR_RED "WARNING: alGetError() -- 0x%04x, AL_INVALID_OPERATION after '%s'\n", AL_INVALID_OPERATION, op );
-        Con_Printf( "Dumping stacktrace of 64 frames...\n" );
-        Sys_DebugStacktrace( 64 );
-    #endif
-        break;
-    case AL_INVALID_VALUE:
-    #ifdef _NOMAD_DEBUG
-        N_Error( ERR_FATAL, "alGetError() -- 0x%04x, AL_INVALID_VALUE after '%s'", AL_INVALID_VALUE, op );
-    #else
-        Con_Printf( COLOR_RED "WARNING: alGetError() -- 0x%04x, AL_INVALID_VALUE after '%s'\n", AL_INVALID_VALUE, op );
-        Con_Printf( "Dumping stacktrace of 64 frames...\n" );
-        Sys_DebugStacktrace( 64 );
-    #endif
-        break;
-    case AL_INVALID_NAME:
-    #ifdef _NOMAD_DEBUG
-        N_Error( ERR_FATAL, "alGetError() -- 0x%04x, AL_INVALID_NAME after '%s'", AL_INVALID_NAME, op );
-    #else
-        Con_Printf( COLOR_RED "WARNING: alGetError() -- 0x%04x, AL_INVALID_NAME after '%s'\n", AL_INVALID_NAME, op );
-        Con_Printf( "Dumping stacktrace of 64 frames...\n" );
-        Sys_DebugStacktrace( 64 );
-    #endif
-        break;
-    case AL_NO_ERROR:
-    default:
-        if ( snd_debugPrint->i ) {
-            Con_DPrintf( "OpenAL operation '%s' all good.\n", op );
-        }
-        break;
-    };
+	error = alGetError();
+	switch ( error ) {
+	case AL_OUT_OF_MEMORY:
+	#ifdef _NOMAD_DEBUG
+		N_Error( ERR_FATAL, "alGetError() -- 0x%04x, AL_OUT_OF_MEMORY after '%s'", AL_OUT_OF_MEMORY, op );
+	#else
+		Con_Printf( COLOR_RED "WARNING: alGetError() -- 0x%04x, AL_OUT_OF_MEMORY after '%s'\n", AL_OUT_OF_MEMORY, op );
+		Con_Printf( "Dumping stacktrace of 64 frames...\n" );
+		Sys_DebugStacktrace( 64 );
+	#endif
+		break;
+	case AL_INVALID_ENUM:
+	#ifdef _NOMAD_DEBUG
+		N_Error( ERR_FATAL, "alGetError() -- 0x%04x, AL_ILLEGAL_ENUM after '%s'", AL_INVALID_ENUM, op );
+	#else
+		Con_Printf( COLOR_RED "WARNING: alGetError() -- 0x%04x, AL_INVALID_ENUM after '%s'\n", AL_INVALID_ENUM, op );
+		Con_Printf( "Dumping stacktrace of 64 frames...\n" );
+		Sys_DebugStacktrace( 64 );
+	#endif
+		break;
+	case AL_INVALID_OPERATION:
+	#ifdef _NOMAD_DEBUG
+		N_Error( ERR_FATAL, "alGetError() -- 0x%04x, AL_INVALID_OPERATION after '%s'", AL_INVALID_OPERATION, op );
+	#else
+		Con_Printf( COLOR_RED "WARNING: alGetError() -- 0x%04x, AL_INVALID_OPERATION after '%s'\n", AL_INVALID_OPERATION, op );
+		Con_Printf( "Dumping stacktrace of 64 frames...\n" );
+		Sys_DebugStacktrace( 64 );
+	#endif
+		break;
+	case AL_INVALID_VALUE:
+	#ifdef _NOMAD_DEBUG
+		N_Error( ERR_FATAL, "alGetError() -- 0x%04x, AL_INVALID_VALUE after '%s'", AL_INVALID_VALUE, op );
+	#else
+		Con_Printf( COLOR_RED "WARNING: alGetError() -- 0x%04x, AL_INVALID_VALUE after '%s'\n", AL_INVALID_VALUE, op );
+		Con_Printf( "Dumping stacktrace of 64 frames...\n" );
+		Sys_DebugStacktrace( 64 );
+	#endif
+		break;
+	case AL_INVALID_NAME:
+	#ifdef _NOMAD_DEBUG
+		N_Error( ERR_FATAL, "alGetError() -- 0x%04x, AL_INVALID_NAME after '%s'", AL_INVALID_NAME, op );
+	#else
+		Con_Printf( COLOR_RED "WARNING: alGetError() -- 0x%04x, AL_INVALID_NAME after '%s'\n", AL_INVALID_NAME, op );
+		Con_Printf( "Dumping stacktrace of 64 frames...\n" );
+		Sys_DebugStacktrace( 64 );
+	#endif
+		break;
+	case AL_NO_ERROR:
+	default:
+		if ( snd_debugPrint->i ) {
+			Con_DPrintf( "OpenAL operation '%s' all good.\n", op );
+		}
+		break;
+	};
 }
 
 class CSoundSource
 {
 public:
-    CSoundSource( void );
-    ~CSoundSource();
+	CSoundSource( void );
+	~CSoundSource();
 
-    void Init( void );
-    void Shutdown( void );
-    bool LoadFile( const char *npath, int64_t tag );
+	void Init( void );
+	void Shutdown( void );
+	bool LoadFile( const char *npath, int64_t tag );
 
-    void SetVolume( void ) const;
+	void SetVolume( void ) const;
 
-    bool IsPlaying( void ) const;
-    bool IsPaused( void ) const;
-    bool IsLooping( void ) const;
+	bool IsPlaying( void ) const;
+	bool IsPaused( void ) const;
+	bool IsLooping( void ) const;
 
-    const char *GetName( void ) const;
-    uint32_t GetTag( void ) const { return m_iTag; }
+	const char *GetName( void ) const;
+	uint32_t GetTag( void ) const { return m_iTag; }
 
-    inline uint32_t GetSource( void ) const { return m_iSource; }
-    inline uint32_t GetBuffer( void ) const { return m_iBuffer; }
-    inline void SetSource( uint32_t source ) { m_iSource = source; }
-    inline const SF_INFO& GetInfo( void ) const { return m_hFData; }
+	inline uint32_t GetSource( void ) const { return m_iSource; }
+	inline uint32_t GetBuffer( void ) const { return m_iBuffer; }
+	inline void SetSource( uint32_t source ) { m_iSource = source; }
+	inline const SF_INFO& GetInfo( void ) const { return m_hFData; }
 
-    void *GetCacheData( void ) { return m_pCacheData; }
-    const void *GetCacheData( void ) const { return m_pCacheData; }
+	void *GetCacheData( void ) { return m_pCacheData; }
+	const void *GetCacheData( void ) const { return m_pCacheData; }
 
-    void Play( bool loop = false );
-    void Stop( void );
-    void Pause( void );
+	void Play( bool loop = false );
+	void Stop( void );
+	void Pause( void );
 
-    CSoundSource *m_pNext;
-    uint64_t m_nTimeOffset;
+	CSoundSource *m_pNext;
+	uint64_t m_nTimeOffset;
 private:
-    int64_t FileFormat( const char *ext ) const;
-    void Alloc( void );
-    ALenum Format( void ) const;
-    void CheckForDownSample( void );
+	int64_t FileFormat( const char *ext ) const;
+	void Alloc( void );
+	ALenum Format( void ) const;
+	void CheckForDownSample( void );
 
-    char m_pName[MAX_NPATH];
+	char m_pName[MAX_NPATH];
 
-    void *m_pCacheData;
+	void *m_pCacheData;
 
-    uint32_t m_iType;
-    uint32_t m_iTag;
-    uint32_t m_nObjectSize;
-    uint32_t m_nObjectMemSize;
+	uint32_t m_iType;
+	uint32_t m_iTag;
+	uint32_t m_nObjectSize;
+	uint32_t m_nObjectMemSize;
 
-    // AL data
-    ALuint m_iSource;
-    ALuint m_iBuffer;
+	// AL data
+	ALuint m_iSource;
+	ALuint m_iBuffer;
 
-    qboolean m_bLoop;
+	qboolean m_bLoop;
 
-    SF_INFO m_hFData;
+	SF_INFO m_hFData;
 };
 
 typedef struct trackQueue_s {
-    struct trackQueue_s *next;
-    struct trackQueue_s *prev;
-    CSoundSource *track;
-    qboolean used;
+	struct trackQueue_s *next;
+	struct trackQueue_s *prev;
+	CSoundSource *track;
+	qboolean used;
 } trackQueue_t;
 
 class CSoundManager
 {
 public:
-    CSoundManager( void );
-    ~CSoundManager();
+	CSoundManager( void );
+	~CSoundManager();
 
-    void Init( void );
-    void Shutdown( void );
-    void Restart( void );
+	void Init( void );
+	void Shutdown( void );
+	void Restart( void );
 
-    void PlaySound( CSoundSource *snd );
-    void StopSound( CSoundSource *snd );
-    void LoopTrack( CSoundSource *snd );
-    void DisableSounds( void );
-    void Update( int64_t msec );
-    bool CheckDeviceAndRecoverIfNeeded( void );
+	void PlaySound( CSoundSource *snd );
+	void StopSound( CSoundSource *snd );
+	void LoopTrack( CSoundSource *snd );
+	void DisableSounds( void );
+	void Update( int64_t msec );
+	bool CheckDeviceAndRecoverIfNeeded( void );
 
-    inline CSoundSource **GetSources( void ) { return m_pSources; }
-    inline void Mute( bool bMute ) {
-        uint64_t i;
+	inline CSoundSource **GetSources( void ) { return m_pSources; }
+	inline void Mute( bool bMute ) {
+		uint64_t i;
 
-        if ( !snd_musicOn->i && !snd_effectsOn->i ) {
-            return;
-        }
-        if ( bMute && !m_bMuted ) {
-            for ( i = 0; i < MAX_SOUND_SOURCES; i++ ) {
-                if ( m_pSources[i] ) {
-                    alSourcef( m_pSources[i]->GetSource(), AL_GAIN, 0.0f );
-                }
-            }
-            Con_Printf( "Muted sounds\n" );
-        } else if ( !bMute && m_bMuted ) {
-            for ( i = 0; i < MAX_SOUND_SOURCES; i++ ) {
-                if ( m_pSources[i] ) {
-                    switch ( m_pSources[i]->GetTag() ) {
-                    case TAG_MUSIC:
-                        alSourcef( m_pSources[i]->GetSource(), AL_GAIN, snd_musicVolume->f / 100.0f );
-                    case TAG_SFX:
-                        alSourcef( m_pSources[i]->GetSource(), AL_GAIN, snd_effectsVolume->f / 100.0f );
-                        break;
-                    };
-                }
-            }
-        }
-        m_bMuted = bMute;
-    }
+		if ( !snd_musicOn->i && !snd_effectsOn->i ) {
+			return;
+		}
+		if ( bMute && !m_bMuted ) {
+			for ( i = 0; i < MAX_SOUND_SOURCES; i++ ) {
+				if ( m_pSources[i] ) {
+					alSourcef( m_pSources[i]->GetSource(), AL_GAIN, 0.0f );
+				}
+			}
+			Con_Printf( "Muted sounds\n" );
+		} else if ( !bMute && m_bMuted ) {
+			for ( i = 0; i < MAX_SOUND_SOURCES; i++ ) {
+				if ( m_pSources[i] ) {
+					switch ( m_pSources[i]->GetTag() ) {
+					case TAG_MUSIC:
+						alSourcef( m_pSources[i]->GetSource(), AL_GAIN, snd_musicVolume->f / 100.0f );
+					case TAG_SFX:
+						alSourcef( m_pSources[i]->GetSource(), AL_GAIN, snd_effectsVolume->f / 100.0f );
+						break;
+					};
+				}
+			}
+		}
+		m_bMuted = bMute;
+	}
 
-    void UpdateParm( int64_t tag );
+	void UpdateParm( int64_t tag );
 
-    void AddSourceToHash( CSoundSource *src );
-    CSoundSource *InitSource( const char *filename, int64_t tag );
+	void AddSourceToHash( CSoundSource *src );
+	CSoundSource *InitSource( const char *filename, int64_t tag );
 
-    inline uint64_t NumSources( void ) const { return m_nSources; }
-    inline CSoundSource *&GetSource( sfxHandle_t handle ) { return m_pSources[handle]; }
-    inline const CSoundSource *GetSource( sfxHandle_t handle ) const { return m_pSources[handle]; }
-    inline void SetListenerPos( const vec3_t origin ) { VectorCopy( m_ListenerPosition, origin ); }
+	inline uint64_t NumSources( void ) const { return m_nSources; }
+	inline CSoundSource *&GetSource( sfxHandle_t handle ) { return m_pSources[handle]; }
+	inline const CSoundSource *GetSource( sfxHandle_t handle ) const { return m_pSources[handle]; }
+	inline void SetListenerPos( const vec3_t origin ) { VectorCopy( m_ListenerPosition, origin ); }
 
-    CThreadMutex m_hAllocLock;
-    CThreadMutex m_hQueueLock;
+	CThreadMutex m_hAllocLock;
+	CThreadMutex m_hQueueLock;
 
-    uint32_t m_nFirstLevelSource;
-    uint32_t m_nLevelSources;
+	uint32_t m_nFirstLevelSource;
+	uint32_t m_nLevelSources;
 
-    eastl::fixed_vector<CSoundSource *, 10> m_LoopingTracks;
+	eastl::fixed_vector<CSoundSource *, 10> m_LoopingTracks;
 private:
-    CSoundSource *m_pSources[MAX_SOUND_SOURCES];
-    uint64_t m_nSources;
+	CSoundSource *m_pSources[MAX_SOUND_SOURCES];
+	uint64_t m_nSources;
 
-    uint64_t m_nLastCheckTime;
-    uint32_t m_nResetRetryCount;
+	uint64_t m_nLastCheckTime;
+	uint32_t m_nResetRetryCount;
 
-    vec3_t m_ListenerPosition;
+	vec3_t m_ListenerPosition;
 
-    ALCdevice *m_pDevice;
-    ALCcontext *m_pContext;
+	ALCdevice *m_pDevice;
+	ALCcontext *m_pContext;
 
-    qboolean m_bClearedQueue;
-    qboolean m_bRegistered;
+	qboolean m_bClearedQueue;
+	qboolean m_bRegistered;
 
-    qboolean m_bMuted;
+	qboolean m_bMuted;
 };
 
 static CSoundManager *sndManager;
 
 CSoundSource::CSoundSource( void ) {
-    Init();
+	Init();
 }
 
 CSoundSource::~CSoundSource() {
-    Shutdown();
+	Shutdown();
 }
 
 const char *CSoundSource::GetName( void ) const {
-    return m_pName;
+	return m_pName;
 }
 
 bool CSoundSource::IsPaused( void ) const {
-    ALint state;
-    alGetSourcei( m_iSource, AL_SOURCE_STATE, &state );
-    return state == AL_PAUSED;
+	ALint state;
+	alGetSourcei( m_iSource, AL_SOURCE_STATE, &state );
+	return state == AL_PAUSED;
 }
 
 bool CSoundSource::IsPlaying( void ) const {
-    ALint state;
-    alGetSourcei( m_iSource, AL_SOURCE_STATE, &state );
-    return state == AL_PLAYING;
+	ALint state;
+	alGetSourcei( m_iSource, AL_SOURCE_STATE, &state );
+	return state == AL_PLAYING;
 }
 
 bool CSoundSource::IsLooping( void ) const {
-    ALint state;
-    alGetSourcei( m_iSource, AL_SOURCE_STATE, &state );
-    return state == AL_LOOPING;
+	ALint state;
+	alGetSourcei( m_iSource, AL_SOURCE_STATE, &state );
+	return state == AL_LOOPING;
 }
 
 void CSoundSource::Init( void )
 {
-    memset( m_pName, 0, sizeof( m_pName ) );
-    memset( &m_hFData, 0, sizeof( m_hFData ) );
+	memset( m_pName, 0, sizeof( m_pName ) );
+	memset( &m_hFData, 0, sizeof( m_hFData ) );
 
-    // this could be the music source, so don't allocate a new redundant source just yet
-    m_iSource = 0;
+	// this could be the music source, so don't allocate a new redundant source just yet
+	m_iSource = 0;
 
-    if ( m_iBuffer == 0 ) {
-        ALCall( alGenBuffers( 1, &m_iBuffer ) );
-    }
-    m_iType = 0;
-    m_bLoop = false;
+	if ( m_iBuffer == 0 ) {
+		ALCall( alGenBuffers( 1, &m_iBuffer ) );
+	}
+	m_iType = 0;
+	m_bLoop = false;
 }
 
 void CSoundSource::Shutdown( void )
 {
-    ALint state;
-    ALenum err;
+	ALint state;
+	ALenum err;
 
-    if ( alIsBuffer( m_iBuffer ) ) {
-        if ( alIsSource( m_iSource ) ) {
-            alGetSourcei( m_iSource, AL_SOURCE_STATE, &state );
-            if ( state == AL_PLAYING ) {
-                alSourceStop( m_iSource );
-            }
-            alSourcei( m_iSource, AL_BUFFER, AL_NONE );
-        }
-        alDeleteBuffers( 1, &m_iBuffer );
-        if ( ( err = alGetError() ) != AL_NO_ERROR ) {
-            Con_Printf( COLOR_YELLOW "WARNING: Error deallocating OpenAL hardware buffer: 0x%04x\n", err );
-        }
-    }
-    if ( alIsSource( m_iSource ) && m_iTag != TAG_MUSIC ) {
-        alDeleteSources( 1, &m_iSource );
-        if ( ( err = alGetError() ) != AL_NO_ERROR ) {
-            Con_Printf( COLOR_YELLOW "WARNING: Error deallocating OpenAL hardware source: 0x%04x\n", err );
-        }
-    }
+	if ( alIsBuffer( m_iBuffer ) ) {
+		if ( alIsSource( m_iSource ) ) {
+			alGetSourcei( m_iSource, AL_SOURCE_STATE, &state );
+			if ( state == AL_PLAYING ) {
+				alSourceStop( m_iSource );
+			}
+			alSourcei( m_iSource, AL_BUFFER, AL_NONE );
+		}
+		alDeleteBuffers( 1, &m_iBuffer );
+		if ( ( err = alGetError() ) != AL_NO_ERROR ) {
+			Con_Printf( COLOR_YELLOW "WARNING: Error deallocating OpenAL hardware buffer: 0x%04x\n", err );
+		}
+	}
+	if ( alIsSource( m_iSource ) && m_iTag != TAG_MUSIC ) {
+		alDeleteSources( 1, &m_iSource );
+		if ( ( err = alGetError() ) != AL_NO_ERROR ) {
+			Con_Printf( COLOR_YELLOW "WARNING: Error deallocating OpenAL hardware source: 0x%04x\n", err );
+		}
+	}
 
-    m_iBuffer = 0;
-    m_iSource = 0;
-    m_iType = 0;
+	m_iBuffer = 0;
+	m_iSource = 0;
+	m_iType = 0;
 }
 
 
 void CSoundSource::SetVolume( void ) const {
-    if ( m_iTag == TAG_MUSIC || m_iSource == 0 ) {
-        return;
-    }
-    alSourcef( m_iSource, AL_GAIN, snd_effectsVolume->f / CLAMP_VOLUME );
+	if ( m_iTag == TAG_MUSIC || m_iSource == 0 ) {
+		return;
+	}
+	alSourcef( m_iSource, AL_GAIN, snd_effectsVolume->f / CLAMP_VOLUME );
 }
 
 ALenum CSoundSource::Format( void ) const {
-    return m_hFData.channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
+	return m_hFData.channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
 }
 
 int64_t CSoundSource::FileFormat( const char *ext ) const
 {
-    if ( !N_stricmp( ext, "wav" ) ) {
-        return SF_FORMAT_WAV;
-    } else if ( !N_stricmp( ext, "aiff" ) ) {
-        return SF_FORMAT_AIFF;
-    } else if ( !N_stricmp( ext, "ogg" ) ) {
-        return SF_FORMAT_OGG;
-    } else if ( !N_stricmp( ext, "opus" ) ) {
-        return SF_FORMAT_OPUS;
-    } else if ( !N_stricmp( ext, "flac" ) ) {
-        return SF_FORMAT_FLAC;
-    } else if ( !N_stricmp( ext, "sd2" ) ) {
-        return SF_FORMAT_SD2;
-    } else {
-        Con_Printf( COLOR_YELLOW "WARNING: unknown audio file format extension '%s', refusing to load\n", ext );
-        return 0;
-    }
+	if ( !N_stricmp( ext, "wav" ) ) {
+		return SF_FORMAT_WAV;
+	} else if ( !N_stricmp( ext, "aiff" ) ) {
+		return SF_FORMAT_AIFF;
+	} else if ( !N_stricmp( ext, "ogg" ) ) {
+		return SF_FORMAT_OGG;
+	} else if ( !N_stricmp( ext, "opus" ) ) {
+		return SF_FORMAT_OPUS;
+	} else if ( !N_stricmp( ext, "flac" ) ) {
+		return SF_FORMAT_FLAC;
+	} else if ( !N_stricmp( ext, "sd2" ) ) {
+		return SF_FORMAT_SD2;
+	} else {
+		Con_Printf( COLOR_YELLOW "WARNING: unknown audio file format extension '%s', refusing to load\n", ext );
+		return 0;
+	}
 }
 
 static inline qboolean IsPCMFormat( int format )
 {
-    switch ( format & SF_FORMAT_SUBMASK ) {
-    case SF_FORMAT_PCM_S8:
-    case SF_FORMAT_PCM_U8:
-    case SF_FORMAT_PCM_16:
-    case SF_FORMAT_PCM_24:
-    case SF_FORMAT_PCM_32:
-        return qtrue;
-    default:
-        break;
-    };
-    return qfalse;
+	switch ( format & SF_FORMAT_SUBMASK ) {
+	case SF_FORMAT_PCM_S8:
+	case SF_FORMAT_PCM_U8:
+	case SF_FORMAT_PCM_16:
+	case SF_FORMAT_PCM_24:
+	case SF_FORMAT_PCM_32:
+		return qtrue;
+	default:
+		break;
+	};
+	return qfalse;
 }
 
 void CSoundSource::CheckForDownSample( void )
 {
-    if ( !snd_force22kHz->i ) {
+	if ( !snd_force22kHz->i ) {
 		return;
 	}
 	if ( !IsPCMFormat( m_hFData.format ) || m_hFData.samplerate != 44100 ) {
@@ -416,90 +421,90 @@ void CSoundSource::CheckForDownSample( void )
 
 void CSoundSource::Alloc( void )
 {
-    uint64_t nLength;
+	uint64_t nLength;
 
-    nLength = 0;
-    switch ( m_hFData.format & SF_FORMAT_SUBMASK ) {
-    case SF_FORMAT_ALAW:
-        Con_Printf( COLOR_YELLOW "WARNING: alaw sound format not supported.\n" );
-        break;
-    case SF_FORMAT_ULAW:
-        Con_Printf( COLOR_YELLOW "WARNING: ulaw sound format not supported.\n" );
-        break;
-    case SF_FORMAT_FLOAT:
-        m_iType = SNDBUF_FLOAT;
-        break;
-    case SF_FORMAT_DOUBLE:
-        m_iType = SNDBUF_DOUBLE;
-        break;
-    case SF_FORMAT_PCM_S8:
-    case SF_FORMAT_PCM_U8:
-    case SF_FORMAT_DPCM_8:
-        m_iType = SNDBUF_8BIT;
-        break;
-    case SF_FORMAT_ALAC_16:
-    case SF_FORMAT_PCM_16:
-    case SF_FORMAT_DPCM_16:
-    case SF_FORMAT_DWVW_16:
-    case SF_FORMAT_PCM_24:
-    case SF_FORMAT_PCM_32:
-    case SF_FORMAT_NMS_ADPCM_16:
-        m_iType = SNDBUF_16BIT;
-        break;
-    };
+	nLength = 0;
+	switch ( m_hFData.format & SF_FORMAT_SUBMASK ) {
+	case SF_FORMAT_ALAW:
+		Con_Printf( COLOR_YELLOW "WARNING: alaw sound format not supported.\n" );
+		break;
+	case SF_FORMAT_ULAW:
+		Con_Printf( COLOR_YELLOW "WARNING: ulaw sound format not supported.\n" );
+		break;
+	case SF_FORMAT_FLOAT:
+		m_iType = SNDBUF_FLOAT;
+		break;
+	case SF_FORMAT_DOUBLE:
+		m_iType = SNDBUF_DOUBLE;
+		break;
+	case SF_FORMAT_PCM_S8:
+	case SF_FORMAT_PCM_U8:
+	case SF_FORMAT_DPCM_8:
+		m_iType = SNDBUF_8BIT;
+		break;
+	case SF_FORMAT_ALAC_16:
+	case SF_FORMAT_PCM_16:
+	case SF_FORMAT_DPCM_16:
+	case SF_FORMAT_DWVW_16:
+	case SF_FORMAT_PCM_24:
+	case SF_FORMAT_PCM_32:
+	case SF_FORMAT_NMS_ADPCM_16:
+		m_iType = SNDBUF_16BIT;
+		break;
+	};
 }
 
 void CSoundSource::Play( bool loop )
 {
-    if ( ( IsLooping() && loop ) ) {
-        return;
-    }
-    if ( loop ) {
-        alSourcei( m_iSource, AL_LOOPING, AL_TRUE );
-    }
-    alSourcePlay( m_iSource );
+	if ( ( IsLooping() && loop ) ) {
+		return;
+	}
+	if ( loop ) {
+		alSourcei( m_iSource, AL_LOOPING, AL_TRUE );
+	}
+	alSourcePlay( m_iSource );
 }
 
 void CSoundSource::Pause( void ) {
-    if ( !IsPlaying() && !IsLooping() ) {
-        return;
-    }
-    alSourcePause( m_iSource );
+	if ( !IsPlaying() && !IsLooping() ) {
+		return;
+	}
+	alSourcePause( m_iSource );
 }
 
 void CSoundSource::Stop( void ) {
-    if ( !IsPlaying() && !IsLooping() ) {
-        return; // nothing's playing
-    }
-    alSourceStop( m_iSource );
+	if ( !IsPlaying() && !IsLooping() ) {
+		return; // nothing's playing
+	}
+	alSourceStop( m_iSource );
 }
 
 static sf_count_t SndFile_Read( void *data, sf_count_t size, void *file ) {
-    return FS_Read( data, size, (fileHandle_t)(uintptr_t)file );
+	return FS_Read( data, size, (fileHandle_t)(uintptr_t)file );
 }
 
 static sf_count_t SndFile_Tell( void *file ) {
-    return FS_FileTell( (fileHandle_t)(uintptr_t)file );
+	return FS_FileTell( (fileHandle_t)(uintptr_t)file );
 }
 
 static sf_count_t SndFile_GetFileLen( void *file ) {
-    return FS_FileLength( (fileHandle_t)(uintptr_t)file );
+	return FS_FileLength( (fileHandle_t)(uintptr_t)file );
 }
 
 static sf_count_t SndFile_Seek( sf_count_t offset, int whence, void *file ) {
-    fileHandle_t f = (fileHandle_t)(uintptr_t)file;
-    switch ( whence ) {
-    case SEEK_SET:
-        return FS_FileSeek( f, (fileOffset_t)offset, FS_SEEK_SET );
-    case SEEK_CUR:
-        return FS_FileSeek( f, (fileOffset_t)offset, FS_SEEK_CUR );
-    case SEEK_END:
-        return FS_FileSeek( f, (fileOffset_t)offset, FS_SEEK_END );
-    default:
-        break;
-    };
-    N_Error( ERR_FATAL, "SndFile_Seek: bad whence" );
-    return 0; // quiet compiler warning
+	fileHandle_t f = (fileHandle_t)(uintptr_t)file;
+	switch ( whence ) {
+	case SEEK_SET:
+		return FS_FileSeek( f, (fileOffset_t)offset, FS_SEEK_SET );
+	case SEEK_CUR:
+		return FS_FileSeek( f, (fileOffset_t)offset, FS_SEEK_CUR );
+	case SEEK_END:
+		return FS_FileSeek( f, (fileOffset_t)offset, FS_SEEK_END );
+	default:
+		break;
+	};
+	N_Error( ERR_FATAL, "SndFile_Seek: bad whence" );
+	return 0; // quiet compiler warning
 }
 
 
@@ -548,142 +553,142 @@ static const char* my_stbv_strerror( int stbVorbisError )
 
 static inline const void *IsSpecialSong( const char *npath )
 {
-    int i;
+	int i;
 
-    for ( i = 0; i < arraylen( specialSongs ); i++ ) {
-        if ( !N_stricmp( npath, specialSongs[i].name ) ) {
-            return specialSongs[i].buffer;
-        }
-    }
+	for ( i = 0; i < arraylen( specialSongs ); i++ ) {
+		if ( !N_stricmp( npath, specialSongs[i].name ) ) {
+			return specialSongs[i].buffer;
+		}
+	}
 
-    return NULL;
+	return NULL;
 }
 
 bool CSoundSource::LoadFile( const char *npath, int64_t tag )
 {
-    PROFILE_FUNCTION();
+	PROFILE_FUNCTION();
 
-    SNDFILE *sf;
-    SF_VIRTUAL_IO vio;
-    ALenum format;
-    fileHandle_t f;
-    FILE *fp;
-    void *buffer;
-    uint64_t length;
-    const char *ospath;
-    short *data;
+	SNDFILE *sf;
+	SF_VIRTUAL_IO vio;
+	ALenum format;
+	fileHandle_t f;
+	FILE *fp;
+	void *buffer;
+	uint64_t length;
+	const char *ospath;
+	short *data;
 
-    m_iTag = tag;
+	m_iTag = tag;
 
-    // clear audio file data before anything
-    memset( &m_hFData, 0, sizeof( m_hFData ) );
-    memset( &vio, 0, sizeof( vio ) );
+	// clear audio file data before anything
+	memset( &m_hFData, 0, sizeof( m_hFData ) );
+	memset( &vio, 0, sizeof( vio ) );
 
-    N_strncpyz( m_pName, npath, sizeof( m_pName ) );
+	N_strncpyz( m_pName, npath, sizeof( m_pName ) );
 
-    // hash it so that if we try loading it
-    // even if it's failed, we won't try loading
-    // it again
-    sndManager->AddSourceToHash( this );
+	// hash it so that if we try loading it
+	// even if it's failed, we won't try loading
+	// it again
+	sndManager->AddSourceToHash( this );
 
-    buffer = const_cast<void *>( IsSpecialSong( npath ) );
-    if ( !buffer ) {
-        length = FS_LoadFile( npath, &buffer );
-        if ( !length || !buffer ) {
-            Con_Printf( COLOR_RED "CSoundSource::LoadFile: failed to load file '%s'.\n", npath );
-            return false;
-        }
-    }
+	buffer = const_cast<void *>( IsSpecialSong( npath ) );
+	if ( !buffer ) {
+		length = FS_LoadFile( npath, &buffer );
+		if ( !length || !buffer ) {
+			Con_Printf( COLOR_RED "CSoundSource::LoadFile: failed to load file '%s'.\n", npath );
+			return false;
+		}
+	}
 
-    fp = tmpfile();
-    Assert( fp );
+	fp = tmpfile();
+	Assert( fp );
 
-    /*
-    vio.get_filelen = SndFile_GetFileLen;
-    vio.write = NULL; // no need for this
-    vio.read = SndFile_Read;
-    vio.tell = SndFile_Tell;
-    vio.seek = SndFile_Seek;
+	/*
+	vio.get_filelen = SndFile_GetFileLen;
+	vio.write = NULL; // no need for this
+	vio.read = SndFile_Read;
+	vio.tell = SndFile_Tell;
+	vio.seek = SndFile_Seek;
 
-    sf = sf_open_virtual( &vio, SFM_READ, &m_hFData, (void *)(uintptr_t)f );
-    if ( !sf ) {
-        Con_Printf( COLOR_YELLOW "WARNING: libsndfile sf_open_virtual failed on '%s', sf_sterror(): %s\n", npath, sf_strerror( sf ) );
-        return false;
-    }
-    */
-    fwrite( buffer, length, 1, fp );
-    fseek( fp, 0L, SEEK_SET );
-    if ( !IsSpecialSong( npath ) ) {
-        FS_FreeFile( buffer );
-    }
-    
-    sf = sf_open_fd( fileno( fp ), SFM_READ, &m_hFData, SF_FALSE );
-    if ( !sf ) {
-        Con_Printf( COLOR_YELLOW "WARNING: libsndfile sf_open_fd failed on '%s', sf_strerror(): %s\n", npath, sf_strerror( sf ) );
-        return false;
-    }
+	sf = sf_open_virtual( &vio, SFM_READ, &m_hFData, (void *)(uintptr_t)f );
+	if ( !sf ) {
+		Con_Printf( COLOR_YELLOW "WARNING: libsndfile sf_open_virtual failed on '%s', sf_sterror(): %s\n", npath, sf_strerror( sf ) );
+		return false;
+	}
+	*/
+	fwrite( buffer, length, 1, fp );
+	fseek( fp, 0L, SEEK_SET );
+	if ( !IsSpecialSong( npath ) ) {
+		FS_FreeFile( buffer );
+	}
+	
+	sf = sf_open_fd( fileno( fp ), SFM_READ, &m_hFData, SF_FALSE );
+	if ( !sf ) {
+		Con_Printf( COLOR_YELLOW "WARNING: libsndfile sf_open_fd failed on '%s', sf_strerror(): %s\n", npath, sf_strerror( sf ) );
+		return false;
+	}
 
-    m_nObjectSize = ( sizeof( short ) * 8 ) * m_hFData.channels;
-    m_nObjectMemSize = m_nObjectSize * sizeof( short );
-    
-    // allocate the buffer
-    Alloc();
+	m_nObjectSize = ( sizeof( short ) * 8 ) * m_hFData.channels;
+	m_nObjectMemSize = m_nObjectSize * sizeof( short );
+	
+	// allocate the buffer
+	Alloc();
 
-    m_pCacheData = (short *)Hunk_AllocateTempMemory( sizeof( short ) * m_hFData.channels * m_hFData.frames );
-    if ( !sf_read_short( sf, (short *)m_pCacheData, m_hFData.channels * m_hFData.frames ) ) {
-        N_Error( ERR_FATAL, "CSoundSource::LoadFile(%s): failed to read %lu bytes from audio stream, sf_strerror(): %s\n",
-            m_pName, sizeof( short ) * m_hFData.channels * m_hFData.frames, sf_strerror( sf ) );
-    }
+	m_pCacheData = (short *)Hunk_AllocateTempMemory( sizeof( short ) * m_hFData.channels * m_hFData.frames );
+	if ( !sf_read_short( sf, (short *)m_pCacheData, m_hFData.channels * m_hFData.frames ) ) {
+		N_Error( ERR_FATAL, "CSoundSource::LoadFile(%s): failed to read %lu bytes from audio stream, sf_strerror(): %s\n",
+			m_pName, sizeof( short ) * m_hFData.channels * m_hFData.frames, sf_strerror( sf ) );
+	}
 
-    sf_close( sf );
-    fclose( fp );
+	sf_close( sf );
+	fclose( fp );
 
-    format = Format();
-    if ( format == 0 ) {
-        Con_Printf( COLOR_RED "Bad soundfile format for '%s', refusing to load\n", npath );
-        return false;
-    }
+	format = Format();
+	if ( format == 0 ) {
+		Con_Printf( COLOR_RED "Bad soundfile format for '%s', refusing to load\n", npath );
+		return false;
+	}
 
-    ALCall( alGenBuffers( 1, &m_iBuffer ) );
+	ALCall( alGenBuffers( 1, &m_iBuffer ) );
 
-    // generate a brand new source for each individual sfx
-    if ( m_iSource == 0 ) {
-        ALCall( alGenSources( 1, &m_iSource ) );
-    }
+	// generate a brand new source for each individual sfx
+	if ( m_iSource == 0 ) {
+		ALCall( alGenSources( 1, &m_iSource ) );
+	}
 
-    if ( alBufferDataStatic ) {
-        ALCall( alBufferDataStatic( m_iBuffer, format, m_pCacheData, sizeof( short ) * m_hFData.channels * m_hFData.frames, m_hFData.samplerate ) );
-    } else {
-        ALCall( alBufferData( m_iBuffer, format, m_pCacheData, sizeof( short ) * m_hFData.channels * m_hFData.frames, m_hFData.samplerate ) );
-    }
+	if ( alBufferDataStatic ) {
+		ALCall( alBufferDataStatic( m_iBuffer, format, m_pCacheData, sizeof( short ) * m_hFData.channels * m_hFData.frames, m_hFData.samplerate ) );
+	} else {
+		ALCall( alBufferData( m_iBuffer, format, m_pCacheData, sizeof( short ) * m_hFData.channels * m_hFData.frames, m_hFData.samplerate ) );
+	}
 
-    if ( tag == TAG_SFX ) {
-        ALCall( alSourcef( m_iSource, AL_GAIN, snd_effectsVolume->f / 100.0f ) );
-    } else if ( tag == TAG_MUSIC ) {
-        ALCall( alSourcef( m_iSource, AL_GAIN, snd_musicVolume->f / 100.0f ) );
-    }
-    ALCall( alSourcei( m_iSource, AL_BUFFER, m_iBuffer ) );
-    Hunk_FreeTempMemory( m_pCacheData );
+	if ( tag == TAG_SFX ) {
+		ALCall( alSourcef( m_iSource, AL_GAIN, snd_effectsVolume->f / 100.0f ) );
+	} else if ( tag == TAG_MUSIC ) {
+		ALCall( alSourcef( m_iSource, AL_GAIN, snd_musicVolume->f / 100.0f ) );
+	}
+	ALCall( alSourcei( m_iSource, AL_BUFFER, m_iBuffer ) );
+	Hunk_FreeTempMemory( m_pCacheData );
 
-    if ( gi.mapLoaded && gi.state == GS_LEVEL ) {
-        sndManager->m_nLevelSources++;
-    }
+	if ( gi.mapLoaded && gi.state == GS_LEVEL ) {
+		sndManager->m_nLevelSources++;
+	}
 
-    return true;
+	return true;
 }
 
 void CSoundManager::Init( void )
 {
-    PROFILE_FUNCTION();
-    
-    memset( this, 0, sizeof( *this ) );
+	PROFILE_FUNCTION();
+	
+	memset( this, 0, sizeof( *this ) );
 
-    // no point in initializing OpenAL if sound is disabled with snd_noSound
+	// no point in initializing OpenAL if sound is disabled with snd_noSound
 	if ( snd_noSound->i ) {
 		Con_Printf( "Sound disabled with snd_noSound 1!\n" );
 		m_pDevice = NULL;
 		m_pContext = NULL;
-        return;
+		return;
 	} else {
 		// set up openal device and context
 		Con_Printf( "Setup OpenAL device and context\n" );
@@ -693,7 +698,7 @@ void CSoundManager::Init( void )
 			device = NULL;
 		} else if ( !N_stricmp( device, "default" ) ) {
 			device = NULL;
-        }
+		}
 
 		if ( alcIsExtensionPresent( NULL, "ALC_ENUMERATE_ALL_EXT" ) ) {
 			const char *devs = alcGetString( NULL, ALC_ALL_DEVICES_SPECIFIER );
@@ -737,127 +742,127 @@ void CSoundManager::Init( void )
 			}
 		}
 	}
-    if ( !m_pDevice || !m_pContext ) {
-        Cvar_Set( "snd_noSound", "1" );
-        return;
-    }
+	if ( !m_pDevice || !m_pContext ) {
+		Cvar_Set( "snd_noSound", "1" );
+		return;
+	}
 
 /*
-    m_pDevice = alcOpenDevice( NULL );
-    if ( !m_pDevice ) {
-        N_Error( ERR_FATAL, "Snd_Init: failed to open OpenAL device" );
-    }
+	m_pDevice = alcOpenDevice( NULL );
+	if ( !m_pDevice ) {
+		N_Error( ERR_FATAL, "Snd_Init: failed to open OpenAL device" );
+	}
 
-    m_pContext = alcCreateContext( m_pDevice, NULL );
-    if ( !m_pContext ) {
-        N_Error( ERR_FATAL, "Snd_Init: failed to create OpenAL context, reason: %s", alcGetString( m_pDevice, alcGetError( m_pDevice ) ) );
-    }
-    */
+	m_pContext = alcCreateContext( m_pDevice, NULL );
+	if ( !m_pContext ) {
+		N_Error( ERR_FATAL, "Snd_Init: failed to create OpenAL context, reason: %s", alcGetString( m_pDevice, alcGetError( m_pDevice ) ) );
+	}
+	*/
 
-    alcMakeContextCurrent( m_pContext );
-    m_bRegistered = true;
+	alcMakeContextCurrent( m_pContext );
+	m_bRegistered = true;
 
-    // generate the recyclable music source
+	// generate the recyclable music source
 
-    Con_Printf( "OpenAL vendor: %s\n", alGetString( AL_VENDOR ) );
-    Con_Printf( "OpenAL renderer: %s\n", alGetString( AL_RENDERER ) );
-    Con_Printf( "OpenAL version: %s\n", alGetString( AL_VERSION ) );
+	Con_Printf( "OpenAL vendor: %s\n", alGetString( AL_VENDOR ) );
+	Con_Printf( "OpenAL renderer: %s\n", alGetString( AL_RENDERER ) );
+	Con_Printf( "OpenAL version: %s\n", alGetString( AL_VERSION ) );
 
-    if ( alcIsExtensionPresent( m_pDevice, "AL_EXT_STATIC_BUFFER" ) ) {
-        Con_Printf( "AL_EXT_STATIC_BUFFER found\n" );
-        alBufferDataStatic = (PFNALBUFFERDATASTATICPROC)alcGetProcAddress( m_pDevice, "alBufferDataStatic" );
-    } else {
-        Con_Printf( "AL_EXT_STATIC_BUFFER not found\n" );
-        alBufferDataStatic = NULL;
-    }
+	if ( alcIsExtensionPresent( m_pDevice, "AL_EXT_STATIC_BUFFER" ) ) {
+		Con_Printf( "AL_EXT_STATIC_BUFFER found\n" );
+		alBufferDataStatic = (PFNALBUFFERDATASTATICPROC)alcGetProcAddress( m_pDevice, "alBufferDataStatic" );
+	} else {
+		Con_Printf( "AL_EXT_STATIC_BUFFER not found\n" );
+		alBufferDataStatic = NULL;
+	}
 
-    if ( alcIsExtensionPresent( m_pDevice, "ALC_EXT_disconnect" ) && alcIsExtensionPresent( m_pDevice, "ALC_SOFT_HRTF" ) ) {
-        Con_Printf( "ALC_EXT_disconnect and ALC_SOFT_HRTF found, resetting disconnected devices now possible\n" );
-        alcResetDeviceSOFT = (LPALCRESETDEVICESOFT)alcGetProcAddress( m_pDevice, "alcResetDeviceSOFT" );
-    } else {
-        Con_Printf( "ALC_EXT_disconnect or ALC_SOFT_HRTF not found, resetting disconnected devices not possible\n" );
-        alcResetDeviceSOFT = NULL;
-    }
+	if ( alcIsExtensionPresent( m_pDevice, "ALC_EXT_disconnect" ) && alcIsExtensionPresent( m_pDevice, "ALC_SOFT_HRTF" ) ) {
+		Con_Printf( "ALC_EXT_disconnect and ALC_SOFT_HRTF found, resetting disconnected devices now possible\n" );
+		alcResetDeviceSOFT = (LPALCRESETDEVICESOFT)alcGetProcAddress( m_pDevice, "alcResetDeviceSOFT" );
+	} else {
+		Con_Printf( "ALC_EXT_disconnect or ALC_SOFT_HRTF not found, resetting disconnected devices not possible\n" );
+		alcResetDeviceSOFT = NULL;
+	}
 
-    gi.soundStarted = qtrue;
+	gi.soundStarted = qtrue;
 }
 
 void CSoundManager::PlaySound( CSoundSource *snd ) {
-    if ( !snd ) {
-        return;
-    }
-    if ( gi.state == GS_LEVEL ) {
-        vec3_t pos;
-        alGetListenerfv( AL_POSITION, pos );
-        alSource3f( snd->GetSource(), AL_POSITION, pos[0], pos[1], pos[2] );
-    }
-    snd->Play();
+	if ( !snd ) {
+		return;
+	}
+	if ( gi.state == GS_LEVEL ) {
+		vec3_t pos;
+		alGetListenerfv( AL_POSITION, pos );
+		alSource3f( snd->GetSource(), AL_POSITION, pos[0], pos[1], pos[2] );
+	}
+	snd->Play();
 }
 
 void CSoundManager::StopSound( CSoundSource *snd ) {
-    snd->Stop();
+	snd->Stop();
 }
 
 void CSoundManager::Shutdown( void )
 {
-    uint64_t i;
-    trackQueue_t *pTrack, *pNext;
+	uint64_t i;
+	trackQueue_t *pTrack, *pNext;
 
-    m_LoopingTracks.clear();
-    for ( i = 0; i < MAX_SOUND_SOURCES; i++ ) {
-        if ( !m_pSources[i] ) {
-            continue;
-        }
-        m_pSources[i]->Shutdown();
-        m_pSources[i] = NULL;
-    }
+	m_LoopingTracks.clear();
+	for ( i = 0; i < MAX_SOUND_SOURCES; i++ ) {
+		if ( !m_pSources[i] ) {
+			continue;
+		}
+		m_pSources[i]->Shutdown();
+		m_pSources[i] = NULL;
+	}
 
-    m_nSources = 0;
-    m_bRegistered = false;
-    memset( m_pSources, 0, sizeof( m_pSources ) );
+	m_nSources = 0;
+	m_bRegistered = false;
+	memset( m_pSources, 0, sizeof( m_pSources ) );
 
-    Z_FreeTags( TAG_SFX );
-    Z_FreeTags( TAG_MUSIC );
+	Z_FreeTags( TAG_SFX );
+	Z_FreeTags( TAG_MUSIC );
 
-    Cmd_RemoveCommand( "snd.setvolume" );
-    Cmd_RemoveCommand( "snd.toggle" );
-    Cmd_RemoveCommand( "snd.updatevolume" );
-    Cmd_RemoveCommand( "snd.list_files" );
-    Cmd_RemoveCommand( "snd.clear_tracks" );
-    Cmd_RemoveCommand( "snd.play_sfx" );
-    Cmd_RemoveCommand( "snd.queue_track" );
-    Cmd_RemoveCommand( "snd.audio_info" );
-    Cmd_RemoveCommand( "snd.startup_level" );
-    Cmd_RemoveCommand( "snd.unload_level" );
+	Cmd_RemoveCommand( "snd.setvolume" );
+	Cmd_RemoveCommand( "snd.toggle" );
+	Cmd_RemoveCommand( "snd.updatevolume" );
+	Cmd_RemoveCommand( "snd.list_files" );
+	Cmd_RemoveCommand( "snd.clear_tracks" );
+	Cmd_RemoveCommand( "snd.play_sfx" );
+	Cmd_RemoveCommand( "snd.queue_track" );
+	Cmd_RemoveCommand( "snd.audio_info" );
+	Cmd_RemoveCommand( "snd.startup_level" );
+	Cmd_RemoveCommand( "snd.unload_level" );
 
-    alcMakeContextCurrent( NULL );
-    alcDestroyContext( m_pContext );
-    alcCloseDevice( m_pDevice );
+	alcMakeContextCurrent( NULL );
+	alcDestroyContext( m_pContext );
+	alcCloseDevice( m_pDevice );
 
-    gi.soundStarted = qfalse;
+	gi.soundStarted = qfalse;
 
 //    soundCacheAllocator.Shutdown();
 }
 
 void CSoundManager::AddSourceToHash( CSoundSource *src )
 {
-    nhandle_t hash;
+	nhandle_t hash;
 
-    hash = Snd_HashFileName( src->GetName() );
+	hash = Snd_HashFileName( src->GetName() );
 
-    src->m_pNext = m_pSources[hash];
-    m_pSources[hash] = src;
+	src->m_pNext = m_pSources[hash];
+	m_pSources[hash] = src;
 }
 
 void CSoundManager::Restart( void )
 {
-    uint64_t i;
+	uint64_t i;
 
-    // shutdown everything
-    Shutdown();
-    
-    // re-init
-    Init();
+	// shutdown everything
+	Shutdown();
+	
+	// re-init
+	Init();
 }
 
 //
@@ -867,68 +872,68 @@ void CSoundManager::Restart( void )
 //
 CSoundSource *CSoundManager::InitSource( const char *filename, int64_t tag )
 {
-    CSoundSource *src;
-    nhandle_t hash;
+	CSoundSource *src;
+	nhandle_t hash;
 
-    hash = Snd_HashFileName( filename );
+	hash = Snd_HashFileName( filename );
 
-    //
-    // check if we already have it loaded
-    //
-    for ( src = m_pSources[hash]; src; src = src->m_pNext ) {
-        if ( !N_stricmp( filename, src->GetName() ) ) {
-            return src;
-        }
-    }
+	//
+	// check if we already have it loaded
+	//
+	for ( src = m_pSources[hash]; src; src = src->m_pNext ) {
+		if ( !N_stricmp( filename, src->GetName() ) ) {
+			return src;
+		}
+	}
 
-    if ( strlen( filename ) >= MAX_NPATH ) {
-        Con_Printf( "CSoundManager::InitSource: name '%s' too long\n", filename );
-        return NULL;
-    }
-    if ( m_nSources == MAX_SOUND_SOURCES ) {
-        N_Error( ERR_DROP, "CSoundManager::InitSource: MAX_SOUND_SOURCES hit" );
-    }
+	if ( strlen( filename ) >= MAX_NPATH ) {
+		Con_Printf( "CSoundManager::InitSource: name '%s' too long\n", filename );
+		return NULL;
+	}
+	if ( m_nSources == MAX_SOUND_SOURCES ) {
+		N_Error( ERR_DROP, "CSoundManager::InitSource: MAX_SOUND_SOURCES hit" );
+	}
 
-    m_hAllocLock.Lock();
+	m_hAllocLock.Lock();
 
-    src = (CSoundSource *)Hunk_Alloc( sizeof( *src ), h_low );
-    memset( src, 0, sizeof( *src ) );
+	src = (CSoundSource *)Hunk_Alloc( sizeof( *src ), h_low );
+	memset( src, 0, sizeof( *src ) );
 
-    if ( !src->LoadFile( filename, tag ) ) {
-        Con_Printf( COLOR_YELLOW "WARNING: failed to load sound file '%s'\n", filename );
-        m_hAllocLock.Unlock();
-        return NULL;
-    }
+	if ( !src->LoadFile( filename, tag ) ) {
+		Con_Printf( COLOR_YELLOW "WARNING: failed to load sound file '%s'\n", filename );
+		m_hAllocLock.Unlock();
+		return NULL;
+	}
 
-    src->SetVolume();
+	src->SetVolume();
 
-    m_nSources++;
-    if ( gi.mapLoaded ) {
-        sndManager->m_nLevelSources++;
-    }
+	m_nSources++;
+	if ( gi.mapLoaded ) {
+		sndManager->m_nLevelSources++;
+	}
 
-    m_hAllocLock.Unlock();
+	m_hAllocLock.Unlock();
 
-    return src;
+	return src;
 }
 
 void CSoundManager::UpdateParm( int64_t tag )
 {
-    for ( uint64_t i = 0; i < m_nSources; i++ ) {
-        if ( m_pSources[i]->GetTag() == tag ) {
-            m_pSources[i]->SetVolume();
-        }
-    }
+	for ( uint64_t i = 0; i < m_nSources; i++ ) {
+		if ( m_pSources[i]->GetTag() == tag ) {
+			m_pSources[i]->SetVolume();
+		}
+	}
 }
 
 void CSoundManager::DisableSounds( void ) {
-    for ( uint64_t i = 0; i < MAX_SOUND_SOURCES; i++ ) {
-        if ( !m_pSources[i] ) {
-            continue;
-        }
-        m_pSources[i]->Shutdown();
-    }
-    memset( m_pSources, 0, sizeof( m_pSources ) );
+	for ( uint64_t i = 0; i < MAX_SOUND_SOURCES; i++ ) {
+		if ( !m_pSources[i] ) {
+			continue;
+		}
+		m_pSources[i]->Shutdown();
+	}
+	memset( m_pSources, 0, sizeof( m_pSources ) );
 }
 
 
@@ -937,8 +942,8 @@ void CSoundManager::DisableSounds( void ) {
 CSoundManager::CheckDeviceAndRecoverIfNeeded
 
  DG: returns true if m_pDevice is still available,
-     otherwise it will try to recover the device and return false while it's gone
-     (display audio sound devices sometimes disappear for a few seconds when switching resolution)
+	 otherwise it will try to recover the device and return false while it's gone
+	 (display audio sound devices sometimes disappear for a few seconds when switching resolution)
 ===============
 */
 bool CSoundManager::CheckDeviceAndRecoverIfNeeded( void )
@@ -989,240 +994,240 @@ bool CSoundManager::CheckDeviceAndRecoverIfNeeded( void )
 
 
 void Snd_DisableSounds( void ) {
-    sndManager->DisableSounds();
-    ALCall( alListenerf( AL_GAIN, 0.0f ) );
+	sndManager->DisableSounds();
+	ALCall( alListenerf( AL_GAIN, 0.0f ) );
 //    soundCacheAllocator.FreeEmptyBaseBlocks();
 }
 
 void Snd_StopAll( void ) {
-    sndManager->DisableSounds();
+	sndManager->DisableSounds();
 }
 
 void Snd_PlaySfx( sfxHandle_t sfx ) {
-    if ( sfx == FS_INVALID_HANDLE || !snd_effectsOn->i ) {
-        return;
-    }
+	if ( sfx == FS_INVALID_HANDLE || !snd_effectsOn->i ) {
+		return;
+	}
 
-    sndManager->PlaySound( sndManager->GetSource( sfx ) );
+	sndManager->PlaySound( sndManager->GetSource( sfx ) );
 }
 
 void Snd_PlayWorldSfx( const vec3_t origin, sfxHandle_t hSfx )
 {
-    CSoundSource *source;
+	CSoundSource *source;
 
-    if ( hSfx == FS_INVALID_HANDLE || !snd_effectsOn->i ) {
-        return;
-    }
+	if ( hSfx == FS_INVALID_HANDLE || !snd_effectsOn->i ) {
+		return;
+	}
 
-    source = sndManager->GetSource( hSfx );
-    if ( !source ) {
-        return;
-    }
-    Assert( source );
+	source = sndManager->GetSource( hSfx );
+	if ( !source ) {
+		return;
+	}
+	Assert( source );
 
-    alSourcei( source->GetSource(), AL_SOURCE_RELATIVE, AL_TRUE );
-    alSource3f( source->GetSource(), AL_POSITION, origin[0], origin[1], origin[2] );
-    alSource3f( source->GetSource(), AL_DIRECTION, 0.0f, 0.0f, 0.0f );
+	alSourcei( source->GetSource(), AL_SOURCE_RELATIVE, AL_TRUE );
+	alSource3f( source->GetSource(), AL_POSITION, origin[0], origin[1], origin[2] );
+	alSource3f( source->GetSource(), AL_DIRECTION, 0.0f, 0.0f, 0.0f );
 //    alSourcei( source->GetSource(), AL_ROLLOFF_FACTOR, 1.0f );
-    source->Play();
+	source->Play();
 }
 
 void Snd_StopSfx( sfxHandle_t sfx ) {
-    if ( sfx == FS_INVALID_HANDLE || !snd_effectsOn->i ) {
-        return;
-    }
+	if ( sfx == FS_INVALID_HANDLE || !snd_effectsOn->i ) {
+		return;
+	}
 
-    sndManager->StopSound( sndManager->GetSource( sfx ) );
+	sndManager->StopSound( sndManager->GetSource( sfx ) );
 }
 
 void Snd_SetWorldListener( const vec3_t origin ) {
-    sndManager->SetListenerPos( origin );
-    alListener3f( AL_POSITION, origin[0], origin[2], origin[1] );
+	sndManager->SetListenerPos( origin );
+	alListener3f( AL_POSITION, origin[0], origin[2], origin[1] );
 }
 
 void Snd_Restart( void ) {
-    if ( !sndManager ) {
-        return;
-    }
-    sndManager->Restart();
+	if ( !sndManager ) {
+		return;
+	}
+	sndManager->Restart();
 }
 
 void Snd_Shutdown( void ) {
-    if ( !sndManager ) {
-        return;
-    }
-    sndManager->Shutdown();
+	if ( !sndManager ) {
+		return;
+	}
+	sndManager->Shutdown();
 }
 
 sfxHandle_t Snd_RegisterTrack( const char *npath ) {
-    CSoundSource *track;
+	CSoundSource *track;
 
-    track = sndManager->InitSource( npath, TAG_MUSIC );
-    if ( !track ) {
-        return -1;
-    }
+	track = sndManager->InitSource( npath, TAG_MUSIC );
+	if ( !track ) {
+		return -1;
+	}
 
-    return Snd_HashFileName( track->GetName() );
+	return Snd_HashFileName( track->GetName() );
 }
 
 sfxHandle_t Snd_RegisterSfx( const char *npath ) {
-    CSoundSource *sfx;
+	CSoundSource *sfx;
 
-    sfx = sndManager->InitSource( npath, TAG_SFX );
-    if ( !sfx ) {
-        return -1;
-    }
+	sfx = sndManager->InitSource( npath, TAG_SFX );
+	if ( !sfx ) {
+		return -1;
+	}
 
-    return Snd_HashFileName( sfx->GetName() );
+	return Snd_HashFileName( sfx->GetName() );
 }
 
 static qboolean Snd_IsFreebird( CSoundSource *source )
 {
-    const CSoundSource *freeBird;
+	const CSoundSource *freeBird;
 
-    freeBird = sndManager->GetSource( Snd_RegisterTrack( "music/warcrimes_are_permitted.ogg" ) );
-    if ( memcmp( source->GetCacheData(), freeBird->GetCacheData(), GAMEDATA_MUSIC_WARCRIMES_OGG_LEN ) == 0 ) {
-        Cvar_Set( "snd_specialFlag", "1" );
-        return qtrue;
-    }
-    return qfalse;
+	freeBird = sndManager->GetSource( Snd_RegisterTrack( "music/warcrimes_are_permitted.ogg" ) );
+	if ( memcmp( source->GetCacheData(), freeBird->GetCacheData(), GAMEDATA_MUSIC_WARCRIMES_OGG_LEN ) == 0 ) {
+		Cvar_Set( "snd_specialFlag", "1" );
+		return qtrue;
+	}
+	return qfalse;
 }
 
 void Snd_AddLoopingTrack( sfxHandle_t handle, uint64_t timeOffset ) {
-    CSoundSource *track;
+	CSoundSource *track;
 
-    if ( !snd_musicOn->i ) {
-        return;
-    }
+	if ( !snd_musicOn->i ) {
+		return;
+	}
 
-    if ( handle == -1 ) {
-        Con_Printf( COLOR_RED "Snd_AddLoopingTrack: invalid handle, ignoring call.\n" );
-        return;
-    }
+	if ( handle == -1 ) {
+		Con_Printf( COLOR_RED "Snd_AddLoopingTrack: invalid handle, ignoring call.\n" );
+		return;
+	}
 
-    CThreadAutoLock<CThreadMutex> lock( sndManager->m_hQueueLock );
-    track = sndManager->GetSource( handle );
-    if ( !track ) {
-        Con_Printf( COLOR_RED "Snd_AddLoopingTrack: invalid handle, ignoring call.\n" );
-        return;
-    }
-    if ( eastl::find( sndManager->m_LoopingTracks.cbegin(), sndManager->m_LoopingTracks.cend(), track )
-        != sndManager->m_LoopingTracks.cend() )
-    {
-        return;
-    }
+	CThreadAutoLock<CThreadMutex> lock( sndManager->m_hQueueLock );
+	track = sndManager->GetSource( handle );
+	if ( !track ) {
+		Con_Printf( COLOR_RED "Snd_AddLoopingTrack: invalid handle, ignoring call.\n" );
+		return;
+	}
+	if ( eastl::find( sndManager->m_LoopingTracks.cbegin(), sndManager->m_LoopingTracks.cend(), track )
+		!= sndManager->m_LoopingTracks.cend() )
+	{
+		return;
+	}
 
-    if ( Snd_IsFreebird( track ) ) {
-        Con_Printf( "Your honor, freebird is playing\n" );
-    }
+	if ( Snd_IsFreebird( track ) ) {
+		Con_Printf( "Your honor, freebird is playing\n" );
+	}
 
-    track->m_nTimeOffset = timeOffset;
+	track->m_nTimeOffset = timeOffset;
 
-    alSourcei( track->GetSource(), AL_LOOPING, AL_TRUE );
-    alSourcef( track->GetSource(), AL_GAIN, snd_musicVolume->f / 100.0f );
-    alSourcei( track->GetSource(), AL_SEC_OFFSET, timeOffset );
-    alSourcePlay( track->GetSource() );
+	alSourcei( track->GetSource(), AL_LOOPING, AL_TRUE );
+	alSourcef( track->GetSource(), AL_GAIN, snd_musicVolume->f / 100.0f );
+	alSourcei( track->GetSource(), AL_SEC_OFFSET, timeOffset );
+	alSourcePlay( track->GetSource() );
 
-    sndManager->m_LoopingTracks.emplace_back( track );
+	sndManager->m_LoopingTracks.emplace_back( track );
 }
 
 void Snd_ClearLoopingTracks( void ) {
-    for ( auto& it : sndManager->m_LoopingTracks ) {
-        if ( it->IsPlaying() ) {
-            it->Stop();
-        }
-    }
-    sndManager->m_LoopingTracks.clear();
+	for ( auto& it : sndManager->m_LoopingTracks ) {
+		if ( it->IsPlaying() ) {
+			it->Stop();
+		}
+	}
+	sndManager->m_LoopingTracks.clear();
 }
 
 static void Snd_AudioInfo_f( void )
 {
-    char tracks[200000];
-    int i;
+	char tracks[200000];
+	int i;
 
-    tracks[0] = '\0';
-    for ( i = 0; i < sndManager->m_LoopingTracks.size(); i++ ) {
-        strncat( tracks, sndManager->m_LoopingTracks[i]->GetName(),  sizeof( tracks ) - 1 );
-        if ( i != sndManager->m_LoopingTracks.size() - 1 ) {
+	tracks[0] = '\0';
+	for ( i = 0; i < sndManager->m_LoopingTracks.size(); i++ ) {
+		strncat( tracks, sndManager->m_LoopingTracks[i]->GetName(),  sizeof( tracks ) - 1 );
+		if ( i != sndManager->m_LoopingTracks.size() - 1 ) {
 //            N_strcat( tracks, sizeof( tracks ) - 1, ", " );
-            strncat( tracks, ", ", sizeof( tracks ) - 1 );
-        }
-    }
+			strncat( tracks, ", ", sizeof( tracks ) - 1 );
+		}
+	}
 
-    Con_Printf( "\n----- Audio Info -----\n" );
-    Con_Printf( "Audio Driver: %s\n", SDL_GetCurrentAudioDriver() );
-    Con_Printf( "Number of Sound Sources: %lu\n", sndManager->NumSources() );
-    Con_Printf( "OpenAL vendor: %s\n", alGetString( AL_VENDOR ) );
-    Con_Printf( "OpenAL renderer: %s\n", alGetString( AL_RENDERER ) );
-    Con_Printf( "OpenAL version: %s\n", alGetString( AL_VERSION ) );
-    Con_Printf( "Looping Tracks: %s\n", tracks );
+	Con_Printf( "\n----- Audio Info -----\n" );
+	Con_Printf( "Audio Driver: %s\n", SDL_GetCurrentAudioDriver() );
+	Con_Printf( "Number of Sound Sources: %lu\n", sndManager->NumSources() );
+	Con_Printf( "OpenAL vendor: %s\n", alGetString( AL_VENDOR ) );
+	Con_Printf( "OpenAL renderer: %s\n", alGetString( AL_RENDERER ) );
+	Con_Printf( "OpenAL version: %s\n", alGetString( AL_VERSION ) );
+	Con_Printf( "Looping Tracks: %s\n", tracks );
 }
 
 static void Snd_Toggle_f( void )
 {
-    const char *var;
-    const char *toggle;
-    bool option;
+	const char *var;
+	const char *toggle;
+	bool option;
 
-    if ( Cmd_Argc() < 3 ) {
-        Con_Printf( "usage: snd.toggle <sfx|music> <on|off, 1|0>\n" );
-        return;
-    }
+	if ( Cmd_Argc() < 3 ) {
+		Con_Printf( "usage: snd.toggle <sfx|music> <on|off, 1|0>\n" );
+		return;
+	}
 
-    var = Cmd_Argv( 1 );
-    toggle = Cmd_Argv( 2 );
+	var = Cmd_Argv( 1 );
+	toggle = Cmd_Argv( 2 );
 
-    if ( ( toggle[0] == '1' && toggle[1] == '\0' ) || !N_stricmp( toggle, "on" ) ) {
-        option = true;
-    } else if ( ( toggle[0] == '0' && toggle[1] == '\0' ) || !N_stricmp( toggle, "off" ) ) {
-        option = false;
-    }
+	if ( ( toggle[0] == '1' && toggle[1] == '\0' ) || !N_stricmp( toggle, "on" ) ) {
+		option = true;
+	} else if ( ( toggle[0] == '0' && toggle[1] == '\0' ) || !N_stricmp( toggle, "off" ) ) {
+		option = false;
+	}
 
-    if ( !N_stricmp( var, "sfx" ) ) {
-        Cvar_Set( "snd_effectsOn", va( "%i", option ) );
-    } else if ( !N_stricmp( var, "music" ) ) {
-        Cvar_Set( "snd_musicOn", va( "%i", option ) );
-    } else {
-        Con_Printf( "snd.toggle: unknown parameter '%s', use either 'sfx' or 'music'\n", var );
-        return;
-    }
+	if ( !N_stricmp( var, "sfx" ) ) {
+		Cvar_Set( "snd_effectsOn", va( "%i", option ) );
+	} else if ( !N_stricmp( var, "music" ) ) {
+		Cvar_Set( "snd_musicOn", va( "%i", option ) );
+	} else {
+		Con_Printf( "snd.toggle: unknown parameter '%s', use either 'sfx' or 'music'\n", var );
+		return;
+	}
 }
 
 static void Snd_SetVolume_f( void )
 {
-    float vol;
-    const char *change;
+	float vol;
+	const char *change;
 
-    if ( Cmd_Argc() < 3 ) {
-        Con_Printf( "usage: snd.setvolume <sfx|music> <volume>\n" );
-        return;
-    }
+	if ( Cmd_Argc() < 3 ) {
+		Con_Printf( "usage: snd.setvolume <sfx|music> <volume>\n" );
+		return;
+	}
 
-    vol = N_atof( Cmd_Argv( 1 ) );
-    vol = CLAMP( vol, 0.0f, 100.0f );
+	vol = N_atof( Cmd_Argv( 1 ) );
+	vol = CLAMP( vol, 0.0f, 100.0f );
 
-    change = Cmd_Argv( 2 );
-    if ( !N_stricmp( change, "sfx" ) ) {
-        if ( snd_effectsVolume->f != vol ) {
-            Cvar_Set( "snd_effectsVolume", va("%f", vol) );
-            sndManager->UpdateParm( TAG_SFX );
-        }
-    }
-    else if ( !N_stricmp( change, "music" ) ) {
-        if ( snd_musicVolume->f != vol ) {
-            Cvar_Set( "snd_musicVolume", va( "%f", vol ) );
-            sndManager->UpdateParm( TAG_MUSIC );
-        }
-    }
-    else {
-        Con_Printf( "snd.setvolume: unknown parameter '%s', use either 'sfx' or 'music'\n", change );
-        return;
-    }
+	change = Cmd_Argv( 2 );
+	if ( !N_stricmp( change, "sfx" ) ) {
+		if ( snd_effectsVolume->f != vol ) {
+			Cvar_Set( "snd_effectsVolume", va("%f", vol) );
+			sndManager->UpdateParm( TAG_SFX );
+		}
+	}
+	else if ( !N_stricmp( change, "music" ) ) {
+		if ( snd_musicVolume->f != vol ) {
+			Cvar_Set( "snd_musicVolume", va( "%f", vol ) );
+			sndManager->UpdateParm( TAG_MUSIC );
+		}
+	}
+	else {
+		Con_Printf( "snd.setvolume: unknown parameter '%s', use either 'sfx' or 'music'\n", change );
+		return;
+	}
 }
 
 static void Snd_UpdateVolume_f( void ) {
-    sndManager->UpdateParm( TAG_SFX );
-    sndManager->UpdateParm( TAG_MUSIC );
+	sndManager->UpdateParm( TAG_SFX );
+	sndManager->UpdateParm( TAG_MUSIC );
 }
 
 /*
@@ -1230,222 +1235,223 @@ static void Snd_UpdateVolume_f( void ) {
 */
 void Snd_Update( int32_t msec )
 {
-    uint64_t i;
-    CSoundSource *source;
-    ALfloat v;
+	uint64_t i;
+	CSoundSource *source;
+	ALfloat v;
 
-    if ( !sndManager->CheckDeviceAndRecoverIfNeeded() ) {
-        return; // don't play anything
-    }
+	if ( !sndManager->CheckDeviceAndRecoverIfNeeded() ) {
+		return; // don't play anything
+	}
 
 //    if ( snd_muteUnfocused->i ) {
 //        sndManager->Mute( !gw_active );
 //    }
-    if ( snd_masterVolume->modified ) {
-        snd_effectsVolume->modified = qtrue;
-        snd_musicVolume->modified = qtrue;
-    }
-    if ( snd_effectsVolume->modified ) {
-        for ( i = 0; i < MAX_SOUND_SOURCES; i++ ) {
-            source = sndManager->GetSource( i );
-            if ( !source ) {
-                continue;
-            }
-            if ( source->GetTag() == TAG_SFX
-            && eastl::find( sndManager->m_LoopingTracks.cbegin(),
-                sndManager->m_LoopingTracks.cend(), source ) == sndManager->m_LoopingTracks.cend() )
-            {
-                source->SetVolume();
-            }
-        }
-        snd_effectsVolume->modified = qfalse;
-    }
+	if ( snd_masterVolume->modified ) {
+		snd_effectsVolume->modified = qtrue;
+		snd_musicVolume->modified = qtrue;
+	}
+	if ( snd_effectsVolume->modified ) {
+		for ( i = 0; i < MAX_SOUND_SOURCES; i++ ) {
+			source = sndManager->GetSource( i );
+			if ( !source ) {
+				continue;
+			}
+			if ( source->GetTag() == TAG_SFX
+			&& eastl::find( sndManager->m_LoopingTracks.cbegin(),
+				sndManager->m_LoopingTracks.cend(), source ) == sndManager->m_LoopingTracks.cend() )
+			{
+				source->SetVolume();
+			}
+		}
+		snd_effectsVolume->modified = qfalse;
+	}
 
-    snd_musicVolume->modified = qfalse;
-    for ( i = 0; i < sndManager->m_LoopingTracks.size(); i++ ) {
-        source = sndManager->m_LoopingTracks[i];
-        if ( source->IsPlaying() ) {
-            alSourcef( source->GetSource(), AL_GAIN, snd_musicVolume->f / 100.0f );
-        } else {
-            alSourcei( source->GetSource(), AL_SEC_OFFSET, source->m_nTimeOffset );
-        }
-    }
+	snd_musicVolume->modified = qfalse;
+	for ( i = 0; i < sndManager->m_LoopingTracks.size(); i++ ) {
+		source = sndManager->m_LoopingTracks[i];
+		if ( source->IsPlaying() ) {
+			alSourcef( source->GetSource(), AL_GAIN, snd_musicVolume->f / 100.0f );
+		} else {
+			alSourcei( source->GetSource(), AL_SEC_OFFSET, source->m_nTimeOffset );
+		}
+	}
 }
 
 static void Snd_ListFiles_f( void )
 {
-    uint64_t i, numFiles;
-    const CSoundSource *source;
+	uint64_t i, numFiles;
+	const CSoundSource *source;
 
-    Con_Printf( "\n---------- Snd_ListFiles_f ----------\n" );
-    Con_Printf( "                      --channels-- ---samplerate--- ----cache size----\n" );
+	Con_Printf( "\n---------- Snd_ListFiles_f ----------\n" );
+	Con_Printf( "                      --channels-- ---samplerate--- ----cache size----\n" );
 
-    numFiles = 0;
-    for ( i = 0; i < MAX_SOUND_SOURCES; i++ ) {
-        source = sndManager->GetSource( i );
+	numFiles = 0;
+	for ( i = 0; i < MAX_SOUND_SOURCES; i++ ) {
+		source = sndManager->GetSource( i );
 
-        if ( !source ) {
-            continue;
-        }
-        numFiles++;
-        Con_Printf( "%10s: %4i %4i %8lu\n", source->GetName(), source->GetInfo().channels, source->GetInfo().samplerate,
-            source->GetInfo().channels * source->GetInfo().frames );
-    }
-    Con_Printf( "Total sound files loaded: %lu\n", numFiles );
+		if ( !source ) {
+			continue;
+		}
+		numFiles++;
+		Con_Printf( "%10s: %4i %4i %8lu\n", source->GetName(), source->GetInfo().channels, source->GetInfo().samplerate,
+			source->GetInfo().channels * source->GetInfo().frames );
+	}
+	Con_Printf( "Total sound files loaded: %lu\n", numFiles );
 }
 
 static void Snd_PlayTrack_f( void ) {
-    sfxHandle_t hSfx;
-    const char *music;
+	sfxHandle_t hSfx;
+	const char *music;
 
-    music = Cmd_Argv( 1 );
-    
-    if ( !*music ) {
-        Con_Printf( "Clearing current track...\n" );
-        Snd_ClearLoopingTracks();
-    } else {
-        hSfx = Com_GenerateHashValue( music, MAX_SOUND_SOURCES );
+	music = Cmd_Argv( 1 );
+	
+	if ( !*music ) {
+		Con_Printf( "Clearing current track...\n" );
+		Snd_ClearLoopingTracks();
+	} else {
+		hSfx = Com_GenerateHashValue( music, MAX_SOUND_SOURCES );
 
-        if ( sndManager->GetSource( hSfx ) == NULL ) {
-            Con_Printf( "invalid track '%s'\n", music );
-            return;
-        }
+		if ( sndManager->GetSource( hSfx ) == NULL ) {
+			Con_Printf( "invalid track '%s'\n", music );
+			return;
+		}
 
-        Snd_AddLoopingTrack( hSfx );
-    }
+		Snd_AddLoopingTrack( hSfx );
+	}
 }
 
 static void Snd_QueueTrack_f( void ) {
-    sfxHandle_t hSfx;
-    const char *music;
+	sfxHandle_t hSfx;
+	const char *music;
 
-    if ( Cmd_Argc() != 2 ) {
-        Con_Printf( "usage: snd.queue_track <music>\n" );
-        return;
-    }
+	if ( Cmd_Argc() != 2 ) {
+		Con_Printf( "usage: snd.queue_track <music>\n" );
+		return;
+	}
 
-    music = Cmd_Argv( 1 );
-    hSfx = Com_GenerateHashValue( music, MAX_SOUND_SOURCES );
-    
-    if ( sndManager->GetSource( hSfx ) == NULL ) {
-        hSfx = Snd_RegisterSfx( music );
-        if ( hSfx == -1 ) {
-            Con_Printf( "invalid track '%s'\n", music );
-            return;
-        }
-    }
+	music = Cmd_Argv( 1 );
 
-    Snd_AddLoopingTrack( hSfx );
+	hSfx = Com_GenerateHashValue( music, MAX_SOUND_SOURCES );
+	
+	if ( sndManager->GetSource( hSfx ) == NULL ) {
+		hSfx = Snd_RegisterSfx( music );
+		if ( hSfx == -1 ) {
+			Con_Printf( "invalid track '%s'\n", music );
+			return;
+		}
+	}
+
+	Snd_AddLoopingTrack( hSfx );
 }
 
 static void Snd_ClearTracks_f( void ) {
-    Snd_ClearLoopingTracks();
+	Snd_ClearLoopingTracks();
 }
 
 static void Snd_PlaySfx_f( void ) {
-    sfxHandle_t hSfx;
-    const char *sound;
+	sfxHandle_t hSfx;
+	const char *sound;
 
-    if ( Cmd_Argc() != 2 ) {
-        Con_Printf( "usage: snd.play_sfx <music>\n" );
-        return;
-    }
+	if ( Cmd_Argc() != 2 ) {
+		Con_Printf( "usage: snd.play_sfx <music>\n" );
+		return;
+	}
 
-    sound = Cmd_Argv( 1 );
-    hSfx = Com_GenerateHashValue( sound, MAX_SOUND_SOURCES );
-    
-    if ( sndManager->GetSource( hSfx ) == NULL ) {
-        Con_Printf( "invalid sfx '%s'\n", sound );
-        return;
-    }
+	sound = Cmd_Argv( 1 );
+	hSfx = Com_GenerateHashValue( sound, MAX_SOUND_SOURCES );
+	
+	if ( sndManager->GetSource( hSfx ) == NULL ) {
+		Con_Printf( "invalid sfx '%s'\n", sound );
+		return;
+	}
 
-    Snd_PlaySfx( hSfx );
+	Snd_PlaySfx( hSfx );
 }
 
 void Snd_UnloadLevel_f( void ) {
-    int i;
-    
-    for ( i = 0; i < sndManager->m_nLevelSources; i++ ) {
-        if ( !sndManager->GetSource( sndManager->m_nFirstLevelSource + i ) ) {
-            continue;
-        }
-        sndManager->GetSource( sndManager->m_nFirstLevelSource + i )->Shutdown();
-    }
+	int i;
+	
+	for ( i = 0; i < sndManager->m_nLevelSources; i++ ) {
+		if ( !sndManager->GetSource( sndManager->m_nFirstLevelSource + i ) ) {
+			continue;
+		}
+		sndManager->GetSource( sndManager->m_nFirstLevelSource + i )->Shutdown();
+	}
 }
 
 void Snd_StartupLevel_f( void ) {
-    sndManager->m_nFirstLevelSource = sndManager->NumSources();
-    sndManager->m_nLevelSources = 0;
+	sndManager->m_nFirstLevelSource = sndManager->NumSources();
+	sndManager->m_nLevelSources = 0;
 }
 
 void Snd_Init( void )
 {
-    Con_Printf( "---------- Snd_Init ----------\n" );
+	Con_Printf( "---------- Snd_Init ----------\n" );
 
-    snd_effectsOn = Cvar_Get( "snd_effectsOn", "1", CVAR_SAVE );
-    Cvar_CheckRange( snd_effectsOn, "0", "1", CVT_INT );
-    Cvar_SetDescription( snd_effectsOn, "Toggles sound effects." );
+	snd_effectsOn = Cvar_Get( "snd_effectsOn", "1", CVAR_SAVE );
+	Cvar_CheckRange( snd_effectsOn, "0", "1", CVT_INT );
+	Cvar_SetDescription( snd_effectsOn, "Toggles sound effects." );
 
-    snd_musicOn = Cvar_Get( "snd_musicOn", "1", CVAR_SAVE );
-    Cvar_CheckRange( snd_musicOn, "0", "1", CVT_INT );
-    Cvar_SetDescription( snd_musicOn, "Toggles music." );
+	snd_musicOn = Cvar_Get( "snd_musicOn", "1", CVAR_SAVE );
+	Cvar_CheckRange( snd_musicOn, "0", "1", CVT_INT );
+	Cvar_SetDescription( snd_musicOn, "Toggles music." );
 
-    snd_effectsVolume = Cvar_Get( "snd_effectsVolume", "50", CVAR_SAVE );
-    Cvar_CheckRange( snd_effectsVolume, "0", "100", CVT_INT );
-    Cvar_SetDescription( snd_effectsVolume, "Sets global sound effects volume." );
+	snd_effectsVolume = Cvar_Get( "snd_effectsVolume", "50", CVAR_SAVE );
+	Cvar_CheckRange( snd_effectsVolume, "0", "100", CVT_INT );
+	Cvar_SetDescription( snd_effectsVolume, "Sets global sound effects volume." );
 
-    snd_musicVolume = Cvar_Get( "snd_musicVolume", "80", CVAR_SAVE );
-    Cvar_CheckRange( snd_musicVolume, "0", "100", CVT_INT );
-    Cvar_SetDescription( snd_musicVolume, "Sets volume for music." );
+	snd_musicVolume = Cvar_Get( "snd_musicVolume", "80", CVAR_SAVE );
+	Cvar_CheckRange( snd_musicVolume, "0", "100", CVT_INT );
+	Cvar_SetDescription( snd_musicVolume, "Sets volume for music." );
 
-    snd_masterVolume = Cvar_Get( "snd_masterVolume", "80", CVAR_SAVE );
-    Cvar_CheckRange( snd_masterVolume, "0", "100", CVT_INT );
-    Cvar_SetDescription( snd_masterVolume, "Sets the cap for sfx and music volume." );
+	snd_masterVolume = Cvar_Get( "snd_masterVolume", "80", CVAR_SAVE );
+	Cvar_CheckRange( snd_masterVolume, "0", "100", CVT_INT );
+	Cvar_SetDescription( snd_masterVolume, "Sets the cap for sfx and music volume." );
 
-    snd_debugPrint = Cvar_Get( "snd_debugPrint", "0", CVAR_CHEAT | CVAR_TEMP );
-    Cvar_CheckRange( snd_debugPrint, "0", "1", CVT_INT );
-    Cvar_SetDescription( snd_debugPrint, "Toggles OpenAL-soft debug messages." );
+	snd_debugPrint = Cvar_Get( "snd_debugPrint", "0", CVAR_CHEAT | CVAR_TEMP );
+	Cvar_CheckRange( snd_debugPrint, "0", "1", CVT_INT );
+	Cvar_SetDescription( snd_debugPrint, "Toggles OpenAL-soft debug messages." );
 
 #ifdef _WIN32
-    Com_StartupVariable( "s_noSound" );
-    snd_noSound = Cvar_Get( "s_noSound", "1", CVAR_LATCH );
+	Com_StartupVariable( "s_noSound" );
+	snd_noSound = Cvar_Get( "s_noSound", "1", CVAR_LATCH );
 #else
-    Com_StartupVariable( "s_noSound" );
-    snd_noSound = Cvar_Get( "s_noSound", "0", CVAR_LATCH );
+	Com_StartupVariable( "s_noSound" );
+	snd_noSound = Cvar_Get( "s_noSound", "0", CVAR_LATCH );
 #endif
 
-    snd_device = Cvar_Get( "snd_device", "default", CVAR_LATCH | CVAR_SAVE );
-    Cvar_SetDescription( snd_device, "the audio device to use ('default' for the default audio device)" );
+	snd_device = Cvar_Get( "snd_device", "default", CVAR_LATCH | CVAR_SAVE );
+	Cvar_SetDescription( snd_device, "the audio device to use ('default' for the default audio device)" );
 
-    Cvar_Get( "snd_specialFlag", "-1", CVAR_TEMP | CVAR_PROTECTED );
+	Cvar_Get( "snd_specialFlag", "-1", CVAR_TEMP | CVAR_PROTECTED );
 
 //    snd_muteUnfocused = Cvar_Get( "snd_muteUnfocused", "1", CVAR_SAVE );
 //    Cvar_SetDescription( snd_muteUnfocused, "Toggles muting sounds when the game's window isn't focused." );
 
-    // init sound manager
-    sndManager = (CSoundManager *)Hunk_Alloc( sizeof( *sndManager ), h_low );
-    sndManager->Init();
+	// init sound manager
+	sndManager = (CSoundManager *)Hunk_Alloc( sizeof( *sndManager ), h_low );
+	sndManager->Init();
 
-    Cmd_AddCommand( "snd.setvolume", Snd_SetVolume_f );
-    Cmd_AddCommand( "snd.toggle", Snd_Toggle_f );
-    Cmd_AddCommand( "snd.updatevolume", Snd_UpdateVolume_f );
-    Cmd_AddCommand( "snd.list_files", Snd_ListFiles_f );
-    Cmd_AddCommand( "snd.clear_tracks", Snd_ClearTracks_f );
-    Cmd_AddCommand( "snd.play_sfx", Snd_PlaySfx_f );
-    Cmd_AddCommand( "snd.queue_track", Snd_QueueTrack_f );
-    Cmd_AddCommand( "snd.audio_info", Snd_AudioInfo_f );
-    Cmd_AddCommand( "snd.startup_level", Snd_StartupLevel_f );
-    Cmd_AddCommand( "snd.unload_level", Snd_UnloadLevel_f );
-    Cmd_AddCommand( "snd.play_track", Snd_PlayTrack_f );
+	Cmd_AddCommand( "snd.setvolume", Snd_SetVolume_f );
+	Cmd_AddCommand( "snd.toggle", Snd_Toggle_f );
+	Cmd_AddCommand( "snd.updatevolume", Snd_UpdateVolume_f );
+	Cmd_AddCommand( "snd.list_files", Snd_ListFiles_f );
+	Cmd_AddCommand( "snd.clear_tracks", Snd_ClearTracks_f );
+	Cmd_AddCommand( "snd.play_sfx", Snd_PlaySfx_f );
+	Cmd_AddCommand( "snd.queue_track", Snd_QueueTrack_f );
+	Cmd_AddCommand( "snd.audio_info", Snd_AudioInfo_f );
+	Cmd_AddCommand( "snd.startup_level", Snd_StartupLevel_f );
+	Cmd_AddCommand( "snd.unload_level", Snd_UnloadLevel_f );
+	Cmd_AddCommand( "snd.play_track", Snd_PlayTrack_f );
 
-    alDistanceModel( AL_EXPONENT_DISTANCE_CLAMPED );
+	alDistanceModel( AL_EXPONENT_DISTANCE_CLAMPED );
 
-    Snd_RegisterTrack( "warcrimes_are_permitted.ogg" );
+	Snd_RegisterTrack( "warcrimes_are_permitted.ogg" );
 
-    gi.soundStarted = qtrue;
-    gi.soundRegistered = qtrue;
+	gi.soundStarted = qtrue;
+	gi.soundRegistered = qtrue;
 
-    Con_Printf( "----------------------------------\n" );
+	Con_Printf( "----------------------------------\n" );
 
 //    soundCacheAllocator.Init();
 }

@@ -243,17 +243,6 @@ namespace TheNomad::SGame {
 		*/
 		
 		void SetMovementDir() {
-			// set legs direction
-			if ( side > 0 ) {
-				m_EntityData.SetFacing( FACING_RIGHT );
-				m_EntityData.SetLegsFacing( FACING_RIGHT );
-				m_EntityData.SetArmsFacing( FACING_RIGHT );
-			} else if ( side < 0 ) {
-				m_EntityData.SetFacing( FACING_LEFT );
-				m_EntityData.SetLegsFacing( FACING_LEFT );
-				m_EntityData.SetArmsFacing( FACING_LEFT );
-			}
-
 			//
 			// set torso direction
 			//
@@ -305,12 +294,16 @@ namespace TheNomad::SGame {
 				*/
 			}
 			else {
-				TheNomad::Engine::GetJoystickAngle( m_EntityData.GetPlayerIndex(), m_nJoystickAngle, m_JoystickPosition );
+//				TheNomad::Engine::GetJoystickAngle( m_EntityData.GetPlayerIndex(), m_nJoystickAngle, m_JoystickPosition );
 
 				if ( side > 0 ) {
 					m_EntityData.SetFacing( FACING_RIGHT );
+					m_EntityData.SetLegsFacing( FACING_RIGHT );
+					m_EntityData.SetArmsFacing( FACING_RIGHT );
 				} else if ( side < 0 ) {
 					m_EntityData.SetFacing( FACING_LEFT );
+					m_EntityData.SetLegsFacing( FACING_LEFT );
+					m_EntityData.SetArmsFacing( FACING_LEFT );
 				}
 
 				if ( side > forward ) {

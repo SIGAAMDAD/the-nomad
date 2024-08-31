@@ -29,7 +29,7 @@ VERSION_DEFINE=-D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPD
 
 .PHONY: all clean
 
-DEFINES       =$(VERSION_DEFINE) $(DEBUGDEF) -DUSE_OPENGL_API -DGDR_DLLCOMPILE -Werror=implicit-function-declaration -Werror=incompatible-pointer-types -D_NOMAD_ENGINE -DHQ_BLUR
+DEFINES       =$(VERSION_DEFINE) $(DEBUGDEF) -DUSE_OPENGL_API -DGDR_DLLCOMPILE -Werror=implicit-function-declaration -Werror=incompatible-pointer-types -D_NOMAD_ENGINE -DHQ_BLUR -DUSE_RENDERER_DLOPEN
 OPTIMIZERS    =\
 				-fexpensive-optimizations \
 				-funroll-loops \

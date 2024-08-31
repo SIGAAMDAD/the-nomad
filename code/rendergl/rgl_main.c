@@ -309,6 +309,15 @@ void R_DrawWorld( void )
             // convert the local world coordinates to OpenGL screen coordinates
             R_WorldToGL( vtx, pos );
 
+            // clip anything not visible out of view
+            for ( i = 0; i < 4; i++ ) {
+                if ( ( vtx[i].xyz[0] < -1.0f && vtx[i].xyz[1] > 1.0f )
+                    || ( vtx[i].xyz[2] > 1.0f && vtx[i].xyz[1] < -1.0f ) )
+                {
+                    continue;
+                }
+            }
+
             // generate normals
             // FIXME: this is hideous
             if ( &vtx[3] != &rg.world->vertices[rg.world->numVertices] ) {

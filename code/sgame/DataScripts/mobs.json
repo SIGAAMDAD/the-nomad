@@ -60,27 +60,27 @@
 			"Type": "mob_mercenary",
 			"Health": 50,
 			"ArmorType": "Light",
-			"SoundTolerance": 14.0,
-			"SoundRangeX": 10,
-			"SoundRangeY": 10,
 			"Width": 1.0,
 			"Height": 1.0,
-			"SightRadius": 3.5,
-			"SightRange": 13.0,
-			"DetectionRangeX": 8.0,
-			"DetectionRangeY": 8.0,
 			"WaitTics": 15,
 			"SpriteOffsetX": 0,
 			"SpriteOffsetY": 0,
+			"Sounds": {
+				"Wakeup": "sfx/mobs/detection.ogg",
+				"Pain": "sfx/mobs/pain.ogg",
+				"Die": "sfx/mobs/die0.ogg"
+			},
 			"Sprite": "sprites/mobs/mercenary",
-			"WakeupSfx": "sfx/mobs/detection.ogg",
-			"PainSfx": "sfx/mobs/merc_pain.ogg",
-			"DieSfx": "sfx/mobs/die0.ogg",
-			"MoveSfx": "sfx/mobs/merc_move.ogg",
 			"Flags": "None",
 			"Speed": [ 1.0, 1.0, 2.0 ],
 			"Detection": {
-				
+				"SightRadius": 3.5,
+				"SightRange": 13.0,
+				"DetectionRangeX": 8.0,
+				"DetectionRangeY": 8.0,
+				"SoundTolerance": 14.0,
+				"SoundRangeX": 10,
+				"SoundRangeY": 10
 			},
 			"AttackData": [
 				{

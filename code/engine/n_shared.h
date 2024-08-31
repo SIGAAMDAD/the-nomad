@@ -69,8 +69,22 @@ Platform Specific Preprocessors
 	#pragma comment(lib, "gdi32")
 	#pragma comment(lib, "winmm")
 
+	#pragma warning(disable:4996)
+	#pragma warning(disable:4700)
+	#pragma warning(disable:4146)
+	#pragma warning(disable:4703)
+
+//	extern "C" void *__cdecl memcpy( void *, const void *, size_t );
+//	extern "C" void *__cdecl memset( void *, int, size_t );
+//	extern "C" void *__cdecl memmove( void *, const void *, size_t );
+//	extern "C" double __cdecl fabs( double );
+//	extern "C" long __cdecl labs( long );
+	
+	#include <string.h>
+	#include <math.h>
 	#pragma intrinsic(memcpy)
 	#pragma intrinsic(memset)
+	#pragma intrinsic(memmove)
 	#pragma intrinsic(fabs)
 	#pragma intrinsic(labs)
 
@@ -100,7 +114,7 @@ Platform Specific Preprocessors
 		#endif
 	#endif
 	
-	#if defined(_MSC_VER) && _MSVC_VER >= 1400
+	#if defined(_MSC_VER) && _MSC_VER >= 1400
 		#define COMPILER_STRING "msvc"
 	#elif defined(__MINGW32__) && !defined(_WIN64)
 		#define COMPILER_STRING "mingw32"
@@ -487,11 +501,13 @@ Compiler Macro Abstraction
 #endif
 #endif
 
-#ifdef offsetof
-#undef offsetof
-// GCC's __builtin_offsetof doesn't do well with some template types
-#define offsetof( type, member ) (size_t)( &( ( (type *)0 )->( member ) ) )
-#endif
+//#ifdef __GNUC__
+//#ifdef offsetof
+//#undef offsetof
+//// GCC's __builtin_offsetof doesn't do well with some template types
+//#define offsetof( type, member ) (size_t)( &( ( (type *)0 )->( member ) ) )
+//#endif
+//#endif
 
 #ifndef Q3_VM
 	#if !defined(__clang__) && defined(_WIN32)
@@ -503,6 +519,8 @@ Compiler Macro Abstraction
 		typedef unsigned __int32 uint32_t;
 		typedef unsigned __int16 uint16_t;
 		typedef unsigned __int8 uint8_t;
+		typedef uint64_t size_t;
+		typedef int64_t ssize_t;
 		#ifdef __cplusplus
 			// for THOSE people
 			namespace std {
@@ -841,7 +859,7 @@ typedef enum {
 	ERR_FATAL,		// exit the entire game with a popup window
 	ERR_DROP,		// print to console and go to title screen
 } errorCode_t;
-void GDR_ATTRIBUTE((format(printf, 2, 3))) N_Error(errorCode_t code, const char *fmt, ...);
+void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL N_Error(errorCode_t code, const char *fmt, ...);
 
 #define arraylen(arr) (sizeof((arr))/sizeof(*(arr)))
 #define zeroinit(x,size) memset((x),0,(size))

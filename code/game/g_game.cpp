@@ -31,9 +31,19 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include "g_threads.h"
 #include "../engine/n_steam.h"
 #include "snd_public.h"
+#include "../rendercommon/r_public.h"
+
+#if defined(_WIN32) && !defined(USE_RENDERER_DLOPEN)
+#ifdef _NOMAD_DEBUG
+#pragma comment(lib, "TheNomad.RenderLib-opengl.x64.debug.lib")
+#pragma comment(lib, "TheNomad.ASLib.x64.debug.lib")
+#else
+#pragma comment(lib, "TheNomad.RenderLib-opengl.x64.lib")
+#pragma comment(lib, "TheNomad.ASLib.x64.lib")
+#endif
+#endif
 
 CModuleLib *g_pModuleLib;
 CModuleInfo *sgvm;
@@ -46,7 +56,9 @@ cvar_t *r_displayRefresh;
 cvar_t *r_allowSoftwareGL;
 cvar_t *vid_xpos;
 cvar_t *vid_ypos;
+#ifdef USE_RENDERER_DLOPEN
 cvar_t *g_renderer; // current rendering api
+#endif
 cvar_t *r_fullscreen;
 cvar_t *r_customWidth;
 cvar_t *r_customHeight;
@@ -66,7 +78,9 @@ cvar_t *g_drawBuffer;
 cvar_t *g_paused;
 cvar_t *r_debugCamera;
 
+#ifdef USE_RENDERER_DLOPEN
 static void *renderLib;
+#endif
 
 #if 0
 #if defined(__OS2__) || defined(_WIN32)
@@ -432,15 +446,239 @@ qboolean G_CheckWallHit( const vec3_t origin, dirtype_t dir ) {
     return g_world->CheckWallHit( origin, dir );
 }
 
-static void G_InitRenderRef(void)
+const vidmode_t r_vidModes[NUMVIDMODES] =
 {
-    refimport_t import;
+    { "Mode  0: 1024x768",      1024,   768,    1 },
+    { "Mode  1: 1280x720",      1280,   720,    1 },
+    { "Mode  2: 1280x800",      1280,   800,    1 },
+    { "Mode  3: 1280x1024",     1280,   1024,   1 },
+    { "Mode  4: 1440x900",      1440,   900,    1 },
+    { "Mode  5: 1440x960",      1440,   960,    1 },
+    { "Mode  6: 1600x900",      1600,   900,    1 },
+    { "Mode  7: 1600x1200",     1600,   1200,   1 },
+    { "Mode  8: 1600x1050",     1600,   1050,   1 },
+    { "Mode  9: 1920x800",      1920,   800,    1 },
+    { "Mode 10: 1920x1080",     1920,   1080,   1 },
+    { "Mode 11: 1920x1200",     1920,   1200,   1 },
+    { "Mode 12: 1920x1280",     1920,   1280,   1 },
+    { "Mode 13: 2560x1080",     2560,   1080,   1 },
+    { "Mode 14: 2560x1440",     2560,   1440,   1 },
+    { "Mode 15: 2560x1600",     2560,   1600,   1 },
+    { "Mode 16: 2880x1620",     2880,   1620,   1 },
+    { "Mode 17: 3200x1800",     3200,   1800,   1 },
+    { "Mode 18: 3840x1600",     3840,   1600,   1 },
+    { "Mode 19: 3840x2160",     3840,   2160,   1 }
+};
+static const int64_t numVidModes = (int64_t)arraylen(r_vidModes);
+
+qboolean G_GetModeInfo(int* width, int* height, float* windowAspect, int mode, const char* modeFS, int dw, int dh, qboolean fullscreen)
+{
+    const vidmode_t* vm;
+    float pixelAspect;
+
+    // set dedicated fullscreen mode
+    if (fullscreen && *modeFS)
+        mode = atoi(modeFS);
+
+    if (mode < -2)
+        return qfalse;
+
+    if (mode >= numVidModes)
+        return qfalse;
+
+    // fix unknown desktop resolution
+    if (mode == -2 && (dw == 0 || dh == 0))
+        mode = 3;
+
+    if (mode == -2) { // desktop resolution
+        *width = dw;
+        *height = dh;
+
+        // set the width & height for aspect ratios
+        Cvar_Set("r_customWidth", va("%i", dw));
+        Cvar_Set("r_customHeight", va("%i", dh));
+
+        pixelAspect = r_customPixelAspect->f;
+    }
+    else if (mode == -1) { // custom resolution
+        *width = r_customWidth->i;
+        *height = r_customHeight->i;
+        pixelAspect = r_customPixelAspect->f;
+    }
+    else { // predefined resolution
+        vm = &r_vidModes[mode];
+        *width = vm->width;
+        *height = vm->height;
+        pixelAspect = vm->pixelAspect;
+    }
+
+    *windowAspect = (float)*width / (*height * pixelAspect);
+
+    return qtrue;
+}
+
+static void G_ModeList_f(void)
+{
+    uint32_t i;
+
+    Con_Printf("\n");
+    for (i = 0; i < numVidModes; i++) {
+        Con_Printf("%s\n", r_vidModes[i].description);
+    }
+    Con_Printf("\n");
+}
+
+#ifdef USE_RENDERER_DLOPEN
+static qboolean IsValidRenderer(const char* s)
+{
+    while (*s) {
+        if (!((*s >= 'a' && *s <= 'z') || (*s >= 'A' && *s <= 'Z') || (*s >= '1' && *s <= '9')))
+            return qfalse;
+        ++s;
+    }
+    return qtrue;
+}
+#endif
+
+static void G_InitRenderer_Cvars( void )
+{
+    cvar_t* temp;
+
+    r_allowLegacy = Cvar_Get("r_allowLegacy", "0", CVAR_SAVE | CVAR_LATCH);
+    Cvar_SetDescription(r_allowLegacy, "Allow the use of old OpenGL API versions, requires \\r_drawMode 0 or 1 and \\r_allowShaders 0");
+
+    r_glDebug = Cvar_Get("r_glDebug", "1", CVAR_SAVE | CVAR_LATCH);
+    Cvar_SetDescription(r_glDebug, "Toggles OpenGL driver debug logging.");
+
+    temp = Cvar_Get("window_title", WINDOW_TITLE, CVAR_INIT | CVAR_PROTECTED);
+    Cvar_SetDescription(temp, "Sets the name of the application's window.");
+
+    r_allowSoftwareGL = Cvar_Get("r_allowSoftwareGL", "0", CVAR_LATCH);
+    Cvar_SetDescription(r_allowSoftwareGL, "Toggle the use of the default software OpenGL driver supplied by the Operating System.");
+
+    r_stereoEnabled = Cvar_Get("r_stereoEnabled", "0", CVAR_SAVE | CVAR_LATCH);
+    Cvar_SetDescription(r_stereoEnabled, "Enable stereo rendering for techniques like shutter glasses.");
+
+    r_swapInterval = Cvar_Get("r_swapInterval", "1", CVAR_SAVE);
+    Cvar_SetDescription(r_swapInterval,
+        "V-blanks to wait before swapping buffers."
+        "\n  0: No V-Sync\n  1: Synced to the monitor's refresh rate.\n -1: Adaptive V-Sync");
+
+    r_displayRefresh = Cvar_Get("r_displayRefresh", "0", CVAR_TEMP);
+    Cvar_CheckRange(r_displayRefresh, "0", "500", CVT_INT);
+    Cvar_SetDescription(r_displayRefresh,
+        "Override monitor refresh rate in fullscreen mode:\n"
+        "   0 - use current monitor refresh rate\n"
+        " > 0 - use custom refresh rate");
+
+    vid_xpos = Cvar_Get("vid_xpos", "0", CVAR_SAVE);
+    Cvar_CheckRange(vid_xpos, NULL, NULL, CVT_INT);
+    Cvar_SetDescription(vid_xpos, "Saves/sets window X-coordinate when windowed, requires \\vid_restart.");
+
+    vid_ypos = Cvar_Get("vid_ypos", "0", CVAR_SAVE);
+    Cvar_CheckRange(vid_ypos, NULL, NULL, CVT_INT);
+    Cvar_SetDescription(vid_ypos, "Saves/sets window Y-coordinate when windowed, requires \\vid_restart.");
+
+    r_multisampleType = Cvar_Get("r_multisampleType", "1", CVAR_SAVE);
+    Cvar_CheckRange(r_multisampleType, va("%i", AntiAlias_None), va("%i", AntiAlias_FXAA), CVT_INT);
+    Cvar_SetDescription(r_multisampleType,
+        "Sets the anti-aliasing type to the desired:\n"
+        " 0: None\n"
+        " 1: 2x MSAA\n"
+        " 2: 4x MSAA\n"
+        " 3: 8x MSAA\n"
+        " 4: 16x MSAA\n"
+        " 5: 32x MSAA\n"
+        " 6: 2x SSAA\n"
+        " 7: 4x SSAA\n"
+        " 8: TAA\n"
+        " 9: SMAA\n"
+        " 10: FXAA\n"
+        "requires \\vid_restart.");
+    r_multisampleAmount = Cvar_Get("r_multisampleAmount", "2", CVAR_SAVE);
+    Cvar_CheckRange(r_multisampleAmount, "0", "32", CVT_INT);
+
+    r_noborder = Cvar_Get("r_noborder", "0", CVAR_SAVE);
+    Cvar_CheckRange(r_noborder, "0", "1", CVT_INT);
+    Cvar_SetDescription(r_noborder, "Setting to 1 will remove window borders and title bar in windowed mode, hold ALT to drag & drop it with opened console.");
+
+    r_mode = Cvar_Get("r_mode", "-2", CVAR_SAVE);
+    Cvar_CheckRange(r_mode, "-2", va("%lu", numVidModes - 1), CVT_INT);
+    Cvar_SetDescription(r_mode,
+        "Set video mode:\n"
+        "   -2 - use current desktop resolution\n"
+        "   -1 - use \\r_customWidth and \\r_customHeight\n"
+        " 0..N - enter \\modelist for details"
+    );
+
+    r_debugCamera = Cvar_Get("r_debugCamera", "0", CVAR_TEMP | CVAR_PRIVATE);
+
+    r_fullscreen = Cvar_Get("r_fullscreen", "1", CVAR_SAVE);
+    Cvar_CheckRange(r_fullscreen, "0", "1", CVT_INT);
+    Cvar_SetDescription(r_fullscreen, "Fullscreen mode. Set to 0 for windowed mode.");
+
+    r_customPixelAspect = Cvar_Get("r_customPixelAspect", "1", CVAR_ARCHIVE_ND | CVAR_LATCH);
+    Cvar_SetDescription(r_customPixelAspect, "Enables custom aspect of the screen, with \\r_mode 1.");
+
+    r_customWidth = Cvar_Get("r_customWidth", "1980", CVAR_SAVE);
+    Cvar_CheckRange(r_customWidth, "4", NULL, CVT_INT);
+    Cvar_SetDescription(r_customWidth, "Custom width to use with \\r_mode -1.");
+
+    r_customHeight = Cvar_Get("r_customHeight", "1080", CVAR_SAVE);
+    Cvar_CheckRange(r_customHeight, "4", NULL, CVT_INT);
+    Cvar_SetDescription(r_customHeight, "Custom height to use with \\r_mode -1.");
+
+    r_colorBits = Cvar_Get("r_colorBits", "0", CVAR_ARCHIVE_ND | CVAR_LATCH);
+    Cvar_CheckRange(r_colorBits, "0", "32", CVT_INT);
+    Cvar_SetDescription(r_colorBits, "Sets color bit depth, set to 0 to use desktop settings.");
+
+    // shared with renderer:
+    g_stencilBits = Cvar_Get("r_stencilBits", "8", CVAR_ARCHIVE_ND | CVAR_LATCH);
+    Cvar_CheckRange(g_stencilBits, "0", "8", CVT_INT);
+    Cvar_SetDescription(g_stencilBits, "Stencil buffer size, value decreases Z-buffer depth.");
+    g_depthBits = Cvar_Get("r_depthBits", "0", CVAR_ARCHIVE_ND | CVAR_LATCH);
+    Cvar_CheckRange(g_depthBits, "0", "32", CVT_INT);
+    Cvar_SetDescription(g_depthBits, "Sets precision of Z-buffer.");
+
+    g_drawBuffer = Cvar_Get("r_drawBuffer", "GL_BACK", CVAR_CHEAT);
+    Cvar_SetDescription(g_drawBuffer, "Specifies buffer to draw from: GL_FRONT or GL_BACK.");
+
+    g_paused = Cvar_Get("g_paused", "1", CVAR_TEMP);
+    Cvar_CheckRange(g_paused, "0", "1", CVT_INT);
+    Cvar_SetDescription(g_paused, "Set to 1 when in the pause menu.");
+
+#ifdef USE_RENDERER_DLOPEN
+#ifdef RENDERER_DEFAULT
+    g_renderer = Cvar_Get( "g_renderer", VSTR( RENDERER_DEFAULT ), CVAR_SAVE | CVAR_LATCH);
+#else
+    g_renderer = Cvar_Get( "g_renderer", "opengl", CVAR_SAVE | CVAR_LATCH );
+#endif
+    Cvar_SetDescription( g_renderer,
+        "Set your desired renderer, valid options: opengl, vulkan, sdl2, d3d11\n"
+        "NOTICE: Vulkan, SDL2, and DirectX 11 rendering not supported yet... *will be tho soon :)*\n"
+        "requires \\vid_restart when changed"
+    );
+
+    if ( !IsValidRenderer( g_renderer->s ) ) {
+        Cvar_ForceReset( "g_renderer" );
+    }
+#endif
+}
+
+static void G_InitRenderRef( void )
+{
+    refimport_t rimp;
     renderExport_t *ret;
+#ifdef USE_RENDERER_DLOPEN
     GetRenderAPI_t GetRenderAPI;
     char dllName[MAX_OSPATH];
     const char *dllPrefix;
+#endif
 
+    G_InitRenderer_Cvars();
     Con_Printf( "----- Initializing Renderer ----\n" );
+
+#ifdef USE_RENDERER_DLOPEN
 
     dllPrefix = g_renderer->s;
 
@@ -471,90 +709,91 @@ static void G_InitRenderRef(void)
     }
 
     g_renderer->modified = qfalse;
+#endif
 
-    memset( &import, 0, sizeof( import ) );
+    memset( &rimp, 0, sizeof( rimp ) );
 
-    import.Cmd_AddCommand = Cmd_AddCommand;
-    import.Cmd_RemoveCommand = Cmd_RemoveCommand;
-    import.Cmd_ExecuteCommand = Cmd_ExecuteString;
-    import.Cmd_Argc = Cmd_Argc;
-    import.Cmd_Argv = Cmd_Argv;
-    import.Cmd_ArgsFrom = Cmd_ArgsFrom;
-    import.Printf = G_RefPrintf;
-    import.Error = N_Error;
+    rimp.Cmd_AddCommand = Cmd_AddCommand;
+    rimp.Cmd_RemoveCommand = Cmd_RemoveCommand;
+    rimp.Cmd_ExecuteCommand = Cmd_ExecuteString;
+    rimp.Cmd_Argc = Cmd_Argc;
+    rimp.Cmd_Argv = Cmd_Argv;
+    rimp.Cmd_ArgsFrom = Cmd_ArgsFrom;
+    rimp.Printf = G_RefPrintf;
+    rimp.Error = N_Error;
 #ifdef _NOMAD_DEBUG
-    import.Hunk_AllocDebug = Hunk_AllocDebug;
+    rimp.Hunk_AllocDebug = Hunk_AllocDebug;
 #else
-    import.Hunk_Alloc = Hunk_Alloc;
+    rimp.Hunk_Alloc = Hunk_Alloc;
 #endif
-    import.Hunk_AllocateTempMemory = Hunk_AllocateTempMemory;
-    import.Hunk_FreeTempMemory = Hunk_FreeTempMemory;
-    import.Malloc = G_RefMalloc;
-    import.Realloc = G_RefRealloc;
-    import.Free = Z_Free;
-    import.FreeAll = G_RefFreeAll;
-    import.CopyString = CopyString;
+    rimp.Hunk_AllocateTempMemory = Hunk_AllocateTempMemory;
+    rimp.Hunk_FreeTempMemory = Hunk_FreeTempMemory;
+    rimp.Malloc = G_RefMalloc;
+    rimp.Realloc = G_RefRealloc;
+    rimp.Free = Z_Free;
+    rimp.FreeAll = G_RefFreeAll;
+    rimp.CopyString = CopyString;
 
-    import.GLimp_Init = G_InitDisplay;
-    import.GLimp_InitGamma = GLimp_InitGamma;
+    rimp.GLimp_Init = G_InitDisplay;
+    rimp.GLimp_InitGamma = GLimp_InitGamma;
 #ifdef USE_OPENGL_API
-    import.GLimp_EndFrame = GLimp_EndFrame;
-    import.GLimp_SetGamma = GLimp_SetGamma;
-    import.GLimp_LogComment = GLimp_LogComment;
-    import.GLimp_Shutdown = GLimp_Shutdown;
-    import.GLimp_Minimize = GLimp_Minimize;
-    import.GLimp_HideFullscreenWindow = GLimp_HideFullscreenWindow;
-    import.GL_GetProcAddress = GL_GetProcAddress;
+    rimp.GLimp_EndFrame = GLimp_EndFrame;
+    rimp.GLimp_SetGamma = GLimp_SetGamma;
+    rimp.GLimp_LogComment = GLimp_LogComment;
+    rimp.GLimp_Shutdown = GLimp_Shutdown;
+    rimp.GLimp_Minimize = GLimp_Minimize;
+    rimp.GLimp_HideFullscreenWindow = GLimp_HideFullscreenWindow;
+    rimp.GL_GetProcAddress = GL_GetProcAddress;
 #endif
 
-    import.G_SetScaling = G_SetScaling;
-    import.G_SaveJPGToBuffer = G_SaveJPGToBuffer;
-    import.G_SaveJPG = G_SaveJPG;
-    import.G_LoadJPG = G_LoadJPG;
+    rimp.G_SetScaling = G_SetScaling;
+    rimp.G_SaveJPGToBuffer = G_SaveJPGToBuffer;
+    rimp.G_SaveJPG = G_SaveJPG;
+    rimp.G_LoadJPG = G_LoadJPG;
 
-    import.GLM_TransformToGL = GLM_TransformToGL;
-    import.GLM_MakeVPM = GLM_MakeVPM;
+    rimp.GLM_TransformToGL = GLM_TransformToGL;
+    rimp.GLM_MakeVPM = GLM_MakeVPM;
 
-    import.Milliseconds = Sys_Milliseconds;
+    rimp.Milliseconds = Sys_Milliseconds;
 
-    import.Key_IsDown = Key_IsDown;
+    rimp.Key_IsDown = Key_IsDown;
 
-    import.FS_LoadFile = FS_LoadFile;
-    import.FS_FreeFile = FS_FreeFile;
-    import.FS_WriteFile = FS_WriteFile;
-    import.FS_FileExists = FS_FileExists;
-    import.FS_FreeFileList = FS_FreeFileList;
-    import.FS_ListFiles = FS_ListFiles;
-    import.FS_FOpenRead = FS_FOpenRead;
-    import.FS_FOpenWrite = FS_FOpenWrite;
-    import.FS_FClose = FS_FClose;
-    import.FS_Read = FS_Read;
-    import.FS_Write = FS_Write;
-    import.FS_Remove = FS_Remove;
-    import.FS_HomeRemove = FS_HomeRemove;
+    rimp.FS_LoadFile = FS_LoadFile;
+    rimp.FS_FreeFile = FS_FreeFile;
+    rimp.FS_WriteFile = FS_WriteFile;
+    rimp.FS_FileExists = FS_FileExists;
+    rimp.FS_FreeFileList = FS_FreeFileList;
+    rimp.FS_ListFiles = FS_ListFiles;
+    rimp.FS_FOpenRead = FS_FOpenRead;
+    rimp.FS_FOpenWrite = FS_FOpenWrite;
+    rimp.FS_FClose = FS_FClose;
+    rimp.FS_Read = FS_Read;
+    rimp.FS_Write = FS_Write;
+    rimp.FS_Remove = FS_Remove;
+    rimp.FS_HomeRemove = FS_HomeRemove;
 
-    import.Cvar_Get = Cvar_Get;
-    import.Cvar_Set = Cvar_Set;
-    import.Cvar_Reset = Cvar_Reset;
-    import.Cvar_SetGroup = Cvar_SetGroup;
-    import.Cvar_CheckRange = Cvar_CheckRange;
-    import.Cvar_SetDescription = Cvar_SetDescription;
-    import.Cvar_VariableStringBuffer = Cvar_VariableStringBuffer;
-    import.Cvar_VariableString = Cvar_VariableString;
-    import.Cvar_VariableInteger = Cvar_VariableInteger;
-    import.Cvar_CheckGroup = Cvar_CheckGroup;
-    import.Cvar_ResetGroup = Cvar_ResetGroup;
+    rimp.Cvar_Get = Cvar_Get;
+    rimp.Cvar_Set = Cvar_Set;
+    rimp.Cvar_Reset = Cvar_Reset;
+    rimp.Cvar_SetGroup = Cvar_SetGroup;
+    rimp.Cvar_CheckRange = Cvar_CheckRange;
+    rimp.Cvar_SetDescription = Cvar_SetDescription;
+    rimp.Cvar_VariableStringBuffer = Cvar_VariableStringBuffer;
+    rimp.Cvar_VariableString = Cvar_VariableString;
+    rimp.Cvar_VariableInteger = Cvar_VariableInteger;
+    rimp.Cvar_CheckGroup = Cvar_CheckGroup;
+    rimp.Cvar_ResetGroup = Cvar_ResetGroup;
 
-    import.ImGui_Init = G_RefImGuiInit;
-    import.ImGui_Shutdown = G_RefImGuiShutdown;
-    import.ImGui_NewFrame = G_RefImGuiNewFrame;
-    import.ImGui_Draw = G_RefImGuiDraw;
+    rimp.ImGui_Init = G_RefImGuiInit;
+    rimp.ImGui_Shutdown = G_RefImGuiShutdown;
+    rimp.ImGui_NewFrame = G_RefImGuiNewFrame;
+    rimp.ImGui_Draw = G_RefImGuiDraw;
 
-    import.Sys_LoadDLL = Sys_LoadDLL;
-    import.Sys_CloseDLL = Sys_CloseDLL;
-    import.Sys_GetProcAddress = Sys_GetProcAddress;
+    rimp.Sys_LoadDLL = Sys_LoadDLL;
+    rimp.Sys_CloseDLL = Sys_CloseDLL;
+    rimp.Sys_GetProcAddress = Sys_GetProcAddress;
 
-    ret = GetRenderAPI( NOMAD_VERSION_FULL, &import );
+    ret = GetRenderAPI( NOMAD_VERSION_FULL, &rimp );
 
     Con_Printf( "-------------------------------\n" );
 	if ( !ret ) {
@@ -630,19 +869,23 @@ static void G_InitRenderer( void )
 
 void G_ShutdownRenderer( refShutdownCode_t code )
 {
+#ifdef USE_RENDERER_DLOPEN
     if ( g_renderer && g_renderer->modified ) {
         code = REF_UNLOAD_DLL;
     }
+#endif
 
     if ( re.Shutdown ) {
         PROFILE_SCOPE( "Renderer Shutdown" );
         re.Shutdown( code );
     }
 
+#ifdef USE_RENDERER_DLOPEN
     if ( renderLib ) {
         Sys_CloseDLL( renderLib );
         renderLib = NULL;
     }
+#endif
 
     memset( &re, 0, sizeof( re ) );
 
@@ -1279,96 +1522,6 @@ static void G_VM_Restart_f( void ) {
     G_InitSGame();
 }
 
-const vidmode_t r_vidModes[NUMVIDMODES] =
-{
-    { "Mode  0: 1024x768",      1024,   768,    1 },
-    { "Mode  1: 1280x720",      1280,   720,    1 },
-    { "Mode  2: 1280x800",      1280,   800,    1 },
-    { "Mode  3: 1280x1024",     1280,   1024,   1 },
-    { "Mode  4: 1440x900",      1440,   900,    1 },
-    { "Mode  5: 1440x960",      1440,   960,    1 },
-    { "Mode  6: 1600x900",      1600,   900,    1 },
-    { "Mode  7: 1600x1200",     1600,   1200,   1 },
-    { "Mode  8: 1600x1050",     1600,   1050,   1 },
-    { "Mode  9: 1920x800",      1920,   800,    1 },
-    { "Mode 10: 1920x1080",     1920,   1080,   1 },
-    { "Mode 11: 1920x1200",     1920,   1200,   1 },
-    { "Mode 12: 1920x1280",     1920,   1280,   1 },
-    { "Mode 13: 2560x1080",     2560,   1080,   1 },
-    { "Mode 14: 2560x1440",     2560,   1440,   1 },
-    { "Mode 15: 2560x1600",     2560,   1600,   1 },
-    { "Mode 16: 2880x1620",     2880,   1620,   1 },
-    { "Mode 17: 3200x1800",     3200,   1800,   1 },
-    { "Mode 18: 3840x1600",     3840,   1600,   1 },
-    { "Mode 19: 3840x2160",     3840,   2160,   1 }
-};
-static const int64_t numVidModes = (int64_t)arraylen( r_vidModes );
-
-qboolean G_GetModeInfo( int *width, int *height, float *windowAspect, int mode, const char *modeFS, int dw, int dh, qboolean fullscreen )
-{
-	const vidmode_t *vm;
-	float pixelAspect;
-
-	// set dedicated fullscreen mode
-	if ( fullscreen && *modeFS )
-		mode = atoi( modeFS );
-
-	if ( mode < -2 )
-		return qfalse;
-
-	if ( mode >= numVidModes )
-		return qfalse;
-
-	// fix unknown desktop resolution
-	if ( mode == -2 && (dw == 0 || dh == 0) )
-		mode = 3;
-
-	if ( mode == -2 ) { // desktop resolution
-		*width = dw;
-		*height = dh;
-
-        // set the width & height for aspect ratios
-        Cvar_Set("r_customWidth", va("%i", dw));
-        Cvar_Set("r_customHeight", va("%i", dh));
-
-		pixelAspect = r_customPixelAspect->f;
-	} else if ( mode == -1 ) { // custom resolution
-		*width = r_customWidth->i;
-		*height = r_customHeight->i;
-		pixelAspect = r_customPixelAspect->f;
-	} else { // predefined resolution
-		vm = &r_vidModes[ mode ];
-		*width  = vm->width;
-		*height = vm->height;
-		pixelAspect = vm->pixelAspect;
-	}
-
-	*windowAspect = (float)*width / ( *height * pixelAspect );
-
-	return qtrue;
-}
-
-static void G_ModeList_f( void )
-{
-	uint32_t i;
-
-	Con_Printf( "\n" );
-	for ( i = 0; i < numVidModes; i++) {
-		Con_Printf( "%s\n", r_vidModes[ i ].description );
-	}
-	Con_Printf( "\n" );
-}
-
-static qboolean isValidRenderer( const char *s )
-{
-	while ( *s ) {
-		if ( !((*s >= 'a' && *s <= 'z') || (*s >= 'A' && *s <= 'Z') || (*s >= '1' && *s <= '9')) )
-			return qfalse;
-		++s;
-	}
-	return qtrue;
-}
-
 static void G_TogglePhotoMode_f( void ) {
     gi.togglePhotomode = !gi.togglePhotomode;
     Cvar_Set2( "r_debugCamera", va( "%i", gi.togglePhotomode ), qtrue );
@@ -1653,121 +1806,6 @@ static void G_SetSkin_f( void )
     Cvar_Set( "skin", s->name );
 }
 
-static void G_InitRenderer_Cvars( void )
-{
-    cvar_t *temp;
-
-    r_allowLegacy = Cvar_Get( "r_allowLegacy", "0", CVAR_SAVE | CVAR_LATCH );
-    Cvar_SetDescription( r_allowLegacy, "Allow the use of old OpenGL API versions, requires \\r_drawMode 0 or 1 and \\r_allowShaders 0" );
-
-    r_glDebug = Cvar_Get( "r_glDebug", "1", CVAR_SAVE | CVAR_LATCH );
-    Cvar_SetDescription( r_glDebug, "Toggles OpenGL driver debug logging." );
-
-    temp = Cvar_Get( "window_title", WINDOW_TITLE, CVAR_INIT | CVAR_PROTECTED );
-    Cvar_SetDescription( temp, "Sets the name of the application's window." );
-
-    r_allowSoftwareGL = Cvar_Get( "r_allowSoftwareGL", "0", CVAR_LATCH );
-	Cvar_SetDescription( r_allowSoftwareGL, "Toggle the use of the default software OpenGL driver supplied by the Operating System." );
-
-    r_stereoEnabled = Cvar_Get( "r_stereoEnabled", "0", CVAR_SAVE | CVAR_LATCH );
-	Cvar_SetDescription( r_stereoEnabled, "Enable stereo rendering for techniques like shutter glasses." );
-
-	r_swapInterval = Cvar_Get( "r_swapInterval", "1", CVAR_SAVE );
-	Cvar_SetDescription( r_swapInterval,
-                        "V-blanks to wait before swapping buffers."
-                        "\n  0: No V-Sync\n  1: Synced to the monitor's refresh rate.\n -1: Adaptive V-Sync" );
-    
-	r_displayRefresh = Cvar_Get( "r_displayRefresh", "0", CVAR_TEMP );
-	Cvar_CheckRange( r_displayRefresh, "0", "500", CVT_INT );
-	Cvar_SetDescription( r_displayRefresh,
-                        "Override monitor refresh rate in fullscreen mode:\n"
-                        "   0 - use current monitor refresh rate\n"
-                        " > 0 - use custom refresh rate" );
-
-	vid_xpos = Cvar_Get( "vid_xpos", "0", CVAR_SAVE );
-	Cvar_CheckRange( vid_xpos, NULL, NULL, CVT_INT );
-	Cvar_SetDescription( vid_xpos, "Saves/sets window X-coordinate when windowed, requires \\vid_restart." );
-
-	vid_ypos = Cvar_Get( "vid_ypos", "0", CVAR_SAVE );
-	Cvar_CheckRange( vid_ypos, NULL, NULL, CVT_INT );
-	Cvar_SetDescription( vid_ypos, "Saves/sets window Y-coordinate when windowed, requires \\vid_restart." );
-
-    r_multisampleType = Cvar_Get( "r_multisampleType", "1", CVAR_SAVE );
-    Cvar_CheckRange( r_multisampleType, va( "%i", AntiAlias_None ), va( "%i", AntiAlias_FXAA ), CVT_INT );
-    Cvar_SetDescription( r_multisampleType,
-                            "Sets the anti-aliasing type to the desired:\n"
-                            " 0: None\n"
-                            " 1: 2x MSAA\n"
-                            " 2: 4x MSAA\n"
-                            " 3: 8x MSAA\n"
-                            " 4: 16x MSAA\n"
-                            " 5: 32x MSAA\n"
-                            " 6: 2x SSAA\n"
-                            " 7: 4x SSAA\n"
-                            " 8: TAA\n"
-                            " 9: SMAA\n"
-                            " 10: FXAA\n"
-                            "requires \\vid_restart." );
-    r_multisampleAmount = Cvar_Get( "r_multisampleAmount", "2", CVAR_SAVE );
-    Cvar_CheckRange( r_multisampleAmount, "0", "32", CVT_INT );
-
-	r_noborder = Cvar_Get( "r_noborder", "0", CVAR_SAVE );
-	Cvar_CheckRange( r_noborder, "0", "1", CVT_INT );
-	Cvar_SetDescription( r_noborder, "Setting to 1 will remove window borders and title bar in windowed mode, hold ALT to drag & drop it with opened console." );
-
-	r_mode = Cvar_Get( "r_mode", "-2", CVAR_SAVE );
-	Cvar_CheckRange( r_mode, "-2", va( "%lu", numVidModes - 1 ), CVT_INT );
-	Cvar_SetDescription( r_mode,
-                            "Set video mode:\n"
-                            "   -2 - use current desktop resolution\n"
-                            "   -1 - use \\r_customWidth and \\r_customHeight\n"
-                            " 0..N - enter \\modelist for details"
-                        );
-    
-    r_debugCamera = Cvar_Get( "r_debugCamera", "0", CVAR_TEMP | CVAR_PRIVATE );
-
-	r_fullscreen = Cvar_Get( "r_fullscreen", "1", CVAR_SAVE );
-    Cvar_CheckRange( r_fullscreen, "0", "1", CVT_INT );
-	Cvar_SetDescription( r_fullscreen, "Fullscreen mode. Set to 0 for windowed mode." );
-
-	r_customPixelAspect = Cvar_Get( "r_customPixelAspect", "1", CVAR_ARCHIVE_ND | CVAR_LATCH );
-	Cvar_SetDescription( r_customPixelAspect, "Enables custom aspect of the screen, with \\r_mode 1." );
-
-	r_customWidth = Cvar_Get( "r_customWidth", "1980", CVAR_SAVE );
-	Cvar_CheckRange( r_customWidth, "4", NULL, CVT_INT );
-	Cvar_SetDescription( r_customWidth, "Custom width to use with \\r_mode -1." );
-
-	r_customHeight = Cvar_Get( "r_customHeight", "1080", CVAR_SAVE );
-	Cvar_CheckRange( r_customHeight, "4", NULL, CVT_INT );
-	Cvar_SetDescription( r_customHeight, "Custom height to use with \\r_mode -1." );
-
-    r_colorBits = Cvar_Get( "r_colorBits", "0", CVAR_ARCHIVE_ND | CVAR_LATCH );
-	Cvar_CheckRange( r_colorBits, "0", "32", CVT_INT );
-	Cvar_SetDescription( r_colorBits, "Sets color bit depth, set to 0 to use desktop settings." );
-
-	// shared with renderer:
-	g_stencilBits = Cvar_Get( "r_stencilBits", "8", CVAR_ARCHIVE_ND | CVAR_LATCH );
-	Cvar_CheckRange( g_stencilBits, "0", "8", CVT_INT );
-	Cvar_SetDescription( g_stencilBits, "Stencil buffer size, value decreases Z-buffer depth." );
-	g_depthBits = Cvar_Get( "r_depthBits", "0", CVAR_ARCHIVE_ND | CVAR_LATCH );
-	Cvar_CheckRange( g_depthBits, "0", "32", CVT_INT );
-	Cvar_SetDescription( g_depthBits, "Sets precision of Z-buffer." );
-
-    g_drawBuffer = Cvar_Get( "r_drawBuffer", "GL_BACK", CVAR_CHEAT );
-	Cvar_SetDescription( g_drawBuffer, "Specifies buffer to draw from: GL_FRONT or GL_BACK." );
-
-    g_paused = Cvar_Get( "g_paused", "1", CVAR_TEMP );
-    Cvar_CheckRange( g_paused, "0", "1", CVT_INT );
-    Cvar_SetDescription( g_paused, "Set to 1 when in the pause menu." );
-
-    g_renderer = Cvar_Get( "g_renderer", "opengl", CVAR_SAVE | CVAR_LATCH );
-    Cvar_SetDescription( g_renderer,
-                        "Set your desired renderer, valid options: opengl, vulkan, sdl2, d3d11\n"
-                        "NOTICE: Vulkan, SDL2, and DirectX 11 rendering not supported yet... *will be tho soon :)*\n"
-                        "requires \\vid_restart when changed"
-        );
-}
-
 /*
 * G_Init: called every time a new level is loaded
 */
@@ -1784,18 +1822,12 @@ void G_Init( void )
 
     G_ClearState();
 
-    G_InitRenderer_Cvars();
-
     G_LoadSkins();
     
     // userinfo
     Cvar_Get( "name", "The Ultimate Lad", CVAR_USERINFO | CVAR_SAVE );
     Cvar_Get( "skin", "raio", CVAR_USERINFO | CVAR_SAVE );
     Cvar_Get( "voice", "0", CVAR_USERINFO | CVAR_ARCHIVE_ND ); // for the future
-    
-    if ( !isValidRenderer( g_renderer->s ) ) {
-        Cvar_ForceReset( "g_renderer" );
-    }
 
     // init sound
     Snd_Init();
@@ -1841,8 +1873,6 @@ void G_Init( void )
     G_GenerateGameKey();
 #endif
     Cvar_Get( "g_guid", "", CVAR_USERINFO | CVAR_ROM | CVAR_PROTECTED );
-
-    gi.consoleShader = re.RegisterShader( "console" );
 
     Con_Printf( "----- Game State Initialization Complete ----\n" );
 }

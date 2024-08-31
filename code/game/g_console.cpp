@@ -835,6 +835,8 @@ static void Con_DrawSolidConsole( float frac, qboolean open )
 		return;
 	}
 
+	gi.consoleShader = re.RegisterShader( "console" );
+
 	// draw the background
 	// custom console background color
 	if ( con_color->s[0] ) {

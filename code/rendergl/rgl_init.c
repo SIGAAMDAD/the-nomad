@@ -1496,16 +1496,13 @@ void R_Init( void )
 
     nglGenQueries( 3, rg.queries );
 
-    if ( glContext.ARB_framebuffer_object && !rg.numFBOs ) {
+    if ( glContext.ARB_framebuffer_object ) {
         FBO_Init();
     }
     
-    if ( !rg.numPrograms ) {
-        GLSL_InitGPUShaders();
-    }
-    if ( !rg.numBuffers ) {
-        R_InitGPUBuffers();
-    }
+    GLSL_InitGPUShaders();
+
+    R_InitGPUBuffers();
 
     R_InitShaders();
 
@@ -1555,8 +1552,11 @@ void RE_Shutdown( refShutdownCode_t code )
 
         nglDeleteQueries( 3, rg.queries );
         nglDeleteSamplers( MAX_TEXTURE_UNITS, rg.samplers );
-
+        
+        FBO_Shutdown();
         R_DeleteTextures();
+        R_ShutdownGPUBuffers();
+        GLSL_ShutdownGPUShaders();
 
         ri.ImGui_Shutdown();
     }
@@ -1564,9 +1564,6 @@ void RE_Shutdown( refShutdownCode_t code )
     // shutdown platform specific OpenGL thingies
     if ( code != REF_KEEP_CONTEXT ) {
         ri.GLimp_Shutdown( code == REF_UNLOAD_DLL ? qtrue : qfalse );
-
-        R_ShutdownGPUBuffers();
-        GLSL_ShutdownGPUShaders();
 
         memset( &glConfig, 0, sizeof(glConfig) );
         memset( &glState, 0, sizeof(glState) );
@@ -1585,7 +1582,7 @@ RE_EndRegistration
 Touch all images to make sure they are resident (probably obsolete on modern systems)
 =============
 */
-void RE_EndRegistration(void) {
+void RE_EndRegistration( void ) {
     R_IssuePendingRenderCommands();
 //    RB_ShowImages(); // not doing it here
 }

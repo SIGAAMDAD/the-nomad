@@ -686,6 +686,7 @@ CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *
 
     Con_Printf( "---------- InitModuleLib ----------\n" );
     Con_Printf( "Initializing mod library...\n" );
+    Con_Printf( "AngelScript Version: %s (%u)\n", ANGELSCRIPT_VERSION_STRING, (unsigned)ANGELSCRIPT_VERSION );
 
     //
     // init cvars

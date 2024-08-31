@@ -1,0 +1,1 @@
+#include <EASTL/atomic.h>
