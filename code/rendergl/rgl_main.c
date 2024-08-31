@@ -310,12 +310,10 @@ void R_DrawWorld( void )
             R_WorldToGL( vtx, pos );
 
             // clip anything not visible out of view
-            for ( i = 0; i < 4; i++ ) {
-                if ( ( vtx[i].xyz[0] < -1.0f && vtx[i].xyz[1] > 1.0f )
-                    || ( vtx[i].xyz[2] > 1.0f && vtx[i].xyz[1] < -1.0f ) )
-                {
-                    continue;
-                }
+            if ( ( vtx[0].xyz[0] < -1.0f && vtx[0].xyz[1] > 1.0f )
+                || ( vtx[2].xyz[0] > 1.0f && vtx[2].xyz[1] < -1.0f ) )
+            {
+                continue;
             }
 
             // generate normals
@@ -343,7 +341,9 @@ void R_DrawWorld( void )
                     continue; // not in clipping range
                 }
 
-                if ( rg.world->tiles[ origin[1] * rg.world->width + origin[0] ].sides[DIR_SOUTH] ) {
+                if ( rg.world->tiles[ origin[1] * rg.world->width + origin[0] ].sides[DIR_SOUTH]
+                    || rg.world->tiles[ origin[1] * rg.world->width + origin[0] ].sides[DIR_NORTH] )
+                {
                     color[3] = 0.10f;
                     break;
                 }

@@ -108,16 +108,19 @@ typedef struct {
 	const char **windowSizes;
 	const char **vsyncList;
 	const char **windowModes;
+	const char **maxFPSList;
 
 	int numWindowSizes;
 	int numVSync;
 	int numWindowModes;
+	int numMaxFPSList;
 
 	int vsync;
 	int windowMode;
 	int windowResolution;
 	int windowWidth;
 	int windowHeight;
+	int maxFPS;
 
 	float gamma;
 	float exposure;
@@ -1581,13 +1584,11 @@ static void VideoMenu_Draw( void )
 			"Sets the amount of sharpening applied to a rendered texture",
 			&s_settingsMenu->video.sharpening, 0.5f, 20.0f, 0.1f );
 		
-		/* for now we will only really allow running at 60 fps
 		ImGui::TableNextRow();
 
-		SettingsMenu_MultiSliderInt( "FRAME LIMITER", "FrameLimiter",
+		SettingsMenu_MultiAdjustable( "FRAME LIMITER", "FrameLimiter",
 			"Sets the maximum amount of frames the game can render per second.",
-			&s_settingsMenu->video.maxFPS, 0, 1000, 1, true );
-		*/
+			s_settingsMenu->video.maxFPSList, s_settingsMenu->video.numMaxFPSList, &s_settingsMenu->video.maxFPS, true );
 	}
 	ImGui::EndTable();
 }
@@ -1677,8 +1678,20 @@ static void ModuleMenu_Draw( void )
 static void VideoMenu_Save( void )
 {
 	extern SDL_Window *SDL_window;
+	bool isFullscreen;
 
-	if ( ( s_settingsMenu->video.windowMode >= WINDOWMODE_FULLSCREEN ) != r_fullscreen->i ) {
+	switch ( s_settingsMenu->video.windowMode ) {
+	case WINDOWMODE_WINDOWED:
+	case WINDOWMODE_BORDERLESS_WINDOWED:
+		isFullscreen = false;
+		break;
+	case WINDOWMODE_FULLSCREEN:
+	case WINDOWMODE_BORDERLESS_FULLSCREEN:
+		isFullscreen = true;
+		break;
+	};
+
+	if ( isFullscreen != r_fullscreen->i ) {
 		Cbuf_ExecuteText( EXEC_APPEND, "vid_restart fast\n" );
 	}
 	else if ( r_vidModes[ s_settingsMenu->video.windowResolution - 2 ].width != r_customWidth->i
@@ -1687,11 +1700,16 @@ static void VideoMenu_Save( void )
 		Cbuf_ExecuteText( EXEC_APPEND, "vid_restart fast\n" );
 	}
 
-	Cvar_SetIntegerValue( "r_fullscreen", s_settingsMenu->video.windowMode >= WINDOWMODE_FULLSCREEN );
+	switch ( s_settingsMenu->video.windowMode ) {
+	case WINDOWMODE_BORDERLESS_FULLSCREEN:
+	case WINDOWMODE_FULLSCREEN:
+		Cvar_SetIntegerValue( "r_fullscreen", 1 );
+		break;
+	default:
+		Cvar_SetIntegerValue( "r_fullscreen", 0 );
+		break;
+	};
 	Cvar_SetIntegerValue( "r_noborder", s_settingsMenu->video.windowMode % 2 != 0 );
-	Cvar_SetIntegerValue( "r_customWidth", s_settingsMenu->video.windowWidth );
-	Cvar_SetIntegerValue( "r_customHeight", s_settingsMenu->video.windowHeight );
-	Cvar_SetIntegerValue( "r_mode", s_settingsMenu->video.windowResolution - 2 );
 	Cvar_SetIntegerValue( "r_swapInterval", s_settingsMenu->video.vsync - 1 );
 	Cvar_SetFloatValue( "r_imageSharpenAmount", s_settingsMenu->video.sharpening );
 	Cvar_SetFloatValue( "r_autoExposure", s_settingsMenu->video.exposure );
@@ -1703,6 +1721,24 @@ static void VideoMenu_Save( void )
 
 	Cvar_SetIntegerValue( "r_customWidth", r_vidModes[ s_settingsMenu->video.windowResolution - 2 ].width );
 	Cvar_SetIntegerValue( "r_customHeight", r_vidModes[ s_settingsMenu->video.windowResolution - 2 ].height );
+
+	switch ( s_settingsMenu->video.maxFPS ) {
+	case 0:
+		Cvar_SetIntegerValue( "com_maxfps", 60 );
+		break;
+	case 1:
+		Cvar_SetIntegerValue( "com_maxfps", 72 );
+		break;
+	case 2:
+		Cvar_SetIntegerValue( "com_maxfps", 125 );
+		break;
+	case 3:
+		Cvar_SetIntegerValue( "com_maxfps", 244 );
+		break;
+	case 4:
+		Cvar_SetIntegerValue( "com_maxfps", 333 );
+		break;
+	};
 
 	switch ( s_settingsMenu->video.windowMode ) {
 	case WINDOWMODE_BORDERLESS_FULLSCREEN:
@@ -2043,7 +2079,12 @@ static void VideoMenu_SetDefault( void )
 	s_settingsMenu->video.windowResolution = Cvar_VariableInteger( "r_mode" ) + 2;
 	s_settingsMenu->video.vsync = Cvar_VariableInteger( "r_swapInterval" ) + 1;
 	s_settingsMenu->video.gamma = Cvar_VariableFloat( "r_gammaAmount" );
-	s_settingsMenu->video.windowMode = Cvar_VariableInteger( "r_fullscreen" ) + Cvar_VariableInteger( "r_noborder" );
+
+	if ( Cvar_VariableInteger( "r_fullscreen" ) ) {
+		s_settingsMenu->video.windowMode = WINDOWMODE_FULLSCREEN + Cvar_VariableInteger( "r_noborder" );
+	} else {
+		s_settingsMenu->video.windowMode = WINDOWMODE_WINDOWED + Cvar_VariableInteger( "r_noborder" );
+	}
 	s_settingsMenu->video.sharpening = Cvar_VariableFloat( "r_imageSharpenAmount" );
 	s_settingsMenu->video.exposure = Cvar_VariableFloat( "r_autoExposure" );
 //	s_settingsMenu->video.maxFPS = Cvar_VariableInteger( "com_maxfps" );
@@ -2381,6 +2422,13 @@ void SettingsMenu_Cache( void )
 		"OFF",
 		"ON"
 	};
+	static const char *s_maxFPS[] = {
+		"60",
+		"72",
+		"125",
+		"244",
+		"333"
+	};
 	static const char *s_windowModes[ NUM_WINDOW_MODES ];
 
 	s_multisampleTypes[0] = strManager->ValueForKey( "GAMEUI_NONE" )->value;
@@ -2481,10 +2529,12 @@ void SettingsMenu_Cache( void )
 	s_settingsMenu->video.vsyncList = s_vsync;
 	s_settingsMenu->video.windowSizes = s_windowSizes;
 	s_settingsMenu->video.windowModes = s_windowModes;
+	s_settingsMenu->video.maxFPSList = s_maxFPS;
 
 	s_settingsMenu->video.numVSync = arraylen( s_vsync );
 	s_settingsMenu->video.numWindowSizes = arraylen( s_windowSizes );
 	s_settingsMenu->video.numWindowModes = arraylen( s_windowModes );
+	s_settingsMenu->video.numMaxFPSList = arraylen( s_maxFPS );
 
 	s_settingsMenu->performance.numMultisampleTypes = arraylen( s_multisampleTypes );
 	s_settingsMenu->advancedPerformance.numAnisotropyTypes = arraylen( s_anisotropyTypes );

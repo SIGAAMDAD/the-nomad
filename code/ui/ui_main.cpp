@@ -1210,7 +1210,6 @@ void Menu_Cache( void )
 	ui->sfx_select = Snd_RegisterSfx( "sfx/menu/UI_Menu_Select_2ch_v3_07.wav" );
 	ui->sfx_move = Snd_RegisterSfx( "sfx/menu/UI_Menu_Move_2ch_v1_01.wav" );
 	ui->sfx_back = Snd_RegisterSfx( "sfx/menu/UI_Menu_Back_2ch_v1_01.wav" );
-	ui->sfx_null = Snd_RegisterSfx( "sfx/menu/menu4.ogg" );
 
 	ui->controller_start = re.RegisterShader( "menu/xbox_start" );
 	ui->controller_back = re.RegisterShader( "menu/xbox_back" );
