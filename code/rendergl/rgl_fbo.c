@@ -329,6 +329,7 @@ void FBO_Init( void )
 //		FBO_AttachImage( rg.msaaResolveFbo, rg.renderDepthImage, GL_DEPTH_ATTACHMENT );
 		R_CheckFBO( rg.msaaResolveFbo );
 	}
+	/*
 	if ( r_multisampleType->i == AntiAlias_SMAA ) {
 		rg.smaaBlendFbo = FBO_Create( "_smaaBlend", width, height );
 		FBO_AttachImage( rg.smaaBlendFbo, rg.smaaBlendImage, GL_COLOR_ATTACHMENT0 );
@@ -342,6 +343,7 @@ void FBO_Init( void )
 		FBO_AttachImage( rg.smaaWeightsFbo, rg.smaaWeightsImage, GL_COLOR_ATTACHMENT0 );
 		R_CheckFBO( rg.smaaWeightsFbo );
 	}
+	*/
 	if ( multisample && r_multisampleType->i >= AntiAlias_2xSSAA && r_multisampleType->i <= AntiAlias_4xSSAA ) {
 		rg.renderFbo = FBO_Create( "_render", width, height );
 		FBO_CreateBuffer( rg.renderFbo, hdrFormat, 0, multisample );
@@ -370,6 +372,7 @@ void FBO_Init( void )
 		GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo->frameBuffer );
 		nglClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	}
+	/*
 	if ( rg.hdrDepthImage ) {
 		rg.hdrDepthFbo = FBO_Create( "_hdrDepth", rg.hdrDepthImage->width, rg.hdrDepthImage->height );
 		FBO_CreateBuffer( rg.hdrDepthFbo, GL_RGBA16F, 0, multisample );
@@ -401,6 +404,7 @@ void FBO_Init( void )
 		FBO_AttachImage( rg.targetLevelsFbo, rg.targetLevelsImage, GL_COLOR_ATTACHMENT0 );
 		R_CheckFBO( rg.targetLevelsFbo );
 	}
+	*/
 
 /*
 	if ( rg.quarterImage[0] ) {
@@ -646,7 +650,7 @@ void FBO_FastBlit( fbo_t *src, ivec4_t srcBox, fbo_t *dst, ivec4_t dstBox, int b
 	glState.currentFbo = NULL;
 }
 
-
+/*
 void RB_ToneMap( fbo_t *hdrFbo, ivec4_t hdrBox, fbo_t *ldrFbo, ivec4_t ldrBox, int autoExposure )
 {
 	ivec4_t srcBox, dstBox;
@@ -718,7 +722,7 @@ void RB_ToneMap( fbo_t *hdrFbo, ivec4_t hdrBox, fbo_t *ldrFbo, ivec4_t ldrBox, i
 	FBO_FastBlit( hdrFbo, hdrBox, ldrFbo, NULL, GL_COLOR_BUFFER_BIT, GL_LINEAR );
 	FBO_Blit( hdrFbo, hdrBox, NULL, ldrFbo, ldrBox, &rg.tonemapShader, color, 0 );
 }
-
+*/
 
 /*
 =============
@@ -730,6 +734,7 @@ Blurs a part of one framebuffer to another.
 Framebuffers can be identical. 
 =============
 */
+/*
 void RB_BokehBlur(fbo_t *src, ivec4_t srcBox, fbo_t *dst, ivec4_t dstBox, float blur)
 {
 //	ivec4_t srcBox, dstBox;
@@ -891,6 +896,7 @@ static void RB_RadialBlur(fbo_t *srcFbo, fbo_t *dstFbo, int passes, float stretc
 	}
 }
 
+*/
 
 /*
 static qboolean RB_UpdateSunFlareVis(void)
@@ -923,6 +929,7 @@ static qboolean RB_UpdateSunFlareVis(void)
 }
 */
 
+/*
 void RB_SunRays(fbo_t *srcFbo, ivec4_t srcBox, fbo_t *dstFbo, ivec4_t dstBox)
 {
 	vec4_t color;
@@ -1145,3 +1152,4 @@ void RB_PostProcessSMAA( fbo_t *srcFbo )
 
 	FBO_BlitFromTexture( rg.smaaBlendFbo, rg.smaaBlendImage, NULL, NULL, srcFbo, NULL, &rg.smaaBlendShader, colorWhite, 0 );
 }
+*/

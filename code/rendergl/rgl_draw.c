@@ -5,9 +5,9 @@ void R_DrawElements( uint32_t numElements, uintptr_t nOffset ) {
 
 	switch ( r_drawMode->i ) {
 	case DRAWMODE_GPU:
-	case DRAWMODE_MAPPED:
+	case DRAWMODE_MAPPED: {
 		nglDrawElements( GL_TRIANGLES, numElements, GLN_INDEX_TYPE, BUFFER_OFFSET( nOffset ) );
-		break;
+		break; }
 	case DRAWMODE_IMMEDIATE: {
 		// immediate mode drawing is the least supported, if there's a bug here, I probably will not try to fix it
 		// only use this if you really want a retro feel
@@ -616,7 +616,7 @@ void RB_IterateShaderStages( shader_t *shader )
 		}
 		else {
 			if ( backend.depthFill ) {
-				if ( stageP->glslShaderGroup == rg.lightallShader ) {
+				if ( /* stageP->glslShaderGroup == rg.lightallShader */ 0 ) {
 					int index = 0;
 
 					if ( stageP->stateBits & GLS_ATEST_BITS ) {
@@ -637,7 +637,7 @@ void RB_IterateShaderStages( shader_t *shader )
 					sp = &rg.genericShader[ shaderAttribs ];
 				}
 			}
-			else if ( stageP->glslShaderGroup == rg.lightallShader ) {
+			else if ( /* stageP->glslShaderGroup == rg.lightallShader */ 0 ) {
 				int index = stageP->glslShaderIndex;
 
 				if ( r_sunlightMode->i && ( glState.viewData.flags & RSF_USE_SUNLIGHT ) && ( index & LIGHTDEF_LIGHTTYPE_MASK ) ) {
@@ -779,20 +779,6 @@ void RB_IterateShaderStages( shader_t *shader )
         GLSL_SetUniformInt( sp, UNIFORM_DIFFUSE_MAP, 0 );
 
 		if ( rg.world && !( backend.refdef.flags & RSF_NOWORLDMODEL ) ) {
-			GLSL_SetUniformVec3( sp, UNIFORM_AMBIENTLIGHT, rg.world->ambientLightColor );
-			GLSL_SetUniformInt( sp, UNIFORM_NUM_LIGHTS, rg.world->numLights );
-
-//			for ( j = 0; j < rg.world->numLights; j++ ) {
-//				nglUniform3fv( nglGetUniformLocation( sp->programId, va( "u_LightData[%i].color", j ) ), 1, rg.world->lights[j].color );
-//				nglUniform2uiv( nglGetUniformLocation( sp->programId, va( "u_LightData[%i].origin", j ) ), 1, rg.world->lights[j].origin );
-//				nglUniform1f( nglGetUniformLocation( sp->programId, va( "u_LightData[%i].brightness", j ) ), rg.world->lights[j].brightness );
-//				nglUniform1f( nglGetUniformLocation( sp->programId, va( "u_LightData[%i].constant", j ) ), rg.world->lights[j].constant );
-//				nglUniform1f( nglGetUniformLocation( sp->programId, va( "u_LightData[%i].linear", j ) ), rg.world->lights[j].linear );
-//				nglUniform1f( nglGetUniformLocation( sp->programId, va( "u_LightData[%i].quadratic", j ) ), rg.world->lights[j].quadratic );
-//				nglUniform1f( nglGetUniformLocation( sp->programId, va( "u_LightData[%i].range", j ) ), rg.world->lights[j].range );
-//				nglUniform1i( nglGetUniformLocation( sp->programId, va( "u_LightData[%i].type", j ) ), rg.world->lights[j].type );
-//			}
-			GLSL_ShaderBufferData( sp, UNIFORM_LIGHTDATA, rg.lightData );
 		} else {
 			vec3_t ambient;
 			VectorSet( ambient, 1, 1, 1 );

@@ -138,7 +138,7 @@ void CDevConsole::DrawText( const char *pText )
 #define  DEFAULT_CONSOLE_WIDTH 78
 #define  MAX_CONSOLE_WIDTH 120
 
-#define  NUM_CON_TIMES  4
+#define  NUM_CON_TIMES  10
 
 #define  CON_TEXTSIZE   65536
 
@@ -483,7 +483,7 @@ void G_ConsolePrint( const char *txt ) {
 	qboolean skipnotify = qfalse;
 	char *buf, *startLine;
 	int colorIndex;
-	int c;
+	int c, l;
 	uint64_t len;
 
 	// TTimo - prefix for text that shows up in console but not in notify
@@ -514,7 +514,6 @@ void G_ConsolePrint( const char *txt ) {
 		con.initialized = qtrue;
 	}
 	
-	buf = con.times[con.contime % NUM_CON_TIMES];
 	startLine = buf;
 	len = strlen( txt );
 
@@ -525,28 +524,22 @@ void G_ConsolePrint( const char *txt ) {
 	memcpy( con.text + con.used, txt, len );
 	con.used += len;
 
+	buf = con.times[ con.contime % NUM_CON_TIMES ];
+	memset( buf, 0, sizeof( *con.times ) );
 	while ( ( c = *txt ) != 0 ) {
-		txt++;
-		switch ( *txt ) {
+		switch ( c ) {
 		case '\n':
-//			con.totallines++;
-			if ( skipnotify ) {
-				con.contimes[ con.contime % NUM_CON_TIMES ] = 0;
-			} else {
-				con.contimes[ con.contime % NUM_CON_TIMES ] = Sys_Milliseconds();
-			}
-			buf = con.times[ con.contime % NUM_CON_TIMES ];
-			*buf++ = '\0';
 			con.contime++;
-			startLine = buf;
-			break;
-		case '\r':
-			buf = startLine;
+			*buf++ = '\n';
+			*buf++ = '\0';
+			buf = con.times[ con.contime % NUM_CON_TIMES ];
+			memset( buf, 0, sizeof( *con.times ) );
 			break;
 		default:
-			*buf++ = *txt;
+			*buf++ = c;
 			break;
 		};
+		*txt++;
 	}
 }
 
@@ -835,6 +828,8 @@ static void Con_DrawSolidConsole( float frac, qboolean open )
 		return;
 	}
 
+	gi.consoleShader = re.RegisterShader( "console" );
+
 	// draw the background
 	// custom console background color
 	if ( con_color->s[0] ) {
@@ -910,23 +905,30 @@ static void Con_DrawSolidConsole( float frac, qboolean open )
 static void Con_DrawNotify( void ) {
 	char		*text;
 	int32_t		i;
-	uint32_t	time;
+	uint64_t	time;
 
-	const int windowFlags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoBackground
-		| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoMouseInputs;
+	const int windowFlags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize
+		| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_AlwaysAutoResize
+		| ImGuiWindowFlags_NoBackground;
 
 	ImGui::Begin( "Notify", NULL, windowFlags );
-	ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-	ImGui::SetWindowFontScale( 1.5f * gi.scale );
+	ImGui::SetWindowPos( ImVec2( 0, 700 * gi.scale ) );
+	ImGui::SetWindowFontScale( 0.75f * gi.scale );
 
 	ImGui::PushStyleColor( ImGuiCol_Text, g_color_table[ ColorIndex( S_COLOR_WHITE ) ] );
 
-	for ( i = 0; i < NUM_CON_TIMES; i++ ) {
-		time = Sys_Milliseconds() - con.contimes[ i ];
-		if ( time >= con_notifytime->f * 1000 ) {
-			// clear it
-			*con.times[ i ] = '\0';
-			continue;
+	for ( i = NUM_CON_TIMES - 1; i != 0; i-- ) {
+		if ( *con.times[ i ] && !*con.times[ i + 1 ] ) {
+			if ( con.contimes[ i ] == 0 && *con.times[ i ] ) {
+				con.contimes[ i ] = gi.realtime;
+			}
+
+			time = gi.realtime - con.contimes[ i ];
+			if ( time > con_notifytime->f * 1000 ) {
+				// clear it
+				*con.times[ i ] = '\0';
+				continue;
+			}
 		}
 		text = con.times[ i ];
 

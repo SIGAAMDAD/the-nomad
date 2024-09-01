@@ -593,6 +593,7 @@ static const void *RB_PostProcess(const void *data)
 	dstBox[2] = glState.viewData.viewportWidth;
 	dstBox[3] = glState.viewData.viewportHeight;
 
+/*
 	if ( r_ssao->i ) {
 		vec4_t viewInfo;
 
@@ -603,6 +604,7 @@ static const void *RB_PostProcess(const void *data)
 
 //		FBO_Blit( rg.screenSsaoFbo, srcBox, NULL, srcFbo, dstBox, NULL, NULL, GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO );
 	}
+*/
 
 	srcBox[0] = glState.viewData.viewportX;
 	srcBox[1] = glState.viewData.viewportY;
@@ -636,15 +638,10 @@ static const void *RB_PostProcess(const void *data)
 	}
 	
 	if ( 0 ) {
-		RB_BokehBlur( NULL, srcBox, NULL, dstBox, backend.refdef.blurFactor );
+//		RB_BokehBlur( NULL, srcBox, NULL, dstBox, backend.refdef.blurFactor );
 	} else {
-		RB_GaussianBlur( backend.refdef.blurFactor );
+//		RB_GaussianBlur( backend.refdef.blurFactor );
 	}
-
-	if ( r_multisampleType->i == AntiAlias_SMAA ) {
-		RB_PostProcessSMAA( srcFbo );
-	}
-
 	if ( srcFbo ) {
 		FBO_FastBlit( srcFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 	}

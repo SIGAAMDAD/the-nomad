@@ -243,6 +243,7 @@ void R_DrawPolys( void )
 			backend.drawBatch.idxOffset += 3;
 			
 			// generate normals
+            /*
 			VectorSubtract( backend.refdef.polys[i].verts[ j ].xyz, backend.refdef.polys[i].verts[ j + 1 ].xyz, edge1 );
 			VectorSubtract( backend.refdef.polys[i].verts[ j ].xyz, backend.refdef.polys[i].verts[ j + 2 ].xyz, edge2 );
 			CrossProduct( edge1, edge2, normal );
@@ -251,12 +252,13 @@ void R_DrawPolys( void )
                 backendData->verts[ backend.drawBatch.vtxOffset + j + 0 ].normal );
 			VectorCopy( backendData->verts[ backend.drawBatch.vtxOffset + j + 2 ].normal,
                 backendData->verts[ backend.drawBatch.vtxOffset + j + 0 ].normal );
+            */
 		}
 		
 		for ( j = 0; j < backend.refdef.polys[i].numVerts; j++ ) {
 			VectorCopy( backendData->verts[ backend.drawBatch.vtxOffset ].xyz, backend.refdef.polys[i].verts[j].xyz );
 			VectorCopy2( backendData->verts[ backend.drawBatch.vtxOffset ].st, backend.refdef.polys[i].verts[j].uv );
-			VectorCopy2( backendData->verts[ backend.drawBatch.vtxOffset ].lightmap, backend.refdef.polys[i].verts[j].uv );
+//			VectorCopy2( backendData->verts[ backend.drawBatch.vtxOffset ].lightmap, backend.refdef.polys[i].verts[j].uv );
 			VectorCopy( backendData->verts[ backend.drawBatch.vtxOffset ].worldPos, backend.refdef.polys[i].verts[j].worldPos );
 //            VectorCopy4( backendData->verts[ backend.drawBatch.vtxOffset ].color, backend.refdef.polys[i].verts[j].modulate );
 //			R_CalcTangentVectors( (drawVert_t *)&vtx[j] );
@@ -311,6 +313,7 @@ void R_DrawWorld( void )
 
             // generate normals
             // FIXME: this is hideous
+            /*
             if ( &vtx[3] != &rg.world->vertices[rg.world->numVertices] ) {
                 VectorSubtract( vtx->xyz, vtx[1].xyz, edge1 );
                 VectorSubtract( vtx->xyz, vtx[3].xyz, edge2 );
@@ -320,6 +323,7 @@ void R_DrawWorld( void )
                 VectorSubtract( vtx->xyz, vtx[2].xyz, edge2 );
                 CrossProduct( edge1, edge2, normal );
             }
+            */
 
             // check if there's any entities in the way
             VectorSet4( color, 1.0f, 1.0f, 1.0f, 1.0f );
@@ -349,8 +353,8 @@ void R_DrawWorld( void )
                 VectorCopy2( vtx[i].uv, rg.world->sprites[ rg.world->tiles[ y * rg.world->width + x ].index ][i] );
                 VectorSet( vtx[i].worldPos, x, y, 0.0f );
 
-                R_VaoPackNormal( vtx[i].normal, normal );
-                R_CalcTangentVectors( vtx );
+//                R_VaoPackNormal( vtx[i].normal, normal );
+//                R_CalcTangentVectors( vtx );
             }
 
             vtx += 4;
@@ -560,6 +564,8 @@ R_CalcTangentSpace
 Lengyel, Eric. �Computing Tangent Space Basis Vectors for an Arbitrary Mesh�. Terathon Software 3D Graphics Library, 2001. http://www.terathon.com/code/tangent.html
 =============
 */
+
+/*
 vec_t R_CalcTangentSpace( vec3_t tangent, vec3_t bitangent, const vec3_t normal, const vec3_t sdir, const vec3_t tdir )
 {
 	vec3_t n_cross_t;
@@ -588,12 +594,12 @@ qboolean R_CalcTangentVectors(drawVert_t dv[3])
 	vec3_t          bary;
 
 
-	/* calculate barycentric basis for the triangle */
+	// calculate barycentric basis for the triangle
 	bb = (dv[1].uv[0] - dv[0].uv[0]) * (dv[2].uv[1] - dv[0].uv[1]) - (dv[2].uv[0] - dv[0].uv[0]) * (dv[1].uv[1] - dv[0].uv[1]);
 	if(fabs(bb) < 0.00000001f)
 		return qfalse;
 
-	/* do each vertex */
+	// do each vertex
 	for(i = 0; i < 3; i++)
 	{
 		vec4_t tangent;
@@ -641,6 +647,7 @@ qboolean R_CalcTangentVectors(drawVert_t dv[3])
 
 	return qtrue;
 }
+*/
 
 /*
 ==========================

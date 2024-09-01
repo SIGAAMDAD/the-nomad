@@ -2809,6 +2809,7 @@ void R_CreateBuiltinTextures( void )
 
 		rg.renderImage = R_CreateImage( "_render", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, hdrFormat );
 
+		/*
 		if ( r_shadowBlur->i ) {
 			rg.screenScratchImage = R_CreateImage( "screenScratch", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, rgbFormat );
 		}
@@ -2837,7 +2838,9 @@ void R_CreateBuiltinTextures( void )
 			rg.smaaAreaImage = R_FindImageFile( "textures/effects/SearchTex.dds", IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE );
 			rg.smaaSearchImage = R_FindImageFile( "textures/effects/AreaTexDX10.dds", IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE );
 		}
+		*/
 
+		/*
 		if ( r_bloom->i && r_hdr->i ) {
 			rg.bloomImage = R_CreateImage( "*bloom", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_RGBA16F );
 		}
@@ -2852,6 +2855,7 @@ void R_CreateBuiltinTextures( void )
 		} else {
 			rg.renderDepthImage  = R_CreateImage( "*renderdepth",  NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_DEPTH_COMPONENT24 );
 		}
+		*/
 
 		/*
 		{
@@ -2892,9 +2896,9 @@ void R_CreateBuiltinTextures( void )
 		}
 		*/
 
-		if ( r_ssao->i ) {
-			rg.screenSsaoImage = R_CreateImage( "*screenSsao", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_RGBA8 );
-		}
+//		if ( r_ssao->i ) {
+//			rg.screenSsaoImage = R_CreateImage( "*screenSsao", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_RGBA8 );
+//		}
 
 		/* GL error on this
 		if ( r_sunlightMode->i ) {

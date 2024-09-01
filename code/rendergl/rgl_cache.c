@@ -244,49 +244,36 @@ void R_InitGPUBuffers( void )
 	backend.drawBuffer->attribs[ATTRIB_INDEX_POSITION].enabled		= qtrue;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_TEXCOORD].enabled		= qtrue;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_COLOR].enabled			= qtrue;
-	backend.drawBuffer->attribs[ATTRIB_INDEX_NORMAL].enabled		= qfalse;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_WORLDPOS].enabled		= qtrue;
-	backend.drawBuffer->attribs[ATTRIB_INDEX_LIGHTCOORD].enabled	= qfalse;
 
 	backend.drawBuffer->attribs[ATTRIB_INDEX_POSITION].count		= 3;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_TEXCOORD].count		= 2;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_COLOR].count			= 4;
-	backend.drawBuffer->attribs[ATTRIB_INDEX_NORMAL].count			= 4;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_WORLDPOS].count		= 3;
-	backend.drawBuffer->attribs[ATTRIB_INDEX_LIGHTCOORD].count		= 4;
 
 	backend.drawBuffer->attribs[ATTRIB_INDEX_POSITION].type			= GL_FLOAT;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_TEXCOORD].type			= GL_FLOAT;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_COLOR].type			= GL_UNSIGNED_SHORT;
-	backend.drawBuffer->attribs[ATTRIB_INDEX_NORMAL].type			= GL_SHORT;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_WORLDPOS].type			= GL_FLOAT;
-	backend.drawBuffer->attribs[ATTRIB_INDEX_LIGHTCOORD].type		= GL_FLOAT;
 
 	backend.drawBuffer->attribs[ATTRIB_INDEX_POSITION].index		= ATTRIB_INDEX_POSITION;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_TEXCOORD].index		= ATTRIB_INDEX_TEXCOORD;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_COLOR].index			= ATTRIB_INDEX_COLOR;
-	backend.drawBuffer->attribs[ATTRIB_INDEX_NORMAL].index			= ATTRIB_INDEX_NORMAL;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_WORLDPOS].index		= ATTRIB_INDEX_WORLDPOS;
-	backend.drawBuffer->attribs[ATTRIB_INDEX_LIGHTCOORD].index		= ATTRIB_INDEX_LIGHTCOORD;
 
 	backend.drawBuffer->attribs[ATTRIB_INDEX_POSITION].normalized	= GL_FALSE;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_TEXCOORD].normalized	= GL_FALSE;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_COLOR].normalized		= GL_TRUE;
-	backend.drawBuffer->attribs[ATTRIB_INDEX_NORMAL].normalized		= GL_TRUE;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_WORLDPOS].normalized	= GL_FALSE;
-	backend.drawBuffer->attribs[ATTRIB_INDEX_LIGHTCOORD].normalized = GL_FALSE;
 
 	backend.drawBuffer->attribs[ATTRIB_INDEX_POSITION].offset		= offsetof( srfVert_t, xyz );
 	backend.drawBuffer->attribs[ATTRIB_INDEX_TEXCOORD].offset		= offsetof( srfVert_t, st );
 	backend.drawBuffer->attribs[ATTRIB_INDEX_COLOR].offset			= offsetof( srfVert_t, color );
-	backend.drawBuffer->attribs[ATTRIB_INDEX_NORMAL].offset			= offsetof( srfVert_t, normal );
 	backend.drawBuffer->attribs[ATTRIB_INDEX_WORLDPOS].offset		= offsetof( srfVert_t, worldPos );
-	backend.drawBuffer->attribs[ATTRIB_INDEX_LIGHTCOORD].offset     = offsetof( srfVert_t, lightmap );
 
 	backend.drawBuffer->attribs[ATTRIB_INDEX_POSITION].stride		= sizeof( srfVert_t );
 	backend.drawBuffer->attribs[ATTRIB_INDEX_TEXCOORD].stride		= sizeof( srfVert_t );
 	backend.drawBuffer->attribs[ATTRIB_INDEX_COLOR].stride			= sizeof( srfVert_t );
-	backend.drawBuffer->attribs[ATTRIB_INDEX_NORMAL].stride			= sizeof( srfVert_t );
 	backend.drawBuffer->attribs[ATTRIB_INDEX_WORLDPOS].stride		= sizeof( srfVert_t );
 
 	VBO_SetVertexAttribPointers( backend.drawBuffer );
@@ -429,25 +416,35 @@ vertexBuffer_t *R_AllocateBuffer( const char *name, void *vertices, uint32_t ver
 	bufferType_t type )
 {
     vertexBuffer_t *buf;
-	GLenum usage;
+	GLenum vertexUsage, indexUsage;
 	uint32_t namelen;
 	uint64_t i;
 	GLenum err;
 
 	switch ( type ) {
 	case BUFFER_STATIC:
-		usage = GL_STATIC_DRAW;
+		vertexUsage = GL_STATIC_DRAW;
+		indexUsage = GL_STATIC_DRAW;
 		break;
 	case BUFFER_FRAME:
 	case BUFFER_DYNAMIC:
-		usage = GL_DYNAMIC_DRAW;
+		vertexUsage = GL_DYNAMIC_DRAW;
+		indexUsage = GL_DYNAMIC_DRAW;
 		break;
 	case BUFFER_STREAM:
-		usage = GL_STREAM_DRAW;
+		vertexUsage = GL_STREAM_DRAW;
+		indexUsage = GL_STREAM_DRAW;
 		break;
 	default:
 		ri.Error( ERR_FATAL, "Bad glUsage %i", type );
 	};
+
+	if ( vertices != NULL ) {
+		vertexUsage = GL_STATIC_DRAW;
+	}
+	if ( indices != NULL ) {
+		indexUsage = GL_STATIC_DRAW;
+	}
 
 	for ( i = 0; i < rg.numBuffers; i++ ) {
 		if ( !N_stricmp( rg.buffers[i]->name, name ) ) {
@@ -455,13 +452,13 @@ vertexBuffer_t *R_AllocateBuffer( const char *name, void *vertices, uint32_t ver
 			VBO_Bind( rg.buffers[i] );
 			if ( rg.buffers[i]->vertex.size != verticesSize ) {
 				glState.memstats.estBufferMemUsed -= rg.buffers[i]->vertex.size;
-				R_InitBufferStorage( GL_ARRAY_BUFFER_ARB, verticesSize, vertices, usage, qfalse, rg.buffers[i]->vertex.id );
+				R_InitBufferStorage( GL_ARRAY_BUFFER_ARB, verticesSize, vertices, vertexUsage, qfalse, rg.buffers[i]->vertex.id );
 				rg.buffers[i]->vertex.size = verticesSize;
 				glState.memstats.estBufferMemUsed += verticesSize;
 			}
 			if ( rg.buffers[i]->index.size != indicesSize ) {
 				glState.memstats.estBufferMemUsed -= rg.buffers[i]->index.size;
-				R_InitBufferStorage( GL_ELEMENT_ARRAY_BUFFER_ARB, indicesSize, indices, usage, qfalse, rg.buffers[i]->index.id );
+				R_InitBufferStorage( GL_ELEMENT_ARRAY_BUFFER_ARB, indicesSize, indices, indexUsage, qfalse, rg.buffers[i]->index.id );
 				rg.buffers[i]->index.size = indicesSize;
 				glState.memstats.estBufferMemUsed += indicesSize;
 			}
@@ -492,18 +489,18 @@ vertexBuffer_t *R_AllocateBuffer( const char *name, void *vertices, uint32_t ver
 	buf->vertex.usage = BUF_GL_BUFFER;
 	buf->index.usage = BUF_GL_BUFFER;
 
-	buf->vertex.glUsage = usage;
-	buf->index.glUsage = usage;
-
 	buf->vertex.size = verticesSize;
 	buf->index.size = indicesSize;
 
-	buf->vertex.id = R_InitBufferStorage( GL_ARRAY_BUFFER_ARB, verticesSize, vertices, usage, qtrue, 0 );
-	buf->index.id = R_InitBufferStorage( GL_ELEMENT_ARRAY_BUFFER_ARB, indicesSize, indices, usage, qtrue, 0 );
+	buf->vertex.glUsage = vertexUsage;
+	buf->index.glUsage = indexUsage;
 
+	buf->vertex.id = R_InitBufferStorage( GL_ARRAY_BUFFER_ARB, verticesSize, vertices, vertexUsage, qtrue, 0 );
+	buf->index.id = R_InitBufferStorage( GL_ELEMENT_ARRAY_BUFFER_ARB, indicesSize, indices, indexUsage, qtrue, 0 );
+	
+	GL_SetObjectDebugName( GL_BUFFER, buf->index.id, name, "_ibo" );
 	GL_SetObjectDebugName( GL_VERTEX_ARRAY, buf->vaoId, name, "_vao" );
 	GL_SetObjectDebugName( GL_BUFFER, buf->vertex.id, name, "_vbo" );
-	GL_SetObjectDebugName( GL_BUFFER, buf->index.id, name, "_ibo" );
 
 	glState.memstats.estBufferMemUsed += ( indicesSize + verticesSize );
 	glState.memstats.estVertexMemUsed += verticesSize;
@@ -676,7 +673,7 @@ void RB_FlushBatchBuffer( void )
     }
 
     // do we actually have something there?
-    if ( backend.drawBatch.vtxOffset == 0 || backend.drawBatch.idxOffset == 0 ) {
+    if ( backend.drawBatch.vtxOffset == 0 && backend.drawBatch.idxOffset == 0 ) {
         return;
     }
 
@@ -689,7 +686,7 @@ void RB_FlushBatchBuffer( void )
 	buf = backend.drawBatch.buffer;
 
 	// orphan the old index buffer so that we don't stall on it
-	if ( r_drawMode->i == DRAWMODE_MAPPED ) {
+	if ( r_drawMode->i == DRAWMODE_MAPPED && backend.drawBuffer->index.glUsage != GL_STATIC_DRAW ) {
 		nglInvalidateBufferData( backend.drawBuffer->index.id );
 		data = nglMapBufferRange( GL_ELEMENT_ARRAY_BUFFER_ARB, 0, backend.drawBatch.maxIndices, GL_MAP_WRITE_BIT
 			| GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT );
@@ -697,7 +694,7 @@ void RB_FlushBatchBuffer( void )
 			memcpy( data, backend.drawBatch.indices, backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize );
 		}
 		nglUnmapBuffer( GL_ELEMENT_ARRAY_BUFFER );
-	} else if ( r_drawMode->i == DRAWMODE_GPU ) {
+	} else if ( r_drawMode->i == DRAWMODE_GPU && backend.drawBuffer->index.glUsage != GL_STATIC_DRAW ) {
 		nglBufferData( GL_ELEMENT_ARRAY_BUFFER, backend.drawBatch.maxIndices, NULL, backend.drawBatch.buffer->index.glUsage );
 		nglBufferSubData( GL_ELEMENT_ARRAY_BUFFER, 0, backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize, backend.drawBatch.indices );
 	}

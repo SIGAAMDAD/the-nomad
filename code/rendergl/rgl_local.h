@@ -19,10 +19,10 @@
 #include <cglm/affine.h>
 */
 
-#define SHADER_MAX_VERTEXES 1000
+#define SHADER_MAX_VERTEXES 528
 #define SHADER_MAX_INDEXES (6*SHADER_MAX_VERTEXES)
 
-#define MAX_RENDER_BUFFERS 2048
+#define MAX_RENDER_BUFFERS 64
 #define MAX_RENDER_PROGRAMS 2048
 #define MAX_RENDER_TEXTURES 2048
 #define MAX_RENDER_SHADERS 2048
@@ -41,7 +41,7 @@ typedef uint16_t glIndex_t;
 
 // set a hard limit of 2 MiB per uniform buffer
 #define MAX_UNIFORM_BUFFER_SIZE ( 2*1024*1024 )
-#define MAX_UNIFORM_BUFFERS 512
+#define MAX_UNIFORM_BUFFERS 64
 #define MAX_VERTEX_BUFFERS 1024
 #define MAX_FRAMEBUFFERS 64
 #define MAX_GLSL_OBJECTS 128
@@ -72,7 +72,7 @@ typedef uint16_t glIndex_t;
 #define MAX_DRAW_INDICES (MAX_INT/sizeof(glIndex_t))
 
 // per drawcall batch
-#define MAX_BATCH_QUADS (10000)
+#define MAX_BATCH_QUADS (528)
 #define MAX_BATCH_VERTICES (MAX_BATCH_QUADS*4)
 #define MAX_BATCH_INDICES (MAX_BATCH_QUADS*6)
 
@@ -450,9 +450,6 @@ typedef struct
     vec3_t          worldPos;
 	vec2_t          uv;
 	vec2_t          lightmap;
-	int16_t         normal[4];
-	int16_t         tangent[4];
-	int16_t         lightdir[4];
 	uint16_t        color[4];
 } drawVert_t;
 
@@ -468,10 +465,6 @@ typedef struct {
     vec3_t          xyz;
     vec3_t          worldPos;
 	vec2_t          st;
-	vec2_t          lightmap;
-	int16_t         normal[4];
-	int16_t         tangent[4];
-	int16_t         lightdir[4];
 	uint16_t        color[4];
 #ifdef DEBUG_OPTIMIZEVERTICES
 //	unsigned int    id;
@@ -1148,10 +1141,13 @@ typedef struct
 	texture_t				*whiteImage;			// full of 0xff
 	texture_t				*identityLightImage;	// full of tr.identityLightByte	
 
-    texture_t               *bloomImage;
+
 	texture_t				*renderImage;
-	texture_t				*sunRaysImage;
 	texture_t				*renderDepthImage;
+	texture_t				*hdrDepthImage;
+	/*
+    texture_t               *bloomImage;
+	texture_t				*sunRaysImage;
 	texture_t				*pshadowMaps[MAX_DRAWN_PSHADOWS];
 	texture_t				*screenScratchImage;
 	texture_t				*textureScratchImage[2];
@@ -1162,44 +1158,47 @@ typedef struct
 	texture_t				*sunShadowDepthImage[4];
 	texture_t               *screenShadowImage;
 	texture_t               *screenSsaoImage;
-	texture_t				*hdrDepthImage;
     texture_t               *smaaEdgesImage;
     texture_t               *smaaBlendImage;
     texture_t               *smaaAreaImage;
     texture_t               *smaaSearchImage;
     texture_t               *smaaWeightsImage;
-    texture_t               *blurImage[2];
+	*/
+//    texture_t               *blurImage[2];
 	
-	texture_t				*textureDepthImage;
+//	texture_t				*textureDepthImage;
+
 
 	fbo_t					*renderFbo;
 	fbo_t					*msaaResolveFbo;
-	fbo_t					*sunRaysFbo;
+	fbo_t                   *ssaaResolveFbo;
+/*
+	fbo_t                   *smaaEdgesFbo;
+    fbo_t                   *smaaWeightsFbo;
+    fbo_t                   *smaaBlendFbo;
 	fbo_t					*depthFbo;
 	fbo_t					*pshadowFbos[MAX_DRAWN_PSHADOWS];
 	fbo_t					*screenScratchFbo;
 	fbo_t					*textureScratchFbo[2];
 	fbo_t                   *quarterFbo[2];
 	fbo_t					*calcLevelsFbo;
+	fbo_t					*sunRaysFbo;
 	fbo_t					*targetLevelsFbo;
 	fbo_t					*sunShadowFbo[4];
 	fbo_t					*screenShadowFbo;
 	fbo_t					*screenSsaoFbo;
 	fbo_t					*hdrDepthFbo;
-    fbo_t                   *smaaEdgesFbo;
-    fbo_t                   *smaaWeightsFbo;
-    fbo_t                   *smaaBlendFbo;
-    fbo_t                   *ssaaResolveFbo;
     fbo_t                   *blurFbo[2];
 //	fbo_t                   *renderCubeFbo;
+*/
 
 	shader_t				*defaultShader;
-	shader_t				*shadowShader;
-	shader_t				*projectionShadowShader;
+//	shader_t				*shadowShader;
+//	shader_t				*projectionShadowShader;
 
-	shader_t				*flareShader;
-	shader_t				*sunShader;
-	shader_t				*sunFlareShader;
+//	shader_t				*flareShader;
+//	shader_t				*sunShader;
+//	shader_t				*sunFlareShader;
 
 	uint32_t				numLightmaps;
 	uint32_t				lightmapSize;
@@ -1244,17 +1243,19 @@ typedef struct
     shaderProgram_t lightallShader[LIGHTDEF_COUNT];
     shaderProgram_t imguiShader;
     shaderProgram_t tileShader;
-    shaderProgram_t ssaoShader;
+	shaderProgram_t textureColorShader;
+    /*
+	shaderProgram_t ssaoShader;
     shaderProgram_t depthBlurShader[4];
     shaderProgram_t calclevels4xShader[2];
     shaderProgram_t down4xShader;
 	shaderProgram_t bokehShader;
     shaderProgram_t blurShader;
 	shaderProgram_t tonemapShader;
-    shaderProgram_t textureColorShader;
     shaderProgram_t smaaEdgesShader;
     shaderProgram_t smaaWeightsShader;
     shaderProgram_t smaaBlendShader;
+	*/
 
     qboolean beganQuery;
 
@@ -1597,7 +1598,7 @@ void GLSL_SetUniformVec2( shaderProgram_t *program, uint32_t uniformNum, const v
 void GLSL_SetUniformVec3( shaderProgram_t *program, uint32_t uniformNum, const vec3_t v );
 void GLSL_SetUniformVec4( shaderProgram_t *program, uint32_t uniformNum, const vec4_t v );
 void GLSL_SetUniformMatrix4( shaderProgram_t *program, uint32_t uniformNum, const mat4_t m );
-void GLSL_ShaderBufferData( shaderProgram_t *shader, uint32_t uniformNum, uniformBuffer_t *buffer );
+void GLSL_ShaderBufferData( shaderProgram_t *shader, uint32_t uniformNum, uniformBuffer_t *buffer, uint64_t nSize );
 uniformBuffer_t *GLSL_InitUniformBuffer( const char *name, byte *buffer, uint64_t bufSize );
 shaderProgram_t *GLSL_GetGenericShaderProgram( int stage );
 void GLSL_LinkUniformToShader( shaderProgram_t *program, uint32_t uniformNum, uniformBuffer_t *buffer );

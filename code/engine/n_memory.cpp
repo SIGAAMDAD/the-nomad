@@ -156,7 +156,6 @@ typedef struct
 	uint64_t tempHighwater;
 } hunkUsed_t;
 
-CThreadMutex hunkLock, allocLock;
 uint64_t hunk_low_used = 0;
 uint64_t hunk_high_used = 0;
 uint64_t hunk_temp_used = 0;
@@ -547,7 +546,6 @@ void Z_Free( void *ptr ) {
 		zone = mainzone;
 	}
 
-	CThreadAutoLock lock( allocLock );
 	zone->used -= block->size;
 
 	// set the block to something that should cause problems
@@ -679,9 +677,7 @@ void *Z_Alloc( uint64_t size, memtag_t tag )
 	size += 4;					// space for memory trash tester
 #endif
 
-	size = PAD(size, sizeof(uintptr_t));		// align to 32/64 bit boundary
-
-	CThreadAutoLock lock( allocLock );
+	size = PAD( size, sizeof( uintptr_t ) );		// align to 32/64 bit boundary
 
 #ifdef USE_MULTI_SEGMENT
 	base = SearchFree( zone, size );
@@ -1465,8 +1461,6 @@ Goals:
 */
 void Hunk_Clear( void )
 {
-	CThreadAutoLock lock( hunkLock );
-
 	G_ShutdownUI();
 	G_ShutdownSGame();
 
@@ -1502,12 +1496,10 @@ uint64_t Hunk_MemoryRemaining( void )
 }
 
 /*
-Hunk_SetMark: gets called after level and game vm have been loaded
+* Hunk_SetMark: gets called after level and game vm have been loaded
 */
 void Hunk_SetMark( void )
 {
-	CThreadAutoLock lock( hunkLock );
-	
 	Con_DPrintf( "Setting hunk data marker...\n" );
 	hunk_low.mark = hunk_low.permanent;
 	hunk_high.mark = hunk_high.permanent;
@@ -1515,8 +1507,6 @@ void Hunk_SetMark( void )
 
 void Hunk_ClearToMark( void )
 {
-	CThreadAutoLock lock( hunkLock );
-
 	Con_DPrintf( "Clearing to set hunk mark...\n" );
 	memset( hunkbase + hunk_low.mark, 0, hunk_low.permanent - hunk_low.mark );
 	hunk_low.permanent = hunk_low.temp = hunk_low.mark;
@@ -1531,8 +1521,6 @@ static void Hunk_SwapBanks(void)
 	if ( hunk_temp->temp != hunk_temp->permanent ) {
 		return;
 	}
-
-	CThreadAutoLock lock( hunkLock );
 
 	// if we have a larger highwater mark on this side, start making
 	// our permanent allocations here and use the other side for temp
@@ -1562,8 +1550,6 @@ void *Hunk_AllocateTempMemory(uint64_t size)
 	if (hunk_temp->temp + hunk_permanent->permanent + size > hunksize) {
 		N_Error(ERR_DROP, "Hunk_AllocateTempMemory: failed on %lu", size);
 	}
-
-	CThreadAutoLock lock( hunkLock );
 
 	if ( hunk_temp == &hunk_low ) {
 		buf = (void *)(hunkbase + hunk_temp->temp);
@@ -1605,8 +1591,6 @@ void Hunk_FreeTempMemory(void *p)
 
 	h->id = HUNKFREE;
 
-	CThreadAutoLock lock( hunkLock );
-
 	// this only works if the files are freed in the stack order,
 	// otherwise the memory will stay around until Hunk_ClearTempMemory
 	if ( hunk_temp == &hunk_low ) {
@@ -1623,9 +1607,8 @@ void Hunk_FreeTempMemory(void *p)
 	}
 }
 
-void Hunk_ClearTempMemory(void)
+void Hunk_ClearTempMemory( void )
 {
-	CThreadAutoLock lock( hunkLock );
 	if (hunkbase) {
 		hunk_temp->temp = hunk_temp->permanent;
 	}
@@ -1664,8 +1647,7 @@ void *Hunk_Alloc (uint64_t size, ha_pref where)
 							"NOTE: if you are using a mod and got this error, find your " NOMAD_CONFIG " "
 							"and edit the CVar \"com_hunkMegs\" to a higher value." );
 	}
-	
-	CThreadAutoLock lock( hunkLock );
+
 	if (where == h_dontcare || hunk_temp->temp != hunk_temp->permanent) {
 		Hunk_SwapBanks();
 	}
@@ -1683,7 +1665,7 @@ void *Hunk_Alloc (uint64_t size, ha_pref where)
 #endif
 
 	// round to the cacheline
-	size = PAD(size, com_cacheLine);
+	size = PAD( size, com_cacheLine );
 
 	if ( hunk_low.temp + hunk_high.temp + size > hunksize ) {
 #ifdef _NOMAD_DEBUG
@@ -1762,7 +1744,7 @@ void Hunk_Log( void ) {
 static void *hunkptr = NULL;
 static void Hunk_Free_f( void ) {
 	if ( !Cvar_VariableInteger( "com_exitFlag" ) ) {
-		Con_Printf( "DONT\n" );
+		Con_Printf( COLOR_RED "DONT\n" );
 		return;
 	}
 	if ( hunkptr != NULL ) {
@@ -1787,8 +1769,8 @@ void Hunk_InitMemory( void )
 	Cvar_CheckRange( cv, VSTR( HUNK_MINSIZE ), NULL, CVT_INT );
 	Cvar_SetDescription( cv, "The size of the hunk memory segment." );
 
-	hunksize = cv->i * 1024 * 1024;
-	hunkptr = hunkbase = (byte *)calloc( hunksize + ( com_cacheLine - 1 ), 1 );
+	hunksize = PAD( cv->i * 1024 * 1024 + ( com_cacheLine - 1 ), Sys_GetPageSize() );
+	hunkptr = hunkbase = (byte *)calloc( hunksize, 1 );
 	if ( !hunkbase ) {
 		Sys_SetError( ERR_OUT_OF_MEMORY );
 		N_Error( ERR_FATAL, "Hunk data failed to allocate %lu megs", hunksize / (1024*1024) );

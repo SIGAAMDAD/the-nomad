@@ -1121,7 +1121,7 @@ static void R_Register( void )
 
     r_shadows = ri.Cvar_Get( "sgame_Shadows", "1", 0 );
 
-    r_maxPolys = ri.Cvar_Get( "r_maxPolys", "1024", CVAR_LATCH | CVAR_PROTECTED );
+    r_maxPolys = ri.Cvar_Get( "r_maxPolys", "528", CVAR_LATCH | CVAR_PROTECTED );
     ri.Cvar_CheckRange( r_maxPolys, "64", "8192", CVT_INT );
     ri.Cvar_SetDescription( r_maxPolys, "Sets the maximum amount of polygons that can be processed per scene.\n"
                                         "NOTE: there can be multiple scenes rendered in a single frame." );
@@ -1132,7 +1132,7 @@ static void R_Register( void )
     r_maxDLights = ri.Cvar_Get( "r_maxDLights", "128", CVAR_LATCH | CVAR_PROTECTED );
     ri.Cvar_SetDescription( r_maxDLights, "Sets the maximum amount of dynamic lights that can be processed per scene.\n"
                                             "NOTE: there can be multiple scenes rendered in a single frame." );
-    r_maxEntities = ri.Cvar_Get( "r_maxEntities", "2048", CVAR_LATCH | CVAR_PROTECTED );
+    r_maxEntities = ri.Cvar_Get( "r_maxEntities", "1024", CVAR_LATCH | CVAR_PROTECTED );
     ri.Cvar_SetDescription( r_maxEntities, "Sets the maximum amount of dynamic entities that can be processed per scene.\n"
                                             "NOTE: there can be multiple scenes rendered in a single frame." );
 
