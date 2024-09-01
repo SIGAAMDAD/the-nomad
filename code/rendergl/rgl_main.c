@@ -243,6 +243,7 @@ void R_DrawPolys( void )
 			backend.drawBatch.idxOffset += 3;
 			
 			// generate normals
+            /*
 			VectorSubtract( backend.refdef.polys[i].verts[ j ].xyz, backend.refdef.polys[i].verts[ j + 1 ].xyz, edge1 );
 			VectorSubtract( backend.refdef.polys[i].verts[ j ].xyz, backend.refdef.polys[i].verts[ j + 2 ].xyz, edge2 );
 			CrossProduct( edge1, edge2, normal );
@@ -251,12 +252,12 @@ void R_DrawPolys( void )
                 backendData->verts[ backend.drawBatch.vtxOffset + j + 0 ].normal );
 			VectorCopy( backendData->verts[ backend.drawBatch.vtxOffset + j + 2 ].normal,
                 backendData->verts[ backend.drawBatch.vtxOffset + j + 0 ].normal );
+            */
 		}
 		
 		for ( j = 0; j < backend.refdef.polys[i].numVerts; j++ ) {
-			VectorCopy( backendData->verts[ backend.drawBatch.vtxOffset ].xyz, backend.refdef.polys[i].verts[j].xyz );
+			VectorCopy2( backendData->verts[ backend.drawBatch.vtxOffset ].xyz, backend.refdef.polys[i].verts[j].xyz );
 			VectorCopy2( backendData->verts[ backend.drawBatch.vtxOffset ].st, backend.refdef.polys[i].verts[j].uv );
-			VectorCopy2( backendData->verts[ backend.drawBatch.vtxOffset ].lightmap, backend.refdef.polys[i].verts[j].uv );
 			VectorCopy( backendData->verts[ backend.drawBatch.vtxOffset ].worldPos, backend.refdef.polys[i].verts[j].worldPos );
 //            VectorCopy4( backendData->verts[ backend.drawBatch.vtxOffset ].color, backend.refdef.polys[i].verts[j].modulate );
 //			R_CalcTangentVectors( (drawVert_t *)&vtx[j] );
@@ -318,6 +319,7 @@ void R_DrawWorld( void )
 
             // generate normals
             // FIXME: this is hideous
+            /*
             if ( &vtx[3] != &rg.world->vertices[rg.world->numVertices] ) {
                 VectorSubtract( vtx->xyz, vtx[1].xyz, edge1 );
                 VectorSubtract( vtx->xyz, vtx[3].xyz, edge2 );
@@ -327,6 +329,7 @@ void R_DrawWorld( void )
                 VectorSubtract( vtx->xyz, vtx[2].xyz, edge2 );
                 CrossProduct( edge1, edge2, normal );
             }
+            */
 
             // check if there's any entities in the way
             VectorSet4( color, 1.0f, 1.0f, 1.0f, 1.0f );
@@ -358,8 +361,8 @@ void R_DrawWorld( void )
                 VectorCopy2( vtx[i].uv, rg.world->sprites[ rg.world->tiles[ y * rg.world->width + x ].index ][i] );
                 VectorSet( vtx[i].worldPos, x, y, 0.0f );
 
-                R_VaoPackNormal( vtx[i].normal, normal );
-                R_CalcTangentVectors( vtx );
+//                R_VaoPackNormal( vtx[i].normal, normal );
+//                R_CalcTangentVectors( vtx );
             }
 
             vtx += 4;

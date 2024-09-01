@@ -190,7 +190,6 @@ static void R_OptimizeVertexCache( void )
 			triangles[i].vertices[j] = pIndices[ i * 3 + j ];
 			++vertices[triangles[i].vertices[j]].numAdjecentTris;
 		}
-		
 		triangles[i].drawn = false;
 	}
 	
@@ -216,7 +215,7 @@ static void R_OptimizeVertexCache( void )
 	int         *LRUCache = ri.Hunk_AllocateTempMemory( LRUCacheSize * sizeof( int ) );
 	float       *scoring = ri.Hunk_AllocateTempMemory( LRUCacheSize * sizeof(float ) );
 	
-	for( i = 0; i < LRUCacheSize; ++i ) {
+	for ( i = 0; i < LRUCacheSize; ++i ) {
 		LRUCache[i] = -1;
 		scoring[i] = -1.0f;
 	}
@@ -228,13 +227,13 @@ static void R_OptimizeVertexCache( void )
 			int vertexIndex = LRUCache[i];
 			if ( vertexIndex != -1 ) {
 				// Do scoring based on cache position
-				if( i < 3 ) {
+				if ( i < 3 ) {
 					scoring[i] = 0.75f;
 				} else {
 					const float scaler = 1.0f / ( LRUCacheSize - 3 );
 					const float scoreBase = 1.0f - ( i - 3 ) * scaler;
 					scoring[i] = powf ( scoreBase, 1.5f );
-				};
+				}
 				// Add score based on tris left for vertex (valence score)
 				const int numTrisLeft = vertices[ vertexIndex ].numTrisLeft;
 				scoring[i] += stsvco_valenceScore(numTrisLeft);
@@ -247,19 +246,19 @@ static void R_OptimizeVertexCache( void )
 		for ( i = 0; i < LRUCacheSize && LRUCache[i] >= 0; ++i ) {
 			const int vIndex = LRUCache[i];
 			
-			if( vertices[vIndex].numTrisLeft > 0 ) {
-				for(int t = 0; t < vertices[vIndex].numAdjecentTris; ++t) {
+			if ( vertices[vIndex].numTrisLeft > 0 ) {
+				for ( int t = 0; t < vertices[vIndex].numAdjecentTris; ++t ) {
 					const int tIndex = vertToTri[ vertices[vIndex].triListIndex + t];
-					if( !triangles[ tIndex ].drawn ) {
+					if ( !triangles[ tIndex ].drawn ) {
 						float triScore = .0f;
-						for(int v = 0; v < 3; ++v) {
+						for ( int v = 0; v < 3; ++v ) {
 							const int cacheIndex = vertices[triangles[ tIndex ].vertices[v]].cacheIndex;
 							if( cacheIndex >= 0) {
 								triScore += scoring[ cacheIndex ];
 							}
 						}
 						
-						if( triScore > bestTriScore ) {
+						if ( triScore > bestTriScore ) {
 							triangleToDraw = tIndex;
 							bestTriScore = triScore;
 						}
@@ -268,19 +267,19 @@ static void R_OptimizeVertexCache( void )
 			}
 		}
 		
-		if( triangleToDraw < 0 ) {
+		if ( triangleToDraw < 0 ) {
 			// No triangle can be found by heuristic, simply choose first and best
-			for(int t = 0; t < numTriangles; ++t ) {
-				if( !triangles[t].drawn ) {
+			for ( int t = 0; t < numTriangles; ++t ) {
+				if ( !triangles[t].drawn ) {
 					//compute valence for each vertex
 					float triScore = .0f;
-					for(int v = 0; v < 3; ++v ) {
-						const unsigned int vertexIndex = triangles[t].vertices[v];
+					for ( int v = 0; v < 3; ++v ) {
+						const uint32_t vertexIndex = triangles[t].vertices[v];
 						// Add score based on tris left for vertex (valence score)
 						const int numTrisLeft = vertices[ vertexIndex ].numTrisLeft;
-						triScore += stsvco_valenceScore(numTrisLeft);
+						triScore += stsvco_valenceScore( numTrisLeft );
 					}
-					if( triScore >= bestTriScore ) {
+					if ( triScore >= bestTriScore ) {
 						triangleToDraw = t;
 						bestTriScore = triScore;
 					}
@@ -302,22 +301,26 @@ static void R_OptimizeVertexCache( void )
 				}
 			}
 			
-			if(!topOfCacheInTri) {
+			if ( !topOfCacheInTri ) {
 				int topIndex = LRUCache[ numVerticesFound ];
-				for( int j = numVerticesFound; j < 2; ++j) {
+				for ( int j = numVerticesFound; j < 2; ++j) {
 					LRUCache[j] = LRUCache[j+1];
 				}
 				LRUCache[2] = LRUCache[cacheIndex];
-				if( LRUCache[2] >= 0) vertices[ LRUCache[2] ].cacheIndex = -1;
+				if ( LRUCache[2] >= 0 ) {
+					vertices[ LRUCache[2] ].cacheIndex = -1;
+				}
 				
 				LRUCache[cacheIndex] = topIndex;
-				if(topIndex >= 0) vertices[ topIndex ].cacheIndex = cacheIndex;
+				if ( topIndex >= 0 ) {
+					vertices[ topIndex ].cacheIndex = cacheIndex;
+				}
 				++cacheIndex;
 			}
 		}
 		
 		// Set triangle as drawn
-		for(int v = 0; v < 3; ++v) {
+		for ( int v = 0; v < 3; ++v ) {
 			const int index = triangles[triangleToDraw].vertices[v];
 			
 			LRUCache[ v ] = index;
@@ -393,71 +396,57 @@ void R_InitWorldBuffer( void )
 
 	// cache the indices so that we aren't calculating these every frame (there could be thousands)
 	for ( i = 0, offset = 0; i < r_worldData.numIndices; i += 6, offset += 4 ) {
-		r_worldData.indices[i + 0] = offset + 0;
-		r_worldData.indices[i + 1] = offset + 1;
-		r_worldData.indices[i + 2] = offset + 2;
+		r_worldData.indices[ i + 0 ] = offset + 0;
+		r_worldData.indices[ i + 1 ] = offset + 1;
+		r_worldData.indices[ i + 2 ] = offset + 2;
 
-		r_worldData.indices[i + 3] = offset + 3;
-		r_worldData.indices[i + 4] = offset + 2;
-		r_worldData.indices[i + 5] = offset + 0;
+		r_worldData.indices[ i + 3 ] = offset + 3;
+		r_worldData.indices[ i + 4 ] = offset + 2;
+		r_worldData.indices[ i + 5 ] = offset + 0;
 	}
 
 	ri.Printf( PRINT_INFO, "Optimizing vertex cache... (Current cache misses: %f)\n", R_CalcCacheEfficiency() );
 	R_OptimizeVertexCache();
 	ri.Printf( PRINT_INFO, "Optimized cache misses: %f\n", R_CalcCacheEfficiency() );
 
-	r_worldData.buffer = R_AllocateBuffer( "worldDrawBuffer", NULL, r_worldData.numVertices * sizeof(drawVert_t), NULL,
-		r_worldData.numIndices * sizeof( glIndex_t ), BUFFER_FRAME );
+	r_worldData.buffer = R_AllocateBuffer( "worldDrawBuffer", NULL, r_worldData.numVertices * sizeof( drawVert_t ),
+		NULL, r_worldData.numIndices * sizeof( glIndex_t ), BUFFER_FRAME );
 	
 	attribs = r_worldData.buffer->attribs;
 
 	attribs[ATTRIB_INDEX_POSITION].enabled		= qtrue;
 	attribs[ATTRIB_INDEX_TEXCOORD].enabled		= qtrue;
 	attribs[ATTRIB_INDEX_COLOR].enabled			= qtrue;
-	attribs[ATTRIB_INDEX_NORMAL].enabled		= qtrue;
 	attribs[ATTRIB_INDEX_WORLDPOS].enabled      = qtrue;
-	attribs[ATTRIB_INDEX_TANGENT].enabled       = qtrue;
 
-	attribs[ATTRIB_INDEX_POSITION].count		= 3;
+	attribs[ATTRIB_INDEX_POSITION].count		= 2;
 	attribs[ATTRIB_INDEX_TEXCOORD].count		= 2;
 	attribs[ATTRIB_INDEX_COLOR].count			= 4;
-	attribs[ATTRIB_INDEX_NORMAL].count			= 4;
 	attribs[ATTRIB_INDEX_WORLDPOS].count        = 3;
-	attribs[ATTRIB_INDEX_TANGENT].count			= 4;
 
 	attribs[ATTRIB_INDEX_POSITION].type			= GL_FLOAT;
 	attribs[ATTRIB_INDEX_TEXCOORD].type			= GL_FLOAT;
 	attribs[ATTRIB_INDEX_COLOR].type			= GL_UNSIGNED_SHORT;
-	attribs[ATTRIB_INDEX_NORMAL].type			= GL_SHORT;
 	attribs[ATTRIB_INDEX_WORLDPOS].type         = GL_FLOAT;
-	attribs[ATTRIB_INDEX_TANGENT].type          = GL_SHORT;
 
 	attribs[ATTRIB_INDEX_POSITION].index		= ATTRIB_INDEX_POSITION;
 	attribs[ATTRIB_INDEX_TEXCOORD].index		= ATTRIB_INDEX_TEXCOORD;
 	attribs[ATTRIB_INDEX_COLOR].index			= ATTRIB_INDEX_COLOR;
-	attribs[ATTRIB_INDEX_NORMAL].index			= ATTRIB_INDEX_NORMAL;
 	attribs[ATTRIB_INDEX_WORLDPOS].index        = ATTRIB_INDEX_WORLDPOS;
-	attribs[ATTRIB_INDEX_TANGENT].index         = ATTRIB_INDEX_TANGENT;
 
 	attribs[ATTRIB_INDEX_POSITION].normalized	= GL_FALSE;
 	attribs[ATTRIB_INDEX_TEXCOORD].normalized	= GL_FALSE;
 	attribs[ATTRIB_INDEX_COLOR].normalized		= GL_TRUE;
-	attribs[ATTRIB_INDEX_NORMAL].normalized		= GL_TRUE;
 	attribs[ATTRIB_INDEX_WORLDPOS].normalized   = GL_FALSE;
-	attribs[ATTRIB_INDEX_TANGENT].normalized    = GL_TRUE;
 
 	attribs[ATTRIB_INDEX_POSITION].offset		= offsetof( drawVert_t, xyz );
 	attribs[ATTRIB_INDEX_TEXCOORD].offset		= offsetof( drawVert_t, uv );
 	attribs[ATTRIB_INDEX_COLOR].offset			= offsetof( drawVert_t, color );
-	attribs[ATTRIB_INDEX_NORMAL].offset			= offsetof( drawVert_t, normal );
 	attribs[ATTRIB_INDEX_WORLDPOS].offset       = offsetof( drawVert_t, worldPos );
-	attribs[ATTRIB_INDEX_TANGENT].offset        = offsetof( drawVert_t, tangent );
 
 	attribs[ATTRIB_INDEX_POSITION].stride		= sizeof( drawVert_t );
 	attribs[ATTRIB_INDEX_TEXCOORD].stride		= sizeof( drawVert_t );
 	attribs[ATTRIB_INDEX_COLOR].stride			= sizeof( drawVert_t );
-	attribs[ATTRIB_INDEX_NORMAL].stride			= sizeof( drawVert_t );
-	attribs[ATTRIB_INDEX_WORLDPOS].stride       = sizeof( drawVert_t );
 	attribs[ATTRIB_INDEX_WORLDPOS].stride       = sizeof( drawVert_t );
 }
 

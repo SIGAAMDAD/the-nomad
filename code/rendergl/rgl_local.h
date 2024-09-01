@@ -444,10 +444,9 @@ typedef struct dlight_s {
 } dlight_t;
 
 // normal is unused
-typedef struct
-{
-    vec3_t          xyz;
+typedef struct {
     vec3_t          worldPos;
+	vec2_t          xyz;
 	vec2_t          uv;
 	vec2_t          lightmap;
 	int16_t         normal[4];
@@ -465,8 +464,8 @@ typedef struct {
 } srfPoly_t;
 
 typedef struct {
-    vec3_t          xyz;
     vec3_t          worldPos;
+	vec2_t          xyz;
 	vec2_t          st;
 	vec2_t          lightmap;
 	int16_t         normal[4];
@@ -607,8 +606,7 @@ typedef enum {
 } deform_t;
 
 // deformVertexes types that can be handled by the GPU
-typedef enum
-{
+typedef enum {
 	// do not edit: same as genFunc_t
 
 	DGEN_NONE,
@@ -1022,9 +1020,6 @@ typedef struct {
     void *indices;              // address of the client indices
 
     vertexBuffer_t *buffer;     // the buffer handle we're using for this batch
-
-    glRingbuffer_t vertexRB;
-    glRingbuffer_t indexRB;
 
     shader_t *shader;
 

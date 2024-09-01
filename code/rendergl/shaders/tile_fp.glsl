@@ -35,7 +35,7 @@ in vec2 v_TexCoords;
 in vec3 v_FragPos;
 in vec4 v_Color;
 in vec3 v_WorldPos;
-in vec3 v_Position;
+in vec2 v_Position;
 
 struct Light {
     vec4 color;
@@ -399,18 +399,18 @@ float CalcLayeredFogFactor()
 */
 
 vec3 CalcFogFactor() {
-    vec3 rayDir = v_Position - u_ViewOrigin;
+    vec3 rayDir = v_WorldPos - u_ViewOrigin;
     float dist = length( rayDir );
 
     const float maxFogHeight = 900;
     const float c = 1.0;
     const float b = 1.0;
 
-    if ( v_Position.z >= maxFogHeight - 1 / c ) {
+    if ( v_WorldPos.z >= maxFogHeight - 1 / c ) {
         return vec3( 1.0 );
     }
 
-    float distInFog = dist * ( maxFogHeight - v_Position.z ) / ( v_Position.z - u_ViewOrigin.z );
+    float distInFog = dist * ( maxFogHeight - v_WorldPos.z ) / ( v_WorldPos.z - u_ViewOrigin.z );
 
     float fogAmount = ( log( distInFog * c ) - 1 ) * b;
 

@@ -89,7 +89,6 @@ void VBO_SetVertexPointers( vertexBuffer_t *vbo, uint32_t attribBits )
 	vbo->attribs[ ATTRIB_INDEX_POSITION ].enabled = attribBits & ATTRIB_POSITION;
 	vbo->attribs[ ATTRIB_INDEX_TEXCOORD ].enabled = attribBits & ATTRIB_TEXCOORD;
 	vbo->attribs[ ATTRIB_INDEX_COLOR ].enabled = attribBits & ATTRIB_COLOR;
-	vbo->attribs[ ATTRIB_INDEX_LIGHTCOORD ].enabled = attribBits & ATTRIB_LIGHTCOORD;
 	vbo->attribs[ ATTRIB_INDEX_WORLDPOS ].enabled = attribBits & ATTRIB_WORLDPOS;
 
 	R_SetVertexPointers( vbo->attribs );
@@ -244,49 +243,36 @@ void R_InitGPUBuffers( void )
 	backend.drawBuffer->attribs[ATTRIB_INDEX_POSITION].enabled		= qtrue;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_TEXCOORD].enabled		= qtrue;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_COLOR].enabled			= qtrue;
-	backend.drawBuffer->attribs[ATTRIB_INDEX_NORMAL].enabled		= qfalse;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_WORLDPOS].enabled		= qtrue;
-	backend.drawBuffer->attribs[ATTRIB_INDEX_LIGHTCOORD].enabled	= qfalse;
 
-	backend.drawBuffer->attribs[ATTRIB_INDEX_POSITION].count		= 3;
+	backend.drawBuffer->attribs[ATTRIB_INDEX_POSITION].count		= 2;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_TEXCOORD].count		= 2;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_COLOR].count			= 4;
-	backend.drawBuffer->attribs[ATTRIB_INDEX_NORMAL].count			= 4;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_WORLDPOS].count		= 3;
-	backend.drawBuffer->attribs[ATTRIB_INDEX_LIGHTCOORD].count		= 4;
 
 	backend.drawBuffer->attribs[ATTRIB_INDEX_POSITION].type			= GL_FLOAT;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_TEXCOORD].type			= GL_FLOAT;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_COLOR].type			= GL_UNSIGNED_SHORT;
-	backend.drawBuffer->attribs[ATTRIB_INDEX_NORMAL].type			= GL_SHORT;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_WORLDPOS].type			= GL_FLOAT;
-	backend.drawBuffer->attribs[ATTRIB_INDEX_LIGHTCOORD].type		= GL_FLOAT;
 
 	backend.drawBuffer->attribs[ATTRIB_INDEX_POSITION].index		= ATTRIB_INDEX_POSITION;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_TEXCOORD].index		= ATTRIB_INDEX_TEXCOORD;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_COLOR].index			= ATTRIB_INDEX_COLOR;
-	backend.drawBuffer->attribs[ATTRIB_INDEX_NORMAL].index			= ATTRIB_INDEX_NORMAL;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_WORLDPOS].index		= ATTRIB_INDEX_WORLDPOS;
-	backend.drawBuffer->attribs[ATTRIB_INDEX_LIGHTCOORD].index		= ATTRIB_INDEX_LIGHTCOORD;
 
 	backend.drawBuffer->attribs[ATTRIB_INDEX_POSITION].normalized	= GL_FALSE;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_TEXCOORD].normalized	= GL_FALSE;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_COLOR].normalized		= GL_TRUE;
-	backend.drawBuffer->attribs[ATTRIB_INDEX_NORMAL].normalized		= GL_TRUE;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_WORLDPOS].normalized	= GL_FALSE;
-	backend.drawBuffer->attribs[ATTRIB_INDEX_LIGHTCOORD].normalized = GL_FALSE;
 
 	backend.drawBuffer->attribs[ATTRIB_INDEX_POSITION].offset		= offsetof( srfVert_t, xyz );
 	backend.drawBuffer->attribs[ATTRIB_INDEX_TEXCOORD].offset		= offsetof( srfVert_t, st );
 	backend.drawBuffer->attribs[ATTRIB_INDEX_COLOR].offset			= offsetof( srfVert_t, color );
-	backend.drawBuffer->attribs[ATTRIB_INDEX_NORMAL].offset			= offsetof( srfVert_t, normal );
 	backend.drawBuffer->attribs[ATTRIB_INDEX_WORLDPOS].offset		= offsetof( srfVert_t, worldPos );
-	backend.drawBuffer->attribs[ATTRIB_INDEX_LIGHTCOORD].offset     = offsetof( srfVert_t, lightmap );
 
 	backend.drawBuffer->attribs[ATTRIB_INDEX_POSITION].stride		= sizeof( srfVert_t );
 	backend.drawBuffer->attribs[ATTRIB_INDEX_TEXCOORD].stride		= sizeof( srfVert_t );
 	backend.drawBuffer->attribs[ATTRIB_INDEX_COLOR].stride			= sizeof( srfVert_t );
-	backend.drawBuffer->attribs[ATTRIB_INDEX_NORMAL].stride			= sizeof( srfVert_t );
 	backend.drawBuffer->attribs[ATTRIB_INDEX_WORLDPOS].stride		= sizeof( srfVert_t );
 
 	VBO_SetVertexAttribPointers( backend.drawBuffer );
