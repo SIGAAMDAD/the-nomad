@@ -36,8 +36,8 @@
 #define DYN_BUFFER_SIZE ( 4 * 1024 * 1024 )
 #define DYN_BUFFER_SEGMENTS 4
 
-#define GLN_INDEX_TYPE GL_UNSIGNED_INT
-typedef uint32_t glIndex_t;
+#define GLN_INDEX_TYPE GL_UNSIGNED_SHORT
+typedef uint16_t glIndex_t;
 
 // set a hard limit of 2 MiB per uniform buffer
 #define MAX_UNIFORM_BUFFER_SIZE ( 2*1024*1024 )

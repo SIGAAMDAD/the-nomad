@@ -150,7 +150,7 @@ float stsvco_valenceScore( const int numTris ) {
 
 static void R_OptimizeVertexCache( void )
 {
-	uint32_t *pIndices;
+	glIndex_t *pIndices;
 	drawVert_t *pVerts;
 	uint64_t i, j;
 
@@ -168,7 +168,7 @@ static void R_OptimizeVertexCache( void )
 
 	vertex_t *vertices;
 	triangle_t *triangles;
-	unsigned int *vertToTri;
+	uint32_t *vertToTri;
 
 	const int numTriangles = r_worldData.numIndices / 3;
 
@@ -192,7 +192,7 @@ static void R_OptimizeVertexCache( void )
 		}
 		
 		triangles[i].drawn = false;
-	};
+	}
 	
 	// Loop through and find index for the tri list for vertex->tri
 	for( i = 1; i < r_worldData.numVertices; ++i ) {
@@ -391,6 +391,24 @@ void R_InitWorldBuffer( void )
 	r_worldData.indices = ri.Hunk_Alloc( sizeof( glIndex_t ) * r_worldData.numIndices, h_low );
 	r_worldData.vertices = ri.Hunk_Alloc( sizeof( drawVert_t ) * r_worldData.numVertices, h_low );
 
+	// cache the indices so that we aren't calculating these every frame (there could be thousands)
+	for ( i = 0, offset = 0; i < r_worldData.numIndices; i += 6, offset += 4 ) {
+		r_worldData.indices[i + 0] = offset + 0;
+		r_worldData.indices[i + 1] = offset + 1;
+		r_worldData.indices[i + 2] = offset + 2;
+
+		r_worldData.indices[i + 3] = offset + 3;
+		r_worldData.indices[i + 4] = offset + 2;
+		r_worldData.indices[i + 5] = offset + 0;
+	}
+
+	ri.Printf( PRINT_INFO, "Optimizing vertex cache... (Current cache misses: %f)\n", R_CalcCacheEfficiency() );
+	R_OptimizeVertexCache();
+	ri.Printf( PRINT_INFO, "Optimized cache misses: %f\n", R_CalcCacheEfficiency() );
+
+	r_worldData.buffer = R_AllocateBuffer( "worldDrawBuffer", NULL, r_worldData.numVertices * sizeof(drawVert_t), NULL,
+		r_worldData.numIndices * sizeof( glIndex_t ), BUFFER_FRAME );
+	
 	attribs = r_worldData.buffer->attribs;
 
 	attribs[ATTRIB_INDEX_POSITION].enabled		= qtrue;
@@ -441,24 +459,6 @@ void R_InitWorldBuffer( void )
 	attribs[ATTRIB_INDEX_NORMAL].stride			= sizeof( drawVert_t );
 	attribs[ATTRIB_INDEX_WORLDPOS].stride       = sizeof( drawVert_t );
 	attribs[ATTRIB_INDEX_WORLDPOS].stride       = sizeof( drawVert_t );
-
-	// cache the indices so that we aren't calculating these every frame (there could be thousands)
-	for ( i = 0, offset = 0; i < r_worldData.numIndices; i += 6, offset += 4 ) {
-		r_worldData.indices[i + 0] = offset + 0;
-		r_worldData.indices[i + 1] = offset + 1;
-		r_worldData.indices[i + 2] = offset + 2;
-
-		r_worldData.indices[i + 3] = offset + 3;
-		r_worldData.indices[i + 4] = offset + 2;
-		r_worldData.indices[i + 5] = offset + 0;
-	}
-
-	ri.Printf( PRINT_INFO, "Optimizing vertex cache... (Current cache misses: %f)\n", R_CalcCacheEfficiency() );
-	R_OptimizeVertexCache();
-	ri.Printf( PRINT_INFO, "Optimized cache misses: %f\n", R_CalcCacheEfficiency() );
-
-	r_worldData.buffer = R_AllocateBuffer( "worldDrawBuffer", NULL, r_worldData.numVertices * sizeof(drawVert_t), NULL,
-		r_worldData.numIndices * sizeof( glIndex_t ), BUFFER_FRAME );
 }
 
 static void R_ProcessLights( void )

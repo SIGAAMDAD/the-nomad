@@ -882,7 +882,7 @@ static const void *RB_DrawImage( const void *data ) {
 	const drawImageCmd_t *cmd;
 	shader_t *shader;
 	srfVert_t *verts;
-	uint32_t *indices;
+	glIndex_t *indices;
 	uint32_t numVerts, numIndices;
 	int i;
 
