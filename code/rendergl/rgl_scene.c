@@ -187,18 +187,18 @@ void RE_ProcessDLights( void )
     shaderLight_t *gpuLight;
     uint64_t i;
 
-    if ( !r_numDLights || !backend.refdef.numDLights || ( backend.refdef.flags & RSF_ORTHO_BITS ) != RSF_ORTHO_TYPE_WORLD ) {
-        return;
-    }
-
-    dlight = backend.refdef.dlights;
-    gpuLight = (shaderLight_t *)rg.lightData->data + rg.world->numLights;
-
-    for ( i = 0; i < backend.refdef.numDLights; i++ ) {
-        if ( r_numDLights >= r_maxDLights->i || r_numDLights + rg.world->numLights >= MAX_MAP_LIGHTS ) {
-
-        }
-    }
+//    if ( !r_numDLights || !backend.refdef.numDLights || ( backend.refdef.flags & RSF_ORTHO_BITS ) != RSF_ORTHO_TYPE_WORLD ) {
+//        return;
+//    }
+//
+//    dlight = backend.refdef.dlights;
+//    gpuLight = (shaderLight_t *)rg.lightData->data + rg.world->numLights;
+//
+//    for ( i = 0; i < backend.refdef.numDLights; i++ ) {
+//        if ( r_numDLights >= r_maxDLights->i || r_numDLights + rg.world->numLights >= MAX_MAP_LIGHTS ) {
+//
+//        }
+//    }
 }
 
 void RE_ProcessEntities( void )
