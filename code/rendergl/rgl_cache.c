@@ -89,7 +89,6 @@ void VBO_SetVertexPointers( vertexBuffer_t *vbo, uint32_t attribBits )
 	vbo->attribs[ ATTRIB_INDEX_POSITION ].enabled = attribBits & ATTRIB_POSITION;
 	vbo->attribs[ ATTRIB_INDEX_TEXCOORD ].enabled = attribBits & ATTRIB_TEXCOORD;
 	vbo->attribs[ ATTRIB_INDEX_COLOR ].enabled = attribBits & ATTRIB_COLOR;
-	vbo->attribs[ ATTRIB_INDEX_LIGHTCOORD ].enabled = attribBits & ATTRIB_LIGHTCOORD;
 	vbo->attribs[ ATTRIB_INDEX_WORLDPOS ].enabled = attribBits & ATTRIB_WORLDPOS;
 
 	R_SetVertexPointers( vbo->attribs );

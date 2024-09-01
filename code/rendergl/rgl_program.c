@@ -777,7 +777,7 @@ static int GLSL_InitGPUShader2( shaderProgram_t *program, const char *name, uint
 		}
 	}
 
-	if (fsCode) {
+	if ( fsCode ) {
 		if (!(GLSL_CompileGPUShader(program->programId, &program->fragmentId, fsCode, strlen(fsCode),
 			GL_FRAGMENT_SHADER, name, fromCache ) ) )
 		{
@@ -787,17 +787,8 @@ static int GLSL_InitGPUShader2( shaderProgram_t *program, const char *name, uint
 		}
 	}
 
-	if ( attribs & ATTRIB_NORMAL ) {
-		nglBindAttribLocation( program->programId, ATTRIB_INDEX_NORMAL, "a_Normal" );
-	}
 	if ( attribs & ATTRIB_POSITION ) {
 		nglBindAttribLocation( program->programId, ATTRIB_INDEX_POSITION, "a_Position" );
-	}
-	if ( attribs & ATTRIB_TANGENT ) {
-		nglBindAttribLocation( program->programId, ATTRIB_INDEX_TANGENT, "a_Tangent" );
-	}
-	if ( attribs & ATTRIB_LIGHTCOORD ) {
-		nglBindAttribLocation( program->programId, ATTRIB_INDEX_LIGHTCOORD, "a_LightCoords" );
 	}
 	if ( attribs & ATTRIB_TEXCOORD ) {
 		nglBindAttribLocation( program->programId, ATTRIB_INDEX_TEXCOORD, "a_TexCoords" );
@@ -1087,13 +1078,11 @@ void GLSL_ShaderBufferData( shaderProgram_t *shader, uint32_t uniformNum, unifor
 {
 	GLint *uniforms;
 	GLuint bufferObject;
-	GLenum target;
 
 	GLSL_UseProgram( shader );
 
 	uniforms = shader->uniforms;
 	bufferObject = buffer ? buffer->id : 0;
-	target = r_arb_shader_storage_buffer_object->i ? GL_SHADER_STORAGE_BUFFER : GL_UNIFORM_BUFFER;
 
 	if ( buffer->binding == -1 ) {
 		ri.Printf( PRINT_WARNING, "Bad binding for uniform buffer '%s'\n", buffer->name );
@@ -1105,14 +1094,10 @@ void GLSL_ShaderBufferData( shaderProgram_t *shader, uint32_t uniformNum, unifor
 		return;
 	}
 
-	nglBindBuffer( target, buffer->id );
-	if ( r_arb_shader_storage_buffer_object->i ) {
-		nglBufferData( target, nSize, buffer->data, GL_DYNAMIC_DRAW );
-	} else {
-		nglBufferData( target, nSize, NULL, GL_DYNAMIC_DRAW );
-		nglBufferSubData( target, 0, nSize, buffer->data );
-	}
-	nglBindBuffer( target, 0 );
+	nglBindBuffer( GL_UNIFORM_BUFFER, buffer->id );
+	nglBufferData( GL_UNIFORM_BUFFER, nSize, NULL, GL_STATIC_DRAW );
+	nglBufferSubData( GL_UNIFORM_BUFFER, 0, nSize, buffer->data );
+	nglBindBuffer( GL_UNIFORM_BUFFER, 0 );
 }
 
 void GLSL_LinkUniformToShader( shaderProgram_t *program, uint32_t uniformNum, uniformBuffer_t *buffer )
@@ -1120,12 +1105,6 @@ void GLSL_LinkUniformToShader( shaderProgram_t *program, uint32_t uniformNum, un
 	GLint *uniforms = program->uniforms;
 	GLuint *compare = (GLuint *)( program->uniformBuffer + program->uniformBufferOffsets[ uniformNum ] );
 	GLenum target;
-
-	if ( r_arb_shader_storage_buffer_object->i ) {
-		target = GL_SHADER_STORAGE_BUFFER;
-	} else {
-		target = GL_UNIFORM_BUFFER;
-	}
 
 	GLSL_UseProgram( program );
 
@@ -1138,12 +1117,10 @@ void GLSL_LinkUniformToShader( shaderProgram_t *program, uint32_t uniformNum, un
 	}
 //    nglUniformBlockBinding( program->programId, buffer->binding, program->numBuffers );
 
-	nglBindBuffer( target, buffer->id );
-	if ( !r_arb_shader_storage_buffer_object->i ) {
-		nglBindBufferRange( target, 0, buffer->id, 0, buffer->size );
-	}
-	nglBindBufferBase( target, 0, buffer->id );
-	nglBindBuffer( target, 0 );
+	nglBindBuffer( GL_UNIFORM_BUFFER, buffer->id );
+	nglBindBufferRange( GL_UNIFORM_BUFFER, 0, buffer->id, 0, buffer->size );
+	nglBindBufferBase( GL_UNIFORM_BUFFER, 0, buffer->id );
+	nglBindBuffer( GL_UNIFORM_BUFFER, 0 );
 
 	GL_CheckErrors();
 	
@@ -1180,31 +1157,21 @@ uniformBuffer_t *GLSL_InitUniformBuffer( const char *name, byte *buffer, uint64_
 	memset( buf, 0, size );
 
 	buf->name = (char *)( buf + 1 );
-	if ( !r_arb_shader_storage_buffer_object->i ) {
-		if ( !buffer ) {
-			buf->data = (byte *)ri.Hunk_Alloc( bufSize, h_low );
-		} else {
-			buf->data = buffer;
-		}
+	if ( !buffer ) {
+		buf->data = (byte *)ri.Hunk_Alloc( bufSize, h_low );
+	} else {
+		buf->data = buffer;
 	}
 	buf->size = bufSize;
 	strcpy( buf->name, name );
 
 	buf->externalBuffer = buffer != NULL;
 
-	if ( r_arb_shader_storage_buffer_object->i ) {
-		target = GL_SHADER_STORAGE_BUFFER;
-	} else {
-		target = GL_UNIFORM_BUFFER;
-	}
-
 	// generate buffer
 	nglGenBuffers( 1, &buf->id );
-	nglBindBuffer( target, buf->id );
-	if ( !r_arb_shader_storage_buffer_object->i ) {
-		nglBufferData( target, bufSize, buffer, GL_DYNAMIC_DRAW );
-	}
-	nglBindBuffer( target, 0 );
+	nglBindBuffer( GL_UNIFORM_BUFFER, buf->id );
+	nglBufferData( GL_UNIFORM_BUFFER, bufSize, buffer, GL_DYNAMIC_DRAW );
+	nglBindBuffer( GL_UNIFORM_BUFFER, 0 );
 
 	GLSL_UseProgram( NULL );
 
@@ -1243,11 +1210,7 @@ void GLSL_InitGPUShaders( void )
 
 		extradefines[0] = '\0';
 
-		if ( r_arb_shader_storage_buffer_object->i ) {
-			N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_SSBO\n" );
-		} else {
-			N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define MAX_MAP_LIGHTS %i\n", MAX_MAP_LIGHTS ) );
-		}
+		N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define MAX_MAP_LIGHTS %i\n", MAX_MAP_LIGHTS ) );
 		N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define POINT_LIGHT %i\n", LIGHT_POINT ) );
 		N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define DIRECTION_LIGHT %i\n", LIGHT_DIRECTIONAL ) );
 
@@ -1312,11 +1275,7 @@ void GLSL_InitGPUShaders( void )
 		attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_COLOR;
 		extradefines[0] = '\0';
 
-		if ( r_arb_shader_storage_buffer_object->i ) {
-			N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_SSBO\n" );
-		} else {
-			N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define MAX_MAP_LIGHTS %i\n", MAX_MAP_LIGHTS ) );
-		}
+		N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define MAX_MAP_LIGHTS %i\n", MAX_MAP_LIGHTS ) );
 		N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define POINT_LIGHT %i\n", LIGHT_POINT ) );
 		N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define DIRECTION_LIGHT %i\n", LIGHT_DIRECTIONAL ) );
 
@@ -1351,8 +1310,6 @@ void GLSL_InitGPUShaders( void )
 
 			if ( r_normalMapping->i ) {
 				N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_NORMALMAP\n" );
-
-				attribs |= ATTRIB_TANGENT;
 				
 				if ( ( i & LIGHTDEF_USE_PARALLAXMAP ) && r_parallaxMapping->i ) {
 					N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_PARALLAXMAP\n" );
@@ -1476,11 +1433,7 @@ void GLSL_InitGPUShaders( void )
 
 	extradefines[0] = '\0';
 	N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_LIGHT\n" );
-	if ( r_arb_shader_storage_buffer_object->i ) {
-		N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_SSBO\n" );
-	} else {
-		N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define MAX_MAP_LIGHTS %i\n", MAX_MAP_LIGHTS ) );
-	}
+	N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define MAX_MAP_LIGHTS %i\n", MAX_MAP_LIGHTS ) );
 	N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define POINT_LIGHT %i\n", LIGHT_POINT ) );
 	N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define DIRECTION_LIGHT %i\n", LIGHT_DIRECTIONAL ) );
 	if ( r_normalMapping->i ) {

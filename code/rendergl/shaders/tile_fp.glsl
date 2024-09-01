@@ -48,15 +48,9 @@ struct Light {
 	int type;
 };
 
-#if defined(USE_SSBO)
-layout( std140, binding = 0 ) buffer u_LightBuffer {
-	Light u_LightData[];
-};
-#else
 layout( std140, binding = 0 ) uniform u_LightBuffer {
 	Light u_LightData[ MAX_MAP_LIGHTS ];
 };
-#endif
 
 #if defined(USE_UBO)
 

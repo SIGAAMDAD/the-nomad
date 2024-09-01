@@ -235,21 +235,15 @@ enum {
 enum
 {
     ATTRIB_POSITION             = BIT( ATTRIB_INDEX_POSITION ),
-    ATTRIB_NORMAL               = BIT( ATTRIB_INDEX_NORMAL ),
 	ATTRIB_TEXCOORD             = BIT( ATTRIB_INDEX_TEXCOORD ),
     ATTRIB_COLOR                = BIT( ATTRIB_INDEX_COLOR ),
     ATTRIB_WORLDPOS             = BIT( ATTRIB_INDEX_WORLDPOS ),
-    ATTRIB_LIGHTCOORD           = BIT( ATTRIB_INDEX_LIGHTCOORD ),
-    ATTRIB_TANGENT              = BIT( ATTRIB_INDEX_TANGENT ),
-    ATTRIB_BITANGENT            = BIT( ATTRIB_INDEX_BITANGENT ),
 
 	ATTRIB_BITS =
         ATTRIB_POSITION |
         ATTRIB_TEXCOORD | 
         ATTRIB_COLOR |
-        ATTRIB_NORMAL |
-        ATTRIB_WORLDPOS |
-        ATTRIB_LIGHTCOORD
+        ATTRIB_WORLDPOS
 };
 
 typedef enum {
@@ -991,9 +985,6 @@ typedef struct {
     drawVert_t *vertices;
     uint64_t numVertices;
 
-    spriteCoord_t *sprites;
-    uint32_t numSprites;
-
     // frame based draw data
     shader_t *shader;
     vertexBuffer_t *buffer;
@@ -1145,60 +1136,13 @@ typedef struct
 	texture_t				*renderImage;
 	texture_t				*renderDepthImage;
 	texture_t				*hdrDepthImage;
-	/*
-    texture_t               *bloomImage;
-	texture_t				*sunRaysImage;
-	texture_t				*pshadowMaps[MAX_DRAWN_PSHADOWS];
-	texture_t				*screenScratchImage;
-	texture_t				*textureScratchImage[2];
-	texture_t               *quarterImage[2];
-	texture_t				*calcLevelsImage;
-	texture_t				*targetLevelsImage;
-	texture_t				*fixedLevelsImage;
-	texture_t				*sunShadowDepthImage[4];
-	texture_t               *screenShadowImage;
-	texture_t               *screenSsaoImage;
-    texture_t               *smaaEdgesImage;
-    texture_t               *smaaBlendImage;
-    texture_t               *smaaAreaImage;
-    texture_t               *smaaSearchImage;
-    texture_t               *smaaWeightsImage;
-	*/
-//    texture_t               *blurImage[2];
-	
-//	texture_t				*textureDepthImage;
 
 
 	fbo_t					*renderFbo;
 	fbo_t					*msaaResolveFbo;
 	fbo_t                   *ssaaResolveFbo;
-/*
-	fbo_t                   *smaaEdgesFbo;
-    fbo_t                   *smaaWeightsFbo;
-    fbo_t                   *smaaBlendFbo;
-	fbo_t					*depthFbo;
-	fbo_t					*pshadowFbos[MAX_DRAWN_PSHADOWS];
-	fbo_t					*screenScratchFbo;
-	fbo_t					*textureScratchFbo[2];
-	fbo_t                   *quarterFbo[2];
-	fbo_t					*calcLevelsFbo;
-	fbo_t					*sunRaysFbo;
-	fbo_t					*targetLevelsFbo;
-	fbo_t					*sunShadowFbo[4];
-	fbo_t					*screenShadowFbo;
-	fbo_t					*screenSsaoFbo;
-	fbo_t					*hdrDepthFbo;
-    fbo_t                   *blurFbo[2];
-//	fbo_t                   *renderCubeFbo;
-*/
 
 	shader_t				*defaultShader;
-//	shader_t				*shadowShader;
-//	shader_t				*projectionShadowShader;
-
-//	shader_t				*flareShader;
-//	shader_t				*sunShader;
-//	shader_t				*sunFlareShader;
 
 	uint32_t				numLightmaps;
 	uint32_t				lightmapSize;

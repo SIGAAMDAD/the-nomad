@@ -42,22 +42,21 @@ static void R_LoadTiles( const lump_t *tiles )
 	memcpy(out, in, count*sizeof(*out));
 }
 
-static void R_LoadTileset( const lump_t *sprites, const tile2d_header_t *theader )
+static spriteCoord_t *R_LoadTileset( const lump_t *sprites, const tile2d_header_t *theader )
 {
 	uint32_t count, i;
-	spriteCoord_t *in,*out;
+	spriteCoord_t *in, *out;
 
-	in = (spriteCoord_t *)(fileBase + sprites->fileofs);
+	in = (spriteCoord_t *)( fileBase + sprites->fileofs );
 	if (sprites->length % sizeof(*out))
 		ri.Error(ERR_DROP, "RE_LoadWorldMap: funny lump size (tileset) in %s", r_worldData.name);
 	
 	count = sprites->length / sizeof(*in);
-	out = ri.Hunk_Alloc( sizeof(*out) * count, h_low );
+	out = ri.Hunk_AllocateTempMemory( sizeof( *out ) * count );
 
-	r_worldData.sprites = out;
-	r_worldData.numSprites = count;
-
-	memcpy( out, in, count * sizeof( *out ) );
+	memcpy( out, in, sizeof( *out ) * count );
+	
+	return out;
 }
 
 static void R_CalcSpriteTextureCoords( uint32_t x, uint32_t y, uint32_t spriteWidth, uint32_t spriteHeight,
@@ -81,7 +80,7 @@ static void R_CalcSpriteTextureCoords( uint32_t x, uint32_t y, uint32_t spriteWi
 	(*texCoords)[3][1] = max[1];
 }
 
-static void R_GenerateTexCoords( tile2d_info_t *info )
+static void R_GenerateTexCoords( tile2d_info_t *info, spriteCoord_t *sprites )
 {
 	uint32_t y, x;
 	uint32_t i;
@@ -89,6 +88,7 @@ static void R_GenerateTexCoords( tile2d_info_t *info )
 	const texture_t *image;
 	char texture[MAX_NPATH];
 	vec3_t tmp1, tmp2;
+	drawVert_t *vtx;
 
 	COM_StripExtension( info->texture, texture, sizeof( texture ) );
 	if ( texture[ strlen( texture ) - 1 ] == '.' ) {
@@ -115,33 +115,32 @@ static void R_GenerateTexCoords( tile2d_info_t *info )
 	for ( y = 0; y < info->tileCountY; y++ ) {
 		for ( x = 0; x < info->tileCountX; x++ ) {
 			R_CalcSpriteTextureCoords( x, y, info->tileWidth, info->tileHeight, sheetWidth, sheetHeight,
-				&r_worldData.sprites[ y * info->tileCountX + x ] );
+				&sprites[ y * info->tileCountX + x ] );
 		}
 	}
-
+	
+	vtx = r_worldData.vertices;
 	for ( y = 0; y < r_worldData.height; y++ ) {
 		for ( x = 0; x < r_worldData.width; x++ ) {
 			VectorCopy2( r_worldData.tiles[ y * r_worldData.width + x ].texcoords[0],
-				r_worldData.sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][0] );
+				sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][0] );
 			VectorCopy2( r_worldData.tiles[ y * r_worldData.width + x ].texcoords[1],
-				r_worldData.sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][1] );
+				sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][1] );
 			VectorCopy2( r_worldData.tiles[ y * r_worldData.width + x ].texcoords[2],
-				r_worldData.sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][2] );
+				sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][2] );
 			VectorCopy2( r_worldData.tiles[ y * r_worldData.width + x ].texcoords[3],
-				r_worldData.sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][0] );
-//            memcpy( r_worldData.tiles[ y * r_worldData.width + x ].texcoords,
-//                r_worldData.sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ], sizeof( spriteCoord_t ) );
+				sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][3] );
 
-			VectorCopy2( r_worldData.vertices[ ( y * r_worldData.width + x ) + 0].uv,
-				r_worldData.tiles[y * r_worldData.width + x].texcoords[0] );
-			VectorCopy2( r_worldData.vertices[( y * r_worldData.width + x ) + 1].uv,
-				r_worldData.tiles[y * r_worldData.width + x].texcoords[1] );
-			VectorCopy2( r_worldData.vertices[( y * r_worldData.width + x ) + 2].uv,
-				r_worldData.tiles[y * r_worldData.width + x].texcoords[2] );
-			VectorCopy2( r_worldData.vertices[( y * r_worldData.width + x ) + 3].uv,
-				r_worldData.tiles[y * r_worldData.width + x].texcoords[3] );
+			VectorCopy2( vtx[0].uv, r_worldData.tiles[ y * r_worldData.width + x ].texcoords[0] );
+			VectorCopy2( vtx[1].uv, r_worldData.tiles[ y * r_worldData.width + x ].texcoords[1] );
+			VectorCopy2( vtx[2].uv, r_worldData.tiles[ y * r_worldData.width + x ].texcoords[2] );
+			VectorCopy2( vtx[3].uv, r_worldData.tiles[ y * r_worldData.width + x ].texcoords[3] );
+
+			vtx += 4;
 		}
 	}
+
+	ri.Hunk_FreeTempMemory( sprites );
 }
 
 
@@ -381,8 +380,10 @@ void R_InitWorldBuffer( void )
 {
 	maptile_t *tile;
 	uint32_t numSurfs, i;
+	uint32_t y, x;
 	uint32_t offset;
 	vertexAttrib_t *attribs;
+	vec3_t pos;
 
 	r_worldData.numIndices = r_worldData.width * r_worldData.height * 6;
 	r_worldData.numVertices = r_worldData.width * r_worldData.height * 4;
@@ -486,6 +487,7 @@ void RE_LoadWorldMap( const char *filename )
 	bmf_t *header;
 	mapheader_t *mheader;
 	tile2d_header_t *theader;
+	spriteCoord_t *sprites;
 	int i;
 	char texture[MAX_NPATH];
 	union {
@@ -557,7 +559,7 @@ void RE_LoadWorldMap( const char *filename )
 	ri.Cmd_ExecuteCommand( "snd.startup_level" );
 
 	// load into heap
-	R_LoadTileset( &mheader->lumps[LUMP_SPRITES], theader );
+	sprites = R_LoadTileset( &mheader->lumps[LUMP_SPRITES], theader );
 	R_LoadTiles( &mheader->lumps[LUMP_TILES] );
 	R_LoadLights( &mheader->lumps[LUMP_LIGHTS] );
 
@@ -565,7 +567,7 @@ void RE_LoadWorldMap( const char *filename )
 
 	R_ProcessLights();
 	R_InitWorldBuffer();
-	R_GenerateTexCoords( &theader->info );
+	R_GenerateTexCoords( &theader->info, sprites );
 
 	ri.FS_FreeFile( buffer.v );
 }
