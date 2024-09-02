@@ -779,6 +779,10 @@ void RB_IterateShaderStages( shader_t *shader )
         GLSL_SetUniformInt( sp, UNIFORM_DIFFUSE_MAP, 0 );
 
 		if ( rg.world && !( backend.refdef.flags & RSF_NOWORLDMODEL ) ) {
+			GLSL_SetUniformVec3( sp, UNIFORM_AMBIENTLIGHT, rg.world->ambientLightColor );
+			GLSL_SetUniformInt( sp, UNIFORM_NUM_LIGHTS, backend.refdef.numDLights + rg.world->numLights );
+			GLSL_ShaderBufferData( sp, UNIFORM_LIGHTDATA, rg.lightData, sizeof( shaderLight_t ) *
+				( backend.refdef.numDLights + rg.world->numLights ) );
 		} else {
 			vec3_t ambient;
 			VectorSet( ambient, 1, 1, 1 );

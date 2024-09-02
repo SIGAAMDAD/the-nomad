@@ -136,6 +136,11 @@ static void R_GenerateTexCoords( tile2d_info_t *info, spriteCoord_t *sprites )
 			VectorCopy2( vtx[2].uv, r_worldData.tiles[ y * r_worldData.width + x ].texcoords[2] );
 			VectorCopy2( vtx[3].uv, r_worldData.tiles[ y * r_worldData.width + x ].texcoords[3] );
 
+			VectorSet( vtx[0].worldPos, x, y, 0.0f );
+			VectorSet( vtx[1].worldPos, x, y, 0.0f );
+			VectorSet( vtx[2].worldPos, x, y, 0.0f );
+			VectorSet( vtx[3].worldPos, x, y, 0.0f );
+
 			vtx += 4;
 		}
 	}
@@ -458,11 +463,6 @@ static void R_ProcessLights( void )
 
 	ri.Printf( PRINT_DEVELOPER, "Processing %u lights\n", r_worldData.numLights );
 
-	if ( r_arb_shader_storage_buffer_object->i ) {
-		rg.lightData->data = ri.Hunk_Alloc( sizeof( *lights ) * r_worldData.numLights, h_low );
-		rg.lightData->size = sizeof( *lights ) * r_worldData.numLights;
-	}
-
 	lights = (shaderLight_t *)rg.lightData->data;
 	data = r_worldData.lights;
 	for ( i = 0; i < r_worldData.numLights; i++ ) {
@@ -475,11 +475,6 @@ static void R_ProcessLights( void )
 		lights[i].quadratic = data[i].quadratic;
 		lights[i].type = data[i].type;
 	}
-
-	GLSL_UseProgram( &rg.tileShader );
-	GLSL_SetUniformVec3( &rg.tileShader, UNIFORM_AMBIENTLIGHT, r_worldData.ambientLightColor );
-	GLSL_SetUniformInt( &rg.tileShader, UNIFORM_NUM_LIGHTS, r_worldData.numLights );
-	GLSL_ShaderBufferData( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, sizeof( *lights ) * r_worldData.numLights );
 }
 
 void RE_LoadWorldMap( const char *filename )

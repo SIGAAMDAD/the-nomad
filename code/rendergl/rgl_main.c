@@ -347,7 +347,6 @@ void R_DrawWorld( void )
             VectorCopy4( vtx[0].color, color );
             VectorCopy4( vtx[1].color, color );
             VectorCopy4( vtx[2].color, color );
-            VectorCopy4( vtx[3].color, color );
 
             vtx += 4;
         }

@@ -57,9 +57,11 @@ in vec4      v_Color;
 #if (defined(USE_LIGHT) && !defined(USE_FAST_LIGHT))
 in vec4      v_ColorAmbient;
 
+
+/*
 struct Light {
     vec4 color;
-    uvec2 origin;
+    vec4 origin;
     float brightness;
     float range;
     float linear;
@@ -71,6 +73,7 @@ struct Light {
 layout( std140, binding = 0 ) uniform u_LightBuffer {
     Light u_LightData[ MAX_MAP_LIGHTS ];
 };
+*/
 
 #endif
 
