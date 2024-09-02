@@ -60,7 +60,11 @@ static void R_SetVertexPointers( const vertexAttrib_t attribs[ATTRIB_INDEX_COUNT
 		vAtb = &attribs[i];
 
         if ( vAtb->enabled ) {
-            nglVertexAttribPointer( vAtb->index, vAtb->count, vAtb->type, vAtb->normalized, vAtb->stride, (const void *)vAtb->offset );
+			if ( ( vAtb->type == GL_UNSIGNED_INT || vAtb->type == GL_UNSIGNED_SHORT ) && !vAtb->normalized ) {
+				nglVertexAttribIPointer( vAtb->index, vAtb->count, vAtb->type, vAtb->stride, (const void *)vAtb->offset );
+			} else {
+	            nglVertexAttribPointer( vAtb->index, vAtb->count, vAtb->type, vAtb->normalized, vAtb->stride, (const void *)vAtb->offset );
+			}
 			if ( !( glState.vertexAttribsEnabled & attribBit ) ) {
 				nglEnableVertexAttribArray( vAtb->index );
 			}

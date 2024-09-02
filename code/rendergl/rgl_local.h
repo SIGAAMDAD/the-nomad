@@ -89,9 +89,9 @@ typedef uint16_t glIndex_t;
 #define DRAWMODE_MAPPED    3
 
 typedef enum {
-    MI_NONE,
-    MI_NVX,
-    MI_ATI
+	MI_NONE,
+	MI_NVX,
+	MI_ATI
 } gpuMemInfo_t;
 
 typedef enum {
@@ -101,72 +101,72 @@ typedef enum {
 } textureCompressionRef_t;
 
 typedef enum {
-    GL_DBG_NONE = 0,
+	GL_DBG_NONE = 0,
 
-    GL_DBG_KHR,
-    GL_DBG_AMD,
-    GL_DBG_ARB
+	GL_DBG_KHR,
+	GL_DBG_AMD,
+	GL_DBG_ARB
 } glDebugType_t;
 
 typedef struct
 {
-    char vendor[1024];
-    char renderer[1024];
-    char version_str[1024];
-    char glsl_version_str[1024];
-    char extensions[8192];
-    float version_f;
-    int versionMajor, versionMinor;
-    int glslVersionMajor, glslVersionMinor;
-    int numExtensions;
-    glTextureCompression_t textureCompression;
-    textureCompressionRef_t textureCompressionRef;
-    gpuMemInfo_t memInfo;
-    glDebugType_t debugType;
-    qboolean nonPowerOfTwoTextures;
-    qboolean stereo;
-    qboolean intelGraphics;
-    qboolean swizzleNormalmap;
+	char vendor[1024];
+	char renderer[1024];
+	char version_str[1024];
+	char glsl_version_str[1024];
+	char extensions[8192];
+	float version_f;
+	int versionMajor, versionMinor;
+	int glslVersionMajor, glslVersionMinor;
+	int numExtensions;
+	glTextureCompression_t textureCompression;
+	textureCompressionRef_t textureCompressionRef;
+	gpuMemInfo_t memInfo;
+	glDebugType_t debugType;
+	qboolean nonPowerOfTwoTextures;
+	qboolean stereo;
+	qboolean intelGraphics;
+	qboolean swizzleNormalmap;
 
-    int maxTextureUnits;
-    int maxTextureSize;
-    int vboTarget;
-    int iboTarget;
-    int maxSamples;
-    int maxColorAttachments;
-    int maxRenderBufferSize;
-    float maxAnisotropy;
+	int maxTextureUnits;
+	int maxTextureSize;
+	int vboTarget;
+	int iboTarget;
+	int maxSamples;
+	int maxColorAttachments;
+	int maxRenderBufferSize;
+	float maxAnisotropy;
 
-    qboolean ARB_gl_spirv;
-    qboolean ARB_texture_filter_anisotropic;
-    qboolean ARB_vertex_buffer_object;
-    qboolean ARB_buffer_storage;
-    qboolean ARB_map_buffer_range;
-    qboolean ARB_texture_float;
-    qboolean ARB_vertex_array_object;
-    qboolean ARB_framebuffer_object;
-    qboolean ARB_framebuffer_sRGB;
-    qboolean ARB_framebuffer_blit;
-    qboolean ARB_framebuffer_multisample;
-    qboolean ARB_vertex_shader;
-    qboolean ARB_texture_compression;
-    qboolean ARB_sync;
-    qboolean ARB_shader_storage_buffer_object;
-    qboolean NV_framebuffer_multisample_coverage;
-    qboolean ARB_sample_shading;
-    qboolean ARB_pixel_buffer_object;
+	qboolean ARB_gl_spirv;
+	qboolean ARB_texture_filter_anisotropic;
+	qboolean ARB_vertex_buffer_object;
+	qboolean ARB_buffer_storage;
+	qboolean ARB_map_buffer_range;
+	qboolean ARB_texture_float;
+	qboolean ARB_vertex_array_object;
+	qboolean ARB_framebuffer_object;
+	qboolean ARB_framebuffer_sRGB;
+	qboolean ARB_framebuffer_blit;
+	qboolean ARB_framebuffer_multisample;
+	qboolean ARB_vertex_shader;
+	qboolean ARB_texture_compression;
+	qboolean ARB_sync;
+	qboolean ARB_shader_storage_buffer_object;
+	qboolean NV_framebuffer_multisample_coverage;
+	qboolean ARB_sample_shading;
+	qboolean ARB_pixel_buffer_object;
 } glContext_t;
 
 typedef struct {
-    renderEntityRef_t e;
+	renderEntityRef_t e;
 
-    qboolean needDlights; // true for anything submitted throught RE_AddEntityToScene
-    qboolean lightingCalculated;
-    int ambientLightInt;  // 32 bit rgba packed
-    vec3_t ambientLight;  // color normalized to 0-255
-    vec3_t lightDir;      // normalized direction towards light, in world space
-    vec3_t directedLight;
-    qboolean intShaderTime;
+	qboolean needDlights; // true for anything submitted throught RE_AddEntityToScene
+	qboolean lightingCalculated;
+	int ambientLightInt;  // 32 bit rgba packed
+	vec3_t ambientLight;  // color normalized to 0-255
+	vec3_t lightDir;      // normalized direction towards light, in world space
+	vec3_t directedLight;
+	qboolean intShaderTime;
 } renderEntityDef_t;
 
 typedef enum
@@ -190,31 +190,31 @@ typedef enum
 	IMGFLAG_LIGHTMAP       = 0x0080,
 	IMGFLAG_NOSCALE        = 0x0100,
 	IMGFLAG_CLAMPTOBORDER  = 0x0200,
-    IMGFLAG_NOWRAP         = 0x0400,
-    IMGFLAG_FBO            = 0x0800
+	IMGFLAG_NOWRAP         = 0x0400,
+	IMGFLAG_FBO            = 0x0800
 } imgFlags_t;
 
 typedef struct {
-    GLuint id;
-    GLuint texunit;
+	GLuint id;
+	GLuint texunit;
 } sampler_t;
 
 typedef struct texture_s
 {
-    char *imgName;              // image path, including extension
-    struct texture_s *next;     // for hash search
-    struct texture_s *list;     // for listing
+	char *imgName;              // image path, including extension
+	struct texture_s *next;     // for hash search
+	struct texture_s *list;     // for listing
 
-    int width, height;          // source image
-    int uploadWidth;            // after power of two but not including clamp to MAX_TEXTURE_SIZE
-    int uploadHeight;
-    GLuint id;                  // GL texture binding
+	int width, height;          // source image
+	int uploadWidth;            // after power of two but not including clamp to MAX_TEXTURE_SIZE
+	int uploadHeight;
+	GLuint id;                  // GL texture binding
 
-    uint64_t frameUsed;
+	uint64_t frameUsed;
 
-    GLint internalFormat;
-    imgType_t type;
-    imgFlags_t flags;
+	GLint internalFormat;
+	imgType_t type;
+	imgFlags_t flags;
 } texture_t;
 
 #include "rgl_fbo.h"
@@ -222,43 +222,43 @@ typedef struct texture_s
 enum {
 	ATTRIB_INDEX_POSITION       = 0,
 	ATTRIB_INDEX_TEXCOORD       = 1,
-    ATTRIB_INDEX_COLOR          = 2,
-    ATTRIB_INDEX_WORLDPOS       = 3,
-    ATTRIB_INDEX_LIGHTCOORD     = 4,
-    ATTRIB_INDEX_NORMAL         = 5,
-    ATTRIB_INDEX_TANGENT        = 6,
-    ATTRIB_INDEX_BITANGENT      = 7,
+	ATTRIB_INDEX_COLOR          = 2,
+	ATTRIB_INDEX_WORLDPOS       = 3,
+	ATTRIB_INDEX_LIGHTCOORD     = 4,
+	ATTRIB_INDEX_NORMAL         = 5,
+	ATTRIB_INDEX_TANGENT        = 6,
+	ATTRIB_INDEX_BITANGENT      = 7,
 	
 	ATTRIB_INDEX_COUNT
 };
 
 enum
 {
-    ATTRIB_POSITION             = BIT( ATTRIB_INDEX_POSITION ),
+	ATTRIB_POSITION             = BIT( ATTRIB_INDEX_POSITION ),
 	ATTRIB_TEXCOORD             = BIT( ATTRIB_INDEX_TEXCOORD ),
-    ATTRIB_COLOR                = BIT( ATTRIB_INDEX_COLOR ),
-    ATTRIB_WORLDPOS             = BIT( ATTRIB_INDEX_WORLDPOS ),
+	ATTRIB_COLOR                = BIT( ATTRIB_INDEX_COLOR ),
+	ATTRIB_WORLDPOS             = BIT( ATTRIB_INDEX_WORLDPOS ),
 
 	ATTRIB_BITS =
-        ATTRIB_POSITION |
-        ATTRIB_TEXCOORD | 
-        ATTRIB_COLOR |
-        ATTRIB_WORLDPOS
+		ATTRIB_POSITION |
+		ATTRIB_TEXCOORD | 
+		ATTRIB_COLOR |
+		ATTRIB_WORLDPOS
 };
 
 typedef enum {
-    GLSL_INT = 0,
-    GLSL_FLOAT,
-    GLSL_VEC2,
-    GLSL_VEC3,
-    GLSL_VEC4,
-    GLSL_VEC5,
-    GLSL_MAT16,
-    GLSL_BUFFER, // uniform buffer -- special case
+	GLSL_INT = 0,
+	GLSL_FLOAT,
+	GLSL_VEC2,
+	GLSL_VEC3,
+	GLSL_VEC4,
+	GLSL_VEC5,
+	GLSL_MAT16,
+	GLSL_BUFFER, // uniform buffer -- special case
 } glslType_t;
 
 typedef enum {
-    UNIFORM_DIFFUSE_MAP = 0,
+	UNIFORM_DIFFUSE_MAP = 0,
 	UNIFORM_LIGHT_MAP,
 	UNIFORM_NORMAL_MAP,
 	UNIFORM_DELUXE_MAP,
@@ -333,61 +333,61 @@ typedef enum {
 
 	UNIFORM_ALPHATEST,
 
-    UNIFORM_GAMMA,
+	UNIFORM_GAMMA,
 
-    UNIFORM_NUM_LIGHTS,
+	UNIFORM_NUM_LIGHTS,
 
-    UNIFORM_EXPOSURE,
-    UNIFORM_SCREEN_SIZE,
-    UNIFORM_SHARPENING,
+	UNIFORM_EXPOSURE,
+	UNIFORM_SCREEN_SIZE,
+	UNIFORM_SHARPENING,
 
-    UNIFORM_LIGHTDATA,
+	UNIFORM_LIGHTDATA,
 
-    UNIFORM_GAMEPAUSED,
+	UNIFORM_GAMEPAUSED,
 
-    UNIFORM_AREA_TEXTURE,
-    UNIFORM_SEARCH_TEXTURE,
-    UNIFORM_EDGES_TEXTURE,
-    UNIFORM_BLEND_TEXTURE,
+	UNIFORM_AREA_TEXTURE,
+	UNIFORM_SEARCH_TEXTURE,
+	UNIFORM_EDGES_TEXTURE,
+	UNIFORM_BLEND_TEXTURE,
 
-    UNIFORM_BLUR_HORIZONTAL,
+	UNIFORM_BLUR_HORIZONTAL,
 
-    UNIFORM_HARDWAREGAMMA,
-    UNIFORM_ANTIALIASING,
-    UNIFORM_USE_HDR,
-    UNIFORM_USE_PBR,
-    UNIFORM_TONEMAPPING,
-    UNIFORM_USE_BLOOM,
+	UNIFORM_HARDWAREGAMMA,
+	UNIFORM_ANTIALIASING,
+	UNIFORM_USE_HDR,
+	UNIFORM_USE_PBR,
+	UNIFORM_TONEMAPPING,
+	UNIFORM_USE_BLOOM,
 
-    UNIFORM_FRAGMENTDATA,
-    UNIFORM_GRAPHICSCONFIG,
-    UNIFORM_SAMPLERS,
-    UNIFORM_VERTEXINPUT,
+	UNIFORM_FRAGMENTDATA,
+	UNIFORM_GRAPHICSCONFIG,
+	UNIFORM_SAMPLERS,
+	UNIFORM_VERTEXINPUT,
 
-    UNIFORM_COUNT
+	UNIFORM_COUNT
 } uniform_t;
 
 typedef struct shaderProgram_s
 {
-    char name[MAX_NPATH];
+	char name[MAX_NPATH];
 
-    char *compressedVSCode;
-    char *compressedFSCode;
+	char *compressedVSCode;
+	char *compressedFSCode;
 
-    uint32_t vertexBufLen;
-    uint32_t fragmentBufLen;
+	uint32_t vertexBufLen;
+	uint32_t fragmentBufLen;
 
-    uint32_t numBuffers;
+	uint32_t numBuffers;
 
-    uint32_t programId;
-    uint32_t vertexId;
-    uint32_t fragmentId;
-    uint32_t attribBits; // vertex array attribute flags
+	uint32_t programId;
+	uint32_t vertexId;
+	uint32_t fragmentId;
+	uint32_t attribBits; // vertex array attribute flags
 
-    // uniforms
-    GLint uniforms[UNIFORM_COUNT];
-    int16_t uniformBufferOffsets[UNIFORM_COUNT]; // max 32767/64=511 uniforms
-    char *uniformBuffer;
+	// uniforms
+	GLint uniforms[UNIFORM_COUNT];
+	int16_t uniformBufferOffsets[UNIFORM_COUNT]; // max 32767/64=511 uniforms
+	char *uniformBuffer;
 } shaderProgram_t;
 
 /*
@@ -395,69 +395,67 @@ typedef struct shaderProgram_s
 * maplight_t or dlight_t
 */
 typedef struct {
-    vec4_t color;
-    uvec2_t origin;
-    float brightness;
-    float range;
-    float linear;
-    float quadratic;
-    float constant;
-    int type;
+	vec4_t color;
+	uvec2_t origin;
+	float brightness;
+	float range;
+	float linear;
+	float quadratic;
+	float constant;
+	int type;
 } shaderLight_t;
 
 typedef struct {
-    char *name;
-    shaderProgram_t *shader;
-    byte *data;
-    qboolean externalBuffer;
-    uint32_t id;
-    int32_t binding;
-    uint64_t size;
+	char *name;
+	shaderProgram_t *shader;
+	byte *data;
+	qboolean externalBuffer;
+	uint32_t id;
+	int32_t binding;
+	uint64_t size;
 } uniformBuffer_t;
 
 typedef enum {
-    DL_POINT,       // point light
-    DL_SPOT,        // spot light
-    DL_SKY,         // sky light
-    DL_DIR,         // directional light
+	DL_POINT,       // point light
+	DL_SPOT,        // spot light
+	DL_SKY,         // sky light
+	DL_DIR,         // directional light
 } dlightType_t; 
 
 typedef struct dlight_s {
-    vec3_t color;
-    vec3_t origin;
+	vec3_t color;
+	vec3_t origin;
 
-    float brightness;
-    float diffuse;
-    float specular;
-    float ambient;
+	float brightness;
+	float diffuse;
+	float specular;
+	float ambient;
 
-    dlightType_t ltype;
+	dlightType_t ltype;
 
-    struct dlight_s *next;
-    struct dlight_s *prev;
+	struct dlight_s *next;
+	struct dlight_s *prev;
 } dlight_t;
 
 // normal is unused
-typedef struct
-{
-    vec3_t          xyz;
-    vec3_t          worldPos;
+typedef struct {
+	vec3_t			worldPos;
+	vec3_t          xyz;
 	vec2_t          uv;
-	vec2_t          lightmap;
 	uint16_t        color[4];
 } drawVert_t;
 
 // when sgame directly specifies a polygon, it becomes a srfPoly_t
 // as soon as it is called
 typedef struct {
-    nhandle_t       hShader;
-    uint32_t        numVerts;
-    polyVert_t      *verts; // later becomes a drawVert_t
+	nhandle_t       hShader;
+	uint32_t        numVerts;
+	polyVert_t      *verts; // later becomes a drawVert_t
 } srfPoly_t;
 
 typedef struct {
-    vec3_t          xyz;
-    vec3_t          worldPos;
+	vec3_t			worldPos;
+	vec3_t          xyz;
 	vec2_t          st;
 	uint16_t        color[4];
 #ifdef DEBUG_OPTIMIZEVERTICES
@@ -466,9 +464,9 @@ typedef struct {
 } srfVert_t;
 
 typedef struct {
-    nhandle_t hSpriteSheet;
-    nhandle_t hSprite;
-    vec3_t origin;
+	nhandle_t hSpriteSheet;
+	nhandle_t hSprite;
+	vec3_t origin;
 } srfQuad_t;
 
 //==================================================================
@@ -492,51 +490,51 @@ typedef struct
 
 typedef enum
 {
-    BUF_GL_MAPPED,
-    BUF_GL_SYNCED,
-    BUF_GL_BUFFER,
-    BUF_GL_CLIENT,
+	BUF_GL_MAPPED,
+	BUF_GL_SYNCED,
+	BUF_GL_BUFFER,
+	BUF_GL_CLIENT,
 } bufferMemType_t;
 
 // not meant to be used by anything other than the vbo backend
 
 typedef enum {
-    BUFFER_STATIC,      // data is constant throughout buffer lifetime
-    BUFFER_DYNAMIC,     // expected to be updated once in a while, but not every frame
-    BUFFER_FRAME,       // expected to be update on a per-frame basis
-    BUFFER_STREAM,      // use GL_STREAM_DRAW -- only really used by the imgui backend
+	BUFFER_STATIC,      // data is constant throughout buffer lifetime
+	BUFFER_DYNAMIC,     // expected to be updated once in a while, but not every frame
+	BUFFER_FRAME,       // expected to be update on a per-frame basis
+	BUFFER_STREAM,      // use GL_STREAM_DRAW -- only really used by the imgui backend
 } bufferType_t;
 
 typedef struct {
-    void *data;
-    uint64_t size;
-    uintptr_t offset;
-    bufferMemType_t usage;
-    uint32_t id;
-    uint32_t target;
-    uint32_t glUsage;
+	void *data;
+	uint64_t size;
+	uintptr_t offset;
+	bufferMemType_t usage;
+	uint32_t id;
+	uint32_t target;
+	uint32_t glUsage;
 } buffer_t;
 
 typedef struct {
-    uint32_t index;
-    uint32_t count;
-    uint32_t type;
-    uint32_t enabled;
-    uint32_t normalized;
-    uintptr_t stride;
-    uintptr_t offset;
+	uint32_t index;
+	uint32_t count;
+	uint32_t type;
+	uint32_t enabled;
+	uint32_t normalized;
+	uintptr_t stride;
+	uintptr_t offset;
 } vertexAttrib_t;
 
 typedef struct {
-    char name[MAX_NPATH];
+	char name[MAX_NPATH];
 
-    uint32_t vaoId;
-    bufferType_t type;
+	uint32_t vaoId;
+	bufferType_t type;
 
-    buffer_t vertex;
-    buffer_t index;
+	buffer_t vertex;
+	buffer_t index;
 
-    vertexAttrib_t attribs[ATTRIB_INDEX_COUNT];
+	vertexAttrib_t attribs[ATTRIB_INDEX_COUNT];
 } vertexBuffer_t;
 
 
@@ -551,13 +549,13 @@ typedef struct {
 */
 
 typedef enum {
-    SS_BAD,             // throw error
+	SS_BAD,             // throw error
 
-    SS_OPAQUE,          // opaque stuff
-    SS_DECAL,           // scorch marks, blood splats, etc.
-    SS_SEE_THROUGH,     // ladders, grates, grills that may have small blended edges
+	SS_OPAQUE,          // opaque stuff
+	SS_DECAL,           // scorch marks, blood splats, etc.
+	SS_SEE_THROUGH,     // ladders, grates, grills that may have small blended edges
 
-    SS_BLEND,           // the standard
+	SS_BLEND,           // the standard
 } shaderSort_t;
 
 typedef enum {
@@ -747,9 +745,9 @@ typedef struct {
 	uint32_t		numTexMods;
 	texModInfo_t	*texMods;
 
-    qboolean isLightmap;
+	qboolean isLightmap;
 
-    textureFilter_t filter;
+	textureFilter_t filter;
 
 
 	int32_t			videoMapHandle;
@@ -777,7 +775,7 @@ enum
 	TB_CUBEMAP     = 6,
 	TB_SHADOWMAP4  = 6,
 
-    NUM_TEXTURE_BUNDLES
+	NUM_TEXTURE_BUNDLES
 };
 
 typedef enum
@@ -792,68 +790,68 @@ typedef enum
 } stageType_t;
 
 typedef struct {
-    qboolean active;
+	qboolean active;
 
-    textureBundle_t	bundle[NUM_TEXTURE_BUNDLES];
+	textureBundle_t	bundle[NUM_TEXTURE_BUNDLES];
 
-    waveForm_t rgbWave;
-    colorGen_t rgbGen;
+	waveForm_t rgbWave;
+	colorGen_t rgbGen;
 
-    waveForm_t alphaWave;
-    alphaGen_t alphaGen;
+	waveForm_t alphaWave;
+	alphaGen_t alphaGen;
 
-    byte constantColor[4];      // for CGEN_CONST and AGEN_CONST
+	byte constantColor[4];      // for CGEN_CONST and AGEN_CONST
 
-    uint32_t stateBits;         // GLS_xxxx mask
+	uint32_t stateBits;         // GLS_xxxx mask
 
-    qboolean isDetail;
+	qboolean isDetail;
 
-    stageType_t type;
-    struct shaderProgram_s *glslShaderGroup;
-    int32_t glslShaderIndex;
+	stageType_t type;
+	struct shaderProgram_s *glslShaderGroup;
+	int32_t glslShaderIndex;
 
-    vec4_t normalScale;
-    vec4_t specularScale;
+	vec4_t normalScale;
+	vec4_t specularScale;
 } shaderStage_t;
 
 typedef struct shader_s {
-    char name[MAX_NPATH];
+	char name[MAX_NPATH];
 
-    uint32_t		numDeforms;
+	uint32_t		numDeforms;
 	deformStage_t	deforms[MAX_SHADER_DEFORMS];
 
-    shaderStage_t *stages[MAX_SHADER_STAGES];
+	shaderStage_t *stages[MAX_SHADER_STAGES];
 
-    uint32_t sortedIndex;           // this shader == rg.sortedShaders[sortedIndex]
-    uint32_t index;                 // this shader == rg.shaders[index]
-    shaderSort_t sort;
+	uint32_t sortedIndex;           // this shader == rg.sortedShaders[sortedIndex]
+	uint32_t index;                 // this shader == rg.shaders[index]
+	shaderSort_t sort;
 
-    int32_t lightmapIndex;
+	int32_t lightmapIndex;
 
-    qboolean explicitlyDefined;     // found in a .shader file
+	qboolean explicitlyDefined;     // found in a .shader file
 
-    uint32_t surfaceFlags;          // if explicitly defined this will have SURFACEPARM_* flags
-    uint32_t contentFlags;
+	uint32_t surfaceFlags;          // if explicitly defined this will have SURFACEPARM_* flags
+	uint32_t contentFlags;
 
-    uint32_t vertexAttribs;         // not all shaders will need all data to be gathered
-    
-    qboolean noLightScale;
-    qboolean polygonOffset;		    // set for decals and other items that must be offset 
+	uint32_t vertexAttribs;         // not all shaders will need all data to be gathered
+	
+	qboolean noLightScale;
+	qboolean polygonOffset;		    // set for decals and other items that must be offset 
 	qboolean noMipMaps;			    // for console fonts, 2D elements, etc.
 	qboolean noPicMip;			    // for images that must always be full resolution
 
-    int32_t lightingStage;
+	int32_t lightingStage;
 
-    qboolean defaultShader;		    // we want to return index 0 if the shader failed to
-								    // load for some reason, but R_FindShader should
-								    // still keep a name allocated for it, so if
-								    // something calls RE_RegisterShader again with
-								    // the same name, we don't try looking for it again
+	qboolean defaultShader;		    // we want to return index 0 if the shader failed to
+									// load for some reason, but R_FindShader should
+									// still keep a name allocated for it, so if
+									// something calls RE_RegisterShader again with
+									// the same name, we don't try looking for it again
 
-    double	clampTime;                                  // time this shader is clamped to - set to double for frameloss fix -EC-
+	double	clampTime;                                  // time this shader is clamped to - set to double for frameloss fix -EC-
 	double	timeOffset;                                 // current time offset for this shader - set to double for frameloss fix -EC-
 
-    struct shader_s *next;
+	struct shader_s *next;
 } shader_t;
 
 //==================================================================
@@ -863,18 +861,18 @@ typedef struct shader_s {
 */
 
 typedef struct {
-    spriteCoord_t texCoords;
+	spriteCoord_t texCoords;
 } sprite_t;
 
 typedef struct {
-    char *name;
-    sprite_t *sprites;
-    nhandle_t hShader;
-    uint32_t sheetWidth;
-    uint32_t sheetHeight;
-    uint32_t spriteWidth;
-    uint32_t spriteHeight;
-    uint32_t numSprites;
+	char *name;
+	sprite_t *sprites;
+	nhandle_t hShader;
+	uint32_t sheetWidth;
+	uint32_t sheetHeight;
+	uint32_t spriteWidth;
+	uint32_t spriteHeight;
+	uint32_t numSprites;
 } spriteSheet_t;
 
 
@@ -883,47 +881,47 @@ typedef struct {
 // renderSceneDef_t holds everything that comes in renderSceneRef_t,
 // as well as the locally generated scene information
 typedef struct {
-    uint32_t    x, y, width, height;
+	uint32_t    x, y, width, height;
 
-    stereoFrame_t stereoFrame;
+	stereoFrame_t stereoFrame;
 
-    qboolean    drawn;
+	qboolean    drawn;
 
-    int64_t     time;
-    uint64_t    flags;
+	int64_t     time;
+	uint64_t    flags;
 
-    double      floatTime; // rg.refdef.time / 1000.0
-    float       blurFactor;
+	double      floatTime; // rg.refdef.time / 1000.0
+	float       blurFactor;
 
-    uint64_t    numEntities;
-    renderEntityDef_t *entities;
+	uint64_t    numEntities;
+	renderEntityDef_t *entities;
 
-    uint64_t    numDLights;
-    dlight_t    *dlights;
+	uint64_t    numDLights;
+	dlight_t    *dlights;
 
-    uint64_t    numPolys;
-    srfPoly_t   *polys;
+	uint64_t    numPolys;
+	srfPoly_t   *polys;
 
-    float       sunShadowMvp[4][16];
+	float       sunShadowMvp[4][16];
 	float       sunDir[4];
 	float       sunCol[4];
 	float       sunAmbCol[4];
 
-    float       autoExposureMinMax[2];
+	float       autoExposureMinMax[2];
 	float       toneMinAvgMaxLinear[3];
 } renderSceneDef_t;
 
 typedef struct {
-    vec3_t origin;
-    vec3_t axis[3];
-    vec3_t viewOrigin;
-    float angle;
-    float zoom;
-    float aspect;
-    mat4_t modelMatrix;
-    mat4_t projectionMatrix;
-    mat4_t viewMatrix;
-    mat4_t viewProjectionMatrix;
+	vec3_t origin;
+	vec3_t axis[3];
+	vec3_t viewOrigin;
+	float angle;
+	float zoom;
+	float aspect;
+	mat4_t modelMatrix;
+	mat4_t projectionMatrix;
+	mat4_t viewMatrix;
+	mat4_t viewProjectionMatrix;
 } cameraData_t;
 
 typedef struct {
@@ -935,102 +933,102 @@ typedef struct {
 } orientationr_t;
 
 typedef struct {
-    cameraData_t camera;
+	cameraData_t camera;
 
-    uint32_t viewportX, viewportY;
-    uint32_t viewportWidth, viewportHeight;
+	uint32_t viewportX, viewportY;
+	uint32_t viewportWidth, viewportHeight;
 
-    float zFar;
-    float zNear;
-    float fovX;
-    float fovY;
+	float zFar;
+	float zNear;
+	float fovX;
+	float fovY;
 
-    stereoFrame_t stereoFrame;
-    cplane_t frustum[5];
+	stereoFrame_t stereoFrame;
+	cplane_t frustum[5];
 
-    uint32_t flags;
+	uint32_t flags;
 
-    uint64_t frameSceneNum;
-    uint64_t frameCount;
+	uint64_t frameSceneNum;
+	uint64_t frameCount;
 } viewData_t;
 
 typedef struct {
-    char baseName[MAX_NPATH];
-    char name[MAX_NPATH];
+	char baseName[MAX_NPATH];
+	char name[MAX_NPATH];
 
-    vec3_t ambientLightColor;
+	vec3_t ambientLightColor;
 
-    qboolean drawing;
+	qboolean drawing;
 
-    uint32_t levelTextures;
-    uint32_t levelShaders;
-    uint32_t levelSpriteSheets;
+	uint32_t levelTextures;
+	uint32_t levelShaders;
+	uint32_t levelSpriteSheets;
 
-    uint32_t firstLevelTexture;
-    uint32_t firstLevelShader;
-    uint32_t firstLevelSpriteSheet;
+	uint32_t firstLevelTexture;
+	uint32_t firstLevelShader;
+	uint32_t firstLevelSpriteSheet;
 
-    uint32_t width;
-    uint32_t height;
+	uint32_t width;
+	uint32_t height;
 
-    maplight_t *lights;
-    uint32_t numLights;
+	maplight_t *lights;
+	uint32_t numLights;
 
-    maptile_t *tiles;
-    uint32_t numTiles;
+	maptile_t *tiles;
+	uint32_t numTiles;
 
-    glIndex_t *indices;
-    uint64_t numIndices;
+	glIndex_t *indices;
+	uint64_t numIndices;
 
-    drawVert_t *vertices;
-    uint64_t numVertices;
+	drawVert_t *vertices;
+	uint64_t numVertices;
 
-    // frame based draw data
-    shader_t *shader;
-    vertexBuffer_t *buffer;
-    nhandle_t tileset;
+	// frame based draw data
+	shader_t *shader;
+	vertexBuffer_t *buffer;
+	nhandle_t tileset;
 } world_t;
 
 
 typedef struct {
-    uintptr_t vtxOffset;        // current offset in vertex buffer
-    uintptr_t idxOffset;        // current offset in index buffer
-    
-    uintptr_t vtxDataSize;      // size in bytes of each vertex
-    uintptr_t idxDataSize;      // size in bytes of each index
+	uintptr_t vtxOffset;        // current offset in vertex buffer
+	uintptr_t idxOffset;        // current offset in index buffer
+	
+	uintptr_t vtxDataSize;      // size in bytes of each vertex
+	uintptr_t idxDataSize;      // size in bytes of each index
 
-    uint32_t maxVertices;       // total allocated vertices with glBufferData
-    uint32_t maxIndices;        // total allocated indices with glBufferData
+	uint32_t maxVertices;       // total allocated vertices with glBufferData
+	uint32_t maxIndices;        // total allocated indices with glBufferData
 
-    void *vertices;             // address of the client vertices
-    void *indices;              // address of the client indices
+	void *vertices;             // address of the client vertices
+	void *indices;              // address of the client indices
 
-    vertexBuffer_t *buffer;     // the buffer handle we're using for this batch
+	vertexBuffer_t *buffer;     // the buffer handle we're using for this batch
 
-    glRingbuffer_t vertexRB;
-    glRingbuffer_t indexRB;
+	glRingbuffer_t vertexRB;
+	glRingbuffer_t indexRB;
 
-    shader_t *shader;
+	shader_t *shader;
 
-    double shaderTime;
+	double shaderTime;
 } batch_t;
 
 typedef struct {
 //    byte color2D[4];
-    float color2D[4];
+	float color2D[4];
 
-    qboolean depthFill;
-    qboolean framePostProcessed;
-    qboolean colorMask[4];
+	qboolean depthFill;
+	qboolean framePostProcessed;
+	qboolean colorMask[4];
 
-    backendCounters_t pc;
+	backendCounters_t pc;
 
-    vertexBuffer_t *drawBuffer;
+	vertexBuffer_t *drawBuffer;
 
-    renderSceneDef_t refdef;
-    renderEntityDef_t *currentEntity;
+	renderSceneDef_t refdef;
+	renderEntityDef_t *currentEntity;
 
-    batch_t drawBatch;
+	batch_t drawBatch;
 } renderBackend_t;
 
 // the renderer front end should never modify glstate_t
@@ -1040,50 +1038,50 @@ typedef struct {
 	qboolean	finishCalled;
 	GLint		texEnv[2];
 	unsigned	glStateBits;
-    unsigned    storedGlState;
-    int         currentArray;
+	unsigned    storedGlState;
+	int         currentArray;
 	unsigned	glClientStateBits[ MAX_TEXTURE_UNITS ];
 
-    GLuint      textureStack[MAX_TEXTURE_UNITS];
-    GLuint      *textureStackPtr;
+	GLuint      textureStack[MAX_TEXTURE_UNITS];
+	GLuint      *textureStackPtr;
 
-    vec4_t      clearColor;
-    char        clearColorString[ MAX_CVAR_VALUE ];
+	vec4_t      clearColor;
+	char        clearColorString[ MAX_CVAR_VALUE ];
 
-    viewData_t  viewData;
+	viewData_t  viewData;
 
-    uint32_t    vertexAttribsEnabled;
+	uint32_t    vertexAttribsEnabled;
 
-    uint32_t    vaoId;
-    uint32_t    vboId;
-    uint32_t    iboId;
-    uint32_t    defFboId;
-    uint32_t    readFboId;
-    uint32_t    writeFboId;
-    uint32_t    rboId;
-    uint32_t    shaderId;
-    uint32_t    uboId;
+	uint32_t    vaoId;
+	uint32_t    vboId;
+	uint32_t    iboId;
+	uint32_t    defFboId;
+	uint32_t    readFboId;
+	uint32_t    writeFboId;
+	uint32_t    rboId;
+	uint32_t    shaderId;
+	uint32_t    uboId;
 
-    gpuMemory_t memstats;
+	gpuMemory_t memstats;
 
-    fbo_t *currentFbo;
-    vertexBuffer_t *currentVao;
-    texture_t *currentTexture;
-    shaderProgram_t *currentShader;
-    uniformBuffer_t *currentUbo;
+	fbo_t *currentFbo;
+	vertexBuffer_t *currentVao;
+	texture_t *currentTexture;
+	shaderProgram_t *currentShader;
+	uniformBuffer_t *currentUbo;
 } glstate_t;
 
 typedef enum {
-    TIME_QUERY,
-    SAMPLES_QUERY,
-    PRIMTIVES_QUERY,
+	TIME_QUERY,
+	SAMPLES_QUERY,
+	PRIMTIVES_QUERY,
 
-    NUMQUERIES
+	NUMQUERIES
 } query_t;
 
 enum
 {
-    GENERICDEF_USE_DEFORM_VERTEXES  = 0x0001,
+	GENERICDEF_USE_DEFORM_VERTEXES  = 0x0001,
 	GENERICDEF_USE_TCGEN_AND_TCMOD  = 0x0002,
 	GENERICDEF_USE_RGBAGEN          = 0x0004,
 	GENERICDEF_ALL                  = 0x000F,
@@ -1097,7 +1095,7 @@ enum
 	LIGHTDEF_USE_LIGHT_VERTEX    = 0x0003,
 	LIGHTDEF_LIGHTTYPE_MASK      = 0x0003,
 	LIGHTDEF_USE_TCGEN_AND_TCMOD = 0x0004,
-    LIGHTDEF_USE_PARALLAXMAP     = 0x0008,
+	LIGHTDEF_USE_PARALLAXMAP     = 0x0008,
 	LIGHTDEF_USE_SHADOWMAP       = 0x0010,
 	LIGHTDEF_ALL                 = 0x002F,
 	LIGHTDEF_COUNT               = 0x0030
@@ -1106,7 +1104,7 @@ enum
 
 typedef struct
 {
-    qboolean				registered;		// cleared at shutdown, set at beginRegistration
+	qboolean				registered;		// cleared at shutdown, set at beginRegistration
 
 	uint32_t				frameCount;		// incremented every frame
 	uint32_t				sceneCount;		// incremented every scene
@@ -1115,13 +1113,13 @@ typedef struct
 
 	uint32_t	   			frameSceneNum;	// zeroed at RE_BeginFrame
 
-    qboolean                needScreenMap;
+	qboolean                needScreenMap;
 
 	qboolean				worldMapLoaded;
 	qboolean				worldDeluxeMapping;
-    vec2_t                  autoExposureMinMax;
+	vec2_t                  autoExposureMinMax;
 	vec3_t                  toneMinAvgMaxLevel;
-    renderEntityDef_t       worldEntity;
+	renderEntityDef_t       worldEntity;
 	world_t					*world;
 
 	texture_t				*defaultImage;
@@ -1149,75 +1147,75 @@ typedef struct
 	texture_t				**lightmaps;
 	texture_t				**deluxemaps;
 
-    uniformBuffer_t         *lightData;
-    uniformBuffer_t         *fragData;
-    uniformBuffer_t         *graphicsConfigData;
-    uniformBuffer_t         *samplersData;
-    uniformBuffer_t         *vertexInput;
+	uniformBuffer_t         *lightData;
+	uniformBuffer_t         *fragData;
+	uniformBuffer_t         *graphicsConfigData;
+	uniformBuffer_t         *samplersData;
+	uniformBuffer_t         *vertexInput;
 
-    uniformBuffer_t *uniformBuffers[MAX_UNIFORM_BUFFERS];
-    uint64_t numUniformBuffers;
+	uniformBuffer_t *uniformBuffers[MAX_UNIFORM_BUFFERS];
+	uint64_t numUniformBuffers;
 
-    spriteSheet_t *sheets[MAX_RENDER_SPRITESHEETS];
-    uint32_t numSpriteSheets;
+	spriteSheet_t *sheets[MAX_RENDER_SPRITESHEETS];
+	uint32_t numSpriteSheets;
 
-    vertexBuffer_t *buffers[MAX_RENDER_BUFFERS];
-    uint32_t numBuffers;
+	vertexBuffer_t *buffers[MAX_RENDER_BUFFERS];
+	uint32_t numBuffers;
 
-    shader_t *shaders[MAX_RENDER_SHADERS];
-    shader_t *sortedShaders[MAX_RENDER_SHADERS];
-    uint32_t numShaders;
+	shader_t *shaders[MAX_RENDER_SHADERS];
+	shader_t *sortedShaders[MAX_RENDER_SHADERS];
+	uint32_t numShaders;
 
-    shaderProgram_t *programs[MAX_RENDER_PROGRAMS];
-    uint32_t numPrograms;
+	shaderProgram_t *programs[MAX_RENDER_PROGRAMS];
+	uint32_t numPrograms;
 
-    texture_t *textures[MAX_RENDER_TEXTURES];
-    uint32_t numTextures;
+	texture_t *textures[MAX_RENDER_TEXTURES];
+	uint32_t numTextures;
 
-    fbo_t *fbos[MAX_RENDER_FBOs];
-    uint32_t numFBOs;
+	fbo_t *fbos[MAX_RENDER_FBOs];
+	uint32_t numFBOs;
 
-    float identityLight;
-    uint32_t identityLightByte;
-    uint32_t overbrightBits;
+	float identityLight;
+	uint32_t identityLightByte;
+	uint32_t overbrightBits;
 
-    uint64_t frontEndMsec;
+	uint64_t frontEndMsec;
 
-    shaderProgram_t genericShader[GENERICDEF_COUNT];
-    shaderProgram_t lightallShader[LIGHTDEF_COUNT];
-    shaderProgram_t imguiShader;
-    shaderProgram_t tileShader;
+	shaderProgram_t genericShader[GENERICDEF_COUNT];
+	shaderProgram_t lightallShader[LIGHTDEF_COUNT];
+	shaderProgram_t imguiShader;
+	shaderProgram_t tileShader;
 	shaderProgram_t textureColorShader;
-    /*
+	/*
 	shaderProgram_t ssaoShader;
-    shaderProgram_t depthBlurShader[4];
-    shaderProgram_t calclevels4xShader[2];
-    shaderProgram_t down4xShader;
+	shaderProgram_t depthBlurShader[4];
+	shaderProgram_t calclevels4xShader[2];
+	shaderProgram_t down4xShader;
 	shaderProgram_t bokehShader;
-    shaderProgram_t blurShader;
+	shaderProgram_t blurShader;
 	shaderProgram_t tonemapShader;
-    shaderProgram_t smaaEdgesShader;
-    shaderProgram_t smaaWeightsShader;
-    shaderProgram_t smaaBlendShader;
+	shaderProgram_t smaaEdgesShader;
+	shaderProgram_t smaaWeightsShader;
+	shaderProgram_t smaaBlendShader;
 	*/
 
-    qboolean beganQuery;
+	qboolean beganQuery;
 
-    uint32_t samplers[MAX_TEXTURE_UNITS];
+	uint32_t samplers[MAX_TEXTURE_UNITS];
 
-    uint32_t queries[NUMQUERIES];
-    uint32_t queryCounts[NUMQUERIES];
+	uint32_t queries[NUMQUERIES];
+	uint32_t queryCounts[NUMQUERIES];
 
-    float sinTable[FUNCTABLE_SIZE];
+	float sinTable[FUNCTABLE_SIZE];
 	float squareTable[FUNCTABLE_SIZE];
 	float triangleTable[FUNCTABLE_SIZE];
 	float sawToothTable[FUNCTABLE_SIZE];
 	float inverseSawToothTable[FUNCTABLE_SIZE];
-    qboolean vertexLightingAllowed;
+	qboolean vertexLightingAllowed;
 
-    GLuint pixelPackBuffer[2];
-    int pixelPackBufferIndex;
-    int pixelPackBufferNextIndex;
+	GLuint pixelPackBuffer[2];
+	int pixelPackBufferIndex;
+	int pixelPackBufferNextIndex;
 } renderGlobals_t;
 
 extern renderGlobals_t rg;
@@ -1651,7 +1649,7 @@ void R_VaoPackColor( uint16_t *out, const vec4_t c );
 void R_VaoUnpackNormal( vec3_t v, int16_t *pack );
 void R_VaoUnpackTangent( vec4_t v, int16_t *pack );
 vertexBuffer_t *R_AllocateBuffer( const char *name, void *vertices, uint32_t verticesSize, void *indices, uint32_t indicesSize,
-    bufferType_t type );
+	bufferType_t type );
 void VBO_BindNull( void );
 void R_InitGPUBuffers( void );
 void R_ShutdownGPUBuffers( void );
@@ -1744,56 +1742,56 @@ RENDERER BACK END COMMAND QUEUE
 
 typedef struct
 {
-    byte buffer[MAX_RC_BUFFER];
-    uint32_t usedBytes;
+	byte buffer[MAX_RC_BUFFER];
+	uint32_t usedBytes;
 } renderCommandList_t;
 
 typedef enum
 {
-    RC_POSTPROCESS,
-    RC_SWAP_BUFFERS,
-    RC_DRAW_BUFFER,
-    RC_COLORMASK,
-    RC_SCREENSHOT,
-    RC_CLEARDEPTH,
+	RC_POSTPROCESS,
+	RC_SWAP_BUFFERS,
+	RC_DRAW_BUFFER,
+	RC_COLORMASK,
+	RC_SCREENSHOT,
+	RC_CLEARDEPTH,
 
-    // mainly called from the vm
-    RC_DRAW_IMAGE,
-    RC_SET_COLOR,
+	// mainly called from the vm
+	RC_DRAW_IMAGE,
+	RC_SET_COLOR,
 
-    RC_END_OF_LIST
+	RC_END_OF_LIST
 } renderCmdType_t;
 
 typedef struct {
-    renderCmdType_t commandId;
-    float color[4];
+	renderCmdType_t commandId;
+	float color[4];
 } setColorCmd_t;
 
 typedef struct {
-    renderCmdType_t commandId;
-    uint32_t rgba[4];
+	renderCmdType_t commandId;
+	uint32_t rgba[4];
 } colorMaskCmd_t;
 
 typedef struct {
-    renderCmdType_t commandId;
+	renderCmdType_t commandId;
 } clearDepthCommand_t;
 
 typedef struct {
-    renderCmdType_t commandId;
+	renderCmdType_t commandId;
 } swapBuffersCmd_t;
 
 typedef struct {
-    renderCmdType_t commandId;
-    uint32_t buffer;
+	renderCmdType_t commandId;
+	uint32_t buffer;
 } drawBufferCmd_t;
 
 typedef struct {
-    renderCmdType_t commandId;
-    shader_t *shader;
-    float x, y;
-    float w, h;
-    float u1, v1;
-    float u2, v2;
+	renderCmdType_t commandId;
+	shader_t *shader;
+	float x, y;
+	float w, h;
+	float u1, v1;
+	float u2, v2;
 } drawImageCmd_t;
 
 typedef struct {
@@ -1808,26 +1806,26 @@ typedef struct {
 
 
 typedef struct {
-    renderCmdType_t commandId;
-    viewData_t viewData;
-    renderSceneDef_t refdef;
+	renderCmdType_t commandId;
+	viewData_t viewData;
+	renderSceneDef_t refdef;
 } postProcessCmd_t;
 
 typedef struct {
-    renderCommandList_t commandList;
+	renderCommandList_t commandList;
 
-    dlight_t *dlights;
-    renderEntityDef_t *entities;
+	dlight_t *dlights;
+	renderEntityDef_t *entities;
 
-    glIndex_t *indices;
-    srfVert_t *verts;
-    polyVert_t *polyVerts;
-    srfPoly_t *polys;
+	glIndex_t *indices;
+	srfVert_t *verts;
+	polyVert_t *polyVerts;
+	srfPoly_t *polys;
 
-    uint64_t numPolys;
-    uint64_t numIndices;
+	uint64_t numPolys;
+	uint64_t numIndices;
 
-    screenshotCommand_t screenshotBuf;
+	screenshotCommand_t screenshotBuf;
 } renderBackendData_t;
 
 extern qboolean screenshotFrame;

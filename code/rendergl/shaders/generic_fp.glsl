@@ -347,8 +347,9 @@ void main() {
     if ( u_Bloom ) {
     	// check whether fragment output is higher than threshold, if so output as brightness color
     	float brightness = dot( a_Color.rgb, vec3( 0.1, 0.1, 0.1 ) );
-    	if ( brightness > 1.0 ) {
+    	if ( brightness > 0.9 ) {
     		a_BrightColor = vec4( a_Color.rgb, 1.0 );
+            a_BrightColor.rgb = blur( a_BrightColor.rgb );
     	} else {
     		a_BrightColor = vec4( 0.0, 0.0, 0.0, 1.0 );
     	}

@@ -115,8 +115,9 @@ vec2 GenTexCoords( int TCGen, vec3 position, vec3 normal, vec3 TCGenVector0, vec
 }
 #endif
 
-void main()
-{
+void main() {
+	vec3 position = vec3( a_Position.xy, 0.0 );
+
 	if ( u_ColorGen == CGEN_VERTEX ) {
 		v_Color = vec4( 1.0 );
 	} else {
@@ -125,19 +126,19 @@ void main()
 	v_Color = vec4( 1.0 );
 
 #if defined(USE_TCGEN)
-	vec2 texCoords = GenTexCoords( u_TCGen0, a_Position, vec3( 0.0 ), u_TCGen0Vector0, u_TCGen0Vector1 );
+	vec2 texCoords = GenTexCoords( u_TCGen0, position, vec3( 0.0 ), u_TCGen0Vector0, u_TCGen0Vector1 );
 #else
 	vec2 texCoords = a_TexCoords;
 #endif
 
 #if defined(USE_TCMOD)
-	v_TexCoords = ModTexCoords( texCoords, a_Position, u_DiffuseTexMatrix, u_DiffuseTexOffTurb );
+	v_TexCoords = ModTexCoords( texCoords, position, u_DiffuseTexMatrix, u_DiffuseTexOffTurb );
 #else
 	v_TexCoords = texCoords;
 #endif
 
 	v_WorldPos = a_WorldPos;
-	v_FragPos = vec4( u_ModelViewProjection * vec4( a_Position, 1.0 ) ).xyz;
+//	v_FragPos = vec4( u_ModelViewProjection * vec4( position, 1.0 ) ).xyz;
 
-    gl_Position = u_ModelViewProjection * vec4( a_Position, 1.0 );
+    gl_Position = u_ModelViewProjection * vec4( position, 1.0 );
 }
