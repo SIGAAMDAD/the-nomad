@@ -13,7 +13,7 @@ Here's a complete list of things I plan to put into the game:
 - Renown System
 - Stealth Mechanics (cover, hiding spots, essentially a dumbed down version of AC Unity)
 - Executions
-- Zandatsu (ripping out the heart inside of the gatorade)
+- Zandatsu (ripping out the heart instead of the gatorade)
 - Blade Mode
 - Grenades
 - Fear
