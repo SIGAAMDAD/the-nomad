@@ -475,6 +475,20 @@ static void R_ProcessLights( void )
 		lights[i].quadratic = data[i].quadratic;
 		lights[i].type = data[i].type;
 	}
+	
+	for ( i = 0; i < GENERICDEF_COUNT; i++ ) {
+		GLSL_UseProgram( &rg.genericShader[i] );
+		GLSL_SetUniformVec3( &rg.genericShader[i], UNIFORM_AMBIENTLIGHT, rg.world->ambientLightColor );
+		GLSL_SetUniformInt( &rg.genericShader[i], UNIFORM_NUM_LIGHTS, backend.refdef.numDLights + rg.world->numLights );
+		GLSL_ShaderBufferData( &rg.genericShader[i], UNIFORM_LIGHTDATA, rg.lightData, sizeof( shaderLight_t ) *
+			( backend.refdef.numDLights + rg.world->numLights ) );
+	}
+	
+	GLSL_UseProgram( &rg.tileShader );
+	GLSL_SetUniformVec3( &rg.tileShader, UNIFORM_AMBIENTLIGHT, rg.world->ambientLightColor );
+	GLSL_SetUniformInt( &rg.tileShader, UNIFORM_NUM_LIGHTS, backend.refdef.numDLights + rg.world->numLights );
+	GLSL_ShaderBufferData( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, sizeof( shaderLight_t ) *
+		( backend.refdef.numDLights + rg.world->numLights ) );
 }
 
 void RE_LoadWorldMap( const char *filename )

@@ -279,6 +279,7 @@ void R_DrawWorld( void )
     vec3_t pos;
     ivec3_t origin;
     drawVert_t *vtx;
+	ivec2_t begin, end;
     vec3_t edge1, edge2, normal;
     vec4_t color;
     uint16_t color16[4];
@@ -301,6 +302,8 @@ void R_DrawWorld( void )
     rg.world->drawing = qtrue;
 
     vtx = rg.world->vertices;
+	VectorCopy2( begin, glState.viewData.camera.origin );
+	VectorCopy2( end, glState.viewData.camera.origin );
 
     for ( y = 0; y < rg.world->height; y++ ) {
         for ( x = 0; x < rg.world->width; x++ ) {
