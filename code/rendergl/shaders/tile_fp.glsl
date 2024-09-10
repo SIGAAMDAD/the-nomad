@@ -296,7 +296,6 @@ void ApplyLighting() {
 			break;
 		};
 	}
-//    a_Color.rgb += texture2D( u_DiffuseMap, v_TexCoords ).rgb;
 	a_Color.rgb *= u_AmbientColor;
 }
 

@@ -75,6 +75,7 @@ typedef struct {
     uint32_t numLevels;
 } mapinfo_t;
 
+#pragma pack( push, 1 )
 typedef struct linkEntity_s {
     bbox_t bounds;
     vec3_t origin;
@@ -96,6 +97,7 @@ typedef struct {
 	float angle;
     uint32_t flags; // unused for now
 } ray_t;
+#pragma pack( pop )
 
 typedef enum
 {

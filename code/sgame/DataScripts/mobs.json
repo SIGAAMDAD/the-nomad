@@ -24,6 +24,7 @@
 			"MoveSfx": "sfx/mobs/grunt_move.ogg",
 			"Flags": "None",
 			"Speed": [ 1.75, 1.75, 5.5 ],
+			"Script": "MobLib/Mobs/ZurgutGrunt.as",
 			"AttackData": [
 				{
 					"Id": "MOB_GRUNT_ATTACK_BOMB",

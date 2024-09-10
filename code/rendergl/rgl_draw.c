@@ -6,7 +6,11 @@ void R_DrawElements( uint32_t numElements, uintptr_t nOffset ) {
 	switch ( r_drawMode->i ) {
 	case DRAWMODE_GPU:
 	case DRAWMODE_MAPPED: {
-		nglDrawElements( GL_TRIANGLES, numElements, GLN_INDEX_TYPE, BUFFER_OFFSET( nOffset ) );
+		if ( backend.drawBatch.instanced ) {
+
+		} else {
+			nglDrawElements( GL_TRIANGLES, numElements, GLN_INDEX_TYPE, BUFFER_OFFSET( nOffset ) );
+		}
 		break; }
 	case DRAWMODE_IMMEDIATE: {
 		// immediate mode drawing is the least supported, if there's a bug here, I probably will not try to fix it

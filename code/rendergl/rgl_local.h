@@ -1008,10 +1008,30 @@ typedef struct {
 	glRingbuffer_t vertexRB;
 	glRingbuffer_t indexRB;
 
+	qboolean instanced;
+	uint32_t instanceCount;
+
 	shader_t *shader;
 
 	double shaderTime;
 } batch_t;
+
+typedef enum {
+	USAGE_VERTEX,
+	USAGE_INDEX,
+	USAGE_UNIFORM,
+	USAGE_SSBO,
+} bufferUsage_t;
+
+typedef struct {
+	char debugName[ MAX_NPATH ];
+
+	GLuint nBufferID;
+	uint32_t nBufferSize;
+
+	GLenum glTarget;
+	GLenum glUsage;
+} gpuBuffer_t;
 
 typedef struct {
 //    byte color2D[4];

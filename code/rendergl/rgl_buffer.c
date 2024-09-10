@@ -1,24 +1,66 @@
 #include "rgl_local.h"
 
-typedef struct {
-    char name[MAX_NPATH];
-    GLuint pboId;
-    uint32_t size;
-} pixelBuffer_t;
-
-pixelBuffer_t *R_AllocatePixelBuffer( const char *name, uint32_t size )
+gpuBuffer_t *R_CreateBuffer( const char *name, bufferUsage_t nUsage, bufferType_t nType, uint32_t nSize, const void *pData )
 {
-    pixelBuffer_t *buf;
+	gpuBuffer_t *buf;
 
-    buf = ri.Hunk_Alloc( sizeof( *buf ), h_low );
+	buf = ri.Hunk_Alloc( sizeof( *buf ), h_low );
 
-    N_strncpyz( buf->name, name, sizeof( buf->name ) );
-    buf->size = size;
+	switch ( nUsage ) {
+	case USAGE_VERTEX:
+		buf->glTarget = GL_ARRAY_BUFFER;
+		break;
+	case USAGE_INDEX:
+		buf->glTarget = GL_ELEMENT_ARRAY_BUFFER;
+		break;
+	case USAGE_SSBO:
+		buf->glTarget = GL_SHADER_STORAGE_BUFFER;
+		break;
+	case USAGE_UNIFORM:
+		buf->glTarget = GL_UNIFORM_BUFFER;
+		break;
+	default:
+	};
 
-    nglGenBuffers( GL_PIXEL_PACK_BUFFER, &buf->pboId );
-    nglBindBuffer( GL_PIXEL_PACK_BUFFER, buf->pboId );
-    nglBufferData( GL_PIXEL_PACK_BUFFER, size, NULL, GL_STREAM_DRAW );
-    nglBindBuffer( GL_PIXEL_PACK_BUFFER, 0 );
+	switch ( nType ) {
+	case BUFFER_DYNAMIC:
+		buf->glUsage = GL_DYNAMIC_DRAW;
+		break;
+	case BUFFER_FRAME:
+	case BUFFER_STREAM:
+		buf->glUsage = GL_STREAM_DRAW;
+		break;
+	case BUFFER_STATIC:
+		buf->glUsage = GL_STATIC_DRAW;
+		break;
+	default:
+		break;
+	};
 
-    return buf;
+	N_strncpyz( buf->debugName, name, sizeof( buf->debugName ) );
+
+	return buf;
+}
+
+void R_StreamBuffer( gpuBuffer_t *buf, uint32_t nSize, const void *pData )
+{
+	if ( buf->glTarget == GL_SHADER_STORAGE_BUFFER ) {
+		nglMapBufferRange( GL_SHADER_STORAGE_BUFFER, 0, nSize, GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT)
+		nglFlushMappedBufferRange( GL_SHADER_STORAGE_BUFFER, 0, nSize );
+	}
+	else {
+		nglBindBuffer( buf->glTarget, buf->nBufferID );
+		nglBufferData( buf->glTarget, nSize, NULL, buf->glUsage );
+		nglBufferSubData( buf->glTarget, 0, nSize, pData );
+		nglBindBuffer( buf->glTarget, 0 );
+	}
+}
+
+void R_SetBufferData( gpuBuffer_t *buf, uint32_t nSize, uint32_t nOffset, const void *pData )
+{
+	nglBindBuffer( buf->glTarget, buf->nBufferID );
+	
+	nglBufferSubData( buf->glTarget, nOffset, nSize, pData );
+
+	nglBindBuffer( buf->glTarget, 0 );
 }

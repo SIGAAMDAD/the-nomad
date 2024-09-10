@@ -124,6 +124,8 @@ static qboolean G_LoadLevelFile( const char *filename, mapinfo_t *info )
 			}
 		}
 	}
+
+	/*
 	p = coords = (ivec2_t *)alloca( sizeof( *coords ) * nWalls );
 	for ( y = 0; y < info->height; y++ ) {
 		for ( x = 0; x < info->width; x++ ) {
@@ -143,6 +145,7 @@ static qboolean G_LoadLevelFile( const char *filename, mapinfo_t *info )
 		}
 	}
 	Con_Printf( "Generated %lu walls.\n", nWalls );
+	*/
 
     FS_FreeFile( f.v );
 
@@ -473,12 +476,14 @@ void CGameWorld::CastRay( ray_t *ray )
 			break;
 		}
 
+		/*
 		for ( i = 0; i < nWalls; i++ ) {
 			if ( BoundsIntersectPoint( &wallBounds[i], ray->origin ) ) {
 				ray->entityNumber = ENTITYNUM_WALL;
 				return;
 			}
 		}
+		*/
 
 		VectorCopy( pos, ray->origin );
 		Sys_SnapVector( pos );

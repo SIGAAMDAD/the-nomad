@@ -5,6 +5,8 @@
 #include <ALsoft/alext.h>
 #include <sndfile.h>
 #include "../module_lib/module_memory.h"
+#include "../fmod/fmod.h"
+#include "../fmod/fmod_studio.h"
 #define STB_VORBIS_NO_STDIO
 #define STB_VORBIS_NO_PUSHDATA_API // we're using the pulldata API
 #include "stb_vorbis.c"

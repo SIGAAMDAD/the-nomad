@@ -1,7 +1,7 @@
 in vec2 a_Position;
 in vec2 a_TexCoords;
-in vec4 a_Color;
 in vec3 a_WorldPos;
+in vec4 a_Color;
 
 out vec2 v_TexCoords;
 out vec3 v_FragPos;

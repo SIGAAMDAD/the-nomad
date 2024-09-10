@@ -61,8 +61,9 @@ bool CGameArchive::ValidateHeader( const void *data ) const
     }
 
     if ( h->validation.version.m_nVersionMajor != NOMAD_VERSION
-    || h->validation.version.m_nVersionUpdate != NOMAD_VERSION_UPDATE
-    || h->validation.version.m_nVersionPatch != NOMAD_VERSION_PATCH ) {
+    	|| h->validation.version.m_nVersionUpdate != NOMAD_VERSION_UPDATE
+    	|| h->validation.version.m_nVersionPatch != NOMAD_VERSION_PATCH )
+	{
         Con_Printf( COLOR_RED "LoadArchiveFile: failed to load save, header has incorrect version.\n" );
         return false;
     }
