@@ -176,6 +176,7 @@ LDLIBS= \
 		-lSDL2_image \
 		-Wl,-rpath='.' \
 		-ljpeg -lsteam_api \
+		-lfmod -lfmodL -lfmodstudio -lfmodstudioL \
 		libbox2d.a
 
 ifndef release

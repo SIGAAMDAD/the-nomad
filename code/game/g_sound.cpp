@@ -5,8 +5,8 @@
 #include <ALsoft/alext.h>
 #include <sndfile.h>
 #include "../module_lib/module_memory.h"
-#include "../fmod/fmod.h"
-#include "../fmod/fmod_studio.h"
+#include "../fmod/fmod.hpp"
+#include "../fmod/fmod_studio.hpp"
 #define STB_VORBIS_NO_STDIO
 #define STB_VORBIS_NO_PUSHDATA_API // we're using the pulldata API
 #include "stb_vorbis.c"
@@ -169,6 +169,8 @@ private:
     ALuint m_iSource;
     ALuint m_iBuffer;
 
+    FMOD::Sound *m_pSound;
+
     qboolean m_bLoop;
 
     SF_INFO m_hFData;
@@ -211,7 +213,7 @@ public:
                     alSourcef( m_pSources[i]->GetSource(), AL_GAIN, 0.0f );
                 }
             }
-            Con_Printf( "Muted sounds\n" );
+            Con_DPrintf( "Muted sounds\n" );
         } else if ( !bMute && m_bMuted ) {
             for ( i = 0; i < MAX_SOUND_SOURCES; i++ ) {
                 if ( m_pSources[i] ) {
@@ -246,6 +248,9 @@ public:
 
     eastl::fixed_vector<CSoundSource *, 10> m_LoopingTracks;
 private:
+    FMOD::Studio::System *m_pStudioSystem;
+    FMOD::System *m_pSystem;
+
     CSoundSource *m_pSources[MAX_SOUND_SOURCES];
     uint64_t m_nSources;
 
@@ -679,6 +684,9 @@ void CSoundManager::Init( void )
     PROFILE_FUNCTION();
     
     memset( this, 0, sizeof( *this ) );
+
+    FMOD::Studio::System::create( &m_pStudioSystem );
+    FMOD::System_Create( &m_pSystem );
 
     // no point in initializing OpenAL if sound is disabled with snd_noSound
 	if ( snd_noSound->i ) {
@@ -1302,6 +1310,7 @@ static void Snd_PlayTrack_f( void ) {
 
     music = Cmd_Argv( 1 );
     
+    Snd_ClearLoopingTracks();
     if ( !*music ) {
         Con_Printf( "Clearing current track...\n" );
         Snd_ClearLoopingTracks();
