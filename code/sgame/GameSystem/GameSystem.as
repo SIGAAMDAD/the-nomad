@@ -25,6 +25,9 @@ namespace TheNomad::GameSystem {
 		void OnInit() {
 			m_nGameTic = 0;
 			m_nDeltaTics = 0;
+			m_nLimitFPS = 1.0f / TheNomad::SGame::sgame_MaxFps.GetFloat();
+			m_nLastFrameTime = 0.0f;
+			m_nDeltaTime = 0.0f;
 
 			// cache redundant calculations
 			GetGPUGameConfig( m_GPUConfig );
@@ -67,10 +70,10 @@ namespace TheNomad::GameSystem {
 			return ivec2( m_GPUConfig.screenWidth, m_GPUConfig.screenHeight );
 		}
 		
-		uint64 GetDeltaTics() const {
+		uint GetDeltaTics() const {
 			return m_nDeltaTics;
 		}
-		uint64 GetGameTic() const {
+		uint GetGameTic() const {
 			return m_nGameTic;
 		}
 		float GetUIScale() const {
@@ -79,9 +82,15 @@ namespace TheNomad::GameSystem {
 		float GetUIBias() const {
 			return m_nUIBias;
 		}
-		void SetMsec( uint64 msec ) {
-			m_nDeltaTics = msec - m_nGameTic;
+		float GetDeltaTime() const {
+			return m_nDeltaTime;
+		}
+		void SetMsec( uint msec ) {
 			m_nGameTic = msec;
+			m_nDeltaTime = ( float( msec ) - m_nLastFrameTime ) * m_nLimitFPS;
+			m_nLastFrameTime = float( msec );
+
+			m_nDeltaTics = msec - m_nGameTic;
 		}
 
 		TheNomad::Engine::Renderer::GPUConfig& GetGPUConfig() {
@@ -128,8 +137,11 @@ namespace TheNomad::GameSystem {
 		private int m_JoystichPitch = 0;
 
 		// timing
-		private uint64 m_nDeltaTics = 0;
-		private uint64 m_nGameTic = 0;
+		private uint m_nDeltaTics = 0;
+		private uint m_nGameTic = 0;
+		private float m_nLastFrameTime = 0.0f;
+		private float m_nDeltaTime = 0.0f;
+		private float m_nLimitFPS = 0.0f;
 
 		// rendering
 		private float m_nUIBias = 0;

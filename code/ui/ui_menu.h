@@ -27,8 +27,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "ui_string_manager.h"
 
-#define MAX_TABLE_ITEMS 64
-#define MAX_MENU_ITEMS 64
+#define MAX_TABLE_ITEMS 36
+#define MAX_MENU_ITEMS 36
 
 #define MTYPE_NULL          0
 #define MTYPE_TEXT          1
@@ -79,9 +79,6 @@ typedef struct {
 
     float titleFontScale;
     float textFontScale;
-
-//    int cursor;
-//    int cursor_prev;
     sfxHandle_t track;
 
     int flags;
@@ -102,11 +99,6 @@ typedef struct {
 	
     int type;
     int id;
-//    int x, y;
-//    int left;
-//    int top;
-//    int right;
-//    int bottom;
     unsigned flags;
     qboolean focused;
     ImFont *font;

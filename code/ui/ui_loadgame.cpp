@@ -23,18 +23,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "ui_lib.h"
 
 typedef struct {
-    char name[MAX_NPATH];
-    fileStats_t stats;
-    uint64_t index;
-    gamedata_t gd;
-    qboolean valid;
-    qboolean *modsLoaded;
-
-    char creationTime[32];
-    char modificationTime[32];
-} saveinfo_t;
-
-typedef struct {
     menuframework_t menu;
 
     saveinfo_t *saveList;
@@ -52,6 +40,11 @@ typedef struct {
 } loadGameMenu_t;
 
 static loadGameMenu_t *s_loadGame;
+
+saveinfo_t *GetSaveInfos( void )
+{
+    return s_loadGame->saveList;
+}
 
 static void LoadGameMenu_Draw( void )
 {

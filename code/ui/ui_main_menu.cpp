@@ -101,7 +101,7 @@ static void MainMenu_EventCallback( void *item, int event )
 
     switch ( self->id ) {
     case ID_SINGEPLAYER:
-        UI_SinglePlayerMenu();
+        UI_PlayMenu();
         break;
     case ID_MODS:
         UI_ModsMenu();

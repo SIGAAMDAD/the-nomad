@@ -62,13 +62,6 @@ menu/mainbackground
         tcGen texture
         rgbGen vertex
     }
-    else {
-        texFilter bilinear
-        map textures/menu/standard/fromeaglespeak.jpg
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-        tcGen texture
-        rgbGen vertex
-    }
 }
 
 menu/tales_around_the_campfire
@@ -304,12 +297,6 @@ menu/accept_1
     if  ( $r_textureDetail < 2 ) {
         texFilter bilinear
         map textures/menu/low/accept_1.tga
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-        rgbGen vertex
-    }
-    elif ( $r_textureDetail == 2 ) {
-        texFilter bilinear
-        map textures/menu/standard/accept_1.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }

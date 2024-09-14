@@ -68,13 +68,13 @@ typedef enum { qfalse = 0, qtrue = 1 } qboolean;
 #endif
 
 #ifndef MAX_OSPATH
-    #ifdef _WIN32
-        #define MAX_OSPATH _PATH_MAX
-    #elif defined(__unix__)
-        #include <unistd.h>
-        #include <limits.h>
-        #define MAX_OSPATH PATH_MAX
-    #endif
+	#ifdef _WIN32
+		#define MAX_OSPATH _PATH_MAX
+	#elif defined(__unix__)
+		#include <unistd.h>
+		#include <limits.h>
+		#define MAX_OSPATH PATH_MAX
+	#endif
 #endif
 
 #ifndef MAX_NPATH
@@ -100,45 +100,45 @@ typedef enum { qfalse = 0, qtrue = 1 } qboolean;
 #define LEVEL_FILE_EXT_RAW "bmf"
 
 typedef enum {
-    DIR_NORTH = 0,
-    DIR_NORTH_EAST,
-    DIR_EAST,
-    DIR_SOUTH_EAST,
-    DIR_SOUTH,
-    DIR_SOUTH_WEST,
-    DIR_WEST,
-    DIR_NORTH_WEST,
+	DIR_NORTH = 0,
+	DIR_NORTH_EAST,
+	DIR_EAST,
+	DIR_SOUTH_EAST,
+	DIR_SOUTH,
+	DIR_SOUTH_WEST,
+	DIR_WEST,
+	DIR_NORTH_WEST,
 
 	DIR_NULL,
 
-    NUMDIRS
+	NUMDIRS
 } dirtype_t;
 
 typedef struct {
-    uint64_t fileofs;
-    uint64_t length;
+	uint64_t fileofs;
+	uint64_t length;
 } lump_t;
 
 #define TEX2D_IDENT (('D'<<16)+('2'<<8)+'T')
 #define TEX2D_VERSION 1
 
 typedef struct {
-    uint64_t ident;
-    uint64_t version;
+	uint64_t ident;
+	uint64_t version;
 
-    char name[MAX_NPATH];
-    uint32_t minfilter;
-    uint32_t magfilter;
-    uint32_t wrapS;
-    uint32_t wrapT;
-    uint32_t multisampling;
-    uint32_t width;
-    uint32_t height;
-    uint32_t channels;
-    uint32_t format; // OpenGL internal format
-    uint32_t compression; // zlib or bzip2
-    uint64_t compressedSize;
-    uint64_t fileSize; // og file size
+	char name[MAX_NPATH];
+	uint32_t minfilter;
+	uint32_t magfilter;
+	uint32_t wrapS;
+	uint32_t wrapT;
+	uint32_t multisampling;
+	uint32_t width;
+	uint32_t height;
+	uint32_t channels;
+	uint32_t format; // OpenGL internal format
+	uint32_t compression; // zlib or bzip2
+	uint64_t compressedSize;
+	uint64_t fileSize; // og file size
 } tex2d_t;
 
 #define TILE2D_MAGIC 0xfda218891
@@ -147,41 +147,41 @@ typedef struct {
 typedef vec2_t spriteCoord_t[4];
 
 typedef struct {
-    vec2_t uv[4];
-    uint32_t index;
+	vec2_t uv[4];
+	uint32_t index;
 } tile2d_sprite_t;
 
 typedef struct {
-    uint32_t numTiles;
-    uint32_t tileWidth;
-    uint32_t tileHeight;
-    uint32_t tileCountX;
-    uint32_t tileCountY;
-    uint32_t compression; // only for sprites
-    uint64_t compressedSize; // only for sprites
-    char texture[MAX_NPATH]; // store a texture inside of a tileset
+	uint32_t numTiles;
+	uint32_t tileWidth;
+	uint32_t tileHeight;
+	uint32_t tileCountX;
+	uint32_t tileCountY;
+	uint32_t compression; // only for sprites
+	uint64_t compressedSize; // only for sprites
+	char texture[MAX_NPATH]; // store a texture inside of a tileset
 } tile2d_info_t;
 
 typedef struct {
-    uint64_t magic;
-    uint64_t version;
-    tile2d_info_t info;
-    tile2d_sprite_t *sprites;
+	uint64_t magic;
+	uint64_t version;
+	tile2d_info_t info;
+	tile2d_sprite_t *sprites;
 } tile2d_header_t;
 
 #define ANIM2D_IDENT (('D'<<24)+('2'<<16)+('A'<<8)+'#')
 #define ANIM2D_VERSION 1
 
 typedef struct {
-    uint32_t index;
-    uint32_t numtics;
+	uint32_t index;
+	uint32_t numtics;
 } anim2d_frame_t;
 
 typedef struct {
-    uint64_t ident;
-    uint64_t version;
-    uint64_t numFrames;
-    anim2d_frame_t *frames;
+	uint64_t ident;
+	uint64_t version;
+	uint64_t numFrames;
+	anim2d_frame_t *frames;
 } anim2d_header_t;
 
 #define MAP_IDENT (('#'<<24)+('P'<<16)+('A'<<8)+'M')
@@ -240,20 +240,29 @@ typedef struct {
 #define SURFACEPARM_NOLIGHTMAP      0x00001000 // surface doesn't need a lightmap
 #define SURFACEPARM_DUST            0x00002000 // generate dust particles when walking on this tile
 #define SURFACEPARM_NONSOLID        0x00004000 // don't apply collision physics here
+#define TILESIDE_NORTH				0x00008000
+#define TILESIDE_NORTH_EAST			0x00000100
+#define TILESIDE_EAST				0x00000200
+#define TILESIDE_SOUTH_EAST			0x00000400
+#define TILESIDE_SOUTH				0x00000800
+#define TILESIDE_SOUTH_WEST			0x00000010
+#define TILESIDE_WEST				0x00000020
+#define TILESIDE_NORTH_WEST			0x00000040
+#define TILESIDE_INSIDE             0x00000080
 
 #define LIGHT_POINT       0
 #define LIGHT_DIRECTIONAL 1
 
 typedef struct {
-    vec4_t color;
-    uvec3_t origin;
-    float angle;
-    float brightness;
-    float range;
-    float linear;
-    float quadratic;
-    float constant;
-    int type;
+	uint16_t color[4];
+	uint16_t origin[2];
+	uint8_t angle;
+	uint8_t brightness;
+	uint8_t range;
+	uint8_t linear;
+	uint8_t quadratic;
+	uint8_t constant;
+	uint16_t type;
 } maplight_t;
 
 //
@@ -261,79 +270,78 @@ typedef struct {
 // index should never the be the last checkpoint in the map
 //
 typedef struct {
-    uint32_t trigger; // checkpoint index
+	uint16_t trigger; // checkpoint index
 } mapsecret_t;
 
 typedef struct {
-    vec2_t texcoords[4];
-    byte sides[DIR_NULL]; // for physics
-    vec4_t color;
-    uvec3_t pos;
-    int32_t index; // tileset texture index, -1 if not bound
-    uint32_t flags;
+	uint16_t color[4];
+	uint16_t pos[3];
+	int16_t index; // tileset texture index, -1 if not bound
+	uint32_t flags;
 } maptile_t;
 
 typedef struct {
-    vec3_t xyz;
-    vec2_t uv;
-    vec4_t color;
+	vec3_t xyz;
+	vec2_t uv;
+	vec4_t color;
 } mapvert_t;
 
 typedef struct {
-    char name[MAX_NPATH];
-    uint32_t minfilter;
-    uint32_t magfilter;
-    uint32_t wrapS;
-    uint32_t wrapT;
-    uint32_t multisampling;
-    uint32_t width;
-    uint32_t height;
-    uint32_t channels;
-    uint32_t format; // OpenGL internal format
-    uint32_t compression; // zlib or bzip2
-    uint64_t compressedSize;
+	char name[MAX_NPATH];
+	uint32_t minfilter;
+	uint32_t magfilter;
+	uint32_t wrapS;
+	uint32_t wrapT;
+	uint32_t multisampling;
+	uint32_t width;
+	uint32_t height;
+	uint32_t channels;
+	uint32_t format; // OpenGL internal format
+	uint32_t compression; // zlib or bzip2
+	uint64_t compressedSize;
 } maptexture_t;
 
 typedef struct {
-    char name[MAX_NPATH];
-    uint32_t numTiles;
-    uint32_t tileWidth;
-    uint32_t tileHeight;
-    uint32_t compression;
-    uint64_t compressedSize;
+	char name[MAX_NPATH];
+	uint32_t numTiles;
+	uint32_t tileWidth;
+	uint32_t tileHeight;
+	uint32_t compression;
+	uint64_t compressedSize;
 } maptileset_t;
 
 //
 // mapcheckpoint_t: the last checkpoint in the list is always the level's exit
 //
 typedef struct {
-    uvec3_t xyz;
+	uint16_t xyz[2];
+	uint16_t lockArea[2];
 } mapcheckpoint_t;
 
 typedef struct {
-    uvec3_t xyz;
-    uint32_t entitytype;
-    uint32_t entityid;
-    uint32_t checkpoint;
+	uint16_t xyz[2];
+	uint16_t checkpoint;
+	uint16_t entitytype;
+	uint32_t entityid;
 } mapspawn_t;
 
 typedef struct {
 	uint32_t ident;
 	uint32_t version;
-    uint32_t mapWidth;
-    uint32_t mapHeight;
-    vec3_t ambientLightColor;
-    lump_t lumps[NUMLUMPS];
+	uint16_t mapWidth;
+	uint16_t mapHeight;
+	uint16_t ambientLightColor[4];
+	lump_t lumps[NUMLUMPS];
 } mapheader_t;
 
 #define LEVEL_IDENT (('M'<<24)+('F'<<16)+('F'<<8)+'B')
 #define LEVEL_VERSION 0
 
 typedef struct {
-    uint32_t ident;
-    uint32_t version;
-    mapheader_t map;
-    tile2d_header_t tileset;
+	uint32_t ident;
+	uint32_t version;
+	mapheader_t map;
+	tile2d_header_t tileset;
 } bmf_t;
 
 #endif

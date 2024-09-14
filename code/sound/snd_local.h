@@ -3,34 +3,46 @@
 
 #pragma once
 
-#include "../engine/n_shared.h"
-#include <EASTL/string.h>
-#include <EASTL/vector.h>
-#include <sndfile.h>
-#include <ALsoft/alext.h>
-#include <ALsoft/al.h>
-#include <fmod/fmod.hpp>
-#include <fmod/fmod_studio.hpp>
-#include <EASTL/map.h>
-#include "../module_lib/module_public.h"
+#include "snd_public.h"
 
-void Snd_DisableSounds( void );
-void Snd_StopAll( void );
-void Snd_PlaySfx( sfxHandle_t sfx );
-void Snd_StopSfx( sfxHandle_t sfx );
-void Snd_Init( void );
-void Snd_Restart( void );
-void Snd_Shutdown( void );
-void Snd_Update( int msec );
-sfxHandle_t Snd_RegisterTrack( const char *npath );
-sfxHandle_t Snd_RegisterSfx( const char *npath );
-void Snd_PlayWorldSfx( const vec3_t origin, sfxHandle_t hSfx );
-void Snd_SetWorldListener( const vec3_t origin );
+#define ERRCHECK( call ) { FMOD_RESULT result = call; if ( result != FMOD_OK ) { FMOD_Error( #call, result ); } }
+void FMOD_Error( const char *call, FMOD_RESULT result );
 
-void Snd_ClearLoopingTracks( void );
-void Snd_AddLoopingTrack( sfxHandle_t handle, uint64_t timeOffset = 0 );
+#define MAX_SOUND_CHANNELS 1024
+#define DISTANCEFACTOR 1.0f
+#define MAX_SOUND_SOURCES 2048
+#define MAX_MUSIC_QUEUE 12
 
-void Snd_StartupThread( int msec );
-void Snd_JoinThread( void );
+#define Snd_HashFileName(x) Com_GenerateHashValue((x),MAX_SOUND_SOURCES)
+
+class CSoundSystem
+{
+public:
+	CSoundSystem( void );
+	~CSoundSystem();
+
+	void Init( void );
+	void Update( void );
+	void Shutdown( void );
+
+	FMOD::Sound *LoadSound( const char *npath );
+
+	inline FMOD::Sound *GetSound( sfxHandle_t hSfx )
+	{ return m_szSources[ hSfx ]; }
+private:
+	FMOD::Studio::System *m_pStudioSystem;
+	FMOD::System *m_pSystem;
+
+	int m_nNextChannelId;
+
+	FMOD::Sound *m_szSources[ MAX_SOUND_SOURCES ];
+
+	eastl::map<string_t, FMOD::Sound *> SoundMap;
+	eastl::map<int, FMOD_CHANNEL *> ChannelMap;
+	eastl::map<string_t, FMOD::Studio::EventInstance *> EventMap;
+	eastl::map<string_t, FMOD::Studio::Bank *> BankMap;
+
+	FMOD::ChannelGroup *m_pMasterGroup;
+};
 
 #endif

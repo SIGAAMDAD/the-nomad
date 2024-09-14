@@ -341,16 +341,11 @@ void R_DrawWorld( void )
                     continue; // not in clipping range
                 }
 
-                if ( rg.world->tiles[ origin[1] * rg.world->width + origin[0] ].sides[DIR_SOUTH] ) {
+                if ( rg.world->tiles[ origin[1] * rg.world->width + origin[0] ].flags & TILESIDE_SOUTH ) {
                     color[3] = 0.10f;
                     break;
                 }
             }
-            R_VaoPackColor( color16, color );
-            VectorCopy4( vtx[0].color, color );
-            VectorCopy4( vtx[1].color, color );
-            VectorCopy4( vtx[2].color, color );
-
             vtx += 4;
         }
     }

@@ -5,33 +5,46 @@ CGameWorld *g_world;
 
 const dirtype_t inversedirs[NUMDIRS] = {
 	DIR_SOUTH,
-    DIR_SOUTH_WEST,
-    DIR_WEST,
-    DIR_NORTH_WEST,
-    DIR_NORTH,
-    DIR_NORTH_EAST,
-    DIR_EAST,
-    DIR_SOUTH_EAST,
+	DIR_SOUTH_WEST,
+	DIR_WEST,
+	DIR_NORTH_WEST,
+	DIR_NORTH,
+	DIR_NORTH_EAST,
+	DIR_EAST,
+	DIR_SOUTH_EAST,
 
 	DIR_NULL, // inside
+};
+
+static const uint64_t inversedirs_flags[ NUMDIRS ] = {
+	TILESIDE_SOUTH,
+	TILESIDE_SOUTH_WEST,
+	TILESIDE_WEST,
+	TILESIDE_NORTH_WEST,
+	TILESIDE_NORTH,
+	TILESIDE_NORTH_EAST,
+	TILESIDE_EAST,
+	TILESIDE_SOUTH_EAST,
+
+	TILESIDE_INSIDE, // inside
 };
 
 static bbox_t *wallBounds;
 static uint64_t nWalls;
 
 static uint64_t CopyLump( void **dest, uint32_t lump, uint64_t size, bmf_t *header ) {
-    uint64_t length, fileofs;
+	uint64_t length, fileofs;
 
-    length = header->map.lumps[lump].length;
-    fileofs = header->map.lumps[lump].fileofs;
+	length = header->map.lumps[lump].length;
+	fileofs = header->map.lumps[lump].fileofs;
 
-    if ( length % size ) {
-        N_Error( ERR_DROP, "CopyLump: funny lump size" );
-    }
-    *dest = Hunk_Alloc( length, h_high );
-    memcpy( *dest, (byte *)header + fileofs, length );
+	if ( length % size ) {
+		N_Error( ERR_DROP, "CopyLump: funny lump size" );
+	}
+	*dest = Hunk_Alloc( length, h_high );
+	memcpy( *dest, (byte *)header + fileofs, length );
 
-    return length / size;
+	return length / size;
 }
 
 static float CM_GetWallLength( dirtype_t dir, int x, int y, const mapinfo_t *info )
@@ -72,50 +85,51 @@ static float CM_GetWallLength( dirtype_t dir, int x, int y, const mapinfo_t *inf
 
 static qboolean G_LoadLevelFile( const char *filename, mapinfo_t *info )
 {
-    union {
-        char *b;
-        void *v;
-    } f;
-    bmf_t *header;
-    uint64_t size;
+	union {
+		char *b;
+		void *v;
+	} f;
+	bmf_t *header;
+	uint64_t size;
 	uint64_t i;
 	ivec2_t *coords, *p;
 	int x, y;
 	const byte nowall[NUMDIRS] = { 0 };
 
-    size = FS_LoadFile( filename, &f.v );
-    if ( !size || !f.v ) {
-        Con_Printf( COLOR_YELLOW "WARNING: failed to load map file '%s'\n", filename );
-        return qfalse;
-    }
+	size = FS_LoadFile( filename, &f.v );
+	if ( !size || !f.v ) {
+		Con_Printf( COLOR_YELLOW "WARNING: failed to load map file '%s'\n", filename );
+		return qfalse;
+	}
 
-    header = (bmf_t *)f.b;
-    if ( size < sizeof(*header) ) {
-        Con_Printf( COLOR_YELLOW "WARNING: map file '%s' isn't big enough to be a map file\n", filename );
-        return qfalse;
-    }
-    
-    if ( header->ident != LEVEL_IDENT ) {
-        Con_Printf( COLOR_YELLOW "WARNING: map file '%s' has bad identifier\n", filename );
-        return qfalse;
-    }
-    if ( header->version != LEVEL_VERSION ) {
-        Con_Printf( COLOR_YELLOW "WARNING: bad map version (%i (it) != %i (this)) in file '%s'\n", header->version, LEVEL_VERSION, filename );
-        return qfalse;
-    }
+	header = (bmf_t *)f.b;
+	if ( size < sizeof(*header) ) {
+		Con_Printf( COLOR_YELLOW "WARNING: map file '%s' isn't big enough to be a map file\n", filename );
+		return qfalse;
+	}
+	
+	if ( header->ident != LEVEL_IDENT ) {
+		Con_Printf( COLOR_YELLOW "WARNING: map file '%s' has bad identifier\n", filename );
+		return qfalse;
+	}
+	if ( header->version != LEVEL_VERSION ) {
+		Con_Printf( COLOR_YELLOW "WARNING: bad map version (%i (it) != %i (this)) in file '%s'\n", header->version, LEVEL_VERSION, filename );
+		return qfalse;
+	}
 
 	N_strncpyz( info->name, filename, sizeof( info->name ) );
 
-    info->width = header->map.mapWidth;
-    info->height = header->map.mapHeight;
+	info->width = header->map.mapWidth;
+	info->height = header->map.mapHeight;
 
-    info->numCheckpoints = CopyLump( (void **)&info->checkpoints, LUMP_CHECKPOINTS, sizeof( mapcheckpoint_t ), header );
-    info->numSpawns = CopyLump( (void **)&info->spawns, LUMP_SPAWNS, sizeof( mapspawn_t ), header );
-    info->numTiles = CopyLump( (void **)&info->tiles, LUMP_TILES, sizeof( maptile_t ), header );
-	info->numLights = CopyLump( (void **)&info->lights, LUMP_LIGHTS, sizeof( maplight_t ), header );
+	info->numCheckpoints = CopyLump( (void **)&info->checkpoints, LUMP_CHECKPOINTS, sizeof( mapcheckpoint_t ), header );
+	info->numSpawns = CopyLump( (void **)&info->spawns, LUMP_SPAWNS, sizeof( mapspawn_t ), header );
+	info->numTiles = CopyLump( (void **)&info->tiles, LUMP_TILES, sizeof( maptile_t ), header );
+//	info->numLights = CopyLump( (void **)&info->lights, LUMP_LIGHTS, sizeof( maplight_t ), header );
 	info->numSecrets = CopyLump( (void **)&info->secrets, LUMP_SECRETS, sizeof( mapsecret_t ), header );
 	info->numLevels = 1;
 
+	/*
 	nWalls = 0;
 	for ( y = 0; y < info->height; y++ ) {
 		for ( x = 0; x < info->width; x++ ) {
@@ -125,7 +139,6 @@ static qboolean G_LoadLevelFile( const char *filename, mapinfo_t *info )
 		}
 	}
 
-	/*
 	p = coords = (ivec2_t *)alloca( sizeof( *coords ) * nWalls );
 	for ( y = 0; y < info->height; y++ ) {
 		for ( x = 0; x < info->width; x++ ) {
@@ -147,31 +160,31 @@ static qboolean G_LoadLevelFile( const char *filename, mapinfo_t *info )
 	Con_Printf( "Generated %lu walls.\n", nWalls );
 	*/
 
-    FS_FreeFile( f.v );
+	FS_FreeFile( f.v );
 
-    return qtrue;
+	return qtrue;
 }
 
 void G_InitMapCache( void )
 {
-    bmf_t header;
-    nhandle_t file;
-    mapinfo_t *info;
-    uint64_t i;
+	bmf_t header;
+	nhandle_t file;
+	mapinfo_t *info;
+	uint64_t i;
 	char path[MAX_NPATH];
 	char **fileList;
 
-    Con_Printf( "Caching map files...\n" );
+	Con_Printf( "Caching map files...\n" );
 
-    memset( &gi.mapCache, 0, sizeof( gi.mapCache ) );
-    fileList = FS_ListFiles( "maps/", ".bmf", &gi.mapCache.numMapFiles );
+	memset( &gi.mapCache, 0, sizeof( gi.mapCache ) );
+	fileList = FS_ListFiles( "maps/", ".bmf", &gi.mapCache.numMapFiles );
 
-    if ( !gi.mapCache.numMapFiles ) {
-        Con_Printf( "no map files to load.\n" );
-        return;
-    }
+	if ( !gi.mapCache.numMapFiles ) {
+		Con_Printf( "no map files to load.\n" );
+		return;
+	}
 
-    Con_Printf( "Got %lu map files\n", gi.mapCache.numMapFiles );
+	Con_Printf( "Got %lu map files\n", gi.mapCache.numMapFiles );
 
 	g_world = new ( Hunk_Alloc( sizeof( *g_world ), h_low ) ) CGameWorld();
 
@@ -184,7 +197,7 @@ void G_InitMapCache( void )
 
 	FS_FreeFileList( fileList );
 
-    // allocate the info
+	// allocate the info
 //    gi.mapCache.infoList = (mapinfo_t *)Hunk_Alloc( sizeof( mapinfo_t ) * gi.mapCache.numMapFiles, h_low );
 //
 //    info = gi.mapCache.infoList;
@@ -222,16 +235,16 @@ void G_MapInfo_f( void ) {
 	uint64_t i;
 
 	Con_Printf( "\nMap List:\n" );
-    for ( i = 0; i < gi.mapCache.numMapFiles; i++ ) {
+	for ( i = 0; i < gi.mapCache.numMapFiles; i++ ) {
 		Con_Printf( "- %s\n", gi.mapCache.mapList[i] );
-    }
+	}
 }
 
 void G_SetMap_f( void ) {
 	const char *mapname;
 	nhandle_t hMap;
 
-    mapname = Cmd_Argv( 1 );
+	mapname = Cmd_Argv( 1 );
 
 	if ( !mapname[0] ) {
 		// clear it
@@ -252,7 +265,7 @@ void G_SetMap_f( void ) {
 		return;
 	}
 
-    gi.mapCache.currentMapLoaded = hMap;
+	gi.mapCache.currentMapLoaded = hMap;
 	gi.mapLoaded = qtrue;
 
 	Cvar_Set( "mapname", gi.mapCache.info.name );
@@ -268,7 +281,7 @@ nhandle_t G_LoadMap( const char *name ) {
 	return G_GetMapHandle( name );
 }
 
-void G_GetCheckpointData( uvec3_t xyz, uint32_t nIndex ) {
+void G_GetCheckpointData( uvec3_t xyz, uvec2_t areaLock, uint32_t nIndex ) {
 	const mapinfo_t *info;
 	
 	if ( !gi.mapCache.info.name[0] ) {
@@ -281,6 +294,7 @@ void G_GetCheckpointData( uvec3_t xyz, uint32_t nIndex ) {
 	}
 	
 	VectorCopy( xyz, info->checkpoints[ nIndex ].xyz );
+	VectorCopy2( areaLock, info->checkpoints[ nIndex ].lockArea );
 }
 
 void G_GetSpawnData( uvec3_t xyz, uint32_t *type, uint32_t *id, uint32_t nIndex, uint32_t *pCheckpointIndex ) {
@@ -356,7 +370,7 @@ void G_SetActiveMap( nhandle_t hMap, uint32_t *nCheckpoints, uint32_t *nSpawns, 
 }
 
 CGameWorld::CGameWorld( void ) {
-    memset( this, 0, sizeof(*this) );
+	memset( this, 0, sizeof(*this) );
 }
 
 CGameWorld::~CGameWorld() {
@@ -365,8 +379,8 @@ CGameWorld::~CGameWorld() {
 void CGameWorld::Init( mapinfo_t *info )
 {
 	m_nEntities = 0;
-    m_pMapInfo = info;
-    m_ActiveEnts.next =
+	m_pMapInfo = info;
+	m_ActiveEnts.next =
 	m_ActiveEnts.prev =
 		&m_ActiveEnts;
 }
@@ -375,7 +389,7 @@ void CGameWorld::LinkEntity( linkEntity_t *ent )
 {
 	m_nEntities++;
 
-    m_ActiveEnts.prev->next = ent;
+	m_ActiveEnts.prev->next = ent;
 	ent->prev = m_ActiveEnts.prev;
 	ent->next = &m_ActiveEnts;
 	m_ActiveEnts.prev = ent;
@@ -383,15 +397,15 @@ void CGameWorld::LinkEntity( linkEntity_t *ent )
 
 void CGameWorld::UnlinkEntity( linkEntity_t *ent )
 {
-    ent->prev->next = ent->next;
-    ent->next->prev = ent->prev;
+	ent->prev->next = ent->next;
+	ent->next->prev = ent->prev;
 }
 
 qboolean CGameWorld::CheckWallHit( const vec3_t origin, dirtype_t dir )
 {
-    vec3_t p;
+	vec3_t p;
 	ivec3_t tmp;
-    VectorCopy( p, origin );
+	VectorCopy( p, origin );
 
 	switch ( dir ) {
 	case DIR_NORTH:
@@ -425,8 +439,8 @@ qboolean CGameWorld::CheckWallHit( const vec3_t origin, dirtype_t dir )
 	tmp[0] = Com_Clamp( 0, m_pMapInfo->width, tmp[0] );
 	tmp[1] = Com_Clamp( 0, m_pMapInfo->height, tmp[1] );
 
-	if ( m_pMapInfo->tiles[ tmp[1] * m_pMapInfo->width + tmp[0] ].sides[ DIR_NULL ]
-		|| m_pMapInfo->tiles[ tmp[1] * m_pMapInfo->width + tmp[0] ].sides[ inversedirs[ dir ] ] )
+	if ( m_pMapInfo->tiles[ tmp[1] * m_pMapInfo->width + tmp[0] ].flags & TILESIDE_INSIDE 
+		|| m_pMapInfo->tiles[ tmp[1] * m_pMapInfo->width + tmp[0] ].flags & inversedirs_flags[ dir ] )
 	{
 		return qtrue;
 	}
@@ -438,7 +452,7 @@ void CGameWorld::CastRay( ray_t *ray )
 {
 	PROFILE_FUNCTION();
 
-    float dx, sx;
+	float dx, sx;
 	float dy, sy;
 	float err;
 	float e2;
@@ -464,7 +478,7 @@ void CGameWorld::CastRay( ray_t *ray )
 	
 	hitCount = 0;
 	for ( ;; ) {
-        for ( linkEntity_t *it = m_ActiveEnts.next; it != &m_ActiveEnts; it = it->next ) {
+		for ( linkEntity_t *it = m_ActiveEnts.next; it != &m_ActiveEnts; it = it->next ) {
 			if ( BoundsIntersectPoint( &it->bounds, ray->origin ) ) {
 				ray->entityNumber = it->entityNumber;
 				return;

@@ -1,65 +1,56 @@
 #include "snd_local.h"
 
-#define MAX_SOUND_CHANNELS 1024
-#define DISTANCEFACTOR 1.0f
-#define MAX_SOUND_SOURCES 2048
-#define MAX_MUSIC_QUEUE 12
-
-#define Snd_HashFileName(x) Com_GenerateHashValue((x),MAX_SOUND_SOURCES)
-
-class CSoundSystem
+void FMOD_Error( const char *call, FMOD_RESULT result )
 {
-public:
-	CSoundSystem( void );
-	~CSoundSystem();
+	const char *err;
+	int isError;
 
-	void Init( void );
-	void Update( void );
-	void Shutdown( void );
-	int ErrorCheck( FMOD_RESULT result );
+	isError = 0;
 
-	FMOD::Sound *LoadSound( const char *npath );
-
-	inline FMOD::Sound *GetSound( sfxHandle_t hSfx )
-	{ return m_szSources[ hSfx ]; }
-private:
-	FMOD::Studio::System *m_pStudioSystem;
-	FMOD::System *m_pSystem;
-
-	int m_nNextChannelId;
-
-	FMOD::Sound *m_szSources[ MAX_SOUND_SOURCES ];
-
-	eastl::map<string_t, FMOD::Sound *> SoundMap;
-	eastl::map<int, FMOD_CHANNEL *> ChannelMap;
-	eastl::map<string_t, FMOD::Studio::EventInstance *> EventMap;
-	eastl::map<string_t, FMOD::Studio::Bank *> BankMap;
-
-	FMOD::ChannelGroup *m_pMasterGroup;
-};
+	switch ( result ) {
+	case FMOD_ERR_CHANNEL_ALLOC:
+		err = "Error allocating channel";
+		isError = 1;
+		break;
+	case FMOD_ERR_CHANNEL_STOLEN:
+		isError = 1;
+		break;
+	case FMOD_ERR_DMA:
+		break;
+	
+	};
+	
+	if ( isError == 0 ) {
+		N_Error( ERR_DROP, "FMOD API Error: %s", err );
+	} else if ( isError == 1 ) {
+		N_Error( ERR_FATAL, "FMOD API Error: %s", err );
+	} else {
+		Con_Printf( COLOR_RED "FMOD API Error: %s\n", err );
+	}
+}
 
 CSoundSystem::CSoundSystem( void )
 {
 	m_pStudioSystem = NULL;
 	m_pSystem = NULL;
 
-	ErrorCheck( FMOD::Studio::System::create( &m_pStudioSystem ) );
-	ErrorCheck( m_pStudioSystem->getCoreSystem( &m_pSystem ) );
-	ErrorCheck( m_pSystem->setSoftwareFormat( 48000, FMOD_SPEAKERMODE_STEREO, 0 ) );
-	ErrorCheck( m_pSystem->set3DSettings( 1.0f, DISTANCEFACTOR, 0.5f ) );
-	ErrorCheck( m_pStudioSystem->initialize( 32, FMOD_STUDIO_INIT_LIVEUPDATE, FMOD_INIT_PROFILE_ENABLE, NULL ) );
-	ErrorCheck( m_pSystem->getMasterChannelGroup( &m_pMasterGroup ) );
+	ERRCHECK( FMOD::Studio::System::create( &m_pStudioSystem ) );
+	ERRCHECK( m_pStudioSystem->getCoreSystem( &m_pSystem ) );
+	ERRCHECK( m_pSystem->setSoftwareFormat( 48000, FMOD_SPEAKERMODE_5POINT1, 0 ) );
+	ERRCHECK( m_pSystem->set3DSettings( 1.0f, DISTANCEFACTOR, 0.5f ) );
+	ERRCHECK( m_pStudioSystem->initialize( 32, FMOD_STUDIO_INIT_LIVEUPDATE, FMOD_INIT_PROFILE_ENABLE, NULL ) );
+	ERRCHECK( m_pSystem->getMasterChannelGroup( &m_pMasterGroup ) );
 }
 
 CSoundSystem::~CSoundSystem()
 {
-	ErrorCheck( m_pStudioSystem->unloadAll() );
-	ErrorCheck( m_pStudioSystem->release() );
+	ERRCHECK( m_pStudioSystem->unloadAll() );
+	ERRCHECK( m_pStudioSystem->release() );
 }
 
 void CSoundSystem::Update( void )
 {
-	ErrorCheck( m_pStudioSystem->update() );
+	ERRCHECK( m_pStudioSystem->update() );
 }
 
 FMOD::Sound *CSoundSystem::LoadSound( const char *npath )

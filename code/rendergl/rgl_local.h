@@ -1668,6 +1668,7 @@ void R_VaoPackNormal( int16_t *out, vec3_t v );
 void R_VaoPackColor( uint16_t *out, const vec4_t c );
 void R_VaoUnpackNormal( vec3_t v, int16_t *pack );
 void R_VaoUnpackTangent( vec4_t v, int16_t *pack );
+void R_VaoUnpackColor( vec4_t v, uint16_t *pack );
 vertexBuffer_t *R_AllocateBuffer( const char *name, void *vertices, uint32_t verticesSize, void *indices, uint32_t indicesSize,
 	bufferType_t type );
 void VBO_BindNull( void );

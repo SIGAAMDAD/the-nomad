@@ -58,15 +58,13 @@ UI_Cache
 =================
 */
 static void UI_Cache_f( void ) {
-    Con_Printf( "Caching ui resources...\n" );
+	Con_Printf( "Caching ui resources...\n" );
 
-    MainMenu_Cache();
-    SettingsMenu_Cache();
+	MainMenu_Cache();
+	SettingsMenu_Cache();
 	ModsMenu_Cache();
-	SinglePlayerMenu_Cache();
 	DemoMenu_Cache();
-	LoadGameMenu_Cache();
-	NewGameMenu_Cache();
+	PlayMenu_Cache();
 	PauseMenu_Cache();
 	CreditsMenu_Cache();
 	ConfirmMenu_Cache();
@@ -74,11 +72,11 @@ static void UI_Cache_f( void ) {
 }
 
 CUIFontCache::CUIFontCache( void ) {
-    union {
-        void *v;
-        char *b;
-    } f;
-    uint64_t nLength;
+	union {
+		void *v;
+		char *b;
+	} f;
+	uint64_t nLength;
 	const char **text;
 	const char *tok, *text_p;
 	float scale;
@@ -89,10 +87,10 @@ CUIFontCache::CUIFontCache( void ) {
 	memset( m_FontList, 0, sizeof( m_FontList ) );
 	m_pCurrentFont = NULL;
 
-    nLength = FS_LoadFile( "fonts/font_config.txt", &f.v );
-    if ( !nLength || !f.v ) {
-        N_Error( ERR_FATAL, "CUIFontCache::Init: failed to load fonts/font_config.txt" );
-    }
+	nLength = FS_LoadFile( "fonts/font_config.txt", &f.v );
+	if ( !nLength || !f.v ) {
+		N_Error( ERR_FATAL, "CUIFontCache::Init: failed to load fonts/font_config.txt" );
+	}
 
 	text_p = f.b;
 	text = (const char **)&text_p;
@@ -326,28 +324,28 @@ void CUIFontCache::ListFonts_f( void ) {
 
 const char *UI_LangToString( int32_t lang )
 {
-    switch ((language_t)lang) {
-    case LANGUAGE_ENGLISH:
-        return "english";
-    default:
-        break;
-    };
-    return "Invalid";
+	switch ((language_t)lang) {
+	case LANGUAGE_ENGLISH:
+		return "english";
+	default:
+		break;
+	};
+	return "Invalid";
 }
 
 static void UI_RegisterCvars( void )
 {
-    ui_language = Cvar_Get( "ui_language", "english", CVAR_LATCH | CVAR_SAVE );
-    Cvar_SetDescription( ui_language,
-                        	"Sets the game's language: american_english, british_english, spanish, german\n"
+	ui_language = Cvar_Get( "ui_language", "english", CVAR_LATCH | CVAR_SAVE );
+	Cvar_SetDescription( ui_language,
+							"Sets the game's language: american_english, british_english, spanish, german\n"
 							"Currently only english is supported, but I'm looking for some translators :)"
-                   		);
+				   		);
 
-    ui_cpuString = Cvar_Get( "sys_cpuString", "detect", CVAR_PROTECTED | CVAR_ROM | CVAR_NORESTART );
+	ui_cpuString = Cvar_Get( "sys_cpuString", "detect", CVAR_PROTECTED | CVAR_ROM | CVAR_NORESTART );
 
-    ui_printStrings = Cvar_Get( "ui_printStrings", "1", CVAR_LATCH | CVAR_SAVE | CVAR_PRIVATE );
-    Cvar_CheckRange( ui_printStrings, "0", "1", CVT_INT );
-    Cvar_SetDescription( ui_printStrings, "Print value strings set by the language ui file" );
+	ui_printStrings = Cvar_Get( "ui_printStrings", "1", CVAR_LATCH | CVAR_SAVE | CVAR_PRIVATE );
+	Cvar_CheckRange( ui_printStrings, "0", "1", CVT_INT );
+	Cvar_SetDescription( ui_printStrings, "Print value strings set by the language ui file" );
 
 #ifdef _NOMAD_DEBUG
 	ui_debugOverlay = Cvar_Get( "ui_debugOverlay", "1", CVAR_SAVE );
@@ -356,7 +354,7 @@ static void UI_RegisterCvars( void )
 #endif
 	Cvar_SetDescription( ui_debugOverlay, "Draws an overlay of various debugging statistics." );
 
-    ui_active = Cvar_Get( "g_paused", "1", CVAR_TEMP );
+	ui_active = Cvar_Get( "g_paused", "1", CVAR_TEMP );
 
 #ifdef _NOMAD_DEBUG
 	r_gpuDiagnostics = Cvar_Get( "r_gpuDiagnostics", "1", CVAR_LATCH | CVAR_SAVE );
@@ -395,16 +393,16 @@ extern "C" void UI_Shutdown( void )
 		ui->uiAllocated = qfalse;
 	}
 
-    if ( strManager ) {
-        strManager->Shutdown();
+	if ( strManager ) {
+		strManager->Shutdown();
 		strManager = NULL;
-    }
+	}
 
 	if ( FontCache() ) {
 		FontCache()->ClearCache();
 	}
 
-    Cmd_RemoveCommand( "ui.cache" );
+	Cmd_RemoveCommand( "ui.cache" );
 	Cmd_RemoveCommand( "ui.fontinfo" );
 	Cmd_RemoveCommand( "togglepausemenu" );
 	Cmd_RemoveCommand( "ui.reload_savefiles" );
@@ -412,7 +410,7 @@ extern "C" void UI_Shutdown( void )
 
 // FIXME: call UI_Shutdown instead
 void G_ShutdownUI( void ) {
-    UI_Shutdown();
+	UI_Shutdown();
 }
 
 /*
@@ -444,24 +442,24 @@ extern "C" void UI_DrawFPS( void )
 	static int32_t index;
 	static int32_t previous;
 	int32_t t, frameTime;
-    int32_t total, i;
-    int32_t fps;
+	int32_t total, i;
+	int32_t fps;
 	extern ImFont *RobotoMono;
 
 	if ( RobotoMono ) {
 		FontCache()->SetActiveFont( RobotoMono );
 	}
 
-    fps = 0;
+	fps = 0;
 
-    t = Sys_Milliseconds();
-    frameTime = t - previous;
-    previous = t;
+	t = Sys_Milliseconds();
+	frameTime = t - previous;
+	previous = t;
 
-    previousTimes[index % FPS_FRAMES] = frameTime;
-    index++;
-    if ( index > FPS_FRAMES ) {
-        // average multiple frames together to smooth changes out a bit
+	previousTimes[index % FPS_FRAMES] = frameTime;
+	index++;
+	if ( index > FPS_FRAMES ) {
+		// average multiple frames together to smooth changes out a bit
 		total = 0;
 		for ( i = 0; i < FPS_FRAMES; i++ ) {
 			total += previousTimes[i];
@@ -470,17 +468,17 @@ extern "C" void UI_DrawFPS( void )
 			total = 1;
 		}
 		fps = 1000 * FPS_FRAMES / total;
-    } else {
+	} else {
 		fps = previous;
 	}
 
-    ImGui::Begin( "DrawFPS##UI", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar
-                                        | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMouseInputs
+	ImGui::Begin( "DrawFPS##UI", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar
+										| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMouseInputs
 										| ImGuiWindowFlags_NoBackground );
-    ImGui::SetWindowPos( ImVec2( 1010 * ui->scale + ui->bias, 8 * ui->scale ) );
-    ImGui::SetWindowFontScale( 1.5f * ui->scale );
-    ImGui::Text( "%i", fps );
-    ImGui::End();
+	ImGui::SetWindowPos( ImVec2( 1010 * ui->scale + ui->bias, 8 * ui->scale ) );
+	ImGui::SetWindowFontScale( 1.5f * ui->scale );
+	ImGui::Text( "%i", fps );
+	ImGui::End();
 }
 
 static uint32_t gpu_BackEndPreviousTimes[FPS_FRAMES];
@@ -503,7 +501,7 @@ extern "C" uint32_t GPU_CalcFrameTime( uint64_t gpuTime, uint32_t *times, uint32
 	times[ *index % FPS_FRAMES ] = frameTime;
 	(*index)++;
 	if ( *index > FPS_FRAMES ) {
-        // average multiple frames together to smooth changes out a bit
+		// average multiple frames together to smooth changes out a bit
 		total = 0;
 		for ( i = 0; i < FPS_FRAMES; i++ ) {
 			total += times[i];
@@ -512,7 +510,7 @@ extern "C" uint32_t GPU_CalcFrameTime( uint64_t gpuTime, uint32_t *times, uint32
 			total = 1;
 		}
 		realTime = 1000.0f * FPS_FRAMES / total;
-    } else {
+	} else {
 		realTime = *previous;
 	}
 
@@ -521,137 +519,137 @@ extern "C" uint32_t GPU_CalcFrameTime( uint64_t gpuTime, uint32_t *times, uint32
 
 void ImGui_ShowAboutWindow( void ) {
 	ImGui::Text("Dear ImGui %s", ImGui::GetVersion());
-    ImGui::Separator();
-    ImGui::Text("By Omar Cornut and all Dear ImGui contributors.");
-    ImGui::Text("Dear ImGui is licensed under the MIT License, see LICENSE for more information.");
+	ImGui::Separator();
+	ImGui::Text("By Omar Cornut and all Dear ImGui contributors.");
+	ImGui::Text("Dear ImGui is licensed under the MIT License, see LICENSE for more information.");
 
-    static bool show_config_info = false;
-    ImGui::Checkbox("Config/Build Information", &show_config_info);
-    if (show_config_info)
-    {
-        ImGuiIO& io = ImGui::GetIO();
-        ImGuiStyle& style = ImGui::GetStyle();
+	static bool show_config_info = false;
+	ImGui::Checkbox("Config/Build Information", &show_config_info);
+	if (show_config_info)
+	{
+		ImGuiIO& io = ImGui::GetIO();
+		ImGuiStyle& style = ImGui::GetStyle();
 
-        bool copy_to_clipboard = ImGui::Button("Copy to clipboard");
-        ImVec2 child_size = ImVec2(0, ImGui::GetTextLineHeightWithSpacing() * 18);
-        ImGui::BeginChildFrame(ImGui::GetID("cfg_infos"), child_size, ImGuiWindowFlags_NoMove);
-        if (copy_to_clipboard)
-        {
-            ImGui::LogToClipboard();
-            ImGui::LogText("```\n"); // Back quotes will make text appears without formatting when pasting on GitHub
-        }
+		bool copy_to_clipboard = ImGui::Button("Copy to clipboard");
+		ImVec2 child_size = ImVec2(0, ImGui::GetTextLineHeightWithSpacing() * 18);
+		ImGui::BeginChildFrame(ImGui::GetID("cfg_infos"), child_size, ImGuiWindowFlags_NoMove);
+		if (copy_to_clipboard)
+		{
+			ImGui::LogToClipboard();
+			ImGui::LogText("```\n"); // Back quotes will make text appears without formatting when pasting on GitHub
+		}
 
-        ImGui::Text("Dear ImGui %s (%d)", IMGUI_VERSION, IMGUI_VERSION_NUM);
-        ImGui::Separator();
-        ImGui::Text("sizeof(size_t): %d, sizeof(ImDrawIdx): %d, sizeof(ImDrawVert): %d", (int)sizeof(size_t), (int)sizeof(ImDrawIdx), (int)sizeof(ImDrawVert));
-        ImGui::Text("define: __cplusplus=%d", (int)__cplusplus);
+		ImGui::Text("Dear ImGui %s (%d)", IMGUI_VERSION, IMGUI_VERSION_NUM);
+		ImGui::Separator();
+		ImGui::Text("sizeof(size_t): %d, sizeof(ImDrawIdx): %d, sizeof(ImDrawVert): %d", (int)sizeof(size_t), (int)sizeof(ImDrawIdx), (int)sizeof(ImDrawVert));
+		ImGui::Text("define: __cplusplus=%d", (int)__cplusplus);
 #ifdef IMGUI_DISABLE_OBSOLETE_FUNCTIONS
-        ImGui::Text("define: IMGUI_DISABLE_OBSOLETE_FUNCTIONS");
+		ImGui::Text("define: IMGUI_DISABLE_OBSOLETE_FUNCTIONS");
 #endif
 #ifdef IMGUI_DISABLE_OBSOLETE_KEYIO
-        ImGui::Text("define: IMGUI_DISABLE_OBSOLETE_KEYIO");
+		ImGui::Text("define: IMGUI_DISABLE_OBSOLETE_KEYIO");
 #endif
 #ifdef IMGUI_DISABLE_WIN32_DEFAULT_CLIPBOARD_FUNCTIONS
-        ImGui::Text("define: IMGUI_DISABLE_WIN32_DEFAULT_CLIPBOARD_FUNCTIONS");
+		ImGui::Text("define: IMGUI_DISABLE_WIN32_DEFAULT_CLIPBOARD_FUNCTIONS");
 #endif
 #ifdef IMGUI_DISABLE_WIN32_DEFAULT_IME_FUNCTIONS
-        ImGui::Text("define: IMGUI_DISABLE_WIN32_DEFAULT_IME_FUNCTIONS");
+		ImGui::Text("define: IMGUI_DISABLE_WIN32_DEFAULT_IME_FUNCTIONS");
 #endif
 #ifdef IMGUI_DISABLE_WIN32_FUNCTIONS
-        ImGui::Text("define: IMGUI_DISABLE_WIN32_FUNCTIONS");
+		ImGui::Text("define: IMGUI_DISABLE_WIN32_FUNCTIONS");
 #endif
 #ifdef IMGUI_DISABLE_DEFAULT_FORMAT_FUNCTIONS
-        ImGui::Text("define: IMGUI_DISABLE_DEFAULT_FORMAT_FUNCTIONS");
+		ImGui::Text("define: IMGUI_DISABLE_DEFAULT_FORMAT_FUNCTIONS");
 #endif
 #ifdef IMGUI_DISABLE_DEFAULT_MATH_FUNCTIONS
-        ImGui::Text("define: IMGUI_DISABLE_DEFAULT_MATH_FUNCTIONS");
+		ImGui::Text("define: IMGUI_DISABLE_DEFAULT_MATH_FUNCTIONS");
 #endif
 #ifdef IMGUI_DISABLE_DEFAULT_FILE_FUNCTIONS
-        ImGui::Text("define: IMGUI_DISABLE_DEFAULT_FILE_FUNCTIONS");
+		ImGui::Text("define: IMGUI_DISABLE_DEFAULT_FILE_FUNCTIONS");
 #endif
 #ifdef IMGUI_DISABLE_FILE_FUNCTIONS
-        ImGui::Text("define: IMGUI_DISABLE_FILE_FUNCTIONS");
+		ImGui::Text("define: IMGUI_DISABLE_FILE_FUNCTIONS");
 #endif
 #ifdef IMGUI_DISABLE_DEFAULT_ALLOCATORS
-        ImGui::Text("define: IMGUI_DISABLE_DEFAULT_ALLOCATORS");
+		ImGui::Text("define: IMGUI_DISABLE_DEFAULT_ALLOCATORS");
 #endif
 #ifdef IMGUI_USE_BGRA_PACKED_COLOR
-        ImGui::Text("define: IMGUI_USE_BGRA_PACKED_COLOR");
+		ImGui::Text("define: IMGUI_USE_BGRA_PACKED_COLOR");
 #endif
 #ifdef _WIN32
-        ImGui::Text("define: _WIN32");
+		ImGui::Text("define: _WIN32");
 #endif
 #ifdef _WIN64
-        ImGui::Text("define: _WIN64");
+		ImGui::Text("define: _WIN64");
 #endif
 #ifdef __linux__
-        ImGui::Text("define: __linux__");
+		ImGui::Text("define: __linux__");
 #endif
 #ifdef __APPLE__
-        ImGui::Text("define: __APPLE__");
+		ImGui::Text("define: __APPLE__");
 #endif
 #ifdef _MSC_VER
-        ImGui::Text("define: _MSC_VER=%d", _MSC_VER);
+		ImGui::Text("define: _MSC_VER=%d", _MSC_VER);
 #endif
 #ifdef _MSVC_LANG
-        ImGui::Text("define: _MSVC_LANG=%d", (int)_MSVC_LANG);
+		ImGui::Text("define: _MSVC_LANG=%d", (int)_MSVC_LANG);
 #endif
 #ifdef __MINGW32__
-        ImGui::Text("define: __MINGW32__");
+		ImGui::Text("define: __MINGW32__");
 #endif
 #ifdef __MINGW64__
-        ImGui::Text("define: __MINGW64__");
+		ImGui::Text("define: __MINGW64__");
 #endif
 #ifdef __GNUC__
-        ImGui::Text("define: __GNUC__=%d", (int)__GNUC__);
+		ImGui::Text("define: __GNUC__=%d", (int)__GNUC__);
 #endif
 #ifdef __clang_version__
-        ImGui::Text("define: __clang_version__=%s", __clang_version__);
+		ImGui::Text("define: __clang_version__=%s", __clang_version__);
 #endif
 #ifdef __EMSCRIPTEN__
-        ImGui::Text("define: __EMSCRIPTEN__");
+		ImGui::Text("define: __EMSCRIPTEN__");
 #endif
-        ImGui::Separator();
-        ImGui::Text("io.BackendPlatformName: %s", io.BackendPlatformName ? io.BackendPlatformName : "NULL");
-        ImGui::Text("io.BackendRendererName: %s", io.BackendRendererName ? io.BackendRendererName : "NULL");
-        ImGui::Text("io.ConfigFlags: 0x%08X", io.ConfigFlags);
-        if (io.ConfigFlags & ImGuiConfigFlags_NavEnableKeyboard)        ImGui::Text(" NavEnableKeyboard");
-        if (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad)         ImGui::Text(" NavEnableGamepad");
-        if (io.ConfigFlags & ImGuiConfigFlags_NavEnableSetMousePos)     ImGui::Text(" NavEnableSetMousePos");
-        if (io.ConfigFlags & ImGuiConfigFlags_NavNoCaptureKeyboard)     ImGui::Text(" NavNoCaptureKeyboard");
-        if (io.ConfigFlags & ImGuiConfigFlags_NoMouse)                  ImGui::Text(" NoMouse");
-        if (io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange)      ImGui::Text(" NoMouseCursorChange");
-        if (io.MouseDrawCursor)                                         ImGui::Text("io.MouseDrawCursor");
-        if (io.ConfigMacOSXBehaviors)                                   ImGui::Text("io.ConfigMacOSXBehaviors");
-        if (io.ConfigInputTextCursorBlink)                              ImGui::Text("io.ConfigInputTextCursorBlink");
-        if (io.ConfigWindowsResizeFromEdges)                            ImGui::Text("io.ConfigWindowsResizeFromEdges");
-        if (io.ConfigWindowsMoveFromTitleBarOnly)                       ImGui::Text("io.ConfigWindowsMoveFromTitleBarOnly");
-        if (io.ConfigMemoryCompactTimer >= 0.0f)                        ImGui::Text("io.ConfigMemoryCompactTimer = %.1f", io.ConfigMemoryCompactTimer);
-        ImGui::Text("io.BackendFlags: 0x%08X", io.BackendFlags);
-        if (io.BackendFlags & ImGuiBackendFlags_HasGamepad)             ImGui::Text(" HasGamepad");
-        if (io.BackendFlags & ImGuiBackendFlags_HasMouseCursors)        ImGui::Text(" HasMouseCursors");
-        if (io.BackendFlags & ImGuiBackendFlags_HasSetMousePos)         ImGui::Text(" HasSetMousePos");
-        if (io.BackendFlags & ImGuiBackendFlags_RendererHasVtxOffset)   ImGui::Text(" RendererHasVtxOffset");
-        ImGui::Separator();
-        ImGui::Text("io.Fonts: %d fonts, Flags: 0x%08X, TexSize: %d,%d", io.Fonts->Fonts.Size, io.Fonts->Flags, io.Fonts->TexWidth, io.Fonts->TexHeight);
-        ImGui::Text("io.DisplaySize: %.2f,%.2f", io.DisplaySize.x, io.DisplaySize.y);
-        ImGui::Text("io.DisplayFramebufferScale: %.2f,%.2f", io.DisplayFramebufferScale.x, io.DisplayFramebufferScale.y);
-        ImGui::Separator();
-        ImGui::Text("style.WindowPadding: %.2f,%.2f", style.WindowPadding.x, style.WindowPadding.y);
-        ImGui::Text("style.WindowBorderSize: %.2f", style.WindowBorderSize);
-        ImGui::Text("style.FramePadding: %.2f,%.2f", style.FramePadding.x, style.FramePadding.y);
-        ImGui::Text("style.FrameRounding: %.2f", style.FrameRounding);
-        ImGui::Text("style.FrameBorderSize: %.2f", style.FrameBorderSize);
-        ImGui::Text("style.ItemSpacing: %.2f,%.2f", style.ItemSpacing.x, style.ItemSpacing.y);
-        ImGui::Text("style.ItemInnerSpacing: %.2f,%.2f", style.ItemInnerSpacing.x, style.ItemInnerSpacing.y);
+		ImGui::Separator();
+		ImGui::Text("io.BackendPlatformName: %s", io.BackendPlatformName ? io.BackendPlatformName : "NULL");
+		ImGui::Text("io.BackendRendererName: %s", io.BackendRendererName ? io.BackendRendererName : "NULL");
+		ImGui::Text("io.ConfigFlags: 0x%08X", io.ConfigFlags);
+		if (io.ConfigFlags & ImGuiConfigFlags_NavEnableKeyboard)        ImGui::Text(" NavEnableKeyboard");
+		if (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad)         ImGui::Text(" NavEnableGamepad");
+		if (io.ConfigFlags & ImGuiConfigFlags_NavEnableSetMousePos)     ImGui::Text(" NavEnableSetMousePos");
+		if (io.ConfigFlags & ImGuiConfigFlags_NavNoCaptureKeyboard)     ImGui::Text(" NavNoCaptureKeyboard");
+		if (io.ConfigFlags & ImGuiConfigFlags_NoMouse)                  ImGui::Text(" NoMouse");
+		if (io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange)      ImGui::Text(" NoMouseCursorChange");
+		if (io.MouseDrawCursor)                                         ImGui::Text("io.MouseDrawCursor");
+		if (io.ConfigMacOSXBehaviors)                                   ImGui::Text("io.ConfigMacOSXBehaviors");
+		if (io.ConfigInputTextCursorBlink)                              ImGui::Text("io.ConfigInputTextCursorBlink");
+		if (io.ConfigWindowsResizeFromEdges)                            ImGui::Text("io.ConfigWindowsResizeFromEdges");
+		if (io.ConfigWindowsMoveFromTitleBarOnly)                       ImGui::Text("io.ConfigWindowsMoveFromTitleBarOnly");
+		if (io.ConfigMemoryCompactTimer >= 0.0f)                        ImGui::Text("io.ConfigMemoryCompactTimer = %.1f", io.ConfigMemoryCompactTimer);
+		ImGui::Text("io.BackendFlags: 0x%08X", io.BackendFlags);
+		if (io.BackendFlags & ImGuiBackendFlags_HasGamepad)             ImGui::Text(" HasGamepad");
+		if (io.BackendFlags & ImGuiBackendFlags_HasMouseCursors)        ImGui::Text(" HasMouseCursors");
+		if (io.BackendFlags & ImGuiBackendFlags_HasSetMousePos)         ImGui::Text(" HasSetMousePos");
+		if (io.BackendFlags & ImGuiBackendFlags_RendererHasVtxOffset)   ImGui::Text(" RendererHasVtxOffset");
+		ImGui::Separator();
+		ImGui::Text("io.Fonts: %d fonts, Flags: 0x%08X, TexSize: %d,%d", io.Fonts->Fonts.Size, io.Fonts->Flags, io.Fonts->TexWidth, io.Fonts->TexHeight);
+		ImGui::Text("io.DisplaySize: %.2f,%.2f", io.DisplaySize.x, io.DisplaySize.y);
+		ImGui::Text("io.DisplayFramebufferScale: %.2f,%.2f", io.DisplayFramebufferScale.x, io.DisplayFramebufferScale.y);
+		ImGui::Separator();
+		ImGui::Text("style.WindowPadding: %.2f,%.2f", style.WindowPadding.x, style.WindowPadding.y);
+		ImGui::Text("style.WindowBorderSize: %.2f", style.WindowBorderSize);
+		ImGui::Text("style.FramePadding: %.2f,%.2f", style.FramePadding.x, style.FramePadding.y);
+		ImGui::Text("style.FrameRounding: %.2f", style.FrameRounding);
+		ImGui::Text("style.FrameBorderSize: %.2f", style.FrameBorderSize);
+		ImGui::Text("style.ItemSpacing: %.2f,%.2f", style.ItemSpacing.x, style.ItemSpacing.y);
+		ImGui::Text("style.ItemInnerSpacing: %.2f,%.2f", style.ItemInnerSpacing.x, style.ItemInnerSpacing.y);
 
-        if (copy_to_clipboard)
-        {
-            ImGui::LogText("\n```\n");
-            ImGui::LogFinish();
-        }
-        ImGui::EndChildFrame();
-    }
+		if (copy_to_clipboard)
+		{
+			ImGui::LogText("\n```\n");
+			ImGui::LogFinish();
+		}
+		ImGui::EndChildFrame();
+	}
 }
 
 static void UI_DrawModuleProperty( asIScriptObject *pObject, asUINT index )
@@ -1099,55 +1097,55 @@ static void UI_DrawDebugOverlay( void )
 
 void UI_EscapeMenuToggle( void )
 {
-    if ( ( Key_IsDown( KEY_ESCAPE ) || Key_IsDown( KEY_PAD0_B ) && !ImGui::IsAnyItemActive() ) && ui->menusp > 1 ) {
+	if ( ( Key_IsDown( KEY_ESCAPE ) || Key_IsDown( KEY_PAD0_B ) && !ImGui::IsAnyItemActive() ) && ui->menusp > 1 ) {
 		if ( !ui->escapeToggle ) {
 			ui->escapeToggle = qtrue;
 			UI_PopMenu();
 			Snd_PlaySfx( ui->sfx_back );
 		}
-    } else {
+	} else {
 		ui->escapeToggle = qfalse;
 	}
 }
 
 extern "C" void UI_Init( void )
 {
-    Con_Printf( "UI_Init: initializing UI...\n" );
+	Con_Printf( "UI_Init: initializing UI...\n" );
 
-    // register cvars
-    UI_RegisterCvars();
+	// register cvars
+	UI_RegisterCvars();
 
-    // init the library
+	// init the library
 	ui = (uiGlobals_t *)Hunk_Alloc( sizeof( *ui ), h_high );
 
-    // init the string manager
-    strManager = (CUIStringManager *)Hunk_Alloc( sizeof( *strManager ), h_high );
-    strManager->Init();
-    // load the language string file
-    strManager->LoadLanguage( ui_language->s );
-    if ( !strManager->NumLangsLoaded() ) {
-        N_Error( ERR_DROP, "UI_Init: no language loaded" );
-    }
+	// init the string manager
+	strManager = (CUIStringManager *)Hunk_Alloc( sizeof( *strManager ), h_high );
+	strManager->Init();
+	// load the language string file
+	strManager->LoadLanguage( ui_language->s );
+	if ( !strManager->NumLangsLoaded() ) {
+		N_Error( ERR_DROP, "UI_Init: no language loaded" );
+	}
 
 	//
-    // init strings
-    //
-    difficultyTable[DIF_NOOB].name = strManager->ValueForKey( "SP_DIFF_VERY_EASY" )->value;
-    difficultyTable[DIF_NOOB].tooltip = strManager->ValueForKey( "SP_DIFF_0_DESC" )->value;
+	// init strings
+	//
+	difficultyTable[ DIF_EASY ].name = strManager->ValueForKey( "SP_DIFF_EASY" )->value;
+	difficultyTable[ DIF_EASY ].tooltip = strManager->ValueForKey( "SP_DIFF_0_DESC" )->value;
 
-    difficultyTable[DIF_RECRUIT].name = strManager->ValueForKey( "SP_DIFF_EASY" )->value;
-    difficultyTable[DIF_RECRUIT].tooltip = strManager->ValueForKey( "SP_DIFF_1_DESC" )->value;
+	difficultyTable[ DIF_NORMAL ].name = strManager->ValueForKey( "SP_DIFF_NORMAL" )->value;
+	difficultyTable[ DIF_NORMAL ].tooltip = strManager->ValueForKey( "SP_DIFF_1_DESC" )->value;
 
-    difficultyTable[DIF_MERC].name = strManager->ValueForKey( "SP_DIFF_MEDIUM" )->value;
-    difficultyTable[DIF_MERC].tooltip = strManager->ValueForKey( "SP_DIFF_2_DESC" )->value;
+	difficultyTable[ DIF_HARD ].name = strManager->ValueForKey( "SP_DIFF_HARD" )->value;
+	difficultyTable[ DIF_HARD ].tooltip = strManager->ValueForKey( "SP_DIFF_2_DESC" )->value;
 
-    difficultyTable[DIF_NOMAD].name = strManager->ValueForKey( "SP_DIFF_HARD" )->value;
-    difficultyTable[DIF_NOMAD].tooltip = strManager->ValueForKey( "SP_DIFF_3_DESC" )->value;
+	difficultyTable[ DIF_VERY_HARD ].name = strManager->ValueForKey( "SP_DIFF_VERY_HARD" )->value;
+	difficultyTable[ DIF_VERY_HARD ].tooltip = strManager->ValueForKey( "SP_DIFF_3_DESC" )->value;
 
-    difficultyTable[DIF_BLACKDEATH].name = strManager->ValueForKey( "SP_DIFF_VERY_HARD" )->value;
-    difficultyTable[DIF_BLACKDEATH].tooltip = strManager->ValueForKey( "SP_DIFF_4_DESC" )->value;
+	difficultyTable[ DIF_INSANE ].name = strManager->ValueForKey( "SP_DIFF_INSANE" )->value;
+	difficultyTable[ DIF_INSANE ].tooltip = strManager->ValueForKey( "SP_DIFF_4_DESC" )->value;
 
-    difficultyTable[DIF_MINORINCONVENIECE].tooltip = "PAIN."; // no changing this one, because that's the most accurate description
+	difficultyTable[ DIF_MEME ].tooltip = "PAIN."; // no changing this one, because that's the most accurate description
 
 	// cache redundant calulations
 	re.GetConfig( &ui->gpuConfig );
@@ -1172,7 +1170,7 @@ extern "C" void UI_Init( void )
 	ui->uiAllocated = qfalse;
 
 	UI_Cache_f();
-    UI_SetActiveMenu( UI_MENU_MAIN );
+	UI_SetActiveMenu( UI_MENU_MAIN );
 
 	ui->uiAllocated = qtrue;
 
@@ -1185,8 +1183,8 @@ extern "C" void UI_Init( void )
 
 	memset( previousTimes, 0, sizeof( previousTimes ) );
 
-    // add commands
-    Cmd_AddCommand( "ui.cache", UI_Cache_f );
+	// add commands
+	Cmd_AddCommand( "ui.cache", UI_Cache_f );
 	Cmd_AddCommand( "ui.fontinfo", CUIFontCache::ListFonts_f );
 	Cmd_AddCommand( "togglepausemenu", UI_PauseMenu_f );
 	Cmd_AddCommand( "ui.reload_savefiles", UI_ReloadSaveFiles_f );
@@ -1203,7 +1201,7 @@ extern "C" void UI_Init( void )
 
 void Menu_Cache( void )
 {
-    ui->whiteShader = re.RegisterShader( "white" );
+	ui->whiteShader = re.RegisterShader( "white" );
 	ui->back_0 = re.RegisterShader( "menu/backbutton0" );
 	ui->back_1 = re.RegisterShader( "menu/backbutton1" );
 
@@ -1244,10 +1242,10 @@ void Menu_Cache( void )
 
 	ui->backdrop = re.RegisterShader( "menu/mainbackdrop" );
 
-    // IT MUST BE THERE!
-    if ( !FS_LoadFile( "textures/coconut.jpg", NULL ) || ui->backdrop == FS_INVALID_HANDLE ) {
-        N_Error( ERR_FATAL, "YOU DARE DEFY THE WILL OF THE GODS!?!?!?!?!?" );
-    }
+	// IT MUST BE THERE!
+	if ( !FS_LoadFile( "textures/coconut.jpg", NULL ) || ui->backdrop == FS_INVALID_HANDLE ) {
+		N_Error( ERR_FATAL, "YOU DARE DEFY THE WILL OF THE GODS!?!?!?!?!?" );
+	}
 }
 
 /*
@@ -1278,8 +1276,8 @@ extern "C" void UI_DrawMenuBackground( void )
 	//
 	re.ClearScene();
 	re.SetColor( colorWhite );
-    re.DrawImage( 0, 0, refdef.width, refdef.height, 0, 0, 1, 1, ui->menubackShader );
-    re.RenderScene( &refdef );
+	re.DrawImage( 0, 0, refdef.width, refdef.height, 0, 0, 1, 1, ui->menubackShader );
+	re.RenderScene( &refdef );
 }
 
 extern "C" void UI_AddJoystickKeyEvents( void )
@@ -1394,20 +1392,20 @@ extern "C" void UI_Refresh( int32_t realtime )
 
 
 	{
-        refdef_t refdef;
+		refdef_t refdef;
 
-        memset( &refdef, 0, sizeof( refdef ) );
-        refdef.x = 0;
-        refdef.y = 0;
-        refdef.width = ui->gpuConfig.vidWidth;
-        refdef.height = ui->gpuConfig.vidHeight;
-        refdef.time = 0;
-        refdef.flags = RSF_ORTHO_TYPE_SCREENSPACE | RSF_NOWORLDMODEL;
+		memset( &refdef, 0, sizeof( refdef ) );
+		refdef.x = 0;
+		refdef.y = 0;
+		refdef.width = ui->gpuConfig.vidWidth;
+		refdef.height = ui->gpuConfig.vidHeight;
+		refdef.time = 0;
+		refdef.flags = RSF_ORTHO_TYPE_SCREENSPACE | RSF_NOWORLDMODEL;
 
 //        re.ClearScene();
 //        re.DrawImage( 0, 0, refdef.width, refdef.height, 0, 0, 1, 1, ui->backdrop );
 //		re.RenderScene( &refdef );
-    }
+	}
 
 	if ( r_gpuDiagnostics->i ) {
 		UI_DrawGPUStats();
@@ -1692,8 +1690,8 @@ static void Sys_DrawMemoryUsage( void )
 	ImGui::SeparatorText( "Memory Usage/Stats" );
 	ImGui::Text( "Blocks Currently Allocated: %i", SDL_GetNumAllocations() );
 	ImGui::Text( "Total Virtual Memory Used: %lu", stats->virtualHeapUsed );	
-    ImGui::Text( "Total Physical Memory Used: %lu", stats->physicalHeapUsed );
-    ImGui::Text( "Total Stack Memory Remaining: %lu", Sys_StackMemoryRemaining() );
+	ImGui::Text( "Total Physical Memory Used: %lu", stats->physicalHeapUsed );
+	ImGui::Text( "Total Stack Memory Remaining: %lu", Sys_StackMemoryRemaining() );
 }
 
 static void Sys_GPUStatFrame( uint32_t stat, uint32_t *min, uint32_t *max, uint32_t *avg, uint32_t *prev, uint32_t *frames, int32_t *index )
@@ -1740,21 +1738,21 @@ static void Sys_DrawCPUUsage( void )
 	ImGui::Text( "Number of CPU Cores: %i", SDL_GetCPUCount() );
 
 	ImGui::BeginTable( " ", 4 );
-    {
-    	ImGui::TableNextColumn();
-    	ImGui::TextUnformatted( "average" );
-    	ImGui::TableNextColumn();
-    	ImGui::TextUnformatted( "min" );
-    	ImGui::TableNextColumn();
-    	ImGui::TextUnformatted( "max" );
-    	ImGui::TableNextColumn();
-    	ImGui::TextUnformatted( "last" );
+	{
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted( "average" );
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted( "min" );
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted( "max" );
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted( "last" );
 
-    	ImGui::TableNextRow();
+		ImGui::TableNextRow();
 
-    	ImGui::TableNextColumn();
-    	ImGui::Text( "%03.4f", stats->cpuAvg );
-    	ImGui::TableNextColumn();
+		ImGui::TableNextColumn();
+		ImGui::Text( "%03.4f", stats->cpuAvg );
+		ImGui::TableNextColumn();
 
 		if ( stats->cpuNewMin ) {
 			ImGui::TextColored( ImVec4( g_color_table[ ColorIndex( S_COLOR_GREEN ) ] ), "%03.4f", stats->cpuMin );
@@ -1763,19 +1761,19 @@ static void Sys_DrawCPUUsage( void )
 			ImGui::Text( "%03.4f", stats->cpuMin );
 		}
 
-    	ImGui::TableNextColumn();
+		ImGui::TableNextColumn();
 
 		if ( stats->cpuNewMax ) {
-    		ImGui::TextColored( ImVec4( g_color_table[ ColorIndex( S_COLOR_RED ) ] ), "%03.4f", stats->cpuMax );
+			ImGui::TextColored( ImVec4( g_color_table[ ColorIndex( S_COLOR_RED ) ] ), "%03.4f", stats->cpuMax );
 			stats->cpuNewMax = qfalse;
 		} else {
 			ImGui::Text( "%03.4f", stats->cpuMax );
 		}
 		
 		ImGui::TableNextColumn();
-    	ImGui::Text( "%03.4f", stats->cpuPrevious );
-    }
-    ImGui::EndTable();
+		ImGui::Text( "%03.4f", stats->cpuPrevious );
+	}
+	ImGui::EndTable();
 }
 
 void Sys_DisplayEngineStats( void )
@@ -1818,14 +1816,14 @@ void Sys_DisplayEngineStats( void )
 	if ( ui_diagnostics->i == 1 ) {
 		Sys_GetCPUStats();
 		Sys_DrawCPUUsage();
-        return;
-    }
+		return;
+	}
 	// draw memory statistics
 	else if ( ui_diagnostics->i == 2 ) {
-        Sys_GetMemoryUsage( stats );
+		Sys_GetMemoryUsage( stats );
 
-        Sys_DrawMemoryUsage();
-        return;
+		Sys_DrawMemoryUsage();
+		return;
 	}
 
 	//
@@ -1843,7 +1841,7 @@ void Sys_DisplayEngineStats( void )
 	ImGui::Text( "Frame Number: %lu", com_frameNumber );
 
 	Sys_DrawCPUUsage();
-    Sys_DrawMemoryUsage();
+	Sys_DrawMemoryUsage();
 	Sys_DrawGPUStats();
 
 	ImGui::SeparatorText( "Computer Information" );
@@ -1852,7 +1850,7 @@ void Sys_DisplayEngineStats( void )
 	ImGui::Text( "%s", ui->GetConfig().version_string );
 	ImGui::Text( "%s", ui->GetConfig().vendor_string );
 	ImGui::Text( "%s", ui->GetConfig().renderer_string );
-    ImGui::Text( "%s", ui_cpuString->s );
+	ImGui::Text( "%s", ui_cpuString->s );
 
 	ImGui::SetWindowFontScale( fontScale );
 

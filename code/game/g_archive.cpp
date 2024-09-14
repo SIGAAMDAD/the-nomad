@@ -9,19 +9,30 @@
 #define XOR_MAGIC 0xff
 #define EMBEDDED_SECTION_MAGIC 0xffade21
 
+#define SIZEOF_GAMEDATA ( sizeof( uint64_t ) + ( sizeof( int32_t ) * 3 ) + ( sizeof( uint32_t ) * 2 ) )
+#define SIZEOF_METADATA ( sizeof( int32_t ) + sizeof( ngdvalidation_t ) + sizeof( uint64_t ) )
+#define SIZEOF_HEADER ( SIZEOF_GAMEDATA ) + ( SIZEOF_METADATA )
+#define SIZEOF_MOD_METADATA ( MAX_NPATH + ( sizeof( int32_t ) * 2 ) + sizeof( uint64_t ) )
+
 #define IDENT (('d'<<24)+('g'<<16)+('n'<<8)+'!')
 
 /*
 
 .ngd save file layout:
 
-section    |  name         |  value               | type
---------------------------------------------------------
-HEADER     | ident         | !ngd                 | int32
-HEADER     | versionMajor  | NOMAD_VERSION_MAJOR  | uint16
-HEADER     | versionUpdate | NOMAD_VERSION_UPDATE | uint16
-HEADER     | versionPatch  | NOMAD_VERSION_PATCH  | uint32
-HEADER     | numSections   | N/A                  | int64
+section		|  name         	|  value				| type
+-----------------------------------------------------------------
+HEADER		| ident				| !ngd					| int32
+HEADER		| versionMajor		| NOMAD_VERSION_MAJOR	| uint16
+HEADER		| versionUpdate		| NOMAD_VERSION_UPDATE	| uint16
+HEADER		| versionPatch		| NOMAD_VERSION_PATCH	| uint32
+HEADER		| numSections		| N/A					| int64
+GAMEDATA	| mapIndex			| N/A					| int32
+GAMEDATA	| highestDif		| N/A					| int32
+GAMEDATA	| saveDif			| N/A					| int32
+GAMEDATA	| playTimeHours		| Hours					| uint32
+GAMEDATA	| playTimeMinutes	| Minutes				| uint32
+GAMEDATA	| numMods			| N/A					| uint64
 
 */
 
@@ -223,12 +234,19 @@ qboolean CGameArchive::LoadArchiveFile( const char *filename, uint64_t index )
 	}
 
 	FS_Read( &header.numSections, sizeof( header.numSections ), hFile );
-	FS_Read( header.gamedata.mapname, sizeof( header.gamedata.mapname ), hFile );
-	FS_Read( &header.gamedata.dif, sizeof( header.gamedata.dif ), hFile );
+	FS_Read( &header.gamedata.mapIndex, sizeof( header.gamedata.mapIndex ), hFile );
+	FS_Read( &header.gamedata.highestDif, sizeof( header.gamedata.highestDif ), hFile );
+	FS_Read( &header.gamedata.saveDif, sizeof( header.gamedata.saveDif ), hFile );
+	FS_Read( &header.gamedata.playTimeHours, sizeof( header.gamedata.playTimeHours ), hFile );
+	FS_Read( &header.gamedata.playTimeMinutes, sizeof( header.gamedata.playTimeMinutes ), hFile );
 	FS_Read( &header.gamedata.numMods, sizeof( header.gamedata.numMods ), hFile );
 
 	header.numSections = LittleLong( header.numSections );
-	header.gamedata.dif = (gamedif_t)LittleInt( header.gamedata.dif );
+	header.gamedata.mapIndex = LittleInt( header.gamedata.mapIndex );
+	header.gamedata.highestDif = LittleInt( header.gamedata.highestDif );
+	header.gamedata.saveDif = LittleInt( header.gamedata.saveDif );
+	header.gamedata.playTimeHours = LittleInt( header.gamedata.playTimeHours );
+	header.gamedata.playTimeMinutes = LittleInt( header.gamedata.playTimeMinutes );
 	header.gamedata.numMods = LittleLong( header.gamedata.numMods );
 
 	// skip past the mod data
@@ -554,7 +572,7 @@ void CGameArchive::SaveVec2( const char *name, const vec2_t data ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
 	}
 	
-	AddField( name, FT_VECTOR2, data, sizeof( data ) );
+	AddField( name, FT_VECTOR2, data, sizeof( vec2_t ) );
 }
 
 void CGameArchive::SaveVec3( const char *name, const vec3_t data ) {
@@ -562,7 +580,7 @@ void CGameArchive::SaveVec3( const char *name, const vec3_t data ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
 	}
 	
-	AddField( name, FT_VECTOR3, data, sizeof( data ) );
+	AddField( name, FT_VECTOR3, data, sizeof( vec3_t ) );
 }
 
 void CGameArchive::SaveVec4( const char *name, const vec4_t data ) {
@@ -570,7 +588,7 @@ void CGameArchive::SaveVec4( const char *name, const vec4_t data ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
 	}
 	
-	AddField( name, FT_VECTOR4, data, sizeof( data ) );
+	AddField( name, FT_VECTOR4, data, sizeof( vec4_t ) );
 }
 
 void CGameArchive::SaveCString( const char *name, const char *data ) {
@@ -688,7 +706,8 @@ const ngdfield_t *CGameArchive::FindField( const char *name, int32_t type, nhand
 	for ( i = 0; i < section->numFields; i++ ) {
 		if ( !N_stricmp( section->m_pFieldCache[i]->name, name ) ) {
 			if ( section->m_pFieldCache[i]->type != type ) {
-				N_Error( ERR_DROP, "CGameArchive::FindField: save file corrupt or incompatible mod, field type doesn't match type given for '%s'", name );
+				N_Error( ERR_DROP, "CGameArchive::FindField: save file corrupt or incompatible mod, field type doesn't match type given for '%s'",
+					name );
 			}
 			FS_FileSeek( m_hFile, section->m_pFieldCache[i]->dataOffset, FS_SEEK_SET );
 			return section->m_pFieldCache[i];
@@ -1021,9 +1040,13 @@ bool CGameArchive::Save( const char *filename )
 	CModuleInfo *loadList = g_pModuleLib->GetLoadList();
 	
 	memset( &header, 0, sizeof( header ) );
-	N_strncpyz( header.gamedata.mapname, Cvar_VariableString( "mapname" ), sizeof( header.gamedata.mapname ) );
-	header.gamedata.dif = (gamedif_t)Cvar_VariableInteger( "sgame_Difficulty" );
+	header.gamedata.mapIndex = gi.mapCache.currentMapLoaded;
+	header.gamedata.saveDif = Cvar_VariableInteger( "sgame_Difficulty" );
 	header.gamedata.numMods = g_pModuleLib->GetModCount();
+
+	if ( header.gamedata.saveDif > header.gamedata.highestDif ) {
+		header.gamedata.highestDif = header.gamedata.saveDif;
+	}
 
 	for ( i = 0; i < g_pModuleLib->GetModCount(); i++ ) {
 		if ( !loadList[i].m_pHandle->IsValid() ) {
@@ -1041,8 +1064,9 @@ bool CGameArchive::Save( const char *filename )
 
 	FS_Write( &header.validation, sizeof( header.validation ), m_hFile );
 	FS_Write( &header.numSections, sizeof( header.numSections ), m_hFile );
-	FS_Write( header.gamedata.mapname, sizeof( header.gamedata.mapname ), m_hFile );
-	FS_Write( &header.gamedata.dif, sizeof( header.gamedata.dif ), m_hFile );
+	FS_Write( &header.gamedata.mapIndex, sizeof( header.gamedata.mapIndex ), m_hFile );
+	FS_Write( &header.gamedata.highestDif, sizeof( header.gamedata.highestDif ), m_hFile );
+	FS_Write( &header.gamedata.saveDif, sizeof( header.gamedata.saveDif ), m_hFile );
 	FS_Write( &header.gamedata.numMods, sizeof( header.gamedata.numMods ), m_hFile );
 
 	for ( i = 0; i < header.gamedata.numMods; i++ ) {
@@ -1106,6 +1130,7 @@ nhandle_t CGameArchive::GetSection( const char *name )
 	int64_t i;
 
 	section = NULL;
+	Con_DPrintf( "Searching save file for section '%s'...\n", name );
 	for ( i = 0; i < m_pArchiveCache[ m_nCurrentArchive ]->m_nSections; i++ ) {
 		if ( !N_stricmp( m_pArchiveCache[ m_nCurrentArchive ]->m_pSectionList[i].name, name ) ) {
 			section = &m_pArchiveCache[ m_nCurrentArchive ]->m_pSectionList[i];
@@ -1134,17 +1159,21 @@ bool CGameArchive::LoadPartial( const char *filename, gamedata_t *gd )
     //
     // validate the header
     //
-
-	size = sizeof( ngdvalidation_t ) + sizeof( uint64_t ) + sizeof( gamedif_t ) + MAX_NPATH;
-    if ( FS_FileLength( f ) < size ) {
-        Con_Printf( COLOR_RED "CGameArchive::Load: failed to load savefile because the file is too small to contain a header.\n" );
+    if ( FS_FileLength( f ) < SIZEOF_HEADER ) {
+        Con_Printf( COLOR_RED "CGameArchive::Load: failed to load savefile, file is too small to contain a header.\n" );
+        return false;
+    }
+	if ( !ValidateHeader( &header ) ) {
         return false;
     }
 
 	FS_Read( &header.validation, sizeof( header.validation ), f );
 	FS_Read( &header.numSections, sizeof( header.numSections ), f );
-	FS_Read( gd->mapname, sizeof( gd->mapname ), f );
-	FS_Read( &gd->dif, sizeof( gd->dif ), f );
+	FS_Read( &gd->mapIndex, sizeof( gd->mapIndex ), f );
+	FS_Read( &gd->highestDif, sizeof( gd->highestDif ), f );
+	FS_Read( &gd->saveDif, sizeof( gd->saveDif ), f );
+	FS_Read( &gd->playTimeHours, sizeof( gd->playTimeHours ), f );
+	FS_Read( &gd->playTimeMinutes, sizeof( gd->playTimeMinutes ), f );
 	FS_Read( &gd->numMods, sizeof( gd->numMods ), f );
 
 	if ( gd->numMods ) {
@@ -1159,10 +1188,11 @@ bool CGameArchive::LoadPartial( const char *filename, gamedata_t *gd )
 	Con_DPrintf(
 				"Loaded partial header:\n"
 				" [mapname] %s\n"
-				" [difficulty] %i\n"
+				" [highDifficulty] %i\n"
+				" [saveDifficulty] %i\n"
 				" [modCount] %lu\n"
 				" [modList] "
-	, gd->mapname, (int32_t)gd->dif, gd->numMods );
+	, gi.mapCache.mapList[ gd->mapIndex ], gd->highestDif, gd->saveDif, gd->numMods );
 
 	for ( i = 0; i < gd->numMods; i++ ) {
 		Con_DPrintf( "%s", gd->modList[i].name );
@@ -1171,10 +1201,6 @@ bool CGameArchive::LoadPartial( const char *filename, gamedata_t *gd )
 		}
 	}
 	Con_DPrintf( "\n" );
-
-    if ( !ValidateHeader( &header ) ) {
-        return false;
-    }
 
     FS_FClose( f );
 
@@ -1219,13 +1245,10 @@ bool CGameArchive::Load( const char *name )
 	}
 
 	offset = 0;
-	offset += sizeof( ngdvalidation_t );
-	offset += sizeof( uint64_t ); // numSections
-	offset += MAX_NPATH; // mapname
-	offset += sizeof( gamedif_t ); // difficulty
-	offset += m_pArchiveCache[ m_nCurrentArchive ]->m_nMods * ( MAX_NPATH + ( sizeof( int32_t ) * 3 ) );
+	offset += SIZEOF_HEADER;
+	offset += m_pArchiveCache[ m_nCurrentArchive ]->m_nMods * SIZEOF_MOD_METADATA;
 
-	FS_FileSeek( m_hFile, offset, FS_SEEK_CUR );
+	FS_FileSeek( m_hFile, offset, FS_SEEK_SET );
 	for ( i = 0; i < g_pModuleLib->GetModCount(); i++ ) {
 		g_pModuleLib->ModuleCall( &loadList[i], ModuleOnLoadGame, 0 );
 	}

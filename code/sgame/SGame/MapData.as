@@ -30,8 +30,10 @@ namespace TheNomad::SGame {
 			// load the checkpoints
 			//
 			for ( i = 0; i < nCheckpoints; i++ ) {
-				TheNomad::GameSystem::GetCheckpointData( xyz, i );
-				m_Checkpoints.Add( MapCheckpoint( xyz ) );
+				uvec2 areaLock;
+
+				TheNomad::GameSystem::GetCheckpointData( xyz, areaLock, i );
+				m_Checkpoints.Add( MapCheckpoint( xyz, areaLock ) );
 			}
 			
 			//

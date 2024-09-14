@@ -2,8 +2,9 @@
 
 namespace TheNomad::SGame {
     class MapCheckpoint {
-		MapCheckpoint( const uvec3& in origin ) {
+		MapCheckpoint( const uvec3& in origin, const uvec2& in areaLock ) {
 			m_Origin = origin;
+			m_AreaLock = areaLock;
 		}
 		MapCheckpoint() {
 		}
@@ -11,7 +12,7 @@ namespace TheNomad::SGame {
 		void AddSpawn( MapSpawn@ spawn ) {
 			m_Spawns.Add( @spawn );
 		}
-		void Activate( uint64 nLevelTime ) {
+		void Activate( uint nLevelTime ) {
 			if ( m_bPassed ) {
 				return;
 			}
@@ -28,7 +29,8 @@ namespace TheNomad::SGame {
 		
 		array<MapSpawn@> m_Spawns;
 		uvec3 m_Origin = uvec3( 0 );
-		uint64 m_nTime = 0;
+		uvec2 m_AreaLock = uvec2( 0 );
+		uint m_nTime = 0;
 		bool m_bPassed = false;
 	};
 };

@@ -1064,16 +1064,13 @@ void GDR_DECL Con_DPrintf( const char *fmt, ... ) GDR_ATTRIBUTE((format(printf, 
 
 int I_GetParm(const char *parm);
 
-typedef enum
-{
-    DIF_NOOB,
-    DIF_RECRUIT,
-    DIF_MERC,
-    DIF_NOMAD,
-    DIF_BLACKDEATH,
-    DIF_MINORINCONVENIECE,
-
-    DIF_HARDEST = DIF_MINORINCONVENIECE,
+typedef enum {
+	DIF_EASY,
+	DIF_NORMAL,
+	DIF_HARD,
+	DIF_VERY_HARD,
+	DIF_INSANE,
+	DIF_MEME,
 
 	NUMDIFS
 } gamedif_t;

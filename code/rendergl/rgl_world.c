@@ -122,19 +122,19 @@ static void R_GenerateTexCoords( tile2d_info_t *info, spriteCoord_t *sprites )
 	vtx = r_worldData.vertices;
 	for ( y = 0; y < r_worldData.height; y++ ) {
 		for ( x = 0; x < r_worldData.width; x++ ) {
-			VectorCopy2( r_worldData.tiles[ y * r_worldData.width + x ].texcoords[0],
-				sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][0] );
-			VectorCopy2( r_worldData.tiles[ y * r_worldData.width + x ].texcoords[1],
-				sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][1] );
-			VectorCopy2( r_worldData.tiles[ y * r_worldData.width + x ].texcoords[2],
-				sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][2] );
-			VectorCopy2( r_worldData.tiles[ y * r_worldData.width + x ].texcoords[3],
-				sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][3] );
+//			VectorCopy2( r_worldData.tiles[ y * r_worldData.width + x ].texcoords[0],
+//				sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][0] );
+//			VectorCopy2( r_worldData.tiles[ y * r_worldData.width + x ].texcoords[1],
+//				sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][1] );
+//			VectorCopy2( r_worldData.tiles[ y * r_worldData.width + x ].texcoords[2],
+//				sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][2] );
+//			VectorCopy2( r_worldData.tiles[ y * r_worldData.width + x ].texcoords[3],
+//				sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][3] );
 
-			VectorCopy2( vtx[0].uv, r_worldData.tiles[ y * r_worldData.width + x ].texcoords[0] );
-			VectorCopy2( vtx[1].uv, r_worldData.tiles[ y * r_worldData.width + x ].texcoords[1] );
-			VectorCopy2( vtx[2].uv, r_worldData.tiles[ y * r_worldData.width + x ].texcoords[2] );
-			VectorCopy2( vtx[3].uv, r_worldData.tiles[ y * r_worldData.width + x ].texcoords[3] );
+			VectorCopy2( vtx[0].uv, sprites[ y * r_worldData.width + x ][0] );
+			VectorCopy2( vtx[1].uv, sprites[ y * r_worldData.width + x ][1] );
+			VectorCopy2( vtx[2].uv, sprites[ y * r_worldData.width + x ][2] );
+			VectorCopy2( vtx[3].uv, sprites[ y * r_worldData.width + x ][3] );
 
 			VectorSet( vtx[0].worldPos, x, y, 0.0f );
 			VectorSet( vtx[1].worldPos, x, y, 0.0f );
@@ -466,13 +466,13 @@ static void R_ProcessLights( void )
 	lights = (shaderLight_t *)rg.lightData->data;
 	data = r_worldData.lights;
 	for ( i = 0; i < r_worldData.numLights; i++ ) {
-		VectorCopy4( lights[i].color, data[i].color );
+		R_VaoUnpackColor( lights[i].color, data[i].color );
 		VectorCopy2( lights[i].origin, data[i].origin );
-		lights[i].brightness = data[i].brightness;
-		lights[i].range = data[i].range;
-		lights[i].constant = data[i].constant;
-		lights[i].linear = data[i].linear;
-		lights[i].quadratic = data[i].quadratic;
+		lights[i].brightness = ByteToFloat( data[i].brightness );
+		lights[i].range = ByteToFloat( data[i].range );
+		lights[i].constant = ByteToFloat( data[i].constant );
+		lights[i].linear = ByteToFloat( data[i].linear );
+		lights[i].quadratic = ByteToFloat( data[i].quadratic );
 		lights[i].type = data[i].type;
 	}
 	

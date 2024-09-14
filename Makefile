@@ -301,10 +301,8 @@ SRC=\
 	$(O)/ui/ui_demo.o \
 	$(O)/ui/ui_settings.o \
 	$(O)/ui/ui_main_menu.o \
-	$(O)/ui/ui_single_player.o \
+	$(O)/ui/ui_play.o \
 	$(O)/ui/ui_pause.o \
-	$(O)/ui/ui_newgame.o \
-	$(O)/ui/ui_loadgame.o \
 	$(O)/ui/ui_mods.o \
 	$(O)/ui/ui_database.o \
 	\

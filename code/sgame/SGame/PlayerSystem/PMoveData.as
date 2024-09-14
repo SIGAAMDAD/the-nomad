@@ -368,7 +368,7 @@ namespace TheNomad::SGame {
 			}
 			CheckJump();
 			
-			groundPlane = up == 0;
+			groundPlane = m_EntityData.GetWaterLevel() < 1;
 
 			if ( m_EntityData.GetWaterLevel() > 1 ) {
 				WaterMove();

@@ -370,9 +370,6 @@ namespace TheNomad::SGame {
 			m_MapData.Load( m_LevelInfoDatas[m_nIndex].m_MapHandles[difficulty].mapHandle );
 
 			switch ( TheNomad::GameSystem::GameDifficulty( difficulty ) ) {
-			case TheNomad::GameSystem::GameDifficulty::VeryEasy: // Noob
-				m_nDifficultyScale = 0.5f;
-				break;
 			case TheNomad::GameSystem::GameDifficulty::Easy: // Recruit
 				m_nDifficultyScale = 0.75f;
 				break;
@@ -385,7 +382,7 @@ namespace TheNomad::SGame {
 			case TheNomad::GameSystem::GameDifficulty::VeryHard: // The Black Death
 				m_nDifficultyScale = 2.5f;
 				break;
-			case TheNomad::GameSystem::GameDifficulty::TryYourBest: // MemeMode
+			case TheNomad::GameSystem::GameDifficulty::Insane: // Insane
 				m_nDifficultyScale = 5.0f; // ... ;)
 				break;
 			};
@@ -429,7 +426,7 @@ namespace TheNomad::SGame {
 				ConsoleWarning( "LevelSystem::OnLevelStart: at least one checkpoint is required per level\n" );
 				ConsolePrint( "Forcing mandatory checkpoint...\n" );
 
-				MapCheckpoint cp = MapCheckpoint( uvec3( 0, 0, 0 ) );
+				MapCheckpoint cp = MapCheckpoint( uvec3( 0, 0, 0 ), uvec2( 0, 0 ) );
 				m_MapData.GetCheckpoints().InsertAt( 0, cp );
 			}
 			m_MapData.GetCheckpoints()[0].m_Spawns.Add( @spawn );

@@ -29,8 +29,11 @@ typedef struct {
 } modlist_t;
 
 typedef struct {
-    char mapname[MAX_NPATH];
-    gamedif_t dif;
+    int32_t mapIndex;
+    int32_t highestDif;
+    int32_t saveDif;
+    uint32_t playTimeHours;
+    uint32_t playTimeMinutes;
 
     // mod info
     modlist_t *modList;

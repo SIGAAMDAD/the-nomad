@@ -200,7 +200,6 @@ typedef struct {
 	int numDifficultyTypes;
 
 	int mouseCursor;
-	int difficulty;
 	int debugPrint;
 	int toggleHUD;
 
@@ -1598,13 +1597,6 @@ static void GameplayMenu_Draw( void )
 
 	ImGui::BeginTable( "##GameSettingsMenuConfigTable", 2 );
 	{
-		SettingsMenu_MultiAdjustable( "GAME DIFFICULTY", "GameDifficulty",
-			"Sets the game's difficulty",
-			s_settingsMenu->gameplay.difficultyNames, s_settingsMenu->gameplay.numDifficultyTypes, &s_settingsMenu->gameplay.difficulty,
-			s_settingsMenu->gameplay.difficulty != DIF_HARDEST );
-		
-		ImGui::TableNextRow();
-
 		SettingsMenu_MultiAdjustable( "TOGGLE HUD", "ToggleHUD",
 			"Toggles Heads-Up-Display (HUD). Turn this off if you want a more immersive experience",
 			s_settingsMenu->performance.onoff, 2,
@@ -1962,7 +1954,6 @@ static void ControlsMenu_Save( void )
 
 static void GameplayMenu_Save( void )
 {
-	Cvar_SetIntegerValue( "sgame_Difficulty", s_settingsMenu->gameplay.difficulty );
 	Cvar_SetIntegerValue( "sgame_CursorType", s_settingsMenu->gameplay.mouseCursor );
 	Cvar_SetIntegerValue( "sgame_DebugMode", s_settingsMenu->gameplay.debugPrint );
 	Cvar_SetIntegerValue( "sgame_ToggleHUD", s_settingsMenu->gameplay.toggleHUD );
@@ -2096,7 +2087,6 @@ static void ControlsMenu_SetDefault( void )
 
 static void GameplayMenu_SetDefault( void )
 {
-	s_settingsMenu->gameplay.difficulty = Cvar_VariableInteger( "sgame_Difficulty" );
 	s_settingsMenu->gameplay.mouseCursor = Cvar_VariableInteger( "sgame_CursorType" );
 	s_settingsMenu->gameplay.debugPrint = Cvar_VariableInteger( "sgame_DebugMode" );
 	s_settingsMenu->gameplay.toggleHUD = Cvar_VariableInteger( "sgame_ToggleHUD" );

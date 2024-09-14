@@ -234,17 +234,11 @@ extern void         UI_DataBaseMenu( void );
 extern void         DataBaseMenu_Cache( void );
 
 //
-// ui_loadgame.cpp
+// ui_play.cpp
 //
-extern void         UI_LoadGameMenu( void );
-extern void         LoadGameMenu_Cache( void );
+extern void         UI_PlayMenu( void );
+extern void         PlayMenu_Cache( void );
 extern void         UI_ReloadSaveFiles_f( void );
-
-//
-// ui_newgame.cpp
-//
-extern void         UI_NewGameMenu( void );
-extern void         NewGameMenu_Cache( void );
 
 //
 // ui_credits.cpp
@@ -306,8 +300,8 @@ extern qboolean     ModsMenu_IsModuleActive( const char *pName );
 //
 // ui_single_player.cpp
 //
-extern void         UI_SinglePlayerMenu( void );
-extern void         SinglePlayerMenu_Cache( void );
-extern void         SinglePlayerMenu_Draw( void );
+//extern void         UI_SinglePlayerMenu( void );
+//extern void         SinglePlayerMenu_Cache( void );
+//extern void         SinglePlayerMenu_Draw( void );
 
 #endif
