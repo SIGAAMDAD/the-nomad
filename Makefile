@@ -116,7 +116,7 @@ INCLUDE       =-Idependencies/include/ -Idependencies/include/EA/ -Ideps/squirre
 VERSION_DEFINE=-D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPDATE) -D_NOMAD_VERSION_PATCH=$(VERSION_PATCH)
 ERRORS        =-Werror=return-type
 
-DEFINES       =$(VERSION_DEFINE) $(DEBUGDEF) -D_NOMAD_ENGINE
+DEFINES       =$(VERSION_DEFINE) $(DEBUGDEF) -D_NOMAD_ENGINE -DUSE_FMOD
 OPTIMIZERS    =\
 			-ffast-math \
 			-mfma -msse3 -msse2 -msse -mavx2 -mavx \
@@ -246,7 +246,10 @@ SRC=\
 	$(O)/game/g_world.o \
 	$(O)/game/g_jpeg.o \
 	$(O)/game/g_threads.o \
-	$(O)/game/g_sound.o \
+	\
+	$(O)/sound/snd_main.o \
+	$(O)/sound/snd_bank.o \
+	$(O)/sound/snd_world.o \
 	\
 	$(O)/module_lib/module_memory.o \
 	$(O)/module_lib/module_main.o \
@@ -326,6 +329,7 @@ MKDIR=mkdir -p
 makedirs:
 	@if [ ! -d $(O) ];then mkdir $(O);fi
 	@if [ ! -d $(O)/game ];then $(MKDIR) $(O)/game;fi
+	@if [ ! -d $(O)/sound ];then $(MKDIR) $(O)/sound;fi
 	@if [ ! -d $(O)/engine ];then $(MKDIR) $(O)/engine;fi
 	@if [ ! -d $(O)/rendercommon ];then $(MKDIR) $(O)/rendercommon;fi
 	@if [ ! -d $(O)/sys ];then $(MKDIR) $(O)/sys;fi
@@ -366,6 +370,8 @@ endif
 $(O)/rendercommon/%.o: $(SDIR)/rendercommon/%.cpp
 	$(COMPILE_SRC) $(VERSION_CC)
 $(O)/game/%.o: $(SDIR)/game/%.cpp
+	$(COMPILE_SRC) $(VERSION_CC)
+$(O)/sound/%.o: $(SDIR)/sound/%.cpp
 	$(COMPILE_SRC) $(VERSION_CC)
 $(O)/game/%.o: $(SDIR)/game/%.c
 	$(COMPILE_SRC) $(VERSION_CC)

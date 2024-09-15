@@ -122,9 +122,9 @@ static qboolean G_LoadLevelFile( const char *filename, mapinfo_t *info )
 	info->width = header->map.mapWidth;
 	info->height = header->map.mapHeight;
 
+	info->numTiles = CopyLump( (void **)&info->tiles, LUMP_TILES, sizeof( maptile_t ), header );
 	info->numCheckpoints = CopyLump( (void **)&info->checkpoints, LUMP_CHECKPOINTS, sizeof( mapcheckpoint_t ), header );
 	info->numSpawns = CopyLump( (void **)&info->spawns, LUMP_SPAWNS, sizeof( mapspawn_t ), header );
-	info->numTiles = CopyLump( (void **)&info->tiles, LUMP_TILES, sizeof( maptile_t ), header );
 //	info->numLights = CopyLump( (void **)&info->lights, LUMP_LIGHTS, sizeof( maplight_t ), header );
 	info->numSecrets = CopyLump( (void **)&info->secrets, LUMP_SECRETS, sizeof( mapsecret_t ), header );
 	info->numLevels = 1;
@@ -293,7 +293,7 @@ void G_GetCheckpointData( uvec3_t xyz, uvec2_t areaLock, uint32_t nIndex ) {
 		N_Error( ERR_DROP, "G_GetCheckpointData: index out of range" );
 	}
 	
-	VectorCopy( xyz, info->checkpoints[ nIndex ].xyz );
+	VectorCopy2( xyz, info->checkpoints[ nIndex ].xyz );
 	VectorCopy2( areaLock, info->checkpoints[ nIndex ].lockArea );
 }
 
@@ -312,7 +312,7 @@ void G_GetSpawnData( uvec3_t xyz, uint32_t *type, uint32_t *id, uint32_t nIndex,
 		N_Error( ERR_DROP, "G_GetSpawnData: index out of range" );
 	}
 	
-	VectorCopy( xyz, info->spawns[ nIndex ].xyz );
+	VectorCopy2( xyz, info->spawns[ nIndex ].xyz );
 	*type = info->spawns[ nIndex ].entitytype;
 	*id = info->spawns[ nIndex ].entityid;
 	*pCheckpointIndex = info->spawns[ nIndex ].checkpoint;
@@ -335,7 +335,7 @@ void G_GetTileData( uint32_t *pTiles, uint32_t nLevel ) {
 	}
 
 	info = &gi.mapCache.info;
-
+	
 	for ( uint64_t i = 0; i < info->numTiles; i++ ) {
 		pTiles[i] = info->tiles[i].flags;
 	}

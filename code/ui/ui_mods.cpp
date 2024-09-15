@@ -34,12 +34,9 @@ typedef struct {
 
     nhandle_t backgroundShader;
     nhandle_t ambience;
+	qboolean changed;
     
     uint32_t selectedMod;
-    
-    const stringHash_t *titleString;
-    const stringHash_t *loadString;
-    const stringHash_t *backString;
 } modmenu_t;
 
 static modmenu_t *mods;
@@ -298,7 +295,7 @@ void ModsMenu_Draw( void )
 	ImGui::SetWindowPos( ImVec2( mods->menu.x, mods->menu.y ) );
     
 	UI_EscapeMenuToggle();
-    if ( UI_MenuTitle( mods->titleString->value, 1.75f ) ) {
+    if ( UI_MenuTitle( strManager->ValueForKey( "MOD_MENU_TITLE" )->value, 1.75f ) ) {
 		UI_MainMenu();
         ModsMenu_SaveModList();
         return;
@@ -459,17 +456,13 @@ void ModsMenu_Cache( void )
 	    mods->modList = (module_t *)( mods + 1 );
 	}
 
-	mods->titleString = strManager->ValueForKey( "MOD_MENU_TITLE" );
-    mods->loadString = strManager->ValueForKey( "MOD_MENU_LOAD" );
-    mods->backString = strManager->ValueForKey( "MOD_MENU_BACK" );
-
 	mods->menu.draw = ModsMenu_Draw;
 	mods->menu.fullscreen = qtrue;
 	mods->menu.flags = MENU_DEFAULT_FLAGS | ImGuiWindowFlags_HorizontalScrollbar;
 	mods->menu.width = ui->gpuConfig.vidWidth;
 	mods->menu.height = 680 * ui->scale;
-	mods->menu.name = mods->titleString->value;
-	mods->menu.track = Snd_RegisterTrack( "music/menu/campfire.ogg" );
+	mods->menu.name = strManager->ValueForKey( "MOD_MENU_TITLE" )->value;
+	mods->menu.track = Snd_RegisterTrack( "event:/music/campfire" );
 
     ModsMenu_Load();
 

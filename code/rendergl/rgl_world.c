@@ -12,8 +12,9 @@ static void R_LoadLights( const lump_t *lights )
 	if ( !lights->length ) { // not strictly required
 		return;
 	}
-	if (lights->length % sizeof(*in))
-		ri.Error(ERR_DROP, "RE_LoadWorldMap: funny lump size (lights) in %s", r_worldData.name);
+	if ( lights->length % sizeof( *in ) ) {
+		ri.Error( ERR_DROP, "RE_LoadWorldMap: funny lump size (lights) in %s", r_worldData.name );
+	}
 	
 	count = lights->length / sizeof(*in);
 	out = ri.Hunk_Alloc( sizeof(*out) * count, h_low );
@@ -30,8 +31,9 @@ static void R_LoadTiles( const lump_t *tiles )
 	maptile_t *in, *out;
 
 	in = (maptile_t *)(fileBase + tiles->fileofs);
-	if (tiles->length % sizeof(*in))
+	if ( tiles->length % sizeof( *in ) ) {
 		ri.Error(ERR_DROP, "RE_LoadWorldMap: funny lump size (tiles) in %s", r_worldData.name);
+	}
 	
 	count = tiles->length / sizeof(*in);
 	out = ri.Hunk_Alloc( sizeof(*out) * count, h_low );
@@ -80,7 +82,7 @@ static void R_CalcSpriteTextureCoords( uint32_t x, uint32_t y, uint32_t spriteWi
 	(*texCoords)[3][1] = max[1];
 }
 
-static void R_GenerateTexCoords( tile2d_info_t *info, spriteCoord_t *sprites )
+static void R_GenerateTexCoords( tile2d_info_t *info )
 {
 	uint32_t y, x;
 	uint32_t i;
@@ -89,6 +91,7 @@ static void R_GenerateTexCoords( tile2d_info_t *info, spriteCoord_t *sprites )
 	char texture[MAX_NPATH];
 	vec3_t tmp1, tmp2;
 	drawVert_t *vtx;
+	spriteCoord_t *sprites;
 
 	COM_StripExtension( info->texture, texture, sizeof( texture ) );
 	if ( texture[ strlen( texture ) - 1 ] == '.' ) {
@@ -112,6 +115,8 @@ static void R_GenerateTexCoords( tile2d_info_t *info, spriteCoord_t *sprites )
 	ri.Printf( PRINT_DEVELOPER, "Generating worldData tileset %ux%u:%ux%u, %u sprites\n", sheetWidth, sheetHeight,
 		info->tileWidth, info->tileHeight, info->numTiles );
 
+	sprites = (spriteCoord_t *)ri.Hunk_AllocateTempMemory( sizeof( *sprites ) * info->tileCountX * info->tileCountY );
+
 	for ( y = 0; y < info->tileCountY; y++ ) {
 		for ( x = 0; x < info->tileCountX; x++ ) {
 			R_CalcSpriteTextureCoords( x, y, info->tileWidth, info->tileHeight, sheetWidth, sheetHeight,
@@ -122,24 +127,20 @@ static void R_GenerateTexCoords( tile2d_info_t *info, spriteCoord_t *sprites )
 	vtx = r_worldData.vertices;
 	for ( y = 0; y < r_worldData.height; y++ ) {
 		for ( x = 0; x < r_worldData.width; x++ ) {
-//			VectorCopy2( r_worldData.tiles[ y * r_worldData.width + x ].texcoords[0],
-//				sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][0] );
-//			VectorCopy2( r_worldData.tiles[ y * r_worldData.width + x ].texcoords[1],
-//				sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][1] );
-//			VectorCopy2( r_worldData.tiles[ y * r_worldData.width + x ].texcoords[2],
-//				sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][2] );
-//			VectorCopy2( r_worldData.tiles[ y * r_worldData.width + x ].texcoords[3],
-//				sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][3] );
-
-			VectorCopy2( vtx[0].uv, sprites[ y * r_worldData.width + x ][0] );
-			VectorCopy2( vtx[1].uv, sprites[ y * r_worldData.width + x ][1] );
-			VectorCopy2( vtx[2].uv, sprites[ y * r_worldData.width + x ][2] );
-			VectorCopy2( vtx[3].uv, sprites[ y * r_worldData.width + x ][3] );
+			VectorCopy2( vtx[0].uv, sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][0] );
+			VectorCopy2( vtx[1].uv, sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][1] );
+			VectorCopy2( vtx[2].uv, sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][2] );
+			VectorCopy2( vtx[3].uv, sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][3] );
 
 			VectorSet( vtx[0].worldPos, x, y, 0.0f );
 			VectorSet( vtx[1].worldPos, x, y, 0.0f );
 			VectorSet( vtx[2].worldPos, x, y, 0.0f );
 			VectorSet( vtx[3].worldPos, x, y, 0.0f );
+
+			VectorCopy4( vtx[0].color, colorWhite );
+			VectorCopy4( vtx[1].color, colorWhite );
+			VectorCopy4( vtx[2].color, colorWhite );
+			VectorCopy4( vtx[3].color, colorWhite );
 
 			vtx += 4;
 		}
@@ -466,13 +467,13 @@ static void R_ProcessLights( void )
 	lights = (shaderLight_t *)rg.lightData->data;
 	data = r_worldData.lights;
 	for ( i = 0; i < r_worldData.numLights; i++ ) {
-		R_VaoUnpackColor( lights[i].color, data[i].color );
+		VectorCopy4( lights[i].color, data[i].color );
 		VectorCopy2( lights[i].origin, data[i].origin );
-		lights[i].brightness = ByteToFloat( data[i].brightness );
-		lights[i].range = ByteToFloat( data[i].range );
-		lights[i].constant = ByteToFloat( data[i].constant );
-		lights[i].linear = ByteToFloat( data[i].linear );
-		lights[i].quadratic = ByteToFloat( data[i].quadratic );
+		lights[i].brightness = data[i].brightness;
+		lights[i].range = data[i].range;
+		lights[i].constant = data[i].constant;
+		lights[i].linear = data[i].linear;
+		lights[i].quadratic = data[i].quadratic;
 		lights[i].type = data[i].type;
 	}
 	
@@ -554,10 +555,6 @@ void RE_LoadWorldMap( const char *filename )
 	r_worldData.height = mheader->mapHeight;
 	r_worldData.numTiles = r_worldData.width * r_worldData.height;
 
-	ri.Printf( PRINT_INFO, "Loaded map '%s', %ix%i, ambientLightColor: ( %f, %f, %f )\n", r_worldData.name,
-		r_worldData.width, r_worldData.height, r_worldData.ambientLightColor[0], r_worldData.ambientLightColor[1],
-		r_worldData.ambientLightColor[2] );
-
 	r_worldData.firstLevelShader = rg.numShaders;
 	r_worldData.firstLevelSpriteSheet = rg.numSpriteSheets;
 	r_worldData.firstLevelTexture = rg.numTextures;
@@ -568,7 +565,7 @@ void RE_LoadWorldMap( const char *filename )
 	ri.Cmd_ExecuteCommand( "snd.startup_level" );
 
 	// load into heap
-	sprites = R_LoadTileset( &mheader->lumps[LUMP_SPRITES], theader );
+//	sprites = R_LoadTileset( &mheader->lumps[LUMP_SPRITES], theader );
 	R_LoadTiles( &mheader->lumps[LUMP_TILES] );
 	R_LoadLights( &mheader->lumps[LUMP_LIGHTS] );
 
@@ -576,7 +573,7 @@ void RE_LoadWorldMap( const char *filename )
 
 	R_ProcessLights();
 	R_InitWorldBuffer();
-	R_GenerateTexCoords( &theader->info, sprites );
+	R_GenerateTexCoords( &theader->info );
 
 	ri.FS_FreeFile( buffer.v );
 }

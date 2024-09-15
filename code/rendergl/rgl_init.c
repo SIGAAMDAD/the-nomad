@@ -201,7 +201,7 @@ refimport_t ri;
 
 qboolean R_HasExtension(const char *ext)
 {
-    const char *ptr = N_stristr( gl_extensions, ext );
+	const char *ptr = N_stristr( gl_extensions, ext );
 	if (ptr == NULL)
 		return qfalse;
 	ptr += strlen(ext);
@@ -232,15 +232,15 @@ static void R_PrintLongString(const char *string)
 
 static void GpuMemInfo_f(void)
 {
-    switch (glContext.memInfo) {
-    case MI_NONE:
-        ri.Printf(PRINT_INFO, "No extension found for GPU memory info.\n");
-        break;
-    case MI_NVX:
-        {
-            int value;
-            int currentVidMem;
-            int totalVidMem;
+	switch (glContext.memInfo) {
+	case MI_NONE:
+		ri.Printf(PRINT_INFO, "No extension found for GPU memory info.\n");
+		break;
+	case MI_NVX:
+		{
+			int value;
+			int currentVidMem;
+			int totalVidMem;
 
 			nglGetIntegerv(GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX, &value);
 			ri.Printf(PRINT_DEVELOPER, "GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX: %i KiB\n", value);
@@ -257,10 +257,10 @@ static void GpuMemInfo_f(void)
 			nglGetIntegerv(GL_GPU_MEMORY_INFO_EVICTED_MEMORY_NVX, &value);
 			ri.Printf(PRINT_DEVELOPER, "GPU_MEMORY_INFO_EVICTED_MEMORY_NVX: %i KiB\n", value);
 
-            ri.Printf(PRINT_DEVELOPER, "------------------------------------------------\n");
+			ri.Printf(PRINT_DEVELOPER, "------------------------------------------------\n");
 
-            // for those who don't want to read the eyeball barf
-            nglGetIntegerv(GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX, &totalVidMem);
+			// for those who don't want to read the eyeball barf
+			nglGetIntegerv(GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX, &totalVidMem);
 			ri.Printf(PRINT_INFO, "Total Dedicated Video Memory: %i KiB\n", totalVidMem);
 
 			nglGetIntegerv(GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &value);
@@ -269,17 +269,17 @@ static void GpuMemInfo_f(void)
 			nglGetIntegerv(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &currentVidMem);
 			ri.Printf(PRINT_INFO, "Total Current Dedicated Video Memory: %i KiB\n", currentVidMem);
 
-            ri.Printf(PRINT_INFO, "Total Used Dedicated Video Memory: %i KiB\n", totalVidMem - currentVidMem);
+			ri.Printf(PRINT_INFO, "Total Used Dedicated Video Memory: %i KiB\n", totalVidMem - currentVidMem);
 
 			nglGetIntegerv(GL_GPU_MEMORY_INFO_EVICTION_COUNT_NVX, &value);
 			ri.Printf(PRINT_INFO, "Total Evictions: %i\n", value);
 
 			nglGetIntegerv(GL_GPU_MEMORY_INFO_EVICTED_MEMORY_NVX, &value);
 			ri.Printf(PRINT_INFO, "Total Evicted Memory: %i KiB\n", value);
-        }
-        break;
-    case MI_ATI:
-        {
+		}
+		break;
+	case MI_ATI:
+		{
 			int value[4];
 
 			nglGetIntegerv(GL_VBO_FREE_MEMORY_ATI, &value[0]);
@@ -290,9 +290,9 @@ static void GpuMemInfo_f(void)
 
 			nglGetIntegerv(GL_RENDERBUFFER_FREE_MEMORY_ATI, &value[0]);
 			ri.Printf(PRINT_INFO, "RENDERBUFFER_FREE_MEMORY_ATI: %i KiB total %i KiB largest aux: %i KiB total %i KiB largest\n", value[0], value[1], value[2], value[3]);
-        }
-        break;
-    };
+		}
+		break;
+	};
 }
 
 
@@ -411,7 +411,7 @@ static void RB_TakeScreenshot(int x, int y, int width, int height, const char *f
 	// gamma correction
 	if ( glConfig.deviceSupportsGamma ) {
 		R_GammaCorrect(allbuf + offset, memcount);
-    }
+	}
 
 	ri.FS_WriteFile( fileName, buffer, memcount + 18 );
 
@@ -436,7 +436,7 @@ static void RB_TakeScreenshotJPEG( int x, int y, int width, int height, const ch
 	// gamma correction
 	if ( glConfig.deviceSupportsGamma ) {
 		R_GammaCorrect( buffer + offset, memcount );
-    }
+	}
 
 	ri.G_SaveJPG( fileName, r_screenshotJpegQuality->i, width, height, buffer + offset, padlen );
 	ri.Hunk_FreeTempMemory( buffer );
@@ -454,9 +454,9 @@ void RB_TakeScreenshotCmd( void ) {
 
 	if ( cmd->jpeg ) {
 		RB_TakeScreenshotJPEG( cmd->x, cmd->y, cmd->width, cmd->height, cmd->fileName);
-    } else {
+	} else {
 		RB_TakeScreenshot( cmd->x, cmd->y, cmd->width, cmd->height, cmd->fileName);
-    }
+	}
 }
 
 /*
@@ -644,9 +644,9 @@ static void R_ScreenShot_f( void ) {
 		for ( ; lastNumber <= 9999 ; lastNumber++ ) {
 			R_ScreenshotFilename( lastNumber, checkname );
 
-            if ( !ri.FS_FileExists( checkname ) ) {
-                break; // file doesn't exist
-            }
+			if ( !ri.FS_FileExists( checkname ) ) {
+				break; // file doesn't exist
+			}
 		}
 
 		if ( lastNumber >= 9999 ) {
@@ -696,10 +696,10 @@ static void R_ScreenShotJPEG_f( void ) {
 		for ( ; lastNumber <= 9999 ; lastNumber++ ) {
 			R_ScreenshotFilenameJPEG( lastNumber, checkname );
 
-            if ( !ri.FS_FileExists( checkname ) ) {
-                break; // file doesn't exist
-            }
-	    }
+			if ( !ri.FS_FileExists( checkname ) ) {
+				break; // file doesn't exist
+			}
+		}
 
 		if ( lastNumber == 10000 ) {
 			ri.Printf( PRINT_INFO, "ScreenShot: Couldn't create a file\n" ); 
@@ -739,9 +739,9 @@ static void GpuInfo_f( void )
 
 		nglGetIntegerv( GL_NUM_EXTENSIONS, &numExtensions );
 		for ( i = 0; i < numExtensions; i++ ) {
-            if ( i > 64 ) {
-                break;
-            }
+			if ( i > 64 ) {
+				break;
+			}
 			ri.Printf( PRINT_INFO, "%s ", nglGetStringi( GL_EXTENSIONS, i ) );
 		}
 	}
@@ -751,7 +751,7 @@ static void GpuInfo_f( void )
 	ri.Printf( PRINT_INFO, "\n" );
 	ri.Printf( PRINT_INFO, "GL_MAX_TEXTURE_SIZE: %d\n", glContext.maxTextureSize );
 	ri.Printf( PRINT_INFO, "GL_MAX_TEXTURE_IMAGE_UNITS: %d\n", glContext.maxTextureUnits );
-    ri.Printf( PRINT_INFO, "GL_MAX_TEXTURE_MAX_ANISOTROPY: %f\n", glContext.maxAnisotropy );
+	ri.Printf( PRINT_INFO, "GL_MAX_TEXTURE_MAX_ANISOTROPY: %f\n", glContext.maxAnisotropy );
 	ri.Printf( PRINT_INFO, "\nPIXELFORMAT: color(%d-bits) Z(%d-bit) stencil(%d-bits)\n", glConfig.colorBits, glConfig.depthBits, glConfig.stencilBits );
 	ri.Printf( PRINT_INFO, "MODE: %li, %d x %d %s hz:", ri.Cvar_VariableInteger( "r_mode" ), glConfig.vidWidth, glConfig.vidHeight, fsstrings[ glConfig.isFullscreen != 0 ] );
 	if ( glConfig.displayFrequency ) {
@@ -768,22 +768,22 @@ static void GpuInfo_f( void )
 	}
 
 	ri.Printf( PRINT_INFO, "texture filtering: %s\n", r_textureMode->s );
-    ri.Printf( PRINT_INFO, "Extensions:\n" );
-    ri.Printf( PRINT_INFO, "GL_ARB_framebuffer_blit: %s\n", enablestrings[glContext.ARB_framebuffer_blit]);
-    ri.Printf( PRINT_INFO, "GL_ARB_framebuffer_object: %s\n", enablestrings[glContext.ARB_framebuffer_object]);
-    ri.Printf( PRINT_INFO, "GL_ARB_framebuffer_multisample: %s\n", enablestrings[glContext.ARB_framebuffer_multisample]);
-    ri.Printf( PRINT_INFO, "GL_ARB_framebuffer_sRGB: %s\n", enablestrings[glContext.ARB_framebuffer_sRGB]);
-    ri.Printf( PRINT_INFO, "GL_ARB_gl_spirv: %s\n", enablestrings[glContext.ARB_gl_spirv]);
-    ri.Printf( PRINT_INFO, "GL_ARB_texture_compression: %s\n", enablestrings[glContext.ARB_texture_compression]);
-    ri.Printf( PRINT_INFO, "GL_ARB_texture_filter_anisotropic: %s\n", enablestrings[glContext.ARB_texture_filter_anisotropic]);
-    ri.Printf( PRINT_INFO, "GL_ARB_texture_float: %s\n", enablestrings[glContext.ARB_texture_float]);
-    ri.Printf( PRINT_INFO, "GL_ARB_vertex_array_object: %s\n", enablestrings[glContext.ARB_vertex_array_object]);
-    ri.Printf( PRINT_INFO, "GL_ARB_vertex_buffer_object: %s\n", enablestrings[glContext.ARB_vertex_buffer_object]);
-    ri.Printf( PRINT_INFO, "GL_ARB_vertex_shader: %s\n", enablestrings[glContext.ARB_vertex_shader]);
-    ri.Printf( PRINT_INFO, "GL_ARG_sync: %s\n", enablestrings[ glContext.ARB_sync ] );
-    ri.Printf( PRINT_INFO, "GL_ARB_map_buffer_range: %s\n", enablestrings[ glContext.ARB_map_buffer_range ] );
-    ri.Printf( PRINT_INFO, "GL_ARB_buffer_storage: %s\n", enablestrings[ glContext.ARB_buffer_storage ] );
-    ri.Printf( PRINT_INFO, "GL_ARB_shader_storage_buffer_object: %s\n", enablestrings[ glContext.ARB_shader_storage_buffer_object ] );
+	ri.Printf( PRINT_INFO, "Extensions:\n" );
+	ri.Printf( PRINT_INFO, "GL_ARB_framebuffer_blit: %s\n", enablestrings[glContext.ARB_framebuffer_blit]);
+	ri.Printf( PRINT_INFO, "GL_ARB_framebuffer_object: %s\n", enablestrings[glContext.ARB_framebuffer_object]);
+	ri.Printf( PRINT_INFO, "GL_ARB_framebuffer_multisample: %s\n", enablestrings[glContext.ARB_framebuffer_multisample]);
+	ri.Printf( PRINT_INFO, "GL_ARB_framebuffer_sRGB: %s\n", enablestrings[glContext.ARB_framebuffer_sRGB]);
+	ri.Printf( PRINT_INFO, "GL_ARB_gl_spirv: %s\n", enablestrings[glContext.ARB_gl_spirv]);
+	ri.Printf( PRINT_INFO, "GL_ARB_texture_compression: %s\n", enablestrings[glContext.ARB_texture_compression]);
+	ri.Printf( PRINT_INFO, "GL_ARB_texture_filter_anisotropic: %s\n", enablestrings[glContext.ARB_texture_filter_anisotropic]);
+	ri.Printf( PRINT_INFO, "GL_ARB_texture_float: %s\n", enablestrings[glContext.ARB_texture_float]);
+	ri.Printf( PRINT_INFO, "GL_ARB_vertex_array_object: %s\n", enablestrings[glContext.ARB_vertex_array_object]);
+	ri.Printf( PRINT_INFO, "GL_ARB_vertex_buffer_object: %s\n", enablestrings[glContext.ARB_vertex_buffer_object]);
+	ri.Printf( PRINT_INFO, "GL_ARB_vertex_shader: %s\n", enablestrings[glContext.ARB_vertex_shader]);
+	ri.Printf( PRINT_INFO, "GL_ARG_sync: %s\n", enablestrings[ glContext.ARB_sync ] );
+	ri.Printf( PRINT_INFO, "GL_ARB_map_buffer_range: %s\n", enablestrings[ glContext.ARB_map_buffer_range ] );
+	ri.Printf( PRINT_INFO, "GL_ARB_buffer_storage: %s\n", enablestrings[ glContext.ARB_buffer_storage ] );
+	ri.Printf( PRINT_INFO, "GL_ARB_shader_storage_buffer_object: %s\n", enablestrings[ glContext.ARB_shader_storage_buffer_object ] );
 
 	if ( r_finish->i ) {
 		ri.Printf( PRINT_INFO, "Forcing glFinish\n" );
@@ -792,54 +792,54 @@ static void GpuInfo_f( void )
 
 static void R_Register( void )
 {
-    //
-    // latched and archived variables
-    //
-    r_useExtensions = ri.Cvar_Get( "r_useExtensions", "1", CVAR_SAVE | CVAR_LATCH );
-    ri.Cvar_SetDescription( r_useExtensions, "Use all of the OpenGL extensions your card is capable of." );
+	//
+	// latched and archived variables
+	//
+	r_useExtensions = ri.Cvar_Get( "r_useExtensions", "1", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_SetDescription( r_useExtensions, "Use all of the OpenGL extensions your card is capable of." );
 
-    r_arb_pixel_buffer_object = ri.Cvar_Get( "r_arb_pixel_buffer_object", "0", CVAR_SAVE | CVAR_LATCH );
-    ri.Cvar_SetDescription( r_arb_pixel_buffer_object, "Enables pixel buffer objects." );
+	r_arb_pixel_buffer_object = ri.Cvar_Get( "r_arb_pixel_buffer_object", "0", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_SetDescription( r_arb_pixel_buffer_object, "Enables pixel buffer objects." );
 
-    r_arb_texture_compression = ri.Cvar_Get( "r_arb_texture_compression", "0", CVAR_SAVE | CVAR_LATCH );
-    ri.Cvar_SetDescription( r_arb_texture_compression, "Enables texture compression." );
-    r_arb_framebuffer_object = ri.Cvar_Get( "r_arb_framebuffer_object", "1", CVAR_SAVE | CVAR_LATCH );
-    ri.Cvar_SetDescription( r_arb_framebuffer_object, "Enables post-processing via multiple framebuffers." );
-    r_arb_vertex_array_object = ri.Cvar_Get( "r_arb_vertex_array_object", "0", CVAR_SAVE | CVAR_LATCH );
-    ri.Cvar_SetDescription( r_arb_vertex_array_object, "Enables use of vertex array object extensions.\nNOTE: only really matters if OpenGL version < 3.3" );
-    r_arb_vertex_buffer_object = ri.Cvar_Get( "r_arb_vertex_buffer_object", "1", CVAR_SAVE | CVAR_LATCH );
-    ri.Cvar_SetDescription( r_arb_vertex_buffer_object, "Enables use of hardware accelerated vertex and index rendering." );
+	r_arb_texture_compression = ri.Cvar_Get( "r_arb_texture_compression", "0", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_SetDescription( r_arb_texture_compression, "Enables texture compression." );
+	r_arb_framebuffer_object = ri.Cvar_Get( "r_arb_framebuffer_object", "1", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_SetDescription( r_arb_framebuffer_object, "Enables post-processing via multiple framebuffers." );
+	r_arb_vertex_array_object = ri.Cvar_Get( "r_arb_vertex_array_object", "0", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_SetDescription( r_arb_vertex_array_object, "Enables use of vertex array object extensions.\nNOTE: only really matters if OpenGL version < 3.3" );
+	r_arb_vertex_buffer_object = ri.Cvar_Get( "r_arb_vertex_buffer_object", "1", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_SetDescription( r_arb_vertex_buffer_object, "Enables use of hardware accelerated vertex and index rendering." );
 
-    r_arb_sync = ri.Cvar_Get( "r_arb_sync", "0", CVAR_SAVE | CVAR_LATCH );
-    ri.Cvar_CheckRange( r_arb_sync, "0", "1", CVT_INT );
+	r_arb_sync = ri.Cvar_Get( "r_arb_sync", "0", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_CheckRange( r_arb_sync, "0", "1", CVT_INT );
 
-    r_arb_texture_filter_anisotropic = ri.Cvar_Get( "r_arb_texture_filter_anisotropic", "1", CVAR_SAVE | CVAR_LATCH );
-    ri.Cvar_SetDescription( r_arb_texture_filter_anisotropic, "Enabled anisotropic filtering." );
-    r_arb_texture_max_anisotropy = ri.Cvar_Get( "r_arb_texture_max_anisotropy", "8", CVAR_SAVE | CVAR_LATCH );
-    ri.Cvar_SetDescription( r_arb_texture_max_anisotropy, "Sets maximum anisotropic level for your graphics driver. Requires \\r_arb_texture_filter_anisotropic 1." );
+	r_arb_texture_filter_anisotropic = ri.Cvar_Get( "r_arb_texture_filter_anisotropic", "1", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_SetDescription( r_arb_texture_filter_anisotropic, "Enabled anisotropic filtering." );
+	r_arb_texture_max_anisotropy = ri.Cvar_Get( "r_arb_texture_max_anisotropy", "8", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_SetDescription( r_arb_texture_max_anisotropy, "Sets maximum anisotropic level for your graphics driver. Requires \\r_arb_texture_filter_anisotropic 1." );
 
-    r_arb_map_buffer_range = ri.Cvar_Get( "r_arb_map_buffer_range", "0", CVAR_LATCH | CVAR_SAVE );
+	r_arb_map_buffer_range = ri.Cvar_Get( "r_arb_map_buffer_range", "0", CVAR_LATCH | CVAR_SAVE );
 
-    r_arb_shader_storage_buffer_object = ri.Cvar_Get( "r_arb_shader_storage_buffer_object", "0", CVAR_LATCH | CVAR_SAVE );
-    ri.Cvar_SetDescription( r_arb_shader_storage_buffer_object,
-        "Enables usage of Shader Storage Buffer Objects (SSBO) instead of Uniform Buffer Objects (UBO).\n"
-        "SSBOs can hold much more data and are dynamically sizeable, but are generally slower than UBOs." );
+	r_arb_shader_storage_buffer_object = ri.Cvar_Get( "r_arb_shader_storage_buffer_object", "0", CVAR_LATCH | CVAR_SAVE );
+	ri.Cvar_SetDescription( r_arb_shader_storage_buffer_object,
+		"Enables usage of Shader Storage Buffer Objects (SSBO) instead of Uniform Buffer Objects (UBO).\n"
+		"SSBOs can hold much more data and are dynamically sizeable, but are generally slower than UBOs." );
 
-    r_arb_texture_float = ri.Cvar_Get( "r_arb_texture_float", "1", CVAR_SAVE | CVAR_LATCH );
-    ri.Cvar_SetDescription( r_arb_texture_float, "Enables HDR framebuffer." );
+	r_arb_texture_float = ri.Cvar_Get( "r_arb_texture_float", "1", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_SetDescription( r_arb_texture_float, "Enables HDR framebuffer." );
 
-    r_allowLegacy = ri.Cvar_Get( "r_allowLegacy", "0", CVAR_SAVE | CVAR_LATCH );
-    ri.Cvar_SetDescription( r_allowLegacy, "Allow the use of old OpenGL API versions, requires \\r_drawMode 0 or 1 and \\r_allowShaders 0" );
-    r_allowShaders = ri.Cvar_Get( "r_allowShaders", "1", CVAR_SAVE | CVAR_LATCH );
-    ri.Cvar_SetDescription( r_allowShaders, "Allow the use of GLSL shaders, requires \\r_allowLegacy 0." );
+	r_allowLegacy = ri.Cvar_Get( "r_allowLegacy", "0", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_SetDescription( r_allowLegacy, "Allow the use of old OpenGL API versions, requires \\r_drawMode 0 or 1 and \\r_allowShaders 0" );
+	r_allowShaders = ri.Cvar_Get( "r_allowShaders", "1", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_SetDescription( r_allowShaders, "Allow the use of GLSL shaders, requires \\r_allowLegacy 0." );
 
-    r_picmip = ri.Cvar_Get( "r_picmip", "0", CVAR_SAVE | CVAR_LATCH );
+	r_picmip = ri.Cvar_Get( "r_picmip", "0", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_CheckRange( r_picmip, "0", "16", CVT_INT );
 	ri.Cvar_SetDescription( r_picmip, "Set texture quality, lower is better." );
 	r_roundImagesDown = ri.Cvar_Get( "r_roundImagesDown", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_roundImagesDown, "When images are scaled, round images down instead of up." );
 
-    r_detailTextures = ri.Cvar_Get( "r_detailtextures", "1", CVAR_SAVE | CVAR_LATCH );
+	r_detailTextures = ri.Cvar_Get( "r_detailtextures", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_detailTextures, "Enables usage of shader stages flagged as detail." );
 	r_textureBits = ri.Cvar_Get( "r_textureBits", "0", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_textureBits, "Number of texture bits per texture." );
@@ -849,13 +849,13 @@ static void R_Register( void )
 	r_hdr = ri.Cvar_Get( "r_hdr", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_hdr, "Do scene rendering in a framebuffer with high dynamic range." );
 
-    r_floatLightmap = ri.Cvar_Get( "r_floatLightmap", "0", CVAR_SAVE | CVAR_LATCH );
+	r_floatLightmap = ri.Cvar_Get( "r_floatLightmap", "0", CVAR_SAVE | CVAR_LATCH );
 
-    r_toneMapType = ri.Cvar_Get( "r_toneMapType", "0", CVAR_SAVE | CVAR_LATCH );
-    ri.Cvar_SetDescription( r_toneMapType,
-                            "Sets the desired tone mapping technique:\n"
-                            " 0: Reinhard tone mapping, faster, but non adjustable brightness level leading to darker areas losing quality\n"
-                            " 1: Exposure tone mapping, slightly slower, but adjustable brightness level" );
+	r_toneMapType = ri.Cvar_Get( "r_toneMapType", "0", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_SetDescription( r_toneMapType,
+							"Sets the desired tone mapping technique:\n"
+							" 0: Reinhard tone mapping, faster, but non adjustable brightness level leading to darker areas losing quality\n"
+							" 1: Exposure tone mapping, slightly slower, but adjustable brightness level" );
 	r_toneMap = ri.Cvar_Get( "r_toneMap", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_toneMap, "Enable tone mapping. Requires r_hdr and r_postProcess." );
 	r_forceToneMap = ri.Cvar_Get( "r_forceToneMap", "0", CVAR_CHEAT );
@@ -863,7 +863,7 @@ static void R_Register( void )
 	r_forceToneMapAvg = ri.Cvar_Get( "r_forceToneMapAvg", "-2.0", CVAR_CHEAT );
 	r_forceToneMapMax = ri.Cvar_Get( "r_forceToneMapMax", "0.0", CVAR_CHEAT );
 
-    r_sunShadows = ri.Cvar_Get( "r_sunShadows", "1", CVAR_SAVE | CVAR_LATCH );
+	r_sunShadows = ri.Cvar_Get( "r_sunShadows", "1", CVAR_SAVE | CVAR_LATCH );
 	r_shadowFilter = ri.Cvar_Get( "r_shadowFilter", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_shadowFilter, "Enable filtering shadows for a smoother look (0 - No. 1 - Some. 2 - Much)." );
 	r_shadowBlur = ri.Cvar_Get("r_shadowBlur", "0", CVAR_SAVE | CVAR_LATCH);
@@ -876,36 +876,36 @@ static void R_Register( void )
 	r_shadowCascadeZBias = ri.Cvar_Get( "r_shadowCascadeZBias", "0", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_shadowCascadeZBias, "Z-bias for shadow cascade frustums." );
 
-    r_forceSun = ri.Cvar_Get( "r_forceSun", "0", CVAR_CHEAT );
+	r_forceSun = ri.Cvar_Get( "r_forceSun", "0", CVAR_CHEAT );
 	r_forceSunLightScale = ri.Cvar_Get( "r_forceSunLightScale", "1.0", CVAR_CHEAT );
 	r_forceSunAmbientScale = ri.Cvar_Get( "r_forceSunAmbientScale", "0.5", CVAR_CHEAT );
 	r_drawSunRays = ri.Cvar_Get( "r_drawSunRays", "0", CVAR_SAVE | CVAR_LATCH );
 	r_sunlightMode = ri.Cvar_Get( "r_sunlightMode", "1", CVAR_SAVE | CVAR_LATCH );
 
-    r_smaaEdgesType = ri.Cvar_Get( "r_smaaEdgesType", "luma", CVAR_SAVE | CVAR_LATCH );
-    ri.Cvar_SetDescription( r_smaaEdgesType, "Sets SMAA anti-aliasing edges processing method. Can be luma, depth, or color." );
+	r_smaaEdgesType = ri.Cvar_Get( "r_smaaEdgesType", "luma", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_SetDescription( r_smaaEdgesType, "Sets SMAA anti-aliasing edges processing method. Can be luma, depth, or color." );
 
-    r_useShaderCache = ri.Cvar_Get( "r_useShaderCache", "1", CVAR_LATCH | CVAR_SAVE );
-    ri.Cvar_SetDescription( r_useShaderCache, "Caches GLSL shader objects for faster loading, requires GL_ARB_gl_spirv extension." );
+	r_useShaderCache = ri.Cvar_Get( "r_useShaderCache", "1", CVAR_LATCH | CVAR_SAVE );
+	ri.Cvar_SetDescription( r_useShaderCache, "Caches GLSL shader objects for faster loading, requires GL_ARB_gl_spirv extension." );
 
-    r_drawMode = ri.Cvar_Get( "r_drawMode", "2", CVAR_SAVE | CVAR_LATCH );
-    ri.Cvar_SetDescription( r_drawMode,
-                            "Sets the rendering mode (see OpenGL docs if you want more info):\n"
-                            " 0: immediate mode, deprecated in modern GPUs, this will not be supported\n"
-                            " 1: client buffered, cpu buffers, but uses glDrawElements\n"
-                            " 2: gpu buffered, gpu and cpu buffers, most supported\n"
-                            " 3: mapped to client space using glMapBuffer, the most recent in NVidia\n" );
+	r_drawMode = ri.Cvar_Get( "r_drawMode", "2", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_SetDescription( r_drawMode,
+							"Sets the rendering mode (see OpenGL docs if you want more info):\n"
+							" 0: immediate mode, deprecated in modern GPUs, this will not be supported\n"
+							" 1: client buffered, cpu buffers, but uses glDrawElements\n"
+							" 2: gpu buffered, gpu and cpu buffers, most supported\n"
+							" 3: mapped to client space using glMapBuffer, the most recent in NVidia\n" );
 
-    r_depthPrepass = ri.Cvar_Get( "r_depthPrepass", "1", CVAR_SAVE );
+	r_depthPrepass = ri.Cvar_Get( "r_depthPrepass", "1", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_depthPrepass, "Do a depth-only pass before rendering. Speeds up rendering in cases where advanced features are used. Required for r_sunShadows." );
 	r_ssao = ri.Cvar_Get( "r_ssao", "0", CVAR_LATCH | CVAR_SAVE );
 	ri.Cvar_SetDescription( r_ssao, "Enable screen-space ambient occlusion." );
-    r_bloom = ri.Cvar_Get( "r_bloom", "1", CVAR_LATCH | CVAR_SAVE );
-    ri.Cvar_SetDescription( r_bloom, "Enables framebuffer based bloom to make light sources stand out, requires \\r_hdr." );
+	r_bloom = ri.Cvar_Get( "r_bloom", "1", CVAR_LATCH | CVAR_SAVE );
+	ri.Cvar_SetDescription( r_bloom, "Enables framebuffer based bloom to make light sources stand out, requires \\r_hdr." );
 
-    r_useUniformBuffers = ri.Cvar_Get( "r_useUniformBuffers", "0", CVAR_SAVE | CVAR_LATCH );
-    ri.Cvar_SetDescription( r_useUniformBuffers, "Enables the usage of uniform buffers for a more performant shader data transmission." );
-    r_normalMapping = ri.Cvar_Get( "r_normalMapping", "1", CVAR_SAVE | CVAR_LATCH );
+	r_useUniformBuffers = ri.Cvar_Get( "r_useUniformBuffers", "0", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_SetDescription( r_useUniformBuffers, "Enables the usage of uniform buffers for a more performant shader data transmission." );
+	r_normalMapping = ri.Cvar_Get( "r_normalMapping", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_normalMapping, "Enable normal maps for materials that support it." );
 	r_specularMapping = ri.Cvar_Get( "r_specularMapping", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_specularMapping, "Enable specular maps for materials that support it." );
@@ -928,9 +928,9 @@ static void R_Register( void )
 	r_glossType = ri.Cvar_Get("r_glossType", "1", CVAR_SAVE | CVAR_LATCH);
 	r_dlightMode = ri.Cvar_Get( "r_dlightMode", "0", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_dlightMode,
-                            "Dynamic light mode:\n"
-                            " 0: Software processed per-polygon dynamic lights\n"
-                            " 1: High quality per-pixel dynamic lighting done in a shader, slower than per-vertex lighting" );
+							"Dynamic light mode:\n"
+							" 0: Software processed per-polygon dynamic lights\n"
+							" 1: High quality per-pixel dynamic lighting done in a shader, slower than per-vertex lighting" );
 	r_pshadowDist = ri.Cvar_Get( "r_pshadowDist", "128", CVAR_SAVE );
 	r_mergeLightmaps = ri.Cvar_Get( "r_mergeLightmaps", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_mergeLightmaps, "Merge small lightmaps into 2 or fewer giant lightmaps." );
@@ -939,19 +939,19 @@ static void R_Register( void )
 	r_imageUpsampleType = ri.Cvar_Get( "r_imageUpsampleType", "1", CVAR_SAVE | CVAR_LATCH );
 	r_genNormalMaps = ri.Cvar_Get( "r_genNormalMaps", "0", CVAR_SAVE | CVAR_LATCH );
 
-    r_greyscale = ri.Cvar_Get("r_greyscale", "0", CVAR_SAVE | CVAR_LATCH);
+	r_greyscale = ri.Cvar_Get("r_greyscale", "0", CVAR_SAVE | CVAR_LATCH);
 	ri.Cvar_CheckRange( r_greyscale, "0", "1", CVT_INT );
 	ri.Cvar_SetDescription( r_greyscale, "Desaturates rendered frame." );
 
 	r_externalGLSL = ri.Cvar_Get( "r_externalGLSL", "0", CVAR_LATCH );
-    ri.Cvar_SetDescription( r_externalGLSL, "Enables loading glsl from external files instead of just built-in shaders." );
+	ri.Cvar_SetDescription( r_externalGLSL, "Enables loading glsl from external files instead of just built-in shaders." );
 
-    r_ignoreDstAlpha = ri.Cvar_Get( "r_ignoreDstAlpha", "1", CVAR_SAVE | CVAR_LATCH );
+	r_ignoreDstAlpha = ri.Cvar_Get( "r_ignoreDstAlpha", "1", CVAR_SAVE | CVAR_LATCH );
 
-    //
-    // temporary latched variables that can only change over a restart
-    //
-    r_fullbright = ri.Cvar_Get( "r_fullbright", "0", CVAR_LATCH | CVAR_CHEAT );
+	//
+	// temporary latched variables that can only change over a restart
+	//
+	r_fullbright = ri.Cvar_Get( "r_fullbright", "0", CVAR_LATCH | CVAR_CHEAT );
 	ri.Cvar_SetDescription( r_fullbright, "Debugging tool to render the entire level without lighting." );
 	r_intensity = ri.Cvar_Get( "r_intensity", "1", CVAR_LATCH );
 	ri.Cvar_SetDescription( r_intensity, "Global texture lighting scale." );
@@ -961,85 +961,85 @@ static void R_Register( void )
 	ri.Cvar_SetDescription( r_mapOverBrightBits, "Sets the number of overbright bits baked into all lightmaps and map data." );
 
 
-    //
-    // temporary variables that can change at any time
-    //
-    r_lightmap = ri.Cvar_Get( "r_lightmap", "0", 0 );
+	//
+	// temporary variables that can change at any time
+	//
+	r_lightmap = ri.Cvar_Get( "r_lightmap", "0", 0 );
 	ri.Cvar_SetDescription( r_lightmap, "Show only lightmaps on all world surfaces." );
 
-    r_debugCamera = ri.Cvar_Get( "r_debugCamera", "0", CVAR_PRIVATE | CVAR_TEMP );
-    ri.Cvar_SetDescription( r_debugCamera, "Toggles free camera movement, used for photomode." );
+	r_debugCamera = ri.Cvar_Get( "r_debugCamera", "0", CVAR_PRIVATE | CVAR_TEMP );
+	ri.Cvar_SetDescription( r_debugCamera, "Toggles free camera movement, used for photomode." );
 
-    //
-    // archived variables that can change any time
-    //
-    r_customWidth = ri.Cvar_Get( "r_customWidth", "1980", CVAR_SAVE );
+	//
+	// archived variables that can change any time
+	//
+	r_customWidth = ri.Cvar_Get( "r_customWidth", "1980", CVAR_SAVE );
 	r_customHeight = ri.Cvar_Get( "r_customHeight", "1080", CVAR_SAVE );
 
-    r_multisampleAmount = ri.Cvar_Get( "r_multisampleAmount", "2", CVAR_SAVE );
-    ri.Cvar_CheckRange( r_multisampleAmount, "0", "32", CVT_INT );
-    r_multisampleType = ri.Cvar_Get( "r_multisampleType", "1", CVAR_SAVE );
-    ri.Cvar_CheckRange( r_multisampleType, va( "%i", AntiAlias_None ), va( "%i", AntiAlias_FXAA ), CVT_INT );
-    ri.Cvar_SetDescription( r_multisampleType, "Sets the desired anti-aliasing technique. Requires \\r_postProcess" );
+	r_multisampleAmount = ri.Cvar_Get( "r_multisampleAmount", "2", CVAR_SAVE );
+	ri.Cvar_CheckRange( r_multisampleAmount, "0", "32", CVT_INT );
+	r_multisampleType = ri.Cvar_Get( "r_multisampleType", "1", CVAR_SAVE );
+	ri.Cvar_CheckRange( r_multisampleType, va( "%i", AntiAlias_None ), va( "%i", AntiAlias_FXAA ), CVT_INT );
+	ri.Cvar_SetDescription( r_multisampleType, "Sets the desired anti-aliasing technique. Requires \\r_postProcess" );
 
-    r_overBrightBits = ri.Cvar_Get( "r_overBrightBits", "1", CVAR_SAVE );
+	r_overBrightBits = ri.Cvar_Get( "r_overBrightBits", "1", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_overBrightBits, "Sets the intensity of overall brightness of texture pixels." );
 	r_ignorehwgamma = ri.Cvar_Get( "r_ignorehwgamma", "1", CVAR_SAVE );
-    ri.Cvar_SetDescription( r_ignorehwgamma, "Overrides hardware gamma capabilities." );
+	ri.Cvar_SetDescription( r_ignorehwgamma, "Overrides hardware gamma capabilities." );
 
-    r_postProcess = ri.Cvar_Get( "r_postProcess", "1", CVAR_SAVE );
+	r_postProcess = ri.Cvar_Get( "r_postProcess", "1", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_postProcess, "Enable post-processing." );
 
-    r_imageSharpenAmount = ri.Cvar_Get( "r_imageSharpenAmount", "1.0", CVAR_SAVE );
-    ri.Cvar_CheckRange( r_imageSharpenAmount, "0.5", "5.0", CVT_FLOAT );
-    ri.Cvar_SetDescription( r_imageSharpenAmount, "Sets the amount of sharpening applied per-pixel to a rendered texture" );
+	r_imageSharpenAmount = ri.Cvar_Get( "r_imageSharpenAmount", "1.0", CVAR_SAVE );
+	ri.Cvar_CheckRange( r_imageSharpenAmount, "0.5", "5.0", CVT_FLOAT );
+	ri.Cvar_SetDescription( r_imageSharpenAmount, "Sets the amount of sharpening applied per-pixel to a rendered texture" );
 
 #ifdef _NOMAD_DEBUG
-    r_glDiagnostics = ri.Cvar_Get( "r_gpuDiagnostics", "1", CVAR_SAVE | CVAR_LATCH );
+	r_glDiagnostics = ri.Cvar_Get( "r_gpuDiagnostics", "1", CVAR_SAVE | CVAR_LATCH );
 #else
-    r_glDiagnostics = ri.Cvar_Get( "r_gpuDiagnostics", "0", CVAR_SAVE | CVAR_LATCH );
+	r_glDiagnostics = ri.Cvar_Get( "r_gpuDiagnostics", "0", CVAR_SAVE | CVAR_LATCH );
 #endif
-    ri.Cvar_CheckRange( r_glDiagnostics, "0", "1", CVT_INT );
-    ri.Cvar_SetDescription( r_glDiagnostics, "Toggles display of gpu per-frame statistics." );
+	ri.Cvar_CheckRange( r_glDiagnostics, "0", "1", CVT_INT );
+	ri.Cvar_SetDescription( r_glDiagnostics, "Toggles display of gpu per-frame statistics." );
 
 #ifdef _NOMAD_DEBUG
-    r_glDebug = ri.Cvar_Get( "r_glDebug", "1", CVAR_SAVE | CVAR_LATCH );
+	r_glDebug = ri.Cvar_Get( "r_glDebug", "1", CVAR_SAVE | CVAR_LATCH );
 #else
-    r_glDebug = ri.Cvar_Get( "r_glDebug", "0", CVAR_SAVE | CVAR_LATCH );
+	r_glDebug = ri.Cvar_Get( "r_glDebug", "0", CVAR_SAVE | CVAR_LATCH );
 #endif
-    ri.Cvar_SetDescription( r_glDebug, "Toggles OpenGL driver debug logging." );
+	ri.Cvar_SetDescription( r_glDebug, "Toggles OpenGL driver debug logging." );
 
-    r_textureBits = ri.Cvar_Get( "r_textureBits", "0", CVAR_SAVE | CVAR_LATCH );
+	r_textureBits = ri.Cvar_Get( "r_textureBits", "0", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_textureBits, "Number of texture bits per texture." );
 	r_stencilBits = ri.Cvar_Get( "r_stencilBits", "8", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_stencilBits, "Stencil buffer size, value decreases Z-buffer depth." );
 
-    r_finish = ri.Cvar_Get("r_finish", "0", CVAR_SAVE | CVAR_LATCH);
+	r_finish = ri.Cvar_Get("r_finish", "0", CVAR_SAVE | CVAR_LATCH);
 	ri.Cvar_SetDescription( r_finish, "Force a glFinish call after rendering a scene." );
 
-    r_picmip = ri.Cvar_Get("r_picmip", "0", CVAR_SAVE | CVAR_LATCH );
+	r_picmip = ri.Cvar_Get("r_picmip", "0", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_CheckRange( r_picmip, "0", "16", CVT_INT );
 	ri.Cvar_SetDescription( r_picmip, "Set texture quality, lower is better." );
-    r_colorMipLevels = ri.Cvar_Get ("r_colorMipLevels", "0", CVAR_LATCH );
+	r_colorMipLevels = ri.Cvar_Get ("r_colorMipLevels", "0", CVAR_LATCH );
 	ri.Cvar_SetDescription( r_colorMipLevels, "Debugging tool to artificially color different mipmap levels so that they are more apparent." );
 	r_roundImagesDown = ri.Cvar_Get("r_roundImagesDown", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_roundImagesDown, "When images are scaled, round images down instead of up." );
 
-    r_mappedBuffers = ri.Cvar_Get( "r_mappedBuffers", "0", CVAR_SAVE | CVAR_LATCH );
-    ri.Cvar_CheckRange( r_mappedBuffers, "0", "1", CVT_INT );
-    ri.Cvar_SetDescription( r_mappedBuffers, "Toggles whether or not vertex and index buffer data is mapped into cpu memory." );
+	r_mappedBuffers = ri.Cvar_Get( "r_mappedBuffers", "0", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_CheckRange( r_mappedBuffers, "0", "1", CVT_INT );
+	ri.Cvar_SetDescription( r_mappedBuffers, "Toggles whether or not vertex and index buffer data is mapped into cpu memory." );
 
-    r_vertexLight = ri.Cvar_Get( "r_vertexLight", "0", CVAR_SAVE | CVAR_DEV );
+	r_vertexLight = ri.Cvar_Get( "r_vertexLight", "0", CVAR_SAVE | CVAR_DEV );
 	ri.Cvar_SetDescription( r_vertexLight, "Set to 1 to use vertex light instead of lightmaps, collapse all multi-stage shaders into single-stage ones, might cause rendering artifacts." );
-    
+	
 
-    r_ignoreGLErrors = ri.Cvar_Get( "r_ignoreGLErrors", "1", CVAR_SAVE );
+	r_ignoreGLErrors = ri.Cvar_Get( "r_ignoreGLErrors", "1", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_ignoreGLErrors, "Ignore OpenGL errors." );
 //	r_fastsky = ri.Cvar_Get( "r_fastsky", "0", CVAR_SAVE );
 //	ri.Cvar_SetDescription( r_fastsky, "Draw flat colored skies." );
-    r_drawSun = ri.Cvar_Get( "r_drawSun", "0", CVAR_SAVE );
+	r_drawSun = ri.Cvar_Get( "r_drawSun", "0", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_drawSun, "Draw sun shader in skies." );
-    r_dynamiclight = ri.Cvar_Get( "r_dynamiclight", "1", CVAR_SAVE );
+	r_dynamiclight = ri.Cvar_Get( "r_dynamiclight", "1", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_dynamiclight, "Enables dynamic lighting." );
 	r_dlightBacks = ri.Cvar_Get( "r_dlightBacks", "1", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_dlightBacks, "Whether or not dynamic lights should light up back-face culled geometry." );
@@ -1047,23 +1047,23 @@ static void R_Register( void )
 	ri.Cvar_SetDescription( r_finish, "Force a glFinish call after rendering a scene." );
 	r_textureMode = ri.Cvar_Get( "r_textureMode", "Nearest", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_textureMode,
-                            "Texture interpolation mode:\n"
-                            " Bilinear: Linear interpolation and will appear to blend in objects that are closer than the resolution that the textures are set as\n"
-                            " Nearest: Nearest neighbor interpolation and will cause the texture to look pixelated. Use for the most retro look and feel\n"
-                            " Linear Nearest: Linear magnification filter, Nearest minification filter\n"
-                            " Nearest Linear: Nearest magnification filter, Linear minification filter"
+							"Texture interpolation mode:\n"
+							" Bilinear: Linear interpolation and will appear to blend in objects that are closer than the resolution that the textures are set as\n"
+							" Nearest: Nearest neighbor interpolation and will cause the texture to look pixelated. Use for the most retro look and feel\n"
+							" Linear Nearest: Linear magnification filter, Nearest minification filter\n"
+							" Nearest Linear: Nearest magnification filter, Linear minification filter"
 //                            " GL_NEAREST: Nearest neighbor interpolation and will therefore appear similar to Quake II except with the added colored lighting\n"
 //                            " GL_LINEAR: Linear interpolation and will appear to blend in objects that are closer than the resolution that the textures are set as\n"
 //                            " GL_NEAREST_MIPMAP_NEAREST: Nearest neighbor interpolation with mipmapping for bilinear hardware, mipmapping will blend objects that are farther away than the resolution that they are set as\n"
 //                            " GL_LINEAR_MIPMAP_NEAREST: Linear interpolation with mipmapping for bilinear hardware\n"
 //                            " GL_NEAREST_MIPMAP_LINEAR: Nearest neighbor interpolation with mipmapping for trilinear hardware\n"
 //                            " GL_LINEAR_MIPMAP_LINEAR: Linear interpolation with mipmapping for trilinear hardware"
-    );
+	);
 	r_gammaAmount = ri.Cvar_Get( "r_gammaAmount", "1.0", CVAR_SAVE );
 	ri.Cvar_CheckRange( r_gammaAmount, "0.5", "3", CVT_FLOAT );
 	ri.Cvar_SetDescription( r_gammaAmount, "Gamma correction factor." );
 
-    r_autoExposure = ri.Cvar_Get( "r_autoExposure", "1", CVAR_SAVE );
+	r_autoExposure = ri.Cvar_Get( "r_autoExposure", "1", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_autoExposure, "Do automatic exposure based on scene brightness. Hardcoded to -2 to 2 on maps that don't specify otherwise. Requires r_hdr, r_postProcess, and r_toneMap." );
 	r_forceAutoExposure = ri.Cvar_Get( "r_forceAutoExposure", "0", CVAR_CHEAT );
 	r_forceAutoExposureMin = ri.Cvar_Get( "r_forceAutoExposureMin", "-2.0", CVAR_CHEAT );
@@ -1071,396 +1071,396 @@ static void R_Register( void )
 
 	r_cameraExposure = ri.Cvar_Get( "r_cameraExposure", "1", CVAR_CHEAT );
 
-    r_printShaders = ri.Cvar_Get( "r_printShaders", "0", 0 );
+	r_printShaders = ri.Cvar_Get( "r_printShaders", "0", 0 );
 	ri.Cvar_SetDescription( r_printShaders, "Debugging tool to print on console of the number of shaders used." );
 
-    r_textureDetail = ri.Cvar_Get( "r_textureDetail", va( "%i", TexDetail_Normie ), CVAR_SAVE | CVAR_LATCH );
-    ri.Cvar_CheckRange(r_textureDetail, va( "%i", TexDetail_MSDOS ), va( "%i", TexDetail_GPUvsGod ), CVT_INT );
+	r_textureDetail = ri.Cvar_Get( "r_textureDetail", va( "%i", TexDetail_Normie ), CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_CheckRange(r_textureDetail, va( "%i", TexDetail_MSDOS ), va( "%i", TexDetail_GPUvsGod ), CVT_INT );
 
-    r_speeds = ri.Cvar_Get( "r_speeds", "0", CVAR_SAVE | CVAR_LATCH );
+	r_speeds = ri.Cvar_Get( "r_speeds", "0", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_speeds,
-                            "Prints out various debugging stats from renderer:\n"
-                            "0: Disabled\n"
-                            "1: Backend drawing\n"
-                            "2: Lighting\n"
-                            "3: OpenGL state changes" );
+							"Prints out various debugging stats from renderer:\n"
+							"0: Disabled\n"
+							"1: Backend drawing\n"
+							"2: Lighting\n"
+							"3: OpenGL state changes" );
 
-    //
-    // temporary variables that can change at any time
-    //
-    r_clearColor = ri.Cvar_Get( "r_clearColor", "0.1 0.1 0.1 1.0", CVAR_TEMP );
+	//
+	// temporary variables that can change at any time
+	//
+	r_clearColor = ri.Cvar_Get( "r_clearColor", "0.1 0.1 0.1 1.0", CVAR_TEMP );
 
-    r_showTris = ri.Cvar_Get( "r_showTris", "0", CVAR_TEMP );
-    ri.Cvar_SetDescription( r_showTris, "Draw outlines of polygons for bounding box debugging." );
+	r_showTris = ri.Cvar_Get( "r_showTris", "0", CVAR_TEMP );
+	ri.Cvar_SetDescription( r_showTris, "Draw outlines of polygons for bounding box debugging." );
 
-    r_showImages = ri.Cvar_Get( "r_showImages", "0", CVAR_TEMP );
+	r_showImages = ri.Cvar_Get( "r_showImages", "0", CVAR_TEMP );
 	ri.Cvar_SetDescription( r_showImages,
-                                        "Draw all images currently loaded into memory:\n"
-                                        " 0: Disabled\n"
-                                        " 1: Show images set to uniform size\n"
-                                        " 2: Show images with scaled relative to largest image" );
+										"Draw all images currently loaded into memory:\n"
+										" 0: Disabled\n"
+										" 1: Show images set to uniform size\n"
+										" 2: Show images with scaled relative to largest image" );
 
-    r_skipBackEnd = ri.Cvar_Get( "r_skipBackEnd", "0", CVAR_CHEAT );
+	r_skipBackEnd = ri.Cvar_Get( "r_skipBackEnd", "0", CVAR_CHEAT );
 	ri.Cvar_SetDescription( r_skipBackEnd, "Skips loading rendering backend." );
 
-    r_norefresh = ri.Cvar_Get( "r_norefresh", "0", CVAR_CHEAT );
+	r_norefresh = ri.Cvar_Get( "r_norefresh", "0", CVAR_CHEAT );
 	ri.Cvar_SetDescription( r_norefresh, "Bypasses refreshing of the rendered scene." );
 	r_drawentities = ri.Cvar_Get( "r_drawentities", "1", CVAR_CHEAT );
 	ri.Cvar_SetDescription( r_drawentities, "Draw all world entities." );
 
-    r_drawworld = ri.Cvar_Get( "r_drawworld", "1", CVAR_CHEAT );
+	r_drawworld = ri.Cvar_Get( "r_drawworld", "1", CVAR_CHEAT );
 	ri.Cvar_SetDescription( r_drawworld, "Set to 0 to disable drawing the world. Set to 1 to enable." );
 	r_lightmap = ri.Cvar_Get( "r_lightmap", "0", 0 );
 	ri.Cvar_SetDescription( r_lightmap, "Show only lightmaps on all world surfaces." );
 
-    r_measureOverdraw = ri.Cvar_Get( "r_measureOverdraw", "0", CVAR_CHEAT );
-    r_ignoreGLErrors = ri.Cvar_Get( "r_ignoreGLErrors", "1", CVAR_LATCH );
-    r_clear = ri.Cvar_Get( "r_clear", "0", CVAR_CHEAT );
-    r_drawBuffer = ri.Cvar_Get( "r_drawBuffer", "GL_BACK", CVAR_CHEAT );
-    ri.Cvar_SetDescription( r_drawBuffer, "Sets which frame buffer to draw into." );
+	r_measureOverdraw = ri.Cvar_Get( "r_measureOverdraw", "0", CVAR_CHEAT );
+	r_ignoreGLErrors = ri.Cvar_Get( "r_ignoreGLErrors", "1", CVAR_LATCH );
+	r_clear = ri.Cvar_Get( "r_clear", "0", CVAR_CHEAT );
+	r_drawBuffer = ri.Cvar_Get( "r_drawBuffer", "GL_BACK", CVAR_CHEAT );
+	ri.Cvar_SetDescription( r_drawBuffer, "Sets which frame buffer to draw into." );
 
-    r_shadows = ri.Cvar_Get( "sgame_Shadows", "1", 0 );
+	r_shadows = ri.Cvar_Get( "sgame_Shadows", "1", 0 );
 
-    r_maxPolys = ri.Cvar_Get( "r_maxPolys", "528", CVAR_LATCH | CVAR_PROTECTED );
-    ri.Cvar_CheckRange( r_maxPolys, "64", "8192", CVT_INT );
-    ri.Cvar_SetDescription( r_maxPolys, "Sets the maximum amount of polygons that can be processed per scene.\n"
-                                        "NOTE: there can be multiple scenes rendered in a single frame." );
+	r_maxPolys = ri.Cvar_Get( "r_maxPolys", "528", CVAR_LATCH | CVAR_PROTECTED );
+	ri.Cvar_CheckRange( r_maxPolys, "64", "8192", CVT_INT );
+	ri.Cvar_SetDescription( r_maxPolys, "Sets the maximum amount of polygons that can be processed per scene.\n"
+										"NOTE: there can be multiple scenes rendered in a single frame." );
 
-    r_screenshotJpegQuality = ri.Cvar_Get( "r_screenshotJpegQuality", "90", CVAR_SAVE );
+	r_screenshotJpegQuality = ri.Cvar_Get( "r_screenshotJpegQuality", "90", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_screenshotJpegQuality, "Controls quality of Jpeg screenshots when using screenshotJpeg." );
 
-    r_maxDLights = ri.Cvar_Get( "r_maxDLights", "128", CVAR_LATCH | CVAR_PROTECTED );
-    ri.Cvar_SetDescription( r_maxDLights, "Sets the maximum amount of dynamic lights that can be processed per scene.\n"
-                                            "NOTE: there can be multiple scenes rendered in a single frame." );
-    r_maxEntities = ri.Cvar_Get( "r_maxEntities", "1024", CVAR_LATCH | CVAR_PROTECTED );
-    ri.Cvar_SetDescription( r_maxEntities, "Sets the maximum amount of dynamic entities that can be processed per scene.\n"
-                                            "NOTE: there can be multiple scenes rendered in a single frame." );
+	r_maxDLights = ri.Cvar_Get( "r_maxDLights", "128", CVAR_LATCH | CVAR_PROTECTED );
+	ri.Cvar_SetDescription( r_maxDLights, "Sets the maximum amount of dynamic lights that can be processed per scene.\n"
+											"NOTE: there can be multiple scenes rendered in a single frame." );
+	r_maxEntities = ri.Cvar_Get( "r_maxEntities", "1024", CVAR_LATCH | CVAR_PROTECTED );
+	ri.Cvar_SetDescription( r_maxEntities, "Sets the maximum amount of dynamic entities that can be processed per scene.\n"
+											"NOTE: there can be multiple scenes rendered in a single frame." );
 
-    // make sure all commands added here are also
-    // removed in R_Shutdown
-    ri.Cmd_AddCommand( "texturelist", R_ImageList_f );
-    ri.Cmd_AddCommand( "shaderlist", R_ShaderList_f );
-    ri.Cmd_AddCommand( "screenshot", R_ScreenShot_f );
-    ri.Cmd_AddCommand( "gpuinfo", GpuInfo_f );
-    ri.Cmd_AddCommand( "gpumeminfo", GpuMemInfo_f );
+	// make sure all commands added here are also
+	// removed in R_Shutdown
+	ri.Cmd_AddCommand( "texturelist", R_ImageList_f );
+	ri.Cmd_AddCommand( "shaderlist", R_ShaderList_f );
+	ri.Cmd_AddCommand( "screenshot", R_ScreenShot_f );
+	ri.Cmd_AddCommand( "gpuinfo", GpuInfo_f );
+	ri.Cmd_AddCommand( "gpumeminfo", GpuMemInfo_f );
 }
 
 static void R_InitGLContext( void )
 {
-    if ( glConfig.vidWidth == 0 ) {
-        GLint temp;
+	if ( glConfig.vidWidth == 0 ) {
+		GLint temp;
 
-        if ( !ri.GLimp_Init ) {
-            ri.Error( ERR_FATAL, "OpenGL interface is not initialized" );
-        }
+		if ( !ri.GLimp_Init ) {
+			ri.Error( ERR_FATAL, "OpenGL interface is not initialized" );
+		}
 
-        ri.GLimp_Init( &glConfig );
-        ri.G_SetScaling( 1.0, glConfig.vidWidth, glConfig.vidHeight );
-        ri.GLimp_InitGamma( &glConfig );
-    }
+		ri.GLimp_Init( &glConfig );
+		ri.G_SetScaling( 1.0, glConfig.vidWidth, glConfig.vidHeight );
+		ri.GLimp_InitGamma( &glConfig );
+	}
 
-    // GL function loader, based on https://gist.github.com/rygorous/16796a0c876cf8a5f542caddb55bce8a
+	// GL function loader, based on https://gist.github.com/rygorous/16796a0c876cf8a5f542caddb55bce8a
 #ifdef _NOMAD_DEBUG
 #define NGL( ret, name, ... ) n ## name = (PFN ## name) ri.GL_GetProcAddress(#name); \
-                            if (!n ## name) ri.Error(ERR_FATAL, "Failed to load OpenGL proc '" #name "'");
+							if (!n ## name) ri.Error(ERR_FATAL, "Failed to load OpenGL proc '" #name "'");
 #elif defined(_NOMAD_EXPERIMENTAL)
 #define NGL( ret, name, ... ) n ## name = (PFN ## name) ri.GL_GetProcAddress(#name); \
-                            if (!n ## name) ri.Printf(PRINT_INFO, COLOR_YELLOW "Failed to load OpenGL proc '" #name "'\n");
+							if (!n ## name) ri.Printf(PRINT_INFO, COLOR_YELLOW "Failed to load OpenGL proc '" #name "'\n");
 #else
 #define NGL( ret, name, ... ) n ## name = (PFN ## name) ri.GL_GetProcAddress(#name);
 #endif
-    NGL_Core_Procs
-    NGL_Shader_Procs
-    NGL_Texture_Procs
+	NGL_Core_Procs
+	NGL_Shader_Procs
+	NGL_Texture_Procs
 #undef NGL
 
-    if ( !nglGetString )
-        ri.Error( ERR_FATAL, "glGetString is NULL" );
+	if ( !nglGetString )
+		ri.Error( ERR_FATAL, "glGetString is NULL" );
 
-    //
-    // get the OpenGL config vars
-    //
+	//
+	// get the OpenGL config vars
+	//
 
-    N_strncpyz( glContext.vendor, (const char *)nglGetString( GL_VENDOR ), sizeof(glContext.vendor) );
-    N_strncpyz( glContext.renderer, (const char *)nglGetString( GL_RENDERER ), sizeof(glContext.renderer) );
-    N_strncpyz( glContext.version_str, (const char *)nglGetString( GL_VERSION ), sizeof(glContext.version_str) );
-    N_strncpyz( gl_extensions, (const char *)nglGetString( GL_EXTENSIONS ), sizeof(gl_extensions) );
+	N_strncpyz( glContext.vendor, (const char *)nglGetString( GL_VENDOR ), sizeof(glContext.vendor) );
+	N_strncpyz( glContext.renderer, (const char *)nglGetString( GL_RENDERER ), sizeof(glContext.renderer) );
+	N_strncpyz( glContext.version_str, (const char *)nglGetString( GL_VERSION ), sizeof(glContext.version_str) );
+	N_strncpyz( gl_extensions, (const char *)nglGetString( GL_EXTENSIONS ), sizeof(gl_extensions) );
 
-    N_strncpyz( glConfig.renderer_string, glContext.renderer, sizeof(glConfig.renderer_string) );
-    N_strncpyz( glConfig.version_string, glContext.version_str, sizeof(glConfig.version_string) );
-    N_strncpyz( glConfig.vendor_string, glContext.vendor, sizeof(glConfig.vendor_string) );
-    N_strncpyz( glConfig.shader_version_str, (const char *)nglGetString( GL_SHADING_LANGUAGE_VERSION ), sizeof(glConfig.shader_version_str) );
-    N_strncpyz( glConfig.extensions_string, gl_extensions, sizeof(glConfig.extensions_string) );
+	N_strncpyz( glConfig.renderer_string, glContext.renderer, sizeof(glConfig.renderer_string) );
+	N_strncpyz( glConfig.version_string, glContext.version_str, sizeof(glConfig.version_string) );
+	N_strncpyz( glConfig.vendor_string, glContext.vendor, sizeof(glConfig.vendor_string) );
+	N_strncpyz( glConfig.shader_version_str, (const char *)nglGetString( GL_SHADING_LANGUAGE_VERSION ), sizeof(glConfig.shader_version_str) );
+	N_strncpyz( glConfig.extensions_string, gl_extensions, sizeof(glConfig.extensions_string) );
 
-    nglGetIntegerv( GL_NUM_EXTENSIONS, &glContext.numExtensions );
-    nglGetIntegerv( GL_STEREO, (GLint *)&glContext.stereo );
-    nglGetIntegerv( GL_MAX_IMAGE_UNITS, &glContext.maxTextureUnits );
-    nglGetIntegerv( GL_MAX_TEXTURE_SIZE, &glContext.maxTextureSize );
-    nglGetIntegerv( GL_MAX_SAMPLES, &glContext.maxSamples );
+	nglGetIntegerv( GL_NUM_EXTENSIONS, &glContext.numExtensions );
+	nglGetIntegerv( GL_STEREO, (GLint *)&glContext.stereo );
+	nglGetIntegerv( GL_MAX_IMAGE_UNITS, &glContext.maxTextureUnits );
+	nglGetIntegerv( GL_MAX_TEXTURE_SIZE, &glContext.maxTextureSize );
+	nglGetIntegerv( GL_MAX_SAMPLES, &glContext.maxSamples );
 
-    sscanf( glContext.version_str, "%i.%i", &glContext.versionMajor, &glContext.versionMinor );
+	sscanf( glContext.version_str, "%i.%i", &glContext.versionMajor, &glContext.versionMinor );
 
-    ri.Printf( PRINT_INFO, "Getting OpenGL version...\n" );
-    // check OpenGL version
-    if (!NGL_VERSION_ATLEAST(3, 3)) {
-        if (!r_allowLegacy->i) {
-            ri.Error(ERR_FATAL, "OpenGL version must be at least 3.3, please install more recent drivers");
-        }
-        else {
-            ri.Printf(PRINT_DEVELOPER, "r_allowLegacy enabled and we have a legacy api version\n");
-            ri.Printf(PRINT_INFO, "...using Legacy OpenGL API:");
-        }
-    }
-    else {
-        ri.Printf( PRINT_INFO, "...using OpenGL API:" );
-    }
-    ri.Printf( PRINT_INFO, " v%s\n", glContext.version_str );
+	ri.Printf( PRINT_INFO, "Getting OpenGL version...\n" );
+	// check OpenGL version
+	if (!NGL_VERSION_ATLEAST(3, 3)) {
+		if (!r_allowLegacy->i) {
+			ri.Error(ERR_FATAL, "OpenGL version must be at least 3.3, please install more recent drivers");
+		}
+		else {
+			ri.Printf(PRINT_DEVELOPER, "r_allowLegacy enabled and we have a legacy api version\n");
+			ri.Printf(PRINT_INFO, "...using Legacy OpenGL API:");
+		}
+	}
+	else {
+		ri.Printf( PRINT_INFO, "...using OpenGL API:" );
+	}
+	ri.Printf( PRINT_INFO, " v%s\n", glContext.version_str );
 
-    //
-    // check for broken driver
-    //
+	//
+	// check for broken driver
+	//
 
-    if ( !glContext.numExtensions ) {
-        ri.Error( ERR_FATAL, "Broken OpenGL installation, GL_NUM_EXTENSIONS <= 0" );
-    }
-    if ( !glContext.maxTextureUnits ) {
-        ri.Error( ERR_FATAL, "Broken OpenGL installation, GL_MAX_TEXTURE_UNITS <= 0" );
-    }
+	if ( !glContext.numExtensions ) {
+		ri.Error( ERR_FATAL, "Broken OpenGL installation, GL_NUM_EXTENSIONS <= 0" );
+	}
+	if ( !glContext.maxTextureUnits ) {
+		ri.Error( ERR_FATAL, "Broken OpenGL installation, GL_MAX_TEXTURE_UNITS <= 0" );
+	}
 
-    if ( NGL_VERSION_ATLEAST( 3, 0 ) ) { // force the loading of specific procs
+	if ( NGL_VERSION_ATLEAST( 3, 0 ) ) { // force the loading of specific procs
 #ifdef _NOMAD_DEBUG
 #define NGL( ret, name, ... ) n ## name = (PFN ## name) ri.GL_GetProcAddress( #name ); \
-                            if (!n ## name) ri.Error( ERR_FATAL, "Failed to load OpenGL proc '" #name "'" );
+							if (!n ## name) ri.Error( ERR_FATAL, "Failed to load OpenGL proc '" #name "'" );
 #elif defined(_NOMAD_EXPERIMENTAL)
 #define NGL( ret, name, ... ) n ## name = (PFN ## name) ri.GL_GetProcAddress( #name ); \
-                            if (!n ## name) ri.Printf( PRINT_INFO, COLOR_YELLOW "Failed to load OpenGL proc '" #name "'\n" );
+							if (!n ## name) ri.Printf( PRINT_INFO, COLOR_YELLOW "Failed to load OpenGL proc '" #name "'\n" );
 #else
 #define NGL( ret, name, ... ) n ## name = (PFN ## name) ri.GL_GetProcAddress(#name);
 #endif
-        NGL_VertexArray_Procs
-        NGL_Buffer_Procs
-        NGL_FBO_Procs
+		NGL_VertexArray_Procs
+		NGL_Buffer_Procs
+		NGL_FBO_Procs
 #undef NGL
-    }
+	}
 
-    // check if we need Intel graphics specific fixes
-    glContext.intelGraphics = qfalse;
-    if ( strstr( (const char *)nglGetString( GL_RENDERER ), "Intel" ) ) {
-        glContext.intelGraphics = qtrue;
-    }
-    
-    R_InitExtensions();
+	// check if we need Intel graphics specific fixes
+	glContext.intelGraphics = qfalse;
+	if ( strstr( (const char *)nglGetString( GL_RENDERER ), "Intel" ) ) {
+		glContext.intelGraphics = qtrue;
+	}
+	
+	R_InitExtensions();
 
-    if ( glContext.ARB_sample_shading && r_multisampleType->i >= AntiAlias_2xSSAA && r_multisampleType->i <= AntiAlias_4xSSAA
-        && glContext.ARB_framebuffer_object )
-    {
+	if ( glContext.ARB_sample_shading && r_multisampleType->i >= AntiAlias_2xSSAA && r_multisampleType->i <= AntiAlias_4xSSAA
+		&& glContext.ARB_framebuffer_object )
+	{
 //        nglEnable( GL_SAMPLE_SHADING_ARB );
 //        nglMinSampleShadingARB( 0.5f );
-    }
+	}
 }
 
 static void RE_GetTextureId( nhandle_t hShader, uint32_t stageNum, uint32_t *id )
 {
-    shader_t *shader;
+	shader_t *shader;
 
-    shader = R_GetShaderByHandle( hShader );
+	shader = R_GetShaderByHandle( hShader );
 
-    if ( !shader ) {
-        ri.Printf( PRINT_WARNING, "RE_GetTextureId: Invalid shader given" );
-        *id = 0;
-        return;
-    }
+	if ( !shader ) {
+		ri.Printf( PRINT_WARNING, "RE_GetTextureId: Invalid shader given" );
+		*id = 0;
+		return;
+	}
 
-    *id = shader->stages[stageNum]->bundle[0].image[0]->id;
+	*id = shader->stages[stageNum]->bundle[0].image[0]->id;
 }
 
 static void R_InitImGui( void )
 {
-    imguiGL3Import_t import;
+	imguiGL3Import_t import;
 
-    import.glGetString = nglGetString;
-    import.glGetStringi = nglGetStringi;
-    import.glBindSampler = nglBindSampler;
-    import.glScissor = nglScissor;
-    import.glViewport = nglViewport;
-    import.glUniform1i = nglUniform1i;
-    import.glUniform1f = nglUniform1f;
-    import.glGetAttribLocation = nglGetAttribLocation;
-    import.glGetUniformLocation = nglGetUniformLocation;
-    import.glUniformMatrix4fv = nglUniformMatrix4fv;
-    import.glEnable = nglEnable;
-    import.glDisable = nglDisable;
-    import.glGetIntegerv = nglGetIntegerv;
-    import.glBlendEquation = nglBlendEquation;
-    import.glBlendFuncSeparate = nglBlendFuncSeparate;
-    import.glBlendEquationSeparate = nglBlendEquationSeparate;
-    import.glPolygonMode = nglPolygonMode;
-    import.glPixelStorei = nglPixelStorei;
-    import.glIsEnabled = nglIsEnabled;
-    import.glIsDisabled = nglIsDisabled;
-    import.glIsProgram = nglIsProgram;
-    import.glIsShader = nglIsShader;
-    import.glDrawElementsBaseVertex = nglDrawElementsBaseVertex;
-    import.glDrawElements = nglDrawElements;
-    import.glGetVertexAttribPointerv = nglGetVertexAttribPointerv;
-    import.glVertexAttribPointer = nglVertexAttribPointer;
-    import.glEnableVertexAttribArray = nglEnableVertexAttribArray;
-    import.glDisableVertexAttribArray = nglDisableVertexAttribArray;
-    import.glBufferData = nglBufferData;
-    import.glBufferSubData = nglBufferSubData;
-    import.glGetVertexAttribiv = nglGetVertexAttribiv;
-    import.glBindTexture = nglBindTexture;
-    import.glUseProgram = nglUseProgram;
-    import.glBindBuffer = nglBindBuffer;
-    import.glBindVertexArray = nglBindVertexArray;
-    import.glGenBuffers = nglGenBuffers;
-    import.glGenVertexArrays = nglGenVertexArrays;
-    import.glDeleteBuffers = nglDeleteBuffers;
-    import.glDeleteVertexArrays = nglDeleteVertexArrays;
-    import.glGenTextures = nglGenTextures;
-    import.glDeleteTextures = nglDeleteTextures;
-    import.glTexParameteri = nglTexParameteri;
-    import.glTexImage2D = nglTexImage2D;
-    import.glActiveTexture = nglActiveTexture;
-    import.glAlphaFunc = nglAlphaFunc;
-    import.glClear = nglClear;
-    import.glClearColor = nglClearColor;
-    import.glInvalidateBufferData = nglInvalidateBufferData;
-    import.glUnmapBuffer = nglUnmapBuffer;
-    import.glMapBufferRange = nglMapBufferRange;
-    import.glBufferStorage = nglBufferStorage;
+	import.glGetString = nglGetString;
+	import.glGetStringi = nglGetStringi;
+	import.glBindSampler = nglBindSampler;
+	import.glScissor = nglScissor;
+	import.glViewport = nglViewport;
+	import.glUniform1i = nglUniform1i;
+	import.glUniform1f = nglUniform1f;
+	import.glGetAttribLocation = nglGetAttribLocation;
+	import.glGetUniformLocation = nglGetUniformLocation;
+	import.glUniformMatrix4fv = nglUniformMatrix4fv;
+	import.glEnable = nglEnable;
+	import.glDisable = nglDisable;
+	import.glGetIntegerv = nglGetIntegerv;
+	import.glBlendEquation = nglBlendEquation;
+	import.glBlendFuncSeparate = nglBlendFuncSeparate;
+	import.glBlendEquationSeparate = nglBlendEquationSeparate;
+	import.glPolygonMode = nglPolygonMode;
+	import.glPixelStorei = nglPixelStorei;
+	import.glIsEnabled = nglIsEnabled;
+	import.glIsDisabled = nglIsDisabled;
+	import.glIsProgram = nglIsProgram;
+	import.glIsShader = nglIsShader;
+	import.glDrawElementsBaseVertex = nglDrawElementsBaseVertex;
+	import.glDrawElements = nglDrawElements;
+	import.glGetVertexAttribPointerv = nglGetVertexAttribPointerv;
+	import.glVertexAttribPointer = nglVertexAttribPointer;
+	import.glEnableVertexAttribArray = nglEnableVertexAttribArray;
+	import.glDisableVertexAttribArray = nglDisableVertexAttribArray;
+	import.glBufferData = nglBufferData;
+	import.glBufferSubData = nglBufferSubData;
+	import.glGetVertexAttribiv = nglGetVertexAttribiv;
+	import.glBindTexture = nglBindTexture;
+	import.glUseProgram = nglUseProgram;
+	import.glBindBuffer = nglBindBuffer;
+	import.glBindVertexArray = nglBindVertexArray;
+	import.glGenBuffers = nglGenBuffers;
+	import.glGenVertexArrays = nglGenVertexArrays;
+	import.glDeleteBuffers = nglDeleteBuffers;
+	import.glDeleteVertexArrays = nglDeleteVertexArrays;
+	import.glGenTextures = nglGenTextures;
+	import.glDeleteTextures = nglDeleteTextures;
+	import.glTexParameteri = nglTexParameteri;
+	import.glTexImage2D = nglTexImage2D;
+	import.glActiveTexture = nglActiveTexture;
+	import.glAlphaFunc = nglAlphaFunc;
+	import.glClear = nglClear;
+	import.glClearColor = nglClearColor;
+	import.glInvalidateBufferData = nglInvalidateBufferData;
+	import.glUnmapBuffer = nglUnmapBuffer;
+	import.glMapBufferRange = nglMapBufferRange;
+	import.glBufferStorage = nglBufferStorage;
 
-    import.DrawShaderStages = RB_DrawShaderStages;
-    import.GetTextureId = RE_GetTextureId;
-    import.GetShaderByHandle = (void *(*)( nhandle_t ))R_GetShaderByHandle;
-    import.AllocateBuffer = R_AllocateBuffer;
-    import.SetAttribPointers = VBO_SetVertexPointers;
+	import.DrawShaderStages = RB_DrawShaderStages;
+	import.GetTextureId = RE_GetTextureId;
+	import.GetShaderByHandle = (void *(*)( nhandle_t ))R_GetShaderByHandle;
+	import.AllocateBuffer = R_AllocateBuffer;
+	import.SetAttribPointers = VBO_SetVertexPointers;
 
-    ri.ImGui_Init((void *)(uintptr_t)rg.imguiShader.programId, &import);
+	ri.ImGui_Init((void *)(uintptr_t)rg.imguiShader.programId, &import);
 }
 
 static void R_AllocBackend( void ) {
-    uint64_t size;
-    uint64_t polyVertBytes;
-    uint64_t vertBytes;
-    uint64_t polyBytes;
-    uint64_t indexBytes;
-    uint64_t dlightBytes;
-    uint64_t entityBytes;
+	uint64_t size;
+	uint64_t polyVertBytes;
+	uint64_t vertBytes;
+	uint64_t polyBytes;
+	uint64_t indexBytes;
+	uint64_t dlightBytes;
+	uint64_t entityBytes;
 
-    vertBytes = PAD( sizeof( srfVert_t ) * r_maxPolys->i * 4, sizeof(uintptr_t) );
-    polyVertBytes = PAD( sizeof(polyVert_t) * r_maxPolys->i * 4, sizeof(uintptr_t) );
-    polyBytes = PAD( sizeof(srfPoly_t) * r_maxPolys->i, sizeof(uintptr_t) );
-    indexBytes = PAD( sizeof(glIndex_t) * r_maxPolys->i * 6, sizeof(uintptr_t) );
-    entityBytes = PAD( sizeof(renderEntityDef_t) * r_maxEntities->i, sizeof(uintptr_t) );
-    dlightBytes = PAD( sizeof(dlight_t) * r_maxDLights->i, sizeof(uintptr_t) );
+	vertBytes = PAD( sizeof( srfVert_t ) * r_maxPolys->i * 4, sizeof(uintptr_t) );
+	polyVertBytes = PAD( sizeof(polyVert_t) * r_maxPolys->i * 4, sizeof(uintptr_t) );
+	polyBytes = PAD( sizeof(srfPoly_t) * r_maxPolys->i, sizeof(uintptr_t) );
+	indexBytes = PAD( sizeof(glIndex_t) * r_maxPolys->i * 6, sizeof(uintptr_t) );
+	entityBytes = PAD( sizeof(renderEntityDef_t) * r_maxEntities->i, sizeof(uintptr_t) );
+	dlightBytes = PAD( sizeof(dlight_t) * r_maxDLights->i, sizeof(uintptr_t) );
 
-    size = 0;
-    size += PAD( sizeof(renderBackendData_t), sizeof(uintptr_t) );
-    size += PAD( sizeof(srfVert_t) * r_maxPolys->i * 4, sizeof(uintptr_t) );
-    size += PAD( sizeof(polyVert_t) * r_maxPolys->i * 4, sizeof(uintptr_t) );
-    size += PAD( sizeof(srfPoly_t) * r_maxPolys->i, sizeof(uintptr_t) );
-    size += PAD( sizeof(glIndex_t) * r_maxPolys->i * 6, sizeof(uintptr_t) );
-    size += PAD( sizeof(renderEntityDef_t) * r_maxEntities->i, sizeof(uintptr_t) );
-    size += PAD( sizeof(dlight_t) * r_maxDLights->i, sizeof(uintptr_t) );
+	size = 0;
+	size += PAD( sizeof(renderBackendData_t), sizeof(uintptr_t) );
+	size += PAD( sizeof(srfVert_t) * r_maxPolys->i * 4, sizeof(uintptr_t) );
+	size += PAD( sizeof(polyVert_t) * r_maxPolys->i * 4, sizeof(uintptr_t) );
+	size += PAD( sizeof(srfPoly_t) * r_maxPolys->i, sizeof(uintptr_t) );
+	size += PAD( sizeof(glIndex_t) * r_maxPolys->i * 6, sizeof(uintptr_t) );
+	size += PAD( sizeof(renderEntityDef_t) * r_maxEntities->i, sizeof(uintptr_t) );
+	size += PAD( sizeof(dlight_t) * r_maxDLights->i, sizeof(uintptr_t) );
 
-    backendData = (renderBackendData_t *)ri.Malloc( size );
-    backendData->verts = (srfVert_t *)( backendData + 1 );
-    backendData->polyVerts = (polyVert_t *)( backendData->verts + r_maxPolys->i * 4 );
-    backendData->polys = (srfPoly_t *)( backendData->polyVerts + r_maxPolys->i * 4 );
-    backendData->indices = (glIndex_t *)( backendData->polys + r_maxPolys->i );
-    backendData->entities = (renderEntityDef_t *)( backendData->indices + r_maxPolys->i * 6 );
-    backendData->dlights = (dlight_t *)( backendData->entities + r_maxEntities->i );
+	backendData = (renderBackendData_t *)ri.Malloc( size );
+	backendData->verts = (srfVert_t *)( backendData + 1 );
+	backendData->polyVerts = (polyVert_t *)( backendData->verts + r_maxPolys->i * 4 );
+	backendData->polys = (srfPoly_t *)( backendData->polyVerts + r_maxPolys->i * 4 );
+	backendData->indices = (glIndex_t *)( backendData->polys + r_maxPolys->i );
+	backendData->entities = (renderEntityDef_t *)( backendData->indices + r_maxPolys->i * 6 );
+	backendData->dlights = (dlight_t *)( backendData->entities + r_maxEntities->i );
 
-    ri.Printf( PRINT_DEVELOPER,
-        COLOR_CYAN "---------- Renderer Backend Allocation Info ----------\n"
-        COLOR_CYAN "%-10lu Bytes : %-8.04lf KiB : %-4.04lf MiB allocated to renderer backend\n"
-        COLOR_CYAN "%-10lu Bytes : %-8.04lf KiB : %-4.04lf MiB allocated for vertices\n" 
-        COLOR_CYAN "%-10lu Bytes : %-8.04lf KiB : %-4.04lf MiB allocated for polygon vertices\n"
-        COLOR_CYAN "%-10lu Bytes : %-8.04lf KiB : %-4.04lf MiB allocated for polygons\n"
-        COLOR_CYAN "%-10lu Bytes : %-8.04lf KiB : %-4.04lf MiB allocated for polygon indices\n"
-        COLOR_CYAN "%-10lu Bytes : %-8.04lf KiB : %-4.04lf MiB allocated for renderer entities\n"
-        COLOR_CYAN "%-10lu Bytes : %-8.04lf KiB : %-4.04lf MiB allocated for dynamic lights\n"
-        COLOR_CYAN "--------------------\n"
-    , size, ( (double)size / 1024 ), ( (double)size / 1024 / 1024 ),
-    vertBytes, ( (double)vertBytes / 1024 ), ( (double)vertBytes / 1024 / 1024 ),
-    polyVertBytes, ( (double)polyVertBytes / 1024 ), ( (double)polyVertBytes / 1024 / 1024 ),
-    polyBytes, ( (double)polyBytes / 1024 ), ( (double)polyBytes / 1024 / 1024 ),
-    indexBytes, ( (double)indexBytes / 1024 ), ( (double)indexBytes / 1024 / 1024 ),
-    entityBytes, ( (double)entityBytes / 1024 ), ( (double)entityBytes / 1024 / 1024 ),
-    dlightBytes, ( (double)dlightBytes / 1024 ), ( (double)dlightBytes / 1024 / 1024 ) );
+	ri.Printf( PRINT_DEVELOPER,
+		COLOR_CYAN "---------- Renderer Backend Allocation Info ----------\n"
+		COLOR_CYAN "%-10lu Bytes : %-8.04lf KiB : %-4.04lf MiB allocated to renderer backend\n"
+		COLOR_CYAN "%-10lu Bytes : %-8.04lf KiB : %-4.04lf MiB allocated for vertices\n" 
+		COLOR_CYAN "%-10lu Bytes : %-8.04lf KiB : %-4.04lf MiB allocated for polygon vertices\n"
+		COLOR_CYAN "%-10lu Bytes : %-8.04lf KiB : %-4.04lf MiB allocated for polygons\n"
+		COLOR_CYAN "%-10lu Bytes : %-8.04lf KiB : %-4.04lf MiB allocated for polygon indices\n"
+		COLOR_CYAN "%-10lu Bytes : %-8.04lf KiB : %-4.04lf MiB allocated for renderer entities\n"
+		COLOR_CYAN "%-10lu Bytes : %-8.04lf KiB : %-4.04lf MiB allocated for dynamic lights\n"
+		COLOR_CYAN "--------------------\n"
+	, size, ( (double)size / 1024 ), ( (double)size / 1024 / 1024 ),
+	vertBytes, ( (double)vertBytes / 1024 ), ( (double)vertBytes / 1024 / 1024 ),
+	polyVertBytes, ( (double)polyVertBytes / 1024 ), ( (double)polyVertBytes / 1024 / 1024 ),
+	polyBytes, ( (double)polyBytes / 1024 ), ( (double)polyBytes / 1024 / 1024 ),
+	indexBytes, ( (double)indexBytes / 1024 ), ( (double)indexBytes / 1024 / 1024 ),
+	entityBytes, ( (double)entityBytes / 1024 ), ( (double)entityBytes / 1024 / 1024 ),
+	dlightBytes, ( (double)dlightBytes / 1024 ), ( (double)dlightBytes / 1024 / 1024 ) );
 }
 
 static void R_CameraInfo_f( void ) {
-    ri.Printf( PRINT_INFO, "\n---------- Camera Info ----------\n" );
-    ri.Printf( PRINT_INFO, "** Matrix Dump: Projection Matrix **\n" );
-    Mat4Dump( glState.viewData.camera.projectionMatrix );
-    ri.Printf( PRINT_INFO, "** Matrix Dump: View Matrix **\n" );
-    Mat4Dump( glState.viewData.camera.viewMatrix );
-    ri.Printf( PRINT_INFO, "** Matrix Dump: View Projection Matrix **\n" );
-    Mat4Dump( glState.viewData.camera.viewProjectionMatrix );
+	ri.Printf( PRINT_INFO, "\n---------- Camera Info ----------\n" );
+	ri.Printf( PRINT_INFO, "** Matrix Dump: Projection Matrix **\n" );
+	Mat4Dump( glState.viewData.camera.projectionMatrix );
+	ri.Printf( PRINT_INFO, "** Matrix Dump: View Matrix **\n" );
+	Mat4Dump( glState.viewData.camera.viewMatrix );
+	ri.Printf( PRINT_INFO, "** Matrix Dump: View Projection Matrix **\n" );
+	Mat4Dump( glState.viewData.camera.viewProjectionMatrix );
 
-    ri.Printf( PRINT_INFO, "\n" );
-    ri.Printf( PRINT_INFO, "Origin: %f, %f\n", glState.viewData.camera.origin[0], glState.viewData.camera.origin[1] );
-    ri.Printf( PRINT_INFO, "Zoom: %f\n", glState.viewData.camera.zoom );
-    ri.Printf( PRINT_INFO, "Aspect: %f\n", glState.viewData.camera.aspect );
+	ri.Printf( PRINT_INFO, "\n" );
+	ri.Printf( PRINT_INFO, "Origin: %f, %f\n", glState.viewData.camera.origin[0], glState.viewData.camera.origin[1] );
+	ri.Printf( PRINT_INFO, "Zoom: %f\n", glState.viewData.camera.zoom );
+	ri.Printf( PRINT_INFO, "Aspect: %f\n", glState.viewData.camera.aspect );
 }
 
 static void R_UnloadWorld_f( void ) {
-    ri.Printf( PRINT_INFO, "Unloading world...\n" );
+	ri.Printf( PRINT_INFO, "Unloading world...\n" );
 
-    if ( !rg.world ) {
-        ri.Printf( PRINT_WARNING, "No world loaded.\n" );
-        return;
-    }
+	if ( !rg.world ) {
+		ri.Printf( PRINT_WARNING, "No world loaded.\n" );
+		return;
+	}
 
-    R_ShutdownBuffer( rg.world->buffer );
-    VBO_Bind( backend.drawBuffer );
+	R_ShutdownBuffer( rg.world->buffer );
+	VBO_Bind( backend.drawBuffer );
 
-    R_UnloadLevelShaders();
-    R_UnloadLevelTextures();
+	R_UnloadLevelShaders();
+	R_UnloadLevelTextures();
 
-    rg.numSpriteSheets = rg.world->firstLevelSpriteSheet;
+	rg.numSpriteSheets = rg.world->firstLevelSpriteSheet;
 
-    ri.Cmd_ExecuteCommand( "snd.unload_level" );
+	ri.Cmd_ExecuteCommand( "snd.unload_level" );
 
-    memset( rg.world, 0, sizeof( *rg.world ) );
+	memset( rg.world, 0, sizeof( *rg.world ) );
 
-    rg.world = NULL;
-    rg.worldMapLoaded = qfalse;
+	rg.world = NULL;
+	rg.worldMapLoaded = qfalse;
 }
 
 static void R_InitSamplers( void )
 {
-    nglGenSamplers( MAX_TEXTURE_UNITS, rg.samplers );
+	nglGenSamplers( MAX_TEXTURE_UNITS, rg.samplers );
 
-    nglSamplerParameteri( rg.samplers[TexFilter_Bilinear], GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-    nglSamplerParameteri( rg.samplers[TexFilter_Bilinear], GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	nglSamplerParameteri( rg.samplers[TexFilter_Bilinear], GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	nglSamplerParameteri( rg.samplers[TexFilter_Bilinear], GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 
-    nglSamplerParameteri( rg.samplers[TexFilter_Nearest], GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-    nglSamplerParameteri( rg.samplers[TexFilter_Nearest], GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+	nglSamplerParameteri( rg.samplers[TexFilter_Nearest], GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+	nglSamplerParameteri( rg.samplers[TexFilter_Nearest], GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 
-    nglSamplerParameteri( rg.samplers[TexFilter_LinearNearest], GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-    nglSamplerParameteri( rg.samplers[TexFilter_LinearNearest], GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+	nglSamplerParameteri( rg.samplers[TexFilter_LinearNearest], GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	nglSamplerParameteri( rg.samplers[TexFilter_LinearNearest], GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 
-    nglSamplerParameteri( rg.samplers[TexFilter_NearestLinear], GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-    nglSamplerParameteri( rg.samplers[TexFilter_NearestLinear], GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	nglSamplerParameteri( rg.samplers[TexFilter_NearestLinear], GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+	nglSamplerParameteri( rg.samplers[TexFilter_NearestLinear], GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 }
 
 void R_Init( void )
 {
-    GLenum error;
+	GLenum error;
 
-    ri.Printf( PRINT_INFO, "---------- RE_Init ----------\n" );
+	ri.Printf( PRINT_INFO, "---------- RE_Init ----------\n" );
 
-    // clear all globals
-    memset( &rg, 0, sizeof( rg ) );
-    memset( &backend, 0, sizeof( backend ) );
-    
-    glState.viewData.camera.zoom = 1.0f;
-    screenshotFrame = qfalse;
+	// clear all globals
+	memset( &rg, 0, sizeof( rg ) );
+	memset( &backend, 0, sizeof( backend ) );
+	
+	glState.viewData.camera.zoom = 1.0f;
+	screenshotFrame = qfalse;
 
-    //
+	//
 	// init function tables
 	//
 	for ( uint32_t i = 0; i < FUNCTABLE_SIZE; i++ ) {
@@ -1482,100 +1482,96 @@ void R_Init( void )
 		}
 	}
 
-    R_NoiseInit();
+	R_NoiseInit();
 
-    R_Register();
+	R_Register();
 
-    R_AllocBackend();
+	R_AllocBackend();
 
-    R_InitNextFrame();
+	R_InitNextFrame();
 
-    R_InitGLContext();
+	R_InitGLContext();
 
-    R_InitTextures();
+	R_InitTextures();
 
-    nglGenQueries( 3, rg.queries );
+	nglGenQueries( 3, rg.queries );
 
-    if ( glContext.ARB_framebuffer_object && !rg.numFBOs ) {
-        FBO_Init();
-    }
-    
-    if ( !rg.numPrograms ) {
-        GLSL_InitGPUShaders();
-    }
-    if ( !rg.numBuffers ) {
-        R_InitGPUBuffers();
-    }
+	if ( glContext.ARB_framebuffer_object ) {
+		FBO_Init();
+	}
+	
+	GLSL_InitGPUShaders();
 
-    R_InitShaders();
+	R_InitGPUBuffers();
 
-    // init samplers
-    R_InitSamplers();
+	R_InitShaders();
 
-    // init imgui
-    R_InitImGui();
+	// init samplers
+	R_InitSamplers();
 
-    error = nglGetError();
-    if ( error != GL_NO_ERROR )
-        ri.Printf(PRINT_INFO, COLOR_RED "glGetError() = 0x%x\n", error);
-    
-    //R_InitWorldBuffer();
-    
-    VBO_Bind( backend.drawBuffer );
+	// init imgui
+	R_InitImGui();
 
-    ri.Cmd_AddCommand( "unloadworld", R_UnloadWorld_f );
+	error = nglGetError();
+	if ( error != GL_NO_ERROR )
+		ri.Printf(PRINT_INFO, COLOR_RED "glGetError() = 0x%x\n", error);
+	
+	//R_InitWorldBuffer();
+	
+	VBO_Bind( backend.drawBuffer );
 
-    // print info
-    GpuInfo_f();
-    GpuMemInfo_f();
-    ri.Printf( PRINT_INFO, "---------- finished RE_Init ----------\n" );
+	ri.Cmd_AddCommand( "unloadworld", R_UnloadWorld_f );
+
+	// print info
+	GpuInfo_f();
+	GpuMemInfo_f();
+	ri.Printf( PRINT_INFO, "---------- finished RE_Init ----------\n" );
 }
 
 void RE_BeginRegistration(gpuConfig_t *config)
 {
-    R_Init();
-    rg.registered = qtrue;
-    *config = glConfig;
+	R_Init();
+	rg.registered = qtrue;
+	*config = glConfig;
 }
 
 void RE_Shutdown( refShutdownCode_t code )
 {
-    ri.Printf( PRINT_INFO, "RE_Shutdown( %i )\n", code );
+	ri.Printf( PRINT_INFO, "RE_Shutdown( %i )\n", code );
 
-    ri.Cmd_RemoveCommand( "texturelist" );
-    ri.Cmd_RemoveCommand( "shaderlist" );
-    ri.Cmd_RemoveCommand( "screenshot" );
-    ri.Cmd_RemoveCommand( "gpuinfo" );
-    ri.Cmd_RemoveCommand( "gpumeminfo" );
-    ri.Cmd_RemoveCommand( "camerainfo" );
-    ri.Cmd_RemoveCommand( "unloadworld" );
+	ri.Cmd_RemoveCommand( "texturelist" );
+	ri.Cmd_RemoveCommand( "shaderlist" );
+	ri.Cmd_RemoveCommand( "screenshot" );
+	ri.Cmd_RemoveCommand( "gpuinfo" );
+	ri.Cmd_RemoveCommand( "gpumeminfo" );
+	ri.Cmd_RemoveCommand( "camerainfo" );
+	ri.Cmd_RemoveCommand( "unloadworld" );
 
-    if ( rg.registered ) {
-        R_IssuePendingRenderCommands();
+	if ( rg.registered ) {
+		R_IssuePendingRenderCommands();
 
-        nglDeleteQueries( 3, rg.queries );
-        nglDeleteSamplers( MAX_TEXTURE_UNITS, rg.samplers );
+		nglDeleteQueries( 3, rg.queries );
+		nglDeleteSamplers( MAX_TEXTURE_UNITS, rg.samplers );
 
-        R_DeleteTextures();
+		R_DeleteTextures();
+		R_ShutdownGPUBuffers();
+		GLSL_ShutdownGPUShaders();
 
-        ri.ImGui_Shutdown();
-    }
+		ri.ImGui_Shutdown();
+	}
 
-    // shutdown platform specific OpenGL thingies
-    if ( code != REF_KEEP_CONTEXT ) {
-        ri.GLimp_Shutdown( code == REF_UNLOAD_DLL ? qtrue : qfalse );
+	// shutdown platform specific OpenGL thingies
+	if ( code != REF_KEEP_CONTEXT ) {
+		ri.GLimp_Shutdown( code == REF_UNLOAD_DLL ? qtrue : qfalse );
 
-        R_ShutdownGPUBuffers();
-        GLSL_ShutdownGPUShaders();
+		memset( &glConfig, 0, sizeof(glConfig) );
+		memset( &glState, 0, sizeof(glState) );
+		memset( &glContext, 0, sizeof(glContext) );
+	}
 
-        memset( &glConfig, 0, sizeof(glConfig) );
-        memset( &glState, 0, sizeof(glState) );
-        memset( &glContext, 0, sizeof(glContext) );
-    }
-
-    // free everything
-    ri.FreeAll();
-    rg.registered = qfalse;
+	// free everything
+	ri.FreeAll();
+	rg.registered = qfalse;
 }
 
 /*
@@ -1586,91 +1582,91 @@ Touch all images to make sure they are resident (probably obsolete on modern sys
 =============
 */
 void RE_EndRegistration(void) {
-    R_IssuePendingRenderCommands();
+	R_IssuePendingRenderCommands();
 //    RB_ShowImages(); // not doing it here
 }
 
 void RE_GetConfig(gpuConfig_t *config) {
-    *config = glConfig;
+	*config = glConfig;
 }
 
 void RE_GetGPUFrameStats( uint32_t *time, uint32_t *samples, uint32_t *primitives ) {
-    *time = rg.queryCounts[TIME_QUERY];
-    *samples = rg.queryCounts[SAMPLES_QUERY];
-    *primitives = rg.queryCounts[PRIMTIVES_QUERY];
+	*time = rg.queryCounts[TIME_QUERY];
+	*samples = rg.queryCounts[SAMPLES_QUERY];
+	*primitives = rg.queryCounts[PRIMTIVES_QUERY];
 }
 
 void *RE_GetImGuiTextureData( nhandle_t hShader )
 {
-    shader_t *shader;
+	shader_t *shader;
 
-    shader = R_GetShaderByHandle( hShader );
-    if ( !shader ) {
-        ri.Printf( PRINT_WARNING, "RE_GetImGuiTextureData: invalid shader given\n" );
-        return NULL;
-    }
+	shader = R_GetShaderByHandle( hShader );
+	if ( !shader ) {
+		ri.Printf( PRINT_WARNING, "RE_GetImGuiTextureData: invalid shader given\n" );
+		return NULL;
+	}
 
-    return (void *)(intptr_t)shader->stages[0]->bundle[0].image[0]->id;
+	return (void *)(intptr_t)shader->stages[0]->bundle[0].image[0]->id;
 }
 
 void R_VertexLighting( qboolean allowed )
 {
-    rg.vertexLightingAllowed = allowed;
+	rg.vertexLightingAllowed = allowed;
 }
 
 void RE_GetGPUMemStats( gpuMemory_t *memstats )
 {
-    *memstats = glState.memstats;
+	*memstats = glState.memstats;
 }
 
 GDR_EXPORT renderExport_t *GDR_DECL GetRenderAPI( uint32_t version, refimport_t *import )
 {
-    static renderExport_t re;
+	static renderExport_t re;
 
-    ri = *import;
-    memset( &re, 0, sizeof(re) );
+	ri = *import;
+	memset( &re, 0, sizeof(re) );
 
-    if ( version != NOMAD_VERSION_FULL ) {
-        ri.Error( ERR_FATAL, "GetRenderAPI: rendergl version (%i) != glnomad engine version (%i)", NOMAD_VERSION_FULL, version );
-    }
+	if ( version != NOMAD_VERSION_FULL ) {
+		ri.Error( ERR_FATAL, "GetRenderAPI: rendergl version (%i) != glnomad engine version (%i)", NOMAD_VERSION_FULL, version );
+	}
 
-    re.Shutdown = RE_Shutdown;
-    re.BeginRegistration = RE_BeginRegistration;
-    re.RegisterShader = RE_RegisterShader;
-    re.GetConfig = RE_GetConfig;
-    re.ImGui_TextureData = RE_GetImGuiTextureData;
-    re.GetGPUFrameStats = RE_GetGPUFrameStats;
-    re.GetGPUMemStats = RE_GetGPUMemStats;
+	re.Shutdown = RE_Shutdown;
+	re.BeginRegistration = RE_BeginRegistration;
+	re.RegisterShader = RE_RegisterShader;
+	re.GetConfig = RE_GetConfig;
+	re.ImGui_TextureData = RE_GetImGuiTextureData;
+	re.GetGPUFrameStats = RE_GetGPUFrameStats;
+	re.GetGPUMemStats = RE_GetGPUMemStats;
 
-    re.ClearScene = RE_ClearScene;
-    re.BeginScene = RE_BeginScene;
-    re.EndScene = RE_EndScene;
-    re.RenderScene = RE_RenderScene;
+	re.ClearScene = RE_ClearScene;
+	re.BeginScene = RE_BeginScene;
+	re.EndScene = RE_EndScene;
+	re.RenderScene = RE_RenderScene;
 
-    re.BeginFrame = RE_BeginFrame;
-    re.EndFrame = RE_EndFrame;
+	re.BeginFrame = RE_BeginFrame;
+	re.EndFrame = RE_EndFrame;
 
-    re.RegisterSprite = RE_RegisterSprite;
-    re.RegisterSpriteSheet = RE_RegisterSpriteSheet;
-    re.RegisterShader = RE_RegisterShader;
+	re.RegisterSprite = RE_RegisterSprite;
+	re.RegisterSpriteSheet = RE_RegisterSpriteSheet;
+	re.RegisterShader = RE_RegisterShader;
 
-    re.LoadWorld = RE_LoadWorldMap;
-    re.EndRegistration = RE_EndRegistration;
-    
-    re.AddDynamicLightToScene = RE_AddDynamicLightToScene;
-    re.AddPolyListToScene = RE_AddPolyListToScene;
-    re.AddSpriteToScene = RE_AddSpriteToScene;
-    re.AddPolyToScene = RE_AddPolyToScene;
-    re.AddEntityToScene = RE_AddEntityToScene;
-    re.SetColor = RE_SetColor;
-    re.DrawImage = RE_DrawImage;
+	re.LoadWorld = RE_LoadWorldMap;
+	re.EndRegistration = RE_EndRegistration;
+	
+	re.AddDynamicLightToScene = RE_AddDynamicLightToScene;
+	re.AddPolyListToScene = RE_AddPolyListToScene;
+	re.AddSpriteToScene = RE_AddSpriteToScene;
+	re.AddPolyToScene = RE_AddPolyToScene;
+	re.AddEntityToScene = RE_AddEntityToScene;
+	re.SetColor = RE_SetColor;
+	re.DrawImage = RE_DrawImage;
 
-    re.VertexLighting = R_VertexLighting;
-    re.CanMinimize = NULL;
-    re.ThrottleBackend = NULL;
-    re.FinishBloom = NULL;
+	re.VertexLighting = R_VertexLighting;
+	re.CanMinimize = NULL;
+	re.ThrottleBackend = NULL;
+	re.FinishBloom = NULL;
 
-    return &re;
+	return &re;
 }
 
 void R_GLDebug_Callback_AMD(GLuint id, GLenum category, GLenum severity, GLsizei length, const GLchar *message, GLvoid *userParam)
@@ -1684,100 +1680,100 @@ static int numCachedGLMessages = 0;
 
 void R_GLDebug_Callback_ARB(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const GLvoid *userParam)
 {
-    static const char *color;
-    int i;
-    uint64_t len;
+	static const char *color;
+	int i;
+	uint64_t len;
 
-    if (!r_glDebug->i)
-        return; // we don't want to confuse non-developers...
+	if (!r_glDebug->i)
+		return; // we don't want to confuse non-developers...
 
-    // save the messages so OpenGL can't spam us with useless shit
-    for (i = 0; i < numCachedGLMessages; i++) {
-        if (!N_stricmp(cachedGLMessages[i], message)) {
-            return;
-        }
-    }
+	// save the messages so OpenGL can't spam us with useless shit
+	for (i = 0; i < numCachedGLMessages; i++) {
+		if (!N_stricmp(cachedGLMessages[i], message)) {
+			return;
+		}
+	}
 
-    len = strlen(message) + 1;
-    cachedGLMessages[numCachedGLMessages] = (char *)ri.Hunk_Alloc( len, h_low );
-    cachedGLMessages[numCachedGLMessages][len - 1] = '\0';
-    strcpy(cachedGLMessages[numCachedGLMessages], message);
-    numCachedGLMessages++;
+	len = strlen(message) + 1;
+	cachedGLMessages[numCachedGLMessages] = (char *)ri.Hunk_Alloc( len, h_low );
+	cachedGLMessages[numCachedGLMessages][len - 1] = '\0';
+	strcpy(cachedGLMessages[numCachedGLMessages], message);
+	numCachedGLMessages++;
 
-    if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) {
-        ri.Printf(PRINT_INFO, COLOR_MAGENTA "[GLDebug Log]:" COLOR_WHITE " %s\n", message);
-        return;
-    }
+	if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) {
+		ri.Printf(PRINT_INFO, COLOR_MAGENTA "[GLDebug Log]:" COLOR_WHITE " %s\n", message);
+		return;
+	}
 
-    if (!color) {
-        if (type == GL_DEBUG_TYPE_ERROR_ARB || type == GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB) {
-            color = COLOR_RED;
-        }
-        else if (type == GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB) {
-            color = COLOR_YELLOW;
-        }
-        else if (type == GL_DEBUG_TYPE_PERFORMANCE_ARB || type == GL_DEBUG_TYPE_PORTABILITY_ARB) {
-            color = COLOR_CYAN;
-        }
-        else {
-            color = COLOR_WHITE;
-        }
-    }
+	if (!color) {
+		if (type == GL_DEBUG_TYPE_ERROR_ARB || type == GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB) {
+			color = COLOR_RED;
+		}
+		else if (type == GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB) {
+			color = COLOR_YELLOW;
+		}
+		else if (type == GL_DEBUG_TYPE_PERFORMANCE_ARB || type == GL_DEBUG_TYPE_PORTABILITY_ARB) {
+			color = COLOR_CYAN;
+		}
+		else {
+			color = COLOR_WHITE;
+		}
+	}
 
-    ri.Printf(PRINT_INFO, "%s[GLDebug Log]:" COLOR_WHITE" %s\n", color, message);
+	ri.Printf(PRINT_INFO, "%s[GLDebug Log]:" COLOR_WHITE" %s\n", color, message);
 
-    switch (source) {
-    case GL_DEBUG_SOURCE_API_ARB:
-        ri.Printf(PRINT_INFO, "\tSource: GL_DEBUG_SOURCE_API_ARB\n");
-        break;
-    case GL_DEBUG_SOURCE_APPLICATION_ARB:
-        ri.Printf(PRINT_INFO, "\tSource: GL_DEBUG_SOURCE_APPLICATION_ARB\n");
-        break;
-    case GL_DEBUG_SOURCE_OTHER_ARB:
-        ri.Printf(PRINT_INFO, "\tSource: GL_DEBUG_SOURCE_OTHER_ARB\n");
-        break;
-    case GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB:
-        ri.Printf(PRINT_INFO, "\tSource: GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB\n");
-        break;
-    case GL_DEBUG_SOURCE_THIRD_PARTY_ARB:
-        ri.Printf(PRINT_INFO, "\tSource: GL_DEBUG_SOURCE_THIRD_PARTY_ARB\n");
-        break;
-    case GL_DEBUG_SOURCE_SHADER_COMPILER_ARB:
-        ri.Printf(PRINT_INFO, "\tSource: GL_DEBUG_SOURCE_SHADER_COMPILER_ARB\n");
-        break;
-    };
+	switch (source) {
+	case GL_DEBUG_SOURCE_API_ARB:
+		ri.Printf(PRINT_INFO, "\tSource: GL_DEBUG_SOURCE_API_ARB\n");
+		break;
+	case GL_DEBUG_SOURCE_APPLICATION_ARB:
+		ri.Printf(PRINT_INFO, "\tSource: GL_DEBUG_SOURCE_APPLICATION_ARB\n");
+		break;
+	case GL_DEBUG_SOURCE_OTHER_ARB:
+		ri.Printf(PRINT_INFO, "\tSource: GL_DEBUG_SOURCE_OTHER_ARB\n");
+		break;
+	case GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB:
+		ri.Printf(PRINT_INFO, "\tSource: GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB\n");
+		break;
+	case GL_DEBUG_SOURCE_THIRD_PARTY_ARB:
+		ri.Printf(PRINT_INFO, "\tSource: GL_DEBUG_SOURCE_THIRD_PARTY_ARB\n");
+		break;
+	case GL_DEBUG_SOURCE_SHADER_COMPILER_ARB:
+		ri.Printf(PRINT_INFO, "\tSource: GL_DEBUG_SOURCE_SHADER_COMPILER_ARB\n");
+		break;
+	};
 
-    switch (type) {
-    case GL_DEBUG_TYPE_ERROR_ARB:
-        ri.Printf(PRINT_INFO, "\tType: GL_DEBUG_TYPE_ERROR_ARB\n");
-        break;
-    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB:
-        ri.Printf(PRINT_INFO, "\tType: GL_DEBUG_TYPE_DEPRECATED_BEHAVIOUR_ARB\n");
-        break;
-    case GL_DEBUG_TYPE_PERFORMANCE_ARB:
-        ri.Printf(PRINT_INFO, "\tType: GL_DEBUG_TYPE_PERFORMANCE_ARB\n");
-        break;
-    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB:
-        ri.Printf(PRINT_INFO, "\tType: GL_DEBUG_TYPE_UNDEFINED_BEHAVIOUR_ARB\n");
-        break;
-    case GL_DEBUG_TYPE_PORTABILITY_ARB:
-        ri.Printf(PRINT_INFO, "\tType: GL_DEBUG_TYPE_PORTABILITY_ARB\n");
-        break;
-    case GL_DEBUG_TYPE_OTHER_ARB:
-        ri.Printf(PRINT_INFO, "\tType: GL_DEBUG_TYPE_OTHER_ARB\n");
-        break;
-    };
+	switch (type) {
+	case GL_DEBUG_TYPE_ERROR_ARB:
+		ri.Printf(PRINT_INFO, "\tType: GL_DEBUG_TYPE_ERROR_ARB\n");
+		break;
+	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB:
+		ri.Printf(PRINT_INFO, "\tType: GL_DEBUG_TYPE_DEPRECATED_BEHAVIOUR_ARB\n");
+		break;
+	case GL_DEBUG_TYPE_PERFORMANCE_ARB:
+		ri.Printf(PRINT_INFO, "\tType: GL_DEBUG_TYPE_PERFORMANCE_ARB\n");
+		break;
+	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB:
+		ri.Printf(PRINT_INFO, "\tType: GL_DEBUG_TYPE_UNDEFINED_BEHAVIOUR_ARB\n");
+		break;
+	case GL_DEBUG_TYPE_PORTABILITY_ARB:
+		ri.Printf(PRINT_INFO, "\tType: GL_DEBUG_TYPE_PORTABILITY_ARB\n");
+		break;
+	case GL_DEBUG_TYPE_OTHER_ARB:
+		ri.Printf(PRINT_INFO, "\tType: GL_DEBUG_TYPE_OTHER_ARB\n");
+		break;
+	};
 
-    switch (severity) {
-    case GL_DEBUG_SEVERITY_HIGH_ARB:
-        ri.Printf(PRINT_INFO, "\tSeverity: GL_DEBUG_SEVERITY_HIGH_ARB\n");
-        break;
-    case GL_DEBUG_SEVERITY_MEDIUM_ARB:
-        ri.Printf(PRINT_INFO, "\tSeverity: GL_DEBUG_SEVERITY_MEDIUM_ARB\n");
-        break;
-    case GL_DEBUG_SEVERITY_LOW_ARB:
-        ri.Printf(PRINT_INFO, "\tSeverity: GL_DEBUG_SEVERITY_LOW_ARB\n");
-        break;
-    };
-    ri.Printf(PRINT_INFO, "\n");
+	switch (severity) {
+	case GL_DEBUG_SEVERITY_HIGH_ARB:
+		ri.Printf(PRINT_INFO, "\tSeverity: GL_DEBUG_SEVERITY_HIGH_ARB\n");
+		break;
+	case GL_DEBUG_SEVERITY_MEDIUM_ARB:
+		ri.Printf(PRINT_INFO, "\tSeverity: GL_DEBUG_SEVERITY_MEDIUM_ARB\n");
+		break;
+	case GL_DEBUG_SEVERITY_LOW_ARB:
+		ri.Printf(PRINT_INFO, "\tSeverity: GL_DEBUG_SEVERITY_LOW_ARB\n");
+		break;
+	};
+	ri.Printf(PRINT_INFO, "\n");
 }

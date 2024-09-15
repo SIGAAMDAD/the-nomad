@@ -51,15 +51,12 @@ typedef struct {
 
 	photomode_t photomode;
 
+	sfxHandle_t hPausedSnapshot;
+
 	char **dailyTips;
 	uint64_t numDailyTips;
 	qboolean popped;
-
-	int oldMusicVolume;
-	int oldEffectsVolume;
 } pauseMenu_t;
-
-#define PAUSEMENU_VOLUME_CAP 20
 
 // PAUSE. REWIND. PLAY.
 static pauseMenu_t *s_pauseMenu;
@@ -72,18 +69,11 @@ static void PauseMenu_EventCallback( void *ptr, int event )
 
 	switch ( ( (menucommon_t *)ptr )->id ) {
 	case ID_RESUME:
-		Cvar_Set( "snd_musicVolume", va( "%i", s_pauseMenu->oldMusicVolume ) );
-		Cvar_Set( "snd_effectsVolume", va( "%i", s_pauseMenu->oldEffectsVolume ) );
-
 		UI_SetActiveMenu( UI_MENU_NONE );
 		break;
 	case ID_CHECKPOINT:
 		// rewind the checkpoint
 		Cbuf_ExecuteText( EXEC_NOW, "sgame.rewind_checkpoint\n" );
-
-		Cvar_Set( "snd_musicVolume", va( "%i", s_pauseMenu->oldMusicVolume ) );
-		Cvar_Set( "snd_effectsVolume", va( "%i", s_pauseMenu->oldEffectsVolume ) );
-
 		UI_SetActiveMenu( UI_MENU_NONE );
 		break;
 	case ID_PHOTOMODE: 
@@ -109,6 +99,7 @@ static void PauseMenu_EventCallback( void *ptr, int event )
 		gi.state = GS_INACTIVE;
 		g_pModuleLib->ModuleCall( sgvm, ModuleOnLevelEnd, 0 );
 		g_pModuleLib->RunModules( ModuleOnLevelEnd, 0 );
+		Snd_StopSfx( s_pauseMenu->hPausedSnapshot );
 		Cvar_SetIntegerValue( "g_paused", 0 );
 		Cbuf_ExecuteText( EXEC_APPEND, "setmap\n" ); // setting an empty mapname will unload the level
 		break;
@@ -230,6 +221,8 @@ void PauseMenu_Cache( void )
 	helpString = strManager->ValueForKey( "MENU_PAUSE_HELP" );
 	settingsString = strManager->ValueForKey( "MENU_PAUSE_SETTINGS" );
 
+	s_pauseMenu->hPausedSnapshot = Snd_RegisterSfx( "snapshot:/PauseMenu" );
+
 	s_pauseMenu->menu.width = ui->gpuConfig.vidWidth;
 	s_pauseMenu->menu.height = ui->gpuConfig.vidHeight;
 	s_pauseMenu->menu.fullscreen = qfalse;
@@ -288,11 +281,6 @@ void PauseMenu_Cache( void )
 	s_pauseMenu->dailyTipText.color = color_white;
 	s_pauseMenu->dailyTipText.text = s_pauseMenu->dailyTips[ rand() & s_pauseMenu->numDailyTips - 1 ];
 
-	s_pauseMenu->oldMusicVolume = Cvar_VariableInteger( "snd_musicVolume" );
-	s_pauseMenu->oldEffectsVolume = Cvar_VariableInteger( "snd_effectsVolume" );
-	Cvar_Set( "snd_musicVolume", va( "%i", PAUSEMENU_VOLUME_CAP ) );
-	Cvar_Set( "snd_effectsVolume", va( "%i", PAUSEMENU_VOLUME_CAP ) );
-
 	Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->resume );
 	Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->checkpoint );
 	Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->settings );
@@ -315,4 +303,8 @@ void UI_PauseMenu( void )
 	Key_SetCatcher( Key_GetCatcher() | KEYCATCH_SGAME );
 	Snd_PlaySfx( ui->sfx_select );
 	Cvar_SetIntegerValue( "g_paused", !ui_active->i );
+
+	if ( !ui_active->i ) {
+		Snd_PlaySfx( s_pauseMenu->hPausedSnapshot );
+	}
 }

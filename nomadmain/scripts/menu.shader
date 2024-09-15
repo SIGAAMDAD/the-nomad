@@ -64,6 +64,19 @@ menu/mainbackground
     }
 }
 
+menu/playBackground
+{
+    nomipmaps
+    nopicmip
+    {
+        texFilter bilinear
+        map textures/menu/playBackground.jpg
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        tcGen texture
+        rgbGen vertex
+    }
+}
+
 menu/tales_around_the_campfire
 {
     nomipmaps

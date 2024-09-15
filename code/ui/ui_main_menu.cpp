@@ -452,7 +452,7 @@ void MainMenu_Cache( void )
     s_main->exitGame.color = color_white;
 
     s_main->noSaves = Cvar_VariableInteger( "sgame_NumSaves" ) == 0;
-    s_main->menu.track = Snd_RegisterTrack( "music/menu/title.ogg" );
+    s_main->menu.track = Snd_RegisterTrack( "event:/music/main_theme" );
     s_main->background = re.RegisterShader( "menu/mainbackground" );
 
     s_main->noMenu = qfalse;
@@ -466,7 +466,7 @@ void MainMenu_Cache( void )
     Menu_AddItem( &s_main->menu, &s_main->exitGame );
 
     // add in background ambience
-    Snd_AddLoopingTrack( Snd_RegisterTrack( "music/world/icy_gusts.wav" ) );
+//    Snd_AddLoopingTrack( Snd_RegisterTrack( "music/world/icy_gusts.wav" ) );
 
     Key_SetCatcher( KEYCATCH_UI );
     ui->menusp = 0;

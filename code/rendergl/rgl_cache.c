@@ -47,10 +47,10 @@ void R_VaoUnpackNormal( vec3_t v, int16_t *pack )
 
 void R_VaoUnpackColor( vec4_t v, uint16_t *pack )
 {
-	v[0] = pack[0] / 65535.0f - 0.5f;
-	v[1] = pack[1] / 65535.0f - 0.5f;
-	v[2] = pack[2] / 65535.0f - 0.5f;
-	v[3] = pack[3] / 65535.0f - 0.5f;
+	v[0] = pack[0] / 65535.0f /*- 0.5f */;
+	v[1] = pack[1] / 65535.0f /*- 0.5f */;
+	v[2] = pack[2] / 65535.0f /*- 0.5f */;
+	v[3] = pack[3] / 65535.0f /*- 0.5f */;
 }
 
 static void R_SetVertexPointers( const vertexAttrib_t attribs[ATTRIB_INDEX_COUNT] )

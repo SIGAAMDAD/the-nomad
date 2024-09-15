@@ -4,7 +4,7 @@
 #pragma once
 
 //#define USE_QUAKE3_SOUND
-#ifndef USE_QUAKE3_SOUND
+#ifndef USE_FMOD
 
 void Snd_DisableSounds( void );
 void Snd_StopAll( void );
@@ -24,6 +24,10 @@ void Snd_AddLoopingTrack( sfxHandle_t handle, uint64_t timeOffset = 0 );
 
 void Snd_StartupThread( int msec );
 void Snd_JoinThread( void );
+
+#else
+
+#include "../sound/snd_public.h"
 
 #endif
 

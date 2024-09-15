@@ -254,15 +254,15 @@ typedef struct {
 #define LIGHT_DIRECTIONAL 1
 
 typedef struct {
-	uint16_t color[4];
+	vec4_t color;
 	uint16_t origin[2];
-	uint8_t angle;
-	uint8_t brightness;
-	uint8_t range;
-	uint8_t linear;
-	uint8_t quadratic;
-	uint8_t constant;
-	uint16_t type;
+	float angle;
+	float brightness;
+	float range;
+	float linear;
+	float quadratic;
+	float constant;
+	int type;
 } maplight_t;
 
 //
@@ -274,7 +274,7 @@ typedef struct {
 } mapsecret_t;
 
 typedef struct {
-	uint16_t color[4];
+	vec4_t color;
 	uint16_t pos[3];
 	int16_t index; // tileset texture index, -1 if not bound
 	uint32_t flags;
@@ -320,8 +320,8 @@ typedef struct {
 
 typedef struct {
 	uint16_t xyz[2];
-	uint16_t checkpoint;
 	uint16_t entitytype;
+	uint16_t checkpoint;
 	uint32_t entityid;
 } mapspawn_t;
 
@@ -330,7 +330,7 @@ typedef struct {
 	uint32_t version;
 	uint16_t mapWidth;
 	uint16_t mapHeight;
-	uint16_t ambientLightColor[4];
+	vec3_t ambientLightColor;
 	lump_t lumps[NUMLUMPS];
 } mapheader_t;
 

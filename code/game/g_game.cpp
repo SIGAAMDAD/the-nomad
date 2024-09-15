@@ -297,21 +297,10 @@ static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, const glm::mat4&
 	mvp = gi.viewProjectionMatrix * model;
 
 	const glm::vec4 positions[4] = {
-#if 0
 		{ 0.0f, 1.0f, 0.0f, 1.0f },
 		{ 1.0f, 1.0f, 0.0f, 1.0f },
 		{ 1.0f, 0.0f, 0.0f, 1.0f },
 		{ 0.0f, 0.0f, 0.0f, 1.0f }
-#else
-		{ 0.0f, 1.0f, 0.0f, 1.0f },
-		{ 1.0f, 1.0f, 0.0f, 1.0f },
-		{ 1.0f, 0.0f, 0.0f, 1.0f },
-		{ 0.0f, 0.0f, 0.0f, 1.0f }
-#endif
-//        { 1.0f,  1.0f, 0.0f, 1.0f },
-//        { 1.0f,  0.0f, 0.0f, 1.0f },
-//        { 0.0f,  0.0f, 0.0f, 1.0f },
-//        { 0.0f,  1.0f, 0.0f, 1.0f },
 	};
 
 	for ( uint32_t i = 0; i < 4; i++ ) {
@@ -414,17 +403,10 @@ static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, float scale, flo
 	mvp = gi.viewProjectionMatrix * model;
 
 	const glm::vec4 positions[4] = {
-	#if 0
-		{ 0.0f, 1.0f, 0.0f, 1.0f },
-		{ 0.0f, 0.0f, 0.0f, 1.0f },
-		{ 1.0f, 0.0f, 0.0f, 1.0f },
-		{ 1.0f, 1.0f, 0.0f, 1.0f }
-	#else
 		{ 1.0f,  1.0f, 0.0f, 1.0f },
 		{ 1.0f,  0.0f, 0.0f, 1.0f },
 		{ 0.0f,  0.0f, 0.0f, 1.0f },
 		{ 0.0f,  1.0f, 0.0f, 1.0f },
-	#endif
 	};
 
 	for ( uint32_t i = 0; i < 4; i++ ) {
@@ -437,7 +419,7 @@ qboolean G_CheckWallHit( const vec3_t origin, dirtype_t dir ) {
 	return g_world->CheckWallHit( origin, dir );
 }
 
-static void G_InitRenderRef(void)
+static void G_InitRenderRef( void )
 {
 	refimport_t import;
 	renderExport_t *ret;

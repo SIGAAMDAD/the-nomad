@@ -67,7 +67,8 @@ bool CGameArchive::ValidateHeader( const void *data ) const
 	h = (const ngdheader_t *)data;
 
     if ( h->validation.ident != IDENT ) {
-        Con_Printf( COLOR_RED "LoadArchiveFile: failed to load save, header has incorrect identifier.\n" );
+        Con_Printf( COLOR_RED "LoadArchiveFile: failed to load save, header has incorrect identifier (%i, should be %i).\n",
+			h->validation.ident, IDENT );
 		return false;
     }
 
@@ -223,7 +224,11 @@ qboolean CGameArchive::LoadArchiveFile( const char *filename, uint64_t index )
 
 	N_strncpyz( name, COM_SkipPath( const_cast<char *>( filename ) ), sizeof( name ) );
 	
-	FS_Read( &header.validation, sizeof( header.validation ), hFile );
+	FS_Read( &header.validation.ident, sizeof( header.validation.ident ), hFile );
+	FS_Read( &header.validation.version.m_nVersionMajor, sizeof( header.validation.version.m_nVersionMajor ), hFile );
+	FS_Read( &header.validation.version.m_nVersionUpdate, sizeof( header.validation.version.m_nVersionUpdate ), hFile );
+	FS_Read( &header.validation.version.m_nVersionPatch, sizeof( header.validation.version.m_nVersionPatch ), hFile );
+
 	header.validation.ident = LittleInt( header.validation.ident );
 	header.validation.version.m_nVersionMajor = LittleShort( header.validation.version.m_nVersionMajor );
 	header.validation.version.m_nVersionUpdate = LittleShort( header.validation.version.m_nVersionUpdate );
@@ -1062,11 +1067,16 @@ bool CGameArchive::Save( const char *filename )
 	header.validation.version.m_nVersionUpdate = NOMAD_VERSION_UPDATE;
 	header.validation.version.m_nVersionPatch = NOMAD_VERSION_PATCH;
 
-	FS_Write( &header.validation, sizeof( header.validation ), m_hFile );
+	FS_Write( &header.validation.ident, sizeof( header.validation.ident ), m_hFile );
+	FS_Write( &header.validation.version.m_nVersionMajor, sizeof( header.validation.version.m_nVersionMajor ), m_hFile );
+	FS_Write( &header.validation.version.m_nVersionUpdate, sizeof( header.validation.version.m_nVersionUpdate ), m_hFile );
+	FS_Write( &header.validation.version.m_nVersionPatch, sizeof( header.validation.version.m_nVersionPatch ), m_hFile );
 	FS_Write( &header.numSections, sizeof( header.numSections ), m_hFile );
 	FS_Write( &header.gamedata.mapIndex, sizeof( header.gamedata.mapIndex ), m_hFile );
 	FS_Write( &header.gamedata.highestDif, sizeof( header.gamedata.highestDif ), m_hFile );
 	FS_Write( &header.gamedata.saveDif, sizeof( header.gamedata.saveDif ), m_hFile );
+	FS_Write( &header.gamedata.playTimeHours, sizeof( header.gamedata.playTimeHours ), m_hFile );
+	FS_Write( &header.gamedata.playTimeMinutes, sizeof( header.gamedata.playTimeMinutes ), m_hFile );
 	FS_Write( &header.gamedata.numMods, sizeof( header.gamedata.numMods ), m_hFile );
 
 	for ( i = 0; i < header.gamedata.numMods; i++ ) {
@@ -1159,6 +1169,11 @@ bool CGameArchive::LoadPartial( const char *filename, gamedata_t *gd )
     //
     // validate the header
     //
+	FS_Read( &header.validation.ident, sizeof( header.validation.ident ), f );
+	FS_Read( &header.validation.version.m_nVersionMajor, sizeof( header.validation.version.m_nVersionMajor ), f );
+	FS_Read( &header.validation.version.m_nVersionUpdate, sizeof( header.validation.version.m_nVersionUpdate ), f );
+	FS_Read( &header.validation.version.m_nVersionPatch, sizeof( header.validation.version.m_nVersionPatch ), f );
+
     if ( FS_FileLength( f ) < SIZEOF_HEADER ) {
         Con_Printf( COLOR_RED "CGameArchive::Load: failed to load savefile, file is too small to contain a header.\n" );
         return false;
@@ -1167,7 +1182,6 @@ bool CGameArchive::LoadPartial( const char *filename, gamedata_t *gd )
         return false;
     }
 
-	FS_Read( &header.validation, sizeof( header.validation ), f );
 	FS_Read( &header.numSections, sizeof( header.numSections ), f );
 	FS_Read( &gd->mapIndex, sizeof( gd->mapIndex ), f );
 	FS_Read( &gd->highestDif, sizeof( gd->highestDif ), f );

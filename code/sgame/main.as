@@ -108,39 +108,39 @@ void InitResources() {
 
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/misc/getitem.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/misc/getpw.wav" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/misc/passCheckpoint.ogg" );
+	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/level/complete_checkpoint" );
 
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/mobs/alert.ogg" );
+	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/mobs/spot_player" );
 
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/death1.ogg" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/death2.ogg" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/death3.ogg" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain0.ogg" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain1.ogg" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain2.ogg" );
+	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/death1" );
+	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/death2" );
+	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/death3" );
+	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/pain_scream_0" );
+	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/pain_scream_1" );
+	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/pain_scream_2" );
 
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/dash.ogg" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/melee.wav" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/weaponChangeMode.wav" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/weaponChangeHand.wav" );
+	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/dash" );
+	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/melee" );
+	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/weapon_change_mode" );
+	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/weapon_change_hand" );
 
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/clothRuffle0.ogg" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/clothRuffle1.ogg" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/clothRuffle2.ogg" );
+//	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/clothRuffle0.ogg" );
+//	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/clothRuffle1.ogg" );
+//	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/clothRuffle2.ogg" );
 
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/slide0.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/slide1.ogg" );
 
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveGravel0.ogg" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveGravel1.ogg" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveGravel2.ogg" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveGravel3.ogg" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveWater0.ogg" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveWater1.ogg" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal0.ogg" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal1.ogg" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal2.ogg" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal3.ogg" );
+	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/move_gravel_0" );
+	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/move_gravel_1" );
+	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/move_gravel_2" );
+	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/move_gravel_3" );
+	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/move_water_0" );
+	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/move_water_0" );
+//	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/moveMetal0.ogg" );
+//	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/moveMetal1.ogg" );
+//	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/moveMetal2.ogg" );
+//	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/moveMetal3.ogg" );
 
 	//
 	// register strings

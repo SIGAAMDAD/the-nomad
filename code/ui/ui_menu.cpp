@@ -71,7 +71,7 @@ static void Field_Paste( ImGuiInputTextCallbackData *data );
 static void Field_Clear( menufield_t *edit );
 
 static void Menu_DrawItemList( void **items, int numitems );
-static void Menu_DrawItemGeneric( menucommon_t *generic );
+void Menu_DrawItemGeneric( menucommon_t *generic );
 
 static void Field_Clear( menufield_t *edit )
 {
@@ -483,7 +483,7 @@ void Text_Draw( menutext_t *text )
 	ImGui::PopStyleColor( 3 );
 }
 
-static void Menu_DrawItemGeneric( menucommon_t *generic )
+void Menu_DrawItemGeneric( menucommon_t *generic )
 {
 	int colorDepth;
 	float fontScale;
