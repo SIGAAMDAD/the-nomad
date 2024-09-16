@@ -281,6 +281,10 @@ static void SplashScreen_Draw( void )
         "Please exercise caution."
     };
 
+    static const char *copyright[] = {
+        "Made using FMOD Studio by Firelight Technologies Pty Ltd."
+    };
+
     if ( timeCurrent - s_splashScreen->timeStart > s_splashScreen->lifeTime ) {
         if ( s_splashScreen->splashPhase >= SPLASH_SCREEN_WARNING ) {
             playedSplashScreen = qtrue;

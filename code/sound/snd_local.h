@@ -109,6 +109,7 @@ public:
 	void Init( void );
 	void Update( void );
 	void Shutdown( void );
+	void ForceStop( void );
 
 	CSoundSource *LoadSound( const char *npath );
 
@@ -116,6 +117,8 @@ public:
 	{ return m_szBanks; }
 	inline CSoundSource *GetSound( sfxHandle_t hSfx )
 	{ return m_szSources[ hSfx ]; }
+	inline uint64_t NumSources( void ) const
+	{ return m_nSources; }
 
 	inline static FMOD::Studio::System *GetStudioSystem( void )
 	{ return sndManager->m_pStudioSystem; }
@@ -127,6 +130,9 @@ public:
 	void AddSourceToHash( CSoundSource *pSource );
 
 	eastl::fixed_vector<CSoundSource *, 10> m_szLoopingTracks;
+
+	uint32_t m_nFirstLevelSource;
+	uint32_t m_nLevelSources;
 private:
 	bool LoadBank( const char *pName );
 

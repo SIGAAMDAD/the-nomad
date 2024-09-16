@@ -207,6 +207,7 @@ typedef struct {
     gpuConfig_t gpuConfig;
 
     mapCache_t mapCache;
+    uint64_t playTimeStart;
     
     float cameraZoom;
 

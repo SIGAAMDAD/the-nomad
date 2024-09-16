@@ -1026,6 +1026,7 @@ bool CGameArchive::Save( const char *filename )
 	} f;
 	uint64_t length, i, size;
 	char *namePtr;
+	uint64_t now;
 
 	PROFILE_FUNCTION();
 
@@ -1045,9 +1046,14 @@ bool CGameArchive::Save( const char *filename )
 	CModuleInfo *loadList = g_pModuleLib->GetLoadList();
 	
 	memset( &header, 0, sizeof( header ) );
-	header.gamedata.mapIndex = gi.mapCache.currentMapLoaded;
+	header.gamedata.mapIndex = Cvar_VariableInteger( "g_levelIndex" );
 	header.gamedata.saveDif = Cvar_VariableInteger( "sgame_Difficulty" );
 	header.gamedata.numMods = g_pModuleLib->GetModCount();
+
+	// give the best estimation, this is more just for brownie points than an actual ranking
+	now = Sys_Milliseconds();
+	header.gamedata.playTimeMinutes = ( now - gi.playTimeStart ) / 1000 / 60;
+	header.gamedata.playTimeHours = header.gamedata.playTimeMinutes / 60;
 
 	if ( header.gamedata.saveDif > header.gamedata.highestDif ) {
 		header.gamedata.highestDif = header.gamedata.saveDif;
@@ -1116,6 +1122,12 @@ bool CGameArchive::Save( const char *filename )
 
 	FS_Write( &header.validation, sizeof( header.validation ), m_hFile );
 	FS_Write( &header.numSections, sizeof( header.numSections ), m_hFile );
+	FS_Write( &header.gamedata.mapIndex, sizeof( header.gamedata.mapIndex ), m_hFile );
+	FS_Write( &header.gamedata.highestDif, sizeof( header.gamedata.highestDif ), m_hFile );
+	FS_Write( &header.gamedata.saveDif, sizeof( header.gamedata.saveDif ), m_hFile );
+	FS_Write( &header.gamedata.playTimeHours, sizeof( header.gamedata.playTimeHours ), m_hFile );
+	FS_Write( &header.gamedata.playTimeMinutes, sizeof( header.gamedata.playTimeMinutes ), m_hFile );
+	FS_Write( &header.gamedata.numMods, sizeof( header.gamedata.numMods ), m_hFile );
 	
 	FS_FClose( m_hFile );
 	
@@ -1201,12 +1213,12 @@ bool CGameArchive::LoadPartial( const char *filename, gamedata_t *gd )
 	}
 	Con_DPrintf(
 				"Loaded partial header:\n"
-				" [mapname] %s\n"
+				" [mapname] %s (%i)\n"
 				" [highDifficulty] %i\n"
 				" [saveDifficulty] %i\n"
 				" [modCount] %lu\n"
 				" [modList] "
-	, gi.mapCache.mapList[ gd->mapIndex ], gd->highestDif, gd->saveDif, gd->numMods );
+	, gi.mapCache.mapList[ gd->mapIndex ], gd->mapIndex, gd->highestDif, gd->saveDif, gd->numMods );
 
 	for ( i = 0; i < gd->numMods; i++ ) {
 		Con_DPrintf( "%s", gd->modList[i].name );

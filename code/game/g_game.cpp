@@ -1906,10 +1906,10 @@ void G_ShutdownVMs( qboolean quit ) {
 
 void G_StartHunkUsers( void )
 {
-	G_InitArchiveHandler();
-
 	// cache all maps
 	G_InitMapCache();
+
+	G_InitArchiveHandler();
 
 	if ( !gi.rendererStarted ) {
 		gi.rendererStarted = qtrue;

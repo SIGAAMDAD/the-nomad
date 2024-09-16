@@ -145,9 +145,9 @@ bool CSoundSource::Load( const char *npath )
 	N_strncpyz( m_szName, npath, sizeof( m_szName ) );
 
 	// hash it so that if we try loading it
-    // even if it's failed, we won't try loading
-    // it again
-    sndManager->AddSourceToHash( this );
+	// even if it's failed, we won't try loading
+	// it again
+	sndManager->AddSourceToHash( this );
 
 	CSoundSystem::GetStudioSystem()->getEvent( npath, &pEvent );
 	if ( !pEvent ) {
@@ -162,6 +162,9 @@ bool CSoundSource::Load( const char *npath )
 
 void CSoundSource::Play( bool bLooping, uint64_t nTimeOffset )
 {
+	FMOD_STUDIO_PLAYBACK_STATE state;
+
+	m_pEmitter->getPlaybackState( &state );
 	m_pEmitter->start();
 }
 
@@ -171,31 +174,63 @@ void CSoundSource::Stop( void )
 
 	m_pEmitter->getPlaybackState( &state );
 
-	if ( state == FMOD_STUDIO_PLAYBACK_PLAYING ) {
+	switch ( state ) {
+	case FMOD_STUDIO_PLAYBACK_PLAYING:
+	case FMOD_STUDIO_PLAYBACK_STARTING:
+		m_pEmitter->stop( FMOD_STUDIO_STOP_IMMEDIATE );
+		break;
+	case FMOD_STUDIO_PLAYBACK_SUSTAINING:
 		m_pEmitter->stop( FMOD_STUDIO_STOP_ALLOWFADEOUT );
-	}
+		break;
+	case FMOD_STUDIO_PLAYBACK_STOPPED:
+	case FMOD_STUDIO_PLAYBACK_STOPPING:
+		break;
+	};
 }
 
 bool CSoundSystem::LoadBank( const char *pName )
 {
 	CSoundBank *pBank;
+	uint64_t slot;
+
+	for ( slot = 0; slot < MAX_SOUND_BANKS; slot++ ) {
+		if ( !m_szBanks[ slot ] ) {
+			break;
+		}
+	}
+	if ( slot >= MAX_SOUND_BANKS ) {
+		N_Error( ERR_DROP, "CSoundSystem::LoadBank: too many sound banks!" );
+	}
 
 	pBank = (CSoundBank *)Hunk_Alloc( sizeof( *pBank ), h_low );
 	if ( !pBank->Load( pName ) ) {
 		return false;
 	}
 
+	m_szBanks[ slot ] = pBank;
+
 	return true;
 }
 
 void CSoundSystem::AddSourceToHash( CSoundSource *pSource )
 {
-    nhandle_t hash;
+	nhandle_t hash;
 
-    hash = Snd_HashFileName( pSource->GetName() );
+	hash = Snd_HashFileName( pSource->GetName() );
 
 	pSource->m_pNext = m_szSources[hash];
-    m_szSources[hash] = pSource;
+	m_szSources[hash] = pSource;
+}
+
+void CSoundSystem::ForceStop( void )
+{
+	for ( auto& it : m_szSources ) {
+		if ( !it ) {
+			continue;
+		}
+		it->Stop();
+	}
+	Snd_ClearLoopingTracks();
 }
 
 void CSoundSystem::Init( void )
@@ -239,6 +274,7 @@ void CSoundSystem::Shutdown( void )
 			continue;
 		}
 		it->Release();
+		it = NULL;
 	}
 	for ( auto& it : m_szBanks ) {
 		if ( !it ) {
@@ -249,10 +285,34 @@ void CSoundSystem::Shutdown( void )
 	memset( m_szSources, 0, sizeof( m_szSources ) );
 	memset( m_szBanks, 0, sizeof( m_szBanks ) );
 
+	m_nSources = 0;
+
+	m_pSFXGroup->release();
+
 	m_szLoopingTracks.clear();
 
 	ERRCHECK( m_pStudioSystem->unloadAll() );
 	ERRCHECK( m_pStudioSystem->release() );
+	m_pSystem->release();
+
+	m_pStudioSystem = NULL;
+	m_pSystem = NULL;
+
+	gi.soundRegistered = qfalse;
+
+	Z_FreeTags( TAG_SFX );
+	Z_FreeTags( TAG_MUSIC );
+
+	Cmd_RemoveCommand( "snd.setvolume" );
+	Cmd_RemoveCommand( "snd.toggle" );
+	Cmd_RemoveCommand( "snd.updatevolume" );
+	Cmd_RemoveCommand( "snd.list_files" );
+	Cmd_RemoveCommand( "snd.clear_tracks" );
+	Cmd_RemoveCommand( "snd.play_sfx" );
+	Cmd_RemoveCommand( "snd.queue_track" );
+//	Cmd_RemoveCommand( "snd.audio_info" );
+ 	Cmd_RemoveCommand( "snd.startup_level" );
+	Cmd_RemoveCommand( "snd.unload_level" );
 }
 
 void CSoundSystem::Update( void )
@@ -268,52 +328,54 @@ CSoundSource *CSoundSystem::LoadSound( const char *npath )
 
 	hash = Snd_HashFileName( npath );
 
-    //
-    // check if we already have it loaded
-    //
-    for ( pSound = m_szSources[hash]; pSound; pSound = pSound->m_pNext ) {
-        if ( !N_stricmp( npath, pSound->GetName() ) ) {
-            return pSound;
-        }
-    }
+	//
+	// check if we already have it loaded
+	//
+	for ( pSound = m_szSources[hash]; pSound; pSound = pSound->m_pNext ) {
+		if ( !N_stricmp( npath, pSound->GetName() ) ) {
+			return pSound;
+		}
+	}
 
-    if ( strlen( npath ) >= MAX_NPATH ) {
-        Con_Printf( "CSoundManager::InitSource: name '%s' too long\n", npath );
-        return NULL;
-    }
-    if ( m_nSources == MAX_SOUND_SOURCES ) {
-        N_Error( ERR_DROP, "CSoundManager::InitSource: MAX_SOUND_SOURCES hit" );
-    }
+	if ( strlen( npath ) >= MAX_NPATH ) {
+		Con_Printf( "CSoundManager::InitSource: name '%s' too long\n", npath );
+		return NULL;
+	}
+	if ( m_nSources == MAX_SOUND_SOURCES ) {
+		N_Error( ERR_DROP, "CSoundManager::InitSource: MAX_SOUND_SOURCES hit" );
+	}
 
 //    m_hAllocLock.Lock();
 
-    pSound = (CSoundSource *)Hunk_Alloc( sizeof( *pSound ), h_low );
-    memset( pSound, 0, sizeof( *pSound ) );
+	pSound = (CSoundSource *)Hunk_Alloc( sizeof( *pSound ), h_low );
+	memset( pSound, 0, sizeof( *pSound ) );
 
-    if ( !pSound->Load( npath ) ) {
-        Con_Printf( COLOR_YELLOW "WARNING: failed to load sound file '%s'\n", npath );
+	if ( !pSound->Load( npath ) ) {
+		Con_Printf( COLOR_YELLOW "WARNING: failed to load sound file '%s'\n", npath );
 //        m_hAllocLock.Unlock();
-        return NULL;
-    }
+		return NULL;
+	}
 
 //    pSound->SetVolume();
 
-    m_nSources++;
-//    if ( gi.mapLoaded ) {
-//        sndManager->m_nLevelSources++;
-//    }
+	m_nSources++;
+	if ( gi.mapLoaded ) {
+		sndManager->m_nLevelSources++;
+	}
 
 //    m_hAllocLock.Unlock();
 
-    return pSound;
+	return pSound;
 }
 
 void Snd_DisableSounds( void )
 {
+	sndManager->ForceStop();
 }
 
 void Snd_StopAll( void )
 {
+	sndManager->ForceStop();
 }
 
 void Snd_PlaySfx( sfxHandle_t sfx )
@@ -350,64 +412,64 @@ void Snd_StopSfx( sfxHandle_t sfx )
 
 static void Snd_Toggle_f( void )
 {
-    const char *var;
-    const char *toggle;
-    bool option;
+	const char *var;
+	const char *toggle;
+	bool option;
 
-    if ( Cmd_Argc() < 3 ) {
-        Con_Printf( "usage: snd.toggle <sfx|music> <on|off, 1|0>\n" );
-        return;
-    }
+	if ( Cmd_Argc() < 3 ) {
+		Con_Printf( "usage: snd.toggle <sfx|music> <on|off, 1|0>\n" );
+		return;
+	}
 
-    var = Cmd_Argv( 1 );
-    toggle = Cmd_Argv( 2 );
+	var = Cmd_Argv( 1 );
+	toggle = Cmd_Argv( 2 );
 
-    if ( ( toggle[0] == '1' && toggle[1] == '\0' ) || !N_stricmp( toggle, "on" ) ) {
-        option = true;
-    } else if ( ( toggle[0] == '0' && toggle[1] == '\0' ) || !N_stricmp( toggle, "off" ) ) {
-        option = false;
-    }
+	if ( ( toggle[0] == '1' && toggle[1] == '\0' ) || !N_stricmp( toggle, "on" ) ) {
+		option = true;
+	} else if ( ( toggle[0] == '0' && toggle[1] == '\0' ) || !N_stricmp( toggle, "off" ) ) {
+		option = false;
+	}
 
-    if ( !N_stricmp( var, "sfx" ) ) {
-        Cvar_Set( "snd_effectsOn", va( "%i", option ) );
-    } else if ( !N_stricmp( var, "music" ) ) {
-        Cvar_Set( "snd_musicOn", va( "%i", option ) );
-    } else {
-        Con_Printf( "snd.toggle: unknown parameter '%s', use either 'sfx' or 'music'\n", var );
-        return;
-    }
+	if ( !N_stricmp( var, "sfx" ) ) {
+		Cvar_Set( "snd_effectsOn", va( "%i", option ) );
+	} else if ( !N_stricmp( var, "music" ) ) {
+		Cvar_Set( "snd_musicOn", va( "%i", option ) );
+	} else {
+		Con_Printf( "snd.toggle: unknown parameter '%s', use either 'sfx' or 'music'\n", var );
+		return;
+	}
 }
 
 static void Snd_SetVolume_f( void )
 {
-    float vol;
-    const char *change;
+	float vol;
+	const char *change;
 
-    if ( Cmd_Argc() < 3 ) {
-        Con_Printf( "usage: snd.setvolume <sfx|music> <volume>\n" );
-        return;
-    }
+	if ( Cmd_Argc() < 3 ) {
+		Con_Printf( "usage: snd.setvolume <sfx|music> <volume>\n" );
+		return;
+	}
 
-    vol = N_atof( Cmd_Argv( 1 ) );
-    vol = CLAMP( vol, 0.0f, 100.0f );
+	vol = N_atof( Cmd_Argv( 1 ) );
+	vol = CLAMP( vol, 0.0f, 100.0f );
 
-    change = Cmd_Argv( 2 );
-    if ( !N_stricmp( change, "sfx" ) ) {
-        if ( snd_effectsVolume->f != vol ) {
-            Cvar_Set( "snd_effectsVolume", va("%f", vol) );
+	change = Cmd_Argv( 2 );
+	if ( !N_stricmp( change, "sfx" ) ) {
+		if ( snd_effectsVolume->f != vol ) {
+			Cvar_Set( "snd_effectsVolume", va("%f", vol) );
 //            sndManager->UpdateParm( TAG_SFX );
-        }
-    }
-    else if ( !N_stricmp( change, "music" ) ) {
-        if ( snd_musicVolume->f != vol ) {
-            Cvar_Set( "snd_musicVolume", va( "%f", vol ) );
+		}
+	}
+	else if ( !N_stricmp( change, "music" ) ) {
+		if ( snd_musicVolume->f != vol ) {
+			Cvar_Set( "snd_musicVolume", va( "%f", vol ) );
 //            sndManager->UpdateParm( TAG_MUSIC );
-        }
-    }
-    else {
-        Con_Printf( "snd.setvolume: unknown parameter '%s', use either 'sfx' or 'music'\n", change );
-        return;
-    }
+		}
+	}
+	else {
+		Con_Printf( "snd.setvolume: unknown parameter '%s', use either 'sfx' or 'music'\n", change );
+		return;
+	}
 }
 
 static void Snd_UpdateVolume_f( void ) {
@@ -417,178 +479,184 @@ static void Snd_UpdateVolume_f( void ) {
 
 static void Snd_ListFiles_f( void )
 {
-    uint64_t i, numFiles;
-    const CSoundSource *source;
+	uint64_t i, numFiles;
+	const CSoundSource *source;
 
-    Con_Printf( "\n---------- Snd_ListFiles_f ----------\n" );
-    Con_Printf( "                      --channels-- ---samplerate--- ----cache size----\n" );
+	Con_Printf( "\n---------- Snd_ListFiles_f ----------\n" );
+	Con_Printf( "                      --channels-- ---samplerate--- ----cache size----\n" );
 
-    numFiles = 0;
-    for ( i = 0; i < MAX_SOUND_SOURCES; i++ ) {
-        source = sndManager->GetSound( i );
+	numFiles = 0;
+	for ( i = 0; i < MAX_SOUND_SOURCES; i++ ) {
+		source = sndManager->GetSound( i );
 
-        if ( !source ) {
-            continue;
-        }
-        numFiles++;
+		if ( !source ) {
+			continue;
+		}
+		numFiles++;
 //        Con_Printf( "%10s: %4i %4i %8lu\n", source->GetName(), source->GetInfo().channels, source->GetInfo().samplerate,
 //            source->GetInfo().channels * source->GetInfo().frames );
-    }
-    Con_Printf( "Total sound files loaded: %lu\n", numFiles );
+	}
+	Con_Printf( "Total sound files loaded: %lu\n", numFiles );
 }
 
 static void Snd_PlayTrack_f( void ) {
-    sfxHandle_t hSfx;
-    const char *music;
+	sfxHandle_t hSfx;
+	const char *music;
 
-    music = Cmd_Argv( 1 );
-    
-    Snd_ClearLoopingTracks();
-    if ( !*music ) {
-        Con_Printf( "Clearing current track...\n" );
-        Snd_ClearLoopingTracks();
-    } else {
-        hSfx = Com_GenerateHashValue( music, MAX_SOUND_SOURCES );
+	music = Cmd_Argv( 1 );
+	
+	Snd_ClearLoopingTracks();
+	if ( !*music ) {
+		Con_Printf( "Clearing current track...\n" );
+		Snd_ClearLoopingTracks();
+	} else {
+		hSfx = Com_GenerateHashValue( music, MAX_SOUND_SOURCES );
 
-        if ( sndManager->GetSound( hSfx ) == NULL ) {
-            Con_Printf( "invalid track '%s'\n", music );
-            return;
-        }
+		if ( sndManager->GetSound( hSfx ) == NULL ) {
+			Con_Printf( "invalid track '%s'\n", music );
+			return;
+		}
 
-        Snd_AddLoopingTrack( hSfx );
-    }
+		Snd_AddLoopingTrack( hSfx );
+	}
 }
 
 static void Snd_QueueTrack_f( void ) {
-    sfxHandle_t hSfx;
-    const char *music;
+	sfxHandle_t hSfx;
+	const char *music;
 
-    if ( Cmd_Argc() != 2 ) {
-        Con_Printf( "usage: snd.queue_track <music>\n" );
-        return;
-    }
+	if ( Cmd_Argc() != 2 ) {
+		Con_Printf( "usage: snd.queue_track <music>\n" );
+		return;
+	}
 
-    music = Cmd_Argv( 1 );
-    hSfx = Com_GenerateHashValue( music, MAX_SOUND_SOURCES );
-    
-    if ( sndManager->GetSound( hSfx ) == NULL ) {
-        hSfx = Snd_RegisterSfx( music );
-        if ( hSfx == -1 ) {
-            Con_Printf( "invalid track '%s'\n", music );
-            return;
-        }
-    }
+	music = Cmd_Argv( 1 );
+	hSfx = Com_GenerateHashValue( music, MAX_SOUND_SOURCES );
+	
+	if ( sndManager->GetSound( hSfx ) == NULL ) {
+		hSfx = Snd_RegisterSfx( music );
+		if ( hSfx == -1 ) {
+			Con_Printf( "invalid track '%s'\n", music );
+			return;
+		}
+	}
 
-    Snd_AddLoopingTrack( hSfx );
+	Snd_AddLoopingTrack( hSfx );
 }
 
 static void Snd_ClearTracks_f( void ) {
-    Snd_ClearLoopingTracks();
+	Snd_ClearLoopingTracks();
 }
 
 static void Snd_PlaySfx_f( void ) {
-    sfxHandle_t hSfx;
-    const char *sound;
+	sfxHandle_t hSfx;
+	const char *sound;
 
-    if ( Cmd_Argc() != 2 ) {
-        Con_Printf( "usage: snd.play_sfx <music>\n" );
-        return;
-    }
+	if ( Cmd_Argc() != 2 ) {
+		Con_Printf( "usage: snd.play_sfx <music>\n" );
+		return;
+	}
 
-    sound = Cmd_Argv( 1 );
-    hSfx = Com_GenerateHashValue( sound, MAX_SOUND_SOURCES );
-    
-    if ( sndManager->GetSound( hSfx ) == NULL ) {
-        Con_Printf( "invalid sfx '%s'\n", sound );
-        return;
-    }
+	sound = Cmd_Argv( 1 );
+	hSfx = Com_GenerateHashValue( sound, MAX_SOUND_SOURCES );
+	
+	if ( sndManager->GetSound( hSfx ) == NULL ) {
+		Con_Printf( "invalid sfx '%s'\n", sound );
+		return;
+	}
 
-    Snd_PlaySfx( hSfx );
+	Snd_PlaySfx( hSfx );
 }
 
-/*
 void Snd_UnloadLevel_f( void ) {
-    int i;
-    
-    for ( i = 0; i < sndManager->m_nLevelSources; i++ ) {
-        if ( !sndManager->GetSound( sndManager->m_nFirstLevelSource + i ) ) {
-            continue;
-        }
-        sndManager->GetSource( sndManager->m_nFirstLevelSource + i )->Shutdown();
-    }
+	int i;
+	
+	for ( i = 0; i < sndManager->m_nLevelSources; i++ ) {
+		if ( !sndManager->GetSound( sndManager->m_nFirstLevelSource + i ) ) {
+			continue;
+		}
+		sndManager->GetSound( sndManager->m_nFirstLevelSource + i )->Release();
+	}
 }
-*/
+
+void Snd_StartupLevel_f( void ) {
+    sndManager->m_nFirstLevelSource = sndManager->NumSources();
+    sndManager->m_nLevelSources = 0;
+}
 
 void Snd_Init( void )
 {
 	Con_Printf( "---------- Snd_Init ----------\n" );
 
-    snd_effectsOn = Cvar_Get( "snd_effectsOn", "1", CVAR_SAVE );
-    Cvar_CheckRange( snd_effectsOn, "0", "1", CVT_INT );
-    Cvar_SetDescription( snd_effectsOn, "Toggles sound effects." );
+	snd_effectsOn = Cvar_Get( "snd_effectsOn", "1", CVAR_SAVE );
+	Cvar_CheckRange( snd_effectsOn, "0", "1", CVT_INT );
+	Cvar_SetDescription( snd_effectsOn, "Toggles sound effects." );
 
-    snd_musicOn = Cvar_Get( "snd_musicOn", "1", CVAR_SAVE );
-    Cvar_CheckRange( snd_musicOn, "0", "1", CVT_INT );
-    Cvar_SetDescription( snd_musicOn, "Toggles music." );
+	snd_musicOn = Cvar_Get( "snd_musicOn", "1", CVAR_SAVE );
+	Cvar_CheckRange( snd_musicOn, "0", "1", CVT_INT );
+	Cvar_SetDescription( snd_musicOn, "Toggles music." );
 
-    snd_effectsVolume = Cvar_Get( "snd_effectsVolume", "50", CVAR_SAVE );
-    Cvar_CheckRange( snd_effectsVolume, "0", "100", CVT_INT );
-    Cvar_SetDescription( snd_effectsVolume, "Sets global sound effects volume." );
+	snd_effectsVolume = Cvar_Get( "snd_effectsVolume", "50", CVAR_SAVE );
+	Cvar_CheckRange( snd_effectsVolume, "0", "100", CVT_INT );
+	Cvar_SetDescription( snd_effectsVolume, "Sets global sound effects volume." );
 
-    snd_musicVolume = Cvar_Get( "snd_musicVolume", "80", CVAR_SAVE );
-    Cvar_CheckRange( snd_musicVolume, "0", "100", CVT_INT );
-    Cvar_SetDescription( snd_musicVolume, "Sets volume for music." );
+	snd_musicVolume = Cvar_Get( "snd_musicVolume", "80", CVAR_SAVE );
+	Cvar_CheckRange( snd_musicVolume, "0", "100", CVT_INT );
+	Cvar_SetDescription( snd_musicVolume, "Sets volume for music." );
 
-    snd_masterVolume = Cvar_Get( "snd_masterVolume", "80", CVAR_SAVE );
-    Cvar_CheckRange( snd_masterVolume, "0", "100", CVT_INT );
-    Cvar_SetDescription( snd_masterVolume, "Sets the cap for sfx and music volume." );
+	snd_masterVolume = Cvar_Get( "snd_masterVolume", "80", CVAR_SAVE );
+	Cvar_CheckRange( snd_masterVolume, "0", "100", CVT_INT );
+	Cvar_SetDescription( snd_masterVolume, "Sets the cap for sfx and music volume." );
 
-    snd_debugPrint = Cvar_Get( "snd_debugPrint", "0", CVAR_CHEAT | CVAR_TEMP );
-    Cvar_CheckRange( snd_debugPrint, "0", "1", CVT_INT );
-    Cvar_SetDescription( snd_debugPrint, "Toggles OpenAL-soft debug messages." );
+	snd_debugPrint = Cvar_Get( "snd_debugPrint", "0", CVAR_CHEAT | CVAR_TEMP );
+	Cvar_CheckRange( snd_debugPrint, "0", "1", CVT_INT );
+	Cvar_SetDescription( snd_debugPrint, "Toggles OpenAL-soft debug messages." );
 
 #ifdef _WIN32
-    Com_StartupVariable( "s_noSound" );
-    snd_noSound = Cvar_Get( "s_noSound", "1", CVAR_LATCH );
+	Com_StartupVariable( "s_noSound" );
+	snd_noSound = Cvar_Get( "s_noSound", "1", CVAR_LATCH );
 #else
-    Com_StartupVariable( "s_noSound" );
-    snd_noSound = Cvar_Get( "s_noSound", "0", CVAR_LATCH );
+	Com_StartupVariable( "s_noSound" );
+	snd_noSound = Cvar_Get( "s_noSound", "0", CVAR_LATCH );
 #endif
 
 //    snd_device = Cvar_Get( "snd_device", "default", CVAR_LATCH | CVAR_SAVE );
   //  Cvar_SetDescription( snd_device, "the audio device to use ('default' for the default audio device)" );
 
-    Cvar_Get( "snd_specialFlag", "-1", CVAR_TEMP | CVAR_PROTECTED );
+	Cvar_Get( "snd_specialFlag", "-1", CVAR_TEMP | CVAR_PROTECTED );
 
 //    snd_muteUnfocused = Cvar_Get( "snd_muteUnfocused", "1", CVAR_SAVE );
 //    Cvar_SetDescription( snd_muteUnfocused, "Toggles muting sounds when the game's window isn't focused." );
 
-    // init sound manager
-    sndManager = (CSoundSystem *)Hunk_Alloc( sizeof( *sndManager ), h_low );
-    sndManager->Init();
+	// init sound manager
+	sndManager = (CSoundSystem *)Hunk_Alloc( sizeof( *sndManager ), h_low );
+	sndManager->Init();
 
-    Cmd_AddCommand( "snd.setvolume", Snd_SetVolume_f );
-    Cmd_AddCommand( "snd.toggle", Snd_Toggle_f );
-    Cmd_AddCommand( "snd.updatevolume", Snd_UpdateVolume_f );
-    Cmd_AddCommand( "snd.list_files", Snd_ListFiles_f );
-    Cmd_AddCommand( "snd.clear_tracks", Snd_ClearTracks_f );
-    Cmd_AddCommand( "snd.play_sfx", Snd_PlaySfx_f );
-    Cmd_AddCommand( "snd.queue_track", Snd_QueueTrack_f );
+	Cmd_AddCommand( "snd.setvolume", Snd_SetVolume_f );
+	Cmd_AddCommand( "snd.toggle", Snd_Toggle_f );
+	Cmd_AddCommand( "snd.updatevolume", Snd_UpdateVolume_f );
+	Cmd_AddCommand( "snd.list_files", Snd_ListFiles_f );
+	Cmd_AddCommand( "snd.clear_tracks", Snd_ClearTracks_f );
+	Cmd_AddCommand( "snd.play_sfx", Snd_PlaySfx_f );
+	Cmd_AddCommand( "snd.queue_track", Snd_QueueTrack_f );
 //    Cmd_AddCommand( "snd.audio_info", Snd_AudioInfo_f );
-//    Cmd_AddCommand( "snd.startup_level", Snd_StartupLevel_f );
-//    Cmd_AddCommand( "snd.unload_level", Snd_UnloadLevel_f );
-    Cmd_AddCommand( "snd.play_track", Snd_PlayTrack_f );
+	Cmd_AddCommand( "snd.startup_level", Snd_StartupLevel_f );
+	Cmd_AddCommand( "snd.unload_level", Snd_UnloadLevel_f );
+	Cmd_AddCommand( "snd.play_track", Snd_PlayTrack_f );
 
-    Snd_RegisterTrack( "warcrimes_are_permitted.ogg" );
+	Snd_RegisterTrack( "warcrimes_are_permitted.ogg" );
 
-    gi.soundStarted = qtrue;
-    gi.soundRegistered = qtrue;
+	gi.soundStarted = qtrue;
+	gi.soundRegistered = qtrue;
 
-    Con_Printf( "----------------------------------\n" );
+	Con_Printf( "----------------------------------\n" );
 }
 
 void Snd_Restart( void )
 {
+	sndManager->Shutdown();
+
+	sndManager->Init();
 }
 
 void Snd_Shutdown( void )
