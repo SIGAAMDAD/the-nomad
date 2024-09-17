@@ -1221,6 +1221,8 @@ static void G_PlayDemo_f( void )
 	gi.firstDemoFrameSkipped = qfalse;
 
 	G_BeginDemoPlay();
+
+	UI_SetActiveMenu( UI_MENU_NONE );
 }
 
 static void G_Vid_Restart_f( void )

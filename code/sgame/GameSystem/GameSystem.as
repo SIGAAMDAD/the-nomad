@@ -25,7 +25,9 @@ namespace TheNomad::GameSystem {
 		void OnInit() {
 			m_nGameTic = 0;
 			m_nDeltaTics = 0;
-			m_nLimitFPS = 1.0f / TheNomad::SGame::sgame_MaxFps.GetFloat();
+			if ( TheNomad::SGame::sgame_MaxFps.GetFloat() != 0.0f ) {
+				m_nLimitFPS = 1.0f / TheNomad::SGame::sgame_MaxFps.GetFloat();
+			}
 			m_nLastFrameTime = 0.0f;
 			m_nDeltaTime = 0.0f;
 

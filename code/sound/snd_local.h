@@ -4,13 +4,14 @@
 #pragma once
 
 #include "snd_public.h"
+#include <EASTL/vector_map.h>
 
 #define ERRCHECK( call ) { FMOD_RESULT result = call; if ( result != FMOD_OK ) { FMOD_Error( #call, result ); } }
 void FMOD_Error( const char *call, FMOD_RESULT result );
 
 #define MAX_SOUND_CHANNELS 1024
 #define DISTANCEFACTOR 1.0f
-#define MAX_SOUND_SOURCES 2048
+#define MAX_SOUND_SOURCES 1024
 #define MAX_MUSIC_QUEUE 12
 #define MAX_SOUND_BANKS 528
 
@@ -37,13 +38,9 @@ public:
 	inline const char *GetName( void ) const
 	{ return m_szName; }
 private:
-	char m_szName[ MAX_NPATH ];
-
-	FMOD::Studio::EventInstance *m_pEmitter;
-	FMOD::Sound *m_pStream;
-	FMOD::Channel *m_pChannel;
-
 	CSoundSource *m_pNext;
+	char m_szName[ MAX_NPATH ];
+	FMOD::Studio::EventInstance *m_pEmitter;
 };
 
 class CSoundBank
@@ -111,6 +108,8 @@ public:
 	void Shutdown( void );
 	void ForceStop( void );
 
+	void SetParameter( const char *pName, float value );
+
 	CSoundSource *LoadSound( const char *npath );
 
 	inline CSoundBank **GetBankList( void )
@@ -139,15 +138,13 @@ private:
 	FMOD::Studio::System *m_pStudioSystem;
 	FMOD::System *m_pSystem;
 
-	uint64_t m_nSources;
-
 	CSoundSource *m_szSources[ MAX_SOUND_SOURCES ];
 	CSoundBank *m_szBanks[ MAX_SOUND_BANKS ];
 
+	uint64_t m_nSources;
+
 	FMOD::ChannelGroup *m_pUIGroup;
 	FMOD::ChannelGroup *m_pSFXGroup;
-
-	FMOD::Studio::EventDescription *m_pSnapshot_Paused;
 };
 
 extern cvar_t *snd_musicOn;

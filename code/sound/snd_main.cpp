@@ -9,6 +9,7 @@ cvar_t *snd_effectsVolume;
 cvar_t *snd_masterVolume;
 cvar_t *snd_debugPrint;
 cvar_t *snd_noSound;
+cvar_t *snd_muteUnfocused;
 
 void FMOD_Error( const char *call, FMOD_RESULT result )
 {
@@ -142,6 +143,7 @@ bool CSoundSource::Load( const char *npath )
 
 	Con_Printf( "Loading sound source '%s'...\n", npath );
 
+//	m_szName = npath;
 	N_strncpyz( m_szName, npath, sizeof( m_szName ) );
 
 	// hash it so that if we try loading it
@@ -233,6 +235,11 @@ void CSoundSystem::ForceStop( void )
 	Snd_ClearLoopingTracks();
 }
 
+void CSoundSystem::SetParameter( const char *pName, float value )
+{
+	ERRCHECK( m_pStudioSystem->setParameterByName( pName, value, false ) );
+}
+
 void CSoundSystem::Init( void )
 {
 	m_pStudioSystem = NULL;
@@ -269,6 +276,7 @@ void CSoundSystem::Shutdown( void )
 {
 	Snd_ClearLoopingTracks();
 
+	m_szLoopingTracks.clear();
 	for ( auto& it : m_szSources ) {
 		if ( !it ) {
 			continue;
@@ -287,13 +295,11 @@ void CSoundSystem::Shutdown( void )
 
 	m_nSources = 0;
 
-	m_pSFXGroup->release();
-
-	m_szLoopingTracks.clear();
+	ERRCHECK( m_pSFXGroup->release() );
 
 	ERRCHECK( m_pStudioSystem->unloadAll() );
 	ERRCHECK( m_pStudioSystem->release() );
-	m_pSystem->release();
+	ERRCHECK( m_pSystem->release() );
 
 	m_pStudioSystem = NULL;
 	m_pSystem = NULL;
@@ -318,7 +324,7 @@ void CSoundSystem::Shutdown( void )
 void CSoundSystem::Update( void )
 {
 	ERRCHECK( m_pStudioSystem->update() );
-	m_pSystem->update();
+	ERRCHECK( m_pSystem->update() );
 }
 
 CSoundSource *CSoundSystem::LoadSound( const char *npath )
@@ -336,7 +342,6 @@ CSoundSource *CSoundSystem::LoadSound( const char *npath )
 			return pSound;
 		}
 	}
-
 	if ( strlen( npath ) >= MAX_NPATH ) {
 		Con_Printf( "CSoundManager::InitSource: name '%s' too long\n", npath );
 		return NULL;
@@ -371,6 +376,7 @@ CSoundSource *CSoundSystem::LoadSound( const char *npath )
 void Snd_DisableSounds( void )
 {
 	sndManager->ForceStop();
+	memset( sndManager->GetSound( 0 ), 0, sizeof( CSoundSource ) * MAX_SOUND_SOURCES );
 }
 
 void Snd_StopAll( void )
@@ -571,17 +577,17 @@ static void Snd_PlaySfx_f( void ) {
 void Snd_UnloadLevel_f( void ) {
 	int i;
 	
-	for ( i = 0; i < sndManager->m_nLevelSources; i++ ) {
-		if ( !sndManager->GetSound( sndManager->m_nFirstLevelSource + i ) ) {
-			continue;
-		}
-		sndManager->GetSound( sndManager->m_nFirstLevelSource + i )->Release();
-	}
+//	for ( i = 0; i < sndManager->m_nLevelSources; i++ ) {
+//		if ( !sndManager->GetSound( sndManager->m_nFirstLevelSource + i ) ) {
+//			continue;
+//		}
+//		sndManager->GetSound( sndManager->m_nFirstLevelSource + i )->Release();
+//	}
 }
 
 void Snd_StartupLevel_f( void ) {
-    sndManager->m_nFirstLevelSource = sndManager->NumSources();
-    sndManager->m_nLevelSources = 0;
+	sndManager->m_nFirstLevelSource = sndManager->NumSources();
+	sndManager->m_nLevelSources = 0;
 }
 
 void Snd_Init( void )
@@ -625,8 +631,8 @@ void Snd_Init( void )
 
 	Cvar_Get( "snd_specialFlag", "-1", CVAR_TEMP | CVAR_PROTECTED );
 
-//    snd_muteUnfocused = Cvar_Get( "snd_muteUnfocused", "1", CVAR_SAVE );
-//    Cvar_SetDescription( snd_muteUnfocused, "Toggles muting sounds when the game's window isn't focused." );
+	snd_muteUnfocused = Cvar_Get( "snd_muteUnfocused", "1", CVAR_SAVE );
+	Cvar_SetDescription( snd_muteUnfocused, "Toggles muting sounds when the game's window isn't focused." );
 
 	// init sound manager
 	sndManager = (CSoundSystem *)Hunk_Alloc( sizeof( *sndManager ), h_low );
