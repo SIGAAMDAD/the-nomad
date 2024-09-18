@@ -455,6 +455,30 @@ void GLimp_EndFrame( void )
 	if ( N_stricmp( g_drawBuffer->s, "GL_FRONT" ) !=  0) {
 		SDL_GL_SwapWindow( SDL_window );
 	}
+	if ( r_fullscreen->modified ) {
+		int fullscreen;
+		qboolean needToToggle;
+		qboolean sdlToggled = qfalse;
+
+		// find out the current state
+		fullscreen = !!( SDL_GetWindowFlags( SDL_window ) & SDL_WINDOW_FULLSCREEN );
+
+		// is this any different from our current state?
+		needToToggle = !!r_fullscreen->i != fullscreen;
+
+		if ( needToToggle ) {
+			sdlToggled = SDL_SetWindowFullscreen( SDL_window, r_fullscreen->i );
+
+			// SDL_WM_ToggleFullScreen didn't work, so do it the slow way
+			if ( !sdlToggled ) {
+				Cbuf_ExecuteText( EXEC_APPEND, "vid_restart\n" );
+			}
+
+			IN_Restart();
+		}
+		
+		r_fullscreen->modified = qfalse;
+	}
 }
 
 void *GL_GetProcAddress( const char *name )
