@@ -63,14 +63,17 @@ private:
 	int m_nEventCount;
 };
 
-typedef struct {
+typedef struct emitter_s {
 	FMOD_3D_ATTRIBUTES attribs;
+	linkEntity_t *pLink;
+	struct emitter_s *pNext;
+	struct emitter_s *pPrev;
 	uint32_t nListenerMask;
 	float nVolume;
 } emitter_t;
 
 typedef struct {
-	vec3_t origin;
+	linkEntity_t *pLink;
 	uint32_t nListenerMask;
 	float nVolume;
 } listener_t;
@@ -84,8 +87,28 @@ public:
 	{ }
 
 	void Update( void );
-private:
+
+	void SetListenerVolume( nhandle_t hListener, float nVolume );
+	void SetListenerAudioMask( nhandle_t hListener, uint32_t nMask );
 	
+	void SetEmitterPosition( nhandle_t hEmitter, const vec3_t origin );
+	void SetEmitterAudioMask( nhandle_t hEmitter, uint32_t nMask );
+	void SetEmitterVolume( nhandle_t hEmitter, float nVolume );
+	
+	nhandle_t PushListener( uint32_t nEntityNumber );
+	
+	nhandle_t RegisterEmitter( uint32_t nEntityNumber );
+	void RemoveEmitter( nhandle_t hEmitter );
+private:
+	linkEntity_t *m_pLinks;
+	
+	emitter_t *m_pszEmitters;
+	emitter_t *m_pCurrentEmitter;
+	uint32_t m_nEmitterCount;
+	
+	// one listener per player
+	listener_t m_szListeners[ 4 ];
+	uint32_t m_nListenerCount;
 };
 
 typedef struct {
