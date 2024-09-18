@@ -41,26 +41,26 @@ Platform Specific Preprocessors
 #define MAX_GDR_PATH 64
 
 #if defined(__cplusplus) && !defined(__GNUC__) && !defined(__MINGW64__) && !defined(__MINGW32__)
-    #define CallBeforeMain(f) \
-        static void f(void); \
-        struct f##_t_ { f##_t_(void) { f(); } }; static f##_t_ f##_; \
-        static void f(void)
+	#define CallBeforeMain(f) \
+		static void f(void); \
+		struct f##_t_ { f##_t_(void) { f(); } }; static f##_t_ f##_; \
+		static void f(void)
 #elif defined(_MSC_VER)
-    #pragma section(".CRT$XCU",read)
-    #define CallBeforeMain_(f,p) \
-        static void f(void); \
-        __declspec(allocate(".CRT$XCU")) void (*f##_)(void) = f; \
-        __pragma(comment(linker,"/include:" p #f "_")) \
-        static void f(void)
-    #ifdef _WIN64
-        #define CallBeforeMain(f) CallBeforeMain_(f,"")
-    #else
-        #define CallBeforeMain(f) CallBeforeMain_(f,"_")
-    #endif
+	#pragma section(".CRT$XCU",read)
+	#define CallBeforeMain_(f,p) \
+		static void f(void); \
+		__declspec(allocate(".CRT$XCU")) void (*f##_)(void) = f; \
+		__pragma(comment(linker,"/include:" p #f "_")) \
+		static void f(void)
+	#ifdef _WIN64
+		#define CallBeforeMain(f) CallBeforeMain_(f,"")
+	#else
+		#define CallBeforeMain(f) CallBeforeMain_(f,"_")
+	#endif
 #else
-    #define CallBeforeMain(f) \
-        static void f(void) __attribute__((constructor)); \
-        static void f(void)
+	#define CallBeforeMain(f) \
+		static void f(void) __attribute__((constructor)); \
+		static void f(void)
 #endif
 
 #ifdef _WIN32
@@ -888,31 +888,33 @@ default values.
 ==========================================================
 */
 
-typedef int cvartype_t;
+typedef uint16_t cvartype_t;
+typedef uint16_t cvarGroup_t;
 
 enum
 {
-    CVT_NONE = 0,
-    CVT_INT,
-    CVT_STRING,
-    CVT_FLOAT,
-    CVT_BOOL,
+	CVT_NONE = 0,
+	CVT_INT,
+	CVT_STRING,
+	CVT_FLOAT,
+	CVT_BOOL,
 	CVT_FSPATH,
 
-    CVT_MAX
+	CVT_MAX
 };
 
-typedef enum {
+enum
+{
 	CVG_VM,
 	CVG_ENGINE,
 	CVG_RENDERER,
 	CVG_ALLOCATOR,
 	CVG_SOUND,
 	CVG_FILESYSTEM,
-    CVG_NONE,
+	CVG_NONE,
 
-    CVG_MAX
-} cvarGroup_t;
+	CVG_MAX
+};
 
 // cvar flags
 #define	CVAR_SAVE		0x0001	// set to cause it to be saved to default.cfg
@@ -960,16 +962,17 @@ typedef int cvarHandle_t;
 
 typedef struct cvar_s
 {
-    char		*name;
+	char		*name;
 	char		*s;
 	char		*resetString;		// cvar_restart will reset to this value
 	char		*latchedString;		// for CVAR_LATCH vars
 	uint32_t	flags;
-	qboolean	modified;			// set each time the cvar is changed
 	uint32_t	modificationCount;	// incremented each time the cvar is changed
-	float		f;  				// N_atof( string )
-	int64_t		i;      			// atol( string )
+	qboolean	modified;			// set each time the cvar is changed
+	cvarGroup_t	group;				// to track changes
 	cvartype_t  type;
+	float		f;  				// N_atof( string )
+	int32_t		i;      			// atoi( string )
 	char		*mins;
 	char		*maxs;
 	char		*description;
@@ -979,16 +982,15 @@ typedef struct cvar_s
 	struct cvar_s *hashNext;
 	struct cvar_s *hashPrev;
 	uint64_t	hashIndex;
-	cvarGroup_t	group;				// to track changes
 } cvar_t;
 
 typedef struct {
-    char s[MAX_CVAR_VALUE];
-    float f;
-    int64_t i;
+	char s[MAX_CVAR_VALUE];
+	float f;
+	int64_t i;
 
-    unsigned int modificationCount;
-    cvarHandle_t handle;
+	unsigned int modificationCount;
+	cvarHandle_t handle;
 } vmCvar_t;
 
 #define Q_COLOR_ESCAPE	'^'
@@ -1076,9 +1078,9 @@ typedef enum {
 } gamedif_t;
 
 typedef enum {
-    R_SDL2,
-    R_OPENGL,
-    R_VULKAN
+	R_SDL2,
+	R_OPENGL,
+	R_VULKAN
 } renderapi_t;
 
 #ifdef _WIN32

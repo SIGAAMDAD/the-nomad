@@ -127,10 +127,16 @@ static void PauseMenu_DrawPhotoMode( void )
 {
 	ImGui::Begin( "##PhotoModeWindow", NULL, MENU_DEFAULT_FLAGS );
 	{
+		ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+
 		ImGui::SetCursorScreenPos( ImVec2( 64 * ui->scale, 64 * ui->scale ) );
 		ImGui::BeginChild( ImGui::GetID( "PhotoModeSettings" ), ImVec2( 72 * ui->scale, 128 * ui->scale ), ImGuiChildFlags_AlwaysAutoResize );
-		ImGui::SliderFloat( "Exposure##PhotoModeSettingsExposure", &s_pauseMenu->photomode.exposure, 0.0f, 10.0f );
+		if ( ImGui::SliderFloat( "Exposure##PhotoModeSettingsExposure", &s_pauseMenu->photomode.exposure, 0.0f, 10.0f ) ) {
+			Cvar_SetFloatValue( "r_autoExposure", s_pauseMenu->photomode.exposure );
+		}
 		ImGui::EndChild();
+
+		ImGui::PopStyleColor();
 
 		ImGui::SetCursorScreenPos( ImVec2( 0, 700 * ui->scale ) );
 		if ( ImGui::Button( "Exit" ) ) {

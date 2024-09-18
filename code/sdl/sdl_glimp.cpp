@@ -554,6 +554,7 @@ void G_InitDisplay( gpuConfig_t *config )
 	if ( SDL_Init( SDL_INIT_VIDEO ) != 0 ) {
 		N_Error( ERR_FATAL, "SDL_Init(SDL_INIT_VIDEO) Failed: %s", SDL_GetError() );
 	}
+	
 	if ( SDL_GetDesktopDisplayMode( 0, &mode ) != 0 ) {
 		Con_Printf( COLOR_YELLOW "SDL_GetDesktopDisplayMode() Failed: %s\n", SDL_GetError() );
 		Con_Printf( COLOR_YELLOW "Setting mode to default of 1920x1080\n" );
@@ -583,7 +584,7 @@ void G_InitDisplay( gpuConfig_t *config )
 	}
 
 	Con_Printf( "Setting up display\n" );
-	Con_Printf( "...setting mode %li\n", r_mode->i );
+	Con_Printf( "...setting mode %i\n", r_mode->i );
 	
 	// init OpenGL
 	GLimp_Init( config );
