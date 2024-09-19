@@ -450,13 +450,15 @@ static const void *RB_SwapBuffers(const void *data)
     // texture swapping test
     if (r_showImages->i)
         RB_ShowImages();
-    
-    cmd = (const swapBuffersCmd_t *)data;
-
+	
 	// only draw imgui data after everything else has finished
+	// [the-nomad] this has to be here with a multithreaded renderer in
+	// order for the imgui context to not get fucked up
 	if ( !backend.framePostProcessed ) {
 		ri.ImGui_Draw();
 	}
+    
+    cmd = (const swapBuffersCmd_t *)data;
 
 	if ( r_glDiagnostics->i ) {
 		if ( rg.beganQuery ) {
@@ -553,6 +555,8 @@ static const void *RB_PostProcess(const void *data)
 	backend.drawBatch.shader = rg.defaultShader;
 
 	// only draw imgui data after everything else has finished
+	while ( renderThreadActive )
+		;
 	ri.ImGui_Draw();
 
 	// finish any drawing if needed
@@ -616,7 +620,7 @@ static const void *RB_PostProcess(const void *data)
 		if ( r_hdr->i && ( r_toneMap->i || r_forceToneMap->i ) ) {
 			autoExposure = r_autoExposure->i || r_forceAutoExposure->i;
 			RB_ToneMap( srcFbo, srcBox, NULL, dstBox, autoExposure );
-		}
+		}br 
 		else if ( r_autoExposure->f == 0.0f ) {
 			FBO_FastBlit( srcFbo, srcBox, NULL, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
 		}
@@ -891,12 +895,13 @@ static const void *RB_DrawImage( const void *data ) {
 		if ( backend.drawBatch.idxOffset ) {
 			RB_FlushBatchBuffer();
 		}
-		RB_SetBatchBuffer( backend.drawBuffer, backendData->verts, sizeof( srfVert_t ), backendData->indices, sizeof( glIndex_t ) );
+		RB_SetBatchBuffer( backend.drawBuffer, backendData[ rg.smpFrame ]->verts, sizeof( srfVert_t ),
+			backendData[ rg.smpFrame ]->indices, sizeof( glIndex_t ) );
 	}
 	backend.drawBatch.shader = shader;
 
-	verts = &backendData->verts[ backend.drawBatch.vtxOffset ];
-	indices = &backendData->indices[ backend.drawBatch.idxOffset ];
+	verts = &backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ];
+	indices = &backendData[ rg.smpFrame ]->indices[ backend.drawBatch.idxOffset ];
 
 	{
 		uint16_t color[4];
@@ -937,12 +942,12 @@ static const void *RB_DrawImage( const void *data ) {
 	verts[ 3 ].st[0] = cmd->u1;
 	verts[ 3 ].st[1] = cmd->v2;
 
-	backendData->indices[ backend.drawBatch.idxOffset + 0 ] = 0;
-	backendData->indices[ backend.drawBatch.idxOffset + 1 ] = 1;
-	backendData->indices[ backend.drawBatch.idxOffset + 2 ] = 2;
-	backendData->indices[ backend.drawBatch.idxOffset + 3 ] = 0;
-	backendData->indices[ backend.drawBatch.idxOffset + 4 ] = 2;
-	backendData->indices[ backend.drawBatch.idxOffset + 5 ] = 3;
+	backendData[ rg.smpFrame ]->indices[ backend.drawBatch.idxOffset + 0 ] = 0;
+	backendData[ rg.smpFrame ]->indices[ backend.drawBatch.idxOffset + 1 ] = 1;
+	backendData[ rg.smpFrame ]->indices[ backend.drawBatch.idxOffset + 2 ] = 2;
+	backendData[ rg.smpFrame ]->indices[ backend.drawBatch.idxOffset + 3 ] = 0;
+	backendData[ rg.smpFrame ]->indices[ backend.drawBatch.idxOffset + 4 ] = 2;
+	backendData[ rg.smpFrame ]->indices[ backend.drawBatch.idxOffset + 5 ] = 3;
 
 	backend.drawBatch.vtxOffset += 4;
 	backend.drawBatch.idxOffset += 6;
@@ -1015,6 +1020,22 @@ static const void *RB_DrawImage( const void *data ) {
 	return (const void *)( cmd + 1 );
 }
 
+static const void *RB_DrawWorldView( const void *data )
+{
+	const drawWorldView_t *cmd;
+
+	cmd = (const drawWorldView_t *)data;
+
+	RE_ProcessEntities();
+    
+    // draw the tilemap
+    R_DrawWorld();
+
+    // render all submitted sgame polygons
+    R_DrawPolys();
+
+	return (const void *)( cmd + 1 );
+}
 
 void RB_ExecuteRenderCommands( const void *data )
 {
@@ -1022,8 +1043,14 @@ void RB_ExecuteRenderCommands( const void *data )
 
 	t1 = ri.Milliseconds();
 
+	if ( sys_forceSingleThreading->i || data == backendData[ 0 ]->commandList.buffer ) {
+		backend.smpFrame = 0;
+	} else {
+		backend.smpFrame = 1;
+	}
+
 	while ( 1 ) {
-		data = PADP(data, sizeof(void *));
+		data = PADP( data, sizeof( void * ) );
 
 		switch ( *(const renderCmdType_t *)data ) {
 		case RC_SET_COLOR:
@@ -1039,7 +1066,7 @@ void RB_ExecuteRenderCommands( const void *data )
 			data = RB_SwapBuffers( data );
 			break;
 		case RC_SCREENSHOT:
-			backendData->screenshotBuf = *(const screenshotCommand_t *)data;
+			backendData[ rg.smpFrame ]->screenshotBuf = *(const screenshotCommand_t *)data;
 			data = (const void *)( (const screenshotCommand_t *)data + 1 );
 			break;
 		case RC_COLORMASK:
@@ -1051,6 +1078,9 @@ void RB_ExecuteRenderCommands( const void *data )
 		case RC_POSTPROCESS:
 			data = RB_PostProcess( data );
 			break;
+		case RC_DRAW_WORLDVIEW:
+			data = RB_DrawWorldView( data );
+			break;
 		case RC_END_OF_LIST:
 		default:
 			// finish any drawing if needed
@@ -1061,5 +1091,25 @@ void RB_ExecuteRenderCommands( const void *data )
 			backend.pc.msec = t2 - t1;
 			return;
 		}
+	}
+}
+
+void RB_RenderThread( void ) {
+	const void *data;
+
+	// wait for either a rendering command or a quit command
+	while ( 1 ) {
+		// sleep until we have work to do
+		data = ri.GLimp_RenderSleep();
+
+		if ( !data ) {
+			return;	// all done, renderer is shutting down
+		}
+
+		renderThreadActive = qtrue;
+
+		RB_ExecuteRenderCommands( data );
+
+		renderThreadActive = qfalse;
 	}
 }

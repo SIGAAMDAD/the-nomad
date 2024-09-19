@@ -65,6 +65,7 @@ cvar_t *r_multisampleType;
 cvar_t *g_drawBuffer;
 cvar_t *g_paused;
 cvar_t *r_debugCamera;
+cvar_t *sys_forceSingleThreading;
 
 static void *renderLib;
 
@@ -484,6 +485,10 @@ static void G_InitRenderRef( void )
 
 	import.GLimp_Init = G_InitDisplay;
 	import.GLimp_InitGamma = GLimp_InitGamma;
+	import.GLimp_SpawnRenderThread = GLimp_SpawnRenderThread;
+	import.GLimp_FrontEndSleep = GLimp_FrontEndSleep;
+	import.GLimp_WakeRenderer = GLimp_WakeRenderer;
+	import.GLimp_RenderSleep = GLimp_RenderSleep;
 #ifdef USE_OPENGL_API
 	import.GLimp_EndFrame = GLimp_EndFrame;
 	import.GLimp_SetGamma = GLimp_SetGamma;
@@ -1740,6 +1745,13 @@ static void G_InitRenderer_Cvars( void )
 	g_paused = Cvar_Get( "g_paused", "1", CVAR_TEMP );
 	Cvar_CheckRange( g_paused, "0", "1", CVT_INT );
 	Cvar_SetDescription( g_paused, "Set to 1 when in the pause menu." );
+
+	sys_forceSingleThreading = Cvar_Get( "sys_forceSingleThreading", "0", CVAR_SAVE | CVAR_LATCH );
+	Cvar_CheckRange( sys_forceSingleThreading, "0", "1", CVT_INT );
+	Cvar_SetDescription( sys_forceSingleThreading,
+					"Set to 0 if you have a single core processor.\n"
+					"Forces the engine to not use parallel processing"
+				);
 
 	g_renderer = Cvar_Get( "g_renderer", "opengl", CVAR_SAVE | CVAR_LATCH );
 	Cvar_SetDescription( g_renderer,

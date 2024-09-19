@@ -174,6 +174,8 @@ cvar_t *r_imageUpsampleMaxSize;
 cvar_t *r_useShaderCache;
 cvar_t *r_useUniformBuffers;
 
+cvar_t *sys_forceSingleThreading;
+
 // OpenGL extensions
 cvar_t *r_arb_texture_compression;
 cvar_t *r_arb_framebuffer_object;
@@ -450,7 +452,7 @@ RB_TakeScreenshotCmd
 void RB_TakeScreenshotCmd( void ) {
 	const screenshotCommand_t *cmd;
 	
-	cmd = (const screenshotCommand_t *)&backendData->screenshotBuf;
+	cmd = (const screenshotCommand_t *)&backendData[ rg.smpFrame ]->screenshotBuf;
 
 	if ( cmd->jpeg ) {
 		RB_TakeScreenshotJPEG( cmd->x, cmd->y, cmd->width, cmd->height, cmd->fileName);
@@ -887,6 +889,8 @@ static void R_Register( void )
 
 	r_useShaderCache = ri.Cvar_Get( "r_useShaderCache", "1", CVAR_LATCH | CVAR_SAVE );
 	ri.Cvar_SetDescription( r_useShaderCache, "Caches GLSL shader objects for faster loading, requires GL_ARB_gl_spirv extension." );
+
+	sys_forceSingleThreading = ri.Cvar_Get( "sys_forceSingleThreading", "0", CVAR_LATCH | CVAR_SAVE );
 
 	r_drawMode = ri.Cvar_Get( "r_drawMode", "2", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_drawMode,
@@ -1347,6 +1351,7 @@ static void R_AllocBackend( void ) {
 	uint64_t indexBytes;
 	uint64_t dlightBytes;
 	uint64_t entityBytes;
+	int i;
 
 	vertBytes = PAD( sizeof( srfVert_t ) * r_maxPolys->i * 4, sizeof(uintptr_t) );
 	polyVertBytes = PAD( sizeof(polyVert_t) * r_maxPolys->i * 4, sizeof(uintptr_t) );
@@ -1356,21 +1361,33 @@ static void R_AllocBackend( void ) {
 	dlightBytes = PAD( sizeof(dlight_t) * r_maxDLights->i, sizeof(uintptr_t) );
 
 	size = 0;
-	size += PAD( sizeof(renderBackendData_t), sizeof(uintptr_t) );
-	size += PAD( sizeof(srfVert_t) * r_maxPolys->i * 4, sizeof(uintptr_t) );
-	size += PAD( sizeof(polyVert_t) * r_maxPolys->i * 4, sizeof(uintptr_t) );
-	size += PAD( sizeof(srfPoly_t) * r_maxPolys->i, sizeof(uintptr_t) );
-	size += PAD( sizeof(glIndex_t) * r_maxPolys->i * 6, sizeof(uintptr_t) );
-	size += PAD( sizeof(renderEntityDef_t) * r_maxEntities->i, sizeof(uintptr_t) );
-	size += PAD( sizeof(dlight_t) * r_maxDLights->i, sizeof(uintptr_t) );
+	size += PAD( sizeof( renderBackendData_t ), sizeof( uintptr_t ) );
+	size += PAD( sizeof( srfVert_t ) * r_maxPolys->i * 4, sizeof( uintptr_t ) );
+	size += PAD( sizeof( polyVert_t ) * r_maxPolys->i * 4, sizeof( uintptr_t ) );
+	size += PAD( sizeof( srfPoly_t ) * r_maxPolys->i, sizeof( uintptr_t ) );
+	size += PAD( sizeof( glIndex_t ) * r_maxPolys->i * 6, sizeof( uintptr_t ) );
+	size += PAD( sizeof( renderEntityDef_t ) * r_maxEntities->i, sizeof( uintptr_t ) );
+	size += PAD( sizeof( dlight_t ) * r_maxDLights->i, sizeof( uintptr_t ) );
 
-	backendData = (renderBackendData_t *)ri.Malloc( size );
-	backendData->verts = (srfVert_t *)( backendData + 1 );
-	backendData->polyVerts = (polyVert_t *)( backendData->verts + r_maxPolys->i * 4 );
-	backendData->polys = (srfPoly_t *)( backendData->polyVerts + r_maxPolys->i * 4 );
-	backendData->indices = (glIndex_t *)( backendData->polys + r_maxPolys->i );
-	backendData->entities = (renderEntityDef_t *)( backendData->indices + r_maxPolys->i * 6 );
-	backendData->dlights = (dlight_t *)( backendData->entities + r_maxEntities->i );
+	backendData[ 0 ] = (renderBackendData_t *)ri.Hunk_Alloc( size, h_low );
+	backendData[ 0 ]->verts = (srfVert_t *)( backendData[ 0 ] + 1 );
+	backendData[ 0 ]->polyVerts = (polyVert_t *)( backendData[ 0 ]->verts + r_maxPolys->i * 4 );
+	backendData[ 0 ]->polys = (srfPoly_t *)( backendData[ 0 ]->polyVerts + r_maxPolys->i * 4 );
+	backendData[ 0 ]->indices = (glIndex_t *)( backendData[ 0 ]->polys + r_maxPolys->i );
+	backendData[ 0 ]->entities = (renderEntityDef_t *)( backendData[ 0 ]->indices + r_maxPolys->i * 6 );
+	backendData[ 0 ]->dlights = (dlight_t *)( backendData[ 0 ]->entities + r_maxEntities->i );
+
+	if ( !sys_forceSingleThreading->i ) {
+		backendData[ 1 ] = (renderBackendData_t *)ri.Hunk_Alloc( size, h_low );
+		backendData[ 1 ]->verts = (srfVert_t *)( backendData[ 1 ] + 1 );
+		backendData[ 1 ]->polyVerts = (polyVert_t *)( backendData[ 1 ]->verts + r_maxPolys->i * 4 );
+		backendData[ 1 ]->polys = (srfPoly_t *)( backendData[ 1 ]->polyVerts + r_maxPolys->i * 4 );
+		backendData[ 1 ]->indices = (glIndex_t *)( backendData[ 1 ]->polys + r_maxPolys->i );
+		backendData[ 1 ]->entities = (renderEntityDef_t *)( backendData[ 1 ]->indices + r_maxPolys->i * 6 );
+		backendData[ 1 ]->dlights = (dlight_t *)( backendData[ 1 ]->entities + r_maxEntities->i );
+	} else {
+		backendData[ 1 ] = NULL;
+	}
 
 	ri.Printf( PRINT_DEVELOPER,
 		COLOR_CYAN "---------- Renderer Backend Allocation Info ----------\n"
@@ -1517,6 +1534,8 @@ void R_Init( void )
 		ri.Printf(PRINT_INFO, COLOR_RED "glGetError() = 0x%x\n", error);
 	
 	//R_InitWorldBuffer();
+
+	R_InitCommandBuffers();
 	
 	VBO_Bind( backend.drawBuffer );
 
@@ -1549,6 +1568,8 @@ void RE_Shutdown( refShutdownCode_t code )
 
 	if ( rg.registered ) {
 		R_IssuePendingRenderCommands();
+
+		R_ShutdownCommandBuffers();
 
 		nglDeleteQueries( 3, rg.queries );
 		nglDeleteSamplers( MAX_TEXTURE_UNITS, rg.samplers );

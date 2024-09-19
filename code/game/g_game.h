@@ -305,6 +305,8 @@ extern cvar_t *g_depthBits;
 extern cvar_t *r_stereoEnabled;
 extern cvar_t *g_drawBuffer;
 
+extern cvar_t *sys_forceSingleThreading;
+
 extern cvar_t *g_paused;
 extern cvar_t *g_maxSaveSlots;
 
@@ -349,12 +351,12 @@ extern const vidmode_t r_vidModes[NUMVIDMODES];
 //
 qboolean G_GetModeInfo( int *width, int *height, float *windowAspect, int mode, const char *modeFS, int dw, int dh, qboolean fullscreen );
 void G_Init( void );
-void G_StartHunkUsers(void);
-void G_Shutdown(qboolean quit);
-void G_ClearMem(void);
-void G_Restart(void);
-void G_ShutdownRenderer(refShutdownCode_t code);
-qboolean G_GameCommand(void);
+void G_StartHunkUsers( void );
+void G_Shutdown( qboolean quit );
+void G_ClearMem( void );
+void G_Restart( void );
+void G_ShutdownRenderer( refShutdownCode_t code );
+qboolean G_GameCommand( void );
 void G_ClearState( void );
 void G_FlushMemory( void );
 void G_StartHunkUsers( void );
@@ -367,6 +369,14 @@ qboolean G_CheckPaused( void );
 qboolean G_CheckWallHit( const vec3_t origin, dirtype_t dir );
 void G_SetCameraData( const vec2_t origin, float zoom, float rotation );
 void G_RecordEvent( const sysEvent_t *ev );
+
+//
+// g_threads.cpp
+//
+qboolean GLimp_SpawnRenderThread( void (*function)( void ) );
+void *GLimp_RenderSleep( void );
+void GLimp_FrontEndSleep( void );
+void GLimp_WakeRenderer( void *data );
 
 //
 // g_world.cpp

@@ -210,7 +210,8 @@ void R_DrawPolys( void )
 	}
     rg.world->drawing = qtrue;
 
-    RB_SetBatchBuffer( backend.drawBuffer, backendData->verts, sizeof( srfVert_t ), backendData->indices, sizeof( glIndex_t ) );
+    RB_SetBatchBuffer( backend.drawBuffer, backendData[ rg.smpFrame ]->verts, sizeof( srfVert_t ),
+        backendData[ rg.smpFrame ]->indices, sizeof( glIndex_t ) );
 
     // sort the polys to be more efficient with our shaders
     R_RadixSort( backend.refdef.polys, backend.refdef.numPolys );
@@ -237,9 +238,9 @@ void R_DrawPolys( void )
         
 		// generate fan indexes into the buffer
 		for ( j = 0; j < backend.refdef.polys[i].numVerts - 2; j++ ) {
-			backendData->indices[ backend.drawBatch.idxOffset + 0 ] = backend.drawBatch.vtxOffset;
-			backendData->indices[ backend.drawBatch.idxOffset + 1 ] = backend.drawBatch.vtxOffset + j + 1;
-			backendData->indices[ backend.drawBatch.idxOffset + 2 ] = backend.drawBatch.vtxOffset + j + 2;
+			backendData[ rg.smpFrame ]->indices[ backend.drawBatch.idxOffset + 0 ] = backend.drawBatch.vtxOffset;
+			backendData[ rg.smpFrame ]->indices[ backend.drawBatch.idxOffset + 1 ] = backend.drawBatch.vtxOffset + j + 1;
+			backendData[ rg.smpFrame ]->indices[ backend.drawBatch.idxOffset + 2 ] = backend.drawBatch.vtxOffset + j + 2;
 			backend.drawBatch.idxOffset += 3;
 			
 			// generate normals
@@ -247,20 +248,20 @@ void R_DrawPolys( void )
 			VectorSubtract( backend.refdef.polys[i].verts[ j ].xyz, backend.refdef.polys[i].verts[ j + 1 ].xyz, edge1 );
 			VectorSubtract( backend.refdef.polys[i].verts[ j ].xyz, backend.refdef.polys[i].verts[ j + 2 ].xyz, edge2 );
 			CrossProduct( edge1, edge2, normal );
-			R_VaoPackNormal( backendData->verts[ backend.drawBatch.vtxOffset + j ].normal, normal );
-			VectorCopy( backendData->verts[ backend.drawBatch.vtxOffset + j + 1 ].normal,
-                backendData->verts[ backend.drawBatch.vtxOffset + j + 0 ].normal );
-			VectorCopy( backendData->verts[ backend.drawBatch.vtxOffset + j + 2 ].normal,
-                backendData->verts[ backend.drawBatch.vtxOffset + j + 0 ].normal );
+			R_VaoPackNormal( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset + j ].normal, normal );
+			VectorCopy( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset + j + 1 ].normal,
+                backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset + j + 0 ].normal );
+			VectorCopy( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset + j + 2 ].normal,
+                backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset + j + 0 ].normal );
             */
 		}
 		
 		for ( j = 0; j < backend.refdef.polys[i].numVerts; j++ ) {
-			VectorCopy( backendData->verts[ backend.drawBatch.vtxOffset ].xyz, backend.refdef.polys[i].verts[j].xyz );
-			VectorCopy2( backendData->verts[ backend.drawBatch.vtxOffset ].st, backend.refdef.polys[i].verts[j].uv );
-//			VectorCopy2( backendData->verts[ backend.drawBatch.vtxOffset ].lightmap, backend.refdef.polys[i].verts[j].uv );
-			VectorCopy( backendData->verts[ backend.drawBatch.vtxOffset ].worldPos, backend.refdef.polys[i].verts[j].worldPos );
-//            VectorCopy4( backendData->verts[ backend.drawBatch.vtxOffset ].color, backend.refdef.polys[i].verts[j].modulate );
+			VectorCopy( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].xyz, backend.refdef.polys[i].verts[j].xyz );
+			VectorCopy2( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].st, backend.refdef.polys[i].verts[j].uv );
+//			VectorCopy2( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].lightmap, backend.refdef.polys[i].verts[j].uv );
+			VectorCopy( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].worldPos, backend.refdef.polys[i].verts[j].worldPos );
+//            VectorCopy4( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].color, backend.refdef.polys[i].verts[j].modulate );
 //			R_CalcTangentVectors( (drawVert_t *)&vtx[j] );
 			backend.drawBatch.vtxOffset++;
 		}
@@ -366,16 +367,11 @@ void R_RenderView( const viewData_t *parms )
     // setup the correct matrices
     RB_MakeViewMatrix();
 
+    // draw the world
+    RE_AddDrawWorldCmd();
+
     // draw any queued up images
     R_IssuePendingRenderCommands();
-
-    RE_ProcessEntities();
-    
-    // draw the tilemap
-    R_DrawWorld();
-
-    // render all submitted sgame polygons
-    R_DrawPolys();
 }
 
 

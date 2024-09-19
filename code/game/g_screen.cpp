@@ -166,7 +166,7 @@ void SCR_DrawSmallChar( uint32_t x, uint32_t y, int ch ) {
 */
 void SCR_DrawSmallString( uint32_t x, uint32_t y, const char *s, uint64_t len )
 {
-    uint32_t row, col, ch, i;
+	uint32_t row, col, ch, i;
 	float frow, fcol;
 	float size;
 
@@ -350,35 +350,44 @@ text to the screen.
 */
 void SCR_UpdateScreen( void )
 {
-    static int recursive;
-    static int framecount;
-    static int next_frametime;
+	extern SDL_Window *SDL_window;
+	extern SDL_GLContext SDL_glContext;
+
+	static int recursive;
+	static int framecount;
+	static int next_frametime;
 	extern cvar_t *ui_debugOverlay;
-	
+
+
+	// make sure that we have the context
+//	SDL_GL_MakeCurrent( SDL_window, SDL_glContext );
 	re.BeginFrame( STEREO_CENTER );
+	
+	// release it for the render thread
+//	SDL_GL_MakeCurrent( SDL_window, NULL );
+ 
+	if ( framecount == gi.framecount ) {
+		int ms = Sys_Milliseconds();
 
-    if ( framecount == gi.framecount ) {
-        int ms = Sys_Milliseconds();
+		if ( next_frametime && ms - next_frametime < 0 ) {
+			re.ThrottleBackend();
+		}
+		else {
+			next_frametime = ms + 16; // limit to 60 FPS
+		}
+	}
+	else {
+		next_frametime = 0;
+		framecount = gi.framecount;
+	}
 
-        if ( next_frametime && ms - next_frametime < 0 ) {
-            re.ThrottleBackend();
-        }
-        else {
-            next_frametime = ms + 16; // limit to 60 FPS
-        }
-    }
-    else {
-        next_frametime = 0;
-        framecount = gi.framecount;
-    }
-
-    if ( ++recursive > 2 ) {
-        N_Error( ERR_FATAL, "G_UpdateScreen: recursively called" );
-    }
-    recursive = 1;
+	if ( ++recursive > 2 ) {
+		N_Error( ERR_FATAL, "G_UpdateScreen: recursively called" );
+	}
+	recursive = 1;
 
 	// if there is no VM, there are also no rendering comamnds. Stop the renderer in
-    // that case
+	// that case
 	// we're in a level
 	// if the user is ending a level through the pause menu,
 	// we let the ui handle the sgame call
@@ -408,16 +417,17 @@ void SCR_UpdateScreen( void )
 		};
 	}
 
-    // console draws next
-    Con_DrawConsole();
+	// console draws next
+	Con_DrawConsole();
 
 	UI_Refresh( gi.realtime );
 
+//	SDL_GL_MakeCurrent( SDL_window, SDL_glContext );
 	if ( ui_debugOverlay->i ) {
 		re.EndFrame( &time_frontend, &time_backend, &gi.pc );
 	} else {
 		re.EndFrame( NULL, NULL, &gi.pc );
 	}
 
-    recursive = 0;
+	recursive = 0;
 }

@@ -474,7 +474,7 @@ void GLimp_EndFrame( void )
 				Cbuf_ExecuteText( EXEC_APPEND, "vid_restart\n" );
 			}
 
-			IN_Restart();
+//			IN_Restart();
 		}
 		
 		r_fullscreen->modified = qfalse;

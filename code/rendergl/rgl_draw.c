@@ -836,7 +836,8 @@ void RB_InstantQuad2( vec4_t quadVerts[4], vec2_t texCoords[4] )
 
 	nglEnd();
 #else
-    RB_SetBatchBuffer( backend.drawBuffer, backendData->verts, sizeof( srfVert_t ), backendData->indices, sizeof(glIndex_t) );
+    RB_SetBatchBuffer( backend.drawBuffer, backendData[ rg.smpFrame ]->verts, sizeof( srfVert_t ),
+		backendData[ rg.smpFrame ]->indices, sizeof(glIndex_t) );
 
     for ( i = 0; i < 4; i++ ) {
         VectorCopy( verts[i].xyz, quadVerts[0] );
@@ -849,7 +850,7 @@ void RB_InstantQuad2( vec4_t quadVerts[4], vec2_t texCoords[4] )
 	backend.drawBatch.vtxOffset = 4;
 	backend.drawBatch.idxOffset = 6;
 
-	memcpy( backendData->verts, verts, sizeof( verts ) );
+	memcpy( backendData[ rg.smpFrame ]->verts, verts, sizeof( verts ) );
 
 	VBO_Bind( backend.drawBuffer );
 

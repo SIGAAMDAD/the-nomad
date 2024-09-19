@@ -22,6 +22,8 @@
 #define SHADER_MAX_VERTEXES 528
 #define SHADER_MAX_INDEXES (6*SHADER_MAX_VERTEXES)
 
+#define SMP_FRAMES 2
+
 #define MAX_RENDER_BUFFERS 64
 #define MAX_RENDER_PROGRAMS 2048
 #define MAX_RENDER_TEXTURES 2048
@@ -127,6 +129,7 @@ typedef struct
 	qboolean stereo;
 	qboolean intelGraphics;
 	qboolean swizzleNormalmap;
+	qboolean smpActive;
 
 	int maxTextureUnits;
 	int maxTextureSize;
@@ -1049,6 +1052,8 @@ typedef struct {
 	renderEntityDef_t *currentEntity;
 
 	batch_t drawBatch;
+
+	int smpFrame;
 } renderBackend_t;
 
 // the renderer front end should never modify glstate_t
@@ -1124,6 +1129,8 @@ enum
 
 typedef struct
 {
+	int smpFrame;
+
 	qboolean				registered;		// cleared at shutdown, set at beginRegistration
 
 	uint32_t				frameCount;		// incremented every frame
@@ -1461,6 +1468,8 @@ extern cvar_t *r_imageUpsampleType;
 extern cvar_t *r_imageUpsample;
 extern cvar_t *r_imageUpsampleMaxSize;
 
+extern cvar_t *sys_forceSingleThreading;
+
 // OpenGL extensions
 extern cvar_t *r_arb_pixel_buffer_object;
 extern cvar_t *r_arb_texture_compression;
@@ -1780,8 +1789,14 @@ typedef enum
 	RC_DRAW_IMAGE,
 	RC_SET_COLOR,
 
+	RC_DRAW_WORLDVIEW,
+
 	RC_END_OF_LIST
 } renderCmdType_t;
+
+typedef struct {
+	renderCmdType_t commandID;
+} drawWorldView_t;
 
 typedef struct {
 	renderCmdType_t commandId;
@@ -1850,12 +1865,20 @@ typedef struct {
 } renderBackendData_t;
 
 extern qboolean screenshotFrame;
-extern renderBackendData_t *backendData;
+
+extern renderBackendData_t *backendData[ SMP_FRAMES ];
+extern volatile renderCommandList_t *renderCommandList;
+extern volatile qboolean renderThreadActive;
+
+void RB_RenderThread( void );
+void R_InitCommandBuffers( void );
+void R_ShutdownCommandBuffers( void );
 
 void RE_DrawImage( float x, float y, float w, float h, float u1, float v1, float u2, float v2, nhandle_t hShader );
-void RE_LoadWorldMap(const char *filename);
-void RE_SetColor(const float *rgba);
-void R_IssuePendingRenderCommands(void);
+void RE_LoadWorldMap( const char *filename );
+void RE_SetColor( const float *rgba );
+void R_IssuePendingRenderCommands( void );
+void RE_AddDrawWorldCmd( void );
 
 // https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=516
 void RB_TakeScreenshotCmd( void );

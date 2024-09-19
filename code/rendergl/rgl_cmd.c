@@ -1,8 +1,11 @@
 #include "rgl_local.h"
 
-renderBackendData_t *backendData;
+renderBackendData_t *backendData[ SMP_FRAMES ];
 
-static void R_PerformanceCounters(void)
+volatile renderCommandList_t *renderCommandList;
+volatile qboolean renderThreadActive;
+
+static void R_PerformanceCounters( void )
 {
 	if ( !r_speeds->i ) {
 		// clear the counters even if we aren't printing
@@ -15,44 +18,81 @@ static void R_PerformanceCounters(void)
 			backend.pc.c_bufferBinds, backend.pc.c_bufferIndices, backend.pc.c_bufferVertices, backend.pc.c_dynamicBufferDraws,
 			backend.pc.c_staticBufferDraws, backend.pc.c_iboBinds, backend.pc.c_vboBinds, backend.pc.c_vaoBinds );
 	}
-	else if (r_speeds->i == 2) {
+	else if ( r_speeds->i == 2 ) {
 	}
 }
 
-void R_IssueRenderCommands(qboolean runPerformanceCounters)
+void R_InitCommandBuffers( void )
+{
+	glContext.smpActive = qfalse;
+	if ( !sys_forceSingleThreading->i ) {
+		ri.Printf( PRINT_INFO, "Trying SMP acceleration...\n" );
+		if ( ri.GLimp_SpawnRenderThread( RB_RenderThread ) ) {
+			ri.Printf( PRINT_INFO, "...succeded.\n" );
+			glContext.smpActive = qtrue;
+		} else {
+			ri.Printf( PRINT_INFO, "...failed.\n" );
+		}
+	}
+}
+
+void R_ShutdownCommandBuffers( void ) {
+	// kill the rendering thread
+	if ( glContext.smpActive ) {
+		ri.GLimp_WakeRenderer( NULL );
+		glContext.smpActive = qfalse;
+	}
+}
+
+void R_IssueRenderCommands( qboolean runPerformanceCounters, qboolean finalCommand )
 {
 	renderCommandList_t *cmdList;
 
-	cmdList = &backendData->commandList;
-	assert(cmdList);
+	cmdList = &backendData[ rg.smpFrame ]->commandList;
+	assert( cmdList );
 
 	// add an end-of-list command
-	*(renderCmdType_t *)(cmdList->buffer + cmdList->usedBytes) = RC_END_OF_LIST;
+	*(renderCmdType_t *)( cmdList->buffer + cmdList->usedBytes ) = RC_END_OF_LIST;
 
 	// clear it out, in case this is a sync and not a buffer flip
 	cmdList->usedBytes = 0;
 
-	if (runPerformanceCounters) {
+	if ( glContext.smpActive ) {
+		// if the render thread is not idle, wait for it
+		// sleep until the renderer has completed
+//		ri.GLimp_FrontEndSleep();
+	}
+
+	if ( runPerformanceCounters ) {
 		R_PerformanceCounters();
 	}
 
 	// actually start the commands going
-	if (!r_skipBackEnd->i) {
+	if ( !r_skipBackEnd->i ) {
 		// let it start on the new batch
-		RB_ExecuteRenderCommands(cmdList->buffer);
+		if ( sys_forceSingleThreading->i || finalCommand ) {
+			RB_ExecuteRenderCommands( cmdList->buffer );
+		} else {
+			ri.GLimp_WakeRenderer( cmdList );
+		}
 	}
 }
 
 //
 // R_IssuePendingRenderCommands: issue any pending commands and wait for them to complete
 //
-void R_IssuePendingRenderCommands(void)
+void R_IssuePendingRenderCommands( void )
 {
-    if (!rg.registered) {
+    if ( !rg.registered ) {
         return;
     }
 
-    R_IssueRenderCommands(qfalse);
+    R_IssueRenderCommands( qfalse, qfalse );
+
+	if ( !glContext.smpActive ) {
+		return;
+	}
+	ri.GLimp_FrontEndSleep();
 }
 
 /*
@@ -66,8 +106,8 @@ void *R_GetCommandBufferReserved( uint32_t bytes, uint32_t reservedBytes )
 {
 	renderCommandList_t	*cmdList;
 
-	cmdList = &backendData->commandList;
-	bytes = PAD(bytes, sizeof(void *));
+	cmdList = &backendData[ rg.smpFrame ]->commandList;
+	bytes = PAD( bytes, sizeof( void * ) );
 
 	// always leave room for the end of list command
 	if ( cmdList->usedBytes + bytes + sizeof( renderCmdType_t ) + reservedBytes > MAX_RC_BUFFER ) {
@@ -92,6 +132,20 @@ returns NULL if there is not enough space for important commands
 */
 void *R_GetCommandBuffer( uint32_t bytes ) {
 	return R_GetCommandBufferReserved( bytes, PAD( sizeof( swapBuffersCmd_t ), sizeof(void *) ) );
+}
+
+void RE_AddDrawWorldCmd( void )
+{
+	drawWorldView_t *cmd;
+
+	if ( !rg.registered ) {
+		return;
+	}
+	cmd = R_GetCommandBuffer( sizeof( *cmd ) );
+	if ( !cmd ) {
+		return;
+	}
+	cmd->commandID = RC_DRAW_WORLDVIEW;
 }
 
 /*
@@ -348,8 +402,8 @@ void RE_EndFrame( uint64_t *frontEndMsec, uint64_t *backEndMsec, backendCounters
 {
 	swapBuffersCmd_t *cmd;
 
-	cmd = R_GetCommandBufferReserved(sizeof(*cmd), 0);
-	if (!cmd) {
+	cmd = R_GetCommandBufferReserved( sizeof( *cmd ), 0 );
+	if ( !cmd ) {
 		return;
 	}
 	cmd->commandId = RC_SWAP_BUFFERS;
@@ -358,7 +412,7 @@ void RE_EndFrame( uint64_t *frontEndMsec, uint64_t *backEndMsec, backendCounters
 		*pc = backend.pc;
 	}
 
-	R_IssueRenderCommands( qtrue );
+	R_IssueRenderCommands( qtrue, qtrue );
 	R_InitNextFrame();
 
 	if ( frontEndMsec ) {

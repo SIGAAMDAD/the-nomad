@@ -253,6 +253,12 @@ static ImGui_ImplOpenGL3_Data *bd;
 imguiGL3Import_t renderImport;
 static cvar_t *r_gamma;
 
+#ifdef _WIN32
+static CRITICAL_SECTION imguiMutex;
+#else
+static pthread_mutex_t imguiMutex;
+#endif
+
 // Backend data stored in io.BackendRendererUserData to allow support for multiple Dear ImGui contexts
 // It is STRONGLY preferred that you use docking branch with multi-viewports (== single Dear ImGui context + multiple windows) instead of multiple Dear ImGui contexts.
 static ImGui_ImplOpenGL3_Data *ImGui_ImplOpenGL3_GetBackendData()
@@ -304,6 +310,12 @@ void ImGui_ImplOpenGL3_Init(void *shaderData, const char *glsl_version, const im
 
     renderImport = *import;
     imguiShader = (GLuint)(uintptr_t)shaderData;
+
+#ifdef _WIN32
+    InitializeCriticalSection( &imguiMutex );
+#else
+    pthread_mutex_init( &imguiMutex, NULL );
+#endif
 
     ImGuiIO &io = ImGui::GetIO();
     IM_ASSERT(io.BackendRendererUserData == nullptr && "Already initialized a renderer backend!");
@@ -523,6 +535,12 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
     ImVec2 clip_off, clip_scale;
     int fb_width, fb_height;
     ImGui_ImplOpenGL3_Data *bd;
+
+#ifdef _WIN32
+    EnterCriticalSection( &imguiMutex );
+#else
+    pthread_mutex_lock( &imguiMutex );
+#endif
 
     // Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
     fb_width = (int)(draw_data->DisplaySize.x * draw_data->FramebufferScale.x);
@@ -767,6 +785,12 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
     renderImport.glViewport(last_viewport[0], last_viewport[1], (GLsizei)last_viewport[2], (GLsizei)last_viewport[3]);
     renderImport.glScissor(last_scissor_box[0], last_scissor_box[1], (GLsizei)last_scissor_box[2], (GLsizei)last_scissor_box[3]);
     (void)bd; // Not all compilation paths use this
+
+#ifdef _WIN32
+    LeaveCriticalSection( &imguiMutex );
+#else
+    pthread_mutex_unlock( &imguiMutex );
+#endif
 }
 
 int ImGui_ImplOpenGL3_CreateFontsTexture(void)
@@ -902,6 +926,11 @@ void ImGui_ImplOpenGL3_DestroyDeviceObjects(void)
         renderImport.glDeleteBuffers( 1, &bd->ElementsHandle );
         bd->ElementsHandle = 0;
     }
+#ifdef _WIN32
+
+#else
+    pthread_mutex_destroy( &imguiMutex );
+#endif
     ImGui_ImplOpenGL3_DestroyFontsTexture();
 }
 

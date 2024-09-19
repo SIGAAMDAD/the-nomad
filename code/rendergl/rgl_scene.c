@@ -18,8 +18,14 @@ uint64_t r_numQuads;
 
 void R_InitNextFrame( void )
 {
-	backendData->commandList.usedBytes = 0;
-	backendData->numIndices = 0;
+	if ( !sys_forceSingleThreading->i ) {
+		// use the other buffers next frame, because another CPU
+		// may still be rendering into the current ones
+		rg.smpFrame ^= 1;
+	} else {
+		rg.smpFrame = 0;
+	}
+	backendData[ rg.smpFrame ]->commandList.usedBytes = 0;
 
 	r_firstSceneDLight = 0;
 	r_numDLights = 0;
@@ -54,8 +60,8 @@ void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hShader )
 		return;
 	}
 
-	poly = &backendData->polys[r_numPolys];
-	vtx = &backendData->polyVerts[r_numPolyVerts];
+	poly = &backendData[ rg.smpFrame ]->polys[ r_numPolys ];
+	vtx = &backendData[ rg.smpFrame ]->polyVerts[ r_numPolyVerts ];
 
 	pos[0] = origin[0];
 	pos[1] = rg.world->height - origin[1];
@@ -99,8 +105,8 @@ void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t num
 		return;
 	}
 
-	poly = &backendData->polys[r_numPolys];
-	vt = &backendData->polyVerts[r_numPolyVerts];
+	poly = &backendData[ rg.smpFrame ]->polys[r_numPolys];
+	vt = &backendData[ rg.smpFrame ]->polyVerts[r_numPolyVerts];
 
 	poly->verts = vt;
 	poly->hShader = hShader;
@@ -126,7 +132,7 @@ void RE_AddDynamicLightToScene( const vec3_t origin, float brightness, const vec
 		return;
 	}
 
-	dl = &backendData->dlights[ r_numDLights++ ];
+	dl = &backendData[ rg.smpFrame ]->dlights[ r_numDLights++ ];
 	VectorCopy( dl->origin, origin );
 	VectorCopy( dl->color, color );
 	dl->brightness = brightness;
@@ -176,7 +182,7 @@ void RE_AddEntityToScene( const renderEntityRef_t *ent )
 		return;
 	}
 
-	backendData->entities[ r_numEntities ].e = *ent;
+	backendData[ rg.smpFrame ]->entities[ r_numEntities ].e = *ent;
 
 	r_numEntities++;
 }
@@ -237,7 +243,7 @@ void RE_ProcessEntities( void )
 	refEntity = backend.refdef.entities;
 	maxVerts = r_maxPolys->i * 4;
 	poly = &backend.refdef.polys[ backend.refdef.numPolys ];
-	verts = &backendData->polyVerts[ r_numPolyVerts ];
+	verts = &backendData[ rg.smpFrame ]->polyVerts[ r_numPolyVerts ];
 
 	for ( i = 0; i < backend.refdef.numEntities; i++ ) {
 		if ( r_numPolys >= r_maxPolys->i || r_numPolyVerts >= maxVerts ) {
@@ -298,13 +304,13 @@ void RE_BeginScene( const renderSceneRef_t *fd )
 	backend.refdef.floatTime = (double)backend.refdef.time * 0.001f; // -EC-: cast to double
 
 	backend.refdef.numDLights = r_numDLights - r_firstSceneDLight;
-	backend.refdef.dlights = &backendData->dlights[ r_firstSceneDLight ];
+	backend.refdef.dlights = &backendData[ rg.smpFrame ]->dlights[ r_firstSceneDLight ];
 	
 	backend.refdef.numEntities = r_numEntities - r_firstSceneEntity;
-	backend.refdef.entities = &backendData->entities[ r_firstSceneEntity ];
+	backend.refdef.entities = &backendData[ rg.smpFrame ]->entities[ r_firstSceneEntity ];
 
 	backend.refdef.numPolys = r_numPolys - r_firstScenePoly;
-	backend.refdef.polys = &backendData->polys[ r_firstScenePoly ];
+	backend.refdef.polys = &backendData[ rg.smpFrame ]->polys[ r_firstScenePoly ];
 
 	backend.refdef.drawn = qfalse;
 
