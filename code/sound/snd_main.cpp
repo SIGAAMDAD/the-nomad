@@ -245,12 +245,27 @@ void CSoundSystem::SetParameter( const char *pName, float value )
 	ERRCHECK( s_pStudioSystem->setParameterByName( pName, value, false ) );
 }
 
+static FMOD_RESULT fmod_debug_callback( FMOD_DEBUG_FLAGS flags, const char *file, int line, const char *func, const char *message )
+{
+	if ( flags & FMOD_DEBUG_LEVEL_ERROR ) {
+		N_Error( ERR_DROP, COLOR_RED "[FMOD API][%s:%s:%i] %s", file, func, line, message );
+	} else if ( flags & FMOD_DEBUG_LEVEL_WARNING ) {
+		Con_Printf( COLOR_YELLOW "[FMOD API][%s:%s:%i] %s", file, func, line, message );
+	} else {
+		Con_Printf( "[FMOD API][%s:%s:%i] %s", file, func, line, message );
+	}
+
+	return FMOD_OK;
+}
+
 void CSoundSystem::Init( void )
 {
 	ERRCHECK( FMOD::Studio::System::create( &s_pStudioSystem ) );
 	ERRCHECK( s_pStudioSystem->getCoreSystem( &s_pCoreSystem ) );
 	ERRCHECK( s_pCoreSystem->setSoftwareFormat( 48000, FMOD_SPEAKERMODE_5POINT1, 0 ) );
 	ERRCHECK( s_pCoreSystem->set3DSettings( 1.0f, DISTANCEFACTOR, 0.5f ) );
+	ERRCHECK( FMOD::Debug_Initialize( FMOD_DEBUG_LEVEL_LOG | FMOD_DEBUG_LEVEL_ERROR | FMOD_DEBUG_LEVEL_WARNING | FMOD_DEBUG_TYPE_TRACE
+		| FMOD_DEBUG_DISPLAY_THREAD, FMOD_DEBUG_MODE_CALLBACK, fmod_debug_callback, NULL ) );
 #ifdef _NOMAD_DEBUG
 	ERRCHECK( s_pStudioSystem->initialize( 32, FMOD_STUDIO_INIT_LIVEUPDATE, FMOD_INIT_PROFILE_ENABLE | FMOD_INIT_CHANNEL_DISTANCEFILTER, NULL ) );
 #else
@@ -282,6 +297,7 @@ void CSoundSystem::Shutdown( void )
 	Snd_ClearLoopingTracks();
 
 	m_szLoopingTracks.clear();
+	/*
 	for ( auto& it : m_szSources ) {
 		if ( !it ) {
 			continue;
@@ -294,14 +310,15 @@ void CSoundSystem::Shutdown( void )
 		}
 		it->Shutdown();
 	}
-	//memset( m_szSources, 0, sizeof( m_szSources ) );
-	//memset( m_szBanks, 0, sizeof( m_szBanks ) );
+	*/
+	memset( m_szSources, 0, sizeof( m_szSources ) );
+	memset( m_szBanks, 0, sizeof( m_szBanks ) );
 
 	m_nSources = 0;
 
 	ERRCHECK( m_pSFXGroup->release() );
 
-//	ERRCHECK( s_pStudioSystem->unloadAll() );
+	ERRCHECK( s_pStudioSystem->unloadAll() );
 	ERRCHECK( s_pStudioSystem->release() );
 //	ERRCHECK( s_pCoreSystem->release() );
 
