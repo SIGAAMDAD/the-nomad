@@ -158,6 +158,7 @@ typedef struct {
 	int multisampleType;
 	int textureDetail;
 	int textureFilter;
+	int lightingQuality;
 
 	int dynamicLighting;
 	int bloom;

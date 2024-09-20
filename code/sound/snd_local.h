@@ -41,6 +41,7 @@ private:
 	CSoundSource *m_pNext;
 	char m_szName[ MAX_NPATH ];
 	FMOD::Studio::EventInstance *m_pEmitter;
+	FMOD::Studio::EventDescription *m_pData;
 };
 
 class CSoundBank

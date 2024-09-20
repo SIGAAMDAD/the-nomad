@@ -327,7 +327,7 @@ typedef struct {
 // NOTE: these resolutions are taken from AC4 Black Flag
 typedef enum {
     // minimum resolution needed to run
-    VIDMODE_1280x1024,
+//    VIDMODE_1280x1024,
     VIDMODE_1600x1200,
     VIDMODE_1600x1050,
     VIDMODE_1920x1080,

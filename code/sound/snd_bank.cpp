@@ -71,7 +71,7 @@ void CSoundBank::Shutdown( void )
 
 	if ( m_pEventList ) {
 		for ( i = 0; i < m_nEventCount; i++ ) {
-			ERRCHECK( m_pEventList[ i ]->releaseAllInstances() );
+//			ERRCHECK( m_pEventList[ i ]->releaseAllInstances() );
 		}
 		Z_Free( m_pEventList );
 		m_pEventList = NULL;

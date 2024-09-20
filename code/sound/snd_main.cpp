@@ -10,6 +10,10 @@ cvar_t *snd_masterVolume;
 cvar_t *snd_debugPrint;
 cvar_t *snd_noSound;
 cvar_t *snd_muteUnfocused;
+cvar_t *snd_maxChannels;
+
+static FMOD::Studio::System *s_pStudioSystem;
+static FMOD::System *s_pCoreSystem;
 
 void FMOD_Error( const char *call, FMOD_RESULT result )
 {
@@ -151,13 +155,11 @@ bool CSoundSource::Load( const char *npath )
 	// it again
 	sndManager->AddSourceToHash( this );
 
-	CSoundSystem::GetStudioSystem()->getEvent( npath, &pEvent );
-	if ( !pEvent ) {
+	CSoundSystem::GetStudioSystem()->getEvent( npath, &m_pData );
+	if ( !m_pData ) {
 		Con_Printf( COLOR_YELLOW "WARNING: Error loading sound source. Event not found.\n" );
 		return false;
 	}
-
-	ERRCHECK( pEvent->createInstance( &m_pEmitter ) );
 
 	return true;
 }
@@ -166,6 +168,7 @@ void CSoundSource::Play( bool bLooping, uint64_t nTimeOffset )
 {
 	FMOD_STUDIO_PLAYBACK_STATE state;
 
+	m_pData->createInstance( &m_pEmitter );
 	m_pEmitter->getPlaybackState( &state );
 	m_pEmitter->start();
 }
@@ -188,6 +191,8 @@ void CSoundSource::Stop( void )
 	case FMOD_STUDIO_PLAYBACK_STOPPING:
 		break;
 	};
+
+	m_pEmitter->release();
 }
 
 bool CSoundSystem::LoadBank( const char *pName )
@@ -237,24 +242,24 @@ void CSoundSystem::ForceStop( void )
 
 void CSoundSystem::SetParameter( const char *pName, float value )
 {
-	ERRCHECK( m_pStudioSystem->setParameterByName( pName, value, false ) );
+	ERRCHECK( s_pStudioSystem->setParameterByName( pName, value, false ) );
 }
 
 void CSoundSystem::Init( void )
 {
-	m_pStudioSystem = NULL;
-	m_pSystem = NULL;
-
-	ERRCHECK( FMOD::Studio::System::create( &m_pStudioSystem ) );
-	ERRCHECK( m_pStudioSystem->getCoreSystem( &m_pSystem ) );
-	ERRCHECK( m_pSystem->setSoftwareFormat( 48000, FMOD_SPEAKERMODE_5POINT1, 0 ) );
-	ERRCHECK( m_pSystem->set3DSettings( 1.0f, DISTANCEFACTOR, 0.5f ) );
+	ERRCHECK( FMOD::Studio::System::create( &s_pStudioSystem ) );
+	ERRCHECK( s_pStudioSystem->getCoreSystem( &s_pCoreSystem ) );
+	ERRCHECK( s_pCoreSystem->setSoftwareFormat( 48000, FMOD_SPEAKERMODE_5POINT1, 0 ) );
+	ERRCHECK( s_pCoreSystem->set3DSettings( 1.0f, DISTANCEFACTOR, 0.5f ) );
 #ifdef _NOMAD_DEBUG
-	ERRCHECK( m_pStudioSystem->initialize( 32, FMOD_STUDIO_INIT_LIVEUPDATE, FMOD_INIT_PROFILE_ENABLE | FMOD_INIT_CHANNEL_DISTANCEFILTER, NULL ) );
+	ERRCHECK( s_pStudioSystem->initialize( 32, FMOD_STUDIO_INIT_LIVEUPDATE, FMOD_INIT_PROFILE_ENABLE | FMOD_INIT_CHANNEL_DISTANCEFILTER, NULL ) );
 #else
-	ERRCHECK( m_pStudioSystem->initialize( 32, FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_PROFILE_ENABLE | FMOD_INIT_CHANNEL_DISTANCEFILTER, NULL ) );
+	ERRCHECK( s_pStudioSystem->initialize( 32, FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_PROFILE_ENABLE | FMOD_INIT_CHANNEL_DISTANCEFILTER, NULL ) );
 #endif
-	ERRCHECK( m_pSystem->createChannelGroup( "SFX", &m_pSFXGroup ) );
+	ERRCHECK( s_pCoreSystem->createChannelGroup( "SFX", &m_pSFXGroup ) );
+
+	m_pStudioSystem = s_pStudioSystem;
+	m_pSystem = s_pCoreSystem;
 
 	{
 		char **fileList;
@@ -282,7 +287,6 @@ void CSoundSystem::Shutdown( void )
 			continue;
 		}
 		it->Release();
-		it = NULL;
 	}
 	for ( auto& it : m_szBanks ) {
 		if ( !it ) {
@@ -290,19 +294,16 @@ void CSoundSystem::Shutdown( void )
 		}
 		it->Shutdown();
 	}
-	memset( m_szSources, 0, sizeof( m_szSources ) );
-	memset( m_szBanks, 0, sizeof( m_szBanks ) );
+	//memset( m_szSources, 0, sizeof( m_szSources ) );
+	//memset( m_szBanks, 0, sizeof( m_szBanks ) );
 
 	m_nSources = 0;
 
 	ERRCHECK( m_pSFXGroup->release() );
 
-	ERRCHECK( m_pStudioSystem->unloadAll() );
-	ERRCHECK( m_pStudioSystem->release() );
-	ERRCHECK( m_pSystem->release() );
-
-	m_pStudioSystem = NULL;
-	m_pSystem = NULL;
+//	ERRCHECK( s_pStudioSystem->unloadAll() );
+	ERRCHECK( s_pStudioSystem->release() );
+//	ERRCHECK( s_pCoreSystem->release() );
 
 	gi.soundRegistered = qfalse;
 
@@ -323,8 +324,8 @@ void CSoundSystem::Shutdown( void )
 
 void CSoundSystem::Update( void )
 {
-	ERRCHECK( m_pStudioSystem->update() );
-	ERRCHECK( m_pSystem->update() );
+	ERRCHECK( s_pStudioSystem->update() );
+	ERRCHECK( s_pCoreSystem->update() );
 }
 
 CSoundSource *CSoundSystem::LoadSound( const char *npath )

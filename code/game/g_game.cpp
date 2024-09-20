@@ -1274,7 +1274,7 @@ static void G_VM_Restart_f( void ) {
 }
 
 const vidmode_t r_vidModes[NUMVIDMODES] = {
-	{ "Mode  0: 1280x1024",     1280,   1024,   1 },
+//	{ "Mode  0: 1280x1024",     1280,   1024,   1 },
 	{ "Mode  1: 1600x1200",     1600,   1200,   1 },
 	{ "Mode  2: 1600x1050",     1600,   1050,   1 },
 	{ "Mode  3: 1920x1080",     1920,   1080,   1 },
