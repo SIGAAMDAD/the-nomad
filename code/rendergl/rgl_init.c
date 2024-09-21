@@ -1202,6 +1202,16 @@ static void R_InitGLContext( void )
 	nglGetIntegerv( GL_MAX_TEXTURE_SIZE, &glContext.maxTextureSize );
 	nglGetIntegerv( GL_MAX_SAMPLES, &glContext.maxSamples );
 
+	nglGetIntegeri_v( GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &glContext.workGroupCount[0] );
+	nglGetIntegeri_v( GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &glContext.workGroupCount[1] );
+	nglGetIntegeri_v( GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &glContext.workGroupCount[2] );
+
+	nglGetIntegeri_v( GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &glContext.workGroupSize[0] );
+	nglGetIntegeri_v( GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &glContext.workGroupSize[1] );
+	nglGetIntegeri_v( GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &glContext.workGroupSize[2] );
+
+	nglGetIntegerv( GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &glContext.workGroupInvocations );
+
 	sscanf( glContext.version_str, "%i.%i", &glContext.versionMajor, &glContext.versionMinor );
 
 	ri.Printf( PRINT_INFO, "Getting OpenGL version...\n" );

@@ -7,7 +7,7 @@ void R_DrawElements( uint32_t numElements, uintptr_t nOffset ) {
 	case DRAWMODE_GPU:
 	case DRAWMODE_MAPPED: {
 		if ( backend.drawBatch.instanced ) {
-
+			nglDrawElementsInstanced( GL_TRIANGLES, numElements, GLN_INDEX_TYPE, NULL, backend.drawBatch.instanceCount );
 		} else {
 			nglDrawElements( GL_TRIANGLES, numElements, GLN_INDEX_TYPE, BUFFER_OFFSET( nOffset ) );
 		}

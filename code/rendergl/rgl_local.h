@@ -140,6 +140,10 @@ typedef struct
 	int maxRenderBufferSize;
 	float maxAnisotropy;
 
+	GLint workGroupCount[3];
+	GLint workGroupSize[3];
+	GLint workGroupInvocations;
+
 	qboolean ARB_gl_spirv;
 	qboolean ARB_texture_filter_anisotropic;
 	qboolean ARB_vertex_buffer_object;
@@ -1141,6 +1145,10 @@ typedef struct
 	uint32_t	   			frameSceneNum;	// zeroed at RE_BeginFrame
 
 	qboolean                needScreenMap;
+
+	GLuint					computeShader, computeShaderProgram;
+	GLuint					computeShaderTexture;
+	vertexBuffer_t			*renderPassVBO;
 
 	qboolean				worldMapLoaded;
 	qboolean				worldDeluxeMapping;

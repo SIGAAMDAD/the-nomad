@@ -280,6 +280,11 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 		}
 	}
 
+	if ( NGL_VERSION_ATLEAST( 4, 3  ) ) {
+		nglUseProgram( rg.computeShaderProgram );
+		nglDispatchCompute( ceil( glConfig.vidWidth / glContext.workGroupCount[0] ), ceil( glConfig.vidHeight / glContext.workGroupCount[1] ), 1 );
+	}
+
     // clear relevant buffers
     nglClear( clearBits );
 	nglActiveTexture( GL_TEXTURE0 );
@@ -410,6 +415,20 @@ void RE_EndFrame( uint64_t *frontEndMsec, uint64_t *backEndMsec, backendCounters
 
 	if ( pc ) {
 		*pc = backend.pc;
+	}
+
+	// compute shader
+	if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
+//		nglMemoryBarrier( GL_UNIFORM_BARRIER_BIT | GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_ELEMENT_ARRAY_BARRIER_BIT
+//			| GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_BUFFER_UPDATE_BARRIER_BIT | GL_FRAMEBUFFER_BARRIER_BIT );
+
+		GLSL_UseProgram( &rg.textureColorShader );
+		nglActiveTexture( GL_TEXTURE0 );
+		nglBindTexture( GL_TEXTURE_2D, rg.computeShaderTexture );
+		GLSL_SetUniformInt( &rg.textureColorShader, UNIFORM_DIFFUSE_MAP, TB_DIFFUSEMAP );
+		RB_SetBatchBuffer( rg.renderPassVBO, NULL, sizeof( srfVert_t ), NULL, sizeof( uint32_t ) );
+		backend.drawBatch.shader = rg.defaultShader;
+		RB_FlushBatchBuffer();
 	}
 
 	R_IssueRenderCommands( qtrue, qtrue );

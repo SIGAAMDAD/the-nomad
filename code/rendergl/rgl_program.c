@@ -520,7 +520,7 @@ static int GLSL_CompileGPUShader( GLuint program, GLuint *prevShader, const GLch
 	nglGetShaderiv( shader, GL_COMPILE_STATUS, &compiled );
 	if ( !compiled ) {
 		GLSL_PrintLog( shader, GLSL_PRINTLOG_SHADER_INFO, qfalse );
-		ri.Error( ERR_DROP, "Failed to compiled shader" );
+		ri.Error( ERR_DROP, "Failed to compile shader" );
 		return qfalse;
 	}
 
@@ -1527,6 +1527,51 @@ void GLSL_InitGPUShaders( void )
 	}
 	*/
 
+	// create compute shader
+	if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
+		GLint compiled;
+
+		rg.computeShaderProgram = nglCreateProgram();
+
+		const char *computeShaderSource =
+			"#version 430 core\n"
+			"layout( local_size_x = 64, local_size_y = 16, local_size_z = 1 ) in;\n"
+			"layout( rgba32f, binding = 0 ) uniform image2D screen;\n"
+			"\n"
+			"void main() {\n"
+//				"memoryBarrierShared();\n"
+				"imageStore( screen, ivec2( gl_GlobalInvocationID.xy ), vec4( 1.0 ) );\n"
+			"}\n";
+
+		rg.computeShader = nglCreateShader( GL_COMPUTE_SHADER );
+		nglShaderSource( rg.computeShader, 1, &computeShaderSource, NULL );
+		nglCompileShader( rg.computeShader );
+		
+		nglGetShaderiv( rg.computeShader, GL_COMPILE_STATUS, &compiled );
+		if ( !compiled ) {
+			GLSL_PrintLog( rg.computeShader, GLSL_PRINTLOG_SHADER_INFO, qfalse );
+			ri.Error( ERR_DROP, "Failed to compile compute shader" );
+			return;
+		}
+
+		nglAttachShader( rg.computeShaderProgram, rg.computeShader );
+		GLSL_LinkProgram( rg.computeShaderProgram, -1 );
+
+//		nglDeleteShader( rg.computeShader );
+
+		nglGenTextures( 1, &rg.computeShaderTexture );
+		nglActiveTexture( GL_TEXTURE0 );
+		nglBindTexture( GL_TEXTURE_2D, rg.computeShaderTexture );
+		nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+		nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+		nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+		nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+		nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0 );
+		nglTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, glConfig.vidWidth, glConfig.vidHeight, 0, GL_RGBA, GL_FLOAT, NULL );
+		nglBindImageTexture( 0, rg.computeShaderTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F );
+		nglBindTexture( GL_TEXTURE_2D, 0 );
+	}
+
 	end = ri.Milliseconds();
 
 	ri.Printf( PRINT_INFO, "...loaded %u GLSL shaders (%u gen %u etc %u light) in %5.2f seconds\n",
@@ -1546,6 +1591,10 @@ void GLSL_ShutdownGPUShaders( void )
 	GL_BindNullProgram();
 	nglBindBufferARB( r_arb_shader_storage_buffer_object->i ? GL_SHADER_STORAGE_BUFFER : GL_UNIFORM_BUFFER, 0 );
 
+	if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
+		nglDeleteProgram( rg.computeShaderProgram );
+	}
+
 	GLSL_DeleteGPUShader( &rg.imguiShader );
 	GLSL_DeleteGPUShader( &rg.tileShader );
 //	GLSL_DeleteGPUShader( &rg.tonemapShader );
@@ -1559,10 +1608,10 @@ void GLSL_ShutdownGPUShaders( void )
 	for ( i = 0; i < GENERICDEF_COUNT; i++ ) {
 		GLSL_DeleteGPUShader( &rg.genericShader[i] );
 	}
-	/*
 	for ( i = 0; i < LIGHTDEF_COUNT; i++ ) {
 		GLSL_DeleteGPUShader( &rg.lightallShader[i] );
 	}
+	/*
 	for ( i = 0; i < 4; i++ ) {
 		GLSL_DeleteGPUShader( &rg.depthBlurShader[i] );
 	}

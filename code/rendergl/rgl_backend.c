@@ -143,9 +143,9 @@ void GL_BindFramebuffer(GLenum target, GLuint fbo)
 
 void GL_BindNullFramebuffers(void)
 {
-    nglBindFramebuffer(GL_FRAMEBUFFER, 0);
-    nglBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-    nglBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    nglBindFramebuffer( GL_FRAMEBUFFER, 0 );
+    nglBindFramebuffer( GL_READ_FRAMEBUFFER, 0 );
+    nglBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
 	glState.currentFbo = NULL;
 }
 
@@ -159,26 +159,21 @@ void GL_State( uint32_t stateBits )
 {
 	uint32_t diff = stateBits ^ glState.glStateBits;
 
-	if ( !diff )
-	{
+	if ( !diff ) {
 		return;
 	}
 
 	//
 	// check depthFunc bits
 	//
-	if ( diff & GLS_DEPTHFUNC_BITS )
-	{
-		if ( stateBits & GLS_DEPTHFUNC_EQUAL )
-		{
+	if ( diff & GLS_DEPTHFUNC_BITS ) {
+		if ( stateBits & GLS_DEPTHFUNC_EQUAL ) {
 			nglDepthFunc( GL_EQUAL );
 		}
-		else if ( stateBits & GLS_DEPTHFUNC_GREATER)
-		{
+		else if ( stateBits & GLS_DEPTHFUNC_GREATER ) {
 			nglDepthFunc( GL_GREATER );
 		}
-		else
-		{
+		else {
 			nglDepthFunc( GL_LEQUAL );
 		}
 	}
@@ -186,30 +181,25 @@ void GL_State( uint32_t stateBits )
 	//
 	// check blend bits
 	//
-	if ( diff & ( GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS ) )
-	{
+	if ( diff & ( GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS ) ) {
 		uint32_t oldState = glState.glStateBits & ( GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS );
 		uint32_t newState = stateBits & ( GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS );
 		uint32_t storedState = glState.storedGlState & ( GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS );
 
-		if (oldState == 0)
-		{
+		if ( oldState == 0 ) {
 			nglEnable( GL_BLEND );
 		}
-		else if (newState == 0)
-		{
+		else if ( newState == 0 ) {
 			nglDisable( GL_BLEND );
 		}
 
-		if (newState != 0 && storedState != newState)
-		{
+		if ( newState != 0 && storedState != newState ) {
 			GLenum srcFactor = GL_ONE, dstFactor = GL_ONE;
 
 			glState.storedGlState &= ~( GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS );
 			glState.storedGlState |= newState;
 
-			switch ( stateBits & GLS_SRCBLEND_BITS )
-			{
+			switch ( stateBits & GLS_SRCBLEND_BITS ) {
 			case GLS_SRCBLEND_ZERO:
 				srcFactor = GL_ZERO;
 				break;
@@ -240,10 +230,9 @@ void GL_State( uint32_t stateBits )
 			default:
 				ri.Error( ERR_DROP, "GL_State: invalid src blend state bits" );
 				break;
-			}
+			};
 
-			switch ( stateBits & GLS_DSTBLEND_BITS )
-			{
+			switch ( stateBits & GLS_DSTBLEND_BITS ) {
 			case GLS_DSTBLEND_ZERO:
 				dstFactor = GL_ZERO;
 				break;
@@ -271,7 +260,7 @@ void GL_State( uint32_t stateBits )
 			default:
 				ri.Error( ERR_DROP, "GL_State: invalid dst blend state bits" );
 				break;
-			}
+			};
 
 			nglBlendFunc( srcFactor, dstFactor );
 		}

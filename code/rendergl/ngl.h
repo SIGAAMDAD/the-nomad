@@ -125,6 +125,10 @@ typedef void*(*NGLloadproc)(const char *name);
 	NGL( void, glEndQuery, GLenum target ) \
 	NGL( void, glGetQueryObjectiv, GLuint id, GLenum pname, GLuint *params ) \
 	NGL( void, glOrtho, GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat far, GLfloat near ) \
+	NGL( void, glDispatchCompute, GLuint num_groups_x, GLuint num_groups_y, GLuint num_groups_z ) \
+	NGL( void, glMemoryBarrier, GLbitfield barriers ) \
+	NGL( void, glDrawElementsInstanced, GLenum mode, GLsizei count, GLenum type, const void *indices, GLsizei instancecount ) \
+	NGL( void, glGetIntegeri_v, GLenum target, GLuint index, GLint *data ) \
 
 #define NGL_List_Procs \
 	NGL( void, glListBase, GLuint base ) \
@@ -223,7 +227,8 @@ typedef void*(*NGLloadproc)(const char *name);
 	NGL( void, glDeleteSamplers, GLsizei n, const GLuint *samplers ) \
 	NGL( void, glSamplerParameteri, GLuint sampler, GLenum pname, GLint param ) \
 	NGL( void, glSamplerParameterf, GLuint sampler, GLenum pname, GLfloat param ) \
-	NGL( void, glGenerateMipmap, GLenum target )
+	NGL( void, glGenerateMipmap, GLenum target ) \
+	NGL( void, glBindImageTexture, GLuint unit, GLuint texture, GLint level, GLboolean layered, GLint layer, GLenum access, GLenum format ) \
 
 #define NGL_FBO_Procs \
 	NGL( void, glGenFramebuffers, GLsizei n, GLuint *buffers ) \
@@ -260,7 +265,8 @@ typedef void*(*NGLloadproc)(const char *name);
 	NGL( void, glVertexAttribPointer, GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer ) \
 	NGL( void, glVertexAttribIPointer, GLuint index, GLint size, GLenum type, GLsizei stride, const GLvoid *pointer ) \
 	NGL( void, glGetVertexAttribiv, GLuint index, GLenum pname, GLint *params ) \
-	NGL( void, glGetVertexAttribPointerv, GLuint index, GLenum pname, void **pointer )
+	NGL( void, glGetVertexAttribPointerv, GLuint index, GLenum pname, void **pointer ) \
+	NGL( void, glVertexAttribDivisor, GLuint index, GLuint divisor ) \
 
 #define NGL_BufferARB_Procs \
 	NGL( void, glGenBuffersARB, GLsizei n, GLuint *buffers ) \
