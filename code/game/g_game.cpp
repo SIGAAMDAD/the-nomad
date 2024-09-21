@@ -420,6 +420,16 @@ qboolean G_CheckWallHit( const vec3_t origin, dirtype_t dir ) {
 	return g_world->CheckWallHit( origin, dir );
 }
 
+static void ProfileFunctionBegin( const char *function )
+{
+	PROFILE_BLOCK_BEGIN( function );
+}
+
+static void ProfileFunctionEnd( void )
+{
+	PROFILE_BLOCK_END;
+}
+
 static void G_InitRenderRef( void )
 {
 	refimport_t import;
@@ -545,6 +555,9 @@ static void G_InitRenderRef( void )
 	import.Sys_LoadDLL = Sys_LoadDLL;
 	import.Sys_CloseDLL = Sys_CloseDLL;
 	import.Sys_GetProcAddress = Sys_GetProcAddress;
+
+	import.ProfileFunctionBegin = ProfileFunctionBegin;
+	import.ProfileFunctionEnd = ProfileFunctionEnd;
 
 	ret = GetRenderAPI( NOMAD_VERSION_FULL, &import );
 

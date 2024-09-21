@@ -208,6 +208,8 @@ void R_DrawPolys( void )
 	if ( !r_numPolys && !r_numPolyVerts ) {
 	    return;
 	}
+    ri.ProfileFunctionBegin( "R_DrawPolys" );
+
     rg.world->drawing = qtrue;
 
     RB_SetBatchBuffer( backend.drawBuffer, backendData[ rg.smpFrame ]->verts, sizeof( srfVert_t ),
@@ -270,6 +272,8 @@ void R_DrawPolys( void )
 	// flush out anything remaining
 	RB_FlushBatchBuffer();
     rg.world->drawing = qfalse;
+
+    ri.ProfileFunctionEnd();
 }
 
 void R_DrawWorld( void )
@@ -285,12 +289,13 @@ void R_DrawWorld( void )
     vec4_t color;
     uint16_t color16[4];
     const renderEntityDef_t *refEntity;
-    int clipCount;
 
     if ( ( backend.refdef.flags & RSF_NOWORLDMODEL ) ) {
         // nothing to draw
         return;
     }
+
+    ri.ProfileFunctionBegin( "R_DrawWorld" );
 
     if ( !rg.world ) {
         ri.Error( ERR_FATAL, "R_DrawWorld: no world model loaded" );
@@ -356,6 +361,8 @@ void R_DrawWorld( void )
     // flush it we have anything left in there
     RB_FlushBatchBuffer();
     rg.world->drawing = qfalse;
+
+    ri.ProfileFunctionEnd();
 }
 
 void R_RenderView( const viewData_t *parms )

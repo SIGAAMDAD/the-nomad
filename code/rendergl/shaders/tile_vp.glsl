@@ -9,6 +9,8 @@ out vec4 v_Color;
 out vec3 v_WorldPos;
 out vec3 v_Position;
 
+#include "lighting_common.glsl"
+
 #if defined(USE_UBO)
 
 layout( std140, binding = 0 ) uniform u_VertexInput {
@@ -105,22 +107,6 @@ vec2 ModTexCoords( vec2 st, vec3 a_Position, vec4 texMatrix, vec4 offTurb )
 }
 #endif
 
-float CalcLightAttenuation( float point, float normDist )
-{
-	// zero light at 1.0, approximating q3 style
-	// also don't attenuate directional light
-	float attenuation = ( 0.5 * normDist - 1.5 ) * point + 1.0;
-
-	// clamp attenuation
-#if defined(NO_LIGHT_CLAMP)
-	attenuation = max( attenuation, 0.0 );
-#else
-	attenuation = clamp( attenuation, 0.0, 1.0 );
-#endif
-
-	return attenuation;
-}
-
 #if defined(USE_TCGEN)
 vec2 GenTexCoords( int TCGen, vec3 a_Position, vec3 normal, vec3 TCGenVector0, vec3 TCGenVector1 )
 {
@@ -159,6 +145,8 @@ void main() {
     v_Color = u_VertColor * a_Color + u_BaseColor;
 	v_WorldPos = a_WorldPos;
 	v_Position = position;
+
+	ApplyLighting();
 
 //	v_FragPos = vec4( u_ModelViewProjection * vec4( position, 1.0 ) ).xyz;
 

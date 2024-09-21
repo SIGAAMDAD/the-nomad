@@ -1,4 +1,7 @@
 #include "rgl_local.h"
+#define STB_INCLUDE_LINE_GLSL
+#define STB_INCLUDE_IMPLEMENTATION
+#include "stb_include.h"
 
 extern const char *fallbackShader_generic_vp;
 extern const char *fallbackShader_generic_fp;
@@ -549,51 +552,67 @@ static void GLSL_LinkProgram( GLuint program, int fromCache )
 	}
 }
 
-static int GLSL_LoadGPUShaderText(const char *name, const char *fallback, GLenum shaderType, char *dest, uint64_t destSize)
+static int GLSL_LoadGPUShaderText( const char *name, const char *fallback, GLenum shaderType, char *dest, uint64_t destSize )
 {
 	char filename[MAX_NPATH];
 	GLchar *buffer = NULL;
 	const GLchar *shaderText = NULL;
 	uint64_t size;
 
-	if (shaderType == GL_VERTEX_SHADER) {
-		Com_snprintf(filename, sizeof(filename), "shaders/%s_vp.glsl", name);
+	if ( shaderType == GL_VERTEX_SHADER ) {
+		Com_snprintf( filename, sizeof( filename ) - 1, "shaders/%s_vp.glsl", name );
 	}
 	else {
-		Com_snprintf(filename, sizeof(filename), "shaders/%s_fp.glsl", name);
+		Com_snprintf( filename, sizeof( filename ) - 1, "shaders/%s_fp.glsl", name );
 	}
 
-	if (r_externalGLSL->i) {
-		size = ri.FS_LoadFile(filename, (void **)&buffer);
+	if ( r_externalGLSL->i ) {
+		size = ri.FS_LoadFile( filename, (void **)&buffer );
 	}
 	else {
 		size = 0;
 		buffer = NULL;
 	}
 
-	if (!buffer) {
-		if (fallback) {
-			ri.Printf(PRINT_DEVELOPER, "...loading built-in '%s'\n", filename);
+	if ( !buffer ) {
+		if ( fallback ) {
+			ri.Printf( PRINT_DEVELOPER, "...loading built-in '%s'\n", filename );
 			shaderText = fallback;
-			size = strlen(shaderText);
+			size = strlen( shaderText );
 		}
 		else {
-			ri.Printf(PRINT_DEVELOPER, "couldn't load '%s'\n", filename);
+			ri.Printf( PRINT_DEVELOPER, "couldn't load '%s'\n", filename );
 			return qfalse;
 		}
 	}
 	else {
-		ri.Printf(PRINT_DEVELOPER, "...loaded '%s'\n", filename);
+		ri.Printf( PRINT_DEVELOPER, "...loaded '%s'\n", filename );
 		shaderText = buffer;
 	}
 
-	if (size > destSize) {
+	if ( size > destSize ) {
 		return qfalse;
 	}
 
-	N_strncpyz(dest, shaderText, size + 1);
-	if (buffer)
-		ri.FS_FreeFile(buffer);
+	N_strncpyz( dest, shaderText, size + 1 );
+	if ( buffer ) {
+		ri.FS_FreeFile( buffer );
+	}
+	
+	{
+		char err[256];
+		char *out = stb_include_string( dest, NULL, "gamedata/shaders/", filename, err );
+		
+		if ( !out ) {
+			ri.Error( ERR_DROP, "Error loading shader code: %s", err );
+		}
+		if ( strlen( out ) > destSize ) {
+			ri.Error( ERR_DROP, "Error loading shader code, output include string is too long" );
+		}
+		N_strncpyz( dest, out, destSize );
+
+		free( out );
+	}
 
 	return qtrue;
 }
@@ -718,10 +737,34 @@ static void GLSL_PrepareHeader(GLenum shaderType, const GLchar *extra, char *des
 	
 	N_strcat( dest, size,
 							va( "#ifndef ToneMapType_t\n"
-								"#define ToneMap_Disabled -1\n"
+								"#define ToneMap_Disabled 0\n"
 								"#define ToneMap_Reinhard 1\n"
 								"#define ToneMap_Exposure 2\n"
 								"#endif\n" ) );
+	
+
+	// for #included files
+	if ( shaderType == GL_VERTEX_SHADER ) {
+		N_strcat( dest, size, "#define VERTEX_SHADER\n" );
+	} else if ( shaderType == GL_FRAGMENT_SHADER ) {
+		N_strcat( dest, size, "#define FRAGMENT_SHADER\n" );
+	}
+	
+	if ( r_hdr->i ) {
+		N_strcat( dest, size, "#define USE_HDR\n" );
+		if ( r_bloom->i ) {
+			N_strcat( dest, size, "#define USE_BLOOM\n" );
+		}
+		if ( r_toneMap->i ) {
+			N_strcat( dest, size, "#define TONEMAP_TYPE ToneMap_Disabled\n" );
+		} else {
+			N_strcat( dest, size, va( "#define TONEMAP_TYPE %i\n", r_toneMapType->i ) );
+		}
+	}
+	if ( r_dynamiclight->i ) {
+		N_strcat( dest, size, "#define USE_DYNAMIC_LIGHTING\n" );
+	}
+	N_strcat( dest, size, va( "#define LIGHTING_QUALITY %i\n", r_lightingQuality->i ) );
 
 	fbufWidthScale = 1.0f / ((float)glConfig.vidWidth);
 	fbufHeightScale = 1.0f / ((float)glConfig.vidHeight);
@@ -1539,7 +1582,6 @@ void GLSL_InitGPUShaders( void )
 			"layout( rgba32f, binding = 0 ) uniform image2D screen;\n"
 			"\n"
 			"void main() {\n"
-//				"memoryBarrierShared();\n"
 				"imageStore( screen, ivec2( gl_GlobalInvocationID.xy ), vec4( 1.0 ) );\n"
 			"}\n";
 
@@ -1621,22 +1663,22 @@ void GLSL_ShutdownGPUShaders( void )
 	*/
 }
 
-void GLSL_UseProgram(shaderProgram_t *program)
+void GLSL_UseProgram( shaderProgram_t *program )
 {
 	GLuint programObject = program ? program->programId : 0;
 
-	if (GL_UseProgram(programObject)) {
+	if ( GL_UseProgram( programObject ) ) {
 		backend.pc.c_glslShaderBinds++;
 		glState.currentShader = program;
 	}
 }
 
-shaderProgram_t *GLSL_GetGenericShaderProgram(int stage)
+shaderProgram_t *GLSL_GetGenericShaderProgram( int stage )
 {
 	const shaderStage_t *pStage = backend.drawBatch.shader->stages[stage];
 	int shaderAttribs = 0;
 
-	switch (pStage->rgbGen) {
+	switch ( pStage->rgbGen ) {
 	case CGEN_LIGHTING_DIFFUSE:
 		shaderAttribs |= GENERICDEF_USE_RGBAGEN;
 		break;
@@ -1644,7 +1686,7 @@ shaderProgram_t *GLSL_GetGenericShaderProgram(int stage)
 		break;
 	};
 
-	switch (pStage->alphaGen) {
+	switch ( pStage->alphaGen ) {
 	case AGEN_LIGHTING_SPECULAR:
 	case AGEN_PORTAL:
 		shaderAttribs |= GENERICDEF_USE_RGBAGEN;
@@ -1657,18 +1699,15 @@ shaderProgram_t *GLSL_GetGenericShaderProgram(int stage)
 		return &rg.genericShader[shaderAttribs];
 	}
 
-	if ( pStage->bundle[0].tcGen != TCGEN_TEXTURE )
-	{
+	if ( pStage->bundle[0].tcGen != TCGEN_TEXTURE ) {
 		shaderAttribs |= GENERICDEF_USE_TCGEN_AND_TCMOD;
 	}
 
-	if (backend.drawBatch.shader->numDeforms && !ShaderRequiresCPUDeforms(backend.drawBatch.shader))
-	{
+	if ( backend.drawBatch.shader->numDeforms && !ShaderRequiresCPUDeforms( backend.drawBatch.shader ) ) {
 		shaderAttribs |= GENERICDEF_USE_DEFORM_VERTEXES;
 	}
 
-	if (pStage->bundle[0].numTexMods)
-	{
+	if ( pStage->bundle[0].numTexMods ) {
 		shaderAttribs |= GENERICDEF_USE_TCGEN_AND_TCMOD;
 	}
 

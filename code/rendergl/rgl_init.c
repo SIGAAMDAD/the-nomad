@@ -174,6 +174,8 @@ cvar_t *r_imageUpsampleMaxSize;
 cvar_t *r_useShaderCache;
 cvar_t *r_useUniformBuffers;
 
+cvar_t *r_lightingQuality;
+
 cvar_t *sys_forceSingleThreading;
 
 // OpenGL extensions
@@ -803,7 +805,7 @@ static void R_Register( void )
 	r_arb_pixel_buffer_object = ri.Cvar_Get( "r_arb_pixel_buffer_object", "0", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_arb_pixel_buffer_object, "Enables pixel buffer objects." );
 
-	r_arb_texture_compression = ri.Cvar_Get( "r_arb_texture_compression", "0", CVAR_SAVE | CVAR_LATCH );
+	r_arb_texture_compression = ri.Cvar_Get( "r_arb_texture_compression", "3", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_arb_texture_compression, "Enables texture compression." );
 	r_arb_framebuffer_object = ri.Cvar_Get( "r_arb_framebuffer_object", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_arb_framebuffer_object, "Enables post-processing via multiple framebuffers." );
@@ -834,6 +836,15 @@ static void R_Register( void )
 	ri.Cvar_SetDescription( r_allowLegacy, "Allow the use of old OpenGL API versions, requires \\r_drawMode 0 or 1 and \\r_allowShaders 0" );
 	r_allowShaders = ri.Cvar_Get( "r_allowShaders", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_allowShaders, "Allow the use of GLSL shaders, requires \\r_allowLegacy 0." );
+
+	r_lightingQuality = ri.Cvar_Get( "r_lightingQuality", "1", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_CheckRange( r_lightingQuality, "0", "2", CVT_INT );
+	ri.Cvar_SetDescription( r_lightingQuality,
+		"Sets desired lighting quality:\n"
+		" 0: vertex shader per quad lighting\n"
+		" 1: vertex shader per quad lighting with extra fluff\n"
+		" 2: per pixel high quality fragment shader calculated lighting"
+	);
 
 	r_picmip = ri.Cvar_Get( "r_picmip", "0", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_CheckRange( r_picmip, "0", "16", CVT_INT );

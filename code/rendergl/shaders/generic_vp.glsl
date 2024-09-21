@@ -8,6 +8,8 @@ out vec3 v_FragPos;
 out vec4 v_Color;
 out vec3 v_WorldPos;
 
+#include "lighting_common.glsl"
+
 uniform mat4 u_ModelViewProjection;
 uniform vec4 u_BaseColor;
 uniform vec4 u_VertColor;
@@ -139,6 +141,8 @@ void main() {
 
 	v_WorldPos = a_WorldPos;
 //	v_FragPos = vec4( u_ModelViewProjection * vec4( position, 1.0 ) ).xyz;
+
+	ApplyLighting();
 
     gl_Position = u_ModelViewProjection * vec4( position, 1.0 );
 }

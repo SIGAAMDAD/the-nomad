@@ -144,6 +144,9 @@ typedef struct {
 	void (*ImGui_Shutdown)( void );
 	void (*ImGui_NewFrame)( void );
 	void (*ImGui_Draw)( void );
+
+	void (*ProfileFunctionBegin)( const char *function );
+	void (*ProfileFunctionEnd)( void );
 } refimport_t;
 
 typedef struct {

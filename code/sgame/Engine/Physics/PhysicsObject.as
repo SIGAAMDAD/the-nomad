@@ -195,6 +195,8 @@ namespace TheNomad::Engine::Physics {
 			vec3 accel;
 			float friction = TheNomad::SGame::sgame_Friction.GetFloat();
 			vec3 origin;
+
+			ProfileBlock block( "PhysicsObject::OnRunTic" );
 			
 			// clip it
 			ClipBounds();

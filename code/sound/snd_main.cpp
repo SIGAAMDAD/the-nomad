@@ -1,4 +1,5 @@
 #include "snd_local.h"
+#include <EASTL/atomic.h>
 
 CSoundSystem *sndManager = NULL;
 
@@ -14,6 +15,16 @@ cvar_t *snd_maxChannels;
 
 static FMOD::Studio::System *s_pStudioSystem;
 static FMOD::System *s_pCoreSystem;
+
+#define SOUNDTHREAD_PLAYSOURCE	0
+#define SOUNDTHREAD_STOPSOURCE	1
+
+static pthread_cond_t s_SoundSignal;
+static pthread_mutex_t s_SoundMutex;
+static pthread_t s_hSoundThread;
+static eastl::atomic<qboolean> s_bExitThread;
+static eastl::atomic<uint32_t> s_nThreadCommand;
+static eastl::atomic<sfxHandle_t> s_nThreadData;
 
 void FMOD_Error( const char *call, FMOD_RESULT result )
 {
@@ -133,13 +144,12 @@ void FMOD_Error( const char *call, FMOD_RESULT result )
 void CSoundSource::Release( void )
 {
 	Stop();
-	if ( m_pEmitter ) {
-		ERRCHECK( m_pEmitter->release() );
+	if ( m_pData ) {
+		ERRCHECK( m_pData->releaseAllInstances() );
 	}
-	m_pEmitter = NULL;
 }
 
-bool CSoundSource::Load( const char *npath )
+bool CSoundSource::Load( const char *npath, int64_t nTag )
 {
 	CSoundBank **pBankList;
 	FMOD::Studio::EventDescription *pEvent;
@@ -147,7 +157,6 @@ bool CSoundSource::Load( const char *npath )
 
 	Con_Printf( "Loading sound source '%s'...\n", npath );
 
-//	m_szName = npath;
 	N_strncpyz( m_szName, npath, sizeof( m_szName ) );
 
 	// hash it so that if we try loading it
@@ -168,31 +177,31 @@ void CSoundSource::Play( bool bLooping, uint64_t nTimeOffset )
 {
 	FMOD_STUDIO_PLAYBACK_STATE state;
 
-	m_pData->createInstance( &m_pEmitter );
-	m_pEmitter->getPlaybackState( &state );
-	m_pEmitter->start();
+	ERRCHECK( m_pData->createInstance( &m_pEmitter ) );
+	ERRCHECK( m_pEmitter->getPlaybackState( &state ) );
+	ERRCHECK( m_pEmitter->start() );
 }
 
 void CSoundSource::Stop( void )
 {
 	FMOD_STUDIO_PLAYBACK_STATE state;
 
-	m_pEmitter->getPlaybackState( &state );
+	ERRCHECK( m_pEmitter->getPlaybackState( &state ) );
 
 	switch ( state ) {
 	case FMOD_STUDIO_PLAYBACK_PLAYING:
 	case FMOD_STUDIO_PLAYBACK_STARTING:
-		m_pEmitter->stop( FMOD_STUDIO_STOP_IMMEDIATE );
+		ERRCHECK( m_pEmitter->stop( FMOD_STUDIO_STOP_IMMEDIATE ) );
 		break;
 	case FMOD_STUDIO_PLAYBACK_SUSTAINING:
-		m_pEmitter->stop( FMOD_STUDIO_STOP_ALLOWFADEOUT );
+		ERRCHECK( m_pEmitter->stop( FMOD_STUDIO_STOP_ALLOWFADEOUT ) );
 		break;
 	case FMOD_STUDIO_PLAYBACK_STOPPED:
 	case FMOD_STUDIO_PLAYBACK_STOPPING:
 		break;
 	};
 
-	m_pEmitter->release();
+	ERRCHECK( m_pEmitter->release() );
 }
 
 bool CSoundSystem::LoadBank( const char *pName )
@@ -258,8 +267,48 @@ static FMOD_RESULT fmod_debug_callback( FMOD_DEBUG_FLAGS flags, const char *file
 	return FMOD_OK;
 }
 
+void *Sound_Thread( void *arg )
+{
+	CSoundSource *pSource;
+
+	while ( 1 ) {
+		if ( s_bExitThread.load() ) {
+			break;
+		}
+
+		pthread_mutex_lock( &s_SoundMutex );
+		pthread_cond_wait( &s_SoundSignal, &s_SoundMutex );
+		pthread_mutex_unlock( &s_SoundMutex );
+
+		if ( !s_nThreadData.load() ) {
+			continue;
+		}
+
+		switch ( s_nThreadCommand.load() ) {
+		case SOUNDTHREAD_PLAYSOURCE: {
+			pSource = sndManager->GetSound( s_nThreadData.load() );
+			if ( !pSource ) {
+				break;;
+			}
+			pSource->Play();
+			break; }
+		case SOUNDTHREAD_STOPSOURCE: {
+			pSource = sndManager->GetSound( s_nThreadData.load() );
+			if ( !pSource ) {
+				break;;
+			}
+			pSource->Stop();
+			break; }
+		};
+	}
+
+	return NULL;
+}
+
 void CSoundSystem::Init( void )
 {
+	int ret;
+
 	ERRCHECK( FMOD::Studio::System::create( &s_pStudioSystem ) );
 	ERRCHECK( s_pStudioSystem->getCoreSystem( &s_pCoreSystem ) );
 	ERRCHECK( s_pCoreSystem->setSoftwareFormat( 48000, FMOD_SPEAKERMODE_5POINT1, 0 ) );
@@ -267,12 +316,26 @@ void CSoundSystem::Init( void )
 	ERRCHECK( FMOD::Debug_Initialize( FMOD_DEBUG_LEVEL_LOG | FMOD_DEBUG_LEVEL_ERROR | FMOD_DEBUG_LEVEL_WARNING | FMOD_DEBUG_TYPE_TRACE
 		| FMOD_DEBUG_DISPLAY_THREAD, FMOD_DEBUG_MODE_CALLBACK, fmod_debug_callback, NULL ) );
 #ifdef _NOMAD_DEBUG
-	ERRCHECK( s_pStudioSystem->initialize( 32, FMOD_STUDIO_INIT_LIVEUPDATE, FMOD_INIT_PROFILE_ENABLE | FMOD_INIT_CHANNEL_DISTANCEFILTER, NULL ) );
+	ERRCHECK( s_pStudioSystem->initialize( snd_maxChannels->i, FMOD_STUDIO_INIT_LIVEUPDATE,
+		FMOD_INIT_PROFILE_ENABLE | FMOD_INIT_CHANNEL_DISTANCEFILTER, NULL ) );
 #else
-	ERRCHECK( s_pStudioSystem->initialize( 32, FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_PROFILE_ENABLE | FMOD_INIT_CHANNEL_DISTANCEFILTER, NULL ) );
+	ERRCHECK( s_pStudioSystem->initialize( snd_maxChannels->i, FMOD_STUDIO_INIT_NORMAL,
+		FMOD_INIT_PROFILE_ENABLE | FMOD_INIT_CHANNEL_DISTANCEFILTER, NULL ) );
 #endif
 	ERRCHECK( s_pCoreSystem->createChannelGroup( "SFX", &m_pSFXGroup ) );
 
+	{
+		Con_Printf( "Launching SoundThread...\n" );
+
+		s_bExitThread.store( qfalse );
+		pthread_mutex_init( &s_SoundMutex, NULL );
+		pthread_cond_init( &s_SoundSignal, NULL );
+
+		ret = pthread_create( &s_hSoundThread, NULL, Sound_Thread, NULL );
+		if ( ret ) {
+			Con_Printf( COLOR_RED "Error creating SoundThread, pthread_create(): %s", strerror( errno ) );
+		}
+	}
 	m_pStudioSystem = s_pStudioSystem;
 	m_pSystem = s_pCoreSystem;
 
@@ -320,7 +383,14 @@ void CSoundSystem::Shutdown( void )
 
 	ERRCHECK( s_pStudioSystem->unloadAll() );
 	ERRCHECK( s_pStudioSystem->release() );
-//	ERRCHECK( s_pCoreSystem->release() );
+
+	pthread_cond_signal( &s_SoundSignal );
+
+	s_bExitThread.store( qtrue );
+	pthread_join( s_hSoundThread, NULL );
+
+	pthread_cond_destroy( &s_SoundSignal );
+	pthread_mutex_destroy( &s_SoundMutex );
 
 	gi.soundRegistered = qfalse;
 
@@ -343,9 +413,12 @@ void CSoundSystem::Update( void )
 {
 	ERRCHECK( s_pStudioSystem->update() );
 	ERRCHECK( s_pCoreSystem->update() );
+
+	if ( snd_muteUnfocused->i && !gw_active ) {
+	}
 }
 
-CSoundSource *CSoundSystem::LoadSound( const char *npath )
+CSoundSource *CSoundSystem::LoadSound( const char *npath, int64_t nTag )
 {
 	CSoundSource *pSound;
 	sfxHandle_t hash;
@@ -373,7 +446,7 @@ CSoundSource *CSoundSystem::LoadSound( const char *npath )
 	pSound = (CSoundSource *)Hunk_Alloc( sizeof( *pSound ), h_low );
 	memset( pSound, 0, sizeof( *pSound ) );
 
-	if ( !pSound->Load( npath ) ) {
+	if ( !pSound->Load( npath, nTag ) ) {
 		Con_Printf( COLOR_YELLOW "WARNING: failed to load sound file '%s'\n", npath );
 //        m_hAllocLock.Unlock();
 		return NULL;
@@ -404,34 +477,24 @@ void Snd_StopAll( void )
 
 void Snd_PlaySfx( sfxHandle_t sfx )
 {
-	CSoundSource *pSource;
-
 	if ( sfx == -1 ) {
 		return;
 	}
 
-	pSource = sndManager->GetSound( sfx );
-	if ( !pSource ) {
-		return;
-	}
-
-	pSource->Play();
+	s_nThreadData.store( sfx );
+	s_nThreadCommand.store( SOUNDTHREAD_PLAYSOURCE );
+	pthread_cond_signal( &s_SoundSignal );
 }
 
 void Snd_StopSfx( sfxHandle_t sfx )
 {
-	CSoundSource *pSource;
-
 	if ( sfx == -1 ) {
 		return;
 	}
 
-	pSource = sndManager->GetSound( sfx );
-	if ( !pSource ) {
-		return;
-	}
-
-	pSource->Stop();
+	s_nThreadData.store( sfx );
+	s_nThreadCommand.store( SOUNDTHREAD_STOPSOURCE );
+	pthread_cond_signal( &s_SoundSignal );
 }
 
 static void Snd_Toggle_f( void )
@@ -632,9 +695,18 @@ void Snd_Init( void )
 	Cvar_CheckRange( snd_masterVolume, "0", "100", CVT_INT );
 	Cvar_SetDescription( snd_masterVolume, "Sets the cap for sfx and music volume." );
 
+/*
 	snd_debugPrint = Cvar_Get( "snd_debugPrint", "0", CVAR_CHEAT | CVAR_TEMP );
 	Cvar_CheckRange( snd_debugPrint, "0", "1", CVT_INT );
 	Cvar_SetDescription( snd_debugPrint, "Toggles OpenAL-soft debug messages." );
+*/
+
+	snd_maxChannels = Cvar_Get( "snd_maxChannels", "256", CVAR_SAVE );
+	Cvar_CheckRange( snd_maxChannels, "24", "512", CVT_INT );
+	Cvar_SetDescription( snd_maxChannels,
+		"Sets the maximum amount of channels the engine can process at a time.\n"
+		"Higher values will increase CPU load.\n"
+	);
 
 #ifdef _WIN32
 	Com_StartupVariable( "s_noSound" );
@@ -697,7 +769,7 @@ sfxHandle_t Snd_RegisterTrack( const char *npath )
 {
 	CSoundSource *pSource;
 
-	pSource = sndManager->LoadSound( npath );
+	pSource = sndManager->LoadSound( npath, TAG_MUSIC );
 	if ( !pSource ) {
 		return -1;
 	}
@@ -709,7 +781,7 @@ sfxHandle_t Snd_RegisterSfx( const char *npath )
 {
 	CSoundSource *pSource;
 
-	pSource = sndManager->LoadSound( npath );
+	pSource = sndManager->LoadSound( npath, TAG_SFX );
 	if ( !pSource ) {
 		return -1;
 	}

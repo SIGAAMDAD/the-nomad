@@ -18,7 +18,7 @@ uniform int u_AntiAliasing;
 // -- Advanced sharpening settings --
 
 #define offset_bias 6.0  //[0.0 to 6.0] Offset bias adjusts the radius of the sampling pattern.
-                         //I designed the pattern for offset_bias 1.0, but feel free to experiment.
+						 //I designed the pattern for offset_bias 1.0, but feel free to experiment.
 
 //#define CoefLuma vec3( 0.2126, 0.7152, 0.0722 )      // BT.709 & sRBG luma coefficient (Monitors and HD Television)
 //#define CoefLuma vec3( 0.299, 0.587, 0.114 )       // BT.601 luma coefficient (SD Television)
@@ -36,63 +36,63 @@ void texcoords( vec2 fragCoord, vec2 resolution, out vec2 v_rgbNW, out vec2 v_rg
 }
 
 #ifndef FXAA_REDUCE_MIN
-    #define FXAA_REDUCE_MIN   (1.0/ 128.0)
+	#define FXAA_REDUCE_MIN   (1.0/ 128.0)
 #endif
 #ifndef FXAA_REDUCE_MUL
-    #define FXAA_REDUCE_MUL   (1.0 / 8.0)
+	#define FXAA_REDUCE_MUL   (1.0 / 8.0)
 #endif
 #ifndef FXAA_SPAN_MAX
-    #define FXAA_SPAN_MAX     8.0
+	#define FXAA_SPAN_MAX     8.0
 #endif
 
 //optimized version for mobile, where dependent 
 //texture reads can be a bottleneck
 vec4 fxaa(sampler2D tex, vec2 fragCoord, vec2 resolution,
-            vec2 v_rgbNW, vec2 v_rgbNE, 
-            vec2 v_rgbSW, vec2 v_rgbSE, 
-            vec2 v_rgbM) {
-    vec4 color;
-    vec2 inverseVP = vec2(1.0 / resolution.x, 1.0 / resolution.y);
-    vec3 rgbNW = texture2D(tex, v_rgbNW).xyz;
-    vec3 rgbNE = texture2D(tex, v_rgbNE).xyz;
-    vec3 rgbSW = texture2D(tex, v_rgbSW).xyz;
-    vec3 rgbSE = texture2D(tex, v_rgbSE).xyz;
-    vec4 texColor = texture2D(tex, v_rgbM);
-    vec3 rgbM  = texColor.xyz;
-    vec3 luma = vec3(0.299, 0.587, 0.114);
-    float lumaNW = dot(rgbNW, luma);
-    float lumaNE = dot(rgbNE, luma);
-    float lumaSW = dot(rgbSW, luma);
-    float lumaSE = dot(rgbSE, luma);
-    float lumaM  = dot(rgbM,  luma);
-    float lumaMin = min(lumaM, min(min(lumaNW, lumaNE), min(lumaSW, lumaSE)));
-    float lumaMax = max(lumaM, max(max(lumaNW, lumaNE), max(lumaSW, lumaSE)));
-    
-    vec2 dir;
-    dir.x = -((lumaNW + lumaNE) - (lumaSW + lumaSE));
-    dir.y =  ((lumaNW + lumaSW) - (lumaNE + lumaSE));
-    
-    float dirReduce = max((lumaNW + lumaNE + lumaSW + lumaSE) *
-                          (0.25 * FXAA_REDUCE_MUL), FXAA_REDUCE_MIN);
-    
-    float rcpDirMin = 1.0 / (min(abs(dir.x), abs(dir.y)) + dirReduce);
-    dir = min(vec2(FXAA_SPAN_MAX, FXAA_SPAN_MAX),
-              max(vec2(-FXAA_SPAN_MAX, -FXAA_SPAN_MAX),
-              dir * rcpDirMin)) * inverseVP;
-    
-    vec3 rgbA = 0.5 * (
-        texture2D(tex, fragCoord * inverseVP + dir * (1.0 / 3.0 - 0.5)).xyz +
-        texture2D(tex, fragCoord * inverseVP + dir * (2.0 / 3.0 - 0.5)).xyz);
-    vec3 rgbB = rgbA * 0.5 + 0.25 * (
-        texture2D(tex, fragCoord * inverseVP + dir * -0.5).xyz +
-        texture2D(tex, fragCoord * inverseVP + dir * 0.5).xyz);
+			vec2 v_rgbNW, vec2 v_rgbNE, 
+			vec2 v_rgbSW, vec2 v_rgbSE, 
+			vec2 v_rgbM) {
+	vec4 color;
+	vec2 inverseVP = vec2(1.0 / resolution.x, 1.0 / resolution.y);
+	vec3 rgbNW = texture2D(tex, v_rgbNW).xyz;
+	vec3 rgbNE = texture2D(tex, v_rgbNE).xyz;
+	vec3 rgbSW = texture2D(tex, v_rgbSW).xyz;
+	vec3 rgbSE = texture2D(tex, v_rgbSE).xyz;
+	vec4 texColor = texture2D(tex, v_rgbM);
+	vec3 rgbM  = texColor.xyz;
+	vec3 luma = vec3(0.299, 0.587, 0.114);
+	float lumaNW = dot(rgbNW, luma);
+	float lumaNE = dot(rgbNE, luma);
+	float lumaSW = dot(rgbSW, luma);
+	float lumaSE = dot(rgbSE, luma);
+	float lumaM  = dot(rgbM,  luma);
+	float lumaMin = min(lumaM, min(min(lumaNW, lumaNE), min(lumaSW, lumaSE)));
+	float lumaMax = max(lumaM, max(max(lumaNW, lumaNE), max(lumaSW, lumaSE)));
+	
+	vec2 dir;
+	dir.x = -((lumaNW + lumaNE) - (lumaSW + lumaSE));
+	dir.y =  ((lumaNW + lumaSW) - (lumaNE + lumaSE));
+	
+	float dirReduce = max((lumaNW + lumaNE + lumaSW + lumaSE) *
+						  (0.25 * FXAA_REDUCE_MUL), FXAA_REDUCE_MIN);
+	
+	float rcpDirMin = 1.0 / (min(abs(dir.x), abs(dir.y)) + dirReduce);
+	dir = min(vec2(FXAA_SPAN_MAX, FXAA_SPAN_MAX),
+			  max(vec2(-FXAA_SPAN_MAX, -FXAA_SPAN_MAX),
+			  dir * rcpDirMin)) * inverseVP;
+	
+	vec3 rgbA = 0.5 * (
+		texture2D(tex, fragCoord * inverseVP + dir * (1.0 / 3.0 - 0.5)).xyz +
+		texture2D(tex, fragCoord * inverseVP + dir * (2.0 / 3.0 - 0.5)).xyz);
+	vec3 rgbB = rgbA * 0.5 + 0.25 * (
+		texture2D(tex, fragCoord * inverseVP + dir * -0.5).xyz +
+		texture2D(tex, fragCoord * inverseVP + dir * 0.5).xyz);
 
-    float lumaB = dot(rgbB, luma);
-    if ((lumaB < lumaMin) || (lumaB > lumaMax))
-        color = vec4(rgbA, texColor.a);
-    else
-        color = vec4(rgbB, texColor.a);
-    return color;
+	float lumaB = dot(rgbB, luma);
+	if ((lumaB < lumaMin) || (lumaB > lumaMax))
+		color = vec4(rgbA, texColor.a);
+	else
+		color = vec4(rgbB, texColor.a);
+	return color;
 }
 
 vec4 applyFXAA( sampler2D tex, vec2 fragCoord, vec2 resolution ) {
@@ -109,20 +109,20 @@ vec4 applyFXAA( sampler2D tex, vec2 fragCoord, vec2 resolution ) {
 
 vec4 sharpenImage( sampler2D tex, vec2 pos )
 {
-	vec4 colorInput = texture2D(tex, pos);
+	vec4 colorInput = texture2D( tex, pos );
   	
 	vec3 ori = colorInput.rgb;
 
 	// -- Combining the strength and luma multipliers --
-	vec3 sharp_strength_luma = (CoefLuma * u_SharpenAmount); //I'll be combining even more multipliers with it later on
+	vec3 sharp_strength_luma = ( CoefLuma * u_SharpenAmount ); //I'll be combining even more multipliers with it later on
 	
 	// -- Gaussian filter --
 	//   [ .25, .50, .25]     [ 1 , 2 , 1 ]
 	//   [ .50,   1, .50]  =  [ 2 , 4 , 2 ]
  	//   [ .25, .50, .25]     [ 1 , 2 , 1 ]
 
-    float px = 1.0/u_ScreenSize[0];
-	float py = 1.0/u_ScreenSize[1];
+	const float px = 1.0 / u_ScreenSize[0];
+	const float py = 1.0 / u_ScreenSize[1];
 
 	vec3 blur_ori = texture2D(tex, pos + vec2(px,-py) * 0.5 * offset_bias).rgb; // South East
 	blur_ori += texture2D(tex, pos + vec2(-px,-py) * 0.5 * offset_bias).rgb;  // South West
@@ -150,10 +150,10 @@ vec4 sharpenImage( sampler2D tex, vec2 pos )
 void main() {
 	if ( u_AntiAliasing == AntiAlias_FXAA ) {
 		vec2 fragCoord = v_TexCoords * u_ScreenSize;
-        a_Color = v_Color * applyFXAA( u_DiffuseMap, fragCoord, u_ScreenSize );
+		a_Color = v_Color * applyFXAA( u_DiffuseMap, fragCoord, u_ScreenSize );
 	} else {
-	    a_Color = v_Color * sharpenImage( u_DiffuseMap, v_TexCoords );
+		a_Color = v_Color * sharpenImage( u_DiffuseMap, v_TexCoords );
 	}
 
-    a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
+	a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
 }

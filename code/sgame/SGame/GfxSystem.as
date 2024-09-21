@@ -38,6 +38,8 @@ namespace TheNomad::SGame {
 			TheNomad::Engine::Renderer::LocalEntity@ ent;
 			TheNomad::Engine::Renderer::LocalEntity@ next;
 
+			TheNomad::Engine::ProfileBlock block( "GfxSystem::OnRenderScene" );
+
 			// walk the list backwards, so any new local entities generated
 			// (trails, marks, etc) will be present this frame
 			@ent = @m_ActiveLocalEnts.m_Prev;

@@ -296,21 +296,6 @@ void FBO_Init( void )
 		ri.Cvar_Set( "r_multisampleAmount", va( "%i", multisample ) );
 	}
 
-	/*
-	if ( glContext.ARB_pixel_buffer_object ) {
-		ri.Printf( PRINT_INFO, "Allocating pixel buffer object for framebuffer data streaming...\n" );
-
-		nglGenBuffers( 2, rg.pixelPackBuffer );
-		nglBindBuffer( GL_PIXEL_PACK_BUFFER, rg.pixelPackBuffer[0] );
-		nglBufferData( GL_PIXEL_PACK_BUFFER, width * height * 4, NULL, GL_STREAM_DRAW );
-		nglBindBuffer( GL_PIXEL_PACK_BUFFER, 0 );
-
-		nglBindBuffer( GL_PIXEL_PACK_BUFFER, rg.pixelPackBuffer[1] );
-		nglBufferData( GL_PIXEL_PACK_BUFFER, width * height * 4, NULL, GL_STREAM_DRAW );
-		nglBindBuffer( GL_PIXEL_PACK_BUFFER, 0 );
-	}
-	*/
-
 	if ( multisample && r_multisampleType->i >= AntiAlias_2xMSAA && r_multisampleType->i <= AntiAlias_32xMSAA ) {
 		rg.renderFbo = FBO_Create( "_render", width, height );
 		if ( r_bloom->i ) {

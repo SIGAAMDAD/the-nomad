@@ -781,6 +781,7 @@ void RB_IterateShaderStages( shader_t *shader )
 
 		GL_BindTexture( TB_DIFFUSEMAP, stageP->bundle[TB_DIFFUSEMAP].image[0] );
         GLSL_SetUniformInt( sp, UNIFORM_DIFFUSE_MAP, 0 );
+		nglUniform1i( nglGetUniformLocation( sp->programId, "u_InLevel" ), rg.world != NULL );
 
 		if ( rg.world && !( backend.refdef.flags & RSF_NOWORLDMODEL ) ) {
 		} else {

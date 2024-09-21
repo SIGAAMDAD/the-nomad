@@ -1,3 +1,5 @@
+#include "Engine/Profiler.as"
+
 namespace TheNomad::Engine::CommandSystem {
     funcdef void CommandFunc();
 
@@ -31,6 +33,8 @@ namespace TheNomad::Engine::CommandSystem {
         }
 
         bool CheckCommand( const string& in name ) const {
+            TheNomad::Engine::ProfileBlock block( "CheckCommand" );
+            
             for ( uint i = 0; i < m_CommandList.Count(); i++ ) {
                 if ( m_CommandList[i].m_Name == name ) {
                     if ( @m_CommandList[i].m_Function is null ) {

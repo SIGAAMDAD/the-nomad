@@ -1476,6 +1476,8 @@ extern cvar_t *r_imageUpsampleType;
 extern cvar_t *r_imageUpsample;
 extern cvar_t *r_imageUpsampleMaxSize;
 
+extern cvar_t *r_lightingQuality;
+
 extern cvar_t *sys_forceSingleThreading;
 
 // OpenGL extensions
@@ -1491,9 +1493,10 @@ extern cvar_t *r_arb_sync;
 extern cvar_t *r_arb_shader_storage_buffer_object;
 extern cvar_t *r_arb_map_buffer_range;
 
+
 //====================================================================
 
-static GDR_INLINE qboolean ShaderRequiresCPUDeforms(const shader_t * shader)
+static GDR_INLINE qboolean ShaderRequiresCPUDeforms( const shader_t * shader )
 {
 	if(shader->numDeforms) {
 		const deformStage_t *ds = &shader->deforms[0];

@@ -232,6 +232,8 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
     mat4_t matrix;
 	drawBufferCmd_t *cmd = NULL;
 
+	ri.ProfileFunctionBegin( "BeginFrame" );
+
 	if ( !rg.registered ) {
 		return;
 	}
@@ -280,9 +282,11 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 		}
 	}
 
-	if ( NGL_VERSION_ATLEAST( 4, 3  ) ) {
+	if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
+		ri.ProfileFunctionBegin( "ComputeShaderDispatch" );
 		nglUseProgram( rg.computeShaderProgram );
-		nglDispatchCompute( ceil( glConfig.vidWidth / glContext.workGroupCount[0] ), ceil( glConfig.vidHeight / glContext.workGroupCount[1] ), 1 );
+		nglDispatchCompute( glConfig.vidWidth / 64, glConfig.vidHeight / 16, 1 );
+		ri.ProfileFunctionEnd();
 	}
 
     // clear relevant buffers
@@ -293,6 +297,7 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 	// setup basic state
 	nglEnable( GL_BLEND );
 	nglEnable( GL_SCISSOR_TEST );
+	nglDisable( GL_STENCIL_TEST );
 	nglDisable( GL_CULL_FACE );
 	nglDisable( GL_DEPTH_TEST );
 
@@ -395,6 +400,8 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 	*/
 
 	backend.refdef.stereoFrame = stereoFrame;
+
+	ri.ProfileFunctionEnd();
 }
 /*
 =============
@@ -421,6 +428,7 @@ void RE_EndFrame( uint64_t *frontEndMsec, uint64_t *backEndMsec, backendCounters
 	if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
 //		nglMemoryBarrier( GL_UNIFORM_BARRIER_BIT | GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_ELEMENT_ARRAY_BARRIER_BIT
 //			| GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_BUFFER_UPDATE_BARRIER_BIT | GL_FRAMEBUFFER_BARRIER_BIT );
+		ri.ProfileFunctionBegin( "ComputeShaderFlush" );
 
 		GLSL_UseProgram( &rg.textureColorShader );
 		nglActiveTexture( GL_TEXTURE0 );
@@ -429,6 +437,8 @@ void RE_EndFrame( uint64_t *frontEndMsec, uint64_t *backEndMsec, backendCounters
 		RB_SetBatchBuffer( rg.renderPassVBO, NULL, sizeof( srfVert_t ), NULL, sizeof( uint32_t ) );
 		backend.drawBatch.shader = rg.defaultShader;
 		RB_FlushBatchBuffer();
+
+		ri.ProfileFunctionEnd();
 	}
 
 	R_IssueRenderCommands( qtrue, qtrue );

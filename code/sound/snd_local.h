@@ -30,7 +30,7 @@ public:
 	{ }
 
 	void Release( void );
-	bool Load( const char *npath );
+	bool Load( const char *npath,int64_t nTag );
 	
 	void Play( bool bLooping = false, uint64_t nTimeOffset = 0 );
 	void Stop( void );
@@ -38,8 +38,9 @@ public:
 	inline const char *GetName( void ) const
 	{ return m_szName; }
 private:
-	CSoundSource *m_pNext;
 	char m_szName[ MAX_NPATH ];
+	CSoundSource *m_pNext;
+	int64_t m_nTag;
 	FMOD::Studio::EventInstance *m_pEmitter;
 	FMOD::Studio::EventDescription *m_pData;
 };
@@ -134,7 +135,7 @@ public:
 
 	void SetParameter( const char *pName, float value );
 
-	CSoundSource *LoadSound( const char *npath );
+	CSoundSource *LoadSound( const char *npath, int64_t nTag );
 
 	inline CSoundBank **GetBankList( void )
 	{ return m_szBanks; }
@@ -157,6 +158,8 @@ public:
 	uint32_t m_nFirstLevelSource;
 	uint32_t m_nLevelSources;
 private:
+	friend void *Sound_Thread( void *arg );
+
 	bool LoadBank( const char *pName );
 
 	FMOD::Studio::System *m_pStudioSystem;

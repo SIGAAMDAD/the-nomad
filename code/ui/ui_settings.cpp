@@ -249,6 +249,8 @@ typedef struct settingsMenu_s {
 	const void *focusedItem;
 	const void *currentItem;
 
+	qboolean playedClickSound;
+	qboolean playedHoverSound;
 	qboolean modified;
 } settingsMenu_t;
 
@@ -631,16 +633,6 @@ static inline void SfxFocused( const void *item ) {
 	}
 }
 
-static inline void SfxActivated( const void *item )
-{
-	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) && ImGui::IsItemDeactivated() ) {
-		if ( s_settingsMenu->currentItem != item ) {
-			s_settingsMenu->currentItem = item;
-			Snd_PlaySfx( ui->sfx_select );
-		}
-	}
-}
-
 static void SettingsMenu_GetGPUMemoryInfo( void )
 {
 	const char *memSuffix;
@@ -797,12 +789,12 @@ static void SettingsMenu_Text( const char *name, const char *hint )
 static void SettingsMenu_List( const char *label, const char **itemnames, int numitems, int *curitem, bool enabled )
 {
 	int i;
+	const char *name;
+	
+	name = va( "##%sSettingsMenuConfigList", label );
 
 	ImGui::PushStyleColor( ImGuiCol_Text, colorLimeGreen );
-	if ( ImGui::BeginCombo( va( "##%sSettingsMenuConfigList", label ), itemnames[*curitem] ) ) {
-		if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
-			Snd_PlaySfx( ui->sfx_select );
-		}
+	if ( ImGui::BeginCombo( name, itemnames[*curitem] ) ) {
 		for ( i = 0; i < numitems; i++ ) {
 			if ( ImGui::Selectable( va( "%s##%sSettingsMenuConfigList", itemnames[i], label ), ( *curitem == i ) ) ) {
 				if ( enabled ) {
@@ -814,11 +806,14 @@ static void SettingsMenu_List( const char *label, const char **itemnames, int nu
 		}
 		ImGui::EndCombo();
 	}
-	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
+	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) && !s_settingsMenu->playedClickSound ) {
 		Snd_PlaySfx( ui->sfx_select );
+		s_settingsMenu->playedClickSound = qtrue;
+	} else {
+		s_settingsMenu->playedClickSound = qfalse;
 	}
 	ImGui::PopStyleColor();
-	SfxFocused( label );
+	SfxFocused( itemnames );
 }
 
 static void SettingsMenu_MultiAdjustable( const char *name, const char *label, const char *hint, const char **itemnames, int numitems,
@@ -837,7 +832,7 @@ static void SettingsMenu_MultiAdjustable( const char *name, const char *label, c
 	ImGui::TableNextColumn();
 	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigLeft", label ), ImGuiDir_Left ) ) {
 		if ( enabled ) {
-			Snd_PlaySfx( ui->sfx_select);
+			Snd_PlaySfx( ui->sfx_select );
 			( *curitem )--;
 			if ( *curitem < 0 ) {
 				*curitem = 0;

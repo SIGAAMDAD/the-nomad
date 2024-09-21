@@ -1750,6 +1750,17 @@ static void DebugPrint( asIScriptGeneric *pGeneric ) {
 	Con_Printf( COLOR_GREEN "DEBUG: %s", msg->c_str() );
 }
 
+static void ProfileBlockBegin( asIScriptGeneric *pGeneric )
+{
+	const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+	PROFILE_BLOCK_BEGIN( name->c_str() );
+}
+
+static void ProfileBlockEnd( asIScriptGeneric *pGeneric )
+{
+	PROFILE_BLOCK_END;
+}
+
 //
 // script globals
 //
@@ -2413,6 +2424,9 @@ void ModuleLib_Register_Engine( void )
 
 		REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::GetJoystickAngle( int, float& out, ivec2& out )", asFUNCTION( GetJoystickAngle ) );
 		REGISTER_GLOBAL_FUNCTION( "const ivec2 TheNomad::Engine::GetMousePosition()", asFUNCTION( GetMousePosition ) );
+
+		REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::ProfileBlockBegin( const string& in )", asFUNCTION( ProfileBlockBegin ) );
+		REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::ProfileBlockEnd()", asFUNCTION( ProfileBlockEnd ) );
 
 		REGISTER_ENUM_TYPE( "KeyNum" );
 		REGISTER_ENUM_VALUE( "KeyNum", "A", KEY_A );

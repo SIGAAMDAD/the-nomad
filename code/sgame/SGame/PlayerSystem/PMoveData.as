@@ -333,6 +333,8 @@ namespace TheNomad::SGame {
 			float angle;
 			TheNomad::GameSystem::DirType dir;
 			const uint gameTic = TheNomad::GameSystem::GameManager.GetGameTic();
+
+			TheNomad::Engine::ProfileBlock block( "PMoveData::OnRunTic" );
 			
 			frametime = uint( float( gameTic * 0.0001f ) );
 			
