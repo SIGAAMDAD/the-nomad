@@ -38,6 +38,7 @@ in vec3 v_WorldPos;
 in vec3 v_Position;
 
 #include "lighting_common.glsl"
+#include "image_sharpen.glsl"
 
 #if defined(USE_UBO)
 
@@ -93,8 +94,6 @@ uniform sampler2D u_ShadowMap;
 uniform vec4 u_SpecularScale;
 uniform vec4 u_NormalScale;
 
-uniform vec2 u_ScreenSize;
-uniform float u_SharpenAmount;
 uniform int u_AlphaTest;
 
 #endif
@@ -242,8 +241,7 @@ void main() {
 		vec2 fragCoord = texCoord * u_ScreenSize;
 		a_Color = applyFXAA( u_DiffuseMap, fragCoord, u_ScreenSize );
 	} else {
-//		a_Color = sharpenImage( u_DiffuseMap, texCoord );
-		a_Color = texture2D( u_DiffuseMap, texCoord );
+		a_Color = sharpenImage( u_DiffuseMap, texCoord );
 	}
 
 	ApplyLighting();

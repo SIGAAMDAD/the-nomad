@@ -1,4 +1,6 @@
 #include "rgl_local.h"
+#define _GNU_SOURCE
+#include <pthread.h>
 
 typedef uintptr_t ImDrawData;
 #include "../rendercommon/imgui_impl_opengl3.h"
@@ -1361,7 +1363,7 @@ static void R_InitImGui( void )
 	import.AllocateBuffer = R_AllocateBuffer;
 	import.SetAttribPointers = VBO_SetVertexPointers;
 
-	ri.ImGui_Init((void *)(uintptr_t)rg.imguiShader.programId, &import);
+	ri.ImGui_Init( (void *)(uintptr_t)rg.imguiShader.programId, &import );
 }
 
 static void R_AllocBackend( void ) {
@@ -1498,6 +1500,8 @@ void R_Init( void )
 	glState.viewData.camera.zoom = 1.0f;
 	screenshotFrame = qfalse;
 
+	ri.GLimp_AcquireContext();
+
 	//
 	// init function tables
 	//
@@ -1547,16 +1551,11 @@ void R_Init( void )
 	// init samplers
 	R_InitSamplers();
 
-	// init imgui
-	R_InitImGui();
-
 	error = nglGetError();
 	if ( error != GL_NO_ERROR )
 		ri.Printf(PRINT_INFO, COLOR_RED "glGetError() = 0x%x\n", error);
 	
 	//R_InitWorldBuffer();
-
-	R_InitCommandBuffers();
 	
 	VBO_Bind( backend.drawBuffer );
 
@@ -1568,9 +1567,28 @@ void R_Init( void )
 	ri.Printf( PRINT_INFO, "---------- finished RE_Init ----------\n" );
 }
 
-void RE_BeginRegistration(gpuConfig_t *config)
+static pthread_t initThread;
+
+static void *InitRenderer( void * )
 {
 	R_Init();
+
+	return NULL;
+}
+
+void RE_BeginRegistration( gpuConfig_t *config )
+{
+	if ( !ri.Cvar_VariableInteger( "sys_forceSingleThreading" ) ) {
+		int ret;
+
+		if ( ( ret = pthread_create( &initThread, NULL, InitRenderer, NULL ) ) ) {
+			ri.Printf( PRINT_WARNING, "Error creating render init thread: %s\n", strerror( ret ) );
+			R_Init();
+		}
+	} else {
+		R_Init();
+	}
+
 	rg.registered = qtrue;
 	*config = glConfig;
 }
@@ -1623,12 +1641,12 @@ RE_EndRegistration
 Touch all images to make sure they are resident (probably obsolete on modern systems)
 =============
 */
-void RE_EndRegistration(void) {
+void RE_EndRegistration( void ) {
 	R_IssuePendingRenderCommands();
 //    RB_ShowImages(); // not doing it here
 }
 
-void RE_GetConfig(gpuConfig_t *config) {
+void RE_GetConfig( gpuConfig_t *config ) {
 	*config = glConfig;
 }
 
@@ -1661,12 +1679,35 @@ void RE_GetGPUMemStats( gpuMemory_t *memstats )
 	*memstats = glState.memstats;
 }
 
+void RE_WaitRegistered( void )
+{
+	if ( ri.Cvar_VariableInteger( "sys_forceSingleThreading" ) ) {
+		// init imgui
+		R_InitImGui();
+
+		return;
+	}
+
+	pthread_join( initThread, NULL );
+
+	rg.registered = qtrue;
+
+	ri.GLimp_AcquireContext();
+
+	// init imgui
+	R_InitImGui();
+
+	// only create the smp thread after we've fully initialized
+	// otherwise we just hang in the init thread
+	R_InitCommandBuffers();
+}
+
 GDR_EXPORT renderExport_t *GDR_DECL GetRenderAPI( uint32_t version, refimport_t *import )
 {
 	static renderExport_t re;
 
 	ri = *import;
-	memset( &re, 0, sizeof(re) );
+	memset( &re, 0, sizeof( re ) );
 
 	if ( version != NOMAD_VERSION_FULL ) {
 		ri.Error( ERR_FATAL, "GetRenderAPI: rendergl version (%i) != glnomad engine version (%i)", NOMAD_VERSION_FULL, version );
@@ -1707,6 +1748,7 @@ GDR_EXPORT renderExport_t *GDR_DECL GetRenderAPI( uint32_t version, refimport_t 
 	re.CanMinimize = NULL;
 	re.ThrottleBackend = NULL;
 	re.FinishBloom = NULL;
+	re.WaitRegistered = RE_WaitRegistered;
 
 	return &re;
 }

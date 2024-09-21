@@ -147,6 +147,8 @@ typedef struct {
 
 	void (*ProfileFunctionBegin)( const char *function );
 	void (*ProfileFunctionEnd)( void );
+
+	void (*GLimp_AcquireContext)( void );
 } refimport_t;
 
 typedef struct {
@@ -214,6 +216,8 @@ typedef struct {
 	void	(*SyncRender)( void );
 
 	void    (*GetGPUMemStats)( gpuMemory_t *memstats );
+
+	void	(*WaitRegistered)( void );
 } renderExport_t;
 
 extern refimport_t ri;

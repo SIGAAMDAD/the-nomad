@@ -24,6 +24,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "n_allocator.h"
 #include "n_common.h"
 #include "n_cvar.h"
+#include "../game/g_game.h"
+#include "n_threads.h"
+
+static CThreadMutex cvarMutex;
 
 cvar_t *cvar_vars = NULL;
 static cvar_t *c_cheatsAllowed;

@@ -4,74 +4,74 @@
 
 void GDR_DECL N_Error( errorCode_t code, const char *err, ... )
 {
-    va_list argptr;
-    char msg[MAXPRINTMSG];
+	va_list argptr;
+	char msg[MAXPRINTMSG];
 
-    va_start( argptr, err );
-    N_vsnprintf( msg, sizeof( msg ) - 1, err, argptr );
-    va_end( argptr );
+	va_start( argptr, err );
+	N_vsnprintf( msg, sizeof( msg ) - 1, err, argptr );
+	va_end( argptr );
 
-    ri.Error( code, "%s", msg );
+	ri.Error( code, "%s", msg );
 }
 
 void GDR_DECL Con_Printf( const char *fmt, ... )
 {
-    va_list argptr;
-    char msg[MAXPRINTMSG];
+	va_list argptr;
+	char msg[MAXPRINTMSG];
 
-    va_start( argptr, fmt );
-    N_vsnprintf( msg, sizeof( msg ) - 1, fmt, argptr );
-    va_end( argptr );
+	va_start( argptr, fmt );
+	N_vsnprintf( msg, sizeof( msg ) - 1, fmt, argptr );
+	va_end( argptr );
 
-    ri.Printf( PRINT_INFO, "%s", msg );
+	ri.Printf( PRINT_INFO, "%s", msg );
 }
 
 void RB_MakeViewMatrix( void )
 {
-    float aspect;
-    uint32_t viewFlags;
-    vec4_t ortho;
+	float aspect;
+	uint32_t viewFlags;
+	vec4_t ortho;
 
-    aspect = glConfig.vidWidth / glConfig.vidHeight;
+	aspect = glConfig.vidWidth / glConfig.vidHeight;
 
-    glState.viewData.zFar = -1.0f;
-    glState.viewData.zNear = 1.0f;
-    viewFlags = glState.viewData.flags & RSF_ORTHO_BITS;
+	glState.viewData.zFar = -1.0f;
+	glState.viewData.zNear = 1.0f;
+	viewFlags = glState.viewData.flags & RSF_ORTHO_BITS;
 
-    switch ( viewFlags ) {
-    case RSF_ORTHO_TYPE_SCREENSPACE:
-        ortho[0] = 0;
-        ortho[1] = glConfig.vidWidth;
-        ortho[2] = glConfig.vidHeight;
-        ortho[3] = 0;
+	switch ( viewFlags ) {
+	case RSF_ORTHO_TYPE_SCREENSPACE:
+		ortho[0] = 0;
+		ortho[1] = glConfig.vidWidth;
+		ortho[2] = glConfig.vidHeight;
+		ortho[3] = 0;
 
-        VectorClear( glState.viewData.camera.origin );
-        break;
-    case RSF_ORTHO_TYPE_WORLD:
-        ortho[0] = 0.0f;
-        ortho[1] = rg.world->width;
-        ortho[2] = 0.0f;
-        ortho[3] = rg.world->height;
-        break;
-    case RSF_ORTHO_TYPE_CORDESIAN:
-        ortho[0] = -aspect;
-        ortho[1] = aspect;
-        ortho[2] = -aspect;
-        ortho[3] = aspect;
-        break;
-    default:
-        ri.Error( ERR_DROP, "R_RenderView: invalid orthographic matrix type" );
-    };
+		VectorClear( glState.viewData.camera.origin );
+		break;
+	case RSF_ORTHO_TYPE_WORLD:
+		ortho[0] = 0.0f;
+		ortho[1] = rg.world->width;
+		ortho[2] = 0.0f;
+		ortho[3] = rg.world->height;
+		break;
+	case RSF_ORTHO_TYPE_CORDESIAN:
+		ortho[0] = -aspect;
+		ortho[1] = aspect;
+		ortho[2] = -aspect;
+		ortho[3] = aspect;
+		break;
+	default:
+		ri.Error( ERR_DROP, "R_RenderView: invalid orthographic matrix type" );
+	};
 
-    if ( r_drawMode->i == DRAWMODE_IMMEDIATE ) {
-        nglMatrixMode( GL_PROJECTION );
-        nglLoadIdentity();
-        nglOrtho( ortho[0], ortho[1], ortho[2], ortho[3], glState.viewData.zFar, glState.viewData.zNear );
-    } else {
-        ri.GLM_MakeVPM( ortho, &glState.viewData.camera.zoom, glState.viewData.zNear, glState.viewData.zFar, glState.viewData.camera.origin,
-            glState.viewData.camera.viewProjectionMatrix, glState.viewData.camera.projectionMatrix, glState.viewData.camera.viewMatrix,
-            viewFlags );
-    }
+	if ( r_drawMode->i == DRAWMODE_IMMEDIATE ) {
+		nglMatrixMode( GL_PROJECTION );
+		nglLoadIdentity();
+		nglOrtho( ortho[0], ortho[1], ortho[2], ortho[3], glState.viewData.zFar, glState.viewData.zNear );
+	} else {
+		ri.GLM_MakeVPM( ortho, &glState.viewData.camera.zoom, glState.viewData.zNear, glState.viewData.zFar, glState.viewData.camera.origin,
+			glState.viewData.camera.viewProjectionMatrix, glState.viewData.camera.projectionMatrix, glState.viewData.camera.viewMatrix,
+			viewFlags );
+	}
 }
 
 /*
@@ -81,28 +81,28 @@ R_Radix
 */
 static GDR_INLINE void R_Radix( int32_t byte, uint32_t size, const srfPoly_t *source, srfPoly_t *dest )
 {
-    uint32_t       count[ 256 ] = { 0 };
-    uint32_t       index[ 256 ];
-    uint32_t       i;
-    uint8_t        *sortKey;
-    uint8_t        *end;
+	uint32_t       count[ 256 ] = { 0 };
+	uint32_t       index[ 256 ];
+	uint32_t       i;
+	uint8_t        *sortKey;
+	uint8_t        *end;
 
-    sortKey = ( (uint8_t *)&source[ 0 ].hShader ) + byte;
-    end = sortKey + ( size * sizeof( srfPoly_t ) );
-    for ( ; sortKey < end; sortKey += sizeof( srfPoly_t ) ) {
-        ++count[ *sortKey ];
-    }
+	sortKey = ( (uint8_t *)&source[ 0 ].hShader ) + byte;
+	end = sortKey + ( size * sizeof( srfPoly_t ) );
+	for ( ; sortKey < end; sortKey += sizeof( srfPoly_t ) ) {
+		++count[ *sortKey ];
+	}
 
-    index[ 0 ] = 0;
+	index[ 0 ] = 0;
 
-    for ( i = 1; i < 256; ++i ) {
-        index[ i ] = index[ i - 1 ] + count[ i - 1 ];
-    }
+	for ( i = 1; i < 256; ++i ) {
+		index[ i ] = index[ i - 1 ] + count[ i - 1 ];
+	}
 
-    sortKey = ( (uint8_t *)&source[ 0 ].hShader ) + byte;
-    for ( i = 0; i < size; ++i, sortKey += sizeof( srfPoly_t ) ) {
-        dest[ index[ *sortKey ]++ ] = source[ i ];
-    }
+	sortKey = ( (uint8_t *)&source[ 0 ].hShader ) + byte;
+	for ( i = 0; i < size; ++i, sortKey += sizeof( srfPoly_t ) ) {
+		dest[ index[ *sortKey ]++ ] = source[ i ];
+	}
 }
 
 
@@ -115,22 +115,22 @@ Radix sort with 4 byte size buckets
 */
 static void R_RadixSort( srfPoly_t *source, uint32_t size )
 {
-    srfPoly_t *scratch = (srfPoly_t *)ri.Hunk_AllocateTempMemory( sizeof( *scratch ) * r_maxPolys->i );
-    if ( !scratch ) {
-        N_Error( ERR_FATAL, "R_RadixSort: failed to allocate sufficient memory for scratch sort buffer" );
-    }
+	srfPoly_t *scratch = (srfPoly_t *)ri.Hunk_AllocateTempMemory( sizeof( *scratch ) * r_maxPolys->i );
+	if ( !scratch ) {
+		N_Error( ERR_FATAL, "R_RadixSort: failed to allocate sufficient memory for scratch sort buffer" );
+	}
 #ifdef GDR_LITTLE_ENDIAN
-    R_Radix( 0, size, source, scratch );
-    R_Radix( 1, size, scratch, source );
-    R_Radix( 2, size, source, scratch );
-    R_Radix( 3, size, scratch, source );
+	R_Radix( 0, size, source, scratch );
+	R_Radix( 1, size, scratch, source );
+	R_Radix( 2, size, source, scratch );
+	R_Radix( 3, size, scratch, source );
 #else
-    R_Radix( 3, size, source, scratch );
-    R_Radix( 2, size, scratch, source );
-    R_Radix( 1, size, source, scratch );
-    R_Radix( 0, size, scratch, source );
+	R_Radix( 3, size, source, scratch );
+	R_Radix( 2, size, scratch, source );
+	R_Radix( 1, size, source, scratch );
+	R_Radix( 0, size, scratch, source );
 #endif //GDR_LITTLE_ENDIAN
-    ri.Hunk_FreeTempMemory( scratch );
+	ri.Hunk_FreeTempMemory( scratch );
 }
 
 extern uint64_t r_numEntities;
@@ -146,49 +146,49 @@ extern uint64_t r_numPolyVerts;
 extern uint64_t r_firstSceneVert;
 
 static int SortPoly( const void *a, const void *b ) {
-    return (int)( ( (srfPoly_t *)a )->hShader - ( (srfPoly_t *)b )->hShader );
+	return (int)( ( (srfPoly_t *)a )->hShader - ( (srfPoly_t *)b )->hShader );
 }
 
 void R_WorldToGL( drawVert_t *verts, vec3_t pos )
 {
-    vec3_t xyz[4];
-    int i;
+	vec3_t xyz[4];
+	int i;
 
-    ri.GLM_TransformToGL( pos, xyz, 1.0f, 0.0f, glState.viewData.camera.viewProjectionMatrix );
+	ri.GLM_TransformToGL( pos, xyz, 1.0f, 0.0f, glState.viewData.camera.viewProjectionMatrix );
 
-    for ( i = 0; i < 4; ++i ) {
-        VectorCopy( verts[i].xyz, xyz[i] );
+	for ( i = 0; i < 4; ++i ) {
+		VectorCopy( verts[i].xyz, xyz[i] );
 	}
 }
 
 void R_WorldToGL2( polyVert_t *verts, vec3_t pos, uint32_t numVerts )
 {
-    vec3_t xyz[4];
-    int i;
+	vec3_t xyz[4];
+	int i;
 
-    ri.GLM_TransformToGL( pos, xyz, 1.0f, 0.0f, glState.viewData.camera.viewProjectionMatrix );
+	ri.GLM_TransformToGL( pos, xyz, 1.0f, 0.0f, glState.viewData.camera.viewProjectionMatrix );
 
-    for ( i = 0; i < numVerts; ++i ) {
-        VectorCopy( verts[i].xyz, xyz[i] );
-    }
+	for ( i = 0; i < numVerts; ++i ) {
+		VectorCopy( verts[i].xyz, xyz[i] );
+	}
 }
 
 void R_ScreenToGL( polyVert_t *verts )
 {
-    vec3_t xyz[4];
-    vec3_t pos;
-    int i;
-    float scale;
+	vec3_t xyz[4];
+	vec3_t pos;
+	int i;
+	float scale;
 
-    VectorCopy( pos, verts[3].xyz );
+	VectorCopy( pos, verts[3].xyz );
 
-    scale = verts[0].xyz[0] * verts[0].xyz[1];
+	scale = verts[0].xyz[0] * verts[0].xyz[1];
 
-    ri.GLM_TransformToGL( pos, xyz, scale, 0.0f, glState.viewData.camera.viewProjectionMatrix );
+	ri.GLM_TransformToGL( pos, xyz, scale, 0.0f, glState.viewData.camera.viewProjectionMatrix );
 
-    for ( i = 0; i < 4; i++ ) {
-        VectorCopy( verts[i].xyz, xyz[i] );
-    }
+	for ( i = 0; i < 4; i++ ) {
+		VectorCopy( verts[i].xyz, xyz[i] );
+	}
 }
 
 /*
@@ -202,42 +202,42 @@ void R_DrawPolys( void )
 	nhandle_t oldShader;
 	uint64_t numVerts;
 	vec3_t normal, edge1, edge2;
-    vec3_t xyz[4];
+	vec3_t xyz[4];
 	
 	// no polygon submissions this frame
 	if ( !r_numPolys && !r_numPolyVerts ) {
-	    return;
+		return;
 	}
-    ri.ProfileFunctionBegin( "R_DrawPolys" );
+	ri.ProfileFunctionBegin( "R_DrawPolys" );
 
-    rg.world->drawing = qtrue;
+	rg.world->drawing = qtrue;
 
-    RB_SetBatchBuffer( backend.drawBuffer, backendData[ rg.smpFrame ]->verts, sizeof( srfVert_t ),
-        backendData[ rg.smpFrame ]->indices, sizeof( glIndex_t ) );
+	RB_SetBatchBuffer( backend.drawBuffer, backendData[ rg.smpFrame ]->verts, sizeof( srfVert_t ),
+		backendData[ rg.smpFrame ]->indices, sizeof( glIndex_t ) );
 
-    // sort the polys to be more efficient with our shaders
-    R_RadixSort( backend.refdef.polys, backend.refdef.numPolys );
+	// sort the polys to be more efficient with our shaders
+	R_RadixSort( backend.refdef.polys, backend.refdef.numPolys );
 
-    poly = backend.refdef.polys;
-    oldShader = poly->hShader;
-    backend.drawBatch.shader = R_GetShaderByHandle( oldShader );
+	poly = backend.refdef.polys;
+	oldShader = poly->hShader;
+	backend.drawBatch.shader = R_GetShaderByHandle( oldShader );
 
-    assert( backend.refdef.polys );
+	assert( backend.refdef.polys );
 
-    for ( i = 0; i < backend.refdef.numPolys; i++ ) {
-        if ( oldShader != backend.refdef.polys[i].hShader ) {
-            // if we have a new shader, flush the current batch
-            RB_FlushBatchBuffer();
-            oldShader = backend.refdef.polys[i].hShader;
-            backend.drawBatch.shader = R_GetShaderByHandle( backend.refdef.polys[i].hShader );
-        }
+	for ( i = 0; i < backend.refdef.numPolys; i++ ) {
+		if ( oldShader != backend.refdef.polys[i].hShader ) {
+			// if we have a new shader, flush the current batch
+			RB_FlushBatchBuffer();
+			oldShader = backend.refdef.polys[i].hShader;
+			backend.drawBatch.shader = R_GetShaderByHandle( backend.refdef.polys[i].hShader );
+		}
 		
 		if ( backend.drawBatch.vtxOffset + backend.refdef.polys[i].numVerts >= r_maxPolys->i * 4
 			|| backend.drawBatch.idxOffset + ( (int64_t)( backend.refdef.polys[i].numVerts ) - 2 ) >= r_maxPolys->i * 6 )
 		{
 			RB_FlushBatchBuffer();
 		}
-        
+		
 		// generate fan indexes into the buffer
 		for ( j = 0; j < backend.refdef.polys[i].numVerts - 2; j++ ) {
 			backendData[ rg.smpFrame ]->indices[ backend.drawBatch.idxOffset + 0 ] = backend.drawBatch.vtxOffset;
@@ -246,16 +246,16 @@ void R_DrawPolys( void )
 			backend.drawBatch.idxOffset += 3;
 			
 			// generate normals
-            /*
+			/*
 			VectorSubtract( backend.refdef.polys[i].verts[ j ].xyz, backend.refdef.polys[i].verts[ j + 1 ].xyz, edge1 );
 			VectorSubtract( backend.refdef.polys[i].verts[ j ].xyz, backend.refdef.polys[i].verts[ j + 2 ].xyz, edge2 );
 			CrossProduct( edge1, edge2, normal );
 			R_VaoPackNormal( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset + j ].normal, normal );
 			VectorCopy( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset + j + 1 ].normal,
-                backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset + j + 0 ].normal );
+				backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset + j + 0 ].normal );
 			VectorCopy( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset + j + 2 ].normal,
-                backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset + j + 0 ].normal );
-            */
+				backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset + j + 0 ].normal );
+			*/
 		}
 		
 		for ( j = 0; j < backend.refdef.polys[i].numVerts; j++ ) {
@@ -271,250 +271,254 @@ void R_DrawPolys( void )
 	
 	// flush out anything remaining
 	RB_FlushBatchBuffer();
-    rg.world->drawing = qfalse;
+	rg.world->drawing = qfalse;
 
-    ri.ProfileFunctionEnd();
+	ri.ProfileFunctionEnd();
 }
 
 void R_DrawWorld( void )
 {
-    uint32_t y, x;
-    uint32_t i;
-    uint64_t j;
-    vec3_t pos;
-    ivec3_t origin;
-    drawVert_t *vtx;
+	uint32_t y, x;
+	uint32_t i;
+	uint64_t j;
+	vec3_t pos;
+	ivec3_t origin;
+	drawVert_t *vtx;
 	ivec2_t begin, end;
-    vec3_t edge1, edge2, normal;
-    vec4_t color;
-    uint16_t color16[4];
-    const renderEntityDef_t *refEntity;
+	vec3_t edge1, edge2, normal;
+	vec4_t color;
+	uint16_t color16[4];
+	const renderEntityDef_t *refEntity;
 
-    if ( ( backend.refdef.flags & RSF_NOWORLDMODEL ) ) {
-        // nothing to draw
-        return;
-    }
+	if ( ( backend.refdef.flags & RSF_NOWORLDMODEL ) ) {
+		// nothing to draw
+		return;
+	}
 
-    ri.ProfileFunctionBegin( "R_DrawWorld" );
+	ri.ProfileFunctionBegin( "R_DrawWorld" );
 
-    if ( !rg.world ) {
-        ri.Error( ERR_FATAL, "R_DrawWorld: no world model loaded" );
-    }
+	if ( !rg.world ) {
+		ri.Error( ERR_FATAL, "R_DrawWorld: no world model loaded" );
+	}
 
-    // prepare the batch
-    RB_SetBatchBuffer( rg.world->buffer, rg.world->vertices, sizeof( drawVert_t ), rg.world->indices, sizeof( glIndex_t ) );
+	// prepare the batch
+	RB_SetBatchBuffer( rg.world->buffer, rg.world->vertices, sizeof( drawVert_t ), rg.world->indices, sizeof( glIndex_t ) );
 
-    backend.drawBatch.shader = rg.world->shader;
-    rg.world->drawing = qtrue;
+	backend.drawBatch.shader = rg.world->shader;
+	rg.world->drawing = qtrue;
+	backend.drawBatch.instanceCount = 64;
+	backend.drawBatch.instanced = qtrue;
 
-    vtx = rg.world->vertices;
+	vtx = rg.world->vertices;
 	VectorCopy2( begin, glState.viewData.camera.origin );
 	VectorCopy2( end, glState.viewData.camera.origin );
 
-    for ( y = 0; y < rg.world->height; y++ ) {
-        for ( x = 0; x < rg.world->width; x++ ) {
-            pos[0] = x;
-            pos[1] = rg.world->height - y;
-            pos[2] = 0.0f;
+	for ( y = 0; y < rg.world->height; y++ ) {
+		for ( x = 0; x < rg.world->width; x++ ) {
+			pos[0] = x;
+			pos[1] = rg.world->height - y;
+			pos[2] = 0.0f;
 
-            // convert the local world coordinates to OpenGL screen coordinates
-            R_WorldToGL( vtx, pos );
+			// convert the local world coordinates to OpenGL screen coordinates
+			R_WorldToGL( vtx, pos );
 
-            // generate normals
-            // FIXME: this is hideous
-            /*
-            if ( &vtx[3] != &rg.world->vertices[rg.world->numVertices] ) {
-                VectorSubtract( vtx->xyz, vtx[1].xyz, edge1 );
-                VectorSubtract( vtx->xyz, vtx[3].xyz, edge2 );
-                CrossProduct( edge1, edge2, normal );
-            } else {
-                VectorSubtract( vtx->xyz, vtx[1].xyz, edge1 );
-                VectorSubtract( vtx->xyz, vtx[2].xyz, edge2 );
-                CrossProduct( edge1, edge2, normal );
-            }
-            */
+			// generate normals
+			// FIXME: this is hideous
+			/*
+			if ( &vtx[3] != &rg.world->vertices[rg.world->numVertices] ) {
+				VectorSubtract( vtx->xyz, vtx[1].xyz, edge1 );
+				VectorSubtract( vtx->xyz, vtx[3].xyz, edge2 );
+				CrossProduct( edge1, edge2, normal );
+			} else {
+				VectorSubtract( vtx->xyz, vtx[1].xyz, edge1 );
+				VectorSubtract( vtx->xyz, vtx[2].xyz, edge2 );
+				CrossProduct( edge1, edge2, normal );
+			}
+			*/
 
-            // check if there's any entities in the way
-            VectorSet4( color, 1.0f, 1.0f, 1.0f, 1.0f );
-            for ( j = 0; j < backend.refdef.numEntities; j++ ) {
-                refEntity = &backend.refdef.entities[j];
+			// check if there's any entities in the way
+			VectorSet4( color, 1.0f, 1.0f, 1.0f, 1.0f );
+			for ( j = 0; j < backend.refdef.numEntities; j++ ) {
+				refEntity = &backend.refdef.entities[j];
 
-                origin[0] = refEntity->e.origin[0];
-                origin[1] = (int)( refEntity->e.origin[1] + 1 );
-                origin[2] = refEntity->e.origin[2];
+				origin[0] = refEntity->e.origin[0];
+				origin[1] = (int)( refEntity->e.origin[1] + 1 );
+				origin[2] = refEntity->e.origin[2];
 
-                if ( origin[0] < 0.0f || origin[1] < 0.0f || origin[0] >= rg.world->width || origin[1] >= rg.world->height ) {
-                    continue; // not in clipping range
-                }
+				if ( origin[0] < 0.0f || origin[1] < 0.0f || origin[0] >= rg.world->width || origin[1] >= rg.world->height ) {
+					continue; // not in clipping range
+				}
 
-                if ( rg.world->tiles[ origin[1] * rg.world->width + origin[0] ].flags & TILESIDE_SOUTH ) {
-                    color[3] = 0.10f;
-                    break;
-                }
-            }
-            vtx += 4;
-        }
-    }
+				if ( rg.world->tiles[ origin[1] * rg.world->width + origin[0] ].flags & TILESIDE_SOUTH ) {
+					color[3] = 0.10f;
+					break;
+				}
+			}
+			vtx += 4;
+		}
+	}
 
-    RB_CommitDrawData( rg.world->vertices, rg.world->numVertices, rg.world->indices, rg.world->numIndices );
+	RB_CommitDrawData( rg.world->vertices, rg.world->numVertices, rg.world->indices, rg.world->numIndices );
 
-    // flush it we have anything left in there
-    RB_FlushBatchBuffer();
-    rg.world->drawing = qfalse;
+	// flush it we have anything left in there
+	RB_FlushBatchBuffer();
+	rg.world->drawing = qfalse;
 
-    ri.ProfileFunctionEnd();
+	backend.drawBatch.instanced = qfalse;
+
+	ri.ProfileFunctionEnd();
 }
 
 void R_RenderView( const viewData_t *parms )
 {
-    rg.viewCount++;
+	rg.viewCount++;
 
-    memcpy( &glState.viewData, parms, sizeof( *parms ) );
+	memcpy( &glState.viewData, parms, sizeof( *parms ) );
 
-    // setup the correct matrices
-    RB_MakeViewMatrix();
+	// setup the correct matrices
+	RB_MakeViewMatrix();
 
-    // draw the world
-    RE_AddDrawWorldCmd();
+	// draw the world
+	RE_AddDrawWorldCmd();
 
-    // draw any queued up images
-    R_IssuePendingRenderCommands();
+	// draw any queued up images
+	R_IssuePendingRenderCommands();
 }
 
 
 static void R_CalcSpriteTextureCoords( uint32_t x, uint32_t y, uint32_t spriteWidth, uint32_t spriteHeight,
-    uint32_t sheetWidth, uint32_t sheetHeight, spriteCoord_t texCoords )
+	uint32_t sheetWidth, uint32_t sheetHeight, spriteCoord_t texCoords )
 {
-    const vec2_t min = { ( ( (float)x + 1 ) * spriteWidth ) / sheetWidth, ( ( (float)y + 1 ) * spriteHeight ) / sheetHeight };
-    const vec2_t max = { ( (float)x * spriteWidth ) / sheetWidth, ( (float)y * spriteHeight ) / sheetHeight };
+	const vec2_t min = { ( ( (float)x + 1 ) * spriteWidth ) / sheetWidth, ( ( (float)y + 1 ) * spriteHeight ) / sheetHeight };
+	const vec2_t max = { ( (float)x * spriteWidth ) / sheetWidth, ( (float)y * spriteHeight ) / sheetHeight };
 
-    texCoords[0][0] = min[0];
-    texCoords[0][1] = max[1];
+	texCoords[0][0] = min[0];
+	texCoords[0][1] = max[1];
 
-    texCoords[1][0] = min[0];
-    texCoords[1][1] = min[1];
+	texCoords[1][0] = min[0];
+	texCoords[1][1] = min[1];
 
-    texCoords[2][0] = max[0];
-    texCoords[2][1] = min[1];
-    
-    texCoords[3][0] = max[0];
-    texCoords[3][1] = max[1];
+	texCoords[2][0] = max[0];
+	texCoords[2][1] = min[1];
+	
+	texCoords[3][0] = max[0];
+	texCoords[3][1] = max[1];
 }
 
 /*
 void R_ScreenToGL(vec3_t *xyz)
 {
-    xyz[0][0] = 2.0f * xyz[0][0] / glConfig.vidWidth - 1.0f;
+	xyz[0][0] = 2.0f * xyz[0][0] / glConfig.vidWidth - 1.0f;
 	xyz[0][1] = 1.0f - 2.0f * xyz[0][1] / glConfig.vidHeight;
 
-    xyz[1][0] = 2.0f * xyz[1][0] / glConfig.vidWidth - 1.0f;
+	xyz[1][0] = 2.0f * xyz[1][0] / glConfig.vidWidth - 1.0f;
 	xyz[1][1] = 1.0f - 2.0f * xyz[1][1] / glConfig.vidHeight;
 
-    xyz[2][0] = 2.0f * xyz[2][0] / glConfig.vidWidth - 1.0f;
+	xyz[2][0] = 2.0f * xyz[2][0] / glConfig.vidWidth - 1.0f;
 	xyz[2][1] = 1.0f - 2.0f * xyz[2][1] / glConfig.vidHeight;
 
-    xyz[3][0] = 2.0f * xyz[3][0] / glConfig.vidWidth - 1.0f;
+	xyz[3][0] = 2.0f * xyz[3][0] / glConfig.vidWidth - 1.0f;
 	xyz[3][1] = 1.0f - 2.0f * xyz[3][1] / glConfig.vidHeight;
 }
 */
 
 nhandle_t RE_RegisterSpriteSheet( const char *npath, uint32_t sheetWidth, uint32_t sheetHeight, uint32_t spriteWidth, uint32_t spriteHeight )
 {
-    spriteSheet_t *sheet;
-    uint64_t len;
-    uint64_t size;
-    uint64_t i;
-    nhandle_t handle;
-    uint32_t numSprites, spriteCountY, spriteCountX;
-    sprite_t *sprite;
+	spriteSheet_t *sheet;
+	uint64_t len;
+	uint64_t size;
+	uint64_t i;
+	nhandle_t handle;
+	uint32_t numSprites, spriteCountY, spriteCountX;
+	sprite_t *sprite;
 
-    len = strlen( npath );
+	len = strlen( npath );
 
-    if ( !( ( (uint32_t)sheetWidth % 2 ) == 0 && ( (uint32_t)sheetHeight % 2 ) == 0 )
-	    || !( ( (uint32_t)spriteWidth % 2 ) == 0 && ( (uint32_t)spriteHeight % 2 ) == 0 ) )
-    {
-        ri.Error( ERR_DROP, "RE_RegisterSpriteSheet: please ensure your sprite dimensions and sheet dimensions are powers of two" );
-    }
-    if ( len >= MAX_NPATH ) {
-        ri.Error( ERR_DROP, "RE_RegisterSpriteSheet: name '%s' too long", npath );
-    }
+	if ( !( ( (uint32_t)sheetWidth % 2 ) == 0 && ( (uint32_t)sheetHeight % 2 ) == 0 )
+		|| !( ( (uint32_t)spriteWidth % 2 ) == 0 && ( (uint32_t)spriteHeight % 2 ) == 0 ) )
+	{
+		ri.Error( ERR_DROP, "RE_RegisterSpriteSheet: please ensure your sprite dimensions and sheet dimensions are powers of two" );
+	}
+	if ( len >= MAX_NPATH ) {
+		ri.Error( ERR_DROP, "RE_RegisterSpriteSheet: name '%s' too long", npath );
+	}
 
-    //
-    // check if we already have it
-    //
-    for ( i = 0; i < rg.numSpriteSheets; i++ ) {
-        if ( !rg.sheets[i] ) {
-            continue;
-        }
-        if ( !N_stricmp( npath, rg.sheets[i]->name ) ) {
-            return (nhandle_t)i;
-        }
-    }
+	//
+	// check if we already have it
+	//
+	for ( i = 0; i < rg.numSpriteSheets; i++ ) {
+		if ( !rg.sheets[i] ) {
+			continue;
+		}
+		if ( !N_stricmp( npath, rg.sheets[i]->name ) ) {
+			return (nhandle_t)i;
+		}
+	}
 
-    numSprites = ( sheetWidth / spriteWidth ) * ( sheetHeight / spriteHeight );
+	numSprites = ( sheetWidth / spriteWidth ) * ( sheetHeight / spriteHeight );
 
-    size = 0;
-    size += PAD( sizeof( *sheet ), sizeof( uintptr_t ) );
-    size += PAD( sizeof( *sheet->sprites ) * numSprites, sizeof( uintptr_t ) );
-    size += PAD( len + 1, sizeof( uintptr_t ) );
+	size = 0;
+	size += PAD( sizeof( *sheet ), sizeof( uintptr_t ) );
+	size += PAD( sizeof( *sheet->sprites ) * numSprites, sizeof( uintptr_t ) );
+	size += PAD( len + 1, sizeof( uintptr_t ) );
 
-    handle = rg.numSpriteSheets;
-    sheet = rg.sheets[rg.numSpriteSheets] = (spriteSheet_t *)ri.Hunk_Alloc( size, h_low );
-    memset( sheet, 0, size );
-    sheet->name = (char *)( sheet + 1 );
-    sheet->sprites = (sprite_t *)( sheet->name + len + 1 );
+	handle = rg.numSpriteSheets;
+	sheet = rg.sheets[rg.numSpriteSheets] = (spriteSheet_t *)ri.Hunk_Alloc( size, h_low );
+	memset( sheet, 0, size );
+	sheet->name = (char *)( sheet + 1 );
+	sheet->sprites = (sprite_t *)( sheet->name + len + 1 );
 
-    strcpy( sheet->name, npath );
+	strcpy( sheet->name, npath );
 
-    sheet->numSprites = numSprites;
-    sheet->sheetWidth = sheetWidth;
-    sheet->sheetHeight = sheetHeight;
-    sheet->spriteWidth = spriteWidth;
-    sheet->spriteHeight = spriteHeight;
+	sheet->numSprites = numSprites;
+	sheet->sheetWidth = sheetWidth;
+	sheet->sheetHeight = sheetHeight;
+	sheet->spriteWidth = spriteWidth;
+	sheet->spriteHeight = spriteHeight;
 
-    spriteCountX = sheetWidth / spriteWidth;
-    spriteCountY = sheetHeight / spriteHeight;
+	spriteCountX = sheetWidth / spriteWidth;
+	spriteCountY = sheetHeight / spriteHeight;
 
-    ri.Printf( PRINT_DEVELOPER, "Generate sprite sheet, [ %u, %u ]:[ %u, %u ], %u sprites\n", sheetWidth, sheetHeight, spriteWidth, spriteHeight,
-        numSprites );
+	ri.Printf( PRINT_DEVELOPER, "Generate sprite sheet, [ %u, %u ]:[ %u, %u ], %u sprites\n", sheetWidth, sheetHeight, spriteWidth, spriteHeight,
+		numSprites );
 
-    sheet->hShader = RE_RegisterShader( npath );
-    if ( sheet->hShader == FS_INVALID_HANDLE ) {
-        ri.Printf( PRINT_WARNING, "RE_RegisterSpriteSheet: failed to find shader '%s'.\n", npath );
-        return FS_INVALID_HANDLE;
-    }
+	sheet->hShader = RE_RegisterShader( npath );
+	if ( sheet->hShader == FS_INVALID_HANDLE ) {
+		ri.Printf( PRINT_WARNING, "RE_RegisterSpriteSheet: failed to find shader '%s'.\n", npath );
+		return FS_INVALID_HANDLE;
+	}
 
-    sprite = sheet->sprites;
-    for ( uint32_t y = 0; y < spriteCountY; y++ ) {
-        for ( uint32_t x = 0; x < spriteCountX; x++ ) {
-            R_CalcSpriteTextureCoords( x, y, spriteWidth, spriteHeight, sheetWidth, sheetHeight, sheet->sprites[y * spriteCountX + x].texCoords );
-        }
-    }
+	sprite = sheet->sprites;
+	for ( uint32_t y = 0; y < spriteCountY; y++ ) {
+		for ( uint32_t x = 0; x < spriteCountX; x++ ) {
+			R_CalcSpriteTextureCoords( x, y, spriteWidth, spriteHeight, sheetWidth, sheetHeight, sheet->sprites[y * spriteCountX + x].texCoords );
+		}
+	}
 
-    rg.numSpriteSheets++;
-    if ( rg.world && rg.worldMapLoaded ) {
-        rg.world->levelSpriteSheets++;
-    }
+	rg.numSpriteSheets++;
+	if ( rg.world && rg.worldMapLoaded ) {
+		rg.world->levelSpriteSheets++;
+	}
 
-    return handle;
+	return handle;
 }
 
 nhandle_t RE_RegisterSprite( nhandle_t hSpriteSheet, uint32_t index )
 {
-    spriteSheet_t *sheet;
+	spriteSheet_t *sheet;
 
-    if ( hSpriteSheet == FS_INVALID_HANDLE ) {
-        ri.Printf( PRINT_WARNING, "RE_RegisterSprite: bad sprite sheet given.\n" );
-        return FS_INVALID_HANDLE;
-    }
+	if ( hSpriteSheet == FS_INVALID_HANDLE ) {
+		ri.Printf( PRINT_WARNING, "RE_RegisterSprite: bad sprite sheet given.\n" );
+		return FS_INVALID_HANDLE;
+	}
 
-    sheet = rg.sheets[hSpriteSheet];
+	sheet = rg.sheets[hSpriteSheet];
 
-    if ( index >= sheet->numSprites ) {
-        ri.Printf( PRINT_WARNING, "RE_RegisterSprite: invalid index given.\n" );
-    }
+	if ( index >= sheet->numSprites ) {
+		ri.Printf( PRINT_WARNING, "RE_RegisterSprite: invalid index given.\n" );
+	}
 
-    return (nhandle_t)index; // nothing too fancy...
+	return (nhandle_t)index; // nothing too fancy...
 }
 
 /*

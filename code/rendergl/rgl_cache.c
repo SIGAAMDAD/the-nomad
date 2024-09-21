@@ -177,10 +177,10 @@ void R_InitGPUBuffers( void )
 
 	if ( NGL_VERSION_ATLEAST( 4, 3  ) ) {
 		srfVert_t quadVertices[] = {
-			{ { 0.0f, 0.0f, 0.0f, }, { -1.0f,  1.0f, 0.0f }, { 0.0f, 0.0f }, { 1, 1, 1, 1 } },
-			{ { 0.0f, 0.0f, 0.0f, }, {  1.0f,  1.0f, 0.0f }, { 1.0f, 0.0f }, { 1, 1, 1, 1 } },
-			{ { 0.0f, 0.0f, 0.0f, }, {  1.0f, -1.0f, 0.0f }, { 1.0f, 1.0f }, { 1, 1, 1, 1 } },
-			{ { 0.0f, 0.0f, 0.0f, }, { -1.0f,  1.0f, 0.0f }, { 0.0f, 1.0f }, { 1, 1, 1, 1 } },
+			{ { 0, 0 }, { -1.0f,  1.0f, 0.0f }, { 0.0f, 0.0f }, { 1, 1, 1, 1 } },
+			{ { 0, 0 }, {  1.0f,  1.0f, 0.0f }, { 1.0f, 0.0f }, { 1, 1, 1, 1 } },
+			{ { 0, 0 }, {  1.0f, -1.0f, 0.0f }, { 1.0f, 1.0f }, { 1, 1, 1, 1 } },
+			{ { 0, 0 }, { -1.0f,  1.0f, 0.0f }, { 0.0f, 1.0f }, { 1, 1, 1, 1 } },
 		};
 
 		uint32_t indices[] = {
@@ -286,7 +286,7 @@ void R_InitGPUBuffers( void )
 	*/
 
 	backend.drawBuffer = R_AllocateBuffer( "batchBuffer", NULL, sizeof( srfVert_t ) * MAX_BATCH_VERTICES, NULL,
-		sizeof( glIndex_t ) * MAX_BATCH_INDICES, BUFFER_FRAME );
+		sizeof( glIndex_t ) * MAX_BATCH_INDICES, BUFFER_STREAM );
 
 	backend.drawBuffer->attribs[ATTRIB_INDEX_POSITION].enabled		= qtrue;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_TEXCOORD].enabled		= qtrue;
@@ -296,12 +296,12 @@ void R_InitGPUBuffers( void )
 	backend.drawBuffer->attribs[ATTRIB_INDEX_POSITION].count		= 3;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_TEXCOORD].count		= 2;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_COLOR].count			= 4;
-	backend.drawBuffer->attribs[ATTRIB_INDEX_WORLDPOS].count		= 3;
+	backend.drawBuffer->attribs[ATTRIB_INDEX_WORLDPOS].count		= 2;
 
 	backend.drawBuffer->attribs[ATTRIB_INDEX_POSITION].type			= GL_FLOAT;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_TEXCOORD].type			= GL_FLOAT;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_COLOR].type			= GL_UNSIGNED_SHORT;
-	backend.drawBuffer->attribs[ATTRIB_INDEX_WORLDPOS].type			= GL_FLOAT;
+	backend.drawBuffer->attribs[ATTRIB_INDEX_WORLDPOS].type			= GL_UNSIGNED_SHORT;
 
 	backend.drawBuffer->attribs[ATTRIB_INDEX_POSITION].index		= ATTRIB_INDEX_POSITION;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_TEXCOORD].index		= ATTRIB_INDEX_TEXCOORD;

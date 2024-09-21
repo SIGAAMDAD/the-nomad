@@ -109,7 +109,7 @@ void CalcNormal() {
 #ifdef VERTEX_SHADER
 vec3 CalcPointLight( Light light ) {
 	vec3 diffuse = v_LightColor;
-	float dist = distance( a_WorldPos, vec3( light.origin, a_WorldPos.z ) );
+	float dist = distance( v_WorldPos, vec3( light.origin, v_WorldPos.z ) );
 	float diff = 0.0;
 	float range = light.range;
 	if ( dist <= light.range ) {
@@ -171,7 +171,6 @@ void ApplyLighting() {
 #if LIGHTING_QUALITY == 0 || LIGHTING_QUALITY == 1
 #ifdef VERTEX_SHADER
 	v_LightColor = vec3( 1.0 );
-//	v_LightColor = texture2D( u_DiffuseMap, a_TexCoords ).rgb;
 	for ( int i = 0; i < u_NumLights; i++ ) {
 		switch ( u_LightData[i].type ) {
 		case POINT_LIGHT:

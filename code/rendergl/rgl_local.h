@@ -444,9 +444,8 @@ typedef struct dlight_s {
 	struct dlight_s *prev;
 } dlight_t;
 
-// normal is unused
 typedef struct {
-	vec3_t			worldPos;
+	uint16_t		worldPos[2];
 	vec3_t          xyz;
 	vec2_t          uv;
 	uint16_t        color[4];
@@ -461,13 +460,10 @@ typedef struct {
 } srfPoly_t;
 
 typedef struct {
-	vec3_t			worldPos;
+	uint16_t		worldPos[2];
 	vec3_t          xyz;
 	vec2_t          st;
 	uint16_t        color[4];
-#ifdef DEBUG_OPTIMIZEVERTICES
-//	unsigned int    id;
-#endif
 } srfVert_t;
 
 typedef struct {

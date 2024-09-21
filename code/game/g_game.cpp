@@ -40,6 +40,9 @@ CModuleInfo *sgvm;
 renderExport_t re;
 gameInfo_t gi;
 
+extern SDL_Window *SDL_window;
+extern SDL_GLContext SDL_glContext;
+
 cvar_t *r_glDebug;
 cvar_t *r_allowLegacy;
 cvar_t *r_displayRefresh;
@@ -430,6 +433,12 @@ static void ProfileFunctionEnd( void )
 	PROFILE_BLOCK_END;
 }
 
+static void GLimp_AcquireContext( void )
+{
+	SDL_GL_MakeCurrent( SDL_window, NULL );
+	SDL_GL_MakeCurrent( SDL_window, SDL_glContext );
+}
+
 static void G_InitRenderRef( void )
 {
 	refimport_t import;
@@ -499,6 +508,7 @@ static void G_InitRenderRef( void )
 	import.GLimp_FrontEndSleep = GLimp_FrontEndSleep;
 	import.GLimp_WakeRenderer = GLimp_WakeRenderer;
 	import.GLimp_RenderSleep = GLimp_RenderSleep;
+	import.GLimp_AcquireContext = GLimp_AcquireContext;
 #ifdef USE_OPENGL_API
 	import.GLimp_EndFrame = GLimp_EndFrame;
 	import.GLimp_SetGamma = GLimp_SetGamma;
@@ -615,7 +625,7 @@ static void G_InitRenderer( void )
 
 	// load the character sets
 //    gi.charSetShader = re.RegisterShader("gfx/bigchars");
-	gi.whiteShader = re.RegisterShader( "white" );
+//	gi.whiteShader = re.RegisterShader( "white" );
 
 //    g_console_field_width = ( ( gi.gpuConfig.vidWidth / smallchar_width ) ) - 2;
 
@@ -1803,6 +1813,10 @@ void G_Init( void )
 		Cvar_ForceReset( "g_renderer" );
 	}
 
+	// init renderer
+	G_InitRenderer();
+	gi.rendererStarted = qtrue;
+
 	// init sound
 	Snd_Init();
 	gi.soundStarted = qtrue;
@@ -1810,9 +1824,15 @@ void G_Init( void )
 	// init archive handler
 	G_InitArchiveHandler();
 
-	// init renderer
-	G_InitRenderer();
-	gi.rendererStarted = qtrue;
+	re.WaitRegistered();
+
+	if ( !g_pModuleLib ) {
+		G_InitModuleLib();
+	}
+
+	if ( !sys_forceSingleThreading->i ) {
+		re.GetConfig( &gi.gpuConfig );
+	}
 
 	// init developer console
 	Con_Init();

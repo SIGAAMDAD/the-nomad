@@ -1,5 +1,5 @@
 in vec3 a_Position;
-in vec3 a_WorldPos;
+in uvec2 a_WorldPos;
 in vec2 a_TexCoords;
 in vec4 a_Color;
 
@@ -139,7 +139,7 @@ void main() {
 	v_TexCoords = texCoords;
 #endif
 
-	v_WorldPos = a_WorldPos;
+	v_WorldPos = vec3( a_WorldPos.xy, 0.0 );
 //	v_FragPos = vec4( u_ModelViewProjection * vec4( position, 1.0 ) ).xyz;
 
 	ApplyLighting();

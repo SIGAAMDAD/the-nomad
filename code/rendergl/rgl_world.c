@@ -132,10 +132,10 @@ static void R_GenerateTexCoords( tile2d_info_t *info )
 			VectorCopy2( vtx[2].uv, sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][2] );
 			VectorCopy2( vtx[3].uv, sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][3] );
 
-			VectorSet( vtx[0].worldPos, x, y, 0.0f );
-			VectorSet( vtx[1].worldPos, x, y, 0.0f );
-			VectorSet( vtx[2].worldPos, x, y, 0.0f );
-			VectorSet( vtx[3].worldPos, x, y, 0.0f );
+			VectorSet2( vtx[0].worldPos, x, y );
+			VectorSet2( vtx[1].worldPos, x, y );
+			VectorSet2( vtx[2].worldPos, x, y );
+			VectorSet2( vtx[3].worldPos, x, y );
 
 			VectorCopy4( vtx[0].color, colorWhite );
 			VectorCopy4( vtx[1].color, colorWhite );
@@ -413,7 +413,7 @@ void R_InitWorldBuffer( void )
 	ri.Printf( PRINT_INFO, "Optimized cache misses: %f\n", R_CalcCacheEfficiency() );
 
 	r_worldData.buffer = R_AllocateBuffer( "worldDrawBuffer", NULL, r_worldData.numVertices * sizeof( drawVert_t ), r_worldData.indices,
-										r_worldData.numIndices * sizeof( glIndex_t ), BUFFER_FRAME );
+										r_worldData.numIndices * sizeof( glIndex_t ), BUFFER_STREAM );
 	attribs = r_worldData.buffer->attribs;
 
 	attribs[ATTRIB_INDEX_POSITION].enabled		= qtrue;
@@ -424,12 +424,12 @@ void R_InitWorldBuffer( void )
 	attribs[ATTRIB_INDEX_POSITION].count		= 3;
 	attribs[ATTRIB_INDEX_TEXCOORD].count		= 2;
 	attribs[ATTRIB_INDEX_COLOR].count			= 4;
-	attribs[ATTRIB_INDEX_WORLDPOS].count        = 3;
+	attribs[ATTRIB_INDEX_WORLDPOS].count        = 2;
 
 	attribs[ATTRIB_INDEX_POSITION].type			= GL_FLOAT;
 	attribs[ATTRIB_INDEX_TEXCOORD].type			= GL_FLOAT;
 	attribs[ATTRIB_INDEX_COLOR].type			= GL_UNSIGNED_SHORT;
-	attribs[ATTRIB_INDEX_WORLDPOS].type         = GL_FLOAT;
+	attribs[ATTRIB_INDEX_WORLDPOS].type         = GL_UNSIGNED_SHORT;
 
 	attribs[ATTRIB_INDEX_POSITION].index		= ATTRIB_INDEX_POSITION;
 	attribs[ATTRIB_INDEX_TEXCOORD].index		= ATTRIB_INDEX_TEXCOORD;
@@ -439,7 +439,7 @@ void R_InitWorldBuffer( void )
 	attribs[ATTRIB_INDEX_POSITION].normalized	= GL_FALSE;
 	attribs[ATTRIB_INDEX_TEXCOORD].normalized	= GL_FALSE;
 	attribs[ATTRIB_INDEX_COLOR].normalized		= GL_TRUE;
-	attribs[ATTRIB_INDEX_WORLDPOS].normalized   = GL_FALSE;
+	attribs[ATTRIB_INDEX_WORLDPOS].normalized	= GL_FALSE;
 
 	attribs[ATTRIB_INDEX_POSITION].offset		= offsetof( drawVert_t, xyz );
 	attribs[ATTRIB_INDEX_TEXCOORD].offset		= offsetof( drawVert_t, uv );
@@ -450,6 +450,14 @@ void R_InitWorldBuffer( void )
 	attribs[ATTRIB_INDEX_TEXCOORD].stride		= sizeof( drawVert_t );
 	attribs[ATTRIB_INDEX_COLOR].stride			= sizeof( drawVert_t );
 	attribs[ATTRIB_INDEX_WORLDPOS].stride       = sizeof( drawVert_t );
+
+	VBO_Bind( r_worldData.buffer );
+	VBO_SetVertexPointers( r_worldData.buffer, ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_COLOR | ATTRIB_WORLDPOS );
+	nglVertexAttribDivisor( ATTRIB_INDEX_POSITION, 0 );
+	nglVertexAttribDivisor( ATTRIB_INDEX_TEXCOORD, 0 );
+	nglVertexAttribDivisor( ATTRIB_INDEX_COLOR, 0 );
+	nglVertexAttribDivisor( ATTRIB_INDEX_WORLDPOS, 0 );
+	VBO_BindNull();
 }
 
 static void R_ProcessLights( void )

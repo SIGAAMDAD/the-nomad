@@ -25,6 +25,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../game/g_game.h"
 #include "n_threads.h"
 #include "../game/imgui_memory_editor.h"
+#include <pthread.h>
 
 /*
 ===============================
@@ -123,7 +124,8 @@ typedef struct memzone_s {
 #endif
 } memzone_t;
 
-static CThreadMutex commonLock;
+static pthread_mutex_t hunkLock;
+static pthread_mutex_t zoneLock;
 
 uint64_t hunksize;
 byte *hunkbase;
@@ -1513,7 +1515,7 @@ void Hunk_ClearToMark( void )
 	hunk_high.permanent = hunk_high.temp = hunk_high.mark;
 }
 
-static void Hunk_SwapBanks(void)
+static void Hunk_SwapBanks( void )
 {
 	hunkUsed_t	*swap;
 
@@ -1532,20 +1534,23 @@ static void Hunk_SwapBanks(void)
 	}
 }
 
-void *Hunk_AllocateTempMemory(uint64_t size)
+void *Hunk_AllocateTempMemory( uint64_t size )
 {
 	void *buf;
 	hunkHeader_t *h;
 
+	pthread_mutex_lock( &hunkLock );
+
 	// if the hunk hasn't been initialized yet, but there are filesystem calls
 	// being made, then just allocate with Z_Malloc
-	if (hunkbase == NULL) {
-		return Z_Malloc(size, TAG_HUNK);
+	if ( hunkbase == NULL ) {
+		pthread_mutex_unlock( &hunkLock );
+		return Z_Malloc( size, TAG_HUNK );
 	}
 
 	Hunk_SwapBanks();
 	
-	size = PAD(size, sizeof(intptr_t)) + sizeof(hunkHeader_t);
+	size = PAD( size, sizeof( intptr_t ) ) + sizeof( hunkHeader_t );
 
 	if (hunk_temp->temp + hunk_permanent->permanent + size > hunksize) {
 		N_Error(ERR_DROP, "Hunk_AllocateTempMemory: failed on %lu", size);
@@ -1570,16 +1575,21 @@ void *Hunk_AllocateTempMemory(uint64_t size)
 	h->id = HUNKID;
 	h->size = size;
 
+	pthread_mutex_unlock( &hunkLock );
+
 	// don't bother clearing, because we are going to load a file over it
 	return buf;
 }
 
-void Hunk_FreeTempMemory(void *p)
+void Hunk_FreeTempMemory( void *p )
 {
 	hunkHeader_t *h;
 
+	pthread_mutex_lock( &hunkLock );
+
 	// if hunk hasn't been initialized yet, just Z_Free the data
 	if (hunkbase == NULL) {
+		pthread_mutex_unlock( &hunkLock );
 		Z_Free(p);
 		return;
 	}
@@ -1605,6 +1615,8 @@ void Hunk_FreeTempMemory(void *p)
 		else
 			Con_Printf( "Hunk_FreeTempMemory: not the final block\n" );
 	}
+
+	pthread_mutex_unlock( &hunkLock );
 }
 
 void Hunk_ClearTempMemory( void )
@@ -1637,6 +1649,8 @@ void *Hunk_Alloc (uint64_t size, ha_pref where)
 #endif
 {
 	void *buf;
+
+	pthread_mutex_lock( &hunkLock );
 
 	if ( !hunkbase ) {
 		N_Error( ERR_FATAL, "Hunk_Alloc: Hunk memory system not initialized" );
@@ -1709,6 +1723,8 @@ void *Hunk_Alloc (uint64_t size, ha_pref where)
 	}
 #endif
 
+	pthread_mutex_unlock( &hunkLock );
+
 	return buf;
 }
 
@@ -1779,6 +1795,13 @@ void Hunk_InitMemory( void )
 	// cacheline align
 	hunkbase = (byte *)PADP( hunkbase, com_cacheLine );
 	Hunk_Clear();
+
+	pthread_mutexattr_t attrib;
+	pthread_mutexattr_init( &attrib );
+	pthread_mutexattr_settype( &attrib, PTHREAD_MUTEX_RECURSIVE );
+
+	pthread_mutex_init( &hunkLock, &attrib );
+	pthread_mutex_init( &zoneLock, &attrib );
 
 	Cmd_AddCommand( "hunkfree", Hunk_Free_f );
 	Cmd_AddCommand( "meminfo", Com_Meminfo_f );

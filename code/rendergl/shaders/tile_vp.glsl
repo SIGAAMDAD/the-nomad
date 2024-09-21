@@ -1,6 +1,6 @@
 in vec2 a_Position;
 in vec2 a_TexCoords;
-in vec3 a_WorldPos;
+in uvec2 a_WorldPos;
 in vec4 a_Color;
 
 out vec2 v_TexCoords;
@@ -143,7 +143,7 @@ void main() {
 	v_TexCoords = texCoords;
 #endif
     v_Color = u_VertColor * a_Color + u_BaseColor;
-	v_WorldPos = a_WorldPos;
+	v_WorldPos = vec3( a_WorldPos.xy, 0.0 );
 	v_Position = position;
 
 	ApplyLighting();
