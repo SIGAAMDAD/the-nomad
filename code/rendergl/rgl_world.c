@@ -412,8 +412,10 @@ void R_InitWorldBuffer( void )
 	R_OptimizeVertexCache();
 	ri.Printf( PRINT_INFO, "Optimized cache misses: %f\n", R_CalcCacheEfficiency() );
 
-	r_worldData.buffer = R_AllocateBuffer( "worldDrawBuffer", NULL, r_worldData.numVertices * sizeof( drawVert_t ), r_worldData.indices,
-										r_worldData.numIndices * sizeof( glIndex_t ), BUFFER_STREAM );
+//	r_worldData.buffer = R_AllocateBuffer( "worldDrawBuffer", NULL, r_worldData.numVertices * sizeof( drawVert_t ), r_worldData.indices,
+//										r_worldData.numIndices * sizeof( glIndex_t ), BUFFER_STREAM );
+	r_worldData.buffer = R_AllocateBuffer( "worldDrawBuffer", NULL, 4*1024*1024, r_worldData.indices,
+										4*1024*1024, BUFFER_STREAM );
 	attribs = r_worldData.buffer->attribs;
 
 	attribs[ATTRIB_INDEX_POSITION].enabled		= qtrue;

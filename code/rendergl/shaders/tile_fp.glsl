@@ -236,7 +236,7 @@ void main() {
 	float sOffset = ( 1.0 / ( float( texSize.x ) ) * 0.75 );
 	float tOffset = ( 1.0 / ( float( texSize.y ) ) * 0.75 );
 	vec2 texCoord = vec2( v_TexCoords.x + sOffset, v_TexCoords.y + tOffset );
-
+	
 	if ( u_AntiAliasing == AntiAlias_FXAA ) {
 		vec2 fragCoord = texCoord * u_ScreenSize;
 		a_Color = applyFXAA( u_DiffuseMap, fragCoord, u_ScreenSize );
@@ -261,7 +261,6 @@ void main() {
 	float brightness = dot( a_Color.rgb, vec3( 0.1, 0.1, 0.1 ) );
 	if ( brightness > 0.5 ) {
 		a_BrightColor = vec4( a_Color.rgb, 1.0 );
-		a_BrightColor.rgb = blur( a_BrightColor.rgb );
 	} else {
 		a_BrightColor = vec4( 0.0, 0.0, 0.0, 1.0 );
 	}

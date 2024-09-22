@@ -516,6 +516,7 @@ typedef struct {
 	uint32_t id;
 	uint32_t target;
 	uint32_t glUsage;
+	glRingbuffer_t ringbuffer;
 } buffer_t;
 
 typedef struct {
@@ -1007,9 +1008,6 @@ typedef struct {
 	void *indices;              // address of the client indices
 
 	vertexBuffer_t *buffer;     // the buffer handle we're using for this batch
-
-	glRingbuffer_t vertexRB;
-	glRingbuffer_t indexRB;
 
 	qboolean instanced;
 	uint32_t instanceCount;

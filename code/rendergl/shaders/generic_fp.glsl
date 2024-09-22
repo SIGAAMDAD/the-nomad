@@ -175,7 +175,6 @@ void main() {
 	float brightness = dot( a_Color.rgb, vec3( 0.1, 0.1, 0.1 ) );
 	if ( brightness > 0.5 ) {
 		a_BrightColor = vec4( a_Color.rgb, 1.0 );
-		a_BrightColor.rgb = blur( a_BrightColor.rgb );
 	} else {
 		a_BrightColor = vec4( 0.0, 0.0, 0.0, 1.0 );
 	}

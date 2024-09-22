@@ -9,6 +9,7 @@ void R_DrawElements( uint32_t numElements, uintptr_t nOffset ) {
 		if ( backend.drawBatch.instanced ) {
 			nglDrawElementsInstanced( GL_TRIANGLES, numElements, GLN_INDEX_TYPE, NULL, backend.drawBatch.instanceCount );
 		} else {
+//			nglDrawElementsBaseVertex( GL_TRIANGLES, numElements, GLN_INDEX_TYPE, NULL, nOffset );
 			nglDrawElements( GL_TRIANGLES, numElements, GLN_INDEX_TYPE, BUFFER_OFFSET( nOffset ) );
 		}
 		break; }
@@ -793,7 +794,7 @@ void RB_IterateShaderStages( shader_t *shader )
         //
         // draw
         //
-        R_DrawElements( backend.drawBatch.idxOffset, 0 );
+        R_DrawElements( backend.drawBatch.idxOffset, backend.drawBuffer->index.offset );
     }
 
 	if ( r_showTris->i ) {

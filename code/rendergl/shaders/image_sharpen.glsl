@@ -27,8 +27,8 @@ vec4 sharpenImage( sampler2D tex, vec2 pos )
  	//   [ .25, .50, .25]     [ 1 , 2 , 1 ]
 
 
-	float px = 1.0/u_ScreenSize[0];
-	float py = 1.0/u_ScreenSize[1];
+	float px = 1.0 / u_ScreenSize[0];
+	float py = 1.0 / u_ScreenSize[1];
 
 	vec3 blur_ori = texture2D(tex, pos + vec2(px,-py) * 0.5 * offset_bias).rgb // South East
 		+ texture2D(tex, pos + vec2(-px,-py) * 0.5 * offset_bias).rgb  // South West

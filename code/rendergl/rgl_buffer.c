@@ -44,23 +44,24 @@ gpuBuffer_t *R_CreateBuffer( const char *name, bufferUsage_t nUsage, bufferType_
 
 void R_StreamBuffer( gpuBuffer_t *buf, uint32_t nSize, const void *pData )
 {
-	if ( buf->glTarget == GL_SHADER_STORAGE_BUFFER ) {
-		nglMapBufferRange( GL_SHADER_STORAGE_BUFFER, 0, nSize, GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT)
-		nglFlushMappedBufferRange( GL_SHADER_STORAGE_BUFFER, 0, nSize );
-	}
-	else {
-		nglBindBuffer( buf->glTarget, buf->nBufferID );
-		nglBufferData( buf->glTarget, nSize, NULL, buf->glUsage );
-		nglBufferSubData( buf->glTarget, 0, nSize, pData );
-		nglBindBuffer( buf->glTarget, 0 );
-	}
+#ifdef _WIN32
+
+#else
+	nglBindBuffer( buf->glTarget, buf->nBufferID );
+	nglBufferData( buf->glTarget, nSize, NULL, buf->glUsage );
+	nglBufferSubData( buf->glTarget, 0, nSize, pData );
+	nglBindBuffer( buf->glTarget, 0 );
+#endif
 }
 
 void R_SetBufferData( gpuBuffer_t *buf, uint32_t nSize, uint32_t nOffset, const void *pData )
 {
-	nglBindBuffer( buf->glTarget, buf->nBufferID );
-	
-	nglBufferSubData( buf->glTarget, nOffset, nSize, pData );
-
+	nglBindBuffer( buf->glTarget, buf->nBufferID );	
+	if ( buf->nBufferSize < nSize ) {
+		nglBufferData( buf->glTarget, nSize, pData, buf->glUsage );
+		buf->nBufferSize = nSize;
+	} else {
+		nglBufferSubData( buf->glTarget, nOffset, nSize, pData );
+	}
 	nglBindBuffer( buf->glTarget, 0 );
 }

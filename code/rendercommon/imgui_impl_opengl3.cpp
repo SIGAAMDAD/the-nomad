@@ -650,8 +650,28 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 		}
 		else
 		{
-			renderImport.glBufferData(GL_ARRAY_BUFFER, vtx_buffer_size, (const GLvoid *)cmd_list->VtxBuffer.Data, GL_STREAM_DRAW);
-			renderImport.glBufferData(GL_ELEMENT_ARRAY_BUFFER, idx_buffer_size, (const GLvoid *)cmd_list->IdxBuffer.Data, GL_STREAM_DRAW);
+			if ( vtx_buffer_size >= bd->VertexBufferSize ) {
+				renderImport.glBufferData( GL_ARRAY_BUFFER, vtx_buffer_size, NULL, GL_STREAM_DRAW );
+				bd->VertexBufferSize = vtx_buffer_size;
+			}
+			if ( idx_buffer_size >= bd->IndexBufferSize ) {
+				renderImport.glBufferData( GL_ELEMENT_ARRAY_BUFFER, idx_buffer_size, NULL, GL_STREAM_DRAW );
+				bd->IndexBufferSize = idx_buffer_size;
+			}
+
+			void *vtx = renderImport.glMapBufferRange( GL_ARRAY_BUFFER, 0, vtx_buffer_size, GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_WRITE_BIT
+				| GL_MAP_INVALIDATE_BUFFER_BIT );
+			if ( vtx ) {
+				memcpy( vtx, cmd_list->VtxBuffer.Data, vtx_buffer_size );
+			}
+			renderImport.glUnmapBuffer( GL_ARRAY_BUFFER );
+
+			void *idx = renderImport.glMapBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, idx_buffer_size, GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_WRITE_BIT
+				| GL_MAP_INVALIDATE_BUFFER_BIT );
+			if ( idx) {
+				memcpy( idx, cmd_list->IdxBuffer.Data, idx_buffer_size );
+			}
+			renderImport.glUnmapBuffer( GL_ELEMENT_ARRAY_BUFFER );
 		}
 
 		for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)

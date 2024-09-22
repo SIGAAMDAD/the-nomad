@@ -285,8 +285,8 @@ void R_InitGPUBuffers( void )
 	GL_CheckErrors();
 	*/
 
-	backend.drawBuffer = R_AllocateBuffer( "batchBuffer", NULL, sizeof( srfVert_t ) * MAX_BATCH_VERTICES, NULL,
-		sizeof( glIndex_t ) * MAX_BATCH_INDICES, BUFFER_STREAM );
+	backend.drawBuffer = R_AllocateBuffer( "batchBuffer", NULL, 4*1024*1024, NULL,
+		4*1024*1024, BUFFER_STREAM );
 
 	backend.drawBuffer->attribs[ATTRIB_INDEX_POSITION].enabled		= qtrue;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_TEXCOORD].enabled		= qtrue;
@@ -361,7 +361,7 @@ R_InitRingbuffer
 ============
 */
 static void R_InitRingbuffer( GLenum target, uint32_t elementSize, uint32_t segmentElements, glRingbuffer_t *rb ) {
-	const uint32_t totalSize = elementSize * segmentElements * DYN_BUFFER_SEGMENTS;
+	const uint64_t totalSize = elementSize * segmentElements * DYN_BUFFER_SEGMENTS;
 	uint32_t i;
 
 	nglBufferStorage( target, totalSize, NULL, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
@@ -441,14 +441,18 @@ static GLuint R_InitBufferStorage( GLenum target, GLsizei size, const GLvoid *da
 	}
 
 	nglBindBufferARB( target, bufferId );
+	/*
 	if ( r_drawMode->i == DRAWMODE_MAPPED && NGL_VERSION_ATLEAST( 4, 5 ) ) {
 		if ( !newBuffer ) {
 			nglDeleteBuffers( 1, &bufferId );
 			nglCreateBuffers( 1, &bufferId );
 			nglBindBuffer( target, bufferId );
 		}
-		nglBufferStorage( target, size, data, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
-	} else if ( r_drawMode->i == DRAWMODE_CLIENT || r_drawMode->i == DRAWMODE_GPU ) {
+		nglBufferStorage( target, size, data, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT
+			| GL_MAP_PERSISTENT_BIT );
+	} else if ( r_drawMode->i == DRAWMODE_CLIENT || r_drawMode->i == DRAWMODE_GPU )
+	*/
+	{
 		nglBufferDataARB( target, size, data, usage );
 	}
 	if ( ( err = nglGetError() ) != GL_NO_ERROR ) {
@@ -542,20 +546,31 @@ vertexBuffer_t *R_AllocateBuffer( const char *name, void *vertices, uint32_t ver
 	buf->vertex.glUsage = vertexUsage;
 	buf->index.glUsage = indexUsage;
 
-	buf->vertex.id = R_InitBufferStorage( GL_ARRAY_BUFFER_ARB, verticesSize, vertices, vertexUsage, qtrue, 0 );
-	buf->index.id = R_InitBufferStorage( GL_ELEMENT_ARRAY_BUFFER_ARB, indicesSize, indices, indexUsage, qtrue, 0 );
-
+#ifdef _NOMAD_EXPERIMENTAL
 	if ( r_drawMode->i == DRAWMODE_MAPPED ) {
+		nglGenBuffers( 1, &buf->index.id );
+		nglGenBuffers( 1, &buf->vertex.id );
+
 		nglBindBuffer( GL_ARRAY_BUFFER, buf->vertex.id );
 		nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, buf->index.id );
-		
-		buf->vertex.data = nglMapBufferRange( GL_ARRAY_BUFFER, 0, verticesSize, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT
-			| GL_MAP_FLUSH_EXPLICIT_BIT );
-		buf->index.data = nglMapBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, indicesSize, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT
-			| GL_MAP_FLUSH_EXPLICIT_BIT );
-		
-		nglBindBuffer( GL_ARRAY_BUFFER, 0 );
-		nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
+
+		R_InitRingbuffer( GL_ELEMENT_ARRAY_BUFFER, sizeof( glIndex_t ), buf->index.size / sizeof( glIndex_t ), &buf->index.ringbuffer );
+		R_InitRingbuffer( GL_ARRAY_BUFFER, sizeof( drawVert_t ), buf->vertex.size / sizeof( drawVert_t ), &buf->vertex.ringbuffer );
+	} else
+#endif
+	{
+		buf->vertex.id = R_InitBufferStorage( GL_ARRAY_BUFFER_ARB, verticesSize, vertices, vertexUsage, qtrue, 0 );
+		buf->index.id = R_InitBufferStorage( GL_ELEMENT_ARRAY_BUFFER_ARB, indicesSize, indices, indexUsage, qtrue, 0 );
+		if ( r_drawMode->i == DRAWMODE_MAPPED && 0 ) {
+			VBO_Bind( buf );
+
+			buf->vertex.data = nglMapBufferRange( GL_ARRAY_BUFFER, 0, verticesSize,
+				GL_MAP_WRITE_BIT | GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_PERSISTENT_BIT );
+			buf->index.data = nglMapBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, indicesSize,
+				GL_MAP_WRITE_BIT | GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_PERSISTENT_BIT );
+
+			VBO_BindNull();
+		}
 	}
 	
 	GL_SetObjectDebugName( GL_BUFFER, buf->index.id, name, "_ibo" );
@@ -723,6 +738,11 @@ void RB_SetBatchBuffer( vertexBuffer_t *buffer, void *vertexBuffer, uintptr_t vt
 	R_SetVertexPointers( buffer->attribs );
 }
 
+/*
+* RB_FlushBatchBuffer
+* contains platform and driver specific optimizations
+* from https://www.reddit.com/r/opengl/comments/1461fzc/vertex_buffer_streaming_techniques_comparision/
+*/
 void RB_FlushBatchBuffer( void )
 {
 	vertexBuffer_t *buf;
@@ -747,34 +767,86 @@ void RB_FlushBatchBuffer( void )
 
 	// orphan the old index buffer so that we don't stall on it
 	if ( r_drawMode->i == DRAWMODE_MAPPED && backend.drawBuffer->index.glUsage != GL_STATIC_DRAW ) {
-//		nglInvalidateBufferData( backend.drawBuffer->index.id );
-//		data = nglMapBufferRange( GL_ELEMENT_ARRAY_BUFFER_ARB, 0, backend.drawBatch.maxIndices, GL_MAP_WRITE_BIT
-//			| GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT );
-//		if ( data ) {
-			memcpy( backend.drawBatch.buffer->index.data, backend.drawBatch.indices,
+#ifdef _NOMAD_EXPERIMENTAL
+		const uint32_t written = R_RotateRingbuffer( &backend.drawBatch.buffer->index.ringbuffer );
+		memcpy( (glIndex_t *)backend.drawBatch.buffer->index.ringbuffer.baseAddr + written, backend.drawBatch.indices,
+			backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize );
+#else
+	// broken (Rob Barris)
+#if 0
+		const uint32_t nBufferSize = backend.drawBatch.idxDataSize * backend.drawBatch.idxOffset;
+		const uint32_t nOffset = nBufferSize + backend.drawBuffer->index.offset;
+		if ( nOffset >= backend.drawBuffer->index.size ) {
+			nglBufferData( GL_ELEMENT_ARRAY_BUFFER, nBufferSize + backend.drawBuffer->index.offset, NULL, backend.drawBatch.buffer->index.glUsage );
+			backend.drawBuffer->index.size = nBufferSize + backend.drawBuffer->index.offset;
+			backend.drawBuffer->index.offset = 0;
+		}
+		void *data = nglMapBufferRange( GL_ELEMENT_ARRAY_BUFFER, backend.drawBuffer->index.offset, nBufferSize,
+			GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT );
+		memcpy( data, backend.drawBatch.indices, backend.drawBatch.idxDataSize * backend.drawBatch.idxOffset );
+		nglUnmapBuffer( GL_ELEMENT_ARRAY_BUFFER );
+#else
+		void *data = nglMapBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, backend.drawBatch.idxDataSize * backend.drawBatch.idxOffset,
+			GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_INVALIDATE_RANGE_BIT );
+		if ( data ) {
+			memcpy( data, backend.drawBatch.indices,
 				backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize );
-//		}
-//		nglUnmapBuffer( GL_ELEMENT_ARRAY_BUFFER );
-		nglFlushMappedBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize );
+		}
+		nglUnmapBuffer( GL_ELEMENT_ARRAY_BUFFER );
+#endif
+#endif
 	} else if ( r_drawMode->i == DRAWMODE_GPU && backend.drawBuffer->index.glUsage != GL_STATIC_DRAW ) {
-		nglBufferData( GL_ELEMENT_ARRAY_BUFFER, backend.drawBatch.maxIndices, NULL, backend.drawBatch.buffer->index.glUsage );
+#ifdef _WIN32
+		nglBufferData( GL_ELEMENT_ARRAY_BUFFER, backend.drawBatch.maxIndices, backend.drawBatch.indices, GL_DYNAMIC_DRAW );
+#else
+		if ( backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize >= backend.drawBatch.maxIndices ) {
+			nglBufferData( GL_ELEMENT_ARRAY_BUFFER, backend.drawBatch.maxIndices, NULL, backend.drawBatch.buffer->index.glUsage );
+			backend.drawBuffer->index.size = backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize;
+		}
 		nglBufferSubData( GL_ELEMENT_ARRAY_BUFFER, 0, backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize, backend.drawBatch.indices );
+#endif
 	}
 
 	// orphan the old vertex buffer so that we don't stall on it
 	if ( r_drawMode->i == DRAWMODE_MAPPED && backend.drawBuffer->index.glUsage != GL_STATIC_DRAW ) {
-//		nglInvalidateBufferData( backend.drawBuffer->vertex.id );
-//		data = nglMapBufferRange( GL_ARRAY_BUFFER_ARB, 0, backend.drawBatch.maxVertices, GL_MAP_WRITE_BIT
-//			| GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT );
-//		if ( data ) {
-			memcpy( backend.drawBatch.buffer->vertex.data, backend.drawBatch.vertices,
+#ifdef _NOMAD_EXPERIMENTAL
+		const uint32_t written = R_RotateRingbuffer( &backend.drawBatch.buffer->vertex.ringbuffer );
+		memcpy( (drawVert_t *)backend.drawBatch.buffer->vertex.ringbuffer.baseAddr + written, backend.drawBatch.vertices,
+			backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize );
+#else
+	// broken (Rob Barris)
+#if 0
+		const uint32_t nBufferSize = backend.drawBatch.vtxDataSize * backend.drawBatch.vtxOffset;
+		const uint32_t nOffset = nBufferSize + backend.drawBuffer->vertex.offset;
+		if ( nBufferSize + backend.drawBuffer->vertex.offset >= backend.drawBuffer->vertex.size ) {
+			nglBufferData( GL_ARRAY_BUFFER, nBufferSize + backend.drawBuffer->vertex.offset, NULL, backend.drawBatch.buffer->vertex.glUsage );
+			backend.drawBuffer->vertex.size = nBufferSize + backend.drawBuffer->vertex.offset;
+			backend.drawBuffer->vertex.offset = 0;
+		}
+		void *data = nglMapBufferRange( GL_ARRAY_BUFFER, backend.drawBuffer->vertex.offset, nBufferSize,
+			GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT );
+		memcpy( data, backend.drawBatch.indices, backend.drawBatch.vtxDataSize * backend.drawBatch.vtxOffset );
+		nglUnmapBuffer( GL_ARRAY_BUFFER );
+#else
+		void *data = nglMapBufferRange( GL_ARRAY_BUFFER, 0, backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize,
+			GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_INVALIDATE_BUFFER_BIT );
+		if ( data ) {
+			memcpy( data, backend.drawBatch.vertices,
 				backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize );
-//		}
-//		nglUnmapBuffer( GL_ARRAY_BUFFER );
-		nglFlushMappedBufferRange( GL_ARRAY_BUFFER, 0, backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize );
+		}
+		nglUnmapBuffer( GL_ARRAY_BUFFER );
+#endif
+#endif
 	} else if ( r_drawMode->i == DRAWMODE_GPU && backend.drawBuffer->vertex.glUsage != GL_STATIC_DRAW ) {
-		nglBufferData( GL_ARRAY_BUFFER, backend.drawBatch.maxVertices, NULL, backend.drawBatch.buffer->vertex.glUsage );
+#ifdef _WIN32
+		nglBufferData( GL_ARRAY_BUFFER, backend.drawBatch.maxVertices, backend.drawBatch.vertices, GL_DYNAMIC_DRAW );
+#else
+		if ( backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize >= backend.drawBatch.maxVertices ) {
+			nglBufferData( GL_ARRAY_BUFFER, backend.drawBatch.maxVertices, NULL, backend.drawBatch.buffer->vertex.glUsage );
+			backend.drawBuffer->vertex.size = backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize;
+		}
 		nglBufferSubData( GL_ARRAY_BUFFER, 0, backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize, backend.drawBatch.vertices );
+#endif
 	}
 
 	RB_IterateShaderStages( backend.drawBatch.shader );
@@ -784,6 +856,9 @@ void RB_FlushBatchBuffer( void )
 
 	backend.drawBatch.vtxOffset = 0;
 	backend.drawBatch.idxOffset = 0;
+
+	backend.drawBuffer->index.offset += backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize;
+	backend.drawBuffer->vertex.offset += backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize;
 }
 
 void RB_CommitDrawData( const void *verts, uint32_t numVerts, const void *indices, uint32_t numIndices )
