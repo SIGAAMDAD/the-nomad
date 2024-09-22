@@ -39,16 +39,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #endif
 
 typedef enum {
-    GS_INACTIVE,    // before any initialization (G_Init)
-    GS_PRIMED,      // got gamestate, waiting for first frame
-    GS_MENU,        // in menu
-    GS_LEVEL,       // in level
-    GS_PAUSE,       // pause menu
-    GS_SETTINGS,
-    GS_STATS_MENU,
-    GS_MEMORY_VIEW,
+	GS_INACTIVE,    // before any initialization (G_Init)
+	GS_PRIMED,      // got gamestate, waiting for first frame
+	GS_MENU,        // in menu
+	GS_LEVEL,       // in level
+	GS_PAUSE,       // pause menu
+	GS_SETTINGS,
+	GS_STATS_MENU,
+	GS_MEMORY_VIEW,
 
-    NUM_GAME_STATES
+	NUM_GAME_STATES
 } gameState_t;
 
 //
@@ -57,72 +57,72 @@ typedef enum {
 // the current map loaded or to be loaded
 //
 typedef struct {
-    char name[MAX_NPATH];
+	char name[MAX_NPATH];
 
-    maptile_t *tiles;
-    mapcheckpoint_t *checkpoints;
-    mapspawn_t *spawns;
-    maplight_t *lights;
-    mapsecret_t *secrets;
+	maptile_t *tiles;
+	mapcheckpoint_t *checkpoints;
+	mapspawn_t *spawns;
+	maplight_t *lights;
+	mapsecret_t *secrets;
 
-    uint32_t width;
-    uint32_t height;
-    uint32_t numTiles;
-    uint32_t numSpawns;
-    uint32_t numSecrets;
-    uint32_t numCheckpoints;
-    uint32_t numLights;
-    uint32_t numLevels;
+	uint32_t width;
+	uint32_t height;
+	uint32_t numTiles;
+	uint32_t numSpawns;
+	uint32_t numSecrets;
+	uint32_t numCheckpoints;
+	uint32_t numLights;
+	uint32_t numLevels;
 } mapinfo_t;
 
 #pragma pack( push, 1 )
 typedef struct linkEntity_s {
-    bbox_t bounds;
-    vec3_t origin;
-    uint32_t type;
-    uint32_t id;
-    uint32_t entityNumber;
+	bbox_t bounds;
+	vec3_t origin;
+	uint32_t type;
+	uint32_t id;
+	uint32_t entityNumber;
 
-    struct linkEntity_s *next;
-    struct linkEntity_s *prev;
+	struct linkEntity_s *next;
+	struct linkEntity_s *prev;
 } linkEntity_t;
 
 typedef struct {
 	vec3_t start;
 	vec3_t end;
 	vec3_t origin;
-    uint32_t entityNumber;
+	uint32_t entityNumber;
 //	float speed;
 	float length;
 	float angle;
-    uint32_t flags; // unused for now
+	uint32_t flags; // unused for now
 } ray_t;
 #pragma pack( pop )
 
 typedef enum
 {
-    SG_LOADGAME,
-    SG_SAVEGAME,
-    SG_INACTIVE,
-    SG_IN_LEVEL,
-    SG_SHOW_LEVEL_STATS,
+	SG_LOADGAME,
+	SG_SAVEGAME,
+	SG_INACTIVE,
+	SG_IN_LEVEL,
+	SG_SHOW_LEVEL_STATS,
 } sgameState_t;
 
 typedef enum
 {
-    SGAME_INIT,
-    SGAME_SHUTDOWN,
-    SGAME_ON_LEVEL_START,
-    SGAME_ON_LEVEL_END,
+	SGAME_INIT,
+	SGAME_SHUTDOWN,
+	SGAME_ON_LEVEL_START,
+	SGAME_ON_LEVEL_END,
 } sgameExport_t;
 
 enum
 {
-    OCC_NORMY,
-    OCC_EASTER,
-    OCC_CHRISTMAS,
-    OCC_HALLOWEEN,
-    OCC_THANKSGIVING
+	OCC_NORMY,
+	OCC_EASTER,
+	OCC_CHRISTMAS,
+	OCC_HALLOWEEN,
+	OCC_THANKSGIVING
 };
 
 typedef enum
@@ -138,11 +138,11 @@ typedef enum
 } entitytype_t;
 
 typedef struct {
-    char **mapList;
-    mapinfo_t info;
-    uint64_t numMapFiles;
+	char **mapList;
+	mapinfo_t info;
+	uint64_t numMapFiles;
 
-    int32_t currentMapLoaded;
+	int32_t currentMapLoaded;
 } mapCache_t;
 
 #define	MAX_CONFIGSTRINGS	1024
@@ -157,96 +157,96 @@ typedef struct {
 } usercmd_t;
 
 typedef struct {
-    char mapname[MAX_NPATH];
+	char mapname[MAX_NPATH];
 
-    int32_t framecount;
-    int32_t frametime;      // msec since last frame
+	int32_t framecount;
+	int32_t frametime;      // msec since last frame
 
-    int32_t realtime;       // ingores pause
-    int32_t realFrameTime;
+	int32_t realtime;       // ingores pause
+	int32_t realFrameTime;
 
-    qboolean uiStarted;
-    qboolean sgameStarted;
-    qboolean soundStarted;
-    qboolean soundRegistered;
-    qboolean rendererStarted;
-    qboolean mapLoaded;
+	qboolean uiStarted;
+	qboolean sgameStarted;
+	qboolean soundStarted;
+	qboolean soundRegistered;
+	qboolean rendererStarted;
+	qboolean mapLoaded;
 
-    qboolean togglePhotomode;
-    
-    uint64_t lastVidRestart;
-    
-    int mouseDx[2], mouseDy[2]; // added to by mouse events
-    int mouseIndex;
-    int joystickAxis[MAX_JOYSTICK_AXIS];
+	qboolean togglePhotomode;
+	
+	uint64_t lastVidRestart;
+	
+	int mouseDx[2], mouseDy[2]; // added to by mouse events
+	int mouseIndex;
+	int joystickAxis[MAX_JOYSTICK_AXIS];
 
-    // cmds[cmdNumber] is the predicted command, [cmdNumber-1] is the last
+	// cmds[cmdNumber] is the predicted command, [cmdNumber-1] is the last
 	// properly generated command
 	usercmd_t	cmds[CMD_BACKUP];	// each message will send several old cmds
 	int			cmdNumber;			// incremented each frame, because multiple
 									// frames may need to be packed into a single packet
-    int         oldCmdNumber;
+	int         oldCmdNumber;
 
 
-    gameState_t oldState;
-    gameState_t state;
+	gameState_t oldState;
+	gameState_t state;
 
-    nhandle_t consoleShader;
-    nhandle_t whiteShader;
-    nhandle_t charSetShader;
-    uint32_t captureWidth;
-    uint32_t captureHeight;
-    float con_factor;
-    float biasX;
-    float biasY;
-    float scale;
+	nhandle_t consoleShader;
+	nhandle_t whiteShader;
+	nhandle_t charSetShader;
+	uint32_t captureWidth;
+	uint32_t captureHeight;
+	float con_factor;
+	float biasX;
+	float biasY;
+	float scale;
 
-    int32_t desktopWidth;
-    int32_t desktopHeight;
-    
-    gpuConfig_t gpuConfig;
+	int32_t desktopWidth;
+	int32_t desktopHeight;
+	
+	gpuConfig_t gpuConfig;
 
-    mapCache_t mapCache;
-    uint64_t playTimeStart;
-    
-    float cameraZoom;
+	mapCache_t mapCache;
+	uint64_t playTimeStart;
+	
+	float cameraZoom;
 
-    // demo information
-    char demoName[MAX_OSPATH];
-    char recordName[MAX_OSPATH]; // without extension
-    qboolean explicitRecordName;
-    char recordNameShort[TRUNCATE_LENGTH]; // for recording message
-    qboolean spDemoRecording;
-    qboolean demorecording;
-    qboolean demoplaying;
-    qboolean demowaiting;
-    qboolean firstDemoFrameSkipped;
+	// demo information
+	char demoName[MAX_OSPATH];
+	char recordName[MAX_OSPATH]; // without extension
+	qboolean explicitRecordName;
+	char recordNameShort[TRUNCATE_LENGTH]; // for recording message
+	qboolean spDemoRecording;
+	qboolean demorecording;
+	qboolean demoplaying;
+	qboolean demowaiting;
+	qboolean firstDemoFrameSkipped;
 
-    fileHandle_t demofile;
-    fileHandle_t recordfile;
+	fileHandle_t demofile;
+	fileHandle_t recordfile;
 
-    int timeDemoFrames;   // counter of rendered frames
-    int timeDemoStart;    // gi.realtime before first frame
-    int timeDemoBaseTime; // each frame will be at this time + frameNum * 50
+	int timeDemoFrames;   // counter of rendered frames
+	int timeDemoStart;    // gi.realtime before first frame
+	int timeDemoBaseTime; // each frame will be at this time + frameNum * 50
 
-    // simultaneous demo playback and recording
-    int eventMask;
-    int demoCommandSequence;
-    int demoDeltaNum;
-    int demoMessageSequence;
-    int demoNumEvents;
-    int demoBufferSize;
+	// simultaneous demo playback and recording
+	int eventMask;
+	int demoCommandSequence;
+	int demoDeltaNum;
+	int demoMessageSequence;
+	int demoNumEvents;
+	int demoBufferSize;
 
 //    char gameconfigStrings[BIG_INFO_STRING];
 
-    backendCounters_t pc;
+	backendCounters_t pc;
 
 #ifdef __cplusplus
-    glm::vec3 cameraPos;
-    glm::vec3 cameraWorldPos;
-    glm::mat4 viewMatrix;
-    glm::mat4 viewProjectionMatrix;
-    glm::mat4 projectionMatrix;
+	glm::vec3 cameraPos;
+	glm::vec3 cameraWorldPos;
+	glm::mat4 viewMatrix;
+	glm::mat4 viewProjectionMatrix;
+	glm::mat4 projectionMatrix;
 #endif
 } gameInfo_t;
 
@@ -326,22 +326,22 @@ typedef struct {
 
 // NOTE: these resolutions are taken from AC4 Black Flag
 typedef enum {
-    // minimum resolution needed to run
+	// minimum resolution needed to run
 //    VIDMODE_1280x1024,
-    VIDMODE_1600x1200,
-    VIDMODE_1600x1050,
-    VIDMODE_1920x1080,
-    VIDMODE_1920x1200,
-    VIDMODE_1920x1280,
-    VIDMODE_2560x1080,
-    VIDMODE_2560x1440,
-    VIDMODE_2560x1600,
-    VIDMODE_2880x1620,
-    VIDMODE_3200x1800,
-    VIDMODE_3840x1600,
-    VIDMODE_3840x2160,
+	VIDMODE_1600x1050,
+	VIDMODE_1600x1200,
+	VIDMODE_1920x1080,
+	VIDMODE_1920x1200,
+	VIDMODE_1920x1280,
+	VIDMODE_2560x1080,
+	VIDMODE_2560x1440,
+	VIDMODE_2560x1600,
+	VIDMODE_2880x1620,
+	VIDMODE_3200x1800,
+	VIDMODE_3840x1600,
+	VIDMODE_3840x2160,
 
-    NUMVIDMODES
+	NUMVIDMODES
 } vidmodeNum_t;
 
 extern const vidmode_t r_vidModes[NUMVIDMODES];
@@ -397,9 +397,9 @@ void SCR_DrawNamedPic( float x, float y, float width, float height, const char *
 
 void SCR_DrawBigString( uint32_t x, uint32_t y, const char *s, float alpha, qboolean noColorEscape );			// draws a string with embedded color control characters with fade
 void SCR_DrawStringExt( uint32_t x, uint32_t y, float size, const char *string, const float *setColor,
-    qboolean forceColor, qboolean noColorEscape );
+	qboolean forceColor, qboolean noColorEscape );
 void	SCR_DrawSmallStringExt( uint32_t x, uint32_t y, const char *string, const float *setColor,
-    qboolean forceColor, qboolean noColorEscape );
+	qboolean forceColor, qboolean noColorEscape );
 void SCR_DrawSmallChar( uint32_t x, uint32_t y, int ch );
 void SCR_DrawSmallString( uint32_t x, uint32_t y, const char *s, uint64_t len );
 void SCR_UpdateScreen( void );

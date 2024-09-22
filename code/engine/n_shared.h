@@ -569,10 +569,10 @@ typedef enum { qfalse = 0, qtrue = 1 } qboolean;
 #define UI_INVERSE		0x00002000
 #define UI_PULSE		0x00004000
 
-// all drawing is done to a 1024*768 virtual screen size
+// all drawing is done to a 1600x1050 virtual screen size
 // and will be automatically scaled to the real resolution
-#define	SCREEN_WIDTH		1024
-#define	SCREEN_HEIGHT		768
+#define	SCREEN_WIDTH		1600
+#define	SCREEN_HEIGHT		1050
 
 #define TINYCHAR_WIDTH		(SMALLCHAR_WIDTH)
 #define TINYCHAR_HEIGHT		(SMALLCHAR_HEIGHT/2)

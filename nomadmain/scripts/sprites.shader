@@ -4,7 +4,7 @@ sprites/players/raio_torso
     nomipmaps
     {
         texFilter nearest
-        map textures/sprites/players/raio_torso.tga
+        map textures/sprites/players/raio_torso.dds
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
@@ -16,7 +16,7 @@ sprites/players/raio_legs_0
     nomipmaps
     {
         texFilter nearest
-        map textures/sprites/players/raio_legs_0.tga
+        map textures/sprites/players/raio_legs_0.dds
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
@@ -28,7 +28,7 @@ sprites/players/raio_legs_1
     nomipmaps
     {
         texFilter nearest
-        map textures/sprites/players/raio_legs_1.tga
+        map textures/sprites/players/raio_legs_1.dds
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
@@ -40,7 +40,7 @@ sprites/players/raio_arms_0
     nomipmaps
     {
         texFilter nearest
-        map textures/sprites/players/raio_arms_0.tga
+        map textures/sprites/players/raio_arms_0.dds
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
@@ -52,7 +52,7 @@ sprites/players/raio_arms_1
     nomipmaps
     {
         texFilter nearest
-        map textures/sprites/players/raio_arms_1.tga
+        map textures/sprites/players/raio_arms_1.dds
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }

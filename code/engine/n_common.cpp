@@ -1836,6 +1836,16 @@ void Com_Init( char *commandLine )
 	Com_InitJournals();
 	Com_LoadConfig();
 
+#ifdef _NOMAD_EXPERIMENTAL
+	Con_Printf( "\n*****************************\n"
+				"NOTICE: This is an experimental build of \"The Nomad\",\n"
+				"expect more bugs than the usual and please report them.\n"
+				"keep in mind that this isn't a stable build and is prone\n"
+				"to undefined behaviour in some cases and crashes.\n"
+				"*****************************\n"
+			);
+#endif
+
 	// allocate the stack based hunk allocator
 	Hunk_InitMemory();
 

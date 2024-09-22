@@ -1298,18 +1298,18 @@ static void G_VM_Restart_f( void ) {
 
 const vidmode_t r_vidModes[NUMVIDMODES] = {
 //	{ "Mode  0: 1280x1024",     1280,   1024,   1 },
+	{ "Mode  0: 1600x1050",     1600,   1050,   1 },
 	{ "Mode  1: 1600x1200",     1600,   1200,   1 },
-	{ "Mode  2: 1600x1050",     1600,   1050,   1 },
-	{ "Mode  3: 1920x1080",     1920,   1080,   1 },
-	{ "Mode  4: 1920x1200",     1920,   1200,   1 },
-	{ "Mode  5: 1920x1280",     1920,   1280,   1 },
-	{ "Mode  6: 2560x1080",     2560,   1080,   1 },
-	{ "Mode  7: 2560x1440",     2560,   1440,   1 },
-	{ "Mode  8: 2560x1600",     2560,   1600,   1 },
-	{ "Mode  9: 2880x1620",     2880,   1620,   1 },
-	{ "Mode 10: 3200x1800",     3200,   1800,   1 },
-	{ "Mode 11: 3840x1600",     3840,   1600,   1 },
-	{ "Mode 12: 3840x2160",     3840,   2160,   1 }
+	{ "Mode  2: 1920x1080",     1920,   1080,   1 },
+	{ "Mode  3: 1920x1200",     1920,   1200,   1 },
+	{ "Mode  4: 1920x1280",     1920,   1280,   1 },
+	{ "Mode  5: 2560x1080",     2560,   1080,   1 },
+	{ "Mode  6: 2560x1440",     2560,   1440,   1 },
+	{ "Mode  7: 2560x1600",     2560,   1600,   1 },
+	{ "Mode  8: 2880x1620",     2880,   1620,   1 },
+	{ "Mode  9: 3200x1800",     3200,   1800,   1 },
+	{ "Mode 10: 3840x1600",     3840,   1600,   1 },
+	{ "Mode 11: 3840x2160",     3840,   2160,   1 }
 };
 static const int64_t numVidModes = (int64_t)arraylen( r_vidModes );
 
@@ -1337,8 +1337,8 @@ qboolean G_GetModeInfo( int *width, int *height, float *windowAspect, int mode, 
 		*height = dh;
 
 		// set the width & height for aspect ratios
-		Cvar_Set("r_customWidth", va("%i", dw));
-		Cvar_Set("r_customHeight", va("%i", dh));
+		Cvar_Set( "r_customWidth", va( "%i", dw ) );
+		Cvar_Set( "r_customHeight", va( "%i", dh ) );
 
 		pixelAspect = r_customPixelAspect->f;
 	} else if ( mode == -1 ) { // custom resolution

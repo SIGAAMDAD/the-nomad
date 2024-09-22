@@ -1,11 +1,24 @@
-menu/logo
+menu/fmodLogo
+{
+    nomipmaps
+    nopicmip
+    {
+        texFilter bilinear
+        map fmod_logo.dds
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        tcGen texture
+        rgbGen vertex
+    }
+}
+
+menu/companyLogo
 {
     nomipmaps
     nopicmip
     {
         texFilter bilinear
         map GDRLogo.jpg
-        blendFunc GL_ONE GL_ONE
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         tcGen texture
         rgbGen vertex
     }
@@ -190,13 +203,13 @@ menu/backbutton0
     nomipmaps
     if ( $r_textureDetail < 2 ) {
         texFilter bilinear
-        map textures/menu/low/back_0.tga
+        map textures/menu/low/back_0.dds
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
     else {
         texFilter bilinear
-        map textures/menu/standard/back_0.tga
+        map textures/menu/standard/back_0.dds
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
@@ -207,13 +220,13 @@ menu/backbutton1
     nomipmaps
     if ( $r_textureDetail < 2 ) {
         texFilter bilinear
-        map textures/menu/low/back_1.tga
+        map textures/menu/low/back_1.dds
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
     else {
         texFilter bilinear
-        map textures/menu/standard/back_1.tga
+        map textures/menu/standard/back_1.dds
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
@@ -224,13 +237,13 @@ menu/save_0
     nomipmaps
     if ( $r_textureDetail < 2 ) {
         texFilter bilinear
-        map textures/menu/low/save_0.tga
+        map textures/menu/low/save_0.dds
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
     else {
         texFilter bilinear
-        map textures/menu/standard/save_0.tga
+        map textures/menu/standard/save_0.dds
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
@@ -241,13 +254,13 @@ menu/save_1
     nomipmaps
     if ( $r_textureDetail < 2 ) {
         texFilter bilinear
-        map textures/menu/low/save_1.tga
+        map textures/menu/low/save_1.dds
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
     else {
         texFilter bilinear
-        map textures/menu/standard/save_1.tga
+        map textures/menu/standard/save_1.dds
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
@@ -258,13 +271,13 @@ menu/reset_0
     nomipmaps
     if ( $r_textureDetail < 2 ) {
         texFilter bilinear
-        map textures/menu/low/reset_0.tga
+        map textures/menu/low/reset_0.dds
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
     else {
         texFilter bilinear
-        map textures/menu/standard/reset_0.tga
+        map textures/menu/standard/reset_0.dds
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
@@ -275,13 +288,13 @@ menu/reset_1
     nomipmaps
     if ( $r_textureDetail < 2 ) {
         texFilter bilinear
-        map textures/menu/low/reset_1.tga
+        map textures/menu/low/reset_1.dds
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
     else {
         texFilter bilinear
-        map textures/menu/standard/reset_1.tga
+        map textures/menu/standard/reset_1.dds
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
@@ -292,13 +305,13 @@ menu/accept_0
     nomipmaps
     if  ( $r_textureDetail < 2 ) {
         texFilter bilinear
-        map textures/menu/low/accept_0.tga
+        map textures/menu/low/accept_0.dds
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
     else {
         texFilter bilinear
-        map textures/menu/standard/accept_0.tga
+        map textures/menu/standard/accept_0.dds
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
@@ -309,13 +322,13 @@ menu/accept_1
     nomipmaps
     if  ( $r_textureDetail < 2 ) {
         texFilter bilinear
-        map textures/menu/low/accept_1.tga
+        map textures/menu/low/accept_1.dds
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
     else {
         texFilter bilinear
-        map textures/menu/standard/accept_1.tga
+        map textures/menu/standard/accept_1.dds
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
@@ -326,13 +339,13 @@ menu/play_0
     nomipmaps
     if ( $r_textureDetail < 2 ) {
         texFilter bilinear
-        map textures/menu/low/play_0.tga
+        map textures/menu/low/play_0.dds
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
     else {
         texFilter bilinear
-        map textures/menu/standard/play_0.tga
+        map textures/menu/standard/play_0.dds
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
@@ -343,13 +356,13 @@ menu/play_1
     nomipmaps
     if ( $r_textureDetail < 2 ) {
         texFilter bilinear
-        map textures/menu/low/play_1.tga
+        map textures/menu/low/play_1.dds
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
     else {
         texFilter bilinear
-        map textures/menu/standard/play_1.tga
+        map textures/menu/standard/play_1.dds
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
@@ -360,13 +373,13 @@ menu/load_0
     nomipmaps
     if ( $r_textureDetail < 2 ) {
         texFilter bilinear
-        map textures/menu/low/load_0.tga
+        map textures/menu/low/load_0.dds
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
     else {
         texFilter bilinear
-        map textures/menu/standard/load_0.tga
+        map textures/menu/standard/load_0.dds
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
@@ -377,13 +390,13 @@ menu/load_1
     nomipmaps
     if ( $r_textureDetail == 0 || $r_textureDetail == 1 ) {
         texFilter bilinear
-        map textures/menu/low/load_1.tga
+        map textures/menu/low/load_1.dds
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
     else {
         texFilter bilinear
-        map textures/menu/standard/load_1.tga
+        map textures/menu/standard/load_1.dds
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }

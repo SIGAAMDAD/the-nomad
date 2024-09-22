@@ -1556,7 +1556,7 @@ void R_Init( void )
 		ri.Printf(PRINT_INFO, COLOR_RED "glGetError() = 0x%x\n", error);
 	
 	//R_InitWorldBuffer();
-	
+
 	VBO_Bind( backend.drawBuffer );
 
 	ri.Cmd_AddCommand( "unloadworld", R_UnloadWorld_f );
@@ -1582,13 +1582,12 @@ void RE_BeginRegistration( gpuConfig_t *config )
 		int ret;
 
 		if ( ( ret = pthread_create( &initThread, NULL, InitRenderer, NULL ) ) ) {
-			ri.Printf( PRINT_WARNING, "Error creating render init thread: %s\n", strerror( ret ) );
+			ri.Printf( PRINT_ERROR, "Error creating InitRenderer thread, pthread_create(): %s\n", strerror( ret ) );
 			R_Init();
 		}
 	} else {
 		R_Init();
 	}
-
 	rg.registered = qtrue;
 	*config = glConfig;
 }

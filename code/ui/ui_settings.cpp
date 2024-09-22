@@ -1679,10 +1679,13 @@ static void VideoMenu_Save( void )
 	if ( !N_stricmp( g_renderer->s, "opengl" ) ) {
 		SDL_GL_SetSwapInterval( s_settingsMenu->video.vsync - 1 );
 	}
-	SDL_SetWindowFullscreen( SDL_window, s_settingsMenu->video.windowMode >= WINDOWMODE_FULLSCREEN
-		? SDL_WINDOW_FULLSCREEN_DESKTOP : 0 );
-	SDL_SetWindowSize( SDL_window, r_vidModes[ s_settingsMenu->video.windowResolution - 2 ].width,
-		r_vidModes[ s_settingsMenu->video.windowResolution - 2 ].height );
+	if ( s_settingsMenu->video.windowResolution != s_initial->video.windowResolution
+		|| ( s_settingsMenu->video.windowWidth != s_initial->video.windowWidth
+		|| s_settingsMenu->video.windowHeight != s_initial->video.windowHeight )
+	)
+	{
+		Cbuf_ExecuteText( EXEC_APPEND, "vid_restart keep_context\n" );
+	}
 	switch ( s_settingsMenu->video.windowMode ) {
 	case WINDOWMODE_BORDERLESS_FULLSCREEN:
 	case WINDOWMODE_BORDERLESS_WINDOWED:

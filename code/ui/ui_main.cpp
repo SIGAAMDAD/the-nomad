@@ -475,7 +475,7 @@ extern "C" void UI_DrawFPS( void )
 	ImGui::Begin( "DrawFPS##UI", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar
 										| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMouseInputs
 										| ImGuiWindowFlags_NoBackground );
-	ImGui::SetWindowPos( ImVec2( 1010 * ui->scale + ui->bias, 8 * ui->scale ) );
+	ImGui::SetWindowPos( ImVec2( 900 * ui->scale + ui->bias, 8 * ui->scale ) );
 	ImGui::SetWindowFontScale( 1.5f * ui->scale );
 	ImGui::Text( "%i", fps );
 	ImGui::End();

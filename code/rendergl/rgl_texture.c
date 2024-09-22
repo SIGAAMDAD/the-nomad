@@ -52,6 +52,64 @@ static const textureFilterMode_t filters[] = {
     { "Nearest Linear", GL_NEAREST, GL_LINEAR }
 };
 
+static const char *R_TextureFormatName( GLenum format )
+{
+	#define FORMAT( x ) case x: return #x;
+	switch ( format ) {
+	FORMAT( GL_COMPRESSED_SRGB_EXT )
+	FORMAT( GL_COMPRESSED_SRGB_ALPHA_EXT )
+	FORMAT( GL_COMPRESSED_ALPHA_ARB )
+	FORMAT( GL_COMPRESSED_LUMINANCE_ARB )
+	FORMAT( GL_COMPRESSED_LUMINANCE_ALPHA_ARB )
+	FORMAT( GL_COMPRESSED_INTENSITY_ARB )
+	FORMAT( GL_COMPRESSED_RGBA8_ETC2_EAC )
+	FORMAT( GL_COMPRESSED_R11_EAC )
+	FORMAT( GL_COMPRESSED_SIGNED_R11_EAC )
+	FORMAT( GL_COMPRESSED_RGB8_ETC2 )
+	FORMAT( GL_COMPRESSED_RGB_FXT1_3DFX )
+	FORMAT( GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2 )
+	FORMAT( GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2 )
+	FORMAT( GL_COMPRESSED_RGB_ARB )
+	FORMAT( GL_COMPRESSED_RGB_S3TC_DXT1_EXT )
+	FORMAT( GL_COMPRESSED_SRGB_S3TC_DXT1_EXT )
+	FORMAT( GL_COMPRESSED_RGBA_S3TC_DXT1_EXT )
+	FORMAT( GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT )
+	FORMAT( GL_COMPRESSED_RED_RGTC1 )
+	FORMAT( GL_COMPRESSED_SIGNED_RED_RGTC1 )
+	FORMAT( GL_COMPRESSED_RGBA_S3TC_DXT3_EXT )
+	FORMAT( GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT )
+	FORMAT( GL_COMPRESSED_RGBA_S3TC_DXT5_EXT )
+	FORMAT( GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT )
+	FORMAT( GL_COMPRESSED_RG_RGTC2 )
+	FORMAT( GL_COMPRESSED_SIGNED_RG_RGTC2 )
+	FORMAT( GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT_ARB )
+	FORMAT( GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT_ARB )
+	FORMAT( GL_COMPRESSED_RGBA_BPTC_UNORM_ARB )
+	FORMAT( GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM_ARB )
+	FORMAT( GL_COMPRESSED_LUMINANCE_ALPHA_LATC2_EXT )
+	FORMAT( GL_COMPRESSED_LUMINANCE_LATC1_EXT )
+	FORMAT( GL_COMPRESSED_SIGNED_LUMINANCE_ALPHA_LATC2_EXT )
+	FORMAT( GL_COMPRESSED_SIGNED_LUMINANCE_LATC1_EXT )
+	FORMAT( GL_COMPRESSED_RGBA_FXT1_3DFX )
+	FORMAT( GL_COMPRESSED_SRGB8_ETC2 )
+	FORMAT( GL_RGBA8_EXT )
+	FORMAT( GL_RGB8_EXT )
+	FORMAT( GL_BGR )
+	FORMAT( GL_BGRA )
+	FORMAT( GL_RGBA4 )
+	FORMAT( GL_RGBA16F )
+	FORMAT( GL_RGBA32F )
+	FORMAT( GL_DEPTH_COMPONENT )
+	FORMAT( GL_DEPTH_COMPONENT16_ARB )
+	FORMAT( GL_DEPTH_COMPONENT24_ARB )
+	FORMAT( GL_DEPTH_COMPONENT32_ARB )
+	default:
+		break;
+	};
+	#undef FORMAT
+	ri.Error( ERR_DROP, "R_TextureFormatName: invalid format 0x%x", format );
+}
+
 /*
 ================
 return a hash f for the filename
@@ -1618,11 +1676,11 @@ static GLenum RawImage_GetFormat( const byte *data, uint32_t numPixels, GLenum p
 
 	if ( normalmap ) {
 		if ( ( type == IMGTYPE_NORMALHEIGHT ) && RawImage_HasAlpha( data, numPixels ) ) {
-			if ( !forceNoCompression && glContext.textureCompressionRef & TCR_BPTC ) {
+			/*if ( !forceNoCompression && glContext.textureCompressionRef & TCR_BPTC ) {
 				internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM_ARB;
 			} else if ( !forceNoCompression && glContext.textureCompression == TC_S3TC_ARB ) {
 				internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-			} else if ( r_textureBits->i == 16 ) {
+			} else */if ( r_textureBits->i == 16 ) {
 				internalFormat = GL_RGBA4;
 			} else if ( r_textureBits->i == 32 ) {
 				internalFormat = GL_RGBA8;
@@ -1642,6 +1700,7 @@ static GLenum RawImage_GetFormat( const byte *data, uint32_t numPixels, GLenum p
 			}
 		}
 		else {
+			/*
 			if ( !forceNoCompression && glContext.textureCompressionRef & TCR_RGTC ) {
 				internalFormat = GL_COMPRESSED_RG_RGTC2;
 			}
@@ -1651,7 +1710,8 @@ static GLenum RawImage_GetFormat( const byte *data, uint32_t numPixels, GLenum p
 			else if ( !forceNoCompression && glContext.textureCompression == TC_S3TC_ARB ) {
 				internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 			}
-			else if ( r_textureBits->i == 16 ) {
+			
+			else*/ if ( r_textureBits->i == 16 ) {
 				internalFormat = GL_RGB5;
 			}
 			else if ( r_textureBits->i == 32 ) {
@@ -1693,7 +1753,7 @@ static GLenum RawImage_GetFormat( const byte *data, uint32_t numPixels, GLenum p
 				}
 			}
 			else {
-				if ( !forceNoCompression && (glContext.textureCompressionRef & TCR_BPTC) ) {
+				/*if ( !forceNoCompression && (glContext.textureCompressionRef & TCR_BPTC) ) {
 					internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM_ARB;
 				}
 				else if ( !forceNoCompression && glContext.textureCompression == TC_S3TC_ARB ) {
@@ -1702,7 +1762,7 @@ static GLenum RawImage_GetFormat( const byte *data, uint32_t numPixels, GLenum p
 				else if ( !forceNoCompression && glContext.textureCompression == TC_S3TC ) {
 					internalFormat = GL_RGB4_S3TC;
 				}
-				else if ( r_textureBits->i == 16 ) {
+				else */if ( r_textureBits->i == 16 ) {
 					internalFormat = GL_RGB5;
 				}
 				else if ( r_textureBits->i == 32 ) {
@@ -1732,13 +1792,13 @@ static GLenum RawImage_GetFormat( const byte *data, uint32_t numPixels, GLenum p
 				}
 			}
 			else {
-				if ( !forceNoCompression && (glContext.textureCompressionRef & TCR_BPTC) ) {
+				/*if ( !forceNoCompression && (glContext.textureCompressionRef & TCR_BPTC) ) {
 					internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM_ARB;
 				}
 				else if ( !forceNoCompression && glContext.textureCompression == TC_S3TC_ARB ) {
 					internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 				}
-				else if ( r_textureBits->i == 16 ) {
+				else */if ( r_textureBits->i == 16 ) {
 					internalFormat = GL_RGBA4;
 				}
 				else if ( r_textureBits->i == 32 ) {
@@ -1806,18 +1866,63 @@ static void CompressMonoBlock( byte outdata[8], const byte indata[16] )
 	}
 }
 
-static void RawImage_UploadToRgtc2Texture( uint32_t mipLevel, int x, int y, int width, int height, byte *data, qboolean subImage )
+static uint64_t CalculateTextureSize( int width, int height, GLenum picFormat) 
+{
+	uint64_t numBlocks = ((width + 3) / 4) * ((height + 3) / 4);
+	uint64_t numPixels = width * height;
+
+	switch ( picFormat ) {
+	case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
+	case GL_COMPRESSED_SRGB_S3TC_DXT1_EXT:
+	case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
+	case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT:
+	case GL_COMPRESSED_RED_RGTC1:
+	case GL_COMPRESSED_SIGNED_RED_RGTC1:
+		return numBlocks * 8;
+	case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
+	case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT:
+	case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
+	case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT:
+	case GL_COMPRESSED_RG_RGTC2:
+	case GL_COMPRESSED_SIGNED_RG_RGTC2:
+	case GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT_ARB:
+	case GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT_ARB:
+	case GL_COMPRESSED_RGBA_BPTC_UNORM_ARB:
+	case GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM_ARB:
+		return numBlocks * 16;
+	case GL_RGB8:
+		return numPixels * 2;
+	case GL_RGBA4_EXT:
+		return numPixels;
+	case GL_RGBA8:
+	case GL_SRGB8_ALPHA8_EXT:
+		return numPixels * 4;
+	case GL_RGBA16:
+		return numPixels * 8;
+	default:
+		ri.Printf( PRINT_INFO, "Unsupported texture format 0x%08x\n", picFormat );
+		return 0;
+	};
+
+	return 0;
+}
+
+
+static void RawImage_UploadToRgtc2Texture( uint32_t mipLevel, int x, int y, int width, int height, byte *data, qboolean subImage,
+	GLenum internalFormat )
 {
 	int wBlocks, hBlocks, iy, ix;
 	uint32_t size;
 	byte *compressedData, *p;
+	GLenum format;
+	const char *formatName;
 
 	wBlocks = (width + 3) / 4;
 	hBlocks = (height + 3) / 4;
 	size = wBlocks * hBlocks * 16;
+//	size = width * height * 16;
 
 	compressedData = data;
-
 #if 0
 	p = compressedData = ri.Hunk_AllocateTempMemory(size);
 	for (iy = 0; iy < height; iy += 4) {
@@ -1848,33 +1953,27 @@ static void RawImage_UploadToRgtc2Texture( uint32_t mipLevel, int x, int y, int 
 	}
 #endif
 
-	// FIXME: Won't work for x/y that aren't multiples of 4.
-	if (subImage) {
-		GL_LogComment("glCompressedTexSubImage2D(GL_TEXTURE_2D, %i, %i, %i, %i, %i, GL_COMPRESSED_RG_RGTC2, %u, %p)",
-			mipLevel, x, y, width, height, size, compressedData);
-		nglCompressedTexSubImage2D(GL_TEXTURE_2D, mipLevel, x, y, width, height, GL_COMPRESSED_RG_RGTC2, size, compressedData);
-	}
-	else {
-		GL_LogComment("glCompressedTexImage2D(GL_TEXTURE_2D, %i, GL_COMPRESSED_RG_RGTC2, %i, %i, 0, %u, %p)", mipLevel, width, height, size, compressedData);
-		nglCompressedTexImage2D(GL_TEXTURE_2D, mipLevel, GL_COMPRESSED_RG_RGTC2, width, height, 0, size, compressedData);
-	}
-
-//	ri.Hunk_FreeTempMemory(compressedData);
-}
-
-static uint64_t CalculateTextureSize( int width, int height, GLenum picFormat) 
-{
-	uint64_t numBlocks = ((width + 3) / 4) * ((height + 3) / 4);
-	uint64_t numPixels = width * height;
-
-	switch (picFormat) {
+	switch ( internalFormat ) {
+	case GL_COMPRESSED_SRGB_EXT:
+	case GL_COMPRESSED_SRGB_ALPHA_EXT:
+	case GL_COMPRESSED_ALPHA_ARB:
+	case GL_COMPRESSED_LUMINANCE_ARB:
+	case GL_COMPRESSED_LUMINANCE_ALPHA_ARB:
+	case GL_COMPRESSED_INTENSITY_ARB:
+	case GL_COMPRESSED_RGBA8_ETC2_EAC:
+	case GL_COMPRESSED_R11_EAC:
+	case GL_COMPRESSED_SIGNED_R11_EAC:
+	case GL_COMPRESSED_RGB8_ETC2:
+	case GL_COMPRESSED_RGB_FXT1_3DFX:
+	case GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2:
+	case GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2:
+	case GL_COMPRESSED_RGB_ARB:
 	case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
 	case GL_COMPRESSED_SRGB_S3TC_DXT1_EXT:
 	case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
 	case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT:
 	case GL_COMPRESSED_RED_RGTC1:
 	case GL_COMPRESSED_SIGNED_RED_RGTC1:
-		return numBlocks * 8;
 	case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
 	case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT:
 	case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
@@ -1885,22 +1984,36 @@ static uint64_t CalculateTextureSize( int width, int height, GLenum picFormat)
 	case GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT_ARB:
 	case GL_COMPRESSED_RGBA_BPTC_UNORM_ARB:
 	case GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM_ARB:
-		return numBlocks * 16;
-	case GL_RGB8:
-		return numPixels * 3;
-	case GL_RGBA8:
-	case GL_SRGB8_ALPHA8_EXT:
-		return numPixels * 4;
-	case GL_RGBA16:
-		return numPixels * 8;
+	case GL_COMPRESSED_LUMINANCE_ALPHA_LATC2_EXT:
+	case GL_COMPRESSED_LUMINANCE_LATC1_EXT:
+	case GL_COMPRESSED_SIGNED_LUMINANCE_ALPHA_LATC2_EXT:
+	case GL_COMPRESSED_SIGNED_LUMINANCE_LATC1_EXT:
+	case GL_COMPRESSED_RGBA_FXT1_3DFX:
+	case GL_COMPRESSED_SRGB8_ETC2:
+	case GL_RGBA8_EXT:
+	case GL_RGB8_EXT:
+		format = internalFormat;
+		size = CalculateTextureSize( width, height, format );
+		break;
 	default:
-		ri.Printf( PRINT_INFO, "Unsupported texture format 0x%08x\n", picFormat );
-		return 0;
+		format = GL_COMPRESSED_RG_RGTC2;
+		break;
 	};
 
-	return 0;
-}
+	// FIXME: Won't work for x/y that aren't multiples of 4.
+	if ( subImage ) {
+		GL_LogComment( "glCompressedTexSubImage2D(GL_TEXTURE_2D, %i, %i, %i, %i, %i, %s, %u, %p)",
+			mipLevel, x, y, width, height, R_TextureFormatName( format ), size, compressedData );
+		nglCompressedTexSubImage2D( GL_TEXTURE_2D, mipLevel, x, y, width, height, format, size, compressedData );
+	}
+	else {
+		GL_LogComment( "glCompressedTexImage2D(GL_TEXTURE_2D, %i, %s, %i, %i, 0, %u, %p)",
+			mipLevel, R_TextureFormatName( format ), width, height, size, compressedData );
+		nglCompressedTexImage2D( GL_TEXTURE_2D, mipLevel, format, width, height, 0, size, compressedData );
+	}
 
+//	ri.Hunk_FreeTempMemory(compressedData);
+}
 
 static GLenum PixelDataFormatFromInternalFormat( GLenum internalFormat )
 {
@@ -1918,9 +2031,19 @@ static GLenum PixelDataFormatFromInternalFormat( GLenum internalFormat )
 static int PixelDataFormatIsValidCompressed( GLenum format )
 {
 	switch ( format ) {
+	case GL_COMPRESSED_SRGB_EXT:
+	case GL_COMPRESSED_SRGB_ALPHA_EXT:
+	case GL_COMPRESSED_ALPHA_ARB:
+	case GL_COMPRESSED_LUMINANCE_ARB:
+	case GL_COMPRESSED_LUMINANCE_ALPHA_ARB:
+	case GL_COMPRESSED_INTENSITY_ARB:
+	case GL_COMPRESSED_RGBA8_ETC2_EAC:
+	case GL_COMPRESSED_R11_EAC:
+	case GL_COMPRESSED_SIGNED_R11_EAC:
 	case GL_COMPRESSED_RGB8_ETC2:
 	case GL_COMPRESSED_RGB_FXT1_3DFX:
 	case GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2:
+	case GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2:
 	case GL_COMPRESSED_RGB_ARB:
 	case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
 	case GL_COMPRESSED_SRGB_S3TC_DXT1_EXT:
@@ -1987,8 +2110,9 @@ static void RawImage_UploadTexture( const char *ext, GLuint texture, byte *data,
 			if ( rgba8 && miplevel != 0 && r_colorMipLevels->i && data )
 				R_BlendOverTexture((byte *)data, width * height, mipBlendColors[miplevel]);
 
-			if (rgba8 && rgtc)
-				RawImage_UploadToRgtc2Texture(miplevel, x, y, width, height, data, subtexture);
+			if (rgba8 && rgtc) {
+				RawImage_UploadToRgtc2Texture( miplevel, x, y, width, height, data, subtexture, internalFormat );
+			}
 			else if (subtexture) {
 				GL_LogComment("glTexSubImage2D(GL_TEXTURE_2D, %lu, %i, %i, %i, %i, 0x%04x, %i, %p)", miplevel, x, y, width, height, dataFormat, dataType, data);
 				nglTexSubImage2D(target, miplevel, x, y, width, height, dataFormat, dataType, data);
@@ -2106,7 +2230,8 @@ R_CreateImage2
 This is the only way any texture_t are created
 ================
 */
-static texture_t *R_CreateImage2( const char *name, byte *pic, int width, int height, GLenum picFormat, int numMips, imgType_t type, imgFlags_t flags, int internalFormat )
+static texture_t *R_CreateImage2( const char *name, byte *pic, int width, int height, GLenum picFormat, int numMips, imgType_t type, imgFlags_t flags, int internalFormat,
+	qboolean isDefault )
 {
 	texture_t *image;
 	uint64_t namelen, hash;
@@ -2152,7 +2277,7 @@ static texture_t *R_CreateImage2( const char *name, byte *pic, int width, int he
 		glWrapClampMode = GL_REPEAT;
 	}
 
-	if ( !internalFormat ) {
+	if ( !internalFormat && !N_streq( COM_GetExtension( name ), "dds" ) && !isDefault ) {
 		internalFormat = RawImage_GetFormat( pic, width * height, picFormat, isLightmap, image->type, image->flags );
 	}
 	image->internalFormat = internalFormat;
@@ -2371,7 +2496,7 @@ Wrapper for R_CreateImage2()
 */
 texture_t *R_CreateImage( const char *name, byte *pic, int width, int height, imgType_t type, imgFlags_t flags, int internalFormat )
 {
-	return R_CreateImage2( name, pic, width, height, GL_RGBA8, 0, type, flags, internalFormat );
+	return R_CreateImage2( name, pic, width, height, GL_RGBA8, 0, type, flags, internalFormat, qfalse );
 }
 
 //===================================================================
@@ -2461,7 +2586,7 @@ static const imageExtToLoaderMap_t imageLoaders[] = {
 	{ "jpg",  R_LoadJPG },
 	{ "jpeg", R_LoadJPG },
 	{ "pcx",  R_LoadPCX },
-	{ "bmp",  R_LoadBMP }
+	{ "bmp",  R_LoadBMP },
 };
 
 static const int numImageLoaders = arraylen( imageLoaders );
@@ -2725,7 +2850,7 @@ texture_t *R_FindImageFile( const char *name, imgType_t type, imgFlags_t flags )
 		}
 	}
 
-	image = R_CreateImage( name, pic, width, height, type, flags, 0 );
+	image = R_CreateImage( name, pic, width, height, type, flags, picFormat );
 	ri.Free( pic );
 	return image;
 }
@@ -2759,7 +2884,7 @@ static void R_CreateDefaultTexture( void )
 		data[x][DEFAULT_SIZE-1][2] =
 		data[x][DEFAULT_SIZE-1][3] = 255;
 	}
-	rg.defaultImage = R_CreateImage( "*default", (byte *)data, DEFAULT_SIZE, DEFAULT_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_MIPMAP, 0 );
+	rg.defaultImage = R_CreateImage2( "*default", (byte *)data, DEFAULT_SIZE, DEFAULT_SIZE, GL_RGBA, 0, IMGTYPE_COLORALPHA, IMGFLAG_MIPMAP, GL_RGBA8, qtrue );
 }
 
 void R_CreateBuiltinTextures( void )
@@ -2771,7 +2896,7 @@ void R_CreateBuiltinTextures( void )
 
 	// we use a solid white image instead of disabling texturing
 	memset( data, 255, sizeof( data ) );
-	rg.whiteImage = R_CreateImage( "*white", (byte *)data, 8, 8, IMGTYPE_COLORALPHA, IMGFLAG_NONE, 0 );
+	rg.whiteImage = R_CreateImage2( "*white", (byte *)data, 8, 8, GL_RGBA, IMGTYPE_COLORALPHA, IMGFLAG_NONE, 0, GL_RGBA8, qtrue );
 
 	// with overbright bits active, we need an image which is some fraction of full color,
 	// for default lightmaps, etc
@@ -2784,7 +2909,7 @@ void R_CreateBuiltinTextures( void )
 		}
 	}
 
-	rg.identityLightImage = R_CreateImage( "*identityLight", (byte *)data, 8, 8, IMGTYPE_COLORALPHA, IMGFLAG_NONE, 0 );
+//	rg.identityLightImage = R_CreateImage( "*identityLight", (byte *)data, 8, 8, IMGTYPE_COLORALPHA, IMGFLAG_NONE, 0 );
 
 	for ( x = 0 ; x < arraylen( rg.scratchImage ) ; x++ ) {
 		// scratchimage is usually used for cinematic drawing

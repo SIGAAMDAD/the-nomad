@@ -25,8 +25,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 typedef unsigned int   ui32_t;
 
-typedef struct ddsHeader_s
-{
+typedef struct ddsHeader_s {
 	ui32_t headerSize;
 	ui32_t flags;
 	ui32_t height;
@@ -48,8 +47,7 @@ typedef struct ddsHeader_s
 	ui32_t caps3;
 	ui32_t caps4;
 	ui32_t reserved2;
-}
-ddsHeader_t;
+} ddsHeader_t;
 
 // flags:
 #define _DDSFLAGS_REQUIRED     0x001007
@@ -486,7 +484,7 @@ void R_LoadDDS ( const char *filename, byte **pic, int *width, int *height, GLen
 	*pic = ri.Malloc( len );
 	memcpy( *pic, data, len );
 
-	ri.FS_FreeFile(buffer.v);
+	ri.FS_FreeFile( buffer.v );
 }
 
 void R_SaveDDS(const char *filename, byte *pic, int width, int height, int depth)

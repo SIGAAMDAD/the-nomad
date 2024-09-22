@@ -350,21 +350,15 @@ static void PlayMenu_Draw_SaveSlotSelect( void )
 //			ImGui::PushStyleColor( ImGuiCol_WindowBgHovered, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
 		}
 
-		ImGui::PushID( va( "##SaveSlot%lu", i ) );
 		if ( !g_pArchiveHandler->SlotIsUsed( i ) ) {
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted( "EMPTY" );
-			ImGui::TableNextColumn();
+			if ( ImGui::Selectable( va( "EMPTY##EMPTYSAVESLOT%lu", i ), ( s_playMenu->hoveredSaveSlot == i ) ) ) {
+				Snd_PlaySfx( ui->sfx_select );
+				s_playMenu->hoveredSaveSlot = i;
+			}
 		} else {
-			ImGui::TableNextColumn();
-			ImGui::Text( "SLOT %lu", i );
-			ImGui::TableNextColumn();
-			ImGui::Text( "%u:%02u", s_playMenu->saveSlots[ i ].gd.playTimeHours, s_playMenu->saveSlots[ i ].gd.playTimeMinutes );
-			ImGui::NewLine();
-			ImGui::TextUnformatted( gi.mapCache.mapList[ s_playMenu->saveSlots[ i ].gd.mapIndex ] );
-
-			if ( i != g_maxSaveSlots->i - 1 ) {
-				ImGui::TableNextRow();
+			if ( ImGui::Selectable( va( "SLOT %lu : %u:%02u##USEDSAVESLOT%lu", i ), ( s_playMenu->hoveredSaveSlot == i ) ) ) {
+				Snd_PlaySfx( ui->sfx_select );
+				s_playMenu->hoveredSaveSlot = i;
 			}
 		}
 		if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
@@ -372,7 +366,6 @@ static void PlayMenu_Draw_SaveSlotSelect( void )
 			s_playMenu->selectedSaveSlot = i;
 			s_playMenu->hoveredSaveSlot = 0;
 		}
-		ImGui::PopID();
 
 		ImGui::PopStyleColor( 3 );
 	}
@@ -414,6 +407,8 @@ static void PlayMenu_Draw( void )
 		} else {
 			menuTitle = "NEW GAME";
 		}
+	} else {
+		menuTitle = "SAVE SLOTS";
 	}
 
 	ImGui::Begin( s_playMenu->menu.name, NULL, s_playMenu->menu.flags );
@@ -432,7 +427,7 @@ static void PlayMenu_Draw( void )
 		s_playMenu->selectedSaveSlot = -1;
 		memset( &ui->virtKeyboard, 0, sizeof( ui->virtKeyboard ) );
 	}
-	if ( UI_MenuTitle( "SAVE SLOTS", s_playMenu->menu.titleFontScale ) ) {
+	if ( UI_MenuTitle( menuTitle, s_playMenu->menu.titleFontScale ) ) {
 		UI_PopMenu();
 		s_playMenu->hoveredSaveSlot = 0;
 		s_playMenu->selectedSaveSlot = -1;
