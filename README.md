@@ -6,6 +6,7 @@ The currently release version of the game is a Demo Alpha Test, so expect lots o
 
 ## WIP Features
 Here's a complete list of things I plan to put into the game:
+- (Possibly in the first release) loading textures on demand
 - Desert Sea Shanties
 - Desert Brigs
 - Mercenaries
@@ -40,6 +41,8 @@ Intel i7, 4 or more cores | NVidia GTX 1050 Ti or better | 16 Gb | Windows 10 or
 
 ## The Technical Details
 Unless you're into programming, this won't really be interesting...
+
+IMPORTANT NOTE: Since this engine is old and uses outdated/deprecated functionality, I will most likely not be adding anything groundbreaking to this version of the engine. A lot of the features that I plan on adding in will most likely not be available until then, so please be patient.
 
 ### The Future
 Since Steam is the place where I intend to publish the game in the future, I'll have to do a rewrite of the engine because it uses GPL v2'd code from the Quake III Arena engine.
