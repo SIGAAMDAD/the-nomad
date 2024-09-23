@@ -463,10 +463,6 @@ void Text_Draw( menutext_t *text )
 		ImGui::Button( text->text, ImVec2( 0, ( 32 * text->generic.parent->textFontScale ) * ui->scale ) ); // for joysticks
 	}
 
-	if ( !text->generic.focused && ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone ) ) {
-		Snd_PlaySfx( ui->sfx_move );
-	}
-
 	if ( ImGui::IsItemClicked() || ImGui::IsItemActivated() ) {
 		if ( !( text->generic.flags & QMF_SILENT ) ) {
 			Snd_PlaySfx( ui->sfx_select );

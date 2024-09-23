@@ -150,10 +150,12 @@ typedef struct {
 	const char **textureDetails;
 	const char **textureFilters;
 	const char **onoff;
+	const char **qualityTypes;
 
 	int numMultisampleTypes;
 	int numTextureDetails;
 	int numTextureFilters;
+	int numQualities;
 
 	int multisampleType;
 	int textureDetail;
@@ -239,9 +241,8 @@ typedef struct settingsMenu_s {
 
 	uint64_t currentModSettings;
 
-	char gpuMem0[64];
-	char gpuMem1[64];
-	char gpuMem2[64];
+	GLint availableGPUMemory;
+	GLint totalGPUMemory;
 
 	const char *hintLabel;
 	const char *hintMessage;
@@ -252,6 +253,8 @@ typedef struct settingsMenu_s {
 	qboolean playedClickSound;
 	qboolean playedHoverSound;
 	qboolean modified;
+
+	gpuMemory_t memUsage;
 } settingsMenu_t;
 
 static settingsMenu_t *s_settingsMenu;
@@ -628,26 +631,14 @@ static inline void SfxFocused( const void *item ) {
 	if ( ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone ) ) {
 		if ( s_settingsMenu->focusedItem != item ) {
 			s_settingsMenu->focusedItem = item;
-			Snd_PlaySfx( ui->sfx_move );
+//			Snd_PlaySfx( ui->sfx_move );
 		}
 	}
 }
 
 static void SettingsMenu_GetGPUMemoryInfo( void )
 {
-	const char *memSuffix;
-	auto getMemSuffix = [&]( GLint mem, float& real ) -> void {
-		real = mem;
-		if ( real > 1000 ) {
-			real /= 1000;
-			memSuffix = "Mb";
-		}
-		if ( real > 1000 ) {
-			real /= 1000;
-			memSuffix = "Gb";
-		}
-	};
-
+	re.GetGPUMemStats( &s_settingsMenu->memUsage );
 	switch ( s_settingsMenu->gpuMemInfoType ) {
 	case GPU_MEMINFO_NVX: {
 		GLint dedicatedMemory, availableMemory, totalMemory;
@@ -657,17 +648,8 @@ static void SettingsMenu_GetGPUMemoryInfo( void )
 		renderImport.glGetIntegerv( GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &availableMemory );
 		renderImport.glGetIntegerv( GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &totalMemory );
 
-		getMemSuffix( dedicatedMemory, realDedicated );
-		Com_snprintf( s_settingsMenu->gpuMem0, sizeof( s_settingsMenu->gpuMem0 ) - 1,
-			"Dedicated GPU Memory: %0.04f%s", realDedicated, memSuffix );
-
-		getMemSuffix( availableMemory, realAvailable );
-		Com_snprintf( s_settingsMenu->gpuMem1, sizeof( s_settingsMenu->gpuMem1 ) - 1,
-			"Available GPU Memory: %0.04f%s", realAvailable, memSuffix );
-
-		getMemSuffix( totalMemory, realTotal );
-		Com_snprintf( s_settingsMenu->gpuMem2, sizeof( s_settingsMenu->gpuMem2 ) - 1,
-			"Total GPU Memory: %0.04f%s", realTotal, memSuffix );
+		s_settingsMenu->availableGPUMemory = availableMemory;
+		s_settingsMenu->totalGPUMemory = totalMemory;
 		break; }
 	case GPU_MEMINFO_ATI: {
 		GLint vboMemory, textureMemory, renderbufferMemory;
@@ -677,22 +659,13 @@ static void SettingsMenu_GetGPUMemoryInfo( void )
 		renderImport.glGetIntegerv( GL_TEXTURE_FREE_MEMORY_ATI, &textureMemory );
 		renderImport.glGetIntegerv( GL_RENDERBUFFER_FREE_MEMORY_ATI, &renderbufferMemory );
 
-		getMemSuffix( vboMemory, realVbo );
-		Com_snprintf( s_settingsMenu->gpuMem0, sizeof( s_settingsMenu->gpuMem0 ) - 1,
-			"Available Vertex Buffer Memory: %0.04f%s", realVbo, memSuffix );
+		// the ATI memory usage estimation will always be very rough
 
-		getMemSuffix( textureMemory, realTexture );
-		Com_snprintf( s_settingsMenu->gpuMem1, sizeof( s_settingsMenu->gpuMem1 ) - 1,
-			"Available Texture Buffer Memory: %0.04f%s", realTexture, memSuffix );
-
-		getMemSuffix( renderbufferMemory, realRenderbuffer );
-		Com_snprintf( s_settingsMenu->gpuMem2, sizeof( s_settingsMenu->gpuMem2 ) - 1,\
-			"Available Render Buffer Memory: %0.04f%s", realRenderbuffer, memSuffix );
+		s_settingsMenu->totalGPUMemory = s_settingsMenu->memUsage.estTextureMemUsed + s_settingsMenu->memUsage.estBufferMemUsed
+			+ s_settingsMenu->memUsage.estRenderbufferMemUsed + vboMemory + textureMemory + renderbufferMemory;
+		s_settingsMenu->availableGPUMemory = vboMemory + textureMemory + renderbufferMemory;
 		break; }
 	case GPU_MEMINFO_NONE: {
-		memset( s_settingsMenu->gpuMem0, 0, sizeof( s_settingsMenu->gpuMem0 ) );
-		memset( s_settingsMenu->gpuMem1, 0, sizeof( s_settingsMenu->gpuMem1 ) );
-		memset( s_settingsMenu->gpuMem2, 0, sizeof( s_settingsMenu->gpuMem2 ) );
 		break; }
 	};
 }
@@ -813,7 +786,7 @@ static void SettingsMenu_List( const char *label, const char **itemnames, int nu
 		s_settingsMenu->playedClickSound = qfalse;
 	}
 	ImGui::PopStyleColor();
-	SfxFocused( itemnames );
+	SfxFocused( label );
 }
 
 static void SettingsMenu_MultiAdjustable( const char *name, const char *label, const char *hint, const char **itemnames, int numitems,
@@ -874,9 +847,7 @@ static void SettingsMenu_MultiSliderFloat( const char *name, const char *label, 
 	}
 	SfxFocused( (void *)( (uintptr_t)curvalue * 0xaf ) );
 	ImGui::SameLine();
-	if ( ImGui::SliderFloat( va( "##%sSettingsMenuConfigSlider", label ), curvalue, minvalue, maxvalue ) ) {
-		Snd_PlaySfx( ui->sfx_move );
-	}
+	ImGui::SliderFloat( va( "##%sSettingsMenuConfigSlider", label ), curvalue, minvalue, maxvalue );
 	SfxFocused( curvalue );
 	ImGui::SameLine();
 	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigRight", label ), ImGuiDir_Right ) ) {
@@ -915,11 +886,7 @@ static void SettingsMenu_MultiSliderInt( const char *name, const char *label, co
 	}
 	SfxFocused( (void *)( (uintptr_t)curvalue * 0xaf ) );
 	ImGui::SameLine();
-	if ( ImGui::SliderInt( va( "##%sSettingsMenuConfigSlider", label ), curvalue, minvalue, maxvalue, "%d", enabled ? 0 : ImGuiSliderFlags_NoInput ) ) {
-		if ( enabled ) {
-			Snd_PlaySfx( ui->sfx_move );
-		}
-	}
+	ImGui::SliderInt( va( "##%sSettingsMenuConfigSlider", label ), curvalue, minvalue, maxvalue, "%d", enabled ? 0 : ImGuiSliderFlags_NoInput );
 	SfxFocused( curvalue );
 	ImGui::SameLine();
 	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigRight", label ), ImGuiDir_Right ) ) {
@@ -1487,12 +1454,11 @@ static void PerformanceMenu_Draw( void )
 		}
 	}
 
-	ImGui::Begin( "##GPUMemoryInfo", NULL, MENU_DEFAULT_FLAGS | ImGuiWindowFlags_AlwaysAutoResize & ~( ImGuiWindowFlags_NoBackground ) );
-	ImGui::SetWindowPos( ImVec2( 900 * ui->scale, 600 * ui->scale ) );
+	ImGui::Begin( "##GPUMemoryInfo", NULL, MENU_DEFAULT_FLAGS );
+	ImGui::SetWindowSize( ImVec2( 390 * ui->scale + ui->bias, 100 * ui->scale ) );
+	ImGui::SetWindowPos( ImVec2( s_settingsMenu->menu.width + 50 * ui->scale + ui->bias, 600 * ui->scale ) );
 	ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * 2.5f );
-	ImGui::TextUnformatted( s_settingsMenu->gpuMem0 );
-	ImGui::TextUnformatted( s_settingsMenu->gpuMem1 );
-	ImGui::TextUnformatted( s_settingsMenu->gpuMem2 );
+
 	ImGui::End();
 }
 
@@ -1521,15 +1487,13 @@ static void AudioMenu_Draw( void )
 		
 		ImGui::TableNextRow();
 
-		SettingsMenu_MultiAdjustable( "MUSIC ON", "MusicOn",
-			"Toggles music", s_settingsMenu->performance.onoff, 2,
-			&s_settingsMenu->audio.musicOn, true );
+		SettingsMenu_RadioButton( "MUSIC ON", "MusicOn",
+			"Toggles Music", &s_settingsMenu->audio.musicOn, true );
 
 		ImGui::TableNextRow();
 
-		SettingsMenu_MultiAdjustable( "SOUND EFFECTS ON", "SoundEffectsOn",
-			"Toggles sound effects", s_settingsMenu->performance.onoff, 2,
-			&s_settingsMenu->audio.sfxOn, true );
+		SettingsMenu_RadioButton( "SFX ON", "SfxOn",
+			"Toggles Sound Effects", &s_settingsMenu->audio.sfxOn, true );
 	}
 	ImGui::EndTable();
 }
@@ -2001,6 +1965,7 @@ static void PerformanceMenu_SetDefault( void )
 	s_settingsMenu->advancedPerformance.hdr = Cvar_VariableInteger( "r_hdr" );
 	s_settingsMenu->advancedPerformance.pbr = Cvar_VariableInteger( "r_pbr" );
 	s_settingsMenu->advancedPerformance.postProcessing = Cvar_VariableInteger( "r_postProcess" );
+	s_settingsMenu->performance.lightingQuality = Cvar_VariableInteger( "r_lightingQuality" );
 
 	s_settingsMenu->advancedPerformance.bufferMode = Cvar_VariableInteger( "r_drawMode" );
 
@@ -2210,9 +2175,6 @@ static void SettingsMenu_Draw( void )
 		if ( in_mode->i == 0 ) {
 			ImGui::Image( (ImTextureID)(uintptr_t)( s_settingsMenu->saveHovered ? s_settingsMenu->save_1 : s_settingsMenu->save_0 ),
 				ImVec2( 256 * ui->scale, 72 * ui->scale ) );
-			if ( !s_settingsMenu->saveHovered && ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone ) ) {
-				Snd_PlaySfx( ui->sfx_move );
-			}
 		} else {
 			ImGui::PushStyleColor( ImGuiCol_Button, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
 			ImGui::PushStyleColor( ImGuiCol_ButtonActive, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
@@ -2257,11 +2219,6 @@ static void SettingsMenu_Draw( void )
 		if ( in_mode->i == 0 ) {
 			ImGui::Image( (ImTextureID)(uintptr_t)( s_settingsMenu->setDefaultsHovered ? s_settingsMenu->reset_1 : s_settingsMenu->reset_0 ),
 				ImVec2( 256 * ui->scale, 72 * ui->scale ) );
-			if ( !s_settingsMenu->setDefaultsHovered && ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled
-				| ImGuiHoveredFlags_DelayNone ) )
-			{
-				Snd_PlaySfx( ui->sfx_move );
-			}
 		} else {
 			ImGui::PushStyleColor( ImGuiCol_Button, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
 			ImGui::PushStyleColor( ImGuiCol_ButtonActive, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
@@ -2361,6 +2318,14 @@ void SettingsMenu_Cache( void )
 		"OFF",
 		"ON"
 	};
+	static const char *s_qualityType[] = {
+		"VERY LOW",
+		"LOW",
+		"NORMAL",
+		"HIGH",
+		"VERY HIGH",
+		"INSANE"
+	};
 	static const char *s_windowModes[ NUM_WINDOW_MODES ];
 
 	s_multisampleTypes[0] = strManager->ValueForKey( "GAMEUI_NONE" )->value;
@@ -2398,19 +2363,18 @@ void SettingsMenu_Cache( void )
 
 	s_windowSizes[0] = strManager->ValueForKey( "GAMEUI_WINDOW_NATIVE" )->value;
 	s_windowSizes[1] = strManager->ValueForKey( "GAMEUI_WINDOW_CUSTOM" )->value;
-	s_windowSizes[2] = strManager->ValueForKey( "GAMEUI_WINDOW_1280X1024" )->value;
-	s_windowSizes[3] = strManager->ValueForKey( "GAMEUI_WINDOW_1600X1200" )->value;
-	s_windowSizes[4] = strManager->ValueForKey( "GAMEUI_WINDOW_1600X1050" )->value;
-	s_windowSizes[5] = strManager->ValueForKey( "GAMEUI_WINDOW_1920X1080" )->value;
-	s_windowSizes[6] = strManager->ValueForKey( "GAMEUI_WINDOW_1920X1200" )->value;
-	s_windowSizes[7] = strManager->ValueForKey( "GAMEUI_WINDOW_1920X1280" )->value;
-	s_windowSizes[8] = strManager->ValueForKey( "GAMEUI_WINDOW_2560X1080" )->value;
-	s_windowSizes[9] = strManager->ValueForKey( "GAMEUI_WINDOW_2560X1440" )->value;
-	s_windowSizes[10] = strManager->ValueForKey( "GAMEUI_WINDOW_2560X1600" )->value;
-	s_windowSizes[11] = strManager->ValueForKey( "GAMEUI_WINDOW_2880X1620" )->value;
-	s_windowSizes[12] = strManager->ValueForKey( "GAMEUI_WINDOW_3200X1800" )->value;
-	s_windowSizes[13] = strManager->ValueForKey( "GAMEUI_WINDOW_3840X1600" )->value;
-	s_windowSizes[14] = strManager->ValueForKey( "GAMEUI_WINDOW_3840X2160" )->value;
+	s_windowSizes[2] = strManager->ValueForKey( "GAMEUI_WINDOW_1600X1200" )->value;
+	s_windowSizes[3] = strManager->ValueForKey( "GAMEUI_WINDOW_1600X1050" )->value;
+	s_windowSizes[4] = strManager->ValueForKey( "GAMEUI_WINDOW_1920X1080" )->value;
+	s_windowSizes[5] = strManager->ValueForKey( "GAMEUI_WINDOW_1920X1200" )->value;
+	s_windowSizes[6] = strManager->ValueForKey( "GAMEUI_WINDOW_1920X1280" )->value;
+	s_windowSizes[7] = strManager->ValueForKey( "GAMEUI_WINDOW_2560X1080" )->value;
+	s_windowSizes[8] = strManager->ValueForKey( "GAMEUI_WINDOW_2560X1440" )->value;
+	s_windowSizes[9] = strManager->ValueForKey( "GAMEUI_WINDOW_2560X1600" )->value;
+	s_windowSizes[10] = strManager->ValueForKey( "GAMEUI_WINDOW_2880X1620" )->value;
+	s_windowSizes[11] = strManager->ValueForKey( "GAMEUI_WINDOW_3200X1800" )->value;
+	s_windowSizes[12] = strManager->ValueForKey( "GAMEUI_WINDOW_3840X1600" )->value;
+	s_windowSizes[13] = strManager->ValueForKey( "GAMEUI_WINDOW_3840X2160" )->value;
 
 	s_hudOptions[0] = strManager->ValueForKey( "MENU_HUD" )->value;
 	s_hudOptions[1] = strManager->ValueForKey( "MENU_ADVANCED_HUD" )->value;
@@ -2448,6 +2412,7 @@ void SettingsMenu_Cache( void )
 	s_settingsMenu->performance.textureDetails = s_textureDetail;
 	s_settingsMenu->performance.textureFilters = s_textureFilters;
 	s_settingsMenu->presetNames = s_presetLabels;
+	s_settingsMenu->performance.qualityTypes = s_qualityType + 1;
 
 	s_settingsMenu->gameplay.difficultyNames = difficulties;
 
@@ -2459,6 +2424,7 @@ void SettingsMenu_Cache( void )
 	s_settingsMenu->video.numWindowSizes = arraylen( s_windowSizes );
 	s_settingsMenu->video.numWindowModes = arraylen( s_windowModes );
 
+	s_settingsMenu->performance.numQualities = 3;
 	s_settingsMenu->performance.numMultisampleTypes = arraylen( s_multisampleTypes );
 	s_settingsMenu->advancedPerformance.numAnisotropyTypes = arraylen( s_anisotropyTypes );
 	s_settingsMenu->performance.numTextureDetails = arraylen( s_textureDetail );

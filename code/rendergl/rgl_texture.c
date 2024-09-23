@@ -33,7 +33,7 @@ static texture_t *hashTable[FILE_HASH_SIZE];
 */
 void R_GammaCorrect( byte *buffer, uint64_t bufSize ) {
 	uint64_t i;
-	ri.Printf( PRINT_DEVELOPER, "----- R_GammaCorrect ------" );
+	ri.Printf( PRINT_DEVELOPER, "----- R_GammaCorrect ------\n" );
 
 	for ( i = 0; i < bufSize; i++ ) {
 		buffer[i] = s_gammatable[buffer[i]];
@@ -2399,7 +2399,7 @@ static texture_t *R_CreateImage2( const char *name, byte *pic, int width, int he
 		estSize /= 2;
 		break;
 	case GL_RGBA16F_ARB:
-		// 8 bytes per pixel
+		// 16 bytes per pixel
 		estSize *= 16;
 		break;
 	case GL_RGBA16:
@@ -2416,9 +2416,12 @@ static texture_t *R_CreateImage2( const char *name, byte *pic, int width, int he
 		estSize *= 4;
 		break;
 	case GL_RGBA32F_ARB:
+		// 32 bytes per pixel?
+		estSize *= 32;
+		break;
 	case GL_RGB32F_ARB:
-		// 16 bytes per pixel?
-		estSize *= 16;
+		// 24 bytes per pixel?
+		estSize *= 24;
 		break;
 	case GL_LUMINANCE8:
 	case GL_LUMINANCE:

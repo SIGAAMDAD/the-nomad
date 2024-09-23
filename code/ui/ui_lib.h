@@ -153,7 +153,7 @@ typedef struct {
     sfxHandle_t sfx_null;
     sfxHandle_t sfx_back;
     sfxHandle_t sfx_select;
-    sfxHandle_t sfx_move;
+//    sfxHandle_t sfx_move;
     qboolean sfx_scroll_toggle;
 
     nhandle_t rb_on;

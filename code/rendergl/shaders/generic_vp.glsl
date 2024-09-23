@@ -10,6 +10,10 @@ out vec3 v_WorldPos;
 
 #include "lighting_common.glsl"
 
+//layout( std140, binding = 0 ) uniform u_VertexInput {
+//	mat4 u_ModelViewProjection;
+//};
+
 uniform mat4 u_ModelViewProjection;
 uniform vec4 u_BaseColor;
 uniform vec4 u_VertColor;

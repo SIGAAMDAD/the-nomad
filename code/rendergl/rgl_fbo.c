@@ -88,6 +88,33 @@ static void FBO_CreateBuffer( fbo_t *fbo, int format, int32_t index, int multisa
 	qboolean absent;
 
 	switch ( format ) {
+	case GL_RGB8:
+	case GL_RGB:
+		glState.memstats.estRenderbufferMemUsed += fbo->width * fbo->height * 3;
+		break;
+	case GL_RGBA8:
+	case GL_RGBA:
+		glState.memstats.estRenderbufferMemUsed += fbo->width * fbo->height * 4;
+		break;
+	case GL_RGB16F_ARB:
+		glState.memstats.estRenderbufferMemUsed += fbo->width * fbo->height * 12;
+		break;
+	case GL_RGBA16F_ARB:
+		glState.memstats.estRenderbufferMemUsed += fbo->width * fbo->height * 16;
+		break;
+	case GL_RGB32F_ARB:
+		glState.memstats.estRenderbufferMemUsed += fbo->width * fbo->height * 24;
+		break;
+	case GL_RGBA32F_ARB:
+		glState.memstats.estRenderbufferMemUsed += fbo->width * fbo->height * 32;
+		break;
+	default:
+		// best guess
+		glState.memstats.estRenderbufferMemUsed += fbo->width * fbo->height * 2;
+		break;
+	};
+
+	switch ( format ) {
 	case GL_RGB:
 	case GL_RGBA:
 	case GL_RGB8:

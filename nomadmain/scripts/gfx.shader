@@ -327,7 +327,7 @@ gfx/bloodSplatter0
 {
     nopicmip
     {
-        clampmap gfx/env/blood_spurt.tga
+        clampmap gfx/env/blood_spurt.dds
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen identityLighting
         alphaGen vertex
@@ -365,7 +365,7 @@ bloodMark
 	nopicmip			// make sure a border remains
 	polygonOffset
 	{
-		clampmap gfx/damage/blood_stain.tga
+		clampmap gfx/damage/blood_stain.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		rgbGen identityLighting
 		alphaGen vertex
@@ -477,7 +477,7 @@ gfx/env/smokePuff
     nopicmip
 //	entityMergable		// allow all the sprites to be merged together
 	{
-		map gfx/env/smokepuff3.tga
+		map gfx/env/smokepuff3.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		rgbGen		vertex
 //		alphaGen	vertex
@@ -487,7 +487,7 @@ gfx/env/smokePuff
 shotgunSmokePuff
 {
 	{
-		map gfx/misc/smokepuff2b.tga
+		map gfx/misc/smokepuff2b.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		alphaGen entity		
 		rgbGen entity

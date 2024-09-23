@@ -61,7 +61,6 @@ static void UI_Cache_f( void ) {
 	Con_Printf( "Caching ui resources...\n" );
 
 	MainMenu_Cache();
-	SettingsMenu_Cache();
 	ModsMenu_Cache();
 	DemoMenu_Cache();
 	PlayMenu_Cache();
@@ -69,6 +68,7 @@ static void UI_Cache_f( void ) {
 	CreditsMenu_Cache();
 	ConfirmMenu_Cache();
 	DataBaseMenu_Cache();
+	SettingsMenu_Cache();
 }
 
 CUIFontCache::CUIFontCache( void ) {
@@ -1206,7 +1206,6 @@ void Menu_Cache( void )
 	ui->back_1 = re.RegisterShader( "menu/backbutton1" );
 
 	ui->sfx_select = Snd_RegisterSfx( "event:/sfx/menu/select_item" );
-	ui->sfx_move = Snd_RegisterSfx( "event:/sfx/menu/move" );
 	ui->sfx_back = Snd_RegisterSfx( "event:/sfx/menu/back" );
 //	ui->sfx_select = Snd_RegisterSfx( "sfx/menu/UI_Menu_Select_2ch_v3_07.wav" );
 //	ui->sfx_move = Snd_RegisterSfx( "sfx/menu/UI_Menu_Move_2ch_v1_01.wav" );

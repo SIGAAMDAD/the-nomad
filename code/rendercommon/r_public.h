@@ -37,6 +37,7 @@ typedef struct {
 	uint32_t estTextureMemUsed;
 	uint32_t estVertexMemUsed;
 	uint32_t estIndexMemUsed;
+	uint32_t estRenderbufferMemUsed;
 
 	uint32_t numVertexArrays;
 	uint32_t numVertexBuffers;
@@ -45,8 +46,8 @@ typedef struct {
 	uint32_t numTextures;
 
 	// polled from glGetIntegerv
-	uint32_t dedicatedMem;
-	uint32_t totalMem;
+	int32_t dedicatedMem;
+	int32_t totalMem;
 } gpuMemory_t;
 
 //

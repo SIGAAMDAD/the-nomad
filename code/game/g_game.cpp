@@ -1826,12 +1826,12 @@ void G_Init( void )
 
 	re.WaitRegistered();
 
-	if ( !g_pModuleLib ) {
-		G_InitModuleLib();
-	}
-
 	if ( !sys_forceSingleThreading->i ) {
 		re.GetConfig( &gi.gpuConfig );
+	}
+
+	if ( !g_pModuleLib ) {
+		G_InitModuleLib();
 	}
 
 	// init developer console
@@ -1966,6 +1966,13 @@ void G_StartHunkUsers( void )
 		gi.soundStarted = qtrue;
 		Snd_Init();
 	}
+
+	// the renderer could have a multithreaded init
+	re.WaitRegistered();
+	if ( !sys_forceSingleThreading->i ) {
+		re.GetConfig( &gi.gpuConfig );
+	}
+	
 	if ( !g_pModuleLib ) {
 		G_InitModuleLib();
 	}

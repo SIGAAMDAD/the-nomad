@@ -147,14 +147,11 @@ void CSoundSource::Release( void )
 	if ( m_pData ) {
 		ERRCHECK( m_pData->releaseAllInstances() );
 	}
+	m_pData = NULL;
 }
 
 bool CSoundSource::Load( const char *npath, int64_t nTag )
 {
-	CSoundBank **pBankList;
-	FMOD::Studio::EventDescription *pEvent;
-	uint64_t i;
-
 	Con_Printf( "Loading sound source '%s'...\n", npath );
 
 	N_strncpyz( m_szName, npath, sizeof( m_szName ) );
@@ -177,14 +174,31 @@ void CSoundSource::Play( bool bLooping, uint64_t nTimeOffset )
 {
 	FMOD_STUDIO_PLAYBACK_STATE state;
 
+	if ( !m_pData ) {
+		return;
+	}
+
 	ERRCHECK( m_pData->createInstance( &m_pEmitter ) );
 	ERRCHECK( m_pEmitter->getPlaybackState( &state ) );
 	ERRCHECK( m_pEmitter->start() );
+
+	{
+		bool isSnapshot;
+		m_pData->isSnapshot( &isSnapshot );
+		if ( !isSnapshot ) {
+			m_pEmitter->release();
+			m_pEmitter = NULL;
+		}
+	}
 }
 
 void CSoundSource::Stop( void )
 {
 	FMOD_STUDIO_PLAYBACK_STATE state;
+
+	if ( !m_pData || !m_pEmitter ) {
+		return;
+	}
 
 	ERRCHECK( m_pEmitter->getPlaybackState( &state ) );
 
@@ -202,6 +216,8 @@ void CSoundSource::Stop( void )
 	};
 
 	ERRCHECK( m_pEmitter->release() );
+
+	m_pEmitter = NULL;
 }
 
 bool CSoundSystem::LoadBank( const char *pName )
@@ -324,7 +340,7 @@ void CSoundSystem::Init( void )
 #endif
 	ERRCHECK( s_pCoreSystem->createChannelGroup( "SFX", &m_pSFXGroup ) );
 
-	{
+	if ( !sys_forceSingleThreading->i ) {
 		Con_Printf( "Launching SoundThread...\n" );
 
 		s_bExitThread.store( qfalse );
@@ -360,7 +376,6 @@ void CSoundSystem::Shutdown( void )
 	Snd_ClearLoopingTracks();
 
 	m_szLoopingTracks.clear();
-	/*
 	for ( auto& it : m_szSources ) {
 		if ( !it ) {
 			continue;
@@ -373,7 +388,6 @@ void CSoundSystem::Shutdown( void )
 		}
 		it->Shutdown();
 	}
-	*/
 	memset( m_szSources, 0, sizeof( m_szSources ) );
 	memset( m_szBanks, 0, sizeof( m_szBanks ) );
 
@@ -381,18 +395,21 @@ void CSoundSystem::Shutdown( void )
 
 	ERRCHECK( m_pSFXGroup->release() );
 
-	ERRCHECK( s_pStudioSystem->unloadAll() );
+//	ERRCHECK( s_pStudioSystem->unloadAll() );
 	ERRCHECK( s_pStudioSystem->release() );
 
-	pthread_cond_signal( &s_SoundSignal );
+	if ( !sys_forceSingleThreading->i ) {
+		pthread_cond_signal( &s_SoundSignal );
 
-	s_bExitThread.store( qtrue );
-	pthread_join( s_hSoundThread, NULL );
+		s_bExitThread.store( qtrue );
+		pthread_join( s_hSoundThread, NULL );
 
-	pthread_cond_destroy( &s_SoundSignal );
-	pthread_mutex_destroy( &s_SoundMutex );
+		pthread_cond_destroy( &s_SoundSignal );
+		pthread_mutex_destroy( &s_SoundMutex );
+	}
 
 	gi.soundRegistered = qfalse;
+	gi.soundStarted = qfalse;
 
 	Z_FreeTags( TAG_SFX );
 	Z_FreeTags( TAG_MUSIC );
@@ -481,9 +498,17 @@ void Snd_PlaySfx( sfxHandle_t sfx )
 		return;
 	}
 
-	s_nThreadData.store( sfx );
-	s_nThreadCommand.store( SOUNDTHREAD_PLAYSOURCE );
-	pthread_cond_signal( &s_SoundSignal );
+	if ( !sys_forceSingleThreading->i ) {
+		s_nThreadData.store( sfx );
+		s_nThreadCommand.store( SOUNDTHREAD_PLAYSOURCE );
+		pthread_cond_signal( &s_SoundSignal );
+	} else {
+		CSoundSource *pSource = sndManager->GetSound( sfx );
+		if ( !pSource ) {
+			return;
+		}
+		pSource->Play();
+	}
 }
 
 void Snd_StopSfx( sfxHandle_t sfx )
@@ -492,9 +517,17 @@ void Snd_StopSfx( sfxHandle_t sfx )
 		return;
 	}
 
-	s_nThreadData.store( sfx );
-	s_nThreadCommand.store( SOUNDTHREAD_STOPSOURCE );
-	pthread_cond_signal( &s_SoundSignal );
+	if ( !sys_forceSingleThreading->i ) {
+		s_nThreadData.store( sfx );
+		s_nThreadCommand.store( SOUNDTHREAD_STOPSOURCE );
+		pthread_cond_signal( &s_SoundSignal );
+	} else {
+		CSoundSource *pSource = sndManager->GetSound( sfx );
+		if ( !pSource ) {
+			return;
+		}
+		pSource->Stop();
+	}
 }
 
 static void Snd_Toggle_f( void )

@@ -41,6 +41,7 @@ private:
 	char m_szName[ MAX_NPATH ];
 	CSoundSource *m_pNext;
 	int64_t m_nTag;
+	qboolean m_bLoaded;
 	FMOD::Studio::EventInstance *m_pEmitter;
 	FMOD::Studio::EventDescription *m_pData;
 };

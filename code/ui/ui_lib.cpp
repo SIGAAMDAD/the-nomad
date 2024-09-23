@@ -95,9 +95,6 @@ qboolean UI_MenuTitle( const char *label, float fontScale )
 			hShader = ui->backHovered ? ui->back_1 : ui->back_0;
 		}
 		ImGui::Image( (ImTextureID)(uintptr_t)hShader, ImVec2( 256 * ui->scale, 72 * ui->scale ) );
-		if ( !ui->backHovered && ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone ) ) {
-			Snd_PlaySfx( ui->sfx_move );
-		}
 		ui->backHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
 		if ( ImGui::IsItemClicked() ) {
 			Snd_PlaySfx( ui->sfx_back );

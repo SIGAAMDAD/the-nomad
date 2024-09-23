@@ -1139,7 +1139,9 @@ void GLSL_ShaderBufferData( shaderProgram_t *shader, uint32_t uniformNum, unifor
 
 	nglBindBuffer( GL_UNIFORM_BUFFER, buffer->id );
 
-	// GL_DYNAMIC_DRAW reputed to have shit performance on Windows
+	void *data = nglMapBufferRange( GL_UNIFORM_BUFFER, 0, nSize, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_INVALIDATE_RANGE_BIT );
+
+	// GL_DYNAMIC_DRAW is reputed to have shit performance on Windows
 	nglBufferData( GL_UNIFORM_BUFFER, nSize, NULL, GL_STREAM_DRAW );
 	nglBufferSubData( GL_UNIFORM_BUFFER, 0, nSize, buffer->data );
 	nglBindBuffer( GL_UNIFORM_BUFFER, 0 );

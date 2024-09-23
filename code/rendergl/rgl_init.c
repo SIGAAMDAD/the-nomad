@@ -341,21 +341,43 @@ Return value must be freed with ri.Hunk_FreeTempMemory()
 static byte *RB_ReadPixels(int x, int y, int width, int height, size_t *offset, int *padlen)
 {
 	byte *buffer, *bufstart;
-	int padwidth, linelen;
-	GLint packAlign;
-	
-	nglGetIntegerv(GL_PACK_ALIGNMENT, &packAlign);
-	
-	linelen = width * 3;
-	padwidth = PAD(linelen, packAlign);
-	
-	// Allocate a few more bytes so that we can choose an alignment we like
-	buffer = ri.Hunk_AllocateTempMemory( padwidth * height + *offset + packAlign - 1 );
-	
-	bufstart = PADP((intptr_t) buffer + *offset, packAlign);
+	int padwidth, linelen, bytesPerPixel;
+	int yin, xin, xout;
+	GLint packAlign, format;
 
-	nglReadPixels( x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, bufstart );
-	
+	// OpenGL ES is only required to support reading GL_RGBA
+	if ( 0 ) {
+		format = GL_RGBA;
+		bytesPerPixel = 4;
+	} else {
+		format = GL_RGB;
+		bytesPerPixel = 3;
+	}
+
+	nglGetIntegerv(GL_PACK_ALIGNMENT, &packAlign);
+
+	linelen = width * bytesPerPixel;
+	padwidth = PAD(linelen, packAlign);
+
+	// Allocate a few more bytes so that we can choose an alignment we like
+	buffer = ri.Hunk_AllocateTempMemory(padwidth * height + *offset + packAlign - 1);
+
+	bufstart = PADP((intptr_t) buffer + *offset, packAlign);
+	nglReadPixels(x, y, width, height, format, GL_UNSIGNED_BYTE, bufstart);
+
+	linelen = width * 3;
+
+	// Convert RGBA to RGB, in place, line by line
+	if (format == GL_RGBA) {
+		for (yin = 0; yin < height; yin++) {
+			for (xin = 0, xout = 0; xout < linelen; xin += 4, xout += 3) {
+				bufstart[yin*padwidth + xout + 0] = bufstart[yin*padwidth + xin + 0];
+				bufstart[yin*padwidth + xout + 1] = bufstart[yin*padwidth + xin + 1];
+				bufstart[yin*padwidth + xout + 2] = bufstart[yin*padwidth + xin + 2];
+			}
+		}
+	}
+
 	*offset = bufstart - buffer;
 	*padlen = padwidth - linelen;
 	
@@ -547,6 +569,9 @@ levelshots are specialized 128*128 thumbnails for
 the menu system, sampled down from full screen distorted images
 ====================
 */
+#define LEVELSHOT_WIDTH 128
+#define LEVELSHOT_HEIGHT 128
+
 static void R_LevelShot( void ) {
 	char		checkname[MAX_OSPATH];
 	byte		*buffer;
@@ -564,18 +589,19 @@ static void R_LevelShot( void ) {
 	allsource = RB_ReadPixels( 0, 0, glConfig.vidWidth, glConfig.vidHeight, &offset, &padlen );
 	source = allsource + offset;
 
-	buffer = ri.Hunk_AllocateTempMemory( 128 * 128*3 + 18 );
+	buffer = ri.Hunk_AllocateTempMemory( LEVELSHOT_WIDTH* LEVELSHOT_HEIGHT*3 + 18 );
 	memset( buffer, 0, 18 );
 	buffer[2] = 2;		// uncompressed type
-	buffer[12] = 128;
-	buffer[14] = 128;
+	*(uint16_t *)( buffer + 12 ) = LEVELSHOT_WIDTH;
+	*(uint16_t *)( buffer + 14 ) = LEVELSHOT_HEIGHT;
 	buffer[16] = 24;	// pixel size
 
 	// resample from source
 	xScale = glConfig.vidWidth / 512.0f;
 	yScale = glConfig.vidHeight / 384.0f;
-	for ( y = 0 ; y < 128 ; y++ ) {
-		for ( x = 0 ; x < 128 ; x++ ) {
+
+	for ( y = 0 ; y < LEVELSHOT_WIDTH ; y++ ) {
+		for ( x = 0 ; x < LEVELSHOT_HEIGHT ; x++ ) {
 			r = g = b = 0;
 			for ( yy = 0 ; yy < 3 ; yy++ ) {
 				for ( xx = 0 ; xx < 4 ; xx++ ) {
@@ -592,13 +618,12 @@ static void R_LevelShot( void ) {
 			dst[2] = r / 12;
 		}
 	}
-
 	// gamma correction
 	if ( glConfig.deviceSupportsGamma ) {
-		R_GammaCorrect( buffer + 18, 128 * 128 * 3 );
+		R_GammaCorrect( buffer + 18, LEVELSHOT_WIDTH * LEVELSHOT_HEIGHT * 3 );
 	}
 
-	ri.FS_WriteFile( checkname, buffer, 128 * 128*3 + 18 );
+	ri.FS_WriteFile( checkname, buffer, LEVELSHOT_WIDTH * LEVELSHOT_HEIGHT*3 + 18 );
 
 	ri.Hunk_FreeTempMemory( buffer );
 	ri.Hunk_FreeTempMemory( allsource );
@@ -811,7 +836,7 @@ static void R_Register( void )
 	ri.Cvar_SetDescription( r_arb_texture_compression, "Enables texture compression." );
 	r_arb_framebuffer_object = ri.Cvar_Get( "r_arb_framebuffer_object", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_arb_framebuffer_object, "Enables post-processing via multiple framebuffers." );
-	r_arb_vertex_array_object = ri.Cvar_Get( "r_arb_vertex_array_object", "0", CVAR_SAVE | CVAR_LATCH );
+	r_arb_vertex_array_object = ri.Cvar_Get( "r_arb_vertex_array_object", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_arb_vertex_array_object, "Enables use of vertex array object extensions.\nNOTE: only really matters if OpenGL version < 3.3" );
 	r_arb_vertex_buffer_object = ri.Cvar_Get( "r_arb_vertex_buffer_object", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_arb_vertex_buffer_object, "Enables use of hardware accelerated vertex and index rendering." );
@@ -1158,6 +1183,7 @@ static void R_Register( void )
 	ri.Cmd_AddCommand( "texturelist", R_ImageList_f );
 	ri.Cmd_AddCommand( "shaderlist", R_ShaderList_f );
 	ri.Cmd_AddCommand( "screenshot", R_ScreenShot_f );
+	ri.Cmd_AddCommand( "screenshotJPEG", R_ScreenShotJPEG_f );
 	ri.Cmd_AddCommand( "gpuinfo", GpuInfo_f );
 	ri.Cmd_AddCommand( "gpumeminfo", GpuMemInfo_f );
 }

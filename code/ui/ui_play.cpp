@@ -30,6 +30,7 @@ typedef struct {
 	char name[ MAX_NPATH ];
 	gamedata_t gd;
 	qboolean valid;
+	nhandle_t levelShot;
 	qboolean *modsLoaded;
 } saveinfo_t;
 
@@ -39,6 +40,10 @@ typedef struct {
 	nhandle_t accept_0;
 	nhandle_t accept_1;
 	qboolean acceptHovered;
+
+	nhandle_t delete_0;
+	nhandle_t delete_1;
+	qboolean deleteHovered;
 
 	uint32_t numSaveFiles;
 	uint32_t hoveredSaveSlot;
@@ -66,7 +71,7 @@ static void SfxFocused( const void *ptr ) {
 	if ( ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone ) ) {
 		if ( s_playMenu->focusedItem != ptr ) {
 			s_playMenu->focusedItem = ptr;
-			Snd_PlaySfx( ui->sfx_move );
+//			Snd_PlaySfx( ui->sfx_move );
 		}
 	}
 }
@@ -195,8 +200,10 @@ static void PlayMenu_DrawSlotEdit( void )
 	// mission select menu
 	if ( s_playMenu->missionSelect ) {
 		PlayMenu_MissionSelect();
+		return;
 	}
 
+	SfxFocused( "CONTINUE" );
 	ImGui::TextUnformatted( "CONTINUE" );
 	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
 		Snd_PlaySfx( ui->sfx_select );
@@ -207,10 +214,17 @@ static void PlayMenu_DrawSlotEdit( void )
 		g_pArchiveHandler->Load( slot->name );
 		Cbuf_ExecuteText( EXEC_APPEND, va( "setmap \"%s\"\n", gi.mapCache.mapList[ slot->gd.mapIndex ] ) );
 	}
+	SfxFocused( "MISSIONSELECT" );
 	ImGui::TextUnformatted( "MISSION SELECT" );
+	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
+		Snd_PlaySfx( ui->sfx_select );
+		s_playMenu->missionSelect = qtrue;
+	}
 
+	SfxFocused( "EXIT" );
 	ImGui::TextUnformatted( "EXIT" );
 	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
+		Snd_PlaySfx( ui->sfx_select );
 		s_playMenu->selectedSaveSlot = -1;
 	}
 }
@@ -335,40 +349,38 @@ static void PlayMenu_Draw_SaveSlotSelect( void )
 {
 	uint64_t i;
 
-	ImGui::BeginTable( "##SaveSlotsConfigListSelector", 2, ImGuiTableFlags_BordersH | ImGuiTableFlags_BordersOuterV );
+	ImGui::BeginTable( "##SaveSlotsConfigListSelector", 1, ImGuiTableFlags_BordersH | ImGuiTableFlags_BordersOuterV );
+
+	ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 2.25f ) * ui->scale );
 
 	s_playMenu->selectedSaveSlot = -1;
+	ui->menubackShader = re.RegisterShader( "menu/mainbackground" );
 
 	for ( i = 0; i < g_maxSaveSlots->i; i++ ) {
 		if ( s_playMenu->hoveredSaveSlot == i ) {
-			ImGui::PushStyleColor( ImGuiCol_TableRowBg, ImVec4( 0.75f, 0.75f, 1.0f, 1.0f ) );
-//			ImGui::PushStyleColor( ImGuiCol_WindowBgActive, ImVec4( 0.75f, 0.75f, 1.0f, 1.0f ) );
-//			ImGui::PushStyleColor( ImGuiCol_WindowBgHovered, ImVec4( 0.75f, 0.75f, 1.0f, 1.0f ) );
 		} else {
-			ImGui::PushStyleColor( ImGuiCol_TableRowBg, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
-//			ImGui::PushStyleColor( ImGuiCol_WindowBgActive, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
-//			ImGui::PushStyleColor( ImGuiCol_WindowBgHovered, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
 		}
+		ImGui::TableNextColumn();
 
 		if ( !g_pArchiveHandler->SlotIsUsed( i ) ) {
-			if ( ImGui::Selectable( va( "EMPTY##EMPTYSAVESLOT%lu", i ), ( s_playMenu->hoveredSaveSlot == i ) ) ) {
+			if ( ImGui::MenuItem( va( "EMPTY##EMPTYSAVESLOT%lu", i ) ) ) {
 				Snd_PlaySfx( ui->sfx_select );
-				s_playMenu->hoveredSaveSlot = i;
+				s_playMenu->selectedSaveSlot = i;
 			}
 		} else {
-			if ( ImGui::Selectable( va( "SLOT %lu : %u:%02u##USEDSAVESLOT%lu", i ), ( s_playMenu->hoveredSaveSlot == i ) ) ) {
+			if ( ImGui::MenuItem( va( "SLOT %lu : %u:%02u##USEDSAVESLOT%lu", i, s_playMenu->saveSlots[ i ].gd.playTimeHours,
+				s_playMenu->saveSlots[ i ].gd.playTimeMinutes ) ) )
+			{
 				Snd_PlaySfx( ui->sfx_select );
-				s_playMenu->hoveredSaveSlot = i;
+				s_playMenu->selectedSaveSlot = i;
+				ui->menubackShader = s_playMenu->saveSlots[ i ].levelShot;
 			}
 		}
-		if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
-			Snd_PlaySfx( ui->sfx_select );
-			s_playMenu->selectedSaveSlot = i;
-			s_playMenu->hoveredSaveSlot = 0;
+		if ( i <= g_maxSaveSlots->i - 1 ) {
+			ImGui::TableNextRow();
 		}
-
-		ImGui::PopStyleColor( 3 );
 	}
+	ImGui::EndTable();
 
 	/*
 
@@ -391,8 +403,6 @@ static void PlayMenu_Draw_SaveSlotSelect( void )
 		s_playMenu->selectedSaveSlot = s_playMenu->hoveredSaveSlot;
 	}
 	*/
-
-	ImGui::EndTable();
 }
 
 static void PlayMenu_Draw( void )
@@ -401,7 +411,7 @@ static void PlayMenu_Draw( void )
 	extern cvar_t *in_joystick;
 	const char *menuTitle;
 
-	if ( s_playMenu->selectedSaveSlot ) {
+	if ( s_playMenu->selectedSaveSlot != -1 ) {
 		if ( g_pArchiveHandler->SlotIsUsed( s_playMenu->selectedSaveSlot ) ) {
 			menuTitle = "LEVEL";
 		} else {
@@ -463,6 +473,8 @@ void UI_ReloadSaveFiles_f( void )
 	info = s_playMenu->saveSlots;
 
 	for ( i = 0; i < g_maxSaveSlots->i; i++ ) {
+		char szMapName[ MAX_NPATH ];
+
 		Com_snprintf( info->name, sizeof( info->name ), "SLOT_%lu", i );
 		if ( i >= g_pArchiveHandler->NumUsedSaveSlots() ) {
 			info->valid = qtrue;
@@ -474,6 +486,10 @@ void UI_ReloadSaveFiles_f( void )
 		if ( !info->valid ) {
 			Con_Printf( COLOR_YELLOW "WARNING: Failed to get valid header data from savefile '%s'\n", info->name );
 		}
+
+		COM_StripExtension( gi.mapCache.mapList[ info->gd.mapIndex ], szMapName, sizeof( szMapName ) );
+		szMapName[ strlen( szMapName ) - 1 ] = '\0';
+		info->levelShot = re.RegisterShader( va( "levelshots/%s", COM_SkipPath( szMapName ) ) );
 	}
 }
 
@@ -550,6 +566,9 @@ void PlayMenu_Cache( void )
 
 	s_playMenu->accept_0 = re.RegisterShader( "menu/accept_0" );
 	s_playMenu->accept_1 = re.RegisterShader( "menu/accept_1" );
+
+	s_playMenu->delete_0 = re.RegisterShader( "menu/delete_0" );
+	s_playMenu->delete_1 = re.RegisterShader( "menu/delete_1" );
 
 	s_playMenu->selectedSaveSlot = -1;
 	s_playMenu->hoveredSaveSlot = 0;
