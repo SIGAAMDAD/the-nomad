@@ -562,6 +562,9 @@ static int GLSL_LoadGPUShaderText( const char *name, const char *fallback, GLenu
 	if ( shaderType == GL_VERTEX_SHADER ) {
 		Com_snprintf( filename, sizeof( filename ) - 1, "shaders/%s_vp.glsl", name );
 	}
+	else if ( shaderType == GL_GEOMETRY_SHADER ) {
+		Com_snprintf( filename, sizeof( filename ) - 1, "shaders/%s_geom.glsl", name );
+	}
 	else {
 		Com_snprintf( filename, sizeof( filename ) - 1, "shaders/%s_fp.glsl", name );
 	}
@@ -795,7 +798,7 @@ static void GLSL_CheckAttribLocation(GLuint id, const char *name, const char *at
 }
 
 static int GLSL_InitGPUShader2( shaderProgram_t *program, const char *name, uint32_t attribs, const char *vsCode, const char *fsCode,
-	int fromCache )
+	const char *geomCode, int fromCache )
 {
 	ri.Printf(PRINT_DEVELOPER, "---------- GPU Shader ----------\n");
 
@@ -821,11 +824,21 @@ static int GLSL_InitGPUShader2( shaderProgram_t *program, const char *name, uint
 	}
 
 	if ( fsCode ) {
-		if (!(GLSL_CompileGPUShader(program->programId, &program->fragmentId, fsCode, strlen(fsCode),
+		if (!(GLSL_CompileGPUShader( program->programId, &program->fragmentId, fsCode, strlen(fsCode),
 			GL_FRAGMENT_SHADER, name, fromCache ) ) )
 		{
 			ri.Printf(PRINT_INFO, "GLSL_InitGPUShader2: Unable to load \"%s\" as GL_FRAGMENT_SHADER\n", name);
 			nglDeleteProgram(program->programId);
+			return qfalse;
+		}
+	}
+	
+	if ( geomCode ) {
+		if ( !( GLSL_CompileGPUShader( program->programId, &program->geometryId, geomCode, strlen( geomCode ),
+			GL_GEOMETRY_SHADER, name, fromCache ) ) )
+		{
+			ri.Printf( PRINT_INFO, "GLSL_InitGPUShader2: Unable to load \"%s\" as GL_GEOMETRY_SHADER\n", name );
+			nglDeleteProgram( program->programId );
 			return qfalse;
 		}
 	}
@@ -848,11 +861,12 @@ static int GLSL_InitGPUShader2( shaderProgram_t *program, const char *name, uint
 	return qtrue;
 }
 
-static int GLSL_InitGPUShader( shaderProgram_t *program, const char *name, uint32_t attribs, qboolean fragmentShader,
+static int GLSL_InitGPUShader( shaderProgram_t *program, const char *name, uint32_t attribs, qboolean fragmentShader, qboolean geomShader,
 	const GLchar *extra, qboolean addHeader, const char *fallback_vs, const char *fallback_fs )
 {
 	char vsCode[32000];
 	char fsCode[32000];
+	char geomCode[32000];
 	char *postHeader;
 	uint64_t size;
 	int fromCache = -1;
@@ -882,7 +896,7 @@ static int GLSL_InitGPUShader( shaderProgram_t *program, const char *name, uint3
 		return qfalse;
 	}
 
-	if (fragmentShader) {
+	if ( fragmentShader ) {
 		size = sizeof(fsCode);
 
 		if (addHeader) {
@@ -894,12 +908,29 @@ static int GLSL_InitGPUShader( shaderProgram_t *program, const char *name, uint3
 			postHeader = &fsCode[0];
 		}
 
-		if (!GLSL_LoadGPUShaderText(name, fallback_fs, GL_FRAGMENT_SHADER, postHeader, size)) {
+		if ( !GLSL_LoadGPUShaderText( name, fallback_fs, GL_FRAGMENT_SHADER, postHeader, size ) ) {
 			return qfalse;
 		}
 	}
 
-	return GLSL_InitGPUShader2( program, name, attribs, vsCode, fsCode, fromCache );
+	if ( geomShader ) {
+		size = sizeof( geomCode );
+
+		if ( addHeader ) {
+			GLSL_PrepareHeader( GL_GEOMETRY_SHADER, extra, geomCode, size );
+			postHeader = &geomCode[ strlen( geomCode ) ];
+			size -= strlen( geomCode );
+		}
+		else {
+			postHeader = &geomCode[0];
+		}
+
+		if ( !GLSL_LoadGPUShaderText( name, NULL, GL_GEOMETRY_SHADER, postHeader, size ) ) {
+			return qfalse;
+		}
+	}
+
+	return GLSL_InitGPUShader2( program, name, attribs, vsCode, fsCode, geomShader ? geomCode : NULL, fromCache );
 }
 
 static void GLSL_InitUniforms( shaderProgram_t *program )
@@ -1284,7 +1315,9 @@ void GLSL_InitGPUShaders( void )
 			N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_UBO\n" );
 		}
 
-		if ( !GLSL_InitGPUShader( &rg.genericShader[i], "generic", attribs, qtrue, extradefines, qtrue, fallbackShader_generic_vp, fallbackShader_generic_fp ) ) {
+		if ( !GLSL_InitGPUShader( &rg.genericShader[i], "generic", attribs, qtrue, qfalse, extradefines, qtrue, fallbackShader_generic_vp,
+			fallbackShader_generic_fp ) )
+		{
 			ri.Error( ERR_FATAL, "Could not load generic shader!" );
 		}
 
@@ -1300,7 +1333,9 @@ void GLSL_InitGPUShaders( void )
 	}
 
 	attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD;
-	if ( !GLSL_InitGPUShader( &rg.textureColorShader, "texturecolor", attribs, qtrue, extradefines, qtrue, fallbackShader_texturecolor_vp, fallbackShader_texturecolor_fp ) ) {
+	if ( !GLSL_InitGPUShader( &rg.textureColorShader, "texturecolor", attribs, qtrue, qfalse, extradefines, qtrue, fallbackShader_texturecolor_vp,
+		fallbackShader_texturecolor_fp ) )
+	{
 		ri.Error( ERR_FATAL, "Could not load texturecolor shader!" );
 	}
 	GLSL_InitUniforms( &rg.textureColorShader );
@@ -1411,7 +1446,9 @@ void GLSL_InitGPUShaders( void )
 			N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_TCMOD\n" );
 		}
 
-		if ( !GLSL_InitGPUShader( &rg.lightallShader[i], "lightall", attribs, qtrue, extradefines, qtrue, fallbackShader_lightall_vp, fallbackShader_lightall_fp ) ) {
+		if ( !GLSL_InitGPUShader( &rg.lightallShader[i], "lightall", attribs, qtrue, qfalse, extradefines, qtrue, fallbackShader_lightall_vp,
+			fallbackShader_lightall_fp ) )
+		{
 			ri.Error( ERR_FATAL, "Could not load lightall shader!" );
 		}
 
@@ -1469,7 +1506,7 @@ void GLSL_InitGPUShaders( void )
 	extradefines[0] = '\0';
 	N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_TCGEN\n" );
 	N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_TCMOD\n" );
-	if ( !GLSL_InitGPUShader( &rg.imguiShader, "imgui", attribs, qtrue, extradefines, qtrue, fallbackShader_imgui_vp, fallbackShader_imgui_fp ) ) {
+	if ( !GLSL_InitGPUShader( &rg.imguiShader, "imgui", attribs, qtrue, qfalse, extradefines, qtrue, fallbackShader_imgui_vp, fallbackShader_imgui_fp ) ) {
 		ri.Error( ERR_FATAL, "Could not load imgui shader!" );
 	}
 	GLSL_InitUniforms( &rg.imguiShader );
@@ -1495,7 +1532,7 @@ void GLSL_InitGPUShaders( void )
 	if ( r_useUniformBuffers->i ) {
 		N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_UBO\n" );
 	}
-	if ( !GLSL_InitGPUShader( &rg.tileShader, "tile", attribs, qtrue, extradefines, qtrue, fallbackShader_tile_vp, fallbackShader_tile_fp ) ) {
+	if ( !GLSL_InitGPUShader( &rg.tileShader, "tile", attribs, qtrue, qfalse, extradefines, qtrue, fallbackShader_tile_vp, fallbackShader_tile_fp ) ) {
 		ri.Error( ERR_FATAL, "Could not load tile shader!" );
 	}
 	GLSL_InitUniforms( &rg.tileShader );
@@ -1638,6 +1675,8 @@ void GLSL_ShutdownGPUShaders( void )
 	nglBindBufferARB( r_arb_shader_storage_buffer_object->i ? GL_SHADER_STORAGE_BUFFER : GL_UNIFORM_BUFFER, 0 );
 
 	if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
+		nglDeleteShader( rg.computeShader );
+		nglDeleteTextures( 1, &rg.computeShaderTexture );
 		nglDeleteProgram( rg.computeShaderProgram );
 	}
 

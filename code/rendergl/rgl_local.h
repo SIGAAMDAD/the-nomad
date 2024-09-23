@@ -389,6 +389,7 @@ typedef struct shaderProgram_s
 	uint32_t programId;
 	uint32_t vertexId;
 	uint32_t fragmentId;
+	uint32_t geometryId;
 	uint32_t attribBits; // vertex array attribute flags
 
 	// uniforms
@@ -1523,6 +1524,14 @@ static GDR_INLINE int VectorCompare4(const vec4_t v1, const vec4_t v2)
 	}
 	return 1;
 }
+
+//
+// rgl_shadows.c
+//
+void R_AddEdgeDef( int i1, int i2, int facing );
+void R_RenderShadowEdges( void );
+void RB_ShadowTessEnd( void );
+void RB_ShadowFinish( void );
 
 //
 // rgl_backend.c

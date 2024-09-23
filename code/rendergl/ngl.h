@@ -128,6 +128,7 @@ typedef void*(*NGLloadproc)(const char *name);
 	NGL( void, glDispatchCompute, GLuint num_groups_x, GLuint num_groups_y, GLuint num_groups_z ) \
 	NGL( void, glMemoryBarrier, GLbitfield barriers ) \
 	NGL( void, glDrawElementsInstanced, GLenum mode, GLsizei count, GLenum type, const void *indices, GLsizei instancecount ) \
+	NGL( void, glDrawArraysInstanced, GLenum mode, GLint first, GLsizei count, GLsizei instancecount ) \
 	NGL( void, glGetIntegeri_v, GLenum target, GLuint index, GLint *data ) \
 
 #define NGL_List_Procs \

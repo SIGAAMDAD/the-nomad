@@ -11,6 +11,7 @@ void R_DrawElements( uint32_t numElements, uintptr_t nOffset ) {
 		} else {
 //			nglDrawElementsBaseVertex( GL_TRIANGLES, numElements, GLN_INDEX_TYPE, NULL, nOffset );
 			nglDrawElements( GL_TRIANGLES, numElements, GLN_INDEX_TYPE, BUFFER_OFFSET( nOffset ) );
+//			nglDrawArrays( GL_TRIANGLE_FAN, 0, backend.drawBatch.vtxOffset );
 		}
 		break; }
 	case DRAWMODE_IMMEDIATE: {
@@ -606,6 +607,11 @@ void RB_IterateShaderStages( shader_t *shader )
 
 	ComputeDeformValues( &deformGen, deformParams );
 
+	if ( rg.world && rg.world->drawing ) {
+		nglEnable( GL_STENCIL_TEST );
+		nglStencilFunc( GL_ALWAYS, GL_EQUAL, 1 );
+	}
+
     for ( i = 0; i < MAX_SHADER_STAGES; i++ ) {
         shaderStage_t *stageP = shader->stages[i];
 		shaderProgram_t *sp;
@@ -799,6 +805,9 @@ void RB_IterateShaderStages( shader_t *shader )
 
 	if ( r_showTris->i ) {
 		DrawTris();
+	}
+
+	if ( rg.world && rg.world->drawing ) {
 	}
 }
 

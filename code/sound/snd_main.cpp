@@ -167,6 +167,8 @@ bool CSoundSource::Load( const char *npath, int64_t nTag )
 		return false;
 	}
 
+	m_nTag = nTag;
+
 	return true;
 }
 
@@ -181,6 +183,12 @@ void CSoundSource::Play( bool bLooping, uint64_t nTimeOffset )
 	ERRCHECK( m_pData->createInstance( &m_pEmitter ) );
 	ERRCHECK( m_pEmitter->getPlaybackState( &state ) );
 	ERRCHECK( m_pEmitter->start() );
+
+	if ( m_nTag == TAG_SFX ) {
+		ERRCHECK( m_pEmitter->setVolume( snd_effectsVolume->f / 100.0f ) );
+	} else if ( m_nTag == TAG_MUSIC ) {
+		ERRCHECK( m_pEmitter->setVolume( snd_musicVolume->f / 100.0f ) );
+	}
 
 	{
 		bool isSnapshot;
@@ -494,7 +502,7 @@ void Snd_StopAll( void )
 
 void Snd_PlaySfx( sfxHandle_t sfx )
 {
-	if ( sfx == -1 ) {
+	if ( sfx == -1 || !snd_effectsOn->i ) {
 		return;
 	}
 
@@ -513,7 +521,7 @@ void Snd_PlaySfx( sfxHandle_t sfx )
 
 void Snd_StopSfx( sfxHandle_t sfx )
 {
-	if ( sfx == -1 ) {
+	if ( sfx == -1 || !snd_effectsOn->i ) {
 		return;
 	}
 
@@ -623,6 +631,11 @@ static void Snd_PlayTrack_f( void ) {
 	sfxHandle_t hSfx;
 	const char *music;
 
+	if ( !snd_musicOn->i ) {
+		Con_Printf( "music is disabled\n" );
+		return;
+	}
+
 	music = Cmd_Argv( 1 );
 	
 	Snd_ClearLoopingTracks();
@@ -644,6 +657,11 @@ static void Snd_PlayTrack_f( void ) {
 static void Snd_QueueTrack_f( void ) {
 	sfxHandle_t hSfx;
 	const char *music;
+
+	if ( !snd_musicOn->i ) {
+		Con_Printf( "music is disabled\n" );
+		return;
+	}
 
 	if ( Cmd_Argc() != 2 ) {
 		Con_Printf( "usage: snd.queue_track <music>\n" );
@@ -671,6 +689,11 @@ static void Snd_ClearTracks_f( void ) {
 static void Snd_PlaySfx_f( void ) {
 	sfxHandle_t hSfx;
 	const char *sound;
+
+	if ( !snd_effectsOn->i ) {
+		Con_Printf( "sound effects are disabled\n" );
+		return;
+	}
 
 	if ( Cmd_Argc() != 2 ) {
 		Con_Printf( "usage: snd.play_sfx <music>\n" );

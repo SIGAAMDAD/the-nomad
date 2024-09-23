@@ -68,6 +68,7 @@ INTERNAL_OBJS=\
 	$(O)/rendergl/rgl_fbo.o \
 	$(O)/rendergl/rgl_math.o \
 	$(O)/rendergl/rgl_image_dds.o \
+	$(O)/rendergl/rgl_shadows.o \
 	$(O)/rendergl/r_image_bmp.o \
 	$(O)/rendergl/r_image_jpg.o \
 	$(O)/rendergl/r_image_pcx.o \

@@ -306,8 +306,8 @@ void R_DrawWorld( void )
 
 	backend.drawBatch.shader = rg.world->shader;
 	rg.world->drawing = qtrue;
-//	backend.drawBatch.instanceCount = 64;
-//	backend.drawBatch.instanced = qtrue;
+	backend.drawBatch.instanceCount = 64;
+	backend.drawBatch.instanced = qtrue;
 
 	vtx = rg.world->vertices;
 	VectorCopy2( begin, glState.viewData.camera.origin );

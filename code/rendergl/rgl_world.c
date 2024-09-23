@@ -466,7 +466,9 @@ static void R_ProcessLights( void )
 {
 	shaderLight_t *lights;
 	const maplight_t *data;
-	uint32_t i;
+	uint32_t i, x, y;
+	dirtype_t dir;
+	float dot, det;
 
 	if ( !r_worldData.numLights ) {
 		return;
@@ -486,7 +488,7 @@ static void R_ProcessLights( void )
 		lights[i].quadratic = data[i].quadratic;
 		lights[i].type = data[i].type;
 	}
-	
+
 	for ( i = 0; i < GENERICDEF_COUNT; i++ ) {
 		GLSL_UseProgram( &rg.genericShader[i] );
 		GLSL_SetUniformVec3( &rg.genericShader[i], UNIFORM_AMBIENTLIGHT, rg.world->ambientLightColor );
