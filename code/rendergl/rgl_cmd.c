@@ -284,7 +284,8 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 
 	if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
 		ri.ProfileFunctionBegin( "ComputeShaderDispatch" );
-		nglUseProgram( rg.computeShaderProgram );
+//		nglUseProgram( rg.computeShaderProgram );
+		GLSL_UseProgram( &rg.computeShader );
 		nglDispatchCompute( glConfig.vidWidth / 64, glConfig.vidHeight / 16, 1 );
 		ri.ProfileFunctionEnd();
 	}

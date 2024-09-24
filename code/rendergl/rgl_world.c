@@ -91,6 +91,10 @@ static void R_GenerateTexCoords( tile2d_info_t *info )
 	char texture[MAX_NPATH];
 	vec3_t tmp1, tmp2;
 	drawVert_t *vtx;
+#ifdef USE_SHADER_STORAGE_WORLD
+	vec2_t *texCoords;
+	uvec2_t *worldPositions;
+#endif
 	spriteCoord_t *sprites;
 
 	COM_StripExtension( info->texture, texture, sizeof( texture ) );
@@ -123,7 +127,34 @@ static void R_GenerateTexCoords( tile2d_info_t *info )
 				&sprites[ y * info->tileCountX + x ] );
 		}
 	}
-	
+
+#ifdef USE_SHADER_STORAGE_WORLD
+	texCoords = ri.Hunk_AllocateTempMemory( sizeof( *texCoords ) * rg.world->width * rg.world->height * 4 );
+	worldPositions = ri.Hunk_AllocateTempMemory( sizeof( *worldPositions ) * rg.world->width * rg.world->height * 4 );
+
+	for ( y = 0; y < r_worldData.height; y++ ) {
+		for ( x = 0; x < r_worldData.width; x++ ) {
+			VectorCopy2( texCoords[ y * r_worldData.width + x + 0 ], sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][0] );
+			VectorCopy2( texCoords[ y * r_worldData.width + x + 1 ], sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][1] );
+			VectorCopy2( texCoords[ y * r_worldData.width + x + 2 ], sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][2] );
+			VectorCopy2( texCoords[ y * r_worldData.width + x + 3 ], sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][3] );
+
+			VectorSet2( worldPositions[ y * r_worldData.width + x + 0 ], x, y );
+			VectorSet2( worldPositions[ y * r_worldData.width + x + 1 ], x, y );
+			VectorSet2( worldPositions[ y * r_worldData.width + x + 2 ], x, y );
+			VectorSet2( worldPositions[ y * r_worldData.width + x + 3 ], x, y );
+		}
+	}
+
+	rg.texCoordData = GLSL_InitUniformBuffer( "u_TexCoords", (byte *)texCoords, sizeof( *texCoords ) * rg.world->width * rg.world->height * 4, qtrue );
+	GLSL_LinkUniformToShader( &rg.tileShader, UNIFORM_WORLD_TEXCOORDS, rg.texCoordData, qtrue );
+
+	rg.positionsData = GLSL_InitUniformBuffer( "u_WorldPositions", (byte *)worldPositions, sizeof( *worldPositions ) * rg.world->width * rg.world->height * 4, qtrue );
+	GLSL_LinkUniformToShader( &rg.tileShader, UNIFORM_WORLD_POSITIONS, rg.positionsData, qtrue );
+
+	ri.Hunk_FreeTempMemory( worldPositions );
+	ri.Hunk_FreeTempMemory( texCoords );
+#else
 	vtx = r_worldData.vertices;
 	for ( y = 0; y < r_worldData.height; y++ ) {
 		for ( x = 0; x < r_worldData.width; x++ ) {
@@ -145,7 +176,7 @@ static void R_GenerateTexCoords( tile2d_info_t *info )
 			vtx += 4;
 		}
 	}
-
+#endif
 	ri.Hunk_FreeTempMemory( sprites );
 }
 
@@ -159,7 +190,11 @@ float stsvco_valenceScore( const uint32_t numTris ) {
 static void R_OptimizeVertexCache( void )
 {
 	glIndex_t *pIndices;
+#ifdef USE_SHADER_STORAGE_WORLD
+	tileVertex_t *pVerts;
+#else
 	drawVert_t *pVerts;
+#endif
 	uint64_t i, j, t, v;
 
 	typedef struct {
@@ -394,8 +429,14 @@ void R_InitWorldBuffer( void )
 	r_worldData.numIndices = r_worldData.width * r_worldData.height * 6;
 	r_worldData.numVertices = r_worldData.width * r_worldData.height * 4;
 
+//	r_worldData.buffer = R_AllocateBuffer( "worldDrawBuffer", NULL, r_worldData.numVertices * sizeof( drawVert_t ), r_worldData.indices,
+//										r_worldData.numIndices * sizeof( glIndex_t ), BUFFER_STREAM );
+	r_worldData.buffer = R_AllocateBuffer( "worldDrawBuffer", NULL, sizeof( *r_worldData.vertices ) * r_worldData.numVertices, NULL,
+										sizeof( glIndex_t ) * r_worldData.numIndices, BUFFER_STREAM );
+	attribs = r_worldData.buffer->attribs;
+
 	r_worldData.indices = ri.Hunk_Alloc( sizeof( glIndex_t ) * r_worldData.numIndices, h_low );
-	r_worldData.vertices = ri.Hunk_Alloc( sizeof( drawVert_t ) * r_worldData.numVertices, h_low );
+	r_worldData.vertices = ri.Hunk_Alloc( sizeof( *r_worldData.vertices ) * r_worldData.numVertices, h_low );
 
 	// cache the indices so that we aren't calculating these every frame (there could be thousands)
 	for ( i = 0, offset = 0; i < r_worldData.numIndices; i += 6, offset += 4 ) {
@@ -412,12 +453,42 @@ void R_InitWorldBuffer( void )
 	R_OptimizeVertexCache();
 	ri.Printf( PRINT_INFO, "Optimized cache misses: %f\n", R_CalcCacheEfficiency() );
 
-//	r_worldData.buffer = R_AllocateBuffer( "worldDrawBuffer", NULL, r_worldData.numVertices * sizeof( drawVert_t ), r_worldData.indices,
-//										r_worldData.numIndices * sizeof( glIndex_t ), BUFFER_STREAM );
-	r_worldData.buffer = R_AllocateBuffer( "worldDrawBuffer", NULL, 4*1024*1024, r_worldData.indices,
-										4*1024*1024, BUFFER_STREAM );
-	attribs = r_worldData.buffer->attribs;
+#ifdef USE_SHADER_STORAGE_WORLD
+	attribs[ATTRIB_INDEX_POSITION].enabled		= qtrue;
+	attribs[ATTRIB_INDEX_COLOR].enabled			= qtrue;
+	attribs[ATTRIB_INDEX_TILEID].enabled		= qtrue;
 
+	attribs[ATTRIB_INDEX_POSITION].count		= 3;
+	attribs[ATTRIB_INDEX_COLOR].count			= 4;
+	attribs[ATTRIB_INDEX_TILEID].count			= 1;
+
+	attribs[ATTRIB_INDEX_POSITION].type			= GL_FLOAT;
+	attribs[ATTRIB_INDEX_COLOR].type			= GL_FLOAT;
+	attribs[ATTRIB_INDEX_TILEID].type			= GL_UNSIGNED_INT;
+
+	attribs[ATTRIB_INDEX_POSITION].index		= ATTRIB_INDEX_POSITION;
+	attribs[ATTRIB_INDEX_COLOR].index			= ATTRIB_INDEX_COLOR;
+	attribs[ATTRIB_INDEX_TILEID].index			= ATTRIB_INDEX_TILEID;
+
+	attribs[ATTRIB_INDEX_POSITION].normalized	= GL_FALSE;
+	attribs[ATTRIB_INDEX_COLOR].normalized		= GL_FALSE;
+	attribs[ATTRIB_INDEX_TILEID].normalized		= GL_FALSE;
+
+	attribs[ATTRIB_INDEX_POSITION].offset		= offsetof( tileVertex_t, xyz );
+	attribs[ATTRIB_INDEX_COLOR].offset			= offsetof( tileVertex_t, color );
+	attribs[ATTRIB_INDEX_TILEID].offset			= offsetof( tileVertex_t, tileID );
+
+	attribs[ATTRIB_INDEX_POSITION].stride		= sizeof( tileVertex_t );
+	attribs[ATTRIB_INDEX_COLOR].stride			= sizeof( tileVertex_t );
+	attribs[ATTRIB_INDEX_TILEID].stride			= sizeof( tileVertex_t );
+
+	VBO_Bind( r_worldData.buffer );
+	VBO_SetVertexPointers( r_worldData.buffer, ATTRIB_POSITION | ATTRIB_COLOR | ATTRIB_TILEID );
+//	nglVertexAttribDivisor( ATTRIB_INDEX_POSITION, 0 );
+//	nglVertexAttribDivisor( ATTRIB_INDEX_COLOR, 0 );
+//	nglVertexAttribDivisor( ATTRIB_INDEX_TILEID, 0 );
+	VBO_BindNull();
+#else
 	attribs[ATTRIB_INDEX_POSITION].enabled		= qtrue;
 	attribs[ATTRIB_INDEX_TEXCOORD].enabled		= qtrue;
 	attribs[ATTRIB_INDEX_COLOR].enabled			= qtrue;
@@ -460,6 +531,7 @@ void R_InitWorldBuffer( void )
 	nglVertexAttribDivisor( ATTRIB_INDEX_COLOR, 0 );
 	nglVertexAttribDivisor( ATTRIB_INDEX_WORLDPOS, 0 );
 	VBO_BindNull();
+#endif
 }
 
 static void R_ProcessLights( void )
@@ -468,7 +540,6 @@ static void R_ProcessLights( void )
 	const maplight_t *data;
 	uint32_t i, x, y;
 	dirtype_t dir;
-	float dot, det;
 
 	if ( !r_worldData.numLights ) {
 		return;
@@ -476,8 +547,14 @@ static void R_ProcessLights( void )
 
 	ri.Printf( PRINT_DEVELOPER, "Processing %u lights\n", r_worldData.numLights );
 
+	rg.lightData = GLSL_InitUniformBuffer( "u_LightBuffer", NULL, sizeof( shaderLight_t ) * MAX_MAP_LIGHTS, qfalse );
+	rg.dlightData = GLSL_InitUniformBuffer( "u_DLightBuffer", NULL, sizeof( shaderLight_t ) * r_maxDLights->i, qtrue );
+
+	GLSL_LinkUniformToShader( &rg.computeShader, UNIFORM_LIGHTDATA, rg.lightData, qfalse );
+
 	lights = (shaderLight_t *)rg.lightData->data;
 	data = r_worldData.lights;
+
 	for ( i = 0; i < r_worldData.numLights; i++ ) {
 		VectorCopy4( lights[i].color, data[i].color );
 		VectorCopy2( lights[i].origin, data[i].origin );
@@ -488,20 +565,21 @@ static void R_ProcessLights( void )
 		lights[i].quadratic = data[i].quadratic;
 		lights[i].type = data[i].type;
 	}
-
 	for ( i = 0; i < GENERICDEF_COUNT; i++ ) {
 		GLSL_UseProgram( &rg.genericShader[i] );
 		GLSL_SetUniformVec3( &rg.genericShader[i], UNIFORM_AMBIENTLIGHT, rg.world->ambientLightColor );
-		GLSL_SetUniformInt( &rg.genericShader[i], UNIFORM_NUM_LIGHTS, backend.refdef.numDLights + rg.world->numLights );
-		GLSL_ShaderBufferData( &rg.genericShader[i], UNIFORM_LIGHTDATA, rg.lightData, sizeof( shaderLight_t ) *
-			( backend.refdef.numDLights + rg.world->numLights ) );
+		GLSL_SetUniformInt( &rg.genericShader[i], UNIFORM_NUM_LIGHTS, rg.world->numLights );
+		GLSL_LinkUniformToShader( &rg.genericShader[i], UNIFORM_LIGHTDATA, rg.lightData, qfalse );
+		GLSL_ShaderBufferData( &rg.genericShader[i], UNIFORM_LIGHTDATA, rg.lightData, sizeof( shaderLight_t ) * rg.world->numLights, qfalse );
 	}
 	
 	GLSL_UseProgram( &rg.tileShader );
 	GLSL_SetUniformVec3( &rg.tileShader, UNIFORM_AMBIENTLIGHT, rg.world->ambientLightColor );
-	GLSL_SetUniformInt( &rg.tileShader, UNIFORM_NUM_LIGHTS, backend.refdef.numDLights + rg.world->numLights );
-	GLSL_ShaderBufferData( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, sizeof( shaderLight_t ) *
-		( backend.refdef.numDLights + rg.world->numLights ) );
+	GLSL_SetUniformInt( &rg.tileShader, UNIFORM_NUM_LIGHTS, rg.world->numLights );
+	GLSL_LinkUniformToShader( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, qfalse );
+//	GLSL_LinkUniformToShader( &rg.tileShader, UNIFORM_WORLD_POSITIONS, rg.positionsData, qtrue );
+//	GLSL_LinkUniformToShader( &rg.tileShader, UNIFORM_WORLD_TEXCOORDS, rg.texCoordData, qtrue );
+	GLSL_ShaderBufferData( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, sizeof( shaderLight_t ) * rg.world->numLights, qfalse );
 }
 
 void RE_LoadWorldMap( const char *filename )
@@ -583,9 +661,9 @@ void RE_LoadWorldMap( const char *filename )
 
 	rg.world = &r_worldData;
 
-	R_ProcessLights();
 	R_InitWorldBuffer();
 	R_GenerateTexCoords( &theader->info );
+	R_ProcessLights();
 
 	ri.FS_FreeFile( buffer.v );
 }

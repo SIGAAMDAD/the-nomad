@@ -210,8 +210,6 @@ void R_DrawPolys( void )
 	}
 	ri.ProfileFunctionBegin( "R_DrawPolys" );
 
-	rg.world->drawing = qtrue;
-
 	RB_SetBatchBuffer( backend.drawBuffer, backendData[ rg.smpFrame ]->verts, sizeof( srfVert_t ),
 		backendData[ rg.smpFrame ]->indices, sizeof( glIndex_t ) );
 
@@ -271,7 +269,6 @@ void R_DrawPolys( void )
 	
 	// flush out anything remaining
 	RB_FlushBatchBuffer();
-	rg.world->drawing = qfalse;
 
 	ri.ProfileFunctionEnd();
 }
@@ -283,7 +280,12 @@ void R_DrawWorld( void )
 	uint64_t j;
 	vec3_t pos;
 	ivec3_t origin;
+#ifdef USE_SHADER_STORAGE_WORLD
+	tileVertex_t *vtx;
+	drawVert_t verts[4];
+#else
 	drawVert_t *vtx;
+#endif
 	ivec2_t begin, end;
 	vec3_t edge1, edge2, normal;
 	vec4_t color;
@@ -306,8 +308,8 @@ void R_DrawWorld( void )
 
 	backend.drawBatch.shader = rg.world->shader;
 	rg.world->drawing = qtrue;
-	backend.drawBatch.instanceCount = 64;
-	backend.drawBatch.instanced = qtrue;
+//	backend.drawBatch.instanceCount = 64;
+//	backend.drawBatch.instanced = qtrue;
 
 	vtx = rg.world->vertices;
 	VectorCopy2( begin, glState.viewData.camera.origin );
@@ -320,7 +322,21 @@ void R_DrawWorld( void )
 			pos[2] = 0.0f;
 
 			// convert the local world coordinates to OpenGL screen coordinates
+		#ifdef USE_SHADER_STORAGE_WORLD
+			R_WorldToGL( verts, pos );
+
+			VectorCopy( vtx[0].xyz, verts[0].xyz );
+			VectorCopy( vtx[1].xyz, verts[1].xyz );
+			VectorCopy( vtx[2].xyz, verts[2].xyz );
+			VectorCopy( vtx[3].xyz, verts[3].xyz );
+
+			vtx[0].tileID = y * rg.world->width + x + 0;
+			vtx[1].tileID = y * rg.world->width + x + 1;
+			vtx[2].tileID = y * rg.world->width + x + 2;
+			vtx[3].tileID = y * rg.world->width + x + 3;
+		#else
 			R_WorldToGL( vtx, pos );
+		#endif
 
 			// generate normals
 			// FIXME: this is hideous

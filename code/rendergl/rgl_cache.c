@@ -706,6 +706,8 @@ void R_ShutdownBuffer( vertexBuffer_t *vbo )
 
 void RB_SetBatchBuffer( vertexBuffer_t *buffer, void *vertexBuffer, uintptr_t vtxSize, void *indexBuffer, uintptr_t idxSize )
 {
+	uint32_t attribBits;
+
     // is it already bound?
     if ( backend.drawBatch.buffer != buffer ) {
 		VBO_BindNull();
@@ -732,10 +734,30 @@ void RB_SetBatchBuffer( vertexBuffer_t *buffer, void *vertexBuffer, uintptr_t vt
 
     // bind the new cache
 	VBO_Bind( buffer );
-	R_ClearVertexPointers();
 
-	// set the new vertex attrib array state
-	R_SetVertexPointers( buffer->attribs );
+	attribBits = 0;
+	if ( buffer->attribs[ ATTRIB_INDEX_POSITION ].enabled ) {
+		attribBits |= ATTRIB_POSITION;
+	}
+	if ( buffer->attribs[ ATTRIB_INDEX_TEXCOORD ].enabled ) {
+		attribBits |= ATTRIB_TEXCOORD;
+	}
+	if ( buffer->attribs[ ATTRIB_INDEX_COLOR ].enabled ) {
+		attribBits |= ATTRIB_COLOR;
+	}
+	if ( buffer->attribs[ ATTRIB_INDEX_WORLDPOS ].enabled ) {
+		attribBits |= ATTRIB_WORLDPOS;
+	}
+	if ( buffer->attribs[ ATTRIB_INDEX_TILEID ].enabled ) {
+		attribBits |= ATTRIB_TILEID;
+	}
+
+	if ( ( glState.vertexAttribsEnabled & attribBits ) != 0 ) {
+		R_ClearVertexPointers();
+
+		// set the new vertex attrib array state
+		R_SetVertexPointers( buffer->attribs );
+	}
 }
 
 /*

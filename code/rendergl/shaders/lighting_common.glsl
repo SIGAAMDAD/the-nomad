@@ -29,10 +29,16 @@ layout( std140, binding = 0 ) uniform u_LightBuffer {
 	Light u_LightData[ MAX_MAP_LIGHTS ];
 };
 
+layout( std140, binding = 0 ) buffer u_DLightBuffer {
+	Light u_DLightData[];
+};
+
 uniform int u_NumLights;
 uniform vec3 u_AmbientColor;
 
 out vec3 v_LightColor;
+
+uniform Light u_Lights[ MAX_MAP_LIGHTS ];
 #elif defined(FRAGMENT_SHADER)
 in vec3 v_LightColor;
 #endif
@@ -53,6 +59,10 @@ struct Light {
 
 layout( std140, binding = 0 ) uniform u_LightBuffer {
 	Light u_LightData[ MAX_MAP_LIGHTS ];
+};
+
+layout( std140, binding = 0 ) buffer u_DLightBuffer {
+	Light u_DLightData[];
 };
 
 uniform int u_NumLights;

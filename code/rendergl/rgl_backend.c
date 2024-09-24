@@ -544,9 +544,9 @@ static const void *RB_PostProcess(const void *data)
 	backend.drawBatch.shader = rg.defaultShader;
 
 	// only draw imgui data after everything else has finished
-	while ( renderThreadActive )
-		;
-	ri.ImGui_Draw();
+	if ( !backend.framePostProcessed ) {
+		ri.ImGui_Draw();
+	}
 
 	// finish any drawing if needed
 	if ( backend.drawBatch.idxOffset ) {

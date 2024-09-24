@@ -1,7 +1,12 @@
-in vec2 a_Position;
+in vec3 a_Position;
+#ifndef USE_SHADER_STORAGE_WORLD
 in vec2 a_TexCoords;
 in uvec2 a_WorldPos;
+#endif
 in vec4 a_Color;
+#ifdef USE_SHADER_STORAGE_WORLD
+in uint a_TileID;
+#endif
 
 out vec2 v_TexCoords;
 out vec3 v_FragPos;
@@ -10,6 +15,15 @@ out vec3 v_WorldPos;
 out vec3 v_Position;
 
 #include "lighting_common.glsl"
+
+#ifdef USE_SHADER_STORAGE_WORLD
+layout( std140, binding = 1 ) buffer u_TexCoords {
+	vec2 texCoords[];
+};
+layout( std140, binding = 2 ) buffer u_WorldPositions {
+	uvec2 positions[];
+};
+#endif
 
 #if defined(USE_UBO)
 
@@ -90,7 +104,7 @@ vec4 CalcColor( vec3 a_Position, vec3 normal )
 #endif
 
 #if defined(USE_TCMOD)
-vec2 ModTexCoords( vec2 st, vec3 a_Position, vec4 texMatrix, vec4 offTurb )
+vec2 ModTexCoords( vec2 st, vec3 position, vec4 texMatrix, vec4 offTurb )
 {
 	float amplitude = offTurb.z;
 	float phase = offTurb.w * 2.0 * M_PI;
@@ -99,7 +113,7 @@ vec2 ModTexCoords( vec2 st, vec3 a_Position, vec4 texMatrix, vec4 offTurb )
 	st2.x = st.x * texMatrix.x + ( st.y * texMatrix.z + offTurb.x );
 	st2.y = st.x * texMatrix.y + ( st.y * texMatrix.w + offTurb.y );
 
-	vec2 offsetPos = vec2( a_Position.x + a_Position.z, a_Position.y );
+	vec2 offsetPos = vec2( position.x + position.z, position.y );
 
 	vec2 texOffset = sin( offsetPos * ( 2.0 * M_PI / 1024.0 ) + vec2( phase ) );
 
@@ -108,21 +122,21 @@ vec2 ModTexCoords( vec2 st, vec3 a_Position, vec4 texMatrix, vec4 offTurb )
 #endif
 
 #if defined(USE_TCGEN)
-vec2 GenTexCoords( int TCGen, vec3 a_Position, vec3 normal, vec3 TCGenVector0, vec3 TCGenVector1 )
+vec2 GenTexCoords( int TCGen, vec3 position, vec3 normal, vec3 TCGenVector0, vec3 TCGenVector1 )
 {
-	vec2 tex = a_TexCoords;
+	vec2 tex = texCoords[ a_TileID ];
 
 	if ( TCGen == TCGEN_LIGHTMAP ) {
-		tex = a_TexCoords.st;
+		tex = texCoords[ a_TileID ].st;
 	}
 	else if ( TCGen == TCGEN_ENVIRONMENT_MAPPED ) {
-		vec3 viewer = normalize( u_WorldPos - a_Position );
+		vec3 viewer = normalize( positions[ a_TileID ] - position );
 		vec2 ref = reflect( viewer, normal ).yz;
 		tex.s = ref.x * -0.5 + 0.5;
 		tex.t = ref.y *  0.5 + 0.5;
 	}
 	else if ( TCGen == TCGEN_VECTOR ) {
-		tex = vec2( dot( a_Position, TCGenVector0 ), dot( a_Position, TCGenVector1 ) );
+		tex = vec2( dot( position, TCGenVector0 ), dot( position, TCGenVector1 ) );
 	}
 
 	return tex;
@@ -132,18 +146,26 @@ vec2 GenTexCoords( int TCGen, vec3 a_Position, vec3 normal, vec3 TCGenVector0, v
 void main() {
 	vec3 position = vec3( a_Position.xy, 0.0 );
 #if defined(USE_TCGEN)
-	vec2 texCoords = GenTexCoords( u_TCGen0, position, vec3( 0.0 ), u_TCGen0Vector0, u_TCGen0Vector1 );
+	vec2 texCoord = GenTexCoords( u_TCGen0, position, vec3( 0.0 ), u_TCGen0Vector0, u_TCGen0Vector1 );
 #else
-	vec2 texCoords = a_TexCoords;
+#ifdef USE_SHADER_STORAGE_WORLD
+	vec2 texCoord = texCoords[ gl_VertexID ];
+#else
+	vec2 texCoord = a_TexCoords;
+#endif
 #endif
 
 #if defined(USE_TCMOD)
-	v_TexCoords = ModTexCoords( texCoords, position, u_DiffuseTexMatrix, u_DiffuseTexOffTurb );
+	v_TexCoords = ModTexCoords( texCoord, position, u_DiffuseTexMatrix, u_DiffuseTexOffTurb );
 #else
-	v_TexCoords = texCoords;
+	v_TexCoords = texCoord;
 #endif
     v_Color = u_VertColor * a_Color + u_BaseColor;
+#ifdef USE_SHADER_STORAGE_WORLD
+	v_WorldPos = vec3( positions[ gl_VertexID ].xy, 0.0 );
+#else
 	v_WorldPos = vec3( a_WorldPos.xy, 0.0 );
+#endif
 	v_Position = position;
 
 	ApplyLighting();

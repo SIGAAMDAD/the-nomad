@@ -10,6 +10,8 @@
 #include "../engine/n_cvar.h"
 #include "ngl.h"
 
+//#define USE_SHADER_STORAGE_WORLD
+
 // cglm -- because moi am stupid
 /*
 #include <cglm/types.h>
@@ -235,6 +237,7 @@ enum {
 	ATTRIB_INDEX_NORMAL         = 5,
 	ATTRIB_INDEX_TANGENT        = 6,
 	ATTRIB_INDEX_BITANGENT      = 7,
+	ATTRIB_INDEX_TILEID			= 8,
 	
 	ATTRIB_INDEX_COUNT
 };
@@ -245,6 +248,7 @@ enum
 	ATTRIB_TEXCOORD             = BIT( ATTRIB_INDEX_TEXCOORD ),
 	ATTRIB_COLOR                = BIT( ATTRIB_INDEX_COLOR ),
 	ATTRIB_WORLDPOS             = BIT( ATTRIB_INDEX_WORLDPOS ),
+	ATTRIB_TILEID				= BIT( ATTRIB_INDEX_TILEID ),
 
 	ATTRIB_BITS =
 		ATTRIB_POSITION |
@@ -370,6 +374,9 @@ typedef enum {
 	UNIFORM_GRAPHICSCONFIG,
 	UNIFORM_SAMPLERS,
 	UNIFORM_VERTEXINPUT,
+	UNIFORM_WORLD_TEXCOORDS,
+	UNIFORM_WORLD_POSITIONS,
+	UNIFORM_DLIGHTDATA,
 
 	UNIFORM_COUNT
 } uniform_t;
@@ -390,6 +397,7 @@ typedef struct shaderProgram_s
 	uint32_t vertexId;
 	uint32_t fragmentId;
 	uint32_t geometryId;
+	uint32_t computeId;
 	uint32_t attribBits; // vertex array attribute flags
 
 	// uniforms
@@ -957,6 +965,14 @@ typedef struct {
 	uint64_t frameCount;
 } viewData_t;
 
+#ifdef USE_SHADER_STORAGE_WORLD
+typedef struct {
+	vec4_t color;
+	vec3_t xyz;
+	uint32_t tileID;
+} tileVertex_t;
+#endif
+
 typedef struct {
 	char baseName[MAX_NPATH];
 	char name[MAX_NPATH];
@@ -985,7 +1001,11 @@ typedef struct {
 	glIndex_t *indices;
 	uint64_t numIndices;
 
+#ifdef USE_SHADER_STORAGE_WORLD
+	tileVertex_t *vertices;
+#else
 	drawVert_t *vertices;
+#endif
 	uint64_t numVertices;
 
 	// frame based draw data
@@ -1141,7 +1161,7 @@ typedef struct
 
 	qboolean                needScreenMap;
 
-	GLuint					computeShader, computeShaderProgram;
+//	GLuint					computeShader, computeShaderProgram;
 	GLuint					computeShaderTexture;
 	vertexBuffer_t			*renderPassVBO;
 
@@ -1177,6 +1197,9 @@ typedef struct
 	texture_t				**lightmaps;
 	texture_t				**deluxemaps;
 
+	uniformBuffer_t			*texCoordData;
+	uniformBuffer_t			*positionsData;
+	uniformBuffer_t			*dlightData;
 	uniformBuffer_t         *lightData;
 	uniformBuffer_t         *fragData;
 	uniformBuffer_t         *graphicsConfigData;
@@ -1216,6 +1239,7 @@ typedef struct
 	shaderProgram_t imguiShader;
 	shaderProgram_t tileShader;
 	shaderProgram_t textureColorShader;
+	shaderProgram_t computeShader;
 	/*
 	shaderProgram_t ssaoShader;
 	shaderProgram_t depthBlurShader[4];
@@ -1583,10 +1607,10 @@ void GLSL_SetUniformVec2( shaderProgram_t *program, uint32_t uniformNum, const v
 void GLSL_SetUniformVec3( shaderProgram_t *program, uint32_t uniformNum, const vec3_t v );
 void GLSL_SetUniformVec4( shaderProgram_t *program, uint32_t uniformNum, const vec4_t v );
 void GLSL_SetUniformMatrix4( shaderProgram_t *program, uint32_t uniformNum, const mat4_t m );
-void GLSL_ShaderBufferData( shaderProgram_t *shader, uint32_t uniformNum, uniformBuffer_t *buffer, uint64_t nSize );
-uniformBuffer_t *GLSL_InitUniformBuffer( const char *name, byte *buffer, uint64_t bufSize );
 shaderProgram_t *GLSL_GetGenericShaderProgram( int stage );
-void GLSL_LinkUniformToShader( shaderProgram_t *program, uint32_t uniformNum, uniformBuffer_t *buffer );
+void GLSL_ShaderBufferData( shaderProgram_t *shader, uint32_t uniformNum, uniformBuffer_t *buffer, uint64_t nSize, qboolean dynamicStorage );
+uniformBuffer_t *GLSL_InitUniformBuffer( const char *name, byte *buffer, uint64_t bufSize, qboolean dynamicStorage );
+void GLSL_LinkUniformToShader( shaderProgram_t *program, uint32_t uniformNum, uniformBuffer_t *buffer, qboolean dynamicStorage );
 
 //
 // rgl_math.c
