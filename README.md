@@ -42,7 +42,7 @@ Intel i7, 4 or more cores | NVidia GTX 1050 Ti or better | 16 Gb | Windows 10 or
 ## The Technical Details
 Unless you're into programming, this won't really be interesting...
 
-IMPORTANT NOTE: Since this engine is old and uses outdated/deprecated functionality, I will most likely not be adding anything groundbreaking to this version of the engine. A lot of the features that I plan on adding in will most likely not be available until then, so please be patient.
+IMPORTANT NOTE: Since this engine is old and uses outdated/deprecated functionality, I will most likely not be adding anything groundbreaking to this version of the engine. A lot of the features that I plan on adding in will most likely not be available until the new engine is in place, so please be patient.
 
 ### The Future
 Since Steam is the place where I intend to publish the game in the future, I'll have to do a rewrite of the engine because it uses GPL v2'd code from the Quake III Arena engine.
@@ -55,7 +55,7 @@ Vulkan   | Coming soon
 D3D11    | In the far future
 Metal    | Unless OSX forces you to use it, probably never
 
-Audio: OpenAL Soft
+Audio: FMod
 
 Everything else that's system specific is either handled by SDL2 or the engine
 Future Features: custom simd implementations for standard library functions
