@@ -134,6 +134,59 @@ static uint64_t generateHashValue( const char *fname )
 	return hash;
 }
 
+qboolean R_ClearTextureCache( void )
+{
+	uint64_t i;
+	
+	if ( !r_loadTexturesOnDemand->i ) {
+		return qfalse;
+	}
+	
+	for ( i = 0; i < rg.numTextures; i++ ) {
+		if ( nglIsTextureHandleResidentARB( rg.textures[ i ]->handle ) ) {
+			nglMakeTextureHandleNonResidentARB( rg.textures[ i ]->handle );
+			rg.textures[ i ]->evicted = qtrue;
+		}
+	}
+	
+	return qtrue;
+}
+
+void R_TouchTexture( texture_t *image )
+{
+	image->frameUsed = rg.frameCount;
+	
+	if ( !r_loadTexturesOnDemand->i || !image->evicted ) {
+		return;
+	}
+	
+	nglMakeTextureHandleResidentARB( image->handle );
+	image->evicted = qfalse;
+}
+
+void R_EvictUnusedTextures( void )
+{
+	uint64_t i;
+	int32_t maxFPS;
+	
+	if ( !r_loadTexturesOnDemand->i ) {
+		return;
+	}
+	
+	maxFPS = ri.Cvar_VariableInteger( "com_maxfps" );
+	if ( maxFPS == 0 ) {
+		maxFPS = 1;
+	}
+	
+	for ( i = 0; i < rg.numTextures; i++ ) {
+		// evict a texture that has gone unused for at least 2 minutes
+		if ( rg.frameCount - rg.textures[ i ]->frameUsed >= maxFPS * 120 ) {
+			nglMakeTextureHandleNonResidentARB( rg.textures[ i ]->handle );
+			rg.textures[ i ]->evicted = qtrue;
+		}
+	}
+}
+
 void R_UpdateTextures( void )
 {
     uint32_t i;
@@ -158,15 +211,19 @@ void R_UpdateTextures( void )
     // change all the texture filters
     for ( i = 0; i < rg.numTextures; i++ ) {
         t = rg.textures[i];
-
-	    GL_BindTexture( TB_COLORMAP, t );
-
-	    nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min );
-	    nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max );
-
-		if ( r_arb_texture_filter_anisotropic->i ) {
+        
+		if ( !r_loadTexturesOnDemand->i ) {
+	    	GL_BindTexture( TB_COLORMAP, t );
+			
+	    	nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min );
+	    	nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max );
+			
 			// update the anisotropy while we're at it
-			nglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, r_arb_texture_max_anisotropy->f );
+			if ( r_arb_texture_filter_anisotropic->i ) {
+				nglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, r_arb_texture_max_anisotropy->f );
+			} else {
+				nglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, 0 );
+			}
 		}
 
 	    GL_BindTexture( TB_COLORMAP, 0 );
@@ -185,7 +242,7 @@ uint64_t R_SumOfUsedImages( void )
 
 	total = 0;
 	for ( i = 0; i < rg.numTextures; i++ ) {
-		if ( rg.textures[i]->frameUsed == rg.frameCount) {
+		if ( rg.textures[i]->frameUsed == rg.frameCount && !rg.textures[i]->evicted ) {
 			total += rg.textures[i]->uploadWidth * rg.textures[i]->uploadHeight;
 		}
 	}
