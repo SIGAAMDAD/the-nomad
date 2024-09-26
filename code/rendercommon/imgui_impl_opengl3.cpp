@@ -816,7 +816,7 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 #endif
 }
 
-int ImGui_ImplOpenGL3_CreateFontsTexture(void)
+int ImGui_ImplOpenGL3_CreateFontsTexture( void )
 {
 	unsigned char *pixels;
 	int width, height;
@@ -829,7 +829,7 @@ int ImGui_ImplOpenGL3_CreateFontsTexture(void)
 	texture_t *fontsTex;
 
 	// Build texture atlas
-	io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height); // Load as RGBA 32-bit (75% of the memory is wasted, but default font is so small) because it is more likely to be compatible with user's existing shaders. If your ImTextureId represent a higher-level concept than just a GL texture id, consider calling GetTexDataAsAlpha8() instead to save on GPU memory.
+	io.Fonts->GetTexDataAsRGBA32( &pixels, &width, &height ); // Load as RGBA 32-bit (75% of the memory is wasted, but default font is so small) because it is more likely to be compatible with user's existing shaders. If your ImTextureId represent a higher-level concept than just a GL texture id, consider calling GetTexDataAsAlpha8() instead to save on GPU memory.
 
 	if ( bd->FontTexture ) {
 		renderImport.glDeleteTextures( 1, &bd->FontTexture );
@@ -840,18 +840,28 @@ int ImGui_ImplOpenGL3_CreateFontsTexture(void)
 
 	bd->FontTexture = fontsTex->id;
 
-//    renderImport.glGenTextures(1, &bd->FontTexture);
 	renderImport.glBindTexture( GL_TEXTURE_2D, bd->FontTexture );
 	renderImport.glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 	renderImport.glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 #ifdef GL_UNPACK_ROW_LENGTH // Not on WebGL/ES
 	renderImport.glPixelStorei( GL_UNPACK_ROW_LENGTH, 0 );
 #endif
-	renderImport.glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels );
-//    */
+	renderImport.glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA8, GL_UNSIGNED_BYTE, pixels );
+
+	fontsTex->data = pixels;
+	fontsTex->picFormat = GL_RGBA;
+	fontsTex->internalFormat = GL_RGBA8;
+	fontsTex->evicted = qtrue;
+	fontsTex->width = width;
+	fontsTex->height = height;
+	fontsTex->uploadWidth = width;
+	fontsTex->uploadHeight = height;
+	if ( Cvar_VariableInteger( "r_loadTexturesOnDemand" ) ) {
+		fontsTex->handle = renderImport.glGetTextureHandleARB( fontsTex->id );
+	}
 
 	// Store our identifier
-	io.Fonts->SetTexID((ImTextureID)(intptr_t)shader->index);
+	io.Fonts->SetTexID( (ImTextureID)(intptr_t)shader->index );
 
 	// Restore state
 	renderImport.glBindTexture(GL_TEXTURE_2D, last_texture);
@@ -859,14 +869,14 @@ int ImGui_ImplOpenGL3_CreateFontsTexture(void)
 	return true;
 }
 
-void ImGui_ImplOpenGL3_DestroyFontsTexture(void)
+void ImGui_ImplOpenGL3_DestroyFontsTexture( void )
 {
 	ImGuiIO &io = ImGui::GetIO();
 	ImGui_ImplOpenGL3_Data *bd = ImGui_ImplOpenGL3_GetBackendData();
 	if (bd->FontTexture)
 	{
-		renderImport.glDeleteTextures(1, &bd->FontTexture);
-		io.Fonts->SetTexID(0);
+		renderImport.glDeleteTextures( 1, &bd->FontTexture );
+		io.Fonts->SetTexID( 0 );
 		bd->FontTexture = 0;
 	}
 }

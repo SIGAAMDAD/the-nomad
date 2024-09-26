@@ -52,6 +52,8 @@ static const textureFilterMode_t filters[] = {
     { "Nearest Linear", GL_NEAREST, GL_LINEAR }
 };
 
+static void R_AllocateTextureStorage( texture_t *image );
+
 static const char *R_TextureFormatName( GLenum format )
 {
 	#define FORMAT( x ) case x: return #x;
@@ -130,7 +132,7 @@ static uint64_t generateHashValue( const char *fname )
 		hash+=(uint64_t)(letter)*(i+119);
 		i++;
 	}
-	hash &= (FILE_HASH_SIZE-1);
+	hash &= ( FILE_HASH_SIZE - 1 );
 	return hash;
 }
 
@@ -143,9 +145,11 @@ qboolean R_ClearTextureCache( void )
 	}
 	
 	for ( i = 0; i < rg.numTextures; i++ ) {
-		if ( nglIsTextureHandleResidentARB( rg.textures[ i ]->handle ) ) {
+		if ( !rg.textures[ i ]->evicted ) {
 			nglMakeTextureHandleNonResidentARB( rg.textures[ i ]->handle );
+			nglDeleteTextures( 1, &rg.textures[ i ]->id );
 			rg.textures[ i ]->evicted = qtrue;
+			rg.textures[ i ]->id = 0;
 		}
 	}
 	
@@ -160,6 +164,8 @@ void R_TouchTexture( texture_t *image )
 		return;
 	}
 	
+	R_AllocateTextureStorage( image );
+	ri.Printf( PRINT_DEVELOPER, "Loaded texture handle %s on demand\n", image->imgName );
 	nglMakeTextureHandleResidentARB( image->handle );
 	image->evicted = qfalse;
 }
@@ -168,10 +174,17 @@ void R_EvictUnusedTextures( void )
 {
 	uint64_t i;
 	int32_t maxFPS;
+	texture_t *image;
+	static uint64_t lastEvictionTime = 0;
 	
 	if ( !r_loadTexturesOnDemand->i ) {
 		return;
 	}
+
+	if ( ri.Milliseconds() - lastEvictionTime < 10000 ) {
+		return;
+	}
+	lastEvictionTime = ri.Milliseconds();
 	
 	maxFPS = ri.Cvar_VariableInteger( "com_maxfps" );
 	if ( maxFPS == 0 ) {
@@ -180,9 +193,13 @@ void R_EvictUnusedTextures( void )
 	
 	for ( i = 0; i < rg.numTextures; i++ ) {
 		// evict a texture that has gone unused for at least 2 minutes
-		if ( rg.frameCount - rg.textures[ i ]->frameUsed >= maxFPS * 120 ) {
+		image = rg.textures[ i ];
+		if ( image && rg.frameCount - image->frameUsed >= maxFPS * 12000 && !( image->flags & IMGFLAG_FBO ) && !image->evicted ) {
 			nglMakeTextureHandleNonResidentARB( rg.textures[ i ]->handle );
-			rg.textures[ i ]->evicted = qtrue;
+			nglDeleteTextures( 1, &image->id );
+			image->evicted = qtrue;
+			image->id = 0;
+			ri.Printf( PRINT_DEVELOPER, "Evicted texture handle %s\n", image->imgName );
 		}
 	}
 }
@@ -220,9 +237,9 @@ void R_UpdateTextures( void )
 			
 			// update the anisotropy while we're at it
 			if ( r_arb_texture_filter_anisotropic->i ) {
-				nglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, r_arb_texture_max_anisotropy->f );
+				nglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, r_arb_texture_max_anisotropy->f );
 			} else {
-				nglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, 0 );
+				nglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 0 );
 			}
 		}
 
@@ -1560,6 +1577,67 @@ static void RawImage_SwizzleRA( byte *data, int width, int height )
 	}
 }
 
+static GLenum PixelDataFormatFromInternalFormat( GLenum internalFormat )
+{
+	switch ( internalFormat ) {
+	case GL_DEPTH_COMPONENT:
+	case GL_DEPTH_COMPONENT16_ARB:
+	case GL_DEPTH_COMPONENT24_ARB:
+	case GL_DEPTH_COMPONENT32_ARB:
+		return GL_DEPTH_COMPONENT;
+	default:
+		return GL_RGBA;
+	};
+}
+
+static int PixelDataFormatIsValidCompressed( GLenum format )
+{
+	switch ( format ) {
+	case GL_COMPRESSED_SRGB_EXT:
+	case GL_COMPRESSED_SRGB_ALPHA_EXT:
+	case GL_COMPRESSED_ALPHA_ARB:
+	case GL_COMPRESSED_LUMINANCE_ARB:
+	case GL_COMPRESSED_LUMINANCE_ALPHA_ARB:
+	case GL_COMPRESSED_INTENSITY_ARB:
+	case GL_COMPRESSED_RGBA8_ETC2_EAC:
+	case GL_COMPRESSED_R11_EAC:
+	case GL_COMPRESSED_SIGNED_R11_EAC:
+	case GL_COMPRESSED_RGB8_ETC2:
+	case GL_COMPRESSED_RGB_FXT1_3DFX:
+	case GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2:
+	case GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2:
+	case GL_COMPRESSED_RGB_ARB:
+	case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
+	case GL_COMPRESSED_SRGB_S3TC_DXT1_EXT:
+	case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
+	case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT:
+	case GL_COMPRESSED_RED_RGTC1:
+	case GL_COMPRESSED_SIGNED_RED_RGTC1:
+	case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
+	case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT:
+	case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
+	case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT:
+	case GL_COMPRESSED_RG_RGTC2:
+	case GL_COMPRESSED_SIGNED_RG_RGTC2:
+	case GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT_ARB:
+	case GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT_ARB:
+	case GL_COMPRESSED_RGBA_BPTC_UNORM_ARB:
+	case GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM_ARB:
+	case GL_COMPRESSED_LUMINANCE_ALPHA_LATC2_EXT:
+	case GL_COMPRESSED_LUMINANCE_LATC1_EXT:
+	case GL_COMPRESSED_SIGNED_LUMINANCE_ALPHA_LATC2_EXT:
+	case GL_COMPRESSED_SIGNED_LUMINANCE_LATC1_EXT:
+	case GL_COMPRESSED_RGBA_FXT1_3DFX:
+	case GL_COMPRESSED_SRGB8_ETC2:
+//	case GL_RGBA8_EXT:
+//	case GL_RGB8_EXT:
+		return qtrue;
+	default:
+		break;
+	};
+	return qfalse;
+}
+
 /*
 ===============
 RawImage_ScaleToPower2
@@ -1686,12 +1764,12 @@ static qboolean RawImage_ScaleToPower2( byte **data, int *inout_width, int *inou
 	//
 	// rescale texture to new size using existing mipmap functions
 	//
-	if (data) {
+	if ( data ) {
 		while (width > scaled_width || height > scaled_height) {
-			if (type == IMGTYPE_NORMAL || type == IMGTYPE_NORMALHEIGHT)
-				R_MipMapNormalHeight(*data, *data, width, height, qfalse);
-			else
-				R_MipMapsRGB(*data, width, height);
+//			if (type == IMGTYPE_NORMAL || type == IMGTYPE_NORMALHEIGHT)
+//				R_MipMapNormalHeight(*data, *data, width, height, qfalse);
+//			else
+//				R_MipMapsRGB(*data, width, height);
 
 			width  = MAX(1, width >> 1);
 			height = MAX(1, height >> 1);
@@ -1733,11 +1811,13 @@ static GLenum RawImage_GetFormat( const byte *data, uint32_t numPixels, GLenum p
 
 	if ( normalmap ) {
 		if ( ( type == IMGTYPE_NORMALHEIGHT ) && RawImage_HasAlpha( data, numPixels ) ) {
-			/*if ( !forceNoCompression && glContext.textureCompressionRef & TCR_BPTC ) {
-				internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM_ARB;
-			} else if ( !forceNoCompression && glContext.textureCompression == TC_S3TC_ARB ) {
-				internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-			} else */if ( r_textureBits->i == 16 ) {
+			if ( !PixelDataFormatIsValidCompressed( picFormat ) ) {
+				if ( !forceNoCompression && glContext.textureCompressionRef & TCR_BPTC ) {
+					internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM_ARB;
+				} else if ( !forceNoCompression && glContext.textureCompression == TC_S3TC_ARB ) {
+					internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+				}
+			} else if ( r_textureBits->i == 16 ) {
 				internalFormat = GL_RGBA4;
 			} else if ( r_textureBits->i == 32 ) {
 				internalFormat = GL_RGBA8;
@@ -1757,18 +1837,18 @@ static GLenum RawImage_GetFormat( const byte *data, uint32_t numPixels, GLenum p
 			}
 		}
 		else {
-			/*
-			if ( !forceNoCompression && glContext.textureCompressionRef & TCR_RGTC ) {
-				internalFormat = GL_COMPRESSED_RG_RGTC2;
+			if ( !PixelDataFormatIsValidCompressed( picFormat ) ) {
+				if ( !forceNoCompression && glContext.textureCompressionRef & TCR_RGTC ) {
+					internalFormat = GL_COMPRESSED_RG_RGTC2;
+				}
+				else if ( !forceNoCompression && glContext.textureCompressionRef & TCR_BPTC ) {
+					internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM_ARB;
+				}
+				else if ( !forceNoCompression && glContext.textureCompression == TC_S3TC_ARB ) {
+					internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+				}
 			}
-			else if ( !forceNoCompression && glContext.textureCompressionRef & TCR_BPTC ) {
-				internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM_ARB;
-			}
-			else if ( !forceNoCompression && glContext.textureCompression == TC_S3TC_ARB ) {
-				internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-			}
-			
-			else*/ if ( r_textureBits->i == 16 ) {
+			else if ( r_textureBits->i == 16 ) {
 				internalFormat = GL_RGB5;
 			}
 			else if ( r_textureBits->i == 32 ) {
@@ -1810,16 +1890,18 @@ static GLenum RawImage_GetFormat( const byte *data, uint32_t numPixels, GLenum p
 				}
 			}
 			else {
-				/*if ( !forceNoCompression && (glContext.textureCompressionRef & TCR_BPTC) ) {
-					internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM_ARB;
+				if ( !PixelDataFormatIsValidCompressed( picFormat ) ) {
+					if ( !forceNoCompression && (glContext.textureCompressionRef & TCR_BPTC) ) {
+						internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM_ARB;
+					}
+					else if ( !forceNoCompression && glContext.textureCompression == TC_S3TC_ARB ) {
+						internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+					}
+					else if ( !forceNoCompression && glContext.textureCompression == TC_S3TC ) {
+						internalFormat = GL_RGB4_S3TC;
+					}
 				}
-				else if ( !forceNoCompression && glContext.textureCompression == TC_S3TC_ARB ) {
-					internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
-				}
-				else if ( !forceNoCompression && glContext.textureCompression == TC_S3TC ) {
-					internalFormat = GL_RGB4_S3TC;
-				}
-				else */if ( r_textureBits->i == 16 ) {
+				else if ( r_textureBits->i == 16 ) {
 					internalFormat = GL_RGB5;
 				}
 				else if ( r_textureBits->i == 32 ) {
@@ -1849,13 +1931,15 @@ static GLenum RawImage_GetFormat( const byte *data, uint32_t numPixels, GLenum p
 				}
 			}
 			else {
-				/*if ( !forceNoCompression && (glContext.textureCompressionRef & TCR_BPTC) ) {
-					internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM_ARB;
+				if ( !PixelDataFormatIsValidCompressed( picFormat ) ) {
+					if ( !forceNoCompression && ( glContext.textureCompressionRef & TCR_BPTC ) ) {
+						internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM_ARB;
+					}
+					else if ( !forceNoCompression && glContext.textureCompression == TC_S3TC_ARB ) {
+						internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+					}
 				}
-				else if ( !forceNoCompression && glContext.textureCompression == TC_S3TC_ARB ) {
-					internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-				}
-				else */if ( r_textureBits->i == 16 ) {
+				else if ( r_textureBits->i == 16 ) {
 					internalFormat = GL_RGBA4;
 				}
 				else if ( r_textureBits->i == 32 ) {
@@ -2062,6 +2146,7 @@ static void RawImage_UploadToRgtc2Texture( uint32_t mipLevel, int x, int y, int 
 		GL_LogComment( "glCompressedTexSubImage2D(GL_TEXTURE_2D, %i, %i, %i, %i, %i, %s, %u, %p)",
 			mipLevel, x, y, width, height, R_TextureFormatName( format ), size, compressedData );
 		nglCompressedTexSubImage2D( GL_TEXTURE_2D, mipLevel, x, y, width, height, format, size, compressedData );
+		GL_CheckErrors();
 	}
 	else {
 		GL_LogComment( "glCompressedTexImage2D(GL_TEXTURE_2D, %i, %s, %i, %i, 0, %u, %p)",
@@ -2071,67 +2156,6 @@ static void RawImage_UploadToRgtc2Texture( uint32_t mipLevel, int x, int y, int 
 
 //	ri.Hunk_FreeTempMemory(compressedData);
 }
-
-static GLenum PixelDataFormatFromInternalFormat( GLenum internalFormat )
-{
-	switch ( internalFormat ) {
-	case GL_DEPTH_COMPONENT:
-	case GL_DEPTH_COMPONENT16_ARB:
-	case GL_DEPTH_COMPONENT24_ARB:
-	case GL_DEPTH_COMPONENT32_ARB:
-		return GL_DEPTH_COMPONENT;
-	default:
-		return GL_RGBA;
-	};
-}
-
-static int PixelDataFormatIsValidCompressed( GLenum format )
-{
-	switch ( format ) {
-	case GL_COMPRESSED_SRGB_EXT:
-	case GL_COMPRESSED_SRGB_ALPHA_EXT:
-	case GL_COMPRESSED_ALPHA_ARB:
-	case GL_COMPRESSED_LUMINANCE_ARB:
-	case GL_COMPRESSED_LUMINANCE_ALPHA_ARB:
-	case GL_COMPRESSED_INTENSITY_ARB:
-	case GL_COMPRESSED_RGBA8_ETC2_EAC:
-	case GL_COMPRESSED_R11_EAC:
-	case GL_COMPRESSED_SIGNED_R11_EAC:
-	case GL_COMPRESSED_RGB8_ETC2:
-	case GL_COMPRESSED_RGB_FXT1_3DFX:
-	case GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2:
-	case GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2:
-	case GL_COMPRESSED_RGB_ARB:
-	case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
-	case GL_COMPRESSED_SRGB_S3TC_DXT1_EXT:
-	case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
-	case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT:
-	case GL_COMPRESSED_RED_RGTC1:
-	case GL_COMPRESSED_SIGNED_RED_RGTC1:
-	case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
-	case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT:
-	case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
-	case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT:
-	case GL_COMPRESSED_RG_RGTC2:
-	case GL_COMPRESSED_SIGNED_RG_RGTC2:
-	case GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT_ARB:
-	case GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT_ARB:
-	case GL_COMPRESSED_RGBA_BPTC_UNORM_ARB:
-	case GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM_ARB:
-	case GL_COMPRESSED_LUMINANCE_ALPHA_LATC2_EXT:
-	case GL_COMPRESSED_LUMINANCE_LATC1_EXT:
-	case GL_COMPRESSED_SIGNED_LUMINANCE_ALPHA_LATC2_EXT:
-	case GL_COMPRESSED_SIGNED_LUMINANCE_LATC1_EXT:
-	case GL_COMPRESSED_RGBA_FXT1_3DFX:
-	case GL_COMPRESSED_SRGB8_ETC2:
-	case GL_RGBA8_EXT:
-	case GL_RGB8_EXT:
-		return qtrue;
-	default:
-		break;
-	};
-	return qfalse;
-};
 
 static void RawImage_UploadTexture( const char *ext, GLuint texture, byte *data, int x, int y, int width, int height, GLenum target,
 	GLenum picFormat, int numMips, GLenum internalFormat, imgType_t type, imgFlags_t flags, qboolean subtexture )
@@ -2162,10 +2186,12 @@ static void RawImage_UploadTexture( const char *ext, GLuint texture, byte *data,
 		if ( !rgba && !(flags & IMGFLAG_NO_COMPRESSION) && PixelDataFormatIsValidCompressed( picFormat ) ) {
 			GL_LogComment( "glCompressedTexSubImage2D(GL_TEXTURE_2D, %lu, %i, %i, %i, %i, 0x%04x, %lu, %p)", miplevel, x, y, width, height, picFormat, size, data );
 			nglCompressedTexSubImage2D( GL_TEXTURE_2D, miplevel, x, y, width, height, picFormat, size, data );
+			GL_CheckErrors();
 		}
 		else {
-			if ( rgba8 && miplevel != 0 && r_colorMipLevels->i && data )
-				R_BlendOverTexture((byte *)data, width * height, mipBlendColors[miplevel]);
+			if ( rgba8 && miplevel != 0 && r_colorMipLevels->i && data ) {
+				R_BlendOverTexture( (byte *)data, width * height, mipBlendColors[miplevel] );
+			}
 
 			if (rgba8 && rgtc) {
 				RawImage_UploadToRgtc2Texture( miplevel, x, y, width, height, data, subtexture, internalFormat );
@@ -2173,25 +2199,29 @@ static void RawImage_UploadTexture( const char *ext, GLuint texture, byte *data,
 			else if (subtexture) {
 				GL_LogComment("glTexSubImage2D(GL_TEXTURE_2D, %lu, %i, %i, %i, %i, 0x%04x, %i, %p)", miplevel, x, y, width, height, dataFormat, dataType, data);
 				nglTexSubImage2D(target, miplevel, x, y, width, height, dataFormat, dataType, data);
+				GL_CheckErrors();
 			}
 			else {
 				GL_LogComment( "glTexImage2D(GL_TEXTURE_2D, %lu, %i, %i, %i, %i, 0x%04x, %i, %p)", miplevel, internalFormat, width, height, 0, dataFormat, dataType, data );
 				nglTexImage2D( target, miplevel, internalFormat, width, height, 0, dataFormat, dataType, data );
+				GL_CheckErrors();
 			}
 		}
 
-		if (!lastMip && numMips < 2) {
-			if (glContext.ARB_framebuffer_object) {
-				GL_LogComment("Generating mipmap for texture object %i", texture);
+		if ( !lastMip && numMips < 2 ) {
+			if ( glContext.ARB_framebuffer_object )  {
+				GL_LogComment( "Generating mipmap for texture object %i", texture );
 				nglBindTexture( target, texture );
+				GL_CheckErrors();
 				nglGenerateMipmap( target );
+				GL_CheckErrors();
 				break;
 			}
 			else if (rgba8) {
-				if (type == IMGTYPE_NORMAL || type == IMGTYPE_NORMALHEIGHT)
-					R_MipMapNormalHeight(data, data, width, height, glContext.swizzleNormalmap);
-				else
-					R_MipMapsRGB(data, width, height);
+//				if (type == IMGTYPE_NORMAL || type == IMGTYPE_NORMALHEIGHT)
+//					R_MipMapNormalHeight(data, data, width, height, glContext.swizzleNormalmap);
+//				else
+//					R_MipMapsRGB(data, width, height);
 			}
 		}
 
@@ -2280,6 +2310,231 @@ static void Upload32( byte *data, int x, int y, int width, int height, GLenum pi
 
 }
 
+static void R_AllocateTextureStorage( texture_t *image )
+{
+	GLenum glWrapClampMode;
+	GLenum dataFormat;
+	GLenum dataType;
+	byte *resampledBuffer = NULL;
+	uint32_t estSize = 0;
+	qboolean rgba8 = image->picFormat == GL_RGBA8 || image->picFormat == GL_SRGB8_ALPHA8;
+
+	nglGenTextures( 1, &image->id );
+
+	if ( image->flags & IMGFLAG_CLAMPTOBORDER ) {
+		glWrapClampMode = GL_CLAMP_TO_BORDER;
+	} else if ( image->flags & IMGFLAG_CLAMPTOEDGE ) {
+		glWrapClampMode = GL_CLAMP_TO_EDGE;
+	} else {
+		glWrapClampMode = GL_REPEAT;
+	}
+
+	// possibly scale image before uploading
+	if ( rgba8 && !R_HasExtension( "GL_ARB_texture_non_power_of_two" ) ) {
+//		ri.Printf( PRINT_DEVELOPER, "Scaling '%s' to power of two...\n", image->imgName );
+//		image->scaled = RawImage_ScaleToPower2( &image->data, &image->width, &image->height, image->type, image->flags, &image->data );
+	}
+
+	image->uploadWidth = image->width;
+	image->uploadHeight = image->height;
+
+	// Allocate texture storage so we don't have to worry about it later
+	dataFormat = PixelDataFormatFromInternalFormat( image->internalFormat );
+
+	// this is here so that we don't enter an infinite recursion
+	nglActiveTexture( GL_TEXTURE0 );
+	nglBindTexture( GL_TEXTURE_2D, image->id );
+
+/*
+	mipWidth = width;
+	mipHeight = height;
+	miplevel = 0;
+	do
+	{
+		lastMip = !mipmap || (mipWidth == 1 && mipHeight == 1);
+		if (cubemap)
+		{
+			int i;
+
+			for (i = 0; i < 6; i++)
+				nglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, miplevel, internalFormat, mipWidth, mipHeight, 0, dataFormat, GL_UNSIGNED_BYTE, NULL );
+		}
+		else
+		{
+			nglTexImage2D( GL_TEXTURE_2D, miplevel, internalFormat, mipWidth, mipHeight, 0, dataFormat, GL_UNSIGNED_BYTE, NULL );
+		}
+
+		mipWidth  = MAX(1, mipWidth >> 1);
+		mipHeight = MAX(1, mipHeight >> 1);
+		miplevel++;
+	}
+	while (!lastMip);
+*/
+
+	// Upload data.
+//	if ( image->data || ( image->flags & IMGFLAG_FBO ) ) {
+		GL_LogComment( "-- (%s) -- Upload32( 0x%04x, %i, %i, 0x%04x, 0x%04x, %p )", image->imgName, image->internalFormat,
+			image->width, image->height, dataFormat, dataType, image->data );
+		Upload32( image->data, 0, 0, image->width, image->height, image->picFormat, 1, image, image->scaled );
+//	}
+	/*
+	if ( resampledBuffer != NULL ) {
+		ri.Hunk_FreeTempMemory( resampledBuffer );
+	}
+	*/
+
+	// set all necessary parameters
+	nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, glWrapClampMode );
+	nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, glWrapClampMode );
+	nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0 );
+
+	// set anisotropy
+	if ( r_arb_texture_filter_anisotropic->i ) {
+		nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
+			(GLint)Com_Clamp( 1, glContext.maxAnisotropy, r_arb_texture_max_anisotropy->i ) );
+	}
+	switch ( image->internalFormat ) {
+	case GL_DEPTH_COMPONENT:
+	case GL_DEPTH_COMPONENT16_ARB:
+	case GL_DEPTH_COMPONENT24_ARB:
+	case GL_DEPTH_COMPONENT32_ARB:
+		// Fix for sampling depth buffer on old nVidia cards.
+		// from http://www.idevgames.com/forums/thread-4141-post-34844.html#pid34844
+		nglTexParameteri( GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE_ARB, GL_LUMINANCE );
+		nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+		nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+		break;
+	default:
+		nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min );
+		nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max );
+		break;
+	};
+
+	nglBindTexture( GL_TEXTURE_2D, 0 );
+
+	estSize += image->uploadWidth * image->uploadHeight;
+	switch ( image->internalFormat ) {
+	case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT:
+		// 64 bits per 16 pixels, so 4 bits per pixel
+		estSize /= 2;
+		break;
+	case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT:
+		// 128 bits per 16 pixels, so 1 byte per pixel
+		break;
+	case GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM_ARB:
+		// 128 bits per 16 pixels, so 1 byte per pixel
+		break;
+	case GL_COMPRESSED_RG_RGTC2:
+		// 128 bits per 16 pixels, so 1 byte per pixel
+		break;
+	case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
+		// 64 bits per 16 pixels, so 4 bits per pixel
+		estSize /= 2;
+		break;
+	case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
+		// 64 bits per 16 pixels, so 4 bits per pixel
+		estSize /= 2;
+		break;
+	case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
+		// 128 bits per 16 pixels, so 1 byte per pixel
+		break;
+	case GL_COMPRESSED_RGBA_BPTC_UNORM_ARB:
+		// 128 bits per 16 pixels, so 1 byte per pixel
+		break;
+	case GL_RGB4_S3TC:
+		// same as DXT1?
+		estSize /= 2;
+		break;
+	case GL_RGBA16F_ARB:
+		// 16 bytes per pixel
+		estSize *= 16;
+		break;
+	case GL_RGBA16:
+		// 8 bytes per pixel
+		estSize *= 8;
+		break;
+	case GL_RGBA2:
+	case GL_RGBA4:
+	case GL_RGBA8:
+	case GL_RGBA12:
+	case GL_RGBA:
+	case GL_RGB12:
+		// 4 bytes per pixel
+		estSize *= 4;
+		break;
+	case GL_RGBA32F_ARB:
+		// 32 bytes per pixel?
+		estSize *= 32;
+		break;
+	case GL_RGB32F_ARB:
+		// 24 bytes per pixel?
+		estSize *= 24;
+		break;
+	case GL_LUMINANCE8:
+	case GL_LUMINANCE:
+		// 1 byte per pixel?
+		break;
+	case GL_RGB5:
+	case GL_RGB8:
+	case GL_RGB2_EXT:
+	case GL_RGB:
+		// 3 bytes per pixel?
+		estSize *= 3;
+		break;
+	case GL_LUMINANCE8_ALPHA8:
+	case GL_LUMINANCE_ALPHA:
+		// 2 bytes per pixel?
+		estSize *= 2;
+		break;
+	case GL_SRGB_EXT:
+	case GL_SRGB8_EXT:
+		// 3 bytes per pixel?
+		estSize *= 3;
+		break;
+	case GL_SRGB_ALPHA_EXT:
+	case GL_SRGB8_ALPHA8_EXT:
+		// 4 bytes per pixel?
+		estSize *= 4;
+		break;
+	case GL_SLUMINANCE_EXT:
+	case GL_SLUMINANCE8_EXT:
+		// 1 byte per pixel?
+		break;
+	case GL_SLUMINANCE_ALPHA_EXT:
+	case GL_SLUMINANCE8_ALPHA8_EXT:
+		// 2 byte per pixel?
+		estSize *= 2;
+		break;
+	case GL_DEPTH_COMPONENT16:
+		// 2 bytes per pixel
+		estSize *= 2;
+		break;
+	case GL_DEPTH_COMPONENT24:
+		// 3 bytes per pixel
+		estSize *= 3;
+		break;
+	case GL_DEPTH_COMPONENT:
+	case GL_DEPTH_COMPONENT32:
+		// 4 bytes per pixel
+		estSize *= 4;
+		break;
+	default:
+		ri.Printf( PRINT_WARNING, "unknown texture format 0x%04i\n", image->internalFormat );
+	};
+	glState.memstats.estTextureMemUsed += estSize;
+	glState.memstats.numTextures++;
+
+	if ( r_loadTexturesOnDemand->i ) {
+		image->handle = nglGetTextureHandleARB( image->id );
+	}
+
+	image->evicted = qfalse;
+	
+	if ( rg.world && rg.worldMapLoaded ) {
+		rg.world->levelTextures++;
+	}
+}
+
 /*
 ================
 R_CreateImage2
@@ -2292,15 +2547,15 @@ static texture_t *R_CreateImage2( const char *name, byte *pic, int width, int he
 {
 	texture_t *image;
 	uint64_t namelen, hash;
-	GLenum glWrapClampMode;
-	GLenum dataType;
-	GLenum dataFormat;
-	qboolean rgba8 = picFormat == GL_RGBA8 || picFormat == GL_SRGB8_ALPHA8;
 	qboolean isLightmap = qfalse, scaled = qfalse;
+	GLenum dataFormat;
+	GLenum dataType;
 	byte *resampledBuffer = NULL;
+	uint32_t estSize = 0;
+	GLenum glWrapClampMode;
+	uint64_t textureSize;
 	int lastMip, mipWidth, mipHeight, miplevel;
 	qboolean mipmap = !!( flags & IMGFLAG_MIPMAP );
-	uint32_t estSize = 0;
 
 	namelen = strlen( name );
 	if ( namelen >= MAX_NPATH ) {
@@ -2315,7 +2570,34 @@ static texture_t *R_CreateImage2( const char *name, byte *pic, int width, int he
 	}
 	
 	image = rg.textures[ rg.numTextures ] = (texture_t *)ri.Hunk_Alloc( sizeof( *image ) + namelen, h_low );
-	nglGenTextures(1, &image->id);
+	rg.numTextures++;
+
+#if 1
+	image->flags = flags;
+	image->type = type;
+
+	image->imgName = (char *)( image + 1 );
+	strcpy( image->imgName, name );
+
+	image->width = width;
+	image->height = height;
+
+	image->evicted = qtrue;
+
+	image->picFormat = picFormat;
+	image->internalFormat = internalFormat;
+
+	if ( !r_loadTexturesOnDemand->i ) {
+		R_AllocateTextureStorage( image );
+	} else {
+		if ( pic ) {
+			textureSize = CalculateTextureSize( width, height, picFormat );
+			image->data = ri.Malloc( textureSize );
+			memcpy( image->data, pic, textureSize );
+		}
+	}
+#else
+	nglGenTextures( 1, &image->id );
 	rg.numTextures++;
 
 	image->flags = flags;
@@ -2385,38 +2667,74 @@ static texture_t *R_CreateImage2( const char *name, byte *pic, int width, int he
 	if ( pic || ( flags & IMGFLAG_FBO ) ) {
 		GL_LogComment( "-- (%s) -- Upload32( 0x%04x, %i, %i, 0x%04x, 0x%04x, %p )", name, image->internalFormat, width, height, dataFormat, dataType, pic );
 		Upload32( pic, 0, 0, width, height, picFormat, numMips, image, scaled );
+		GL_CheckErrors();
 	}
 	if ( resampledBuffer != NULL ) {
 		ri.Hunk_FreeTempMemory( resampledBuffer );
 	}
 
 	// set all necessary parameters
-	nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, glWrapClampMode );
-	nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, glWrapClampMode );
-	nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0 );
+	if ( !r_loadTexturesOnDemand->i ) {
+		nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, glWrapClampMode );
+		nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, glWrapClampMode );
+		nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0 );
 
-	// set anisotropy
-	if ( r_arb_texture_filter_anisotropic->i ) {
-		nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY,
-			(GLint)Com_Clamp( 1, glContext.maxAnisotropy, r_arb_texture_max_anisotropy->i ) );
+		// set anisotropy
+		if ( r_arb_texture_filter_anisotropic->i ) {
+			nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
+				(GLint)Com_Clamp( 1, glContext.maxAnisotropy, r_arb_texture_max_anisotropy->i ) );
+		}
+
+		switch ( internalFormat ) {
+		case GL_DEPTH_COMPONENT:
+		case GL_DEPTH_COMPONENT16_ARB:
+		case GL_DEPTH_COMPONENT24_ARB:
+		case GL_DEPTH_COMPONENT32_ARB:
+			// Fix for sampling depth buffer on old nVidia cards.
+			// from http://www.idevgames.com/forums/thread-4141-post-34844.html#pid34844
+			nglTexParameteri( GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE_ARB, GL_LUMINANCE );
+			nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+			nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+			break;
+		default:
+			nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min );
+			nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max );
+			break;
+		};
+	} else {
+		nglGenSamplers( 1, &image->samplerID );
+
+		nglSamplerParameteri( image->samplerID, GL_TEXTURE_WRAP_T, glWrapClampMode );
+		nglSamplerParameteri( image->samplerID, GL_TEXTURE_WRAP_S, glWrapClampMode );
+//		nglSamplerParameteri( image->samplerID, GL_TEXTURE_BASE_LEVEL, 0 );
+
+		// set anisotropy
+//		if ( r_arb_texture_filter_anisotropic->i ) {
+//			nglSamplerParameteri( image->samplerID, GL_TEXTURE_MAX_ANISOTROPY_EXT,
+//				(GLint)Com_Clamp( 1, glContext.maxAnisotropy, r_arb_texture_max_anisotropy->i ) );
+//		}
+
+		switch ( internalFormat ) {
+		case GL_DEPTH_COMPONENT:
+		case GL_DEPTH_COMPONENT16_ARB:
+		case GL_DEPTH_COMPONENT24_ARB:
+		case GL_DEPTH_COMPONENT32_ARB:
+			// Fix for sampling depth buffer on old nVidia cards.
+			// from http://www.idevgames.com/forums/thread-4141-post-34844.html#pid34844
+			nglSamplerParameteri( image->samplerID, GL_DEPTH_TEXTURE_MODE_ARB, GL_LUMINANCE );
+			nglSamplerParameteri( image->samplerID, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+			nglSamplerParameteri( image->samplerID, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+			break;
+		default:
+			nglSamplerParameteri( image->samplerID, GL_TEXTURE_MIN_FILTER, gl_filter_min );
+			nglSamplerParameteri( image->samplerID, GL_TEXTURE_MAG_FILTER, gl_filter_max );
+			break;
+		};
 	}
 
-	switch ( internalFormat ) {
-	case GL_DEPTH_COMPONENT:
-	case GL_DEPTH_COMPONENT16_ARB:
-	case GL_DEPTH_COMPONENT24_ARB:
-	case GL_DEPTH_COMPONENT32_ARB:
-		// Fix for sampling depth buffer on old nVidia cards.
-		// from http://www.idevgames.com/forums/thread-4141-post-34844.html#pid34844
-		nglTexParameteri( GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE_ARB, GL_LUMINANCE );
-		nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-		nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-		break;
-	default:
-		nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min );
-		nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max );
-		break;
-	};
+	if ( r_loadTexturesOnDemand->i ) {
+		image->handle = nglGetTextureSamplerHandleARB( image->id, image->samplerID );
+	}
 
 	GL_BindTexture( TB_COLORMAP, NULL );
 
@@ -2537,8 +2855,9 @@ static texture_t *R_CreateImage2( const char *name, byte *pic, int width, int he
 	if ( rg.world && rg.worldMapLoaded ) {
 		rg.world->levelTextures++;
 	}
+#endif
 
-	hash = generateHashValue(name);
+	hash = generateHashValue( name );
 
 	// link it in
 	image->next = hashTable[hash];
@@ -3184,6 +3503,9 @@ void R_DeleteTextures( void )
 			continue;
 		}
 		nglDeleteTextures( 1, &rg.textures[i]->id );
+		if ( r_loadTexturesOnDemand->i ) {
+			nglDeleteSamplers( 1, &rg.textures[ i ]->samplerID );
+		}
 	}
 	memset( rg.textures, 0, sizeof( rg.textures ) );
 
@@ -3200,6 +3522,9 @@ void R_UnloadLevelTextures( void )
 		for ( j = 0; j < rg.world->levelTextures; j++ ) {
 			if ( hashTable[i] == rg.textures[ j + rg.world->firstLevelTexture ] && hashTable[i] ) {
 				nglDeleteTextures( 1, &rg.textures[ j + rg.world->firstLevelTexture ]->id );
+				if ( r_loadTexturesOnDemand->i ) {
+					nglDeleteSamplers( 1, &rg.textures[ i ]->samplerID );
+				}
 				hashTable[i]->next = NULL;
 				hashTable[i] = NULL;
 				rg.textures[ j + rg.world->firstLevelTexture ] = NULL;

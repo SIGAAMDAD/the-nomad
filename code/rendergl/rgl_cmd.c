@@ -60,7 +60,7 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters, qboolean finalComma
 	if ( glContext.smpActive ) {
 		// if the render thread is not idle, wait for it
 		// sleep until the renderer has completed
-//		ri.GLimp_FrontEndSleep();
+		ri.GLimp_FrontEndSleep();
 	}
 
 	if ( runPerformanceCounters ) {
@@ -78,9 +78,13 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters, qboolean finalComma
 	}
 }
 
-//
-// R_IssuePendingRenderCommands: issue any pending commands and wait for them to complete
-//
+/*
+============
+R_IssuePendingRenderCommands
+
+issue any pending commands and wait for them to complete
+============
+*/
 void R_IssuePendingRenderCommands( void )
 {
     if ( !rg.registered ) {
@@ -283,11 +287,12 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 	}
 
 	if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
+		/*
 		ri.ProfileFunctionBegin( "ComputeShaderDispatch" );
-//		nglUseProgram( rg.computeShaderProgram );
 		GLSL_UseProgram( &rg.computeShader );
 		nglDispatchCompute( glConfig.vidWidth / 64, glConfig.vidHeight / 16, 1 );
 		ri.ProfileFunctionEnd();
+		*/
 	}
 
     // clear relevant buffers
@@ -308,7 +313,13 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
     nglViewport( 0, 0, width, height );
     nglScissor( 0, 0, width, height );
 
+	if ( !sys_forceSingleThreading->i ) {
+		R_IssuePendingRenderCommands();
+	}
+
 	ri.ImGui_NewFrame();
+
+	R_EvictUnusedTextures();
 
 	rg.frameCount++;
 	rg.frameSceneNum = 0;
@@ -362,8 +373,9 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
         GLenum error;
 
         R_IssuePendingRenderCommands();
-        if ( ( error = nglGetError() ) != GL_NO_ERROR )
+        if ( ( error = nglGetError() ) != GL_NO_ERROR ) {
             ri.Error( ERR_FATAL, "RE_BeginFrame() - glGetError() failed (0x%04x)! %s", error, GL_ErrorString( error ) );
+		}
     }
 
 	/*
@@ -427,6 +439,7 @@ void RE_EndFrame( uint64_t *frontEndMsec, uint64_t *backEndMsec, backendCounters
 
 	// compute shader
 	if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
+		/*
 //		nglMemoryBarrier( GL_UNIFORM_BARRIER_BIT | GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_ELEMENT_ARRAY_BARRIER_BIT
 //			| GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_BUFFER_UPDATE_BARRIER_BIT | GL_FRAMEBUFFER_BARRIER_BIT );
 		ri.ProfileFunctionBegin( "ComputeShaderFlush" );
@@ -440,6 +453,7 @@ void RE_EndFrame( uint64_t *frontEndMsec, uint64_t *backEndMsec, backendCounters
 		RB_FlushBatchBuffer();
 
 		ri.ProfileFunctionEnd();
+		*/
 	}
 
 	R_IssueRenderCommands( qtrue, qtrue );

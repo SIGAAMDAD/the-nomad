@@ -218,6 +218,13 @@ typedef struct texture_s
 	int uploadWidth;            // after power of two but not including clamp to MAX_TEXTURE_SIZE
 	int uploadHeight;
 	GLuint id;                  // GL texture binding
+	qboolean evicted;
+	qboolean scaled;
+	GLuint picFormat;
+
+	GLuint samplerID;
+	GLuint64 handle;
+	byte *data;
 
 	uint64_t frameUsed;
 
@@ -259,6 +266,7 @@ enum
 
 typedef enum {
 	GLSL_INT = 0,
+	GLSL_TEXTURE,
 	GLSL_FLOAT,
 	GLSL_VEC2,
 	GLSL_VEC3,
@@ -1489,13 +1497,13 @@ extern cvar_t *r_maxEntities;
 extern cvar_t *r_maxDLights;
 
 extern cvar_t *r_useShaderCache;
-extern cvar_t *r_useUniformBuffers;
 
 extern cvar_t *r_imageUpsampleType;
 extern cvar_t *r_imageUpsample;
 extern cvar_t *r_imageUpsampleMaxSize;
 
 extern cvar_t *r_lightingQuality;
+extern cvar_t *r_loadTexturesOnDemand;
 
 extern cvar_t *sys_forceSingleThreading;
 
@@ -1515,24 +1523,23 @@ extern cvar_t *r_arb_map_buffer_range;
 
 //====================================================================
 
-static GDR_INLINE qboolean ShaderRequiresCPUDeforms( const shader_t * shader )
+static GDR_INLINE qboolean ShaderRequiresCPUDeforms( const shader_t *shader )
 {
-	if(shader->numDeforms) {
+	if ( shader->numDeforms ) {
 		const deformStage_t *ds = &shader->deforms[0];
 
-		if (shader->numDeforms > 1)
+		if ( shader->numDeforms > 1 ) {
 			return qtrue;
-
-		switch (ds->deformation)
-		{
-			case DEFORM_WAVE:
-			case DEFORM_BULGE:
-				// need CPU deforms at high level-times to avoid floating point precision loss
-				return ( backend.refdef.floatTime != (float)backend.refdef.floatTime );
-
-			default:
-				return qtrue;
 		}
+
+		switch ( ds->deformation ) {
+		case DEFORM_WAVE:
+		case DEFORM_BULGE:
+			// need CPU deforms at high level-times to avoid floating point precision loss
+			return ( backend.refdef.floatTime != (float)backend.refdef.floatTime );
+		default:
+			return qtrue;
+		};
 	}
 
 	return qfalse;
@@ -1540,35 +1547,26 @@ static GDR_INLINE qboolean ShaderRequiresCPUDeforms( const shader_t * shader )
 
 //====================================================================
 
-static GDR_INLINE int VectorCompare4(const vec4_t v1, const vec4_t v2)
+static GDR_INLINE int VectorCompare4( const vec4_t v1, const vec4_t v2 )
 {
-	if(v1[0] != v2[0] || v1[1] != v2[1] || v1[2] != v2[2] || v1[3] != v2[3])
-	{
+	if ( v1[0] != v2[0] || v1[1] != v2[1] || v1[2] != v2[2] || v1[3] != v2[3] ) {
 		return 0;
 	}
 	return 1;
 }
 
 //
-// rgl_shadows.c
-//
-void R_AddEdgeDef( int i1, int i2, int facing );
-void R_RenderShadowEdges( void );
-void RB_ShadowTessEnd( void );
-void RB_ShadowFinish( void );
-
-//
 // rgl_backend.c
 //
-void GDR_ATTRIBUTE((format(printf, 1, 2))) GL_LogComment(const char *fmt, ...);
-void GDR_ATTRIBUTE((format(printf, 1, 2))) GL_LogError(const char *fmt, ...);
-void GL_SetObjectDebugName(GLenum target, GLuint id, const char *name, const char *add);
-void RB_ShowImages(void);
-void GL_SetModelViewMatrix(const mat4_t m);
-void GL_SetProjectionMatrix(const mat4_t m);
-void GL_CheckErrors(void);
-void GL_BindNullTextures(void);
-void GL_PushTexture(texture_t *texture);
+void GDR_ATTRIBUTE((format(printf, 1, 2))) GL_LogComment( const char *fmt, ... );
+void GDR_ATTRIBUTE((format(printf, 1, 2))) GL_LogError( const char *fmt, ... );
+void GL_SetObjectDebugName( GLenum target, GLuint id, const char *name, const char *add );
+void RB_ShowImages( void );
+void GL_SetModelViewMatrix( const mat4_t m );
+void GL_SetProjectionMatrix( const mat4_t m );
+void GL_CheckErrors( void );
+void GL_BindNullTextures( void );
+void GL_PushTexture( texture_t *texture );
 void GL_PopTexture(void);
 void GL_BindTexture(int tmu, texture_t *texture);
 void GL_BindNullRenderbuffer(void);
@@ -1602,6 +1600,7 @@ void GLSL_UseProgram( shaderProgram_t *program );
 void GLSL_InitGPUShaders( void );
 void GLSL_ShutdownGPUShaders( void );
 void GLSL_SetUniformInt( shaderProgram_t *program, uint32_t uniformNum, GLint value );
+void GLSL_SetUniformTexture( shaderProgram_t *program, uint32_t uniformNum, GLuint64 value );
 void GLSL_SetUniformFloat( shaderProgram_t *program, uint32_t uniformNum, GLfloat value );
 void GLSL_SetUniformVec2( shaderProgram_t *program, uint32_t uniformNum, const vec2_t v );
 void GLSL_SetUniformVec3( shaderProgram_t *program, uint32_t uniformNum, const vec3_t v );
@@ -1636,6 +1635,9 @@ void R_GammaCorrect( byte *buffer, uint64_t bufSize );
 void R_UpdateTextures( void );
 void R_InitTextures( void );
 texture_t *R_CreateImage(  const char *name, byte *pic, int width, int height, imgType_t type, imgFlags_t flags, int internalFormat );
+qboolean R_ClearTextureCache( void );
+void R_TouchTexture( texture_t *image );
+void R_EvictUnusedTextures( void );
 
 extern int gl_filter_min, gl_filter_max;
 

@@ -218,7 +218,7 @@ static void RemoveFree( memblock_t *block )
 
 static void InsertFree( memzone_t *zone, memblock_t *block )
 {
-	freeblock_t *fb = (freeblock_t*)( block + 1 );
+	freeblock_t *fb = (freeblock_t *)( block + 1 );
 	freeblock_t *prev, *next;
 #ifdef TINY_SIZE
 	if ( block->size <= TINY_SIZE )
@@ -522,16 +522,16 @@ void Z_Free( void *ptr ) {
 	memblock_t *block, *other;
 	memzone_t *zone;
 
-	if (!ptr) {
+	if ( !ptr ) {
 		N_Error( ERR_DROP, "Z_Free: NULL pointer" );
 	}
 
 	block = (memblock_t *) ( (byte *)ptr - sizeof(memblock_t));
-	if (block->id != ZONEID) {
+	if ( block->id != ZONEID ) {
 		N_Error( ERR_FATAL, "Z_Free: freed a pointer without ZONEID" );
 	}
 
-	if (block->tag == TAG_FREE) {
+	if ( block->tag == TAG_FREE ) {
 		N_Error( ERR_FATAL, "Z_Free: freed a freed pointer" );
 	}
 
@@ -827,7 +827,7 @@ void Z_CheckHeap( void )
 		if ( block->next == &zone->blocklist ) {
 			break;	// all blocks have been hit
 		}
-		if ( (byte *)block + block->size != (byte *)block->next) {
+		if ( (byte *)block + block->size != (byte *)block->next ) {
 #ifdef USE_MULTI_SEGMENT
 			const memblock_t *next = block->next;
 			if ( next->size == 0 && next->id == -ZONEID && next->tag == TAG_STATIC ) {

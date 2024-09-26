@@ -21,6 +21,7 @@ NGL_VertexShaderARB_Procs
 NGL_ARB_buffer_storage
 NGL_ARB_map_buffer_range
 NGL_ARB_sync
+NGL_ARB_bindless_texture
 #undef NGL
 
 // because they're edgy...
@@ -174,9 +175,9 @@ cvar_t *r_imageUpsample;
 cvar_t *r_imageUpsampleMaxSize;
 
 cvar_t *r_useShaderCache;
-cvar_t *r_useUniformBuffers;
 
 cvar_t *r_lightingQuality;
+cvar_t *r_loadTexturesOnDemand;
 
 cvar_t *sys_forceSingleThreading;
 
@@ -945,8 +946,9 @@ static void R_Register( void )
 	r_bloom = ri.Cvar_Get( "r_bloom", "1", CVAR_LATCH | CVAR_SAVE );
 	ri.Cvar_SetDescription( r_bloom, "Enables framebuffer based bloom to make light sources stand out, requires \\r_hdr." );
 
-	r_useUniformBuffers = ri.Cvar_Get( "r_useUniformBuffers", "0", CVAR_SAVE | CVAR_LATCH );
-	ri.Cvar_SetDescription( r_useUniformBuffers, "Enables the usage of uniform buffers for a more performant shader data transmission." );
+	r_loadTexturesOnDemand = ri.Cvar_Get( "r_loadTexturesOnDemand", "1", CVAR_LATCH | CVAR_SAVE );
+	ri.Cvar_SetDescription( r_loadTexturesOnDemand, "Enables loading textures on demand, requires GL_ARB_bindless_textures\n" );
+
 	r_normalMapping = ri.Cvar_Get( "r_normalMapping", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_normalMapping, "Enable normal maps for materials that support it." );
 	r_specularMapping = ri.Cvar_Get( "r_specularMapping", "1", CVAR_SAVE | CVAR_LATCH );
@@ -1382,6 +1384,7 @@ static void R_InitImGui( void )
 	import.glUnmapBuffer = nglUnmapBuffer;
 	import.glMapBufferRange = nglMapBufferRange;
 	import.glBufferStorage = nglBufferStorage;
+	import.glGetTextureHandleARB = nglGetTextureHandleARB;
 
 	import.DrawShaderStages = RB_DrawShaderStages;
 	import.GetTextureId = RE_GetTextureId;

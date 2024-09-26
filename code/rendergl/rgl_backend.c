@@ -3,7 +3,7 @@
 
 qboolean screenshotFrame;
 
-void GL_SetObjectDebugName(GLenum target, GLuint id, const char *name, const char *add)
+void GL_SetObjectDebugName( GLenum target, GLuint id, const char *name, const char *add )
 {
 	if (r_glDebug->i) {
 		static char newName[1024];
@@ -15,41 +15,43 @@ void GL_SetObjectDebugName(GLenum target, GLuint id, const char *name, const cha
 static GLuint textureStack[MAX_TEXTURE_UNITS];
 static GLint textureStackP;
 
-void GL_PushTexture(texture_t *image)
+void GL_PushTexture( texture_t *image )
 {
 	uint32_t i;
 	GLuint id = image ? image->id : 0;
 
 	// do we need to pop one?
-	if (textureStackP == MAX_TEXTURE_UNITS - 1) {
+	if ( textureStackP == MAX_TEXTURE_UNITS - 1 ) {
 		GL_PopTexture();
 	}
 
 	// check if it's already bound
-	for (i = 0; i < textureStackP; i++) {
-		if (textureStack[i] == id) {
+	for ( i = 0; i < textureStackP; i++ ) {
+		if ( textureStack[i] == id ) {
 			textureStackP = i;
 			break;
 		}
 	}
 
-	if (i == textureStackP) {
-		if (textureStackP >= MAX_TEXTURE_UNITS)
-			ri.Error(ERR_DROP, "GL_PushTexture: texture stack overflow");
+	if ( i == textureStackP ) {
+		if ( textureStackP >= MAX_TEXTURE_UNITS ) {
+			ri.Error( ERR_DROP, "GL_PushTexture: texture stack overflow" );
+		}
 
-		textureStack[textureStackP++] = id;
+		textureStack[ textureStackP++ ] = id;
 		
-		nglActiveTexture(GL_TEXTURE0 + textureStackP);
-		nglBindTexture(GL_TEXTURE_2D, id);
+		nglActiveTexture( GL_TEXTURE0 + textureStackP );
+		nglBindTexture( GL_TEXTURE_2D, id );
 	}
 }
 
-void GL_PopTexture(void)
+void GL_PopTexture( void )
 {
 	textureStackP--;
 
-	if (textureStackP < 0)
+	if (textureStackP < 0) {
 		ri.Error(ERR_DROP, "GL_PopTexture: texture stack underflow");
+	}
 
 	if (textureStackP) {
 		nglActiveTexture(GL_TEXTURE + textureStackP);
@@ -57,28 +59,36 @@ void GL_PopTexture(void)
 	}
 }
 
-void GL_BindTexture(int tmu, texture_t *image)
+void GL_BindTexture( int tmu, texture_t *image )
 {
 	GLuint texunit = GL_TEXTURE0 + tmu;
 	GLuint id = image ? image->id : 0;
 
-	if (glState.currenttextures[tmu] == id) {
+	if ( image ) {
+		R_TouchTexture( image );
+	}
+	if ( r_loadTexturesOnDemand->i ) {
 		return;
 	}
 
-	if (glState.currenttmu != texunit) {
-		nglActiveTexture(texunit);
+	if ( glState.currenttextures[tmu] == id ) {
+		return;
+	}
+
+	if ( glState.currenttmu != texunit ) {
+		nglActiveTexture( texunit );
 		glState.currenttmu = texunit;
 	}
 
-	nglBindTexture(GL_TEXTURE_2D, id);
+	nglBindTexture( GL_TEXTURE_2D, id );
 }
 
-void GL_BindNullTextures(void)
+void GL_BindNullTextures( void )
 {
-	for (uint32_t i = 0; i < MAX_TEXTURE_UNITS; i++) {
-		nglActiveTexture(GL_TEXTURE0 + i);
-		nglBindTexture(GL_TEXTURE_2D, 0);
+	uint32_t i;
+	for ( i = 0; i < MAX_TEXTURE_UNITS; i++ ) {
+		nglActiveTexture( GL_TEXTURE0 + i );
+		nglBindTexture( GL_TEXTURE_2D, 0 );
 	}
 
 	memset(textureStack, 0, sizeof(GLuint) * textureStackP);
@@ -97,25 +107,26 @@ void GL_BindNullTextures(void)
 	glState.currentTexture = NULL;
 }
 
-int GL_UseProgram(GLuint program)
+int GL_UseProgram( GLuint program) 
 {
-    if (glState.shaderId == program)
+    if ( glState.shaderId == program ) {
         return 0;
+	}
     
-    nglUseProgram(program);
+    nglUseProgram( program );
     glState.shaderId = program;
 	return 1;
 }
 
-void GL_BindNullProgram(void)
+void GL_BindNullProgram( void )
 {
-    nglUseProgram((unsigned)0);
+    nglUseProgram( (unsigned)0 );
     glState.shaderId = 0;
 }
 
-void GL_BindFramebuffer(GLenum target, GLuint fbo)
+void GL_BindFramebuffer( GLenum target, GLuint fbo )
 {
-    switch (target) {
+    switch ( target ) {
     case GL_FRAMEBUFFER:
         if (glState.defFboId == fbo)
             return;
@@ -138,10 +149,10 @@ void GL_BindFramebuffer(GLenum target, GLuint fbo)
         ri.Error(ERR_FATAL, "GL_BindFramebuffer: Invalid fbo target: %i", target);
     };
 
-    nglBindFramebuffer(target, fbo);
+    nglBindFramebuffer( target, fbo );
 }
 
-void GL_BindNullFramebuffers(void)
+void GL_BindNullFramebuffers( void )
 {
     nglBindFramebuffer( GL_FRAMEBUFFER, 0 );
     nglBindFramebuffer( GL_READ_FRAMEBUFFER, 0 );
@@ -530,7 +541,7 @@ RB_PostProcess
 
 =============
 */
-static const void *RB_PostProcess(const void *data)
+static const void *RB_PostProcess( const void *data )
 {
 	const postProcessCmd_t *cmd = data;
 	fbo_t *srcFbo;

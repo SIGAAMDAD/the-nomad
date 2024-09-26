@@ -41,22 +41,22 @@ typedef struct {
 
 // these must in the same order as in uniform_t in rgl_local.h
 static uniformInfo_t uniformsInfo[UNIFORM_COUNT] = {
-	{ "u_DiffuseMap",           GLSL_INT },
-	{ "u_LightMap",             GLSL_INT },
-	{ "u_NormalMap",            GLSL_INT },
-	{ "u_DeluxeMap",            GLSL_INT },
-	{ "u_SpecularMap",          GLSL_INT },
+	{ "u_DiffuseMap",           GLSL_TEXTURE },
+	{ "u_LightMap",             GLSL_TEXTURE },
+	{ "u_NormalMap",            GLSL_TEXTURE },
+	{ "u_DeluxeMap",            GLSL_TEXTURE },
+	{ "u_SpecularMap",          GLSL_TEXTURE },
 
-	{ "u_TextureMap",           GLSL_INT },
-	{ "u_LevelsMap",            GLSL_INT },
+	{ "u_TextureMap",           GLSL_TEXTURE },
+	{ "u_LevelsMap",            GLSL_TEXTURE },
 
-	{ "u_ScreenImageMap",       GLSL_INT },
-	{ "u_ScreenDepthMap",       GLSL_INT },
+	{ "u_ScreenImageMap",       GLSL_TEXTURE },
+	{ "u_ScreenDepthMap",       GLSL_TEXTURE },
 
-	{ "u_ShadowMap",            GLSL_INT },
-	{ "u_ShadowMap2",           GLSL_INT },
-	{ "u_ShadowMap3",           GLSL_INT },
-	{ "u_ShadowMap4",           GLSL_INT },
+	{ "u_ShadowMap",            GLSL_TEXTURE },
+	{ "u_ShadowMap2",           GLSL_TEXTURE },
+	{ "u_ShadowMap3",           GLSL_TEXTURE },
+	{ "u_ShadowMap4",           GLSL_TEXTURE },
 
 	{ "u_ShadowMvp",            GLSL_MAT16 },
 	{ "u_ShadowMvp2",           GLSL_MAT16 },
@@ -126,10 +126,10 @@ static uniformInfo_t uniformsInfo[UNIFORM_COUNT] = {
 	{ "u_LightBuffer",          GLSL_BUFFER },
 	{ "u_GamePaused",           GLSL_INT },
 
-	{ "u_AreaTexture",          GLSL_INT },
-	{ "u_SearchTexture",        GLSL_INT },
-	{ "u_EdgesTexture",         GLSL_INT },
-	{ "u_BlendTexture",         GLSL_INT },
+	{ "u_AreaTexture",          GLSL_TEXTURE },
+	{ "u_SearchTexture",        GLSL_TEXTURE },
+	{ "u_EdgesTexture",         GLSL_TEXTURE },
+	{ "u_BlendTexture",         GLSL_TEXTURE },
 
 	{ "u_BlurHorizontal",       GLSL_INT },
 
@@ -659,20 +659,31 @@ static void GLSL_PrepareHeader(GLenum shaderType, const GLchar *extra, char *des
 
 	// OpenGL version from 3.3 and up have corresponding glsl versions
 	if ( NGL_VERSION_ATLEAST( 3, 30 ) ) {
-		N_strcat(dest, size, "#version 450 core\n" );
+		N_strcat( dest, size, "#version 450 core\n" );
 	}
 	// otherwise, do the Quake3e method
 	else if (GLSL_VERSION_ATLEAST(1, 30)) {
 		if (GLSL_VERSION_ATLEAST(1, 50)) {
-			N_strcat(dest, size, "#version 150\n");
+			N_strcat( dest, size, "#version 150\n" );
 		}
 		else if (GLSL_VERSION_ATLEAST(1, 30)) {
-			N_strcat(dest, size, "#version 130\n");
+			N_strcat( dest, size, "#version 130\n" );
 		}
 	}
 	else {
-		N_strcat(dest, size, "#define GLSL_LEGACY\n");
-		N_strcat(dest, size, "#version 120\n");
+		N_strcat( dest, size, "#version 120\n" );
+		N_strcat( dest, size, "#define GLSL_LEGACY\n" );
+	}
+
+	//
+	// add any extensions
+	//
+	if ( r_loadTexturesOnDemand->i ) {
+		N_strcat( dest, size, "#extension GL_ARB_bindless_texture : enable\n" );
+		N_strcat( dest, size, "#define USE_BINDLESS_TEXTURE\n" );
+		N_strcat( dest, size, "#define TEXTURE2D layout( bindless_sampler ) uniform sampler2D\n" );
+	} else {
+		N_strcat( dest, size, "#define TEXTURE2D uniform sampler2D\n" );
 	}
 
 	if (!(NGL_VERSION_ATLEAST(1, 30))) {
@@ -999,6 +1010,9 @@ static void GLSL_InitUniforms( shaderProgram_t *program )
 		program->uniformBufferOffsets[i] = uniformBufferSize;
  
 		switch ( uniformsInfo[i].type ) {
+		case GLSL_TEXTURE:
+			uniformBufferSize += sizeof( GLuint64 );
+			break;
 		case GLSL_INT:
 			uniformBufferSize += sizeof( GLint );
 			break;
@@ -1064,7 +1078,31 @@ static void GLSL_DeleteGPUShader( shaderProgram_t *program)
 	}
 }
 
-void GLSL_SetUniformInt(shaderProgram_t *program, uint32_t uniformNum, GLint value)
+void GLSL_SetUniformTexture( shaderProgram_t *program, uint32_t uniformNum, GLuint64 value )
+{
+	GLint *uniforms = program->uniforms;
+	GLuint64 *compare = (GLuint64 *)( program->uniformBuffer + program->uniformBufferOffsets[uniformNum] );
+
+	if ( uniforms[uniformNum] == -1 )
+		return;
+	
+	if ( uniformsInfo[uniformNum].type != GLSL_TEXTURE ) {
+		ri.Printf(PRINT_INFO, COLOR_YELLOW "WARNING: GLSL_SetUniformTexture: wrong type for uniform %i in program %s\n", uniformNum, program->name);
+		return;
+	}
+	if ( value == *compare ) {
+		return;
+	}
+	
+	*compare = value;
+	if ( r_loadTexturesOnDemand->i ) {
+		nglUniformHandleui64ARB( uniforms[ uniformNum ], value );
+	} else {
+		nglUniform1i( uniforms[ uniformNum ], value );
+	}
+}
+
+void GLSL_SetUniformInt( shaderProgram_t *program, uint32_t uniformNum, GLint value )
 {
 	GLint *uniforms = program->uniforms;
 	GLint *compare = (GLint *)(program->uniformBuffer + program->uniformBufferOffsets[uniformNum]);
@@ -1370,9 +1408,6 @@ void GLSL_InitGPUShaders( void )
 		if ( r_multisampleType->i == AntiAlias_SMAA ) {
 			N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_LUMA_SMAA_EDGE\n" );
 		}
-		if ( r_useUniformBuffers->i ) {
-			N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_UBO\n" );
-		}
 
 		if ( !GLSL_InitGPUShader( &rg.genericShader[i], "generic", attribs, qtrue, extradefines, qtrue, fallbackShader_generic_vp,
 			fallbackShader_generic_fp ) )
@@ -1482,10 +1517,6 @@ void GLSL_InitGPUShaders( void )
 				break;
 			};
 		}
-		if ( r_useUniformBuffers->i ) {
-			N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_UBO\n" );
-		}
-
 		if ( i & LIGHTDEF_USE_SHADOWMAP ) {
 			N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_SHADOWMAP\n" );
 
@@ -1579,9 +1610,6 @@ void GLSL_InitGPUShaders( void )
 	}
 	if ( r_parallaxMapping->i ) {
 		N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_PARALLAXMAP\n" );
-	}
-	if ( r_useUniformBuffers->i ) {
-		N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_UBO\n" );
 	}
 	if ( !GLSL_InitGPUShader( &rg.tileShader, "tile", attribs, qtrue, extradefines, qtrue, fallbackShader_tile_vp, fallbackShader_tile_fp ) ) {
 		ri.Error( ERR_FATAL, "Could not load tile shader!" );

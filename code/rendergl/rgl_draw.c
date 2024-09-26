@@ -44,9 +44,9 @@ static void R_UploadUniformBufferData( shaderProgram_t *sp, uint32_t uniformNum,
 	case UNIFORM_SAMPLERS: {
 		static struct {
 			int u_DiffuseMap;
-    		int u_NormalMap;
-    		int u_SpecularMap;
-    		int u_DepthMap;
+			int u_NormalMap;
+			int u_SpecularMap;
+			int u_DepthMap;
 		} data;
 
 		memset( &data, 0, sizeof( data ) );
@@ -63,10 +63,10 @@ static void R_UploadUniformBufferData( shaderProgram_t *sp, uint32_t uniformNum,
 		break; }
 	case UNIFORM_FRAGMENTDATA: {
 		static struct {
-		    vec4_t u_ViewOrigin;
-		    vec2_t u_ScreenSize;
+			vec4_t u_ViewOrigin;
+			vec2_t u_ScreenSize;
 			qboolean u_GamePaused;
-		    int u_AlphaTest;
+			int u_AlphaTest;
 		} data;
 
 		memset( &data, 0, sizeof( data ) );
@@ -78,13 +78,13 @@ static void R_UploadUniformBufferData( shaderProgram_t *sp, uint32_t uniformNum,
 	case UNIFORM_GRAPHICSCONFIG: {
 		static struct {
 			qboolean u_HardwareGamma;
-		    qboolean u_HDR;
-		    qboolean u_PBR;
-		    int u_AntiAliasing;
-		    int u_ToneMap;
-		    float u_GammaAmount;
-		    float u_CameraExposure;
-		    float u_SharpenAmount;
+			qboolean u_HDR;
+			qboolean u_PBR;
+			int u_AntiAliasing;
+			int u_ToneMap;
+			float u_GammaAmount;
+			float u_CameraExposure;
+			float u_SharpenAmount;
 		} data;
 
 		memset( &data, 0, sizeof( data ) );
@@ -400,7 +400,7 @@ static void ComputeShaderColors( const shaderStage_t *pStage, vec4_t baseColor, 
 		break;
 	case AGEN_IDENTITY:
 	case AGEN_LIGHTING_SPECULAR:
-        break;
+		break;
 	};
 
 	// FIXME: find some way to implement this.
@@ -482,12 +482,12 @@ void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, con
 		vec4_t texMatrix;
 		vec4_t texOffTurb;
 
-        if ( !stageP ) {
-            break;
-        }
+		if ( !stageP ) {
+			break;
+		}
 
-        GL_State( stageP->stateBits );
-        if ( ( stageP->stateBits & GLS_ATEST_BITS ) == GLS_ATEST_GT_0 ) {
+		GL_State( stageP->stateBits );
+		if ( ( stageP->stateBits & GLS_ATEST_BITS ) == GLS_ATEST_GT_0 ) {
 			GLSL_SetUniformInt( sp, UNIFORM_ALPHATEST, 1 );
 		}
 		else if ( ( stageP->stateBits & GLS_ATEST_BITS ) == GLS_ATEST_LT_80 ) {
@@ -495,7 +495,7 @@ void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, con
 		}
 		else if ( ( stageP->stateBits & GLS_ATEST_BITS ) == GLS_ATEST_GE_80 ) {
 			GLSL_SetUniformInt( sp, UNIFORM_ALPHATEST, 3 );
-	    }
+		}
 		else {
 			GLSL_SetUniformInt( sp, UNIFORM_ALPHATEST, 0 );
 		}
@@ -526,7 +526,7 @@ void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, con
 			}
 		}
 
-        {
+		{
 			vec4_t baseColor;
 			vec4_t vertColor;
 
@@ -536,8 +536,8 @@ void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, con
 			GLSL_SetUniformVec4( sp, UNIFORM_VERTCOLOR, vertColor );
 		}
 
-        GLSL_SetUniformInt( sp, UNIFORM_COLORGEN, stageP->rgbGen );
-        GLSL_SetUniformInt( sp, UNIFORM_ALPHAGEN, stageP->alphaGen );
+		GLSL_SetUniformInt( sp, UNIFORM_COLORGEN, stageP->rgbGen );
+		GLSL_SetUniformInt( sp, UNIFORM_ALPHAGEN, stageP->alphaGen );
 		GLSL_SetUniformInt( sp, UNIFORM_GAMEPAUSED, ri.Cvar_VariableInteger( "g_paused" ) );
 		GLSL_SetUniformInt( sp, UNIFORM_ANTIALIASING, r_multisampleType->i );
 		GLSL_SetUniformFloat( sp, UNIFORM_SHARPENING, r_imageSharpenAmount->f );
@@ -549,17 +549,18 @@ void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, con
 			GLSL_SetUniformVec2( sp, UNIFORM_SCREEN_SIZE, screenSize );
 		}
 
-        GL_BindTexture( TB_DIFFUSEMAP, stageP->bundle[0].image[0] );
-        GLSL_SetUniformInt( sp, UNIFORM_DIFFUSE_MAP, 0 );
+		GL_BindTexture( TB_DIFFUSEMAP, stageP->bundle[0].image[0] );
+		GLSL_SetUniformTexture( sp, UNIFORM_DIFFUSE_MAP, r_loadTexturesOnDemand->i ? stageP->bundle[ TB_DIFFUSEMAP ].image[ 0 ]->handle : 0 );
+//		GLSL_SetUniformTexture( sp, UNIFORM_DIFFUSE_MAP, 0 );
 
 		// custom texture filtering
 		if ( stageP->bundle[0].filter != -1 ) {
 			nglBindSampler( TB_DIFFUSEMAP, rg.samplers[ stageP->bundle[0].filter ] );
 		}
 
-        //
-        // draw
-        //
+		//
+		// draw
+		//
 		backend.pc.c_bufferBinds += 2;
 		backend.pc.c_bufferIndices += nElems;
 		backend.pc.c_bufferVertices += baseVertex;
@@ -585,7 +586,7 @@ void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, con
 
 void RB_IterateShaderStages( shader_t *shader )
 {
-    uint32_t i, j;
+	uint32_t i, j;
 	int deformGen;
 	float deformParams[5];
 	uint32_t numLights;
@@ -610,14 +611,14 @@ void RB_IterateShaderStages( shader_t *shader )
 		nglStencilFunc( GL_ALWAYS, GL_EQUAL, 1 );
 	}
 
-    for ( i = 0; i < MAX_SHADER_STAGES; i++ ) {
-        shaderStage_t *stageP = shader->stages[i];
+	for ( i = 0; i < MAX_SHADER_STAGES; i++ ) {
+		shaderStage_t *stageP = shader->stages[i];
 		shaderProgram_t *sp;
 		vec4_t texMatrix;
 		vec4_t texOffTurb;
 
-        if ( !stageP ) {
-            break;
+		if ( !stageP ) {
+			break;
 		}
 
 		if ( rg.world && rg.world->drawing ) {
@@ -666,16 +667,16 @@ void RB_IterateShaderStages( shader_t *shader )
 			}
 		}
 
-        GLSL_UseProgram( sp );
+		GLSL_UseProgram( sp );
 
 		GLSL_SetUniformInt( sp, UNIFORM_NUM_LIGHTS, numLights );
-        GLSL_SetUniformMatrix4( sp, UNIFORM_MODELVIEWPROJECTION, glState.viewData.camera.viewProjectionMatrix );
+		GLSL_SetUniformMatrix4( sp, UNIFORM_MODELVIEWPROJECTION, glState.viewData.camera.viewProjectionMatrix );
 		GLSL_SetUniformVec3( sp, UNIFORM_LOCALVIEWORIGIN, vec3_origin );
 
 		GLSL_SetUniformInt( sp, UNIFORM_DEFORMGEN, deformGen );
 
-        GL_State( stageP->stateBits );
-        if ( ( stageP->stateBits & GLS_ATEST_BITS ) == GLS_ATEST_GT_0 ) {
+		GL_State( stageP->stateBits );
+		if ( ( stageP->stateBits & GLS_ATEST_BITS ) == GLS_ATEST_GT_0 ) {
 			GLSL_SetUniformInt( sp, UNIFORM_ALPHATEST, 1 );
 		}
 		else if ( ( stageP->stateBits & GLS_ATEST_BITS ) == GLS_ATEST_LT_80 ) {
@@ -683,7 +684,7 @@ void RB_IterateShaderStages( shader_t *shader )
 		}
 		else if ( ( stageP->stateBits & GLS_ATEST_BITS ) == GLS_ATEST_GE_80 ) {
 			GLSL_SetUniformInt( sp, UNIFORM_ALPHATEST, 3 );
-	    }
+		}
 		else {
 			GLSL_SetUniformInt( sp, UNIFORM_ALPHATEST, 0 );
 		}
@@ -716,7 +717,7 @@ void RB_IterateShaderStages( shader_t *shader )
 
 		GLSL_SetUniformVec3( sp, UNIFORM_VIEWORIGIN, glState.viewData.camera.origin );
 
-        {
+		{
 			vec4_t baseColor;
 			vec4_t vertColor;
 
@@ -726,8 +727,8 @@ void RB_IterateShaderStages( shader_t *shader )
 			GLSL_SetUniformVec4( sp, UNIFORM_VERTCOLOR, vertColor );
 		}
 
-        GLSL_SetUniformInt( sp, UNIFORM_COLORGEN, stageP->rgbGen );
-        GLSL_SetUniformInt( sp, UNIFORM_ALPHAGEN, stageP->alphaGen );
+		GLSL_SetUniformInt( sp, UNIFORM_COLORGEN, stageP->rgbGen );
+		GLSL_SetUniformInt( sp, UNIFORM_ALPHAGEN, stageP->alphaGen );
 		GLSL_SetUniformVec4( sp, UNIFORM_NORMAL_SCALE, stageP->normalScale );
 		GLSL_SetUniformVec4( sp, UNIFORM_SPECULAR_SCALE, stageP->specularScale );
 		nglUniform1i( nglGetUniformLocation( sp->programId, "u_GamePaused" ), ri.Cvar_VariableInteger( "g_paused" ) && rg.world );
@@ -762,20 +763,24 @@ void RB_IterateShaderStages( shader_t *shader )
 					GLSL_SetUniformFloat( sp, UNIFORM_EXPOSURE, r_autoExposure->f );
 				}
 
-				if ( stageP->bundle[UNIFORM_NORMAL_MAP].image[0] ) {
-					GL_BindTexture( 1, stageP->bundle[UNIFORM_NORMAL_MAP].image[0] );
-					GLSL_SetUniformInt( sp, UNIFORM_NORMAL_MAP, 1 );
+				if ( stageP->bundle[TB_NORMALMAP].image[0] ) {
+					GL_BindTexture( 1, stageP->bundle[TB_NORMALMAP].image[0] );
+					GLSL_SetUniformTexture( sp, UNIFORM_NORMAL_MAP,
+						r_loadTexturesOnDemand->i ? stageP->bundle[ TB_NORMALMAP ].image[ 0 ]->handle : 1 );
 				} else if ( r_normalMapping->i ) {
 					GL_BindTexture( 1, rg.whiteImage );
-					GLSL_SetUniformInt( sp, UNIFORM_NORMAL_MAP, 1 );
+					GLSL_SetUniformTexture( sp, UNIFORM_NORMAL_MAP,
+						r_loadTexturesOnDemand->i ? rg.whiteImage->handle : 1 );
 				}
 
 				if ( stageP->bundle[TB_SPECULARMAP].image[0] ) {
 					GL_BindTexture( 2, stageP->bundle[TB_SPECULARMAP].image[0] );
-					GLSL_SetUniformInt( sp, UNIFORM_SPECULAR_MAP, 2 );
+					GLSL_SetUniformTexture( sp, UNIFORM_SPECULAR_MAP,
+						r_loadTexturesOnDemand->i ? stageP->bundle[ TB_SPECULARMAP ].image[ 0 ]->handle : 2 );
 				} else if ( r_specularMapping->i ) {
 					GL_BindTexture( 2, rg.whiteImage );
-					GLSL_SetUniformInt( sp, UNIFORM_SPECULAR_MAP, 2 );
+					GLSL_SetUniformTexture( sp, UNIFORM_SPECULAR_MAP,
+						r_loadTexturesOnDemand->i ? rg.whiteImage->handle : 2 );
 				}
 			}
 		}
@@ -785,7 +790,8 @@ void RB_IterateShaderStages( shader_t *shader )
 		}
 
 		GL_BindTexture( TB_DIFFUSEMAP, stageP->bundle[TB_DIFFUSEMAP].image[0] );
-        GLSL_SetUniformInt( sp, UNIFORM_DIFFUSE_MAP, 0 );
+		GLSL_SetUniformTexture( sp, UNIFORM_DIFFUSE_MAP, r_loadTexturesOnDemand->i ? stageP->bundle[ TB_DIFFUSEMAP ].image[ 0 ]->handle : 0 );
+//		GLSL_SetUniformTexture( sp, TB_DIFFUSEMAP, 0 );
 		nglUniform1i( nglGetUniformLocation( sp->programId, "u_InLevel" ), rg.world != NULL );
 
 		if ( rg.world && !( backend.refdef.flags & RSF_NOWORLDMODEL ) ) {
@@ -795,11 +801,11 @@ void RB_IterateShaderStages( shader_t *shader )
 			GLSL_SetUniformVec3( sp, UNIFORM_AMBIENTLIGHT, ambient );
 		}
 
-        //
-        // draw
-        //
-        R_DrawElements( backend.drawBatch.idxOffset, backend.drawBuffer->index.offset );
-    }
+		//
+		// draw
+		//
+		R_DrawElements( backend.drawBatch.idxOffset, backend.drawBuffer->index.offset );
+	}
 
 	if ( r_showTris->i ) {
 		DrawTris();
@@ -845,15 +851,15 @@ void RB_InstantQuad2( vec4_t quadVerts[4], vec2_t texCoords[4] )
 
 	nglEnd();
 #else
-    RB_SetBatchBuffer( backend.drawBuffer, backendData[ rg.smpFrame ]->verts, sizeof( srfVert_t ),
+	RB_SetBatchBuffer( backend.drawBuffer, backendData[ rg.smpFrame ]->verts, sizeof( srfVert_t ),
 		backendData[ rg.smpFrame ]->indices, sizeof(glIndex_t) );
 
-    for ( i = 0; i < 4; i++ ) {
-        VectorCopy( verts[i].xyz, quadVerts[0] );
-        VectorCopy2( verts[i].st, texCoords[0] );
-    }
+	for ( i = 0; i < 4; i++ ) {
+		VectorCopy( verts[i].xyz, quadVerts[0] );
+		VectorCopy2( verts[i].st, texCoords[0] );
+	}
 
-    nglVertex3f( 1.0f, 0.0f, 0.0f );
+	nglVertex3f( 1.0f, 0.0f, 0.0f );
 	nglTexCoord2f( texCoords[1][0], texCoords[1][1] );
 
 	backend.drawBatch.vtxOffset = 4;
@@ -916,7 +922,7 @@ void RB_InstantQuad( vec4_t quadVerts[4] )
 
 	GLSL_UseProgram( &rg.textureColorShader );
 
-    RB_MakeViewMatrix();
+	RB_MakeViewMatrix();
 	GLSL_SetUniformMatrix4( &rg.textureColorShader, UNIFORM_MODELVIEWPROJECTION, glState.viewData.camera.viewProjectionMatrix );
 	GLSL_SetUniformVec4( &rg.textureColorShader, UNIFORM_COLOR, colorWhite );
 

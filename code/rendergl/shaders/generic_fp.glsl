@@ -24,7 +24,7 @@ uniform int u_ToneMap;
 
 
 #if defined(USE_SHADOWMAP)
-uniform sampler2D u_ShadowMap;
+TEXTURE2D uniform sampler2D u_ShadowMap;
 #endif
 
 uniform int u_AlphaTest;

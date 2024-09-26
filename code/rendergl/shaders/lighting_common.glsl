@@ -1,13 +1,13 @@
 uniform bool u_InLevel;
-uniform sampler2D u_DiffuseMap;
+TEXTURE2D u_DiffuseMap;
 
 #ifdef FRAGMENT_SHADER
 #if defined(USE_NORMALMAP)
-uniform sampler2D u_NormalMap;
+TEXTURE2D u_NormalMap;
 #endif
 
 #if defined(USE_SPECULARMAP)
-uniform sampler2D u_SpecularMap;
+TEXTURE2D u_SpecularMap;
 #endif
 #endif
 
@@ -38,7 +38,6 @@ uniform vec3 u_AmbientColor;
 
 out vec3 v_LightColor;
 
-uniform Light u_Lights[ MAX_MAP_LIGHTS ];
 #elif defined(FRAGMENT_SHADER)
 in vec3 v_LightColor;
 #endif

@@ -41,6 +41,7 @@ typedef float GLclampf;
 typedef char GLchar;
 typedef ssize_t GLsizeiptr;
 typedef intptr_t GLintptr;
+typedef uint64_t GLuint64;
 #endif
 
 #ifndef __RGL_LOCAL__
@@ -101,6 +102,7 @@ typedef struct
     void (*glTexParameteri)( GLenum target, GLenum pname, GLint param );
     void (*glActiveTexture)( GLenum texture );
     void (*glTexImage2D)( GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels );
+    GLuint64 (*glGetTextureHandleARB)( GLuint texture );
 
     // rendering engine api for imgui
     void (*GetTextureId)( nhandle_t hShader, uint32_t stageNum, uint32_t *id );

@@ -302,6 +302,15 @@ typedef void*(*NGLloadproc)(const char *name);
 * GL_EXT, GL_ARB procs
 */
 
+#define NGL_ARB_bindless_texture \
+	NGL( GLuint64, glGetTextureHandleARB, GLuint texture ) \
+	NGL( GLuint64, glGetTextureSamplerHandleARB, GLuint texture, GLuint sampler ) \
+	NGL( void, glMakeTextureHandleResidentARB, GLuint64 handle ) \
+	NGL( void, glMakeTextureHandleNonResidentARB, GLuint64 handle ) \
+	NGL( GLboolean, glIsTextureHandleResidentARB, GLuint64 handle ) \
+	NGL( void, glUniformHandleui64ARB, GLint location, GLuint64 value ) \
+	NGL( void, glUniformHandleui64vARB, GLint location, GLsizei count, const GLuint64 *value )
+
 #define NGL_ARB_sync \
 	NGL( GLsync, glFenceSync, GLenum condition, GLbitfield flags ) \
 	NGL( GLenum, glClientWaitSync, GLsync sync, GLbitfield flags, GLuint64 timeout ) \
@@ -352,6 +361,7 @@ NGL_Texture_Procs
 NGL_ARB_map_buffer_range
 NGL_ARB_buffer_storage
 NGL_ARB_sync
+NGL_ARB_bindless_texture
 #undef NGL
 
 #define LOAD_GL_PROCS( procs ) procs
