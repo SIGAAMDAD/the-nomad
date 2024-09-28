@@ -495,7 +495,7 @@ static const void *RB_SwapBuffers(const void *data)
 	if ( glContext.ARB_framebuffer_object && r_arb_framebuffer_object->i ) {
 		if ( !backend.framePostProcessed ) {
 			start = ri.Milliseconds();
-			if ( rg.msaaResolveFbo && r_multisampleType->i <= AntiAlias_32xMSAA && r_hdr->i ) {
+			if ( rg.msaaResolveFbo && r_multisampleType->i <= AntiAlias_32xMSAA ) {
 				// Resolving an RGB16F MSAA FBO to the screen messes with the brightness, so resolve to an RGB16F FBO first
 				FBO_FastBlit( rg.renderFbo, NULL, rg.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
 				FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
