@@ -3313,6 +3313,17 @@ void R_CreateBuiltinTextures( void )
 
 		rgbFormat = GL_RGBA8;
 
+		if ( r_bloom->i && r_hdr->i ) {
+			rg.bloomImage = R_CreateImage( "_bloom", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE
+				| IMGFLAG_FBO, GL_RGBA16F );
+			
+			for ( x = 0; x < 2; x++ ) {
+				rg.bloomPingPongImage[ x ] = R_CreateImage( va( "_bloomPingPong%i", x ), NULL, width, height, IMGTYPE_COLORALPHA,
+					IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_RGBA16F );
+			}
+			
+		}
+
 		rg.renderImage = R_CreateImage( "_render", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, hdrFormat );
 
 		/*

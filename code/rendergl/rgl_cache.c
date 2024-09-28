@@ -180,10 +180,10 @@ void R_InitGPUBuffers( void )
 			{ { 0, 0 }, { -1.0f,  1.0f, 0.0f }, { 0.0f, 0.0f }, { 1, 1, 1, 1 } },
 			{ { 0, 0 }, {  1.0f,  1.0f, 0.0f }, { 1.0f, 0.0f }, { 1, 1, 1, 1 } },
 			{ { 0, 0 }, {  1.0f, -1.0f, 0.0f }, { 1.0f, 1.0f }, { 1, 1, 1, 1 } },
-			{ { 0, 0 }, { -1.0f,  1.0f, 0.0f }, { 0.0f, 1.0f }, { 1, 1, 1, 1 } },
+			{ { 0, 0 }, { -1.0f, -1.0f, 0.0f }, { 0.0f, 1.0f }, { 1, 1, 1, 1 } },
 		};
 
-		uint32_t indices[] = {
+		glIndex_t indices[] = {
 			0, 1, 2,
 			3, 2, 0
 		};
@@ -210,6 +210,9 @@ void R_InitGPUBuffers( void )
 
 		rg.renderPassVBO->attribs[ ATTRIB_INDEX_POSITION ].enabled		= qtrue;
 		rg.renderPassVBO->attribs[ ATTRIB_INDEX_TEXCOORD ].enabled		= qtrue;
+
+		VBO_Bind( rg.renderPassVBO );
+		VBO_SetVertexAttribPointers( rg.renderPassVBO );
 	}
 
 	/*

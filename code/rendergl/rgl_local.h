@@ -282,6 +282,7 @@ typedef enum {
 	UNIFORM_NORMAL_MAP,
 	UNIFORM_DELUXE_MAP,
 	UNIFORM_SPECULAR_MAP,
+	UNIFORM_BRIGHT_MAP,
 
 	UNIFORM_TEXTURE_MAP,
 	UNIFORM_LEVELS_MAP,
@@ -1188,12 +1189,14 @@ typedef struct
 	texture_t				*whiteImage;			// full of 0xff
 	texture_t				*identityLightImage;	// full of tr.identityLightByte	
 
-
+	texture_t				*bloomImage;
+	texture_t				*bloomPingPongImage[ 2 ];
 	texture_t				*renderImage;
 	texture_t				*renderDepthImage;
 	texture_t				*hdrDepthImage;
 
 
+	fbo_t					*bloomPingPongFbo[ 2 ];
 	fbo_t					*renderFbo;
 	fbo_t					*msaaResolveFbo;
 	fbo_t                   *ssaaResolveFbo;
@@ -1247,6 +1250,8 @@ typedef struct
 	shaderProgram_t imguiShader;
 	shaderProgram_t tileShader;
 	shaderProgram_t textureColorShader;
+	shaderProgram_t blurShader;
+	shaderProgram_t bloomResolveShader;
 	shaderProgram_t computeShader;
 	/*
 	shaderProgram_t ssaoShader;
@@ -1909,6 +1914,8 @@ extern qboolean screenshotFrame;
 extern renderBackendData_t *backendData[ SMP_FRAMES ];
 extern volatile renderCommandList_t *renderCommandList;
 extern volatile qboolean renderThreadActive;
+
+void RB_RenderPass( texture_t *image );
 
 void RB_RenderThread( void );
 void R_InitCommandBuffers( void );

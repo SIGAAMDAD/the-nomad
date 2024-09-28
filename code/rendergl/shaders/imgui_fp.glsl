@@ -1,5 +1,6 @@
 #if !defined(GLSL_LEGACY)
 layout( location = 0 ) out vec4 a_Color;
+layout( location = 1 ) out vec4 a_BrightColor;
 #endif
 
 in vec2 v_TexCoords;
@@ -104,5 +105,5 @@ void main() {
 		a_Color = v_Color * sharpenImage( u_DiffuseMap, v_TexCoords );
 	}
 
-	a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
+//	a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
 }

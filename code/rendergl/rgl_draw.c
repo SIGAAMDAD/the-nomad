@@ -892,6 +892,16 @@ void RB_InstantQuad2( vec4_t quadVerts[4], vec2_t texCoords[4] )
 #endif
 }
 
+void RB_RenderPass( texture_t *image )
+{
+//	GL_BindTexture( TB_DIFFUSEMAP, image );
+//	GLSL_SetUniformTexture( &rg.textureColorShader, UNIFORM_DIFFUSE_MAP, image );
+	VBO_Bind( rg.renderPassVBO );
+	VBO_SetVertexPointers( rg.renderPassVBO, ATTRIB_POSITION | ATTRIB_TEXCOORD );
+	backend.drawBatch.shader = rg.defaultShader;
+	R_DrawElements( 6, 0 );
+}
+
 void RB_InstantQuad( vec4_t quadVerts[4] )
 {
 	vec2_t texCoords[4];

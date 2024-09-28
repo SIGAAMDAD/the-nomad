@@ -46,6 +46,7 @@ static uniformInfo_t uniformsInfo[UNIFORM_COUNT] = {
 	{ "u_NormalMap",            GLSL_TEXTURE },
 	{ "u_DeluxeMap",            GLSL_TEXTURE },
 	{ "u_SpecularMap",          GLSL_TEXTURE },
+	{ "u_BrightMap",			GLSL_TEXTURE },
 
 	{ "u_TextureMap",           GLSL_TEXTURE },
 	{ "u_LevelsMap",            GLSL_TEXTURE },
@@ -1617,6 +1618,26 @@ void GLSL_InitGPUShaders( void )
 	}
 	GLSL_InitUniforms( &rg.tileShader );
 	GLSL_FinishGPUShader( &rg.tileShader );
+
+	numGenShaders++;
+
+	extradefines[ 0 ] = '\0';
+	attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD;
+	if ( !GLSL_InitGPUShader( &rg.blurShader, "blur", attribs, qtrue, extradefines, qtrue, NULL, NULL ) ) {
+		ri.Error( ERR_FATAL, "Could not load blur shader!" );
+	}
+	GLSL_InitUniforms( &rg.blurShader );
+	GLSL_FinishGPUShader( &rg.blurShader );
+
+	numGenShaders++;
+
+	extradefines[ 0 ] = '\0';
+	attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD;
+	if ( !GLSL_InitGPUShader( &rg.bloomResolveShader, "bloom", attribs, qtrue, extradefines, qtrue, NULL, NULL ) ) {
+		ri.Error( ERR_FATAL, "Could not load blur shader!" );
+	}
+	GLSL_InitUniforms( &rg.bloomResolveShader );
+	GLSL_FinishGPUShader( &rg.bloomResolveShader );
 
 	numGenShaders++;
 

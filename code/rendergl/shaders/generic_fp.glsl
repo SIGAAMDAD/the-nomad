@@ -160,25 +160,15 @@ void main() {
 
 	ApplyLighting();
 
-#ifdef USE_HDR
-#if TONEMAP_TYPE == ToneMap_Reinhard
-	// reinhard tone mapping
-	a_Color.rgb = a_Color.rgb / ( a_Color.rgb + vec3( 1.0 ) );
-#elif TONEMAP_TYPE == ToneMap_Exposure
-	// exposure tone mapping
-	a_Color.rgb = vec3( 1.0 ) - exp( -a_Color.rgb * u_CameraExposure );
-#endif
-#endif
-
-#ifdef USE_BLOOM
-	// check whether fragment output is higher than threshold, if so output as brightness color
-	float brightness = dot( a_Color.rgb, vec3( 0.1, 0.1, 0.1 ) );
-	if ( brightness > 0.5 ) {
-		a_BrightColor = vec4( a_Color.rgb, 1.0 );
-	} else {
-		a_BrightColor = vec4( 0.0, 0.0, 0.0, 1.0 );
+	if ( u_Bloom && u_HDR ) {
+		// check whether fragment output is higher than threshold, if so output as brightness color
+		float brightness = dot( a_Color.rgb, vec3( 0.1, 0.1, 0.1 ) );
+		if ( brightness > 0.5 ) {
+			a_BrightColor = vec4( a_Color.rgb, 1.0 );
+		} else {
+			a_BrightColor = vec4( 0.0, 0.0, 0.0, 1.0 );
+		}
 	}
-#endif
 	a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
 	a_Color.rgb *= v_Color.rgb;
 
