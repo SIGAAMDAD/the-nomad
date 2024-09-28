@@ -940,7 +940,7 @@ void RB_RenderPass( void )
 
 	nglBindVertexArray( rg.renderPassVBO->vaoId );
 	nglBindBuffer( GL_ARRAY_BUFFER, rg.renderPassVBO->vertex.id );
-	nglDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
+	nglDrawArrays( GL_TRIANGLE_FAN, 0, 4 );
 	nglBindVertexArray( 0 );
 	nglBindBuffer( GL_ARRAY_BUFFER, 0 );
 

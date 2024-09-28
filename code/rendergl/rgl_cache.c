@@ -176,19 +176,12 @@ void R_InitGPUBuffers( void )
 	rg.numBuffers = 0;
 
 //	if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
-		/*
+		// NOTE: NEVER CHANGE THIS
 		srfVert_t quadVertices[] = {
-			{ { 0, 0 }, { -1.0f,  1.0f, 0.0f }, { 0.0f, 0.0f }, { 1, 1, 1, 1 } },
-			{ { 0, 0 }, {  1.0f,  1.0f, 0.0f }, { 1.0f, 0.0f }, { 1, 1, 1, 1 } },
-			{ { 0, 0 }, {  1.0f, -1.0f, 0.0f }, { 1.0f, 1.0f }, { 1, 1, 1, 1 } },
-			{ { 0, 0 }, { -1.0f, -1.0f, 0.0f }, { 0.0f, 1.0f }, { 1, 1, 1, 1 } },
-		};
-		*/
-		srfVert_t quadVertices[] = {
-			{ { 0, 0 }, { -1.0f,  1.0f, 0.0f }, { 0.0f, 0.0f }, { 1, 1, 1, 1 } },
-			{ { 0, 0 }, { -1.0f, -1.0f, 0.0f }, { 1.0f, 0.0f }, { 1, 1, 1, 1 } },
+			{ { 0, 0 }, { -1.0f, -1.0f, 0.0f }, { 0.0f, 0.0f }, { 1, 1, 1, 1 } },
+			{ { 0, 0 }, {  1.0f, -1.0f, 0.0f }, { 1.0f, 0.0f }, { 1, 1, 1, 1 } },
 			{ { 0, 0 }, {  1.0f,  1.0f, 0.0f }, { 1.0f, 1.0f }, { 1, 1, 1, 1 } },
-			{ { 0, 0 }, {  1.0f, -1.0f, 0.0f }, { 0.0f, 1.0f }, { 1, 1, 1, 1 } },
+			{ { 0, 0 }, { -1.0f,  1.0f, 0.0f }, { 0.0f, 1.0f }, { 1, 1, 1, 1 } },
 		};
 
 		glIndex_t indices[] = {
@@ -231,79 +224,6 @@ void R_InitGPUBuffers( void )
 		nglBufferData( GL_ARRAY_BUFFER, sizeof( quadVertices ), quadVertices, GL_STATIC_DRAW );
 		VBO_BindNull();
 //	}
-
-	/*
-
-	vertexesSize  = sizeof( tess.xyz[0] );
-	vertexesSize += sizeof( tess.normal[0] );
-	vertexesSize += sizeof( tess.tangent[0] );
-	vertexesSize += sizeof( tess.color[0] );
-	vertexesSize += sizeof( tess.texCoords[0] );
-	vertexesSize += sizeof( tess.lightCoords[0] );
-	vertexesSize += sizeof( tess.lightdir[0] );
-	vertexesSize *= SHADER_MAX_VERTEXES;
-
-	indexesSize = sizeof( tess.indexes[0] ) * SHADER_MAX_INDEXES;
-
-	tess.vao = R_AllocateBuffer( "tessVertexArray_VAO", NULL, vertexesSize, NULL, indexesSize, BUFFER_DYNAMIC );
-
-	offset = 0;
-
-	tess.vao->attribs[ATTRIB_INDEX_POSITION      ].enabled = qtrue;
-	tess.vao->attribs[ATTRIB_INDEX_NORMAL        ].enabled = qtrue;
-	tess.vao->attribs[ATTRIB_INDEX_TANGENT       ].enabled = qfalse;
-	tess.vao->attribs[ATTRIB_INDEX_TEXCOORD      ].enabled = qtrue;
-	tess.vao->attribs[ATTRIB_INDEX_LIGHTCOORD    ].enabled = qfalse;
-	tess.vao->attribs[ATTRIB_INDEX_COLOR         ].enabled = qtrue;
-
-	tess.vao->attribs[ATTRIB_INDEX_POSITION      ].count = 3;
-	tess.vao->attribs[ATTRIB_INDEX_NORMAL        ].count = 4;
-	tess.vao->attribs[ATTRIB_INDEX_TANGENT       ].count = 4;
-	tess.vao->attribs[ATTRIB_INDEX_TEXCOORD      ].count = 2;
-	tess.vao->attribs[ATTRIB_INDEX_LIGHTCOORD    ].count = 2;
-	tess.vao->attribs[ATTRIB_INDEX_COLOR         ].count = 4;
-
-	tess.vao->attribs[ATTRIB_INDEX_POSITION      ].type = GL_FLOAT;
-	tess.vao->attribs[ATTRIB_INDEX_NORMAL        ].type = GL_SHORT;
-	tess.vao->attribs[ATTRIB_INDEX_TANGENT       ].type = GL_SHORT;
-	tess.vao->attribs[ATTRIB_INDEX_TEXCOORD      ].type = GL_FLOAT;
-	tess.vao->attribs[ATTRIB_INDEX_LIGHTCOORD    ].type = GL_FLOAT;
-	tess.vao->attribs[ATTRIB_INDEX_COLOR         ].type = GL_UNSIGNED_SHORT;
-
-	tess.vao->attribs[ATTRIB_INDEX_POSITION      ].normalized = GL_FALSE;
-	tess.vao->attribs[ATTRIB_INDEX_NORMAL        ].normalized = GL_TRUE;
-	tess.vao->attribs[ATTRIB_INDEX_TANGENT       ].normalized = GL_TRUE;
-	tess.vao->attribs[ATTRIB_INDEX_TEXCOORD      ].normalized = GL_FALSE;
-	tess.vao->attribs[ATTRIB_INDEX_LIGHTCOORD    ].normalized = GL_FALSE;
-	tess.vao->attribs[ATTRIB_INDEX_COLOR         ].normalized = GL_TRUE;
-
-	tess.vao->attribs[ATTRIB_INDEX_POSITION      ].offset = offset; offset += sizeof(tess.xyz[0])         * SHADER_MAX_VERTEXES;
-	tess.vao->attribs[ATTRIB_INDEX_NORMAL        ].offset = offset; offset += sizeof(tess.normal[0])      * SHADER_MAX_VERTEXES;
-	tess.vao->attribs[ATTRIB_INDEX_TANGENT       ].offset = offset; offset += sizeof(tess.tangent[0])     * SHADER_MAX_VERTEXES;
-	tess.vao->attribs[ATTRIB_INDEX_TEXCOORD      ].offset = offset; offset += sizeof(tess.texCoords[0])   * SHADER_MAX_VERTEXES;
-	tess.vao->attribs[ATTRIB_INDEX_LIGHTCOORD    ].offset = offset; offset += sizeof(tess.lightCoords[0]) * SHADER_MAX_VERTEXES;
-	tess.vao->attribs[ATTRIB_INDEX_COLOR         ].offset = offset; offset += sizeof(tess.color[0])       * SHADER_MAX_VERTEXES;
-
-	tess.vao->attribs[ATTRIB_INDEX_POSITION      ].stride = sizeof(tess.xyz[0]);
-	tess.vao->attribs[ATTRIB_INDEX_NORMAL        ].stride = sizeof(tess.normal[0]);
-	tess.vao->attribs[ATTRIB_INDEX_TANGENT       ].stride = sizeof(tess.tangent[0]);
-	tess.vao->attribs[ATTRIB_INDEX_TEXCOORD      ].stride = sizeof(tess.texCoords[0]);
-	tess.vao->attribs[ATTRIB_INDEX_LIGHTCOORD    ].stride = sizeof(tess.lightCoords[0]);
-	tess.vao->attribs[ATTRIB_INDEX_COLOR         ].stride = sizeof(tess.color[0]);
-
-	tess.attribPointers[ATTRIB_INDEX_POSITION]       = tess.xyz;
-	tess.attribPointers[ATTRIB_INDEX_NORMAL]         = tess.normal;
-	tess.attribPointers[ATTRIB_INDEX_TANGENT]        = tess.tangent;
-	tess.attribPointers[ATTRIB_INDEX_TEXCOORD]       = tess.texCoords;
-	tess.attribPointers[ATTRIB_INDEX_LIGHTCOORD]     = tess.lightCoords;
-	tess.attribPointers[ATTRIB_INDEX_COLOR]          = tess.color;
-
-	VBO_SetVertexAttribPointers( tess.vao );
-
-	VBO_BindNull();
-
-	GL_CheckErrors();
-	*/
 
 	backend.drawBuffer = R_AllocateBuffer( "batchBuffer", NULL, 4*1024*1024, NULL,
 		4*1024*1024, BUFFER_STREAM );
