@@ -165,8 +165,8 @@ void R_TouchTexture( texture_t *image )
 	}
 	
 	R_AllocateTextureStorage( image );
-	ri.Printf( PRINT_DEVELOPER, "Loaded texture handle %s on demand\n", image->imgName );
 	nglMakeTextureHandleResidentARB( image->handle );
+	ri.Printf( PRINT_DEVELOPER, "Loaded texture handle %s on demand\n", image->imgName );
 	image->evicted = qfalse;
 }
 
@@ -195,7 +195,7 @@ void R_EvictUnusedTextures( void )
 		// evict a texture that has gone unused for at least 2 minutes
 		image = rg.textures[ i ];
 		if ( image && rg.frameCount - image->frameUsed >= maxFPS * 12000 && !( image->flags & IMGFLAG_FBO ) && !image->evicted ) {
-			nglMakeTextureHandleNonResidentARB( rg.textures[ i ]->handle );
+			nglMakeTextureHandleNonResidentARB( image->handle );
 			nglDeleteTextures( 1, &image->id );
 			image->evicted = qtrue;
 			image->id = 0;
@@ -2586,6 +2586,8 @@ static texture_t *R_CreateImage2( const char *name, byte *pic, int width, int he
 
 	image->picFormat = picFormat;
 	image->internalFormat = internalFormat;
+
+	image->data = pic;
 
 	if ( !r_loadTexturesOnDemand->i ) {
 		R_AllocateTextureStorage( image );

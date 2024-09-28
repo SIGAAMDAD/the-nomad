@@ -1600,7 +1600,7 @@ void GLSL_UseProgram( shaderProgram_t *program );
 void GLSL_InitGPUShaders( void );
 void GLSL_ShutdownGPUShaders( void );
 void GLSL_SetUniformInt( shaderProgram_t *program, uint32_t uniformNum, GLint value );
-void GLSL_SetUniformTexture( shaderProgram_t *program, uint32_t uniformNum, GLuint64 value );
+void GLSL_SetUniformTexture( shaderProgram_t *program, uint32_t uniformNum, texture_t *value );
 void GLSL_SetUniformFloat( shaderProgram_t *program, uint32_t uniformNum, GLfloat value );
 void GLSL_SetUniformVec2( shaderProgram_t *program, uint32_t uniformNum, const vec2_t v );
 void GLSL_SetUniformVec3( shaderProgram_t *program, uint32_t uniformNum, const vec3_t v );

@@ -1011,7 +1011,7 @@ static void GLSL_InitUniforms( shaderProgram_t *program )
  
 		switch ( uniformsInfo[i].type ) {
 		case GLSL_TEXTURE:
-			uniformBufferSize += sizeof( GLuint64 );
+			uniformBufferSize += sizeof( uintptr_t );
 			break;
 		case GLSL_INT:
 			uniformBufferSize += sizeof( GLint );
@@ -1078,27 +1078,28 @@ static void GLSL_DeleteGPUShader( shaderProgram_t *program)
 	}
 }
 
-void GLSL_SetUniformTexture( shaderProgram_t *program, uint32_t uniformNum, GLuint64 value )
+void GLSL_SetUniformTexture( shaderProgram_t *program, uint32_t uniformNum, texture_t *value )
 {
 	GLint *uniforms = program->uniforms;
-	GLuint64 *compare = (GLuint64 *)( program->uniformBuffer + program->uniformBufferOffsets[uniformNum] );
+	uintptr_t *compare = (uintptr_t *)( program->uniformBuffer + program->uniformBufferOffsets[uniformNum] );
 
-	if ( uniforms[uniformNum] == -1 )
+	if ( uniforms[uniformNum] == -1 ) {
 		return;
+	}
 	
 	if ( uniformsInfo[uniformNum].type != GLSL_TEXTURE ) {
 		ri.Printf(PRINT_INFO, COLOR_YELLOW "WARNING: GLSL_SetUniformTexture: wrong type for uniform %i in program %s\n", uniformNum, program->name);
 		return;
 	}
-	if ( value == *compare ) {
+	if ( (uintptr_t)(void *)value == *compare ) {
 		return;
 	}
 	
-	*compare = value;
+	*compare = (uintptr_t)(void *)value;
 	if ( r_loadTexturesOnDemand->i ) {
-		nglUniformHandleui64ARB( uniforms[ uniformNum ], value );
+		nglUniformHandleui64ARB( uniforms[ uniformNum ], value->handle );
 	} else {
-		nglUniform1i( uniforms[ uniformNum ], value );
+		nglUniform1i( uniforms[ uniformNum ], uniformNum );
 	}
 }
 

@@ -838,6 +838,10 @@ int ImGui_ImplOpenGL3_CreateFontsTexture( void )
 	shader = (shader_t *)renderImport.GetShaderByHandle( re.RegisterShader( "gfx/fonts" ) );
 	fontsTex = shader->stages[0]->bundle[0].image[0];
 
+	if ( Cvar_VariableInteger( "r_loadTexturesOnDemand" ) ) {
+		renderImport.glGenTextures( 1, &fontsTex->id );
+	}
+
 	bd->FontTexture = fontsTex->id;
 
 	renderImport.glBindTexture( GL_TEXTURE_2D, bd->FontTexture );
@@ -846,7 +850,7 @@ int ImGui_ImplOpenGL3_CreateFontsTexture( void )
 #ifdef GL_UNPACK_ROW_LENGTH // Not on WebGL/ES
 	renderImport.glPixelStorei( GL_UNPACK_ROW_LENGTH, 0 );
 #endif
-	renderImport.glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA8, GL_UNSIGNED_BYTE, pixels );
+	renderImport.glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels );
 
 	fontsTex->data = pixels;
 	fontsTex->picFormat = GL_RGBA;

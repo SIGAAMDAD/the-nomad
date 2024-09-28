@@ -954,12 +954,12 @@ void RegisterScriptJson_Generic(asIScriptEngine *engine)
     CheckASCall( engine->RegisterObjectBehaviour("json", asBEHAVE_ADDREF, "void f()", asFUNCTION(ScriptJsonAddRef_Generic), asCALL_GENERIC) );
     CheckASCall( engine->RegisterObjectBehaviour("json", asBEHAVE_RELEASE, "void f()", asFUNCTION(ScriptJsonRelease_Generic), asCALL_GENERIC) );
 
-    CheckASCall( engine->RegisterObjectMethod("json", "json &opAssign(bool)", asFUNCTION(ScriptJsonAssignBool_Generic), asCALL_GENERIC) );
-    CheckASCall( engine->RegisterObjectMethod("json", "json &opAssign(int64)", asFUNCTION(ScriptJsonAssignInt_Generic), asCALL_GENERIC) );
-    CheckASCall( engine->RegisterObjectMethod("json", "json &opAssign(double)", asFUNCTION(ScriptJsonAssignFlt_Generic), asCALL_GENERIC) );
-    CheckASCall( engine->RegisterObjectMethod("json", "json &opAssign(const string &in)", asFUNCTION(ScriptJsonAssignStr_Generic), asCALL_GENERIC) );
-    CheckASCall( engine->RegisterObjectMethod("json", "json &opAssign(const array<json@> &in)", asFUNCTION(ScriptJsonAssignArr_Generic), asCALL_GENERIC) );
-    CheckASCall( engine->RegisterObjectMethod("json", "json &opAssign(const json &in)", asFUNCTION(ScriptJsonAssign_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod("json", "json& opAssign(bool)", asFUNCTION(ScriptJsonAssignBool_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod("json", "json& opAssign(int64)", asFUNCTION(ScriptJsonAssignInt_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod("json", "json& opAssign(double)", asFUNCTION(ScriptJsonAssignFlt_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod("json", "json& opAssign(const string &in)", asFUNCTION(ScriptJsonAssignStr_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod("json", "json& opAssign(const array<json@> &in)", asFUNCTION(ScriptJsonAssignArr_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod("json", "json& opAssign(const json &in)", asFUNCTION(ScriptJsonAssign_Generic), asCALL_GENERIC) );
 
     CheckASCall( engine->RegisterObjectMethod("json", "void set(const string &in, const bool&in)", asFUNCTION(ScriptJsonSetBool_Generic), asCALL_GENERIC) );
     CheckASCall( engine->RegisterObjectMethod("json", "bool get(const string &in, bool&out) const", asFUNCTION(ScriptJsonGetBool_Generic), asCALL_GENERIC) );
@@ -982,17 +982,17 @@ void RegisterScriptJson_Generic(asIScriptEngine *engine)
     CheckASCall( engine->RegisterObjectMethod("json", "void set(const string &in, const json@)", asFUNCTION(ScriptJsonSetObj_Generic), asCALL_GENERIC) );
     CheckASCall( engine->RegisterObjectMethod("json", "bool get(const string &in, json@) const", asFUNCTION(ScriptJsonGetObj_Generic), asCALL_GENERIC) );
 
-    CheckASCall( engine->RegisterObjectMethod("json", "bool exists(const string &in) const", asFUNCTION(ScriptJsonExists_Generic), asCALL_GENERIC) );
-    CheckASCall( engine->RegisterObjectMethod("json", "bool isEmpty() const", asFUNCTION(ScriptJsonIsEmpty_Generic), asCALL_GENERIC) );
-    CheckASCall( engine->RegisterObjectMethod("json", "uint getSize() const", asFUNCTION(ScriptJsonGetSize_Generic), asCALL_GENERIC) );
-    CheckASCall( engine->RegisterObjectMethod("json", "void clear()", asFUNCTION(ScriptJsonClear_Generic), asCALL_GENERIC) );
-    CheckASCall( engine->RegisterObjectMethod("json", "jsonType getType()", asFUNCTION(ScriptJsonGetType_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod("json", "bool Exists(const string &in) const", asFUNCTION(ScriptJsonExists_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod("json", "bool IsEmpty() const", asFUNCTION(ScriptJsonIsEmpty_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod("json", "uint Count() const", asFUNCTION(ScriptJsonGetSize_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod("json", "void Clear()", asFUNCTION(ScriptJsonClear_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod("json", "jsonType GetType()", asFUNCTION(ScriptJsonGetType_Generic), asCALL_GENERIC) );
 
-    CheckASCall( engine->RegisterObjectMethod("json", "json &opIndex(const string &in)", asFUNCTION(CScriptJson_opIndex_Generic), asCALL_GENERIC) );
-    CheckASCall( engine->RegisterObjectMethod("json", "const json &opIndex(const string &in) const", asFUNCTION(CScriptJson_opIndex_const_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod("json", "json& opIndex(const string &in)", asFUNCTION(CScriptJson_opIndex_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod("json", "const json& opIndex(const string &in) const", asFUNCTION(CScriptJson_opIndex_const_Generic), asCALL_GENERIC) );
 
-    CheckASCall( engine->RegisterObjectMethod("json", "json &opIndex( uint )", asFUNCTION(CScriptJson_opIndexUInt_Generic), asCALL_GENERIC) );
-    CheckASCall( engine->RegisterObjectMethod("json", "const json &opIndex( uint ) const", asFUNCTION(CScriptJson_opIndexUInt_const_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod("json", "json& opIndex( uint )", asFUNCTION(CScriptJson_opIndexUInt_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod("json", "const json& opIndex( uint ) const", asFUNCTION(CScriptJson_opIndexUInt_const_Generic), asCALL_GENERIC) );
 
     CheckASCall( engine->RegisterObjectMethod( "json", "bool ParseFile( const string& in )", asFUNCTION( CScriptJson_ParseFile ), asCALL_GENERIC ) );
 
@@ -1019,7 +1019,7 @@ void RegisterScriptJson_Generic(asIScriptEngine *engine)
 
 void RegisterScriptJson(asIScriptEngine *engine)
 {
-    if( strstr(asGetLibraryOptions(), "AS_MAX_PORTABILITY") )
+//    if( strstr(asGetLibraryOptions(), "AS_MAX_PORTABILITY") )
         RegisterScriptJson_Generic(engine);
 //    else
 //        RegisterScriptJson_Native(engine);

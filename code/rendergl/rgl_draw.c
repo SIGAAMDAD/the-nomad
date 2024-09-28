@@ -550,7 +550,7 @@ void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, con
 		}
 
 		GL_BindTexture( TB_DIFFUSEMAP, stageP->bundle[0].image[0] );
-		GLSL_SetUniformTexture( sp, UNIFORM_DIFFUSE_MAP, r_loadTexturesOnDemand->i ? stageP->bundle[ TB_DIFFUSEMAP ].image[ 0 ]->handle : 0 );
+		GLSL_SetUniformTexture( sp, UNIFORM_DIFFUSE_MAP, stageP->bundle[ TB_DIFFUSEMAP ].image[ 0 ] );
 //		GLSL_SetUniformTexture( sp, UNIFORM_DIFFUSE_MAP, 0 );
 
 		// custom texture filtering
@@ -605,11 +605,6 @@ void RB_IterateShaderStages( shader_t *shader )
 	}
 
 	ComputeDeformValues( &deformGen, deformParams );
-
-	if ( rg.world && rg.world->drawing ) {
-		nglEnable( GL_STENCIL_TEST );
-		nglStencilFunc( GL_ALWAYS, GL_EQUAL, 1 );
-	}
 
 	for ( i = 0; i < MAX_SHADER_STAGES; i++ ) {
 		shaderStage_t *stageP = shader->stages[i];
@@ -765,22 +760,18 @@ void RB_IterateShaderStages( shader_t *shader )
 
 				if ( stageP->bundle[TB_NORMALMAP].image[0] ) {
 					GL_BindTexture( 1, stageP->bundle[TB_NORMALMAP].image[0] );
-					GLSL_SetUniformTexture( sp, UNIFORM_NORMAL_MAP,
-						r_loadTexturesOnDemand->i ? stageP->bundle[ TB_NORMALMAP ].image[ 0 ]->handle : 1 );
+					GLSL_SetUniformTexture( sp, UNIFORM_NORMAL_MAP, stageP->bundle[ TB_NORMALMAP ].image[ 0 ] );
 				} else if ( r_normalMapping->i ) {
 					GL_BindTexture( 1, rg.whiteImage );
-					GLSL_SetUniformTexture( sp, UNIFORM_NORMAL_MAP,
-						r_loadTexturesOnDemand->i ? rg.whiteImage->handle : 1 );
+					GLSL_SetUniformTexture( sp, UNIFORM_NORMAL_MAP, rg.whiteImage );
 				}
 
 				if ( stageP->bundle[TB_SPECULARMAP].image[0] ) {
 					GL_BindTexture( 2, stageP->bundle[TB_SPECULARMAP].image[0] );
-					GLSL_SetUniformTexture( sp, UNIFORM_SPECULAR_MAP,
-						r_loadTexturesOnDemand->i ? stageP->bundle[ TB_SPECULARMAP ].image[ 0 ]->handle : 2 );
+					GLSL_SetUniformTexture( sp, UNIFORM_SPECULAR_MAP, stageP->bundle[ TB_SPECULARMAP ].image[ 0 ] );
 				} else if ( r_specularMapping->i ) {
 					GL_BindTexture( 2, rg.whiteImage );
-					GLSL_SetUniformTexture( sp, UNIFORM_SPECULAR_MAP,
-						r_loadTexturesOnDemand->i ? rg.whiteImage->handle : 2 );
+					GLSL_SetUniformTexture( sp, UNIFORM_SPECULAR_MAP, rg.whiteImage );
 				}
 			}
 		}
@@ -790,7 +781,7 @@ void RB_IterateShaderStages( shader_t *shader )
 		}
 
 		GL_BindTexture( TB_DIFFUSEMAP, stageP->bundle[TB_DIFFUSEMAP].image[0] );
-		GLSL_SetUniformTexture( sp, UNIFORM_DIFFUSE_MAP, r_loadTexturesOnDemand->i ? stageP->bundle[ TB_DIFFUSEMAP ].image[ 0 ]->handle : 0 );
+		GLSL_SetUniformTexture( sp, UNIFORM_DIFFUSE_MAP, stageP->bundle[ TB_DIFFUSEMAP ].image[ 0 ] );
 //		GLSL_SetUniformTexture( sp, TB_DIFFUSEMAP, 0 );
 		nglUniform1i( nglGetUniformLocation( sp->programId, "u_InLevel" ), rg.world != NULL );
 

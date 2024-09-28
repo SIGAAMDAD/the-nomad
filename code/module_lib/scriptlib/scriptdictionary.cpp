@@ -1051,10 +1051,10 @@ static void CScriptDictValue_FreeValue_Generic(asIScriptGeneric *gen)
 
 void RegisterScriptDictionary(asIScriptEngine *engine)
 {
-	if( strstr(asGetLibraryOptions(), "AS_MAX_PORTABILITY") )
+//	if( strstr(asGetLibraryOptions(), "AS_MAX_PORTABILITY") )
 		RegisterScriptDictionary_Generic(engine);
-	else
-		RegisterScriptDictionary_Native(engine);
+//	else
+//		RegisterScriptDictionary_Native(engine);
 }
 
 void RegisterScriptDictionary_Native(asIScriptEngine *engine)
@@ -1177,7 +1177,7 @@ void RegisterScriptDictionary_Generic(asIScriptEngine *engine)
 
 	CheckASCall( engine->RegisterObjectMethod("dictionary", "dictionary &opAssign(const dictionary &in)", asFUNCTION(ScriptDictionaryAssign_Generic), asCALL_GENERIC) );
 
-	CheckASCall( engine->RegisterObjectMethod("dictionary", "void insert(const string &in, const ?&in)", asFUNCTION(ScriptDictionarySet_Generic), asCALL_GENERIC) );
+//	CheckASCall( engine->RegisterObjectMethod("dictionary", "void insert(const string &in, const ?&in)", asFUNCTION(ScriptDictionarySet_Generic), asCALL_GENERIC) );
 
 	CheckASCall( engine->RegisterObjectMethod("dictionary", "void Add(const string &in, const ?&in)", asFUNCTION(ScriptDictionarySet_Generic), asCALL_GENERIC) );
 	CheckASCall( engine->RegisterObjectMethod("dictionary", "void Insert(const string &in, const ?&in)", asFUNCTION(ScriptDictionarySet_Generic), asCALL_GENERIC) );
