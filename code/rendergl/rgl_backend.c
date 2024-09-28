@@ -496,8 +496,12 @@ static const void *RB_SwapBuffers(const void *data)
 		if ( !backend.framePostProcessed ) {
 			start = ri.Milliseconds();
 			if ( rg.msaaResolveFbo && r_multisampleType->i <= AntiAlias_32xMSAA ) {
-				// Resolving an RGB16F MSAA FBO to the screen messes with the brightness, so resolve to an RGB16F FBO first
-				FBO_FastBlit( rg.renderFbo, NULL, rg.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+				if ( r_bloom->i && r_hdr->i ) {
+					RB_BloomPass( rg.renderFbo, rg.msaaResolveFbo );
+				} else {
+					// Resolving an RGB16F MSAA FBO to the screen messes with the brightness, so resolve to an RGB16F FBO first
+					FBO_FastBlit( rg.renderFbo, NULL, rg.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+				}
 				FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
 			}
 			else if ( rg.ssaaResolveFbo && r_multisampleType->i >= AntiAlias_2xSSAA && r_multisampleType->i <= AntiAlias_4xSSAA ) {
@@ -512,7 +516,6 @@ static const void *RB_SwapBuffers(const void *data)
 				FBO_FastBlit( rg.ssaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
 			}
 			else {
-//				FBO_Blit( rg.renderFbo, NULL, NULL, NULL, NULL, &rg.textureColorShader, colorWhite, 0 );
 				FBO_FastBlit( rg.renderFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 			}
 			end = ri.Milliseconds();

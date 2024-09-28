@@ -1189,6 +1189,7 @@ typedef struct
 	texture_t				*whiteImage;			// full of 0xff
 	texture_t				*identityLightImage;	// full of tr.identityLightByte	
 
+	texture_t				*firstPassImage;
 	texture_t				*bloomImage;
 	texture_t				*bloomPingPongImage[ 2 ];
 	texture_t				*renderImage;

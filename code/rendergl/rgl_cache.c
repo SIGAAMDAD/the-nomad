@@ -175,12 +175,20 @@ void R_InitGPUBuffers( void )
 
 	rg.numBuffers = 0;
 
-	if ( NGL_VERSION_ATLEAST( 4, 3  ) ) {
+//	if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
+		/*
 		srfVert_t quadVertices[] = {
 			{ { 0, 0 }, { -1.0f,  1.0f, 0.0f }, { 0.0f, 0.0f }, { 1, 1, 1, 1 } },
 			{ { 0, 0 }, {  1.0f,  1.0f, 0.0f }, { 1.0f, 0.0f }, { 1, 1, 1, 1 } },
 			{ { 0, 0 }, {  1.0f, -1.0f, 0.0f }, { 1.0f, 1.0f }, { 1, 1, 1, 1 } },
 			{ { 0, 0 }, { -1.0f, -1.0f, 0.0f }, { 0.0f, 1.0f }, { 1, 1, 1, 1 } },
+		};
+		*/
+		srfVert_t quadVertices[] = {
+			{ { 0, 0 }, { -1.0f,  1.0f, 0.0f }, { 0.0f, 0.0f }, { 1, 1, 1, 1 } },
+			{ { 0, 0 }, { -1.0f, -1.0f, 0.0f }, { 1.0f, 0.0f }, { 1, 1, 1, 1 } },
+			{ { 0, 0 }, {  1.0f,  1.0f, 0.0f }, { 1.0f, 1.0f }, { 1, 1, 1, 1 } },
+			{ { 0, 0 }, {  1.0f, -1.0f, 0.0f }, { 0.0f, 1.0f }, { 1, 1, 1, 1 } },
 		};
 
 		glIndex_t indices[] = {
@@ -188,7 +196,8 @@ void R_InitGPUBuffers( void )
 			3, 2, 0
 		};
 
-		rg.renderPassVBO = R_AllocateBuffer( "renderPass", quadVertices, sizeof( quadVertices ), indices, sizeof( indices ), BUFFER_STATIC );
+		rg.buffers[ rg.numBuffers ] = rg.renderPassVBO = ri.Hunk_Alloc( sizeof( *rg.renderPassVBO ), h_low );
+		rg.numBuffers++;
 
 		rg.renderPassVBO->attribs[ ATTRIB_INDEX_POSITION ].index		= ATTRIB_INDEX_POSITION;
 		rg.renderPassVBO->attribs[ ATTRIB_INDEX_TEXCOORD ].index		= ATTRIB_INDEX_TEXCOORD;
@@ -211,9 +220,17 @@ void R_InitGPUBuffers( void )
 		rg.renderPassVBO->attribs[ ATTRIB_INDEX_POSITION ].enabled		= qtrue;
 		rg.renderPassVBO->attribs[ ATTRIB_INDEX_TEXCOORD ].enabled		= qtrue;
 
+		nglGenVertexArrays( 1, &rg.renderPassVBO->vaoId );
+		nglGenBuffers( 1, &rg.renderPassVBO->vertex.id );
+
 		VBO_Bind( rg.renderPassVBO );
 		VBO_SetVertexAttribPointers( rg.renderPassVBO );
-	}
+		rg.renderPassVBO->vertex.size = sizeof( quadVertices );
+		rg.renderPassVBO->vertex.glUsage = GL_STATIC_DRAW;
+		rg.renderPassVBO->vertex.target = GL_ARRAY_BUFFER;
+		nglBufferData( GL_ARRAY_BUFFER, sizeof( quadVertices ), quadVertices, GL_STATIC_DRAW );
+		VBO_BindNull();
+//	}
 
 	/*
 
@@ -343,6 +360,9 @@ void R_ShutdownGPUBuffers( void )
 	ri.Printf( PRINT_INFO, "---------- R_ShutdownGPUBuffers -----------\n" );
 
 	VBO_BindNull();
+	nglBindVertexArray( 0 );
+	nglBindBuffer( GL_ARRAY_BUFFER, 0 );
+	nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
 
 	for ( i = 0; i < rg.numBuffers; i++ ) {
 		vbo = rg.buffers[i];
@@ -625,7 +645,9 @@ void VBO_Bind( vertexBuffer_t *vbo )
 		} else if ( r_drawMode->i >= DRAWMODE_GPU ) {
 			nglBindVertexArray( vbo->vaoId );
 			nglBindBuffer( GL_ARRAY_BUFFER, vbo->vertex.id );
-			nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, vbo->index.id );
+			if ( vbo->index.id != 0 ) {
+				nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, vbo->index.id );
+			}
 
 			// Intel Graphics doesn't save GL_ELEMENT_ARRAY_BUFFER binding with VAO binding.
 			// [TheNomad] 6/10/24 you've gotta bind it, nothing saves the binding
@@ -677,20 +699,10 @@ void R_ShutdownBuffer( vertexBuffer_t *vbo )
 {
 	VBO_Bind( vbo );
 	if ( vbo->vertex.id ) {
-		if ( vbo->vertex.usage == BUF_GL_MAPPED ) {
-			nglBindBuffer( GL_ARRAY_BUFFER, vbo->vertex.id );
-			nglUnmapBuffer( GL_ARRAY_BUFFER );
-			nglBindBuffer( GL_ARRAY_BUFFER, 0 );
-		}
 		nglDeleteBuffers( 1, &vbo->vertex.id );
 	}
 	
 	if ( vbo->index.id ) {
-		if ( vbo->index.usage == BUF_GL_MAPPED ) {
-			nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, vbo->index.id );
-			nglUnmapBuffer( GL_ELEMENT_ARRAY_BUFFER );
-			nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
-		}
 		nglDeleteBuffers( 1, &vbo->index.id );
 	}
 

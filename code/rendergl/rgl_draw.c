@@ -3,6 +3,11 @@
 void R_DrawElements( uint32_t numElements, uintptr_t nOffset ) {
 	backend.pc.c_drawCalls++;
 
+	if ( glState.currentVao == rg.renderPassVBO ) {
+		nglDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
+		return;
+	}
+
 	switch ( r_drawMode->i ) {
 	case DRAWMODE_GPU:
 	case DRAWMODE_MAPPED: {
@@ -892,14 +897,64 @@ void RB_InstantQuad2( vec4_t quadVerts[4], vec2_t texCoords[4] )
 #endif
 }
 
+/*
 void RB_RenderPass( void )
 {
-//	GL_BindTexture( TB_DIFFUSEMAP, image );
-//	GLSL_SetUniformTexture( &rg.textureColorShader, UNIFORM_DIFFUSE_MAP, image );
 	VBO_Bind( rg.renderPassVBO );
 	VBO_SetVertexPointers( rg.renderPassVBO, ATTRIB_POSITION | ATTRIB_TEXCOORD );
 	backend.drawBatch.shader = rg.defaultShader;
-	R_DrawElements( 6, 0 );
+	nglDrawElements( GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, NULL );
+}
+*/
+
+unsigned int quadVAO = 0;
+unsigned int quadVBO;
+void RB_RenderPass( void )
+{
+	vertexBuffer_t *oldBuffer;
+	/*
+    if (quadVAO == 0)
+    {
+        float quadVertices[] = {
+            // positions        // texture Coords
+            -1.0f,  1.0f, 0.0f, 0.0f, 0.0f,
+            -1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+             1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+             1.0f, -1.0f, 0.0f, 0.0f, 1.0f,
+        };
+        // setup plane VAO
+        nglGenVertexArrays(1, &quadVAO);
+        nglGenBuffers(1, &quadVBO);
+        nglBindVertexArray(quadVAO);
+        nglBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+        nglBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+        nglEnableVertexAttribArray(0);
+        nglVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+        nglEnableVertexAttribArray(1);
+        nglVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    }
+	*/
+
+	oldBuffer = glState.currentVao;
+	VBO_BindNull();
+
+	nglBindVertexArray( rg.renderPassVBO->vaoId );
+	nglBindBuffer( GL_ARRAY_BUFFER, rg.renderPassVBO->vertex.id );
+	nglDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
+	nglBindVertexArray( 0 );
+	nglBindBuffer( GL_ARRAY_BUFFER, 0 );
+
+	VBO_Bind( oldBuffer );
+
+//    nglBindVertexArray(quadVAO);
+//	nglBindBuffer( GL_ARRAY_BUFFER, quadVBO );
+//	nglEnableVertexAttribArray(0);
+//    nglVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+//    nglEnableVertexAttribArray(1);
+//    nglVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+//    nglDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+//	nglBindBuffer( GL_ARRAY_BUFFER, 0 );
+//    nglBindVertexArray(0);
 }
 
 void RB_InstantQuad( vec4_t quadVerts[4] )

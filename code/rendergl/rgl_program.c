@@ -1424,6 +1424,7 @@ void GLSL_InitGPUShaders( void )
 		numGenShaders++;
 	}
 
+	extradefines[ 0 ] = '\0';
 	attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD;
 	if ( !GLSL_InitGPUShader( &rg.textureColorShader, "texturecolor", attribs, qtrue, extradefines, qtrue, fallbackShader_texturecolor_vp,
 		fallbackShader_texturecolor_fp ) )
@@ -1432,6 +1433,8 @@ void GLSL_InitGPUShaders( void )
 	}
 	GLSL_InitUniforms( &rg.textureColorShader );
 	GLSL_FinishGPUShader( &rg.textureColorShader );
+
+	numGenShaders++;
 
 	for ( i = 0; i < LIGHTDEF_COUNT; i++ ) {
 		int lightType = i & LIGHTDEF_LIGHTTYPE_MASK;
@@ -1634,7 +1637,7 @@ void GLSL_InitGPUShaders( void )
 	extradefines[ 0 ] = '\0';
 	attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD;
 	if ( !GLSL_InitGPUShader( &rg.bloomResolveShader, "bloom", attribs, qtrue, extradefines, qtrue, NULL, NULL ) ) {
-		ri.Error( ERR_FATAL, "Could not load blur shader!" );
+		ri.Error( ERR_FATAL, "Could not load bloom shader!" );
 	}
 	GLSL_InitUniforms( &rg.bloomResolveShader );
 	GLSL_FinishGPUShader( &rg.bloomResolveShader );
