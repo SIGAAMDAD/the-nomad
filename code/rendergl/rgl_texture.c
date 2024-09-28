@@ -2372,11 +2372,11 @@ static void R_AllocateTextureStorage( texture_t *image )
 */
 
 	// Upload data.
-//	if ( image->data || ( image->flags & IMGFLAG_FBO ) ) {
+	if ( image->data || ( image->flags & IMGFLAG_FBO ) ) {
 		GL_LogComment( "-- (%s) -- Upload32( 0x%04x, %i, %i, 0x%04x, 0x%04x, %p )", image->imgName, image->internalFormat,
 			image->width, image->height, dataFormat, dataType, image->data );
 		Upload32( image->data, 0, 0, image->width, image->height, image->picFormat, 1, image, image->scaled );
-//	}
+	}
 	/*
 	if ( resampledBuffer != NULL ) {
 		ri.Hunk_FreeTempMemory( resampledBuffer );

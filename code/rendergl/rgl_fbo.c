@@ -11,7 +11,7 @@ static qboolean R_CheckFBO( const fbo_t * fbo )
 
 	if ( code == GL_FRAMEBUFFER_COMPLETE ) {
 		return qtrue;
-    }
+	}
 
 	// an error occurred
 	switch ( code ) {
@@ -43,23 +43,23 @@ static qboolean R_CheckFBO( const fbo_t * fbo )
 
 static fbo_t *FBO_Create( const char *name, int width, int height )
 {
-    fbo_t *fbo;
+	fbo_t *fbo;
 	int i;
 	qboolean exists = qfalse;
 
-    if ( strlen( name ) >= MAX_NPATH ) {
-        ri.Error( ERR_DROP, "FBO_Create: \"%s\" too long", name );
-    }
-    if ( width <= 0 || width > glContext.maxRenderBufferSize ) {
-        ri.Error( ERR_DROP, "FBO_Create: bad width %i", width );
-    }
-    if ( height <= 0 || height > glContext.maxRenderBufferSize ) {
-        ri.Error( ERR_DROP, "FBO_Create: bad height %i", height );
-    }
+	if ( strlen( name ) >= MAX_NPATH ) {
+		ri.Error( ERR_DROP, "FBO_Create: \"%s\" too long", name );
+	}
+	if ( width <= 0 || width > glContext.maxRenderBufferSize ) {
+		ri.Error( ERR_DROP, "FBO_Create: bad width %i", width );
+	}
+	if ( height <= 0 || height > glContext.maxRenderBufferSize ) {
+		ri.Error( ERR_DROP, "FBO_Create: bad height %i", height );
+	}
 
-    if ( rg.numFBOs == MAX_RENDER_FBOs ) {
-        ri.Error( ERR_DROP, "FBO_Create: MAX_RENDER_FBOs hit" );
-    }
+	if ( rg.numFBOs == MAX_RENDER_FBOs ) {
+		ri.Error( ERR_DROP, "FBO_Create: MAX_RENDER_FBOs hit" );
+	}
 
 	for ( i = 0; i < rg.numFBOs; i++ ) {
 		if ( !N_stricmp( name, rg.fbos[i]->name ) ) {
@@ -69,16 +69,16 @@ static fbo_t *FBO_Create( const char *name, int width, int height )
 		}
 	}
 	if ( !exists ) {
-    	fbo = rg.fbos[rg.numFBOs] = ri.Hunk_Alloc( sizeof( *fbo ), h_low );
+		fbo = rg.fbos[rg.numFBOs] = ri.Hunk_Alloc( sizeof( *fbo ), h_low );
 		rg.numFBOs++;
 	}
-    N_strncpyz( fbo->name, name, sizeof( fbo->name ) );
-    fbo->width = width;
-    fbo->height = height;
+	N_strncpyz( fbo->name, name, sizeof( fbo->name ) );
+	fbo->width = width;
+	fbo->height = height;
 
-    nglGenFramebuffers( 1, &fbo->frameBuffer );
+	nglGenFramebuffers( 1, &fbo->frameBuffer );
 
-    return fbo;
+	return fbo;
 }
 
 static void FBO_CreateBuffer( fbo_t *fbo, int format, int32_t index, int multisample )
@@ -158,57 +158,57 @@ static void FBO_CreateBuffer( fbo_t *fbo, int format, int32_t index, int multisa
 	absent = *pRenderBuffer == 0;
 	if ( absent ) {
 		nglGenRenderbuffers( 1, pRenderBuffer );
-    }
+	}
 
 	GL_BindFramebuffer( GL_FRAMEBUFFER, fbo->frameBuffer );
-    nglBindRenderbuffer( GL_RENDERBUFFER, *pRenderBuffer );
+	nglBindRenderbuffer( GL_RENDERBUFFER, *pRenderBuffer );
 	if ( multisample && glContext.ARB_framebuffer_multisample ) {
 //		if ( glContext.NV_framebuffer_multisample_coverage && r_multisampleType->i == AntiAlias_CSAA ) {
 //			nglRenderBufferStorageMultisampleCoverageNV( GL_RENDERBUFFER, multisample, 8, format, fbo->width, fbo->height );
 //		} else {
-	        nglRenderbufferStorageMultisample( GL_RENDERBUFFER, multisample, format, fbo->width, fbo->height );
+			nglRenderbufferStorageMultisample( GL_RENDERBUFFER, multisample, format, fbo->width, fbo->height );
 //		}
-    } else {
+	} else {
 		nglRenderbufferStorage( GL_RENDERBUFFER, format, fbo->width, fbo->height );
-    }
+	}
 
 	if ( absent ) {
 		if ( attachment == 0 ) {
-            nglFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, *pRenderBuffer );
-            nglFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, *pRenderBuffer );
+			nglFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, *pRenderBuffer );
+			nglFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, *pRenderBuffer );
 		} else {
-            nglFramebufferRenderbuffer( GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, *pRenderBuffer );
+			nglFramebufferRenderbuffer( GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, *pRenderBuffer );
 		}
 	}
-    nglBindRenderbuffer( GL_RENDERBUFFER, 0 );
+	nglBindRenderbuffer( GL_RENDERBUFFER, 0 );
 }
 
 void FBO_AttachImage( fbo_t *fbo, texture_t *image, GLenum attachment )
 {
-    int32_t index;
+	int32_t index;
 
 	GL_BindFramebuffer( GL_FRAMEBUFFER, fbo->frameBuffer );
 	GL_BindTexture( TB_DIFFUSEMAP, image );
-    nglFramebufferTexture2D( GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, image->id, 0 );
-    index = attachment - GL_COLOR_ATTACHMENT0;
-    if ( index >= 0 && index <= 15 ) {
-        fbo->colorImage[index] = image;
-    }
+	nglFramebufferTexture2D( GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, image->id, 0 );
+	index = attachment - GL_COLOR_ATTACHMENT0;
+	if ( index >= 0 && index <= 15 ) {
+		fbo->colorImage[index] = image;
+	}
 }
 
 void FBO_Bind( fbo_t *fbo )
 {
-    if ( !glContext.ARB_framebuffer_object ) {
-        ri.Printf( PRINT_WARNING, "FBO_Bind() called without framebuffers enabled!\n" );
-        return;
-    }
+	if ( !glContext.ARB_framebuffer_object ) {
+		ri.Printf( PRINT_WARNING, "FBO_Bind() called without framebuffers enabled!\n" );
+		return;
+	}
 
-    if ( glState.currentFbo == fbo ) {
-        return;
-    }
+	if ( glState.currentFbo == fbo ) {
+		return;
+	}
 
-    GL_BindFramebuffer( GL_FRAMEBUFFER, fbo ? fbo->frameBuffer : 0 );
-    glState.currentFbo = fbo;
+	GL_BindFramebuffer( GL_FRAMEBUFFER, fbo ? fbo->frameBuffer : 0 );
+	glState.currentFbo = fbo;
 	GL_CheckErrors();
 }
 
@@ -325,13 +325,11 @@ void FBO_Init( void )
 
 	if ( multisample && r_multisampleType->i >= AntiAlias_2xMSAA && r_multisampleType->i <= AntiAlias_32xMSAA ) {
 		rg.renderFbo = FBO_Create( "_render", width, height );
-		if ( r_bloom->i ) {
-			GLuint buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-			FBO_CreateBuffer( rg.renderFbo, hdrFormat, 1, multisample );
-			nglDrawBuffers( 2, buffers );
-		}
+//		FBO_AttachImage( rg.renderFbo, rg.renderImage, GL_COLOR_ATTACHMENT0 );
+//		GLuint buffers[1] = { GL_COLOR_ATTACHMENT0 };
+//		nglDrawBuffers( 1, buffers );
 		FBO_CreateBuffer( rg.renderFbo, hdrFormat, 0, multisample );
-		FBO_CreateBuffer( rg.renderFbo, GL_DEPTH24_STENCIL8, 0, multisample );
+//		FBO_CreateBuffer( rg.renderFbo, GL_DEPTH24_STENCIL8, 0, multisample );
 		R_CheckFBO( rg.renderFbo );
 	}
 
@@ -444,7 +442,7 @@ void FBO_Shutdown( void )
 	uint64_t i, j;
 	fbo_t *fbo;
 
-    ri.Printf( PRINT_INFO, "------- FBO_Shutdown -------\n" );
+	ri.Printf( PRINT_INFO, "------- FBO_Shutdown -------\n" );
 
 	if ( !glContext.ARB_framebuffer_object ) {
 		return;
@@ -475,10 +473,6 @@ void FBO_Shutdown( void )
 		if ( fbo->frameBuffer ) {
 			nglDeleteFramebuffers( 1, &fbo->frameBuffer );
 		}
-	}
-
-	if ( glContext.ARB_pixel_buffer_object ) {
-		nglDeleteBuffers( 2, rg.pixelPackBuffer );
 	}
 }
 
@@ -575,7 +569,8 @@ void FBO_BlitFromTexture( fbo_t *srcFbo, struct texture_s *src, vec4_t inSrcTexC
 	GLSL_SetUniformVec3( shaderProgram, UNIFORM_TONEMINAVGMAXLINEAR, backend.refdef.toneMinAvgMaxLinear );
 	*/
 
-	RB_InstantQuad2( quadVerts, texCoords );
+//	RB_InstantQuad2( quadVerts, texCoords );
+	RB_RenderPass();
 
 	FBO_Bind( oldFbo );
 }
@@ -638,28 +633,9 @@ void FBO_FastBlit( fbo_t *src, ivec4_t srcBox, fbo_t *dst, ivec4_t dstBox, int b
 
 	GL_BindFramebuffer( GL_READ_FRAMEBUFFER, srcFb );
 	GL_BindFramebuffer( GL_DRAW_FRAMEBUFFER, dstFb );
-	if ( glContext.ARB_pixel_buffer_object ) {
-		GLubyte *src;
-
-		rg.pixelPackBufferIndex = ( rg.pixelPackBufferIndex + 1 ) % 2;
-		rg.pixelPackBufferNextIndex = ( rg.pixelPackBufferIndex + 1 ) % 2;
-
-		nglBindBuffer( GL_PIXEL_PACK_BUFFER, rg.pixelPackBuffer[ rg.pixelPackBufferIndex ] );
-		nglReadPixels( 0, 0, dstBoxFinal[0], dstBoxFinal[1], GL_RGBA, GL_UNSIGNED_BYTE, NULL );
-		nglBindBuffer( GL_PIXEL_PACK_BUFFER, 0 );
-
-		nglBindBuffer( GL_PIXEL_PACK_BUFFER, rg.pixelPackBuffer[ rg.pixelPackBufferNextIndex ] );
-		src = (GLubyte *)nglMapBuffer( GL_PIXEL_PACK_BUFFER, GL_READ_ONLY );
-		if ( src ) {
-			nglUnmapBuffer( GL_PIXEL_PACK_BUFFER );
-		}
-		nglBindBuffer( GL_PIXEL_PACK_BUFFER, 0 );
-	}
-	else {
-		nglBlitFramebuffer( srcBoxFinal[0], srcBoxFinal[1], srcBoxFinal[2], srcBoxFinal[3],
-		                      dstBoxFinal[0], dstBoxFinal[1], dstBoxFinal[2], dstBoxFinal[3],
-							  buffers, filter );
-	}
+	nglBlitFramebuffer( srcBoxFinal[0], srcBoxFinal[1], srcBoxFinal[2], srcBoxFinal[3],
+						  dstBoxFinal[0], dstBoxFinal[1], dstBoxFinal[2], dstBoxFinal[3],
+						  buffers, filter );
 	GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
 	glState.currentFbo = NULL;
 }

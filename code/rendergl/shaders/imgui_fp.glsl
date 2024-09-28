@@ -1,6 +1,5 @@
 #if !defined(GLSL_LEGACY)
 layout( location = 0 ) out vec4 a_Color;
-layout( location = 1 ) out vec4 a_BrightColor;
 #endif
 
 in vec2 v_TexCoords;

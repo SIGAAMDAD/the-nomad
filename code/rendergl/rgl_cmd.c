@@ -287,12 +287,10 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 	}
 
 	if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
-		/*
 		ri.ProfileFunctionBegin( "ComputeShaderDispatch" );
 		GLSL_UseProgram( &rg.computeShader );
 		nglDispatchCompute( glConfig.vidWidth / 64, glConfig.vidHeight / 16, 1 );
 		ri.ProfileFunctionEnd();
-		*/
 	}
 
     // clear relevant buffers
@@ -439,21 +437,19 @@ void RE_EndFrame( uint64_t *frontEndMsec, uint64_t *backEndMsec, backendCounters
 
 	// compute shader
 	if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
-		/*
 //		nglMemoryBarrier( GL_UNIFORM_BARRIER_BIT | GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_ELEMENT_ARRAY_BARRIER_BIT
 //			| GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_BUFFER_UPDATE_BARRIER_BIT | GL_FRAMEBUFFER_BARRIER_BIT );
 		ri.ProfileFunctionBegin( "ComputeShaderFlush" );
 
-		GLSL_UseProgram( &rg.textureColorShader );
-		nglActiveTexture( GL_TEXTURE0 );
-		nglBindTexture( GL_TEXTURE_2D, rg.computeShaderTexture );
-		GLSL_SetUniformInt( &rg.textureColorShader, UNIFORM_DIFFUSE_MAP, TB_DIFFUSEMAP );
-		RB_SetBatchBuffer( rg.renderPassVBO, NULL, sizeof( srfVert_t ), NULL, sizeof( uint32_t ) );
-		backend.drawBatch.shader = rg.defaultShader;
-		RB_FlushBatchBuffer();
+	//	GLSL_UseProgram( &rg.textureColorShader );
+	//	nglActiveTexture( GL_TEXTURE0 );
+	//	nglBindTexture( GL_TEXTURE_2D, rg.computeShaderTexture );
+	//	GLSL_SetUniformTexture( &rg.textureColorShader, UNIFORM_DIFFUSE_MAP, 0 );
+	//	RB_SetBatchBuffer( rg.renderPassVBO, NULL, sizeof( srfVert_t ), NULL, sizeof( uint32_t ) );
+	//	backend.drawBatch.shader = rg.defaultShader;
+	//	RB_FlushBatchBuffer();
 
 		ri.ProfileFunctionEnd();
-		*/
 	}
 
 	R_IssueRenderCommands( qtrue, qtrue );

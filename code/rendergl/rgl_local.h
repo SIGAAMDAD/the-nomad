@@ -1915,7 +1915,7 @@ extern renderBackendData_t *backendData[ SMP_FRAMES ];
 extern volatile renderCommandList_t *renderCommandList;
 extern volatile qboolean renderThreadActive;
 
-void RB_RenderPass( texture_t *image );
+void RB_RenderPass( void );
 
 void RB_RenderThread( void );
 void R_InitCommandBuffers( void );

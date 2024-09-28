@@ -512,6 +512,7 @@ static const void *RB_SwapBuffers(const void *data)
 				FBO_FastBlit( rg.ssaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
 			}
 			else {
+//				FBO_Blit( rg.renderFbo, NULL, NULL, NULL, NULL, &rg.textureColorShader, colorWhite, 0 );
 				FBO_FastBlit( rg.renderFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 			}
 			end = ri.Milliseconds();

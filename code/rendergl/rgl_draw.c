@@ -892,7 +892,7 @@ void RB_InstantQuad2( vec4_t quadVerts[4], vec2_t texCoords[4] )
 #endif
 }
 
-void RB_RenderPass( texture_t *image )
+void RB_RenderPass( void )
 {
 //	GL_BindTexture( TB_DIFFUSEMAP, image );
 //	GLSL_SetUniformTexture( &rg.textureColorShader, UNIFORM_DIFFUSE_MAP, image );
