@@ -86,18 +86,13 @@ typedef renderSceneRef_t refdef_t;
 
 typedef enum {
 	AntiAlias_None,
-	AntiAlias_2xMSAA,
-	AntiAlias_4xMSAA,
-	AntiAlias_8xMSAA,
-	AntiAlias_16xMSAA,
-	AntiAlias_32xMSAA,
-	AntiAlias_2xSSAA,
-	AntiAlias_4xSSAA,
-	
+	AntiAlias_MSAA,
+	AntiAlias_SSAA,
+	AntiAlias_FXAA,
+
 	AntiAlias_TAA,
 	AntiAlias_SMAA,
-	AntiAlias_FXAA,
-	
+
 	AntiAlias_CSAA
 } antialiasType_t;
 

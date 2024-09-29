@@ -193,7 +193,7 @@ void CSoundSource::Play( bool bLooping, uint64_t nTimeOffset )
 	{
 		bool isSnapshot;
 		m_pData->isSnapshot( &isSnapshot );
-		if ( !isSnapshot ) {
+		if ( !isSnapshot && m_nTag != TAG_MUSIC ) {
 			m_pEmitter->release();
 			m_pEmitter = NULL;
 		}
@@ -212,14 +212,18 @@ void CSoundSource::Stop( void )
 
 	switch ( state ) {
 	case FMOD_STUDIO_PLAYBACK_PLAYING:
-	case FMOD_STUDIO_PLAYBACK_STARTING:
-		ERRCHECK( m_pEmitter->stop( FMOD_STUDIO_STOP_IMMEDIATE ) );
-		break;
+	case FMOD_STUDIO_PLAYBACK_STARTING: {
+		if ( m_nTag == TAG_SFX ) {
+			ERRCHECK( m_pEmitter->stop( FMOD_STUDIO_STOP_IMMEDIATE ) );
+		} else if ( m_nTag == TAG_MUSIC ) {
+			ERRCHECK( m_pEmitter->stop( FMOD_STUDIO_STOP_ALLOWFADEOUT ) );
+		}
+		break; }
 	case FMOD_STUDIO_PLAYBACK_SUSTAINING:
+	case FMOD_STUDIO_PLAYBACK_STOPPING:
 		ERRCHECK( m_pEmitter->stop( FMOD_STUDIO_STOP_ALLOWFADEOUT ) );
 		break;
 	case FMOD_STUDIO_PLAYBACK_STOPPED:
-	case FMOD_STUDIO_PLAYBACK_STOPPING:
 		break;
 	};
 
@@ -265,10 +269,9 @@ void CSoundSystem::AddSourceToHash( CSoundSource *pSource )
 void CSoundSystem::ForceStop( void )
 {
 	for ( auto& it : m_szSources ) {
-		if ( !it ) {
-			continue;
+		if ( it ) {
+			it->Stop();
 		}
-		it->Stop();
 	}
 	Snd_ClearLoopingTracks();
 }
@@ -492,7 +495,6 @@ CSoundSource *CSoundSystem::LoadSound( const char *npath, int64_t nTag )
 void Snd_DisableSounds( void )
 {
 	sndManager->ForceStop();
-	memset( sndManager->GetSound( 0 ), 0, sizeof( CSoundSource ) * MAX_SOUND_SOURCES );
 }
 
 void Snd_StopAll( void )

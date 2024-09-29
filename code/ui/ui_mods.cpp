@@ -92,39 +92,14 @@ void ModsMenu_SaveModList( void )
 
     Con_Printf( "Saving mod list...\n" );
     
-    f = FS_FOpenWrite( CACHE_DIR "/loadlist.json" );
+    f = FS_FOpenWrite( CACHE_DIR "/loadlist.cfg" );
     if ( f == FS_INVALID_HANDLE ) {
-    	N_Error( ERR_DROP, "ModsMenu_SaveModList: failed to save " CACHE_DIR "/loadlist.json" );
+    	N_Error( ERR_DROP, "ModsMenu_SaveModList: failed to save " CACHE_DIR "/loadlist.cfg" );
     }
     
-    FS_Printf( f, "{\n" );
-    FS_Printf( f, "\t\"LoadList\": [\n" );
     for ( i = 0; i < mods->numMods; i++ ) {
-    	FS_Printf( f,
-    		"\t\t{\n"
-    		"\t\t\t\"Name\": \"%s\",\n"
-    		"\t\t\t\"Valid\": %i,\n"
-    		"\t\t\t\"Active\": %i,\n"
-    		"\t\t\t\"Dependencies\": [\n"
-    		, mods->modList[i].info->m_szName, mods->modList[i].valid, mods->modList[i].active );
-    	
-    	for ( j = 0; j < mods->modList[i].numDependencies; j++ ) {
-    		FS_Printf( f, "\t\t\t\t\"%s\"", mods->modList[i].info->m_pDependencies[j].c_str() );
-    		if ( j != mods->modList[i].numDependencies - 1 ) {
-    			FS_Printf( f, "," );
-    		}
-    		FS_Printf( f, "\n" );
-    	}
-		FS_Printf( f, "\t\t\t]\n" );
-    	
-    	if ( i != mods->numMods - 1 ) {
-    		FS_Printf( f, "\t\t},\n" );
-    	} else {
-    		FS_Printf( f, "\t\t}\n" );
-    	}
+    	FS_Printf( f, "\"%s\" %i %i\n" , mods->modList[i].info->m_szName, mods->modList[i].valid, mods->modList[i].active );
     }
-    FS_Printf( f, "\t]\n" );
-    FS_Printf( f, "}\n" );
     
     FS_FClose( f );
 }
@@ -472,7 +447,7 @@ void ModsMenu_Cache( void )
 
     Cmd_AddCommand( "ui.clear_load_list", ModsMenu_ClearLoadList_f );
 
-    ModsMenu_SaveModList();
+//    ModsMenu_SaveModList();
 }
 
 void UI_ModsMenu( void )

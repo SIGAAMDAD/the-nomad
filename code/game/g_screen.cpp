@@ -358,13 +358,7 @@ void SCR_UpdateScreen( void )
 	static int next_frametime;
 	extern cvar_t *ui_debugOverlay;
 
-
-	// make sure that we have the context
-//	SDL_GL_MakeCurrent( SDL_window, SDL_glContext );
 	re.BeginFrame( STEREO_CENTER );
-	
-	// release it for the render thread
-//	SDL_GL_MakeCurrent( SDL_window, NULL );
  
 	if ( framecount == gi.framecount ) {
 		int ms = Sys_Milliseconds();
@@ -422,7 +416,6 @@ void SCR_UpdateScreen( void )
 
 	UI_Refresh( gi.realtime );
 
-//	SDL_GL_MakeCurrent( SDL_window, SDL_glContext );
 	if ( ui_debugOverlay->i ) {
 		re.EndFrame( &time_frontend, &time_backend, &gi.pc );
 	} else {

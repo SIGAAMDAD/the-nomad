@@ -1612,8 +1612,7 @@ static void CollapseStagesToLightall( shaderStage_t *diffuse, shaderStage_t *nor
 		if ( normal ) {
 			diffuse->bundle[TB_NORMALMAP] = normal->bundle[0];
 
-			if ( parallax && 0 ) {
-
+			if ( parallax && r_parallaxMapping->i ) {
 			}
 
 			VectorCopy4( normal->normalScale, diffuse->normalScale );
@@ -2107,7 +2106,7 @@ static int CollapseStagesToGLSL(void)
 	return numStages;
 }
 
-static shader_t *FinishShader(void)
+static shader_t *FinishShader( void )
 {
 	uint32_t stage;
 	qboolean hasLightmapStage;
@@ -2457,7 +2456,7 @@ Dump information on all valid shaders to the console
 A second parameter will cause it to print in sorted order
 ===============
 */
-void R_ShaderList_f (void) {
+void R_ShaderList_f( void ) {
 	uint32_t		i;
 	uint32_t		count;
 	const shader_t *sh;

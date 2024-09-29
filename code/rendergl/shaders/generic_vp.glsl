@@ -8,17 +8,9 @@ out vec3 v_FragPos;
 out vec4 v_Color;
 out vec3 v_WorldPos;
 
-#include "lighting_common.glsl"
-
-//layout( std140, binding = 0 ) uniform u_VertexInput {
-//	mat4 u_ModelViewProjection;
-//};
-
 uniform mat4 u_ModelViewProjection;
 uniform vec4 u_BaseColor;
 uniform vec4 u_VertColor;
-
-uniform mat4 u_ModelMatrix;
 
 #if defined(USE_RGBAGEN)
 uniform int u_ColorGen;
@@ -36,33 +28,6 @@ uniform int u_TCGen0;
 uniform vec3 u_TCGen0Vector0;
 uniform vec3 u_TCGen0Vector1;
 uniform vec3 u_WorldPos;
-#endif
-
-#if defined(USE_RGBAGEN) && 0
-vec4 CalcColor(vec3 position, vec3 normal)
-{
-	vec4 color = u_VertColor * a_Color + u_BaseColor;
-	
-	if (u_ColorGen == CGEN_LIGHTING_DIFFUSE)
-	{
-		float incoming = clamp(dot(normal, u_ModelLightDir), 0.0, 1.0);
-
-		color.rgb = clamp(u_DirectedLight * incoming + u_AmbientLight, 0.0, 1.0);
-	}
-	
-	vec3 viewer = u_LocalViewOrigin - position;
-
-	if ( u_AlphaGen == AGEN_LIGHTING_SPECULAR ) {
-		vec3 lightDir = normalize(vec3(-960.0, 1980.0, 96.0) - position);
-		vec3 reflected = -reflect(lightDir, normal);
-		
-		color.a = clamp(dot(reflected, normalize(viewer)), 0.0, 1.0);
-		color.a *= color.a;
-		color.a *= color.a;
-	}
-	
-	return color;
-}
 #endif
 
 #if defined(USE_TCMOD)
@@ -113,7 +78,6 @@ void main() {
 	} else {
 		v_Color = u_VertColor * a_Color + u_BaseColor;
 	}
-	v_Color = vec4( 1.0 );
 
 #if defined(USE_TCGEN)
 	vec2 texCoords = GenTexCoords( u_TCGen0, position, vec3( 0.0 ), u_TCGen0Vector0, u_TCGen0Vector1 );
@@ -128,9 +92,6 @@ void main() {
 #endif
 
 	v_WorldPos = vec3( a_WorldPos.xy, 0.0 );
-//	v_FragPos = vec4( u_ModelViewProjection * vec4( position, 1.0 ) ).xyz;
-
-	ApplyLighting();
 
     gl_Position = u_ModelViewProjection * vec4( position, 1.0 );
 }

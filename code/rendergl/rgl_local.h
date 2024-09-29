@@ -172,9 +172,9 @@ typedef struct {
 	qboolean needDlights; // true for anything submitted throught RE_AddEntityToScene
 	qboolean lightingCalculated;
 	int ambientLightInt;  // 32 bit rgba packed
-	vec3_t ambientLight;  // color normalized to 0-255
-	vec3_t lightDir;      // normalized direction towards light, in world space
-	vec3_t directedLight;
+	vec3_t ambientColor;  // color normalized to 0-255
+//	vec3_t lightDir;      // normalized direction towards light, in world space
+//	vec3_t directedLight;
 	qboolean intShaderTime;
 } renderEntityDef_t;
 
@@ -271,6 +271,12 @@ typedef enum {
 	GLSL_VEC2,
 	GLSL_VEC3,
 	GLSL_VEC4,
+	GLSL_UVEC2,
+	GLSL_UVEC3,
+	GLSL_UVEC4,
+	GLSL_IVEC2,
+	GLSL_IVEC3,
+	GLSL_IVEC4,
 	GLSL_VEC5,
 	GLSL_MAT16,
 	GLSL_BUFFER, // uniform buffer -- special case
@@ -291,16 +297,13 @@ typedef enum {
 	UNIFORM_SCREENDEPTH_MAP,
 
 	UNIFORM_SHADOW_MAP,
-	UNIFORM_SHADOW_MAP2,
-	UNIFORM_SHADOW_MAP3,
-	UNIFORM_SHADOW_MAP4,
+
+	UNIFORM_AREA_TEXTURE,
+	UNIFORM_SEARCH_TEXTURE,
+	UNIFORM_EDGES_TEXTURE,
+	UNIFORM_BLEND_TEXTURE,
 
 	UNIFORM_SHADOW_MVP,
-	UNIFORM_SHADOW_MVP2,
-	UNIFORM_SHADOW_MVP3,
-	UNIFORM_SHADOW_MVP4,
-
-	UNIFORM_ENABLE_TEXTURES,
 
 	UNIFORM_DIFFUSE_TEXMATRIX,
 	UNIFORM_DIFFUSE_TEXOFFTURB,
@@ -317,75 +320,39 @@ typedef enum {
 	UNIFORM_COLOR,
 	UNIFORM_BASECOLOR,
 	UNIFORM_VERTCOLOR,
-
-	UNIFORM_DLIGHTINFO,
-	UNIFORM_LIGHTFORWARD,
-	UNIFORM_LIGHTUP,
-	UNIFORM_LIGHTRIGHT,
-	UNIFORM_LIGHTORIGIN,
-	UNIFORM_MODELLIGHTDIR,
-	UNIFORM_LIGHTRADIUS,
 	UNIFORM_AMBIENTLIGHT,
-	UNIFORM_DIRECTEDLIGHT,
-
+	
 	UNIFORM_MODELVIEWPROJECTION,
 
 	UNIFORM_TIME,
-	UNIFORM_VERTEXLERP,
 	UNIFORM_NORMAL_SCALE,
 	UNIFORM_SPECULAR_SCALE,
-
-	UNIFORM_VIEWINFO, // znear, zfar, width/2, height/2
 	UNIFORM_VIEWORIGIN,
-	UNIFORM_LOCALVIEWORIGIN,
-	UNIFORM_VIEWFORWARD,
-	UNIFORM_VIEWLEFT,
-	UNIFORM_VIEWUP,
-
-	UNIFORM_INVTEXRES,
-	UNIFORM_AUTOEXPOSUREMINMAX,
-	UNIFORM_TONEMINAVGMAXLINEAR,
-
-	UNIFORM_PRIMARYLIGHTORIGIN,
-	UNIFORM_PRIMARYLIGHTCOLOR,
-	UNIFORM_PRIMARYLIGHTAMBIENT,
-	UNIFORM_PRIMARYLIGHTRADIUS,
 
 	UNIFORM_ALPHATEST,
+	UNIFORM_NUM_LIGHTS,
+	UNIFORM_BLUR_HORIZONTAL,
+
+	UNIFORM_LIGHTDATA,
+	UNIFORM_DLIGHTDATA,
 
 	UNIFORM_GAMMA,
-
-	UNIFORM_NUM_LIGHTS,
-
 	UNIFORM_EXPOSURE,
 	UNIFORM_SCREEN_SIZE,
 	UNIFORM_SHARPENING,
-
-	UNIFORM_LIGHTDATA,
-
 	UNIFORM_GAMEPAUSED,
-
-	UNIFORM_AREA_TEXTURE,
-	UNIFORM_SEARCH_TEXTURE,
-	UNIFORM_EDGES_TEXTURE,
-	UNIFORM_BLEND_TEXTURE,
-
-	UNIFORM_BLUR_HORIZONTAL,
-
 	UNIFORM_HARDWAREGAMMA,
 	UNIFORM_ANTIALIASING,
 	UNIFORM_USE_HDR,
 	UNIFORM_USE_PBR,
 	UNIFORM_TONEMAPPING,
 	UNIFORM_USE_BLOOM,
+	UNIFORM_LIGHTING_QUALITY,
+	UNIFORM_POSTPROCESS,
+	UNIFORM_ANTIALIAS_QUALITY,
 
-	UNIFORM_FRAGMENTDATA,
-	UNIFORM_GRAPHICSCONFIG,
-	UNIFORM_SAMPLERS,
-	UNIFORM_VERTEXINPUT,
-	UNIFORM_WORLD_TEXCOORDS,
-	UNIFORM_WORLD_POSITIONS,
-	UNIFORM_DLIGHTDATA,
+	UNIFORM_DISPATCH_COMPUTE_SIZE,
+	UNIFORM_FINALPASS,
 
 	UNIFORM_COUNT
 } uniform_t;
@@ -452,6 +419,7 @@ typedef struct dlight_s {
 	vec3_t origin;
 
 	float brightness;
+	float range;
 	float diffuse;
 	float specular;
 	float ambient;
@@ -1170,7 +1138,6 @@ typedef struct
 
 	qboolean                needScreenMap;
 
-//	GLuint					computeShader, computeShaderProgram;
 	GLuint					computeShaderTexture;
 	vertexBuffer_t			*renderPassVBO;
 
@@ -1195,12 +1162,20 @@ typedef struct
 	texture_t				*renderImage;
 	texture_t				*renderDepthImage;
 	texture_t				*hdrDepthImage;
+	texture_t				*computeImage;
+	texture_t				*smaaEdgesImage;
+	texture_t				*smaaAreaImage;
+	texture_t				*smaaSearchImage;
+	texture_t				*smaaWeightsImage;
+	texture_t				*smaaBlendImage;
 
-
-	fbo_t					*bloomPingPongFbo[ 2 ];
-	fbo_t					*renderFbo;
-	fbo_t					*msaaResolveFbo;
-	fbo_t                   *ssaaResolveFbo;
+	fbo_t					bloomPingPongFbo[ 2 ];
+	fbo_t					renderFbo;
+	fbo_t					msaaResolveFbo;
+	fbo_t                   ssaaResolveFbo;
+	fbo_t					smaaWeightsFbo;
+	fbo_t					smaaBlendFbo;
+	fbo_t					smaaEdgesFbo;
 
 	shader_t				*defaultShader;
 
@@ -1254,6 +1229,7 @@ typedef struct
 	shaderProgram_t blurShader;
 	shaderProgram_t bloomResolveShader;
 	shaderProgram_t computeShader;
+	shaderProgram_t colormapShader;
 	/*
 	shaderProgram_t ssaoShader;
 	shaderProgram_t depthBlurShader[4];
@@ -1262,10 +1238,10 @@ typedef struct
 	shaderProgram_t bokehShader;
 	shaderProgram_t blurShader;
 	shaderProgram_t tonemapShader;
+	*/
 	shaderProgram_t smaaEdgesShader;
 	shaderProgram_t smaaWeightsShader;
 	shaderProgram_t smaaBlendShader;
-	*/
 
 	qboolean beganQuery;
 
@@ -1483,7 +1459,6 @@ extern cvar_t *r_clearColor;
 extern cvar_t *r_useExtensions;
 extern cvar_t *r_allowLegacy;
 extern cvar_t *r_allowShaders;
-extern cvar_t *r_multisampleAmount;
 extern cvar_t *r_multisampleType;
 extern cvar_t *r_ignorehwgamma;
 extern cvar_t *r_drawMode;
@@ -1509,6 +1484,8 @@ extern cvar_t *r_imageUpsample;
 extern cvar_t *r_imageUpsampleMaxSize;
 
 extern cvar_t *r_lightingQuality;
+extern cvar_t *r_antialiasQuality;
+
 extern cvar_t *r_loadTexturesOnDemand;
 
 extern cvar_t *sys_forceSingleThreading;
@@ -1611,6 +1588,12 @@ void GLSL_SetUniformFloat( shaderProgram_t *program, uint32_t uniformNum, GLfloa
 void GLSL_SetUniformVec2( shaderProgram_t *program, uint32_t uniformNum, const vec2_t v );
 void GLSL_SetUniformVec3( shaderProgram_t *program, uint32_t uniformNum, const vec3_t v );
 void GLSL_SetUniformVec4( shaderProgram_t *program, uint32_t uniformNum, const vec4_t v );
+void GLSL_SetUniformIVec2( shaderProgram_t *program, uint32_t uniformNum, const ivec2_t v );
+void GLSL_SetUniformIVec3( shaderProgram_t *program, uint32_t uniformNum, const ivec3_t v );
+void GLSL_SetUniformIVec4( shaderProgram_t *program, uint32_t uniformNum, const ivec4_t v );
+void GLSL_SetUniformUVec2( shaderProgram_t *program, uint32_t uniformNum, const uvec2_t v );
+void GLSL_SetUniformUVec3( shaderProgram_t *program, uint32_t uniformNum, const uvec3_t v );
+void GLSL_SetUniformUVec4( shaderProgram_t *program, uint32_t uniformNum, const uvec4_t v );
 void GLSL_SetUniformMatrix4( shaderProgram_t *program, uint32_t uniformNum, const mat4_t m );
 shaderProgram_t *GLSL_GetGenericShaderProgram( int stage );
 void GLSL_ShaderBufferData( shaderProgram_t *shader, uint32_t uniformNum, uniformBuffer_t *buffer, uint64_t nSize, qboolean dynamicStorage );
@@ -1661,6 +1644,13 @@ void RB_CalcStretchTexMatrix( const waveForm_t *wf, float *matrix );
 void RB_CalcModulateColorsByFog( unsigned char *dstColors );
 float RB_CalcWaveAlphaSingle( const waveForm_t *wf );
 float RB_CalcWaveColorSingle( const waveForm_t *wf );
+
+//
+// rgl_light.c
+//
+void R_SetupTileLighting( void );
+void R_LightEntity( renderEntityDef_t *refEntity );
+void R_ApplyLighting( const dlight_t *dl, shaderLight_t *gpuLight );
 
 //
 // rgl_main.c

@@ -14,37 +14,6 @@ out vec4 v_Color;
 out vec3 v_WorldPos;
 out vec3 v_Position;
 
-#include "lighting_common.glsl"
-
-#ifdef USE_SHADER_STORAGE_WORLD
-layout( std140, binding = 1 ) buffer u_TexCoords {
-	vec2 texCoords[];
-};
-layout( std140, binding = 2 ) buffer u_WorldPositions {
-	uvec2 positions[];
-};
-#endif
-
-#if defined(USE_UBO)
-
-layout( std140, binding = 0 ) uniform u_VertexInput {
-	mat4 u_ModelViewProjection;
-	mat4 u_ModelMatrix;
-	vec4 u_BaseColor;
-	vec4 u_VertColor;
-	vec4 u_DiffuseTexMatrix;
-	vec4 u_DiffuseTexOffTurb;
-	vec3 u_TCGen0Vector0;
-	vec3 u_TCGen0Vector1;
-	vec3 u_WorldPos;
-	vec3 u_DirectedLight;
-	int u_TCGen0;
-	int u_ColorGen;
-	int u_AlphaGen;
-};
-
-#else
-
 uniform mat4 u_ModelViewProjection;
 uniform vec4 u_BaseColor;
 uniform vec4 u_VertColor;
@@ -67,8 +36,6 @@ uniform int u_TCGen0;
 uniform vec3 u_TCGen0Vector0;
 uniform vec3 u_TCGen0Vector1;
 uniform vec3 u_WorldPos;
-#endif
-
 #endif
 
 #if defined(USE_RGBAGEN)
@@ -148,11 +115,7 @@ void main() {
 #if defined(USE_TCGEN)
 	vec2 texCoord = GenTexCoords( u_TCGen0, position, vec3( 0.0 ), u_TCGen0Vector0, u_TCGen0Vector1 );
 #else
-#ifdef USE_SHADER_STORAGE_WORLD
-	vec2 texCoord = texCoords[ gl_VertexID ];
-#else
 	vec2 texCoord = a_TexCoords;
-#endif
 #endif
 
 #if defined(USE_TCMOD)
@@ -160,17 +123,11 @@ void main() {
 #else
 	v_TexCoords = texCoord;
 #endif
-    v_Color = u_VertColor * a_Color + u_BaseColor;
-#ifdef USE_SHADER_STORAGE_WORLD
-	v_WorldPos = vec3( positions[ gl_VertexID ].xy, 0.0 );
-#else
+	v_Color = a_Color;
 	v_WorldPos = vec3( a_WorldPos.xy, 0.0 );
-#endif
 	v_Position = position;
 
-	ApplyLighting();
-
-//	v_FragPos = vec4( u_ModelViewProjection * vec4( position, 1.0 ) ).xyz;
+	v_FragPos = vec3( u_ModelViewProjection * vec4( position, 1.0 ) );
 
     gl_Position = u_ModelViewProjection * vec4( position, 1.0 );
 }

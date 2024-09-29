@@ -1,5 +1,6 @@
 #include "rgl_local.h"
 #include <ctype.h>
+//#include "rgl_smaa_textures.h"
 
 static void *Image_Malloc( size_t size ) {
 	return ri.Malloc( size );
@@ -2740,7 +2741,7 @@ static void R_LoadImage( const char *name, byte **pic, int *width, int *height, 
 	ext = COM_GetExtension( localName );
 
 	// If compressed textures are enabled, try loading a DDS first, it'll load fastest
-	if ( r_arb_texture_compression->i ) {
+//	if ( r_arb_texture_compression->i ) {
 		char ddsName[MAX_NPATH];
 
 		COM_StripExtension( name, ddsName, MAX_NPATH );
@@ -2752,7 +2753,7 @@ static void R_LoadImage( const char *name, byte **pic, int *width, int *height, 
 		if ( *pic ) {
 			return;
 		}
-	}
+//	}
 
 	if ( *ext ) {
 		// Look for the correct loader and use it
@@ -3052,19 +3053,40 @@ void R_CreateBuiltinTextures( void )
 
 		rgbFormat = GL_RGBA8;
 
-		if ( r_bloom->i ) {
-			rg.bloomImage = R_CreateImage( "_bloom", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE
-				| IMGFLAG_FBO, GL_RGBA16F );
+		rg.bloomImage = R_CreateImage( "_bloom", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE
+			| IMGFLAG_FBO, GL_RGBA16F );
 			
-			rg.firstPassImage = R_CreateImage( "_bloomFirstPass", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION
-				| IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_RGBA16F );
+		rg.firstPassImage = R_CreateImage( "_bloomFirstPass", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION
+			| IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_RGBA16F );
 			
-			for ( x = 0; x < 2; x++ ) {
-				rg.bloomPingPongImage[ x ] = R_CreateImage( va( "_bloomPingPong%i", x ), NULL, width, height, IMGTYPE_COLORALPHA,
-					IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_RGBA16F );
-			}
-			
+		for ( x = 0; x < 2; x++ ) {
+			rg.bloomPingPongImage[ x ] = R_CreateImage( va( "_bloomPingPong%i", x ), NULL, width, height, IMGTYPE_COLORALPHA,
+				IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_RGBA16F );
 		}
+		/*
+		if ( r_multisampleType->i == AntiAlias_SMAA ) {
+			float *p;
+
+			p = (float *)ri.Hunk_AllocateTempMemory( sizeof( *p ) * width * height );
+			for ( y = 0; y < height; y++ ) {
+				for ( x = 0; x < width; x++ ) {
+					p[ y * width + x ] = 1.0f;
+				}
+			}
+			rg.smaaBlendImage = R_CreateImage( "*smaaBlendImage", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_FBO | IMGFLAG_CLAMPTOEDGE, GL_RGBA16F );
+			ri.Hunk_FreeTempMemory( p );
+
+			rg.smaaEdgesImage = R_CreateImage( "*smaaEdgesImage", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_RGBA8 );
+			rg.smaaWeightsImage = R_CreateImage( "*smaaWeightsImage", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_RGBA8 );
+			rg.smaaSearchImage = R_FindImageFile( "gfx/SearchTex.dds", IMGTYPE_COLORALPHA, IMGFLAG_FBO );
+			rg.smaaAreaImage = R_FindImageFile( "gfx/AreaTexDX10.dds", IMGTYPE_COLORALPHA, IMGFLAG_FBO );
+		}
+		*/
+//		if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
+//			rg.computeImage = R_CreateImage( "_computeImage", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE
+//				| IMGFLAG_FBO, GL_RGBA32F );
+//			nglBindImageTexture( 0, rg.computeImage->id, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F );
+//		}
 
 		rg.renderImage = R_CreateImage( "_render", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, hdrFormat );
 		rg.renderDepthImage  = R_CreateImage( "*renderdepth",  NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_DEPTH_COMPONENT24 );
@@ -3080,23 +3102,6 @@ void R_CreateBuiltinTextures( void )
 
 		if ( r_drawSunRays->i ) {
 			rg.sunRaysImage = R_CreateImage("*sunRays", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, rgbFormat);
-		}
-		if ( r_multisampleType->i == AntiAlias_SMAA ) {
-			float *p;
-
-			p = (float *)ri.Hunk_AllocateTempMemory( sizeof( *p ) * width * height );
-			for ( y = 0; y < height; y++ ) {
-				for ( x = 0; x < width; x++ ) {
-					p[ y * width + x ] = 1.0f;
-				}
-			}
-			rg.smaaBlendImage = R_CreateImage( "*smaaBlendImage", (byte *)p, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA16F );
-			ri.Hunk_FreeTempMemory( p );
-
-			rg.smaaEdgesImage = R_CreateImage( "*smaaEdgesImage", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_RGBA8 );
-			rg.smaaWeightsImage = R_CreateImage( "*smaaWeightsImage", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_RGBA8 );
-			rg.smaaAreaImage = R_FindImageFile( "textures/effects/SearchTex.dds", IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE );
-			rg.smaaSearchImage = R_FindImageFile( "textures/effects/AreaTexDX10.dds", IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE );
 		}
 		*/
 

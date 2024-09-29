@@ -495,28 +495,32 @@ static const void *RB_SwapBuffers(const void *data)
 	if ( glContext.ARB_framebuffer_object && r_arb_framebuffer_object->i ) {
 		if ( !backend.framePostProcessed ) {
 			start = ri.Milliseconds();
-			if ( rg.msaaResolveFbo && r_multisampleType->i <= AntiAlias_32xMSAA ) {
-				if ( r_bloom->i && r_hdr->i ) {
-					RB_BloomPass( rg.renderFbo, rg.msaaResolveFbo );
-				} else {
-					// Resolving an RGB16F MSAA FBO to the screen messes with the brightness, so resolve to an RGB16F FBO first
-					FBO_FastBlit( rg.renderFbo, NULL, rg.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
-				}
-				FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+			if ( rg.msaaResolveFbo.frameBuffer && r_multisampleType->i == AntiAlias_MSAA ) {
+				// Resolving an RGB16F MSAA FBO to the screen messes with the brightness, so resolve to an RGB16F FBO first
+				FBO_FastBlit( &rg.renderFbo, NULL, &rg.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+				FBO_FastBlit( &rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
 			}
-			else if ( rg.ssaaResolveFbo && r_multisampleType->i >= AntiAlias_2xSSAA && r_multisampleType->i <= AntiAlias_4xSSAA ) {
+			else if ( r_multisampleType->i == AntiAlias_SMAA ) {
+				RB_PostProcessSMAA( &rg.renderFbo );
+				FBO_FastBlit( &rg.renderFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+			}
+			else if ( rg.ssaaResolveFbo.frameBuffer && r_multisampleType->i == AntiAlias_SSAA ) {
 				ivec4_t dstBox;
 
 				dstBox[0] = 0;
 				dstBox[1] = 0;
-				dstBox[2] = rg.renderFbo->width;
-				dstBox[3] = rg.renderFbo->height;
+				dstBox[2] = rg.renderFbo.width;
+				dstBox[3] = rg.renderFbo.height;
 
-				FBO_FastBlit( rg.renderFbo, NULL, rg.ssaaResolveFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
-				FBO_FastBlit( rg.ssaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+				FBO_FastBlit( &rg.renderFbo, NULL, &rg.ssaaResolveFbo, dstBox, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+				FBO_FastBlit( &rg.ssaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+			}
+			else if ( r_hdr->i ) {
+				RB_BloomPass( &rg.renderFbo, &rg.renderFbo );
+				FBO_FastBlit( &rg.renderFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 			}
 			else {
-				FBO_FastBlit( rg.renderFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+				FBO_FastBlit( &rg.renderFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 			}
 			end = ri.Milliseconds();
 			backend.pc.postprocessMsec = end - start;
@@ -578,41 +582,28 @@ static const void *RB_PostProcess( const void *data )
 		glState.viewData = cmd->viewData;
 	}
 
-	srcFbo = rg.renderFbo;
-	if ( rg.msaaResolveFbo && r_multisampleType->i <= AntiAlias_32xMSAA ) {
+	srcFbo = &rg.renderFbo;
+	if ( rg.msaaResolveFbo.frameBuffer && r_multisampleType->i == AntiAlias_MSAA ) {
 		// Resolve the MSAA before anything else
 		// Can't resolve just part of the MSAA FBO, so multiple views will suffer a performance hit here
-		FBO_FastBlit( rg.renderFbo, NULL, rg.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
-		srcFbo = rg.msaaResolveFbo;
-	} else if ( rg.ssaaResolveFbo && r_multisampleType->i >= AntiAlias_2xSSAA && r_multisampleType->i >= AntiAlias_4xSSAA ) {
+		FBO_FastBlit( &rg.renderFbo, NULL, &rg.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+		srcFbo = &rg.msaaResolveFbo;
+	} else if ( rg.ssaaResolveFbo.frameBuffer && r_multisampleType->i == AntiAlias_SSAA ) {
 		ivec4_t dstBox;
 
 		dstBox[0] = 0;
 		dstBox[1] = 0;
-		dstBox[2] = rg.renderFbo->width;
-		dstBox[3] = rg.renderFbo->height;
+		dstBox[2] = rg.renderFbo.width;
+		dstBox[3] = rg.renderFbo.height;
 
-		FBO_FastBlit( rg.renderFbo, NULL, rg.ssaaResolveFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
-		srcFbo = rg.ssaaResolveFbo;
+		FBO_FastBlit( &rg.renderFbo, NULL, &rg.ssaaResolveFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+		srcFbo = &rg.ssaaResolveFbo;
 	}
 
 	dstBox[0] = glState.viewData.viewportX;
 	dstBox[1] = glState.viewData.viewportY;
 	dstBox[2] = glState.viewData.viewportWidth;
 	dstBox[3] = glState.viewData.viewportHeight;
-
-/*
-	if ( r_ssao->i ) {
-		vec4_t viewInfo;
-
-		srcBox[0] = glState.viewData.viewportX      * rg.screenSsaoImage->width  / (float)glConfig.vidWidth;
-		srcBox[1] = glState.viewData.viewportY      * rg.screenSsaoImage->height / (float)glConfig.vidHeight;
-		srcBox[2] = glState.viewData.viewportWidth  * rg.screenSsaoImage->width  / (float)glConfig.vidWidth;
-		srcBox[3] = glState.viewData.viewportHeight * rg.screenSsaoImage->height / (float)glConfig.vidHeight;
-
-//		FBO_Blit( rg.screenSsaoFbo, srcBox, NULL, srcFbo, dstBox, NULL, NULL, GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO );
-	}
-*/
 
 	srcBox[0] = glState.viewData.viewportX;
 	srcBox[1] = glState.viewData.viewportY;
@@ -650,6 +641,46 @@ static const void *RB_PostProcess( const void *data )
 	} else {
 //		RB_GaussianBlur( backend.refdef.blurFactor );
 	}
+
+	/*
+	ri.ProfileFunctionBegin( "ColorMapCompute" );
+					GLSL_UseProgram( &rg.colormapShader );
+					GLSL_SetUniformInt( &rg.colormapShader, UNIFORM_USE_BLOOM, r_bloom->i );
+					GLSL_SetUniformInt( &rg.colormapShader, UNIFORM_USE_HDR, r_hdr->i );
+					GLSL_SetUniformInt( &rg.colormapShader, UNIFORM_TONEMAPPING, r_toneMapType->i );
+					GLSL_SetUniformInt( &rg.colormapShader, UNIFORM_ANTIALIASING, r_multisampleType->i );
+					GLSL_SetUniformFloat( &rg.colormapShader, UNIFORM_EXPOSURE, r_autoExposure->f );
+					GLSL_SetUniformFloat( &rg.colormapShader, UNIFORM_GAMMA, r_gammaAmount->f );
+					{
+						vec2_t screenSize;
+						VectorSet2( screenSize, glConfig.vidWidth, glConfig.vidHeight );
+						GLSL_SetUniformVec2( &rg.colormapShader, UNIFORM_SCREEN_SIZE, screenSize );
+					}
+					{
+						uvec2_t dispatchComputeSize;
+						VectorSet2( dispatchComputeSize, (GLuint)ceil( glConfig.vidWidth / 128 ), (GLuint)ceil( glConfig.vidHeight / 4 ) );
+						GLSL_SetUniformUVec2( &rg.colormapShader, UNIFORM_DISPATCH_COMPUTE_SIZE, dispatchComputeSize );
+					}
+					GL_BindTexture( UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
+					GL_BindTexture( UNIFORM_BRIGHT_MAP, rg.bloomImage );
+					GLSL_SetUniformTexture( &rg.colormapShader, UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
+					GLSL_SetUniformTexture( &rg.colormapShader, UNIFORM_BRIGHT_MAP, rg.bloomImage );
+					nglDispatchCompute( (GLuint)ceil( glConfig.vidWidth / 128 ), (GLuint)ceil( glConfig.vidHeight / 4 ), 1 );
+
+					GLSL_UseProgram( &rg.textureColorShader );
+					GLSL_SetUniformTexture( &rg.textureColorShader, UNIFORM_DIFFUSE_MAP, rg.computeImage );
+
+					GL_BindFramebuffer( GL_READ_FRAMEBUFFER, rg.renderFbo->frameBuffer );
+					GL_BindFramebuffer( GL_DRAW_FRAMEBUFFER, rg.msaaResolveFbo->frameBuffer );
+					RB_RenderPass();
+					GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
+					ri.ProfileFunctionEnd();
+	*/
+
+	if ( r_bloom->i && r_hdr->i ) {
+		RB_BloomPass( srcFbo, srcFbo );
+	}
+
 	if ( srcFbo ) {
 		FBO_FastBlit( srcFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 	}
@@ -864,18 +895,18 @@ static const void *RB_ClearDepth( const void *data )
 	}
 
 	if ( glContext.ARB_framebuffer_object ) {
-		if ( !rg.renderFbo || backend.framePostProcessed ) {
+		if ( !rg.renderFbo.frameBuffer || backend.framePostProcessed ) {
 			FBO_Bind( NULL );
 		} else {
-			FBO_Bind( rg.renderFbo );
+			FBO_Bind( &rg.renderFbo );
 		}
 	}
 
 	nglClear( GL_DEPTH_BUFFER_BIT );
 
 	// if we're doing MSAA, clear the depth texture for the resolve buffer
-	if ( rg.msaaResolveFbo ) {
-		FBO_Bind( rg.msaaResolveFbo );
+	if ( rg.msaaResolveFbo.frameBuffer ) {
+		FBO_Bind( &rg.msaaResolveFbo );
 		nglClear( GL_DEPTH_BUFFER_BIT );
 	}
 

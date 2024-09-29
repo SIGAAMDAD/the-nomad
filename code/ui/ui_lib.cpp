@@ -125,10 +125,13 @@ void UI_PushMenu( menuframework_t *menu )
         if ( ui->menusp >= MAX_MENU_DEPTH ) {
             N_Error( ERR_DROP, "UI_PushMenu: menu stack overflow" );
         }
-        ui->stack[ui->menusp++] = menu;
+        ui->stack[ ui->menusp++ ] = menu;
     }
 
+	Snd_ClearLoopingTracks();
+
     ui->activemenu = menu;
+
 	ImGui::SetNextWindowFocus();
 
     // default cursor position

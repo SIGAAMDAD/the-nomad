@@ -547,10 +547,11 @@ static void R_ProcessLights( void )
 
 	ri.Printf( PRINT_DEVELOPER, "Processing %u lights\n", r_worldData.numLights );
 
+
 	rg.lightData = GLSL_InitUniformBuffer( "u_LightBuffer", NULL, sizeof( shaderLight_t ) * MAX_MAP_LIGHTS, qfalse );
 	rg.dlightData = GLSL_InitUniformBuffer( "u_DLightBuffer", NULL, sizeof( shaderLight_t ) * r_maxDLights->i, qtrue );
 
-	GLSL_LinkUniformToShader( &rg.computeShader, UNIFORM_LIGHTDATA, rg.lightData, qfalse );
+//	GLSL_LinkUniformToShader( &rg.computeShader, UNIFORM_LIGHTDATA, rg.lightData, qfalse );
 
 	lights = (shaderLight_t *)rg.lightData->data;
 	data = r_worldData.lights;
@@ -565,6 +566,7 @@ static void R_ProcessLights( void )
 		lights[i].quadratic = data[i].quadratic;
 		lights[i].type = data[i].type;
 	}
+
 	for ( i = 0; i < GENERICDEF_COUNT; i++ ) {
 		GLSL_UseProgram( &rg.genericShader[i] );
 		GLSL_SetUniformVec3( &rg.genericShader[i], UNIFORM_AMBIENTLIGHT, rg.world->ambientLightColor );
@@ -572,13 +574,11 @@ static void R_ProcessLights( void )
 		GLSL_LinkUniformToShader( &rg.genericShader[i], UNIFORM_LIGHTDATA, rg.lightData, qfalse );
 		GLSL_ShaderBufferData( &rg.genericShader[i], UNIFORM_LIGHTDATA, rg.lightData, sizeof( shaderLight_t ) * rg.world->numLights, qfalse );
 	}
-	
+
 	GLSL_UseProgram( &rg.tileShader );
 	GLSL_SetUniformVec3( &rg.tileShader, UNIFORM_AMBIENTLIGHT, rg.world->ambientLightColor );
 	GLSL_SetUniformInt( &rg.tileShader, UNIFORM_NUM_LIGHTS, rg.world->numLights );
 	GLSL_LinkUniformToShader( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, qfalse );
-//	GLSL_LinkUniformToShader( &rg.tileShader, UNIFORM_WORLD_POSITIONS, rg.positionsData, qtrue );
-//	GLSL_LinkUniformToShader( &rg.tileShader, UNIFORM_WORLD_TEXCOORDS, rg.texCoordData, qtrue );
 	GLSL_ShaderBufferData( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, sizeof( shaderLight_t ) * rg.world->numLights, qfalse );
 }
 
@@ -664,6 +664,7 @@ void RE_LoadWorldMap( const char *filename )
 	R_InitWorldBuffer();
 	R_GenerateTexCoords( &theader->info );
 	R_ProcessLights();
+	R_SetupTileLighting();
 
 	ri.FS_FreeFile( buffer.v );
 }

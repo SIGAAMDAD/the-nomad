@@ -207,13 +207,12 @@ static void G_RefImGuiNewFrame( void ) {
 
 	ImGuiStyle& style = ImGui::GetStyle();
 
-	switch ( r_multisampleType->i ) {
-	case AntiAlias_2xMSAA:
-	case AntiAlias_4xMSAA:
+	switch ( Cvar_VariableInteger( "r_antialiasingQuality" ) ) {
+	case 0:
 		style.AntiAliasedFill = true;
 		break;
-	case AntiAlias_16xMSAA:
-	case AntiAlias_32xMSAA:
+	case 1:
+	case 2:
 		style.AntiAliasedLines = true;
 		style.AntiAliasedFill = true;
 		break;
@@ -224,7 +223,7 @@ static void G_RefImGuiNewFrame( void ) {
 	ImGui::NewFrame();
 }
 
-static void G_SetScaling(float factor, uint32_t captureWidth, uint32_t captureHeight)
+static void G_SetScaling( float factor, uint32_t captureWidth, uint32_t captureHeight )
 {
 	if ( gi.con_factor != factor ) {
 		// rescale console

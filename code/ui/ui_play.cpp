@@ -382,6 +382,16 @@ static void PlayMenu_Draw_SaveSlotSelect( void )
 	}
 	ImGui::EndTable();
 
+	ImGui::Begin( "##DeleteSaveSlotWidget", NULL, MENU_DEFAULT_FLAGS | ImGuiWindowFlags_AlwaysAutoResize );
+	ImGui::SetWindowPos( ImVec2( 200 * ui->scale + ui->bias, 680 * ui->scale ) );
+	ImGui::Image( (ImTextureID)(uintptr_t)( s_playMenu->deleteHovered ? s_playMenu->delete_1 : s_playMenu->delete_0 ),
+		ImVec2( 256 * ui->scale, 72 * ui->scale ) );
+	s_playMenu->deleteHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
+	if ( ImGui::IsItemActivated() ) {
+		s_playMenu->deleteSlot = qtrue;
+	}
+	ImGui::End();
+
 	/*
 
 	if ( Key_IsDown( KEY_DOWNARROW ) ) {
@@ -550,6 +560,7 @@ void PlayMenu_Cache( void )
 	s_playMenu->menu.textFontScale = 1.75f;
 	s_playMenu->menu.x = 0;
 	s_playMenu->menu.y = 0;
+	s_playMenu->menu.track = Snd_RegisterSfx( "event:/music/main_theme" );
 
 	for ( i = 0; i < NUMDIFS; i++ ) {
 		s_playMenu->difficulties[i].color = color_white;

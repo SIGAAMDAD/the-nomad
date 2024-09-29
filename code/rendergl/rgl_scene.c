@@ -266,6 +266,8 @@ void RE_ProcessEntities( void )
 		}
 		poly->numVerts = 4;
 
+		R_LightEntity( refEntity );
+
 		ri.GLM_TransformToGL( origin, xyz, refEntity->e.scale, refEntity->e.rotation, glState.viewData.camera.viewProjectionMatrix );
 
 		if ( refEntity->e.sheetNum == -1 ) {
@@ -282,6 +284,7 @@ void RE_ProcessEntities( void )
 		for ( j = 0; j < 4; j++ ) {
 			VectorSet2( verts[j].worldPos, refEntity->e.origin[0], refEntity->e.origin[1] + refEntity->e.origin[2] );
 			VectorCopy( verts[j].xyz, xyz[j] );
+			verts[j].modulate.u32 = refEntity->ambientLightInt;
 		}
 		verts += 4;
 		r_numPolyVerts += 4;

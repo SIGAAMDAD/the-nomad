@@ -8,8 +8,8 @@ typedef struct {
 	
 	menutext_t yes;
 	menutext_t no;
+	menutext_t question;
 	
-	const char *question;
 	void (*draw)( void );
 	void (*action)( qboolean result );
 	
@@ -107,17 +107,28 @@ void UI_ConfirmMenu( const char *question, void (*draw)( void ), void (*action)(
 	l2 = l1 + n2;
 	l3 = l2 + n3;
 	
-	s_confirm->question = question;
 	s_confirm->draw = draw;
 	s_confirm->action = action;
 
 	s_confirm->menu.draw = ConfirmMenu_Draw;
+	s_confirm->menu.x = 480 - ( n1 * ui->scale + ui->bias );
+	s_confirm->menu.y = 280 * ui->scale;
+	s_confirm->menu.width = l1 * ui->scale;
+	s_confirm->menu.height = 372 * ui->scale;
+	s_confirm->menu.textFontScale = 1.5f;
+	s_confirm->menu.name = "ConfirmMenu";
+	s_confirm->menu.flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar
+		| ImGuiWindowFlags_NoCollapse;
 
 	if ( gi.state == GS_LEVEL ) {
 		s_confirm->menu.fullscreen = qfalse;
 	} else {
 		s_confirm->menu.fullscreen = qtrue;
 	}
+
+	s_confirm->question.generic.type = MTYPE_TEXT;
+	s_confirm->question.text = question;
+	s_confirm->question.color = color_white;
 
 	s_confirm->yes.generic.type = MTYPE_TEXT;
 	s_confirm->yes.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
@@ -133,7 +144,9 @@ void UI_ConfirmMenu( const char *question, void (*draw)( void ), void (*action)(
 	s_confirm->no.text = "NO";
 	s_confirm->no.color = color_red;
 	
+	Menu_AddItem( &s_confirm->menu, &s_confirm->question );
 	Menu_AddItem( &s_confirm->menu, &s_confirm->yes );
+	Menu_AddItem( &s_confirm->menu, &s_confirm->no );
 
 	UI_PushMenu( &s_confirm->menu );
 }
@@ -156,8 +169,8 @@ void UI_Message( const char **lines )
 
 	s_confirm->menu.name = "";
 	s_confirm->menu.fullscreen = qtrue;
-	s_confirm->menu.width = 640 * ui->scale;
-	s_confirm->menu.height = 480 * ui->scale;
+	s_confirm->menu.width = ui->gpuConfig.vidWidth;
+	s_confirm->menu.height = ui->gpuConfig.vidHeight;
 	s_confirm->menu.x = length * ui->scale;
 	s_confirm->menu.y = 268 * ui->scale;
 	s_confirm->menu.draw = MessageMenu_Draw;

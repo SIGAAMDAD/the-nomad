@@ -218,9 +218,12 @@ void R_DrawPolys( void )
 	// sort the polys to be more efficient with our shaders
 	R_RadixSort( backend.refdef.polys, backend.refdef.numPolys );
 
+	GLSL_UseProgram( &rg.tileShader );
+
 	poly = backend.refdef.polys;
 	oldShader = poly->hShader;
 	backend.drawBatch.shader = R_GetShaderByHandle( oldShader );
+	rg.world->drawing = qtrue;
 
 	assert( backend.refdef.polys );
 
@@ -265,6 +268,12 @@ void R_DrawPolys( void )
 			VectorCopy( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].worldPos, backend.refdef.polys[i].verts[j].worldPos );
 //            VectorCopy4( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].color, backend.refdef.polys[i].verts[j].modulate );
 //			R_CalcTangentVectors( (drawVert_t *)&vtx[j] );
+
+			backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].color[0] = (int)backend.refdef.polys[i].verts[j].modulate.rgba[0] * 257;
+			backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].color[1] = (int)backend.refdef.polys[i].verts[j].modulate.rgba[1] * 257;
+			backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].color[2] = (int)backend.refdef.polys[i].verts[j].modulate.rgba[2] * 257;
+			backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].color[3] = (int)backend.refdef.polys[i].verts[j].modulate.rgba[3] * 257;
+
 			backend.drawBatch.vtxOffset++;
 		}
 	}

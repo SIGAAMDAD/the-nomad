@@ -55,16 +55,13 @@ static uniformInfo_t uniformsInfo[UNIFORM_COUNT] = {
 	{ "u_ScreenDepthMap",       GLSL_TEXTURE },
 
 	{ "u_ShadowMap",            GLSL_TEXTURE },
-	{ "u_ShadowMap2",           GLSL_TEXTURE },
-	{ "u_ShadowMap3",           GLSL_TEXTURE },
-	{ "u_ShadowMap4",           GLSL_TEXTURE },
+
+	{ "u_AreaTexture",          GLSL_TEXTURE },
+	{ "u_SearchTexture",        GLSL_TEXTURE },
+	{ "u_EdgesTexture",         GLSL_TEXTURE },
+	{ "u_BlendTexture",         GLSL_TEXTURE },
 
 	{ "u_ShadowMvp",            GLSL_MAT16 },
-	{ "u_ShadowMvp2",           GLSL_MAT16 },
-	{ "u_ShadowMvp3",           GLSL_MAT16 },
-	{ "u_ShadowMvp4",           GLSL_MAT16 },
-
-	{ "u_EnableTextures",       GLSL_VEC4 },
 
 	{ "u_DiffuseTexMatrix",     GLSL_VEC4 },
 	{ "u_DiffuseTexOffTurb",    GLSL_VEC4 },
@@ -81,77 +78,39 @@ static uniformInfo_t uniformsInfo[UNIFORM_COUNT] = {
 	{ "u_Color",                GLSL_VEC4 },
 	{ "u_BaseColor",            GLSL_VEC4 },
 	{ "u_VertColor",            GLSL_VEC4 },
-
-	{ "u_DlightInfo",           GLSL_VEC4 },
-	{ "u_LightForward",         GLSL_VEC3 },
-	{ "u_LightUp",              GLSL_VEC3 },
-	{ "u_LightRight",           GLSL_VEC3 },
-	{ "u_LightOrigin",          GLSL_VEC4 },
-	{ "u_ModelLightDir",        GLSL_VEC3 },
-	{ "u_LightRadius",          GLSL_FLOAT },
 	{ "u_AmbientColor",         GLSL_VEC3 },
-	{ "u_DirectedLight",        GLSL_VEC3 },
 
 	{ "u_ModelViewProjection",  GLSL_MAT16 },
 
 	{ "u_Time",                 GLSL_FLOAT },
-	{ "u_VertexLerp" ,          GLSL_FLOAT },
 	{ "u_NormalScale",          GLSL_VEC4 },
 	{ "u_SpecularScale",        GLSL_VEC4 },
-
-	{ "u_ViewInfo",             GLSL_VEC4 },
 	{ "u_ViewOrigin",           GLSL_VEC3 },
-	{ "u_LocalViewOrigin",      GLSL_VEC3 },
-	{ "u_ViewForward",          GLSL_VEC3 },
-	{ "u_ViewLeft",             GLSL_VEC3 },
-	{ "u_ViewUp",               GLSL_VEC3 },
-
-	{ "u_InvTexRes",            GLSL_VEC2 },
-	{ "u_AutoExposureMinMax",   GLSL_VEC2 },
-	{ "u_ToneMinAvgMaxLinear",  GLSL_VEC3 },
-
-	{ "u_PrimaryLightOrigin",   GLSL_VEC4  },
-	{ "u_PrimaryLightColor",    GLSL_VEC3  },
-	{ "u_PrimaryLightAmbient",  GLSL_VEC3  },
-	{ "u_PrimaryLightRadius",   GLSL_FLOAT },
 
 	{ "u_AlphaTest",            GLSL_INT },
+	{ "u_NumLights",            GLSL_INT },
+	{ "u_BlurHorizontal",       GLSL_INT },
+
+	{ "u_LightBuffer",          GLSL_BUFFER },
+	{ "u_DLightData",			GLSL_BUFFER },
 
 	{ "u_GammaAmount",          GLSL_FLOAT },
-
-	{ "u_NumLights",            GLSL_INT },
-
 	{ "u_Exposure",             GLSL_FLOAT },
 	{ "u_ScreenSize",           GLSL_VEC2 },
 	{ "u_SharpenAmount",        GLSL_FLOAT },
-	{ "u_LightBuffer",          GLSL_BUFFER },
 	{ "u_GamePaused",           GLSL_INT },
-
-	{ "u_AreaTexture",          GLSL_TEXTURE },
-	{ "u_SearchTexture",        GLSL_TEXTURE },
-	{ "u_EdgesTexture",         GLSL_TEXTURE },
-	{ "u_BlendTexture",         GLSL_TEXTURE },
-
-	{ "u_BlurHorizontal",       GLSL_INT },
-
-	// all of the uniforms below are for
-	// replacing the #define that requires
-	// a vid_restart
-
 	{ "u_AntiAliasing",         GLSL_INT },
 	{ "u_HardwareGamma",        GLSL_INT },
 	{ "u_HDR",                  GLSL_INT },
 	{ "u_PBR",                  GLSL_INT },
-	{ "u_ToneMap",              GLSL_INT },
+	{ "u_ToneMapType",          GLSL_INT },
 	{ "u_Bloom",                GLSL_INT },
+	{ "u_LightingQuality",		GLSL_INT },
+	{ "u_PostProcess",			GLSL_INT },
+	{ "u_AntiAliasingQuality",	GLSL_INT },
 
-	{ "u_FragDataBuffer",       GLSL_BUFFER },
-	{ "u_GraphicsConfig",       GLSL_BUFFER },
-	{ "u_Samplers",             GLSL_BUFFER },
-	{ "u_VertexInput",          GLSL_BUFFER },
-	{ "u_TexCoords",			GLSL_BUFFER },
-	{ "u_WorldPositions",		GLSL_BUFFER },
-	{ "u_DLightData",			GLSL_BUFFER }
+	{ "u_DispatchComputeSize",	GLSL_UVEC2 },
+	{ "u_FinalPass",			GLSL_INT },
 };
 
 //static shaderProgram_t *hashTable[MAX_RENDER_SHADERS];
@@ -756,8 +715,9 @@ static void GLSL_PrepareHeader(GLenum shaderType, const GLchar *extra, char *des
 							va( "#ifndef AntiAliasingType_t\n"
 								"#define AntiAlias_FXAA %i\n"
 								"#define AntiAlias_SMAA %i\n"
+								"#define AntiAlias_SSAA %i\n"
 								"#endif\n"
-							, AntiAlias_FXAA, AntiAlias_SMAA ) );
+							, AntiAlias_FXAA, AntiAlias_SMAA, AntiAlias_SSAA ) );
 	
 	N_strcat( dest, size,
 							va( "#ifndef ToneMapType_t\n"
@@ -775,25 +735,10 @@ static void GLSL_PrepareHeader(GLenum shaderType, const GLchar *extra, char *des
 	} else if ( shaderType == GL_COMPUTE_SHADER ) {
 		N_strcat( dest, size, "#define COMPUTE_SHADER\n" );
 	}
-	
-	if ( r_hdr->i ) {
-		N_strcat( dest, size, "#define USE_HDR\n" );
-		if ( r_bloom->i ) {
-			N_strcat( dest, size, "#define USE_BLOOM\n" );
-		}
-		if ( r_toneMap->i ) {
-			N_strcat( dest, size, "#define TONEMAP_TYPE ToneMap_Disabled\n" );
-		} else {
-			N_strcat( dest, size, va( "#define TONEMAP_TYPE %i\n", r_toneMapType->i ) );
-		}
-	}
-	if ( r_dynamiclight->i ) {
-		N_strcat( dest, size, "#define USE_DYNAMIC_LIGHTING\n" );
-	}
-	N_strcat( dest, size, va( "#define LIGHTING_QUALITY %i\n", r_lightingQuality->i ) );
-#ifdef USE_SHADER_STORAGE_WORLD
-	N_strcat( dest, size, "#define USE_SHADER_STORAGE_WORLD\n" );
-#endif
+
+	N_strcat( dest, size, "#define QUALITY_LOW 0\n" );
+	N_strcat( dest, size, "#define QUALITY_NORMAL 1\n" );
+	N_strcat( dest, size, "#define QUALITY_HIGH 2\n" );
 
 	fbufWidthScale = 1.0f / ((float)glConfig.vidWidth);
 	fbufHeightScale = 1.0f / ((float)glConfig.vidHeight);
@@ -1020,12 +965,18 @@ static void GLSL_InitUniforms( shaderProgram_t *program )
 		case GLSL_FLOAT:
 			uniformBufferSize += sizeof( GLfloat );
 			break;
+		case GLSL_IVEC2:
+		case GLSL_UVEC2:
 		case GLSL_VEC2:
 			uniformBufferSize += sizeof( vec2_t );
 			break;
+		case GLSL_IVEC3:
+		case GLSL_UVEC3:
 		case GLSL_VEC3:
 			uniformBufferSize += sizeof( vec3_t );
 			break;
+		case GLSL_IVEC4:
+		case GLSL_UVEC4:
 		case GLSL_VEC4:
 			uniformBufferSize += sizeof( vec4_t );
 			break;
@@ -1097,7 +1048,7 @@ void GLSL_SetUniformTexture( shaderProgram_t *program, uint32_t uniformNum, text
 	}
 	
 	*compare = (uintptr_t)(void *)value;
-	if ( r_loadTexturesOnDemand->i ) {
+	if ( r_loadTexturesOnDemand->i && !( value->flags & IMGFLAG_FBO ) ) {
 		nglUniformHandleui64ARB( uniforms[ uniformNum ], value->handle );
 	} else {
 		nglUniform1i( uniforms[ uniformNum ], uniformNum );
@@ -1123,7 +1074,7 @@ void GLSL_SetUniformInt( shaderProgram_t *program, uint32_t uniformNum, GLint va
 	nglUniform1i(uniforms[uniformNum], value);
 }
 
-void GLSL_SetUniformFloat(shaderProgram_t *program, uint32_t uniformNum, GLfloat value)
+void GLSL_SetUniformFloat( shaderProgram_t *program, uint32_t uniformNum, GLfloat value )
 {
 	GLint *uniforms = program->uniforms;
 	GLfloat *compare = (GLfloat *)( program->uniformBuffer + program->uniformBufferOffsets[uniformNum] );
@@ -1142,6 +1093,126 @@ void GLSL_SetUniformFloat(shaderProgram_t *program, uint32_t uniformNum, GLfloat
 	
 	*compare = value;
 	nglUniform1f(uniforms[uniformNum], value);
+}
+
+void GLSL_SetUniformUVec2(shaderProgram_t *program, uint32_t uniformNum, const uvec2_t v)
+{
+	GLint *uniforms = program->uniforms;
+	uvec_t *compare = (uvec_t *)(program->uniformBuffer + program->uniformBufferOffsets[uniformNum]);
+
+	if (uniforms[uniformNum] == -1)
+		return;
+	
+	if (uniformsInfo[uniformNum].type != GLSL_UVEC2) {
+		ri.Printf(PRINT_INFO, COLOR_YELLOW "WARNING: GLSL_SetUniformUVec2: wrong type for uniform %i in program %s\n", uniformNum, program->name);
+		return;
+	}
+	if (v[0] == compare[0] && v[1] == compare[1])
+		return;
+	
+	compare[0] = v[0];
+	compare[1] = v[1];
+	nglUniform2ui(uniforms[uniformNum], v[0], v[1]);
+}
+
+void GLSL_SetUniformUVec3(shaderProgram_t *program, uint32_t uniformNum, const uvec3_t v)
+{
+	GLint *uniforms = program->uniforms;
+	uvec_t *compare = (uvec_t *)(program->uniformBuffer + program->uniformBufferOffsets[uniformNum]);
+
+	if (uniforms[uniformNum] == -1)
+		return;
+	
+	if (uniformsInfo[uniformNum].type != GLSL_UVEC3) {
+		ri.Printf(PRINT_INFO, COLOR_YELLOW "WARNING: GLSL_SetUniformUVec3: wrong type for uniform %i in program %s\n", uniformNum, program->name);
+		return;
+	}
+	if ( v[0] == compare[0] && v[1] == compare[1] && v[2] == compare[2] ) {
+		return;
+	}
+	
+	VectorCopy(compare, v);
+	nglUniform3ui(uniforms[uniformNum], v[0], v[1], v[2]);
+}
+
+void GLSL_SetUniformUVec4(shaderProgram_t *program, uint32_t uniformNum, const uvec4_t v)
+{
+	GLint *uniforms = program->uniforms;
+	uvec_t *compare = (uvec_t *)(program->uniformBuffer + program->uniformBufferOffsets[uniformNum]);
+
+	if (uniforms[uniformNum] == -1)
+		return;
+	
+	if (uniformsInfo[uniformNum].type != GLSL_UVEC4) {
+		ri.Printf(PRINT_INFO, COLOR_YELLOW "WARNING: GLSL_SetUniformUVec4: wrong type for uniform %i in program %s\n", uniformNum, program->name);
+		return;
+	}
+	if ( v[0] == compare[0] && v[1] == compare[1] && v[2] == compare[2] && v[3] == compare[3] ) {
+		return;
+	}
+	
+	VectorCopy4( compare, v );
+	nglUniform4ui(uniforms[uniformNum], v[0], v[1], v[2], v[3]);
+}
+
+void GLSL_SetUniformIVec2(shaderProgram_t *program, uint32_t uniformNum, const ivec2_t v)
+{
+	GLint *uniforms = program->uniforms;
+	ivec_t *compare = (ivec_t *)(program->uniformBuffer + program->uniformBufferOffsets[uniformNum]);
+
+	if (uniforms[uniformNum] == -1)
+		return;
+	
+	if (uniformsInfo[uniformNum].type != GLSL_IVEC2) {
+		ri.Printf(PRINT_INFO, COLOR_YELLOW "WARNING: GLSL_SetUniformIVec2: wrong type for uniform %i in program %s\n", uniformNum, program->name);
+		return;
+	}
+	if (v[0] == compare[0] && v[1] == compare[1])
+		return;
+	
+	compare[0] = v[0];
+	compare[1] = v[1];
+	nglUniform2i(uniforms[uniformNum], v[0], v[1]);
+}
+
+void GLSL_SetUniformIVec3(shaderProgram_t *program, uint32_t uniformNum, const ivec3_t v)
+{
+	GLint *uniforms = program->uniforms;
+	ivec_t *compare = (ivec_t *)(program->uniformBuffer + program->uniformBufferOffsets[uniformNum]);
+
+	if (uniforms[uniformNum] == -1)
+		return;
+	
+	if (uniformsInfo[uniformNum].type != GLSL_IVEC3) {
+		ri.Printf(PRINT_INFO, COLOR_YELLOW "WARNING: GLSL_SetUniformIVec3: wrong type for uniform %i in program %s\n", uniformNum, program->name);
+		return;
+	}
+	if ( v[0] == compare[0] && v[1] == compare[1] && v[2] == compare[2] ) {
+		return;
+	}
+	
+	VectorCopy(compare, v);
+	nglUniform3i(uniforms[uniformNum], v[0], v[1], v[2]);
+}
+
+void GLSL_SetUniformIVec4(shaderProgram_t *program, uint32_t uniformNum, const ivec4_t v)
+{
+	GLint *uniforms = program->uniforms;
+	ivec_t *compare = (ivec_t *)(program->uniformBuffer + program->uniformBufferOffsets[uniformNum]);
+
+	if (uniforms[uniformNum] == -1)
+		return;
+	
+	if (uniformsInfo[uniformNum].type != GLSL_IVEC4) {
+		ri.Printf(PRINT_INFO, COLOR_YELLOW "WARNING: GLSL_SetUniformIVec4: wrong type for uniform %i in program %s\n", uniformNum, program->name);
+		return;
+	}
+	if ( v[0] == compare[0] && v[1] == compare[1] && v[2] == compare[2] && v[3] == compare[3] ) {
+		return;
+	}
+	
+	VectorCopy4( compare, v );
+	nglUniform4i(uniforms[uniformNum], v[0], v[1], v[2], v[3]);
 }
 
 void GLSL_SetUniformVec2(shaderProgram_t *program, uint32_t uniformNum, const vec2_t v)
@@ -1331,12 +1402,12 @@ uniformBuffer_t *GLSL_InitUniformBuffer( const char *name, byte *buffer, uint64_
 	size += PAD( nameLen + 1, sizeof( uintptr_t ) );
 	size += PAD( sizeof( *buf ), sizeof( uintptr_t ) );
 
-	buf = rg.uniformBuffers[ rg.numUniformBuffers ] = (uniformBuffer_t *)ri.Hunk_Alloc( size, h_low );
+	buf = rg.uniformBuffers[ rg.numUniformBuffers ] = (uniformBuffer_t *)ri.Malloc( size );
 	memset( buf, 0, size );
 
 	buf->name = (char *)( buf + 1 );
 	if ( !buffer ) {
-		buf->data = (byte *)ri.Hunk_Alloc( bufSize, h_low );
+		buf->data = (byte *)ri.Malloc( bufSize );
 	} else {
 		buf->data = buffer;
 	}
@@ -1360,7 +1431,7 @@ uniformBuffer_t *GLSL_InitUniformBuffer( const char *name, byte *buffer, uint64_
 	return buf;
 }
 
-void GLSL_InitGPUShaders( void )
+void GLSL_InitGPUShaders_f( void )
 {
 	uint64_t start, end;
 	uint64_t i;
@@ -1549,7 +1620,6 @@ void GLSL_InitGPUShaders( void )
 		numLightShaders++;
 	}
 
-	/*
 	attribs = ATTRIB_POSITION;
 	extradefines[0] = '\0';
 	if ( !GLSL_InitGPUShader( &rg.smaaEdgesShader, "SMAAEdges", attribs, qtrue, extradefines, qtrue, fallbackShader_SMAAEdges_vp, fallbackShader_SMAAEdges_fp ) ) {
@@ -1576,7 +1646,6 @@ void GLSL_InitGPUShaders( void )
 	GLSL_InitUniforms( &rg.smaaBlendShader );
 	GLSL_FinishGPUShader( &rg.smaaBlendShader );
 	numEtcShaders++;
-	*/
 
 	/*
 	attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD;
@@ -1730,8 +1799,14 @@ void GLSL_InitGPUShaders( void )
 		if ( !GLSL_InitComputeShader( &rg.computeShader, "generic", NULL, qtrue, NULL ) ) {
 			ri.Error( ERR_DROP, "Could not load compute shader!" );
 		}
+		if ( !GLSL_InitComputeShader( &rg.colormapShader, "colormap", NULL, qtrue, NULL ) ) {
+			ri.Error( ERR_DROP, "Could not load colormap comptue shader!" );
+		}
+		GLSL_InitUniforms( &rg.colormapShader );
+		GLSL_FinishGPUShader( &rg.colormapShader );
 #endif
 
+		/*
 		nglGenTextures( 1, &rg.computeShaderTexture );
 		nglActiveTexture( GL_TEXTURE0 );
 		nglBindTexture( GL_TEXTURE_2D, rg.computeShaderTexture );
@@ -1743,6 +1818,7 @@ void GLSL_InitGPUShaders( void )
 		nglTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, glConfig.vidWidth, glConfig.vidHeight, 0, GL_RGBA, GL_FLOAT, NULL );
 		nglBindImageTexture( 0, rg.computeShaderTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F );
 		nglBindTexture( GL_TEXTURE_2D, 0 );
+		*/
 	} else {
 		ri.Printf( PRINT_INFO, "...disabled\n" );
 	}
@@ -1753,11 +1829,19 @@ void GLSL_InitGPUShaders( void )
 		rg.numPrograms, numGenShaders, numEtcShaders, numLightShaders, ( end - start ) / 1000.0f );
 }
 
+void GLSL_InitGPUShaders( void )
+{
+	ri.Cmd_AddCommand( "gpushaders_init", GLSL_InitGPUShaders_f );
+
+	GLSL_InitGPUShaders_f();
+}
+
 void GLSL_ShutdownGPUShaders( void )
 {
 	uint32_t i;
 
 	ri.Printf( PRINT_INFO, "---------- GLSL_ShutdownGPUShaders -----------\n" );
+	ri.Cmd_RemoveCommand( "gpushaders_init" );
 
 	for ( i = 0; i < ATTRIB_INDEX_COUNT; i++ ) {
 		nglDisableVertexAttribArray( i );
@@ -1767,16 +1851,20 @@ void GLSL_ShutdownGPUShaders( void )
 	nglBindBufferARB( r_arb_shader_storage_buffer_object->i ? GL_SHADER_STORAGE_BUFFER : GL_UNIFORM_BUFFER, 0 );
 
 	if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
-		nglDeleteTextures( 1, &rg.computeShaderTexture );
 		GLSL_DeleteGPUShader( &rg.computeShader );
 	}
 
 	GLSL_DeleteGPUShader( &rg.imguiShader );
 	GLSL_DeleteGPUShader( &rg.tileShader );
 	GLSL_DeleteGPUShader( &rg.textureColorShader );
+	GLSL_DeleteGPUShader( &rg.bloomResolveShader );
+	GLSL_DeleteGPUShader( &rg.blurShader );
 
 	for ( i = 0; i < rg.numUniformBuffers; i++ ) {
 		nglDeleteBuffersARB( 1, &rg.uniformBuffers[i]->id );
+		if ( !rg.uniformBuffers[i]->externalBuffer ) {
+			ri.Free( rg.uniformBuffers[ i ]->data );
+		}
 	}
 	for ( i = 0; i < GENERICDEF_COUNT; i++ ) {
 		GLSL_DeleteGPUShader( &rg.genericShader[i] );

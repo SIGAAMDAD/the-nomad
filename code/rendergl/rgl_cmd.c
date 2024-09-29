@@ -242,8 +242,10 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 		return;
 	}
 
-	if ( glContext.ARB_framebuffer_object && r_arb_framebuffer_object->i && rg.renderFbo ) {
-		GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo->frameBuffer );
+	if ( glContext.ARB_framebuffer_object && r_arb_framebuffer_object->i && rg.renderFbo.frameBuffer
+		&& ( ( r_multisampleType->i == AntiAlias_MSAA || r_multisampleType->i == AntiAlias_SSAA ) || r_hdr->i ) )
+	{
+		GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo.frameBuffer );
 	}
 
     if ( glState.currentFbo ) {
@@ -286,12 +288,14 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 		}
 	}
 
+	/*
 	if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
 		ri.ProfileFunctionBegin( "ComputeShaderDispatch" );
 		GLSL_UseProgram( &rg.computeShader );
 		nglDispatchCompute( glConfig.vidWidth / 64, glConfig.vidHeight / 16, 1 );
 		ri.ProfileFunctionEnd();
 	}
+	*/
 
     // clear relevant buffers
     nglClear( clearBits );
@@ -439,7 +443,7 @@ void RE_EndFrame( uint64_t *frontEndMsec, uint64_t *backEndMsec, backendCounters
 	if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
 //		nglMemoryBarrier( GL_UNIFORM_BARRIER_BIT | GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_ELEMENT_ARRAY_BARRIER_BIT
 //			| GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_BUFFER_UPDATE_BARRIER_BIT | GL_FRAMEBUFFER_BARRIER_BIT );
-		ri.ProfileFunctionBegin( "ComputeShaderFlush" );
+//		ri.ProfileFunctionBegin( "ComputeShaderFlush" );
 
 	//	GLSL_UseProgram( &rg.textureColorShader );
 	//	nglActiveTexture( GL_TEXTURE0 );
@@ -449,7 +453,7 @@ void RE_EndFrame( uint64_t *frontEndMsec, uint64_t *backEndMsec, backendCounters
 	//	backend.drawBatch.shader = rg.defaultShader;
 	//	RB_FlushBatchBuffer();
 
-		ri.ProfileFunctionEnd();
+//		ri.ProfileFunctionEnd();
 	}
 
 	R_IssueRenderCommands( qtrue, qtrue );

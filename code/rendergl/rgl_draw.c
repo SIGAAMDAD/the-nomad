@@ -41,74 +41,6 @@ void R_DrawElements( uint32_t numElements, uintptr_t nOffset ) {
 	};
 }
 
-static void R_UploadUniformBufferData( shaderProgram_t *sp, uint32_t uniformNum, uniformBuffer_t *buffer )
-{
-	switch ( uniformNum ) {
-	case UNIFORM_VERTEXINPUT:
-		break;
-	case UNIFORM_SAMPLERS: {
-		static struct {
-			int u_DiffuseMap;
-			int u_NormalMap;
-			int u_SpecularMap;
-			int u_DepthMap;
-		} data;
-
-		memset( &data, 0, sizeof( data ) );
-		data.u_DiffuseMap = backend.drawBatch.shader->stages[0]->bundle[TB_DIFFUSEMAP].image[0]->id;
-		if ( r_normalMapping->i && backend.drawBatch.shader->stages[0]->bundle[TB_NORMALMAP].image[0] ) {
-			data.u_NormalMap = backend.drawBatch.shader->stages[0]->bundle[TB_NORMALMAP].image[0]->id;
-		}
-		if ( r_specularMapping->i && backend.drawBatch.shader->stages[0]->bundle[TB_SPECULARMAP].image[0] ) {
-			data.u_SpecularMap = backend.drawBatch.shader->stages[0]->bundle[TB_SPECULARMAP].image[0]->id;
-		}
-		if ( r_parallaxMapping->i && backend.drawBatch.shader->stages[0]->bundle[TB_LEVELSMAP].image[0] ) {
-			data.u_DepthMap = backend.drawBatch.shader->stages[0]->bundle[TB_LEVELSMAP].image[0]->id;
-		}
-		break; }
-	case UNIFORM_FRAGMENTDATA: {
-		static struct {
-			vec4_t u_ViewOrigin;
-			vec2_t u_ScreenSize;
-			qboolean u_GamePaused;
-			int u_AlphaTest;
-		} data;
-
-		memset( &data, 0, sizeof( data ) );
-		VectorCopy( data.u_ViewOrigin, glState.viewData.camera.origin );
-		VectorSet2( data.u_ScreenSize, glState.viewData.viewportWidth, glState.viewData.viewportHeight );
-		data.u_GamePaused = ri.Cvar_VariableInteger( "g_paused" ) && rg.world;
-		data.u_AlphaTest = backend.drawBatch.shader->stages[0]->alphaGen;
-		break; }
-	case UNIFORM_GRAPHICSCONFIG: {
-		static struct {
-			qboolean u_HardwareGamma;
-			qboolean u_HDR;
-			qboolean u_PBR;
-			int u_AntiAliasing;
-			int u_ToneMap;
-			float u_GammaAmount;
-			float u_CameraExposure;
-			float u_SharpenAmount;
-		} data;
-
-		memset( &data, 0, sizeof( data ) );
-		data.u_HardwareGamma = !r_ignorehwgamma->i;
-		data.u_HDR = r_hdr->i;
-		data.u_PBR = r_pbr->i;
-		data.u_AntiAliasing = r_multisampleType->i;
-		if ( !r_toneMap->i != -1 ) {
-			data.u_ToneMap = r_toneMapType->i;
-		} else {
-			data.u_ToneMap = -1;
-		}
-		data.u_GammaAmount = r_gammaAmount->f;
-		data.u_CameraExposure = r_cameraExposure->f;
-		data.u_SharpenAmount = r_imageSharpenAmount->f;
-		break; }
-	};
-}
-
 /*
 =================
 R_BindAnimatedImageToTMU
@@ -544,9 +476,9 @@ void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, con
 		GLSL_SetUniformInt( sp, UNIFORM_COLORGEN, stageP->rgbGen );
 		GLSL_SetUniformInt( sp, UNIFORM_ALPHAGEN, stageP->alphaGen );
 		GLSL_SetUniformInt( sp, UNIFORM_GAMEPAUSED, ri.Cvar_VariableInteger( "g_paused" ) );
-		GLSL_SetUniformInt( sp, UNIFORM_ANTIALIASING, r_multisampleType->i );
 		GLSL_SetUniformFloat( sp, UNIFORM_SHARPENING, r_imageSharpenAmount->f );
 		GLSL_SetUniformInt( sp, UNIFORM_ANTIALIASING, r_multisampleType->i );
+		GLSL_SetUniformInt( sp, UNIFORM_POSTPROCESS, r_postProcess->i );
 		
 		{
 			vec2_t screenSize;
@@ -671,7 +603,6 @@ void RB_IterateShaderStages( shader_t *shader )
 
 		GLSL_SetUniformInt( sp, UNIFORM_NUM_LIGHTS, numLights );
 		GLSL_SetUniformMatrix4( sp, UNIFORM_MODELVIEWPROJECTION, glState.viewData.camera.viewProjectionMatrix );
-		GLSL_SetUniformVec3( sp, UNIFORM_LOCALVIEWORIGIN, vec3_origin );
 
 		GLSL_SetUniformInt( sp, UNIFORM_DEFORMGEN, deformGen );
 
@@ -735,7 +666,8 @@ void RB_IterateShaderStages( shader_t *shader )
 		GLSL_SetUniformInt( sp, UNIFORM_ANTIALIASING, r_multisampleType->i );
 		GLSL_SetUniformInt( sp, UNIFORM_HARDWAREGAMMA, !r_ignorehwgamma->i );
 		GLSL_SetUniformFloat( sp, UNIFORM_GAMMA, r_gammaAmount->f );
-		GLSL_SetUniformInt( sp, UNIFORM_ANTIALIASING, r_multisampleType->i );
+		GLSL_SetUniformInt( sp, UNIFORM_POSTPROCESS, r_postProcess->i );
+		GLSL_SetUniformInt( sp, UNIFORM_LIGHTING_QUALITY, r_lightingQuality->i );
 
 		// custom texture filtering
 		if ( stageP->bundle[0].filter != -1 ) {
@@ -777,6 +709,14 @@ void RB_IterateShaderStages( shader_t *shader )
 				} else if ( r_specularMapping->i ) {
 					GL_BindTexture( 2, rg.whiteImage );
 					GLSL_SetUniformTexture( sp, UNIFORM_SPECULAR_MAP, rg.whiteImage );
+				}
+
+				if ( stageP->bundle[ TB_LEVELSMAP ].image[0] ) {
+					GL_BindTexture( 3, stageP->bundle[ TB_LEVELSMAP ].image[0] );
+					GLSL_SetUniformTexture( sp, UNIFORM_LEVELS_MAP, stageP->bundle[ TB_LEVELSMAP ].image[ 0 ] );
+				} else {
+					GL_BindTexture( 3, rg.whiteImage );
+					GLSL_SetUniformTexture( sp, UNIFORM_LEVELS_MAP, rg.whiteImage );
 				}
 			}
 		}
@@ -907,8 +847,6 @@ void RB_RenderPass( void )
 }
 */
 
-unsigned int quadVAO = 0;
-unsigned int quadVBO;
 void RB_RenderPass( void )
 {
 	vertexBuffer_t *oldBuffer;
@@ -938,13 +876,13 @@ void RB_RenderPass( void )
 	oldBuffer = glState.currentVao;
 	VBO_BindNull();
 
-	nglBindVertexArray( rg.renderPassVBO->vaoId );
-	nglBindBuffer( GL_ARRAY_BUFFER, rg.renderPassVBO->vertex.id );
+	VBO_Bind( rg.renderPassVBO );
 	nglDrawArrays( GL_TRIANGLE_FAN, 0, 4 );
-	nglBindVertexArray( 0 );
-	nglBindBuffer( GL_ARRAY_BUFFER, 0 );
+	VBO_BindNull();
 
-	VBO_Bind( oldBuffer );
+	if ( oldBuffer ) {
+		VBO_Bind( oldBuffer );
+	}
 
 //    nglBindVertexArray(quadVAO);
 //	nglBindBuffer( GL_ARRAY_BUFFER, quadVBO );

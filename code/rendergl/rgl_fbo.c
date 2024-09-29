@@ -41,11 +41,9 @@ static qboolean R_CheckFBO( const fbo_t * fbo )
 	return qfalse;
 }
 
-static fbo_t *FBO_Create( const char *name, int width, int height )
+static void FBO_Create( fbo_t *fbo, const char *name, int width, int height )
 {
-	fbo_t *fbo;
 	int i;
-	qboolean exists = qfalse;
 
 	if ( strlen( name ) >= MAX_NPATH ) {
 		ri.Error( ERR_DROP, "FBO_Create: \"%s\" too long", name );
@@ -61,24 +59,15 @@ static fbo_t *FBO_Create( const char *name, int width, int height )
 		ri.Error( ERR_DROP, "FBO_Create: MAX_RENDER_FBOs hit" );
 	}
 
-	for ( i = 0; i < rg.numFBOs; i++ ) {
-		if ( !N_stricmp( name, rg.fbos[i]->name ) ) {
-			exists = qtrue;
-			fbo = rg.fbos[i];
-			break;
-		}
-	}
-	if ( !exists ) {
-		fbo = rg.fbos[rg.numFBOs] = ri.Hunk_Alloc( sizeof( *fbo ), h_low );
-		rg.numFBOs++;
-	}
+	memset( fbo, 0, sizeof( *fbo ) );	
+	rg.fbos[ rg.numFBOs ] = fbo;
+	rg.numFBOs++;
+
 	N_strncpyz( fbo->name, name, sizeof( fbo->name ) );
 	fbo->width = width;
 	fbo->height = height;
 
 	nglGenFramebuffers( 1, &fbo->frameBuffer );
-
-	return fbo;
 }
 
 static void FBO_CreateBuffer( fbo_t *fbo, int format, int32_t index, int multisample )
@@ -220,25 +209,26 @@ static void FBO_Clear( fbo_t *fbo )
 		return;
 	}
 
-	if ( fbo->frameBuffer ) {
-		nglDeleteFramebuffers( 1, &fbo->frameBuffer );
-	}
 	for ( i = 0; i < glContext.maxColorAttachments; i++ ) {
 		if ( fbo->colorBuffers[i] ) {
 			nglDeleteRenderbuffers( 1, &fbo->colorBuffers[i] );
+			fbo->colorBuffers[i] = 0;
 		}
 	}
 
 	if ( fbo->depthBuffer ) {
 		nglDeleteRenderbuffers( 1, &fbo->depthBuffer );
+		fbo->depthBuffer = 0;
 	}
 
 	if ( fbo->stencilBuffer ) {
 		nglDeleteRenderbuffers( 1, &fbo->stencilBuffer );
+		fbo->stencilBuffer = 0;
 	}
 
 	if ( fbo->frameBuffer ) {
 		nglDeleteFramebuffers( 1, &fbo->frameBuffer );
+		fbo->frameBuffer = 0;
 	}
 }
 
@@ -269,12 +259,15 @@ static void FBO_List_f( void )
 	ri.Printf( PRINT_INFO, " %0.02lf MB render buffer memory\n", (double)( renderBufferMemoryUsed / ( 1024 * 1024 ) ) );
 }
 
-void FBO_Init( void )
+static void FBO_Init_f( void )
 {
 	int hdrFormat, multisample;
 	int width, height;
 	int i;
-	qboolean createBloomImage;
+	int sampleCount;
+	qboolean restart = rg.numFBOs > 0;
+
+	FBO_Shutdown();
 
 	ri.Printf( PRINT_INFO, "------- FBO_Init -------\n" );
 
@@ -285,88 +278,116 @@ void FBO_Init( void )
 	rg.numFBOs = 0;
 	multisample = 0;
 
+	GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
+
 	GL_CheckErrors();
 
 	R_IssuePendingRenderCommands();
 
 	width = glConfig.vidWidth;
 	height = glConfig.vidHeight;
-	switch ( r_multisampleType->i ) {
-	case AntiAlias_2xSSAA:
-		width *= 2;
-		height *= 2;
-		break;
-	case AntiAlias_4xSSAA:
-		width *= 4;
-		height *= 4;
-		break;
-	};
+	if ( r_multisampleType->i == AntiAlias_SSAA ) {
+		if ( r_antialiasQuality->i == 0 ) {
+			width *= 2;
+			height *= 2;
+		} else {
+			width *= 4;
+			height *= 4;
+		}
+	}
 
 	hdrFormat = GL_RGBA8;
 	if ( r_hdr->i && glContext.ARB_texture_float ) {
 		hdrFormat = GL_RGBA16F_ARB;
 		ri.Printf( PRINT_DEVELOPER, "Using HDR framebuffer format.\n" );
-		if ( r_bloom->i ) {
-			createBloomImage = qtrue;
-		}
+	}
+
+	if ( r_antialiasQuality->i == 0 ) {
+		sampleCount = 2;
+	} else if ( r_antialiasQuality->i == 1 ) {
+		sampleCount = 4;
+	} else if ( r_antialiasQuality->i == 2 ) {
+		sampleCount = 8;
 	}
 
 	if ( glContext.ARB_framebuffer_multisample ) {
 		nglGetIntegerv( GL_MAX_SAMPLES, &multisample );
 	}
 
-	if ( r_multisampleAmount->i < multisample ) {
-		multisample = r_multisampleAmount->i;
+	if ( sampleCount < multisample ) {
+		multisample = sampleCount;
 	}
 
 	if ( multisample < 2 || !glContext.ARB_framebuffer_blit ) {
 		multisample = 0;
 	}
-
-	if ( multisample != r_multisampleAmount->i ) {
-		ri.Cvar_Set( "r_multisampleAmount", va( "%i", multisample ) );
+	
+	if ( r_hdr->i && r_bloom->i ) {
+		for ( i = 0; i < 2; i++ ) {
+			FBO_Create( &rg.bloomPingPongFbo[ i ], va( "_bloomPingPong%i", i ), width, height );
+			FBO_AttachImage( &rg.bloomPingPongFbo[ i ], rg.bloomPingPongImage[ i ], GL_COLOR_ATTACHMENT0 );
+			R_CheckFBO( &rg.bloomPingPongFbo[ i ] );
+		}
 	}
 
-	if ( multisample && r_multisampleType->i >= AntiAlias_2xMSAA && r_multisampleType->i <= AntiAlias_32xMSAA ) {
-		rg.renderFbo = FBO_Create( "_render", width, height );
+	if ( multisample && r_multisampleType->i == AntiAlias_MSAA ) {
+		FBO_Create( &rg.renderFbo, "_render", width, height );
 		if ( r_bloom->i && r_hdr->i ) {
-			GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo->frameBuffer );
+			GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo.frameBuffer );
 			GLuint buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
 
-			FBO_AttachImage( rg.renderFbo, rg.firstPassImage, GL_COLOR_ATTACHMENT0 );
-			FBO_AttachImage( rg.renderFbo, rg.bloomImage, GL_COLOR_ATTACHMENT1 );
+			FBO_AttachImage( &rg.renderFbo, rg.firstPassImage, GL_COLOR_ATTACHMENT0 );
+			FBO_AttachImage( &rg.renderFbo, rg.bloomImage, GL_COLOR_ATTACHMENT1 );
 
 			nglDrawBuffers( 2, buffers );
 		} else {
-			FBO_CreateBuffer( rg.renderFbo, hdrFormat, 0, multisample );
-			FBO_CreateBuffer( rg.renderFbo, GL_DEPTH24_STENCIL8, 0, multisample );
+			FBO_CreateBuffer( &rg.renderFbo, hdrFormat, 0, multisample );
+			FBO_CreateBuffer( &rg.renderFbo, GL_DEPTH24_STENCIL8, 0, multisample );
 		}
-		R_CheckFBO( rg.renderFbo );
+		R_CheckFBO( &rg.renderFbo );
+		GL_CheckErrors();
 
-		rg.msaaResolveFbo = FBO_Create( "_msaaResolve", width, height );
-		FBO_AttachImage( rg.msaaResolveFbo, rg.renderImage, GL_COLOR_ATTACHMENT0 );
-		FBO_AttachImage( rg.msaaResolveFbo, rg.renderDepthImage, GL_DEPTH_ATTACHMENT );
-		R_CheckFBO( rg.msaaResolveFbo );
+		FBO_Create( &rg.msaaResolveFbo, "_msaaResolve", width, height );
+		FBO_AttachImage( &rg.msaaResolveFbo, rg.renderImage, GL_COLOR_ATTACHMENT0 );
+		FBO_AttachImage( &rg.msaaResolveFbo, rg.renderDepthImage, GL_DEPTH_ATTACHMENT );
+		R_CheckFBO( &rg.msaaResolveFbo );
+		GL_CheckErrors();
 	}
-	else if ( multisample && r_multisampleType->i >= AntiAlias_2xSSAA && r_multisampleType->i <= AntiAlias_4xSSAA ) {
-		rg.renderFbo = FBO_Create( "_render", width, height );
-		if ( createBloomImage ) {
-			GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo->frameBuffer );
+	else if ( multisample && r_multisampleType->i == AntiAlias_SSAA ) {
+		FBO_Create( &rg.renderFbo, "_render", width, height );
+		if ( r_bloom->i && r_hdr->i ) {
+			GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo.frameBuffer );
 			GLuint buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
 
-			FBO_AttachImage( rg.renderFbo, rg.firstPassImage, GL_COLOR_ATTACHMENT0 );
-			FBO_AttachImage( rg.renderFbo, rg.bloomImage, GL_COLOR_ATTACHMENT1 );
+			FBO_AttachImage( &rg.renderFbo, rg.firstPassImage, GL_COLOR_ATTACHMENT0 );
+			FBO_AttachImage( &rg.renderFbo, rg.bloomImage, GL_COLOR_ATTACHMENT1 );
 
 			nglDrawBuffers( 2, buffers );
 		} else {
-			FBO_CreateBuffer( rg.renderFbo, hdrFormat, 0, multisample );
-			FBO_CreateBuffer( rg.renderFbo, GL_DEPTH24_STENCIL8, 0, multisample );
+			FBO_CreateBuffer( &rg.renderFbo, hdrFormat, 0, multisample );
+			FBO_CreateBuffer( &rg.renderFbo, GL_DEPTH24_STENCIL8, 0, multisample );
 		}
-		R_CheckFBO( rg.renderFbo );
+		R_CheckFBO( &rg.renderFbo );
 
-		rg.ssaaResolveFbo = FBO_Create( "_ssaaResolve", glConfig.vidWidth, glConfig.vidHeight );
-		FBO_CreateBuffer( rg.ssaaResolveFbo, hdrFormat, 0, multisample );
-		R_CheckFBO( rg.ssaaResolveFbo );
+		FBO_Create( &rg.ssaaResolveFbo, "_ssaaResolve", glConfig.vidWidth, glConfig.vidHeight );
+		FBO_CreateBuffer( &rg.ssaaResolveFbo, hdrFormat, 0, multisample );
+		R_CheckFBO( &rg.ssaaResolveFbo );
+	}
+	else if ( r_hdr->i ) {
+		FBO_Create( &rg.renderFbo, "_render", width, height );
+		if ( r_bloom->i ) {
+			GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo.frameBuffer );
+			GLuint buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+
+			FBO_AttachImage( &rg.renderFbo, rg.firstPassImage, GL_COLOR_ATTACHMENT0 );
+			FBO_AttachImage( &rg.renderFbo, rg.bloomImage, GL_COLOR_ATTACHMENT1 );
+
+			nglDrawBuffers( 2, buffers );
+		}
+		else {
+			FBO_AttachImage( &rg.renderFbo, rg.firstPassImage, GL_COLOR_ATTACHMENT0 );
+		}
+		R_CheckFBO( &rg.renderFbo );
 	}
 	/*
 	if ( r_multisampleType->i == AntiAlias_SMAA ) {
@@ -386,8 +407,12 @@ void FBO_Init( void )
 
 	// clear render buffer
 	// this fixes the corrupt screen bug with r_hdr 1 on older hardware
-	if ( rg.renderFbo ) {
-		GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo->frameBuffer );
+	//if ( rg.renderFbo.frameBuffer ) {
+	//	GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo.frameBuffer );
+	//	nglClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	//}
+	if ( restart ) {
+		GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
 		nglClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	}
 
@@ -395,8 +420,14 @@ void FBO_Init( void )
 
 	GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
 	glState.currentFbo = NULL;
+}
 
+void FBO_Init( void )
+{
 	ri.Cmd_AddCommand( "fbolist", FBO_List_f );
+	ri.Cmd_AddCommand( "fbo_restart", FBO_Init_f );
+
+	FBO_Init_f();
 }
 
 void FBO_Shutdown( void )
@@ -404,14 +435,11 @@ void FBO_Shutdown( void )
 	uint64_t i, j;
 	fbo_t *fbo;
 
-	ri.Printf( PRINT_INFO, "------- FBO_Shutdown -------\n" );
-
-	if ( !glContext.ARB_framebuffer_object ) {
+	if ( !glContext.ARB_framebuffer_object || !rg.numFBOs ) {
 		return;
 	}
 
-	ri.Cmd_RemoveCommand( "vid_restart_fbo" );
-	ri.Cmd_RemoveCommand( "fbolist" );
+	ri.Printf( PRINT_INFO, "------- FBO_Shutdown -------\n" );
 
 	FBO_Bind( NULL );
 
@@ -426,14 +454,17 @@ void FBO_Shutdown( void )
 
 		if ( fbo->depthBuffer ) {
 			nglDeleteRenderbuffers( 1, &fbo->depthBuffer );
+			fbo->depthBuffer = 0;
 		}
 
 		if ( fbo->stencilBuffer ) {
 			nglDeleteRenderbuffers( 1, &fbo->stencilBuffer );
+			fbo->stencilBuffer = 0;
 		}
 
 		if ( fbo->frameBuffer ) {
 			nglDeleteFramebuffers( 1, &fbo->frameBuffer );
+			fbo->frameBuffer = 0;
 		}
 	}
 }
@@ -523,15 +554,6 @@ void FBO_BlitFromTexture( fbo_t *srcFbo, struct texture_s *src, vec4_t inSrcTexC
 
 	GL_State( blend );
 
-	/*
-	
-	GLSL_SetUniformMatrix4( shaderProgram, UNIFORM_MODELVIEWPROJECTION, projection );
-	GLSL_SetUniformVec2( shaderProgram, UNIFORM_INVTEXRES, invTexRes );
-	GLSL_SetUniformVec2( shaderProgram, UNIFORM_AUTOEXPOSUREMINMAX, backend.refdef.autoExposureMinMax );
-	GLSL_SetUniformVec3( shaderProgram, UNIFORM_TONEMINAVGMAXLINEAR, backend.refdef.toneMinAvgMaxLinear );
-	*/
-
-//	RB_InstantQuad2( quadVerts, texCoords );
 	RB_RenderPass();
 
 	FBO_Bind( oldFbo );
@@ -1070,57 +1092,107 @@ void RB_GaussianBlur( float blur )
 		FBO_Blit(rg.textureScratchFbo[0], srcBox, NULL, NULL, dstBox, NULL, color, GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA);
 	}
 }
+*/
 
 void RB_PostProcessSMAA( fbo_t *srcFbo )
 {
+	assert( !"NOPE" );
+
 	//
 	// edges pass
 	//
-	FBO_BlitFromTexture( srcFbo, rg.renderImage, NULL, NULL, rg.smaaEdgesFbo, NULL, &rg.smaaEdgesShader, colorWhite, 0 );
+	GLSL_UseProgram( &rg.smaaEdgesShader );
+	{
+		vec2_t screenSize;
+		VectorSet2( screenSize, glConfig.vidWidth, glConfig.vidHeight );
+		GLSL_SetUniformVec2( &rg.smaaEdgesShader, UNIFORM_SCREEN_SIZE, screenSize );
+	}
+	GL_BindTexture( UNIFORM_DIFFUSE_MAP, srcFbo->colorImage[ 0 ] );
+	GLSL_SetUniformTexture( &rg.smaaEdgesShader, UNIFORM_DIFFUSE_MAP, srcFbo->colorImage[ 0 ] );
+
+	GL_BindFramebuffer( GL_FRAMEBUFFER, rg.smaaEdgesFbo.frameBuffer );
+	nglClear( GL_COLOR_BUFFER_BIT );
+	RB_RenderPass();
 
 	//
 	// weights pass
 	//
 	GLSL_UseProgram( &rg.smaaWeightsShader );
-	GL_BindTexture( 0, rg.smaaEdgesImage );
-	GL_BindTexture( 1, rg.smaaAreaImage );
-	GL_BindTexture( 2, rg.smaaSearchImage );
+	GL_BindTexture( UNIFORM_EDGES_TEXTURE, rg.smaaEdgesImage );
+	GL_BindTexture( UNIFORM_AREA_TEXTURE, rg.smaaAreaImage );
+	GL_BindTexture( UNIFORM_SEARCH_TEXTURE, rg.smaaSearchImage );
 
-	GLSL_SetUniformInt( &rg.smaaWeightsShader, UNIFORM_EDGES_TEXTURE, 0 );
-	GLSL_SetUniformInt( &rg.smaaWeightsShader, UNIFORM_AREA_TEXTURE, 1 );
-	GLSL_SetUniformInt( &rg.smaaWeightsShader, UNIFORM_SEARCH_TEXTURE, 2 );
-
-	FBO_BlitFromTexture( rg.smaaWeightsFbo, rg.smaaWeightsImage, NULL, NULL, rg.smaaBlendFbo, NULL, &rg.smaaWeightsShader, colorWhite, 0 );
+	GLSL_SetUniformTexture( &rg.smaaWeightsShader, UNIFORM_EDGES_TEXTURE, rg.smaaEdgesImage );
+	GLSL_SetUniformTexture( &rg.smaaWeightsShader, UNIFORM_AREA_TEXTURE, rg.smaaAreaImage );
+	GLSL_SetUniformTexture( &rg.smaaWeightsShader, UNIFORM_SEARCH_TEXTURE, rg.smaaSearchImage );
+	{
+		vec2_t screenSize;
+		VectorSet2( screenSize, glConfig.vidWidth, glConfig.vidHeight );
+		GLSL_SetUniformVec2( &rg.smaaWeightsShader, UNIFORM_SCREEN_SIZE, screenSize );
+	}
+	GL_BindFramebuffer( GL_FRAMEBUFFER, rg.smaaWeightsFbo.frameBuffer );
+	nglClear( GL_COLOR_BUFFER_BIT );
+	RB_RenderPass();
 
 	//
 	// blending pass
 	//
 	GLSL_UseProgram( &rg.smaaBlendShader );
-	GL_BindTexture( 0, rg.smaaBlendImage );
-	GL_BindTexture( 1, rg.smaaWeightsImage );
+	GL_BindTexture( UNIFORM_BLEND_TEXTURE, rg.smaaBlendImage );
+	GL_BindTexture( UNIFORM_DIFFUSE_MAP, rg.smaaWeightsImage );
 
-	GLSL_SetUniformInt( &rg.smaaBlendShader, UNIFORM_BLEND_TEXTURE, 0 );
-	GLSL_SetUniformInt( &rg.smaaBlendShader, UNIFORM_DIFFUSE_MAP, 0 );
+	GLSL_SetUniformTexture( &rg.smaaBlendShader, UNIFORM_BLEND_TEXTURE, rg.smaaBlendImage );
+	GLSL_SetUniformTexture( &rg.smaaBlendShader, UNIFORM_DIFFUSE_MAP, rg.smaaWeightsImage );
+	{
+		vec2_t screenSize;
+		VectorSet2( screenSize, glConfig.vidWidth, glConfig.vidHeight );
+		GLSL_SetUniformVec2( &rg.smaaBlendShader, UNIFORM_SCREEN_SIZE, screenSize );
+	}
+	GL_BindFramebuffer( GL_FRAMEBUFFER, rg.smaaBlendFbo.frameBuffer );
+	RB_RenderPass();
 
-	FBO_BlitFromTexture( rg.smaaBlendFbo, rg.smaaBlendImage, NULL, NULL, srcFbo, NULL, &rg.smaaBlendShader, colorWhite, 0 );
+	GLSL_UseProgram( &rg.textureColorShader );
+	GLSL_SetUniformInt( &rg.textureColorShader, UNIFORM_FINALPASS, qtrue );
+	GLSL_SetUniformInt( &rg.textureColorShader, UNIFORM_ANTIALIASING, r_multisampleType->i );
+	FBO_Blit( &rg.smaaBlendFbo, NULL, NULL, srcFbo, NULL, &rg.textureColorShader, colorWhite, 0 );
 }
-*/
 
-#define NUM_BLUR_PASSES 10
+#define NUM_BLUR_PASSES 5
 
 void RB_BloomPass( fbo_t *srcFbo, fbo_t *dstFbo )
 {
 	int i;
 	int horizontal;
 
-	GL_BindFramebuffer( GL_READ_FRAMEBUFFER, srcFbo->frameBuffer );
-	GL_BindFramebuffer( GL_DRAW_FRAMEBUFFER, dstFbo->frameBuffer );
+	if ( !rg.bloomPingPongFbo[ 0 ].frameBuffer || !rg.bloomPingPongFbo[ 1 ].frameBuffer ) {
+		return;
+	}
+
+	horizontal = 0;
+
+	FBO_FastBlit( srcFbo, NULL, &rg.bloomPingPongFbo[ 0 ], NULL, GL_COLOR_BUFFER_BIT, GL_LINEAR );
+
+	for ( i = 0; i < NUM_BLUR_PASSES; i++ ) {
+		GL_BindFramebuffer( GL_FRAMEBUFFER, rg.bloomPingPongFbo[ horizontal ].frameBuffer );
+		
+		// the srcFbo's colorbuffers must be set up specifically for bloom for this to work
+		GLSL_UseProgram( &rg.blurShader );
+		GLSL_SetUniformInt( &rg.blurShader, UNIFORM_BLUR_HORIZONTAL, horizontal );
+		GLSL_SetUniformTexture( &rg.blurShader, UNIFORM_DIFFUSE_MAP, i == 0 ? srcFbo->colorImage[ 1 ] : rg.bloomPingPongImage[ !horizontal ] );
+		RB_RenderPass();
+
+		horizontal = !horizontal;
+	}
+
+	GL_BindFramebuffer( GL_READ_FRAMEBUFFER, rg.bloomPingPongFbo[ !horizontal ].frameBuffer );
+	GL_BindFramebuffer( GL_DRAW_FRAMEBUFFER, dstFbo ? dstFbo->frameBuffer : 0 );
 
 	GLSL_UseProgram( &rg.bloomResolveShader );
 	GL_BindTexture( UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
 	GL_BindTexture( UNIFORM_BRIGHT_MAP, rg.bloomImage );
 	GLSL_SetUniformTexture( &rg.bloomResolveShader, UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
 	GLSL_SetUniformTexture( &rg.bloomResolveShader, UNIFORM_BRIGHT_MAP, rg.bloomImage );
+	GLSL_SetUniformInt( &rg.bloomResolveShader, UNIFORM_TONEMAPPING, r_toneMapType->i );
 
 	RB_RenderPass();
 

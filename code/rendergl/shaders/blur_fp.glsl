@@ -12,6 +12,9 @@ void main() {
     const vec2 texOffset = 1.0 / textureSize( u_DiffuseMap, 0 ); // gets size of single texel
     vec3 result = texture2D( u_DiffuseMap, v_TexCoords ).rgb * weights[0];
     
+    if ( result == vec3( 0.0, 0.0, 0.0 ) ) {
+        discard;
+    }
     if ( u_BlurHorizontal ) {
         for ( int i = 1; i < 5; ++i ) {
            result += texture2D( u_DiffuseMap, v_TexCoords + vec2( texOffset.x * i, 0.0 ) ).rgb * weights[i];

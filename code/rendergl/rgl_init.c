@@ -151,7 +151,6 @@ cvar_t *r_printShaders;
 cvar_t *r_useExtensions;
 cvar_t *r_allowLegacy;
 cvar_t *r_allowShaders;
-cvar_t *r_multisampleAmount;
 cvar_t *r_multisampleType;
 cvar_t *r_ignorehwgamma;
 cvar_t *r_drawMode;
@@ -177,6 +176,8 @@ cvar_t *r_imageUpsampleMaxSize;
 cvar_t *r_useShaderCache;
 
 cvar_t *r_lightingQuality;
+cvar_t *r_antialiasQuality;
+
 cvar_t *r_loadTexturesOnDemand;
 
 cvar_t *sys_forceSingleThreading;
@@ -847,7 +848,7 @@ static void R_Register( void )
 
 	r_arb_texture_filter_anisotropic = ri.Cvar_Get( "r_arb_texture_filter_anisotropic", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_arb_texture_filter_anisotropic, "Enabled anisotropic filtering." );
-	r_arb_texture_max_anisotropy = ri.Cvar_Get( "r_arb_texture_max_anisotropy", "8", CVAR_SAVE | CVAR_LATCH );
+	r_arb_texture_max_anisotropy = ri.Cvar_Get( "r_arb_texture_max_anisotropy", "4", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_arb_texture_max_anisotropy, "Sets maximum anisotropic level for your graphics driver. Requires \\r_arb_texture_filter_anisotropic 1." );
 
 	r_arb_map_buffer_range = ri.Cvar_Get( "r_arb_map_buffer_range", "0", CVAR_LATCH | CVAR_SAVE );
@@ -865,14 +866,9 @@ static void R_Register( void )
 	r_allowShaders = ri.Cvar_Get( "r_allowShaders", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_allowShaders, "Allow the use of GLSL shaders, requires \\r_allowLegacy 0." );
 
-	r_lightingQuality = ri.Cvar_Get( "r_lightingQuality", "1", CVAR_SAVE | CVAR_LATCH );
+	r_lightingQuality = ri.Cvar_Get( "r_lightingQuality", "1", CVAR_SAVE );
 	ri.Cvar_CheckRange( r_lightingQuality, "0", "2", CVT_INT );
-	ri.Cvar_SetDescription( r_lightingQuality,
-		"Sets desired lighting quality:\n"
-		" 0: vertex shader per quad lighting\n"
-		" 1: vertex shader per quad lighting with extra fluff\n"
-		" 2: per pixel high quality fragment shader calculated lighting"
-	);
+	ri.Cvar_SetDescription( r_lightingQuality, "Sets desired lighting quality" );
 
 	r_picmip = ri.Cvar_Get( "r_picmip", "0", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_CheckRange( r_picmip, "0", "16", CVT_INT );
@@ -887,17 +883,17 @@ static void R_Register( void )
 	r_stencilBits = ri.Cvar_Get( "r_stencilBits", "8", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_stencilBits, "Stencil buffer size, value decreases Z-buffer depth." );
 
-	r_hdr = ri.Cvar_Get( "r_hdr", "1", CVAR_SAVE | CVAR_LATCH );
+	r_hdr = ri.Cvar_Get( "r_hdr", "1", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_hdr, "Do scene rendering in a framebuffer with high dynamic range." );
 
 	r_floatLightmap = ri.Cvar_Get( "r_floatLightmap", "0", CVAR_SAVE | CVAR_LATCH );
 
-	r_toneMapType = ri.Cvar_Get( "r_toneMapType", "0", CVAR_SAVE | CVAR_LATCH );
+	r_toneMapType = ri.Cvar_Get( "r_toneMapType", "0", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_toneMapType,
 							"Sets the desired tone mapping technique:\n"
 							" 0: Reinhard tone mapping, faster, but non adjustable brightness level leading to darker areas losing quality\n"
 							" 1: Exposure tone mapping, slightly slower, but adjustable brightness level" );
-	r_toneMap = ri.Cvar_Get( "r_toneMap", "1", CVAR_SAVE | CVAR_LATCH );
+	r_toneMap = ri.Cvar_Get( "r_toneMap", "1", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_toneMap, "Enable tone mapping. Requires r_hdr and r_postProcess." );
 	r_forceToneMap = ri.Cvar_Get( "r_forceToneMap", "0", CVAR_CHEAT );
 	r_forceToneMapMin = ri.Cvar_Get( "r_forceToneMapMin", "-8.0", CVAR_CHEAT );
@@ -941,9 +937,9 @@ static void R_Register( void )
 
 	r_depthPrepass = ri.Cvar_Get( "r_depthPrepass", "1", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_depthPrepass, "Do a depth-only pass before rendering. Speeds up rendering in cases where advanced features are used. Required for r_sunShadows." );
-	r_ssao = ri.Cvar_Get( "r_ssao", "0", CVAR_LATCH | CVAR_SAVE );
+	r_ssao = ri.Cvar_Get( "r_ssao", "0", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_ssao, "Enable screen-space ambient occlusion." );
-	r_bloom = ri.Cvar_Get( "r_bloom", "1", CVAR_LATCH | CVAR_SAVE );
+	r_bloom = ri.Cvar_Get( "r_bloom", "1", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_bloom, "Enables framebuffer based bloom to make light sources stand out, requires \\r_hdr." );
 
 	r_loadTexturesOnDemand = ri.Cvar_Get( "r_loadTexturesOnDemand", "1", CVAR_LATCH | CVAR_SAVE );
@@ -962,7 +958,7 @@ static void R_Register( void )
 	r_parallaxMapShadows = ri.Cvar_Get( "r_parallaxMapShadows", "0", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_parallaxMapShadows, "Enable self-shadowing on parallax map supported materials." );
 	r_deluxeSpecular = ri.Cvar_Get("r_deluxeSpecular", "0.3", CVAR_SAVE | CVAR_LATCH);
-	r_pbr = ri.Cvar_Get("r_pbr", "0", CVAR_SAVE | CVAR_LATCH);
+	r_pbr = ri.Cvar_Get( "r_pbr", "0", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_pbr, "Enable physically based rendering." );
 	r_baseNormalX = ri.Cvar_Get( "r_baseNormalX", "1.0", CVAR_SAVE | CVAR_LATCH );
 	r_baseNormalY = ri.Cvar_Get( "r_baseNormalY", "1.0", CVAR_SAVE | CVAR_LATCH );
@@ -1020,11 +1016,12 @@ static void R_Register( void )
 	r_customWidth = ri.Cvar_Get( "r_customWidth", "1980", CVAR_SAVE );
 	r_customHeight = ri.Cvar_Get( "r_customHeight", "1080", CVAR_SAVE );
 
-	r_multisampleAmount = ri.Cvar_Get( "r_multisampleAmount", "2", CVAR_SAVE );
-	ri.Cvar_CheckRange( r_multisampleAmount, "0", "32", CVT_INT );
 	r_multisampleType = ri.Cvar_Get( "r_multisampleType", "1", CVAR_SAVE );
 	ri.Cvar_CheckRange( r_multisampleType, va( "%i", AntiAlias_None ), va( "%i", AntiAlias_FXAA ), CVT_INT );
 	ri.Cvar_SetDescription( r_multisampleType, "Sets the desired anti-aliasing technique. Requires \\r_postProcess" );
+	r_antialiasQuality = ri.Cvar_Get( "r_antialiasQuality", "1", CVAR_SAVE );
+	ri.Cvar_CheckRange( r_antialiasQuality, "0", "2", CVT_INT );
+	ri.Cvar_SetDescription( r_antialiasQuality, "Sets antialiasing quality" );
 
 	r_overBrightBits = ri.Cvar_Get( "r_overBrightBits", "1", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_overBrightBits, "Sets the intensity of overall brightness of texture pixels." );
@@ -1058,7 +1055,7 @@ static void R_Register( void )
 	r_stencilBits = ri.Cvar_Get( "r_stencilBits", "8", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_stencilBits, "Stencil buffer size, value decreases Z-buffer depth." );
 
-	r_finish = ri.Cvar_Get("r_finish", "0", CVAR_SAVE | CVAR_LATCH);
+	r_finish = ri.Cvar_Get( "r_finish", "0", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_finish, "Force a glFinish call after rendering a scene." );
 
 	r_picmip = ri.Cvar_Get("r_picmip", "0", CVAR_SAVE | CVAR_LATCH );
@@ -1068,10 +1065,6 @@ static void R_Register( void )
 	ri.Cvar_SetDescription( r_colorMipLevels, "Debugging tool to artificially color different mipmap levels so that they are more apparent." );
 	r_roundImagesDown = ri.Cvar_Get("r_roundImagesDown", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_roundImagesDown, "When images are scaled, round images down instead of up." );
-
-	r_mappedBuffers = ri.Cvar_Get( "r_mappedBuffers", "0", CVAR_SAVE | CVAR_LATCH );
-	ri.Cvar_CheckRange( r_mappedBuffers, "0", "1", CVT_INT );
-	ri.Cvar_SetDescription( r_mappedBuffers, "Toggles whether or not vertex and index buffer data is mapped into cpu memory." );
 
 	r_vertexLight = ri.Cvar_Get( "r_vertexLight", "0", CVAR_SAVE | CVAR_DEV );
 	ri.Cvar_SetDescription( r_vertexLight, "Set to 1 to use vertex light instead of lightmaps, collapse all multi-stage shaders into single-stage ones, might cause rendering artifacts." );
@@ -1096,12 +1089,6 @@ static void R_Register( void )
 							" Nearest: Nearest neighbor interpolation and will cause the texture to look pixelated. Use for the most retro look and feel\n"
 							" Linear Nearest: Linear magnification filter, Nearest minification filter\n"
 							" Nearest Linear: Nearest magnification filter, Linear minification filter"
-//                            " GL_NEAREST: Nearest neighbor interpolation and will therefore appear similar to Quake II except with the added colored lighting\n"
-//                            " GL_LINEAR: Linear interpolation and will appear to blend in objects that are closer than the resolution that the textures are set as\n"
-//                            " GL_NEAREST_MIPMAP_NEAREST: Nearest neighbor interpolation with mipmapping for bilinear hardware, mipmapping will blend objects that are farther away than the resolution that they are set as\n"
-//                            " GL_LINEAR_MIPMAP_NEAREST: Linear interpolation with mipmapping for bilinear hardware\n"
-//                            " GL_NEAREST_MIPMAP_LINEAR: Nearest neighbor interpolation with mipmapping for trilinear hardware\n"
-//                            " GL_LINEAR_MIPMAP_LINEAR: Linear interpolation with mipmapping for trilinear hardware"
 	);
 	r_gammaAmount = ri.Cvar_Get( "r_gammaAmount", "1.0", CVAR_SAVE );
 	ri.Cvar_CheckRange( r_gammaAmount, "0.5", "3", CVT_FLOAT );
@@ -1163,8 +1150,6 @@ static void R_Register( void )
 	r_drawBuffer = ri.Cvar_Get( "r_drawBuffer", "GL_BACK", CVAR_CHEAT );
 	ri.Cvar_SetDescription( r_drawBuffer, "Sets which frame buffer to draw into." );
 
-	r_shadows = ri.Cvar_Get( "sgame_Shadows", "1", 0 );
-
 	r_maxPolys = ri.Cvar_Get( "r_maxPolys", "528", CVAR_LATCH | CVAR_PROTECTED );
 	ri.Cvar_CheckRange( r_maxPolys, "64", "8192", CVT_INT );
 	ri.Cvar_SetDescription( r_maxPolys, "Sets the maximum amount of polygons that can be processed per scene.\n"
@@ -1179,6 +1164,11 @@ static void R_Register( void )
 	r_maxEntities = ri.Cvar_Get( "r_maxEntities", "1024", CVAR_LATCH | CVAR_PROTECTED );
 	ri.Cvar_SetDescription( r_maxEntities, "Sets the maximum amount of dynamic entities that can be processed per scene.\n"
 											"NOTE: there can be multiple scenes rendered in a single frame." );
+
+	if ( r_textureDetail->i >= 2 ) {
+		ri.Cvar_Set( "r_normalMapping", "1" );
+		ri.Cvar_Set( "r_specularMapping", "1" );
+	}
 
 	// make sure all commands added here are also
 	// removed in R_Shutdown
@@ -1200,6 +1190,7 @@ static void R_InitGLContext( void )
 		}
 
 		ri.GLimp_Init( &glConfig );
+
 		ri.G_SetScaling( 1.0, glConfig.vidWidth, glConfig.vidHeight );
 		ri.GLimp_InitGamma( &glConfig );
 	}
@@ -1305,13 +1296,6 @@ static void R_InitGLContext( void )
 	}
 	
 	R_InitExtensions();
-
-	if ( glContext.ARB_sample_shading && r_multisampleType->i >= AntiAlias_2xSSAA && r_multisampleType->i <= AntiAlias_4xSSAA
-		&& glContext.ARB_framebuffer_object )
-	{
-//        nglEnable( GL_SAMPLE_SHADING_ARB );
-//        nglMinSampleShadingARB( 0.5f );
-	}
 }
 
 static void RE_GetTextureId( nhandle_t hShader, uint32_t stageNum, uint32_t *id )
@@ -1632,6 +1616,8 @@ void RE_Shutdown( refShutdownCode_t code )
 	ri.Cmd_RemoveCommand( "gpumeminfo" );
 	ri.Cmd_RemoveCommand( "camerainfo" );
 	ri.Cmd_RemoveCommand( "unloadworld" );
+	ri.Cmd_RemoveCommand( "fbo_restart" );
+	ri.Cmd_RemoveCommand( "fbolist" );
 
 	if ( rg.registered ) {
 		R_IssuePendingRenderCommands();
