@@ -1705,14 +1705,14 @@ static void SettingsMenu_Draw( void )
 	// fixed pause menu to settings menu
 	if ( ui->activemenu != &s_settingsMenu->menu && ui->menustate == UI_MENU_PAUSE ) {
 		if ( s_settingsMenu->modified ) {
-			UI_ConfirmMenu( "You have made some changes to your settings, would you like to save now?", NULL, SettingsMenu_ExitModified );
+			UI_ConfirmMenu( "You have made some changes to your settings,\nwould you like to save now?", NULL, SettingsMenu_ExitModified );
 		} else {
 			UI_SetActiveMenu( UI_MENU_PAUSE );
 		}
 	}
 	if ( UI_MenuTitle( "Settings" ) ) {
 		if ( s_settingsMenu->modified ) {
-			UI_ConfirmMenu( "You have made some changes to your settings, would you like to save now?", NULL, SettingsMenu_ExitModified );
+			UI_ConfirmMenu( "You have made some changes to your settings,\nwould you like to save now?", NULL, SettingsMenu_ExitModified );
 		} else {
 			if ( ui->menustate == UI_MENU_PAUSE ) {
 				UI_SetActiveMenu( UI_MENU_PAUSE );

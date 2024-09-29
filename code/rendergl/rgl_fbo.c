@@ -407,10 +407,10 @@ static void FBO_Init_f( void )
 
 	// clear render buffer
 	// this fixes the corrupt screen bug with r_hdr 1 on older hardware
-	//if ( rg.renderFbo.frameBuffer ) {
-	//	GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo.frameBuffer );
-	//	nglClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-	//}
+//	if ( rg.renderFbo.frameBuffer ) {
+//		GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo.frameBuffer );
+//		nglClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+//	}
 	if ( restart ) {
 		GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
 		nglClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
@@ -1157,12 +1157,57 @@ void RB_PostProcessSMAA( fbo_t *srcFbo )
 	FBO_Blit( &rg.smaaBlendFbo, NULL, NULL, srcFbo, NULL, &rg.textureColorShader, colorWhite, 0 );
 }
 
-#define NUM_BLUR_PASSES 5
+#define NUM_BLUR_PASSES 10
+
+static void R_ComputePass( fbo_t *srcFbo, fbo_t *dstFbo )
+{
+	ri.ProfileFunctionBegin( "ColorMapCompute" );
+	GLSL_UseProgram( &rg.colormapShader );
+	GLSL_SetUniformInt( &rg.colormapShader, UNIFORM_USE_BLOOM, r_bloom->i );
+	GLSL_SetUniformInt( &rg.colormapShader, UNIFORM_USE_HDR, r_hdr->i );
+	GLSL_SetUniformInt( &rg.colormapShader, UNIFORM_TONEMAPPING, r_toneMapType->i );
+	GLSL_SetUniformInt( &rg.colormapShader, UNIFORM_ANTIALIASING, r_multisampleType->i );
+	GLSL_SetUniformFloat( &rg.colormapShader, UNIFORM_EXPOSURE, r_autoExposure->f );
+	GLSL_SetUniformFloat( &rg.colormapShader, UNIFORM_GAMMA, r_gammaAmount->f );
+	{
+		vec2_t screenSize;
+		VectorSet2( screenSize, glConfig.vidWidth, glConfig.vidHeight );
+		GLSL_SetUniformVec2( &rg.colormapShader, UNIFORM_SCREEN_SIZE, screenSize );
+	}
+	{
+		uvec2_t dispatchComputeSize;
+		VectorSet2( dispatchComputeSize, (GLuint)ceil( glConfig.vidWidth / 128 ), (GLuint)ceil( glConfig.vidHeight / 4 ) );
+		GLSL_SetUniformUVec2( &rg.colormapShader, UNIFORM_DISPATCH_COMPUTE_SIZE, dispatchComputeSize );
+	}
+	GL_BindTexture( UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
+	GLSL_SetUniformTexture( &rg.colormapShader, UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
+	if ( r_bloom->i && r_hdr->i ) {
+		GL_BindTexture( UNIFORM_BRIGHT_MAP, rg.bloomImage );
+		GLSL_SetUniformTexture( &rg.colormapShader, UNIFORM_BRIGHT_MAP, rg.bloomImage );
+	}
+	nglDispatchCompute( (GLuint)ceil( glConfig.vidWidth / 128 ), (GLuint)ceil( glConfig.vidHeight / 4 ), 1 );
+
+	GL_BindFramebuffer( GL_READ_FRAMEBUFFER, srcFbo->frameBuffer );
+	GL_BindFramebuffer( GL_DRAW_FRAMEBUFFER, dstFbo ? dstFbo->frameBuffer : 0 );
+	GLSL_UseProgram( &rg.textureColorShader );
+	GL_BindTexture( UNIFORM_DIFFUSE_MAP, rg.computeImage );
+	GLSL_SetUniformTexture( &rg.textureColorShader, UNIFORM_DIFFUSE_MAP, rg.computeImage );
+	RB_RenderPass();
+
+	ri.ProfileFunctionEnd();
+
+	GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
+}
 
 void RB_BloomPass( fbo_t *srcFbo, fbo_t *dstFbo )
 {
 	int i;
 	int horizontal;
+
+	if ( r_arb_compute_shader->i ) {
+		R_ComputePass( srcFbo, dstFbo );
+		return;
+	}
 
 	if ( !rg.bloomPingPongFbo[ 0 ].frameBuffer || !rg.bloomPingPongFbo[ 1 ].frameBuffer ) {
 		return;
@@ -1183,8 +1228,8 @@ void RB_BloomPass( fbo_t *srcFbo, fbo_t *dstFbo )
 
 		horizontal = !horizontal;
 	}
-
-	GL_BindFramebuffer( GL_READ_FRAMEBUFFER, rg.bloomPingPongFbo[ !horizontal ].frameBuffer );
+	
+	GL_BindFramebuffer( GL_READ_FRAMEBUFFER, rg.bloomPingPongFbo[ 0 ].frameBuffer );
 	GL_BindFramebuffer( GL_DRAW_FRAMEBUFFER, dstFbo ? dstFbo->frameBuffer : 0 );
 
 	GLSL_UseProgram( &rg.bloomResolveShader );
@@ -1197,4 +1242,26 @@ void RB_BloomPass( fbo_t *srcFbo, fbo_t *dstFbo )
 	RB_RenderPass();
 
 	GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
+}
+
+void RB_FinishPostProcess( fbo_t *srcFbo )
+{
+	ri.ProfileFunctionBegin( "FinishPostProcess" );
+	if ( r_arb_compute_shader->i ) {
+		if ( !r_bloom->i && !r_hdr->i ) {
+			// apply the gamma correction here
+			R_ComputePass( srcFbo, NULL );
+		} else {
+			GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
+			nglClear( GL_COLOR_BUFFER_BIT );
+			GLSL_UseProgram( &rg.textureColorShader );
+			GL_BindTexture( UNIFORM_DIFFUSE_MAP, srcFbo->colorImage[ 0 ] );
+			GLSL_SetUniformTexture( &rg.textureColorShader, UNIFORM_DIFFUSE_MAP, srcFbo->colorImage[ 0 ] );
+			RB_RenderPass();
+		}
+	}
+	else if ( srcFbo ) {
+		FBO_FastBlit( srcFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+	}
+	ri.ProfileFunctionEnd();
 }

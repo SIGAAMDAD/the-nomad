@@ -178,6 +178,8 @@ cvar_t *r_useShaderCache;
 cvar_t *r_lightingQuality;
 cvar_t *r_antialiasQuality;
 
+cvar_t *r_arb_compute_shader;
+
 cvar_t *r_loadTexturesOnDemand;
 
 cvar_t *sys_forceSingleThreading;
@@ -852,6 +854,9 @@ static void R_Register( void )
 	ri.Cvar_SetDescription( r_arb_texture_max_anisotropy, "Sets maximum anisotropic level for your graphics driver. Requires \\r_arb_texture_filter_anisotropic 1." );
 
 	r_arb_map_buffer_range = ri.Cvar_Get( "r_arb_map_buffer_range", "0", CVAR_LATCH | CVAR_SAVE );
+
+	r_arb_compute_shader = ri.Cvar_Get( "r_arb_compute_shader", "1", CVAR_SAVE );
+	ri.Cvar_SetDescription( r_arb_compute_shader, "Enables the usage of compute shaders for parallalized GPU batch work." );
 
 	r_arb_shader_storage_buffer_object = ri.Cvar_Get( "r_arb_shader_storage_buffer_object", "0", CVAR_LATCH | CVAR_SAVE );
 	ri.Cvar_SetDescription( r_arb_shader_storage_buffer_object,

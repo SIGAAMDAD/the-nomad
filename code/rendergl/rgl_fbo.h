@@ -45,5 +45,6 @@ void RB_SunRays( fbo_t *srcFbo, ivec4_t srcBox, fbo_t *dstFbo, ivec4_t dstBox );
 void RB_GaussianBlur( float blur );
 void RB_PostProcessSMAA( fbo_t *srcFbo );
 void RB_BloomPass( fbo_t *srcFbo, fbo_t *dstFbo );
+void RB_FinishPostProcess( fbo_t *srcFbo );
 
 #endif

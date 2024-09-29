@@ -1,3 +1,26 @@
+/*
+===========================================================================
+Copyright (C) 2023-2024 GDR Games
+
+This file is part of The Nomad source code.
+
+The Nomad source code is free software; you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation; either version 2 of the License,
+or (at your option) any later version.
+
+The Nomad source code is distributed in the hope that it will be
+useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Foobar; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+===========================================================================
+*/
+
+
 #include "rgl_local.h"
 #include "rgl_fbo.h"
 
@@ -500,10 +523,6 @@ static const void *RB_SwapBuffers(const void *data)
 				FBO_FastBlit( &rg.renderFbo, NULL, &rg.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
 				FBO_FastBlit( &rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
 			}
-			else if ( r_multisampleType->i == AntiAlias_SMAA ) {
-				RB_PostProcessSMAA( &rg.renderFbo );
-				FBO_FastBlit( &rg.renderFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
-			}
 			else if ( rg.ssaaResolveFbo.frameBuffer && r_multisampleType->i == AntiAlias_SSAA ) {
 				ivec4_t dstBox;
 
@@ -513,14 +532,16 @@ static const void *RB_SwapBuffers(const void *data)
 				dstBox[3] = rg.renderFbo.height;
 
 				FBO_FastBlit( &rg.renderFbo, NULL, &rg.ssaaResolveFbo, dstBox, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
-				FBO_FastBlit( &rg.ssaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+//				FBO_FastBlit( &rg.ssaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+				RB_FinishPostProcess( &rg.ssaaResolveFbo );
 			}
 			else if ( r_hdr->i ) {
 				RB_BloomPass( &rg.renderFbo, &rg.renderFbo );
-				FBO_FastBlit( &rg.renderFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+				RB_FinishPostProcess( &rg.renderFbo );
 			}
 			else {
-				FBO_FastBlit( &rg.renderFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+				RB_FinishPostProcess( &rg.renderFbo );
+//				FBO_FastBlit( &rg.renderFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 			}
 			end = ri.Milliseconds();
 			backend.pc.postprocessMsec = end - start;
@@ -642,48 +663,10 @@ static const void *RB_PostProcess( const void *data )
 //		RB_GaussianBlur( backend.refdef.blurFactor );
 	}
 
-	/*
-	ri.ProfileFunctionBegin( "ColorMapCompute" );
-					GLSL_UseProgram( &rg.colormapShader );
-					GLSL_SetUniformInt( &rg.colormapShader, UNIFORM_USE_BLOOM, r_bloom->i );
-					GLSL_SetUniformInt( &rg.colormapShader, UNIFORM_USE_HDR, r_hdr->i );
-					GLSL_SetUniformInt( &rg.colormapShader, UNIFORM_TONEMAPPING, r_toneMapType->i );
-					GLSL_SetUniformInt( &rg.colormapShader, UNIFORM_ANTIALIASING, r_multisampleType->i );
-					GLSL_SetUniformFloat( &rg.colormapShader, UNIFORM_EXPOSURE, r_autoExposure->f );
-					GLSL_SetUniformFloat( &rg.colormapShader, UNIFORM_GAMMA, r_gammaAmount->f );
-					{
-						vec2_t screenSize;
-						VectorSet2( screenSize, glConfig.vidWidth, glConfig.vidHeight );
-						GLSL_SetUniformVec2( &rg.colormapShader, UNIFORM_SCREEN_SIZE, screenSize );
-					}
-					{
-						uvec2_t dispatchComputeSize;
-						VectorSet2( dispatchComputeSize, (GLuint)ceil( glConfig.vidWidth / 128 ), (GLuint)ceil( glConfig.vidHeight / 4 ) );
-						GLSL_SetUniformUVec2( &rg.colormapShader, UNIFORM_DISPATCH_COMPUTE_SIZE, dispatchComputeSize );
-					}
-					GL_BindTexture( UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
-					GL_BindTexture( UNIFORM_BRIGHT_MAP, rg.bloomImage );
-					GLSL_SetUniformTexture( &rg.colormapShader, UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
-					GLSL_SetUniformTexture( &rg.colormapShader, UNIFORM_BRIGHT_MAP, rg.bloomImage );
-					nglDispatchCompute( (GLuint)ceil( glConfig.vidWidth / 128 ), (GLuint)ceil( glConfig.vidHeight / 4 ), 1 );
-
-					GLSL_UseProgram( &rg.textureColorShader );
-					GLSL_SetUniformTexture( &rg.textureColorShader, UNIFORM_DIFFUSE_MAP, rg.computeImage );
-
-					GL_BindFramebuffer( GL_READ_FRAMEBUFFER, rg.renderFbo->frameBuffer );
-					GL_BindFramebuffer( GL_DRAW_FRAMEBUFFER, rg.msaaResolveFbo->frameBuffer );
-					RB_RenderPass();
-					GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
-					ri.ProfileFunctionEnd();
-	*/
-
 	if ( r_bloom->i && r_hdr->i ) {
 		RB_BloomPass( srcFbo, srcFbo );
 	}
-
-	if ( srcFbo ) {
-		FBO_FastBlit( srcFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
-	}
+	RB_FinishPostProcess( srcFbo );
 
 #if 0
 	if (0)

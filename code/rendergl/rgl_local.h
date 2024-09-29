@@ -335,6 +335,7 @@ typedef enum {
 
 	UNIFORM_LIGHTDATA,
 	UNIFORM_DLIGHTDATA,
+	UNIFORM_VERTEXDATA,
 
 	UNIFORM_GAMMA,
 	UNIFORM_EXPOSURE,
@@ -1482,6 +1483,8 @@ extern cvar_t *r_useShaderCache;
 extern cvar_t *r_imageUpsampleType;
 extern cvar_t *r_imageUpsample;
 extern cvar_t *r_imageUpsampleMaxSize;
+
+extern cvar_t *r_arb_compute_shader;
 
 extern cvar_t *r_lightingQuality;
 extern cvar_t *r_antialiasQuality;

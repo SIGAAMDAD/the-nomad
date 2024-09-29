@@ -1,12 +1,7 @@
 in vec3 a_Position;
-#ifndef USE_SHADER_STORAGE_WORLD
 in vec2 a_TexCoords;
 in uvec2 a_WorldPos;
-#endif
 in vec4 a_Color;
-#ifdef USE_SHADER_STORAGE_WORLD
-in uint a_TileID;
-#endif
 
 out vec2 v_TexCoords;
 out vec3 v_FragPos;
@@ -14,11 +9,10 @@ out vec4 v_Color;
 out vec3 v_WorldPos;
 out vec3 v_Position;
 
+uniform bool u_WorldDrawing;
 uniform mat4 u_ModelViewProjection;
 uniform vec4 u_BaseColor;
 uniform vec4 u_VertColor;
-
-uniform mat4 u_ModelMatrix;
 
 #if defined(USE_RGBAGEN)
 uniform int u_ColorGen;
@@ -127,7 +121,7 @@ void main() {
 	v_WorldPos = vec3( a_WorldPos.xy, 0.0 );
 	v_Position = position;
 
-	v_FragPos = vec3( u_ModelViewProjection * vec4( position, 1.0 ) );
+	v_FragPos = vec3( u_ModelViewProjection * vec4( a_Position, 1.0 ) );
 
-    gl_Position = u_ModelViewProjection * vec4( position, 1.0 );
+    gl_Position = u_ModelViewProjection * vec4( a_Position, 1.0 );
 }

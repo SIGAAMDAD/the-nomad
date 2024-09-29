@@ -163,6 +163,23 @@ vec3 CalcSpecular(vec3 specular, float NH, float EH, float roughness)
 	return specular * (rrrr / (4.0 * d * d * v));
 }
 
+/*
+vec3 CalcTangent() {
+	vec3 Q1 = dFdx( v_WorldPos );
+	vec3 Q2 = dFdy( v_WorldPos );
+	vec3 st1 = dFdx( v_TexCoords );
+	vec3 st2 = dFdy( v_TexCoords );
+
+	vec3 N = normalize( 0.0 );
+	vec3 T = normalize( Q1 * st2.t - Q2 * st1.t );
+	vec3 B = -normalize( cross( N, T ) );
+
+	mat3 TBN = mat3( T, B, N );
+
+	return normalize( TBN * 0.0 );
+}
+*/
+
 vec3 CalcPointLight( Light light ) {
 	vec3 diffuse = a_Color.rgb;
 	float dist = distance( v_WorldPos, vec3( light.origin, v_WorldPos.z ) );

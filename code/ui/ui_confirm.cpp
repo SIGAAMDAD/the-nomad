@@ -115,7 +115,7 @@ void UI_ConfirmMenu( const char *question, void (*draw)( void ), void (*action)(
 	s_confirm->menu.y = 280 * ui->scale;
 	s_confirm->menu.width = l1 * ui->scale;
 	s_confirm->menu.height = 372 * ui->scale;
-	s_confirm->menu.textFontScale = 1.5f;
+	s_confirm->menu.textFontScale = 1.0f;
 	s_confirm->menu.name = "ConfirmMenu";
 	s_confirm->menu.flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar
 		| ImGuiWindowFlags_NoCollapse;

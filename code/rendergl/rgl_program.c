@@ -93,6 +93,7 @@ static uniformInfo_t uniformsInfo[UNIFORM_COUNT] = {
 
 	{ "u_LightBuffer",          GLSL_BUFFER },
 	{ "u_DLightData",			GLSL_BUFFER },
+	{ "u_VertexData",			GLSL_BUFFER },
 
 	{ "u_GammaAmount",          GLSL_FLOAT },
 	{ "u_Exposure",             GLSL_FLOAT },

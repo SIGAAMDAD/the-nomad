@@ -32,8 +32,6 @@ Possible things to add:
 [GL_ARB_sparse_buffer]
 glBufferPageCommitmentARB (GLenum target, GLintptr offset, GLsizeiptr size, GLboolean commit)
 
-
-
 */
 
 #pragma once
