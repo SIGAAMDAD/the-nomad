@@ -862,6 +862,7 @@ int ImGui_ImplOpenGL3_CreateFontsTexture( void )
 	fontsTex->uploadHeight = height;
 	if ( Cvar_VariableInteger( "r_loadTexturesOnDemand" ) ) {
 		fontsTex->handle = renderImport.glGetTextureHandleARB( fontsTex->id );
+		renderImport.glMakeTextureHandleResidentARB( fontsTex->handle );
 	}
 
 	// Store our identifier

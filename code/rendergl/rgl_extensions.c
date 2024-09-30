@@ -73,6 +73,22 @@ void R_InitExtensions( void )
 	}
 
 	//
+	// NV_shader_buffer_load
+	//
+	ext = "GL_NV_shader_buffer_load";
+	if ( R_HasExtension( ext ) && strstr( glConfig.renderer_string, "NVIDIA" ) ) {
+		NGL_NV_shader_buffer_load
+
+		if ( !nglMakeBufferNonResidentNV || !nglMakeBufferNonResidentNV ) {
+			ri.Printf( PRINT_INFO, result[EXT_FAILED], ext );
+		} else {
+			ri.Printf( PRINT_INFO, result[EXT_USING], ext );
+		}
+	} else {
+		ri.Printf( PRINT_INFO, result[EXT_NOTFOUND], ext );
+	}
+
+	//
 	// ARB_sync
 	//
 	ext = "GL_ARB_sync";

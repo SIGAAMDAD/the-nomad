@@ -617,7 +617,7 @@ static const void *RB_PostProcess( const void *data )
 		dstBox[2] = rg.renderFbo.width;
 		dstBox[3] = rg.renderFbo.height;
 
-		FBO_FastBlit( &rg.renderFbo, NULL, &rg.ssaaResolveFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+		FBO_FastBlit( &rg.renderFbo, NULL, &rg.ssaaResolveFbo, dstBox, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 		srcFbo = &rg.ssaaResolveFbo;
 	}
 
@@ -663,7 +663,7 @@ static const void *RB_PostProcess( const void *data )
 //		RB_GaussianBlur( backend.refdef.blurFactor );
 	}
 
-	if ( r_bloom->i && r_hdr->i ) {
+	if ( r_hdr->i ) {
 		RB_BloomPass( srcFbo, srcFbo );
 	}
 	RB_FinishPostProcess( srcFbo );

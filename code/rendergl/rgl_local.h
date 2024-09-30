@@ -434,7 +434,7 @@ typedef struct dlight_s {
 typedef struct {
 	uint16_t		worldPos[2];
 	vec3_t          xyz;
-	vec2_t          uv;
+	vec2_t			uv;
 	uint16_t        color[4];
 } drawVert_t;
 
@@ -1708,6 +1708,7 @@ void RB_IterateShaderStages( shader_t *shader );
 void RB_InstantQuad(vec4_t quadVerts[4]);
 void RB_InstantQuad2(vec4_t quadVerts[4], vec2_t texCoords[4]);
 void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, const void *offset, int32_t baseVertex );
+
 //
 // rgl_cache.c
 //
@@ -1720,6 +1721,7 @@ void R_VaoUnpackColor( vec4_t v, uint16_t *pack );
 vertexBuffer_t *R_AllocateBuffer( const char *name, void *vertices, uint32_t verticesSize, void *indices, uint32_t indicesSize,
 	bufferType_t type );
 void VBO_BindNull( void );
+void VBO_MapBuffers( vertexBuffer_t *vbo, void **vertexBuffer, void **indexBuffer );
 void R_InitGPUBuffers( void );
 void R_ShutdownGPUBuffers( void );
 void VBO_Bind( vertexBuffer_t *vbo );

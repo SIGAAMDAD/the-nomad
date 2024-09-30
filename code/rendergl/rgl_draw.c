@@ -3,15 +3,12 @@
 void R_DrawElements( uint32_t numElements, uintptr_t nOffset ) {
 	backend.pc.c_drawCalls++;
 
-	if ( glState.currentVao == rg.renderPassVBO ) {
-		nglDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
-		return;
-	}
-
 	switch ( r_drawMode->i ) {
 	case DRAWMODE_GPU:
 	case DRAWMODE_MAPPED: {
-		if ( backend.drawBatch.instanced ) {
+		if ( rg.world && backend.drawBatch.buffer == rg.world->buffer ) {
+			nglDrawElementsInstanced( GL_TRIANGLES, numElements, GLN_INDEX_TYPE, NULL, backend.drawBatch.instanceCount );
+		} else if ( backend.drawBatch.instanced && backend.drawBatch.instanceCount > 1 ) {
 			nglDrawElementsInstanced( GL_TRIANGLES, numElements, GLN_INDEX_TYPE, NULL, backend.drawBatch.instanceCount );
 		} else {
 			nglDrawElements( GL_TRIANGLES, numElements, GLN_INDEX_TYPE, BUFFER_OFFSET( nOffset ) );
@@ -766,75 +763,7 @@ void RB_InstantQuad2( vec4_t quadVerts[4], vec2_t texCoords[4] )
 
 	ri.GLimp_LogComment( "--- RB_InstantQuad2 ---" );
 
-#if 0
-	nglOrtho( glState.viewData.viewportX, glState.viewData.viewportX + glState.viewData.viewportWidth,
-		glState.viewData.viewportY + glState.viewData.viewportHeight, glState.viewData.viewportY,
-		glState.viewData.zFar, glState.viewData.zNear );
-
-	nglBegin( GL_TRIANGLE_FAN );
-	
-	nglVertex3f( quadVerts[0][0], quadVerts[0][1], quadVerts[0][2] );
-	nglTexCoord2f( texCoords[0][0], texCoords[0][1] );
-
-	nglVertex3f( quadVerts[1][0], quadVerts[1][1], quadVerts[1][2] );
-	nglTexCoord2f( texCoords[1][0], texCoords[1][1] );
-
-	nglVertex3f( quadVerts[2][0], quadVerts[2][1], quadVerts[2][2] );
-	nglTexCoord2f( texCoords[2][0], texCoords[2][1] );
-
-	nglVertex3f( quadVerts[3][0], quadVerts[3][1], quadVerts[3][2] );
-	nglTexCoord2f( texCoords[3][0], texCoords[3][1] );
-
-	nglEnd();
-#else
-	RB_SetBatchBuffer( backend.drawBuffer, backendData[ rg.smpFrame ]->verts, sizeof( srfVert_t ),
-		backendData[ rg.smpFrame ]->indices, sizeof(glIndex_t) );
-
-	for ( i = 0; i < 4; i++ ) {
-		VectorCopy( verts[i].xyz, quadVerts[0] );
-		VectorCopy2( verts[i].st, texCoords[0] );
-	}
-
-	nglVertex3f( 1.0f, 0.0f, 0.0f );
-	nglTexCoord2f( texCoords[1][0], texCoords[1][1] );
-
-	backend.drawBatch.vtxOffset = 4;
-	backend.drawBatch.idxOffset = 6;
-
-	memcpy( backendData[ rg.smpFrame ]->verts, verts, sizeof( verts ) );
-
-	VBO_Bind( backend.drawBuffer );
-
-	// orphan the old index buffer so that we don't stall on it
-	if ( r_drawMode->i == DRAWMODE_MAPPED ) {
-		nglInvalidateBufferData( backend.drawBuffer->index.id );
-		data = nglMapBufferRange( GL_ELEMENT_ARRAY_BUFFER_ARB, 0, backend.drawBatch.maxIndices, GL_MAP_WRITE_BIT
-			| GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT );
-		if ( data ) {
-			memcpy( data, backend.drawBatch.indices, backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize );
-		}
-		nglUnmapBuffer( GL_ELEMENT_ARRAY_BUFFER );
-	} else if ( r_drawMode->i == DRAWMODE_GPU ) {
-		nglBufferData( GL_ELEMENT_ARRAY_BUFFER, backend.drawBatch.maxIndices, NULL, backend.drawBatch.buffer->index.glUsage );
-		nglBufferSubData( GL_ELEMENT_ARRAY_BUFFER, 0, backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize, backend.drawBatch.indices );
-	}
-
-	// orphan the old vertex buffer so that we don't stall on it
-	if ( r_drawMode->i == DRAWMODE_MAPPED ) {
-		nglInvalidateBufferData( backend.drawBuffer->vertex.id );
-		data = nglMapBufferRange( GL_ARRAY_BUFFER_ARB, 0, backend.drawBatch.maxVertices, GL_MAP_WRITE_BIT
-			| GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT );
-		if ( data ) {
-			memcpy( data, backend.drawBatch.vertices, backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize );
-		}
-		nglUnmapBuffer( GL_ARRAY_BUFFER );
-	} else if ( r_drawMode->i == DRAWMODE_GPU ) {
-		nglBufferData( GL_ARRAY_BUFFER, backend.drawBatch.maxVertices, NULL, backend.drawBatch.buffer->vertex.glUsage );
-		nglBufferSubData( GL_ARRAY_BUFFER, 0, backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize, backend.drawBatch.vertices );
-	}
-
-	R_DrawElements( 6, 0 );
-#endif
+	assert( false );
 }
 
 /*
@@ -850,28 +779,6 @@ void RB_RenderPass( void )
 void RB_RenderPass( void )
 {
 	vertexBuffer_t *oldBuffer;
-	/*
-    if (quadVAO == 0)
-    {
-        float quadVertices[] = {
-            // positions        // texture Coords
-            -1.0f,  1.0f, 0.0f, 0.0f, 0.0f,
-            -1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-             1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-             1.0f, -1.0f, 0.0f, 0.0f, 1.0f,
-        };
-        // setup plane VAO
-        nglGenVertexArrays(1, &quadVAO);
-        nglGenBuffers(1, &quadVBO);
-        nglBindVertexArray(quadVAO);
-        nglBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-        nglBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-        nglEnableVertexAttribArray(0);
-        nglVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-        nglEnableVertexAttribArray(1);
-        nglVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    }
-	*/
 
 	oldBuffer = glState.currentVao;
 	VBO_BindNull();
@@ -883,16 +790,6 @@ void RB_RenderPass( void )
 	if ( oldBuffer ) {
 		VBO_Bind( oldBuffer );
 	}
-
-//    nglBindVertexArray(quadVAO);
-//	nglBindBuffer( GL_ARRAY_BUFFER, quadVBO );
-//	nglEnableVertexAttribArray(0);
-//    nglVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-//    nglEnableVertexAttribArray(1);
-//    nglVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-//    nglDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-//	nglBindBuffer( GL_ARRAY_BUFFER, 0 );
-//    nglBindVertexArray(0);
 }
 
 void RB_InstantQuad( vec4_t quadVerts[4] )

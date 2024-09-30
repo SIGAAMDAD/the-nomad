@@ -309,6 +309,11 @@ typedef void*(*NGLloadproc)(const char *name);
 	NGL( void, glUniformHandleui64ARB, GLint location, GLuint64 value ) \
 	NGL( void, glUniformHandleui64vARB, GLint location, GLsizei count, const GLuint64 *value )
 
+#define NGL_NV_shader_buffer_load \
+	NGL( void, glMakeBufferResidentNV, GLenum target, GLenum access ) \
+	NGL( void, glMakeBufferNonResidentNV, GLenum target ) \
+	NGL( void, glGetBufferParameterui64vNV, GLenum target, GLenum pname, GLuint64 *params )
+
 #define NGL_ARB_sync \
 	NGL( GLsync, glFenceSync, GLenum condition, GLbitfield flags ) \
 	NGL( GLenum, glClientWaitSync, GLsync sync, GLbitfield flags, GLuint64 timeout ) \
@@ -360,6 +365,7 @@ NGL_ARB_map_buffer_range
 NGL_ARB_buffer_storage
 NGL_ARB_sync
 NGL_ARB_bindless_texture
+NGL_NV_shader_buffer_load
 #undef NGL
 
 #define LOAD_GL_PROCS( procs ) procs

@@ -1209,6 +1209,26 @@ void RB_BloomPass( fbo_t *srcFbo, fbo_t *dstFbo )
 		return;
 	}
 
+	if ( !r_bloom->i && r_hdr->i ) {
+		GL_BindFramebuffer( GL_READ_FRAMEBUFFER, srcFbo->frameBuffer );
+		GL_BindFramebuffer( GL_DRAW_FRAMEBUFFER, dstFbo->frameBuffer );
+		
+		GLSL_UseProgram( &rg.bloomResolveShader );
+		GL_BindTexture( UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
+		GLSL_SetUniformTexture( &rg.bloomResolveShader, UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
+		GLSL_SetUniformInt( &rg.bloomResolveShader, UNIFORM_TONEMAPPING, r_toneMapType->i );
+		GLSL_SetUniformInt( &rg.bloomResolveShader, UNIFORM_USE_HDR, r_hdr->i );
+		GLSL_SetUniformInt( &rg.bloomResolveShader, UNIFORM_USE_BLOOM, r_bloom->i );
+		GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_GAMMA, r_gammaAmount->f );
+		GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_EXPOSURE, r_autoExposure->f );
+		GL_BindTexture( UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
+
+		RB_RenderPass();
+
+		GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
+		return;
+	}
+
 	if ( !rg.bloomPingPongFbo[ 0 ].frameBuffer || !rg.bloomPingPongFbo[ 1 ].frameBuffer ) {
 		return;
 	}
@@ -1228,16 +1248,22 @@ void RB_BloomPass( fbo_t *srcFbo, fbo_t *dstFbo )
 
 		horizontal = !horizontal;
 	}
-	
+
+	// combine hdr and bloom pass
+
 	GL_BindFramebuffer( GL_READ_FRAMEBUFFER, rg.bloomPingPongFbo[ 0 ].frameBuffer );
 	GL_BindFramebuffer( GL_DRAW_FRAMEBUFFER, dstFbo ? dstFbo->frameBuffer : 0 );
 
 	GLSL_UseProgram( &rg.bloomResolveShader );
+	GLSL_SetUniformInt( &rg.bloomResolveShader, UNIFORM_USE_HDR, r_hdr->i );
+	GLSL_SetUniformInt( &rg.bloomResolveShader, UNIFORM_USE_BLOOM, r_bloom->i );
 	GL_BindTexture( UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
 	GL_BindTexture( UNIFORM_BRIGHT_MAP, rg.bloomImage );
 	GLSL_SetUniformTexture( &rg.bloomResolveShader, UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
 	GLSL_SetUniformTexture( &rg.bloomResolveShader, UNIFORM_BRIGHT_MAP, rg.bloomImage );
 	GLSL_SetUniformInt( &rg.bloomResolveShader, UNIFORM_TONEMAPPING, r_toneMapType->i );
+	GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_EXPOSURE, r_autoExposure->f );
+	GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_GAMMA, r_gammaAmount->f );
 
 	RB_RenderPass();
 

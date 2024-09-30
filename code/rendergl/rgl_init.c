@@ -22,6 +22,7 @@ NGL_ARB_buffer_storage
 NGL_ARB_map_buffer_range
 NGL_ARB_sync
 NGL_ARB_bindless_texture
+NGL_NV_shader_buffer_load
 #undef NGL
 
 // because they're edgy...
@@ -1233,6 +1234,10 @@ static void R_InitGLContext( void )
 	N_strncpyz( glConfig.shader_version_str, (const char *)nglGetString( GL_SHADING_LANGUAGE_VERSION ), sizeof(glConfig.shader_version_str) );
 	N_strncpyz( glConfig.extensions_string, gl_extensions, sizeof(glConfig.extensions_string) );
 
+	if ( !NGL_VERSION_ATLEAST( 3, 3 ) ) {
+		ri.Printf( PRINT_ERROR, "Update your fucking drivers, jesus....\n" );
+	}
+
 	nglGetIntegerv( GL_NUM_EXTENSIONS, &glContext.numExtensions );
 	nglGetIntegerv( GL_STEREO, (GLint *)&glContext.stereo );
 	nglGetIntegerv( GL_MAX_IMAGE_UNITS, &glContext.maxTextureUnits );
@@ -1374,6 +1379,7 @@ static void R_InitImGui( void )
 	import.glMapBufferRange = nglMapBufferRange;
 	import.glBufferStorage = nglBufferStorage;
 	import.glGetTextureHandleARB = nglGetTextureHandleARB;
+	import.glMakeTextureHandleResidentARB = nglMakeTextureHandleResidentARB;
 
 	import.DrawShaderStages = RB_DrawShaderStages;
 	import.GetTextureId = RE_GetTextureId;
@@ -1473,7 +1479,6 @@ static void R_UnloadWorld_f( void ) {
 	}
 
 	R_ShutdownBuffer( rg.world->buffer );
-	VBO_Bind( backend.drawBuffer );
 
 	R_UnloadLevelShaders();
 	R_UnloadLevelTextures();

@@ -162,6 +162,19 @@ static void R_GenerateTexCoords( tile2d_info_t *info )
 			VectorCopy2( vtx[1].uv, sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][1] );
 			VectorCopy2( vtx[2].uv, sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][2] );
 			VectorCopy2( vtx[3].uv, sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][3] );
+			/*
+			vtx[0].uv[0] = FloatToHalf( sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][0][0] );
+			vtx[0].uv[1] = FloatToHalf( sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][0][1] );
+
+			vtx[1].uv[0] = FloatToHalf( sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][1][0] );
+			vtx[1].uv[1] = FloatToHalf( sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][1][1] );
+
+			vtx[2].uv[0] = FloatToHalf( sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][2][0] );
+			vtx[2].uv[1] = FloatToHalf( sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][2][1] );
+
+			vtx[3].uv[0] = FloatToHalf( sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][3][0] );
+			vtx[3].uv[1] = FloatToHalf( sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][3][1] );
+			*/
 
 			VectorSet2( vtx[0].worldPos, x, y );
 			VectorSet2( vtx[1].worldPos, x, y );
@@ -429,14 +442,18 @@ void R_InitWorldBuffer( void )
 	r_worldData.numIndices = r_worldData.width * r_worldData.height * 6;
 	r_worldData.numVertices = r_worldData.width * r_worldData.height * 4;
 
-//	r_worldData.buffer = R_AllocateBuffer( "worldDrawBuffer", NULL, r_worldData.numVertices * sizeof( drawVert_t ), r_worldData.indices,
-//										r_worldData.numIndices * sizeof( glIndex_t ), BUFFER_STREAM );
 	r_worldData.buffer = R_AllocateBuffer( "worldDrawBuffer", NULL, sizeof( *r_worldData.vertices ) * r_worldData.numVertices, NULL,
 										sizeof( glIndex_t ) * r_worldData.numIndices, BUFFER_STREAM );
 	attribs = r_worldData.buffer->attribs;
 
-	r_worldData.indices = ri.Hunk_Alloc( sizeof( glIndex_t ) * r_worldData.numIndices, h_low );
-	r_worldData.vertices = ri.Hunk_Alloc( sizeof( *r_worldData.vertices ) * r_worldData.numVertices, h_low );
+	VBO_MapBuffers( r_worldData.buffer, (void **)&r_worldData.vertices, (void **)&r_worldData.indices );
+
+	VBO_Bind( r_worldData.buffer );
+	nglFlushMappedBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, sizeof( glIndex_t ) * r_worldData.numIndices );
+	VBO_BindNull();
+
+//	r_worldData.indices = ri.Hunk_Alloc( sizeof( glIndex_t ) * r_worldData.numIndices, h_low );
+//	r_worldData.vertices = ri.Hunk_Alloc( sizeof( *r_worldData.vertices ) * r_worldData.numVertices, h_low );
 
 	// cache the indices so that we aren't calculating these every frame (there could be thousands)
 	for ( i = 0, offset = 0; i < r_worldData.numIndices; i += 6, offset += 4 ) {

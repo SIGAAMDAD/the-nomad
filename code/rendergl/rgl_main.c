@@ -212,8 +212,8 @@ void R_DrawPolys( void )
 
 	rg.world->drawing = qtrue;
 
-	RB_SetBatchBuffer( backend.drawBuffer, backendData[ rg.smpFrame ]->verts, sizeof( srfVert_t ),
-		backendData[ rg.smpFrame ]->indices, sizeof( glIndex_t ) );
+	RB_SetBatchBuffer( backend.drawBuffer, backendData[ 0 ]->verts, sizeof( srfVert_t ),
+		backendData[ 0 ]->indices, sizeof( glIndex_t ) );
 
 	// sort the polys to be more efficient with our shaders
 	R_RadixSort( backend.refdef.polys, backend.refdef.numPolys );
@@ -224,6 +224,7 @@ void R_DrawPolys( void )
 	oldShader = poly->hShader;
 	backend.drawBatch.shader = R_GetShaderByHandle( oldShader );
 	rg.world->drawing = qtrue;
+	backend.drawBatch.instanced = qtrue;
 
 	assert( backend.refdef.polys );
 
@@ -233,6 +234,7 @@ void R_DrawPolys( void )
 			RB_FlushBatchBuffer();
 			oldShader = backend.refdef.polys[i].hShader;
 			backend.drawBatch.shader = R_GetShaderByHandle( backend.refdef.polys[i].hShader );
+			backend.drawBatch.instanceCount = 0;
 		}
 		
 		if ( backend.drawBatch.vtxOffset + backend.refdef.polys[i].numVerts >= r_maxPolys->i * 4
@@ -276,6 +278,7 @@ void R_DrawPolys( void )
 
 			backend.drawBatch.vtxOffset++;
 		}
+		backend.drawBatch.instanceCount++;
 	}
 	
 	// flush out anything remaining
@@ -315,12 +318,10 @@ void R_DrawWorld( void )
 
 	backend.drawBatch.shader = rg.world->shader;
 	rg.world->drawing = qtrue;
-	backend.drawBatch.instanceCount = 64;
+	backend.drawBatch.instanceCount = 1;
 	backend.drawBatch.instanced = qtrue;
 
 	vtx = rg.world->vertices;
-	VectorCopy2( begin, glState.viewData.camera.origin );
-	VectorCopy2( end, glState.viewData.camera.origin );
 
 	for ( y = 0; y < rg.world->height; y++ ) {
 		for ( x = 0; x < rg.world->width; x++ ) {
