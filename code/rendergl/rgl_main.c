@@ -296,6 +296,8 @@ void R_DrawWorld( void )
 	vec3_t pos;
 	ivec3_t origin;
 	drawVert_t *vtx;
+	drawVert_t verts[4];
+	vec3_t *xyz;
 	ivec2_t begin, end;
 	vec3_t edge1, edge2, normal;
 	vec4_t color;
@@ -314,7 +316,7 @@ void R_DrawWorld( void )
 	}
 
 	// prepare the batch
-	RB_SetBatchBuffer( rg.world->buffer, rg.world->vertices, sizeof( drawVert_t ), rg.world->indices, sizeof( glIndex_t ) );
+	RB_SetBatchBuffer( rg.world->buffer, rg.world->vertices, sizeof( vec3_t ), rg.world->indices, sizeof( glIndex_t ) );
 
 	backend.drawBatch.shader = rg.world->shader;
 	rg.world->drawing = qtrue;
@@ -322,6 +324,7 @@ void R_DrawWorld( void )
 	backend.drawBatch.instanced = qtrue;
 
 	vtx = rg.world->vertices;
+	xyz = rg.world->xyz;
 
 	for ( y = 0; y < rg.world->height; y++ ) {
 		for ( x = 0; x < rg.world->width; x++ ) {
@@ -330,7 +333,7 @@ void R_DrawWorld( void )
 			pos[2] = 0.0f;
 
 			// convert the local world coordinates to OpenGL screen coordinates
-			R_WorldToGL( vtx, pos );
+			R_WorldToGL( verts, pos );
 
 			// generate normals
 			// FIXME: this is hideous
@@ -345,6 +348,11 @@ void R_DrawWorld( void )
 				CrossProduct( edge1, edge2, normal );
 			}
 			*/
+
+			VectorCopy( xyz[ 0 ], verts[0].xyz );
+			VectorCopy( xyz[ 1 ], verts[1].xyz );
+			VectorCopy( xyz[ 2 ], verts[2].xyz );
+			VectorCopy( xyz[ 3 ], verts[3].xyz );
 
 			// check if there's any entities in the way
 			VectorSet4( color, 1.0f, 1.0f, 1.0f, 1.0f );
@@ -364,7 +372,8 @@ void R_DrawWorld( void )
 					break;
 				}
 			}
-			vtx += 4;
+//			vtx += 4;
+			xyz += 4;
 		}
 	}
 

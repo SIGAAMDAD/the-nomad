@@ -494,13 +494,8 @@ static int GLSL_CompileGPUShader( GLuint program, GLuint *prevShader, const GLch
 		return qfalse;
 	}
 
-	if (*prevShader) {
-		nglDetachShader(program, *prevShader);
-		nglDeleteShader(*prevShader);
-	}
-
 	// attach shader to program
-	nglAttachShader(program, shader);
+	nglAttachShader( program, shader );
 
 	*prevShader = shader;
 
@@ -1016,11 +1011,11 @@ static void GLSL_DeleteGPUShader( shaderProgram_t *program)
 {
 	if ( program->programId ) {
 		if ( program->vertexId ) {
-			nglDetachShader( program->programId, program->vertexId );
+		//	nglDetachShader( program->programId, program->vertexId );
 			nglDeleteShader( program->vertexId );
 		}
 		if ( program->fragmentId ) {
-			nglDetachShader( program->programId, program->fragmentId );
+		//	nglDetachShader( program->programId, program->fragmentId );
 			nglDeleteShader( program->fragmentId );
 		}
 		if ( program->uniformBuffer ) {
@@ -1444,10 +1439,6 @@ void GLSL_InitGPUShaders_f( void )
 
 	ri.Printf( PRINT_INFO, "---- GLSL_InitGPUShaders ----\n" );
 
-//	if ( r_useUniformBuffers->i ) {
-//		rg.vertexInput = GLSL_InitUniformBuffer( "u_VertexInput", NULL, sizeof( mat4_t ) );
-//	}
-
 	R_IssuePendingRenderCommands();
 
 	start = ri.Milliseconds();
@@ -1849,7 +1840,6 @@ void GLSL_ShutdownGPUShaders( void )
 	}
 	
 	GL_BindNullProgram();
-	nglBindBufferARB( r_arb_shader_storage_buffer_object->i ? GL_SHADER_STORAGE_BUFFER : GL_UNIFORM_BUFFER, 0 );
 
 	if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
 		GLSL_DeleteGPUShader( &rg.computeShader );

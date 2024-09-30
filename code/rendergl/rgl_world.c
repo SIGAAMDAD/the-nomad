@@ -91,11 +91,11 @@ static void R_GenerateTexCoords( tile2d_info_t *info )
 	char texture[MAX_NPATH];
 	vec3_t tmp1, tmp2;
 	drawVert_t *vtx;
-#ifdef USE_SHADER_STORAGE_WORLD
-	vec2_t *texCoords;
-	uvec2_t *worldPositions;
-#endif
 	spriteCoord_t *sprites;
+	vec3_t *xyz;
+	vec2_t *uv;
+	color_t *color;
+	worldPos_t *worldPos;
 
 	COM_StripExtension( info->texture, texture, sizeof( texture ) );
 	if ( texture[ strlen( texture ) - 1 ] == '.' ) {
@@ -128,32 +128,47 @@ static void R_GenerateTexCoords( tile2d_info_t *info )
 		}
 	}
 
-#ifdef USE_SHADER_STORAGE_WORLD
-	texCoords = ri.Hunk_AllocateTempMemory( sizeof( *texCoords ) * rg.world->width * rg.world->height * 4 );
-	worldPositions = ri.Hunk_AllocateTempMemory( sizeof( *worldPositions ) * rg.world->width * rg.world->height * 4 );
-
+#if 1
+	xyz = r_worldData.xyz;
+	uv = r_worldData.uv;
+	worldPos = r_worldData.worldPos;
+	color = r_worldData.color;
 	for ( y = 0; y < r_worldData.height; y++ ) {
 		for ( x = 0; x < r_worldData.width; x++ ) {
-			VectorCopy2( texCoords[ y * r_worldData.width + x + 0 ], sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][0] );
-			VectorCopy2( texCoords[ y * r_worldData.width + x + 1 ], sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][1] );
-			VectorCopy2( texCoords[ y * r_worldData.width + x + 2 ], sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][2] );
-			VectorCopy2( texCoords[ y * r_worldData.width + x + 3 ], sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][3] );
+			VectorCopy2( uv[0], sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][0] );
+			VectorCopy2( uv[1], sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][1] );
+			VectorCopy2( uv[2], sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][2] );
+			VectorCopy2( uv[3], sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][3] );
+			/*
+			vtx[0].uv[0] = FloatToHalf( sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][0][0] );
+			vtx[0].uv[1] = FloatToHalf( sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][0][1] );
 
-			VectorSet2( worldPositions[ y * r_worldData.width + x + 0 ], x, y );
-			VectorSet2( worldPositions[ y * r_worldData.width + x + 1 ], x, y );
-			VectorSet2( worldPositions[ y * r_worldData.width + x + 2 ], x, y );
-			VectorSet2( worldPositions[ y * r_worldData.width + x + 3 ], x, y );
+			vtx[1].uv[0] = FloatToHalf( sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][1][0] );
+			vtx[1].uv[1] = FloatToHalf( sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][1][1] );
+
+			vtx[2].uv[0] = FloatToHalf( sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][2][0] );
+			vtx[2].uv[1] = FloatToHalf( sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][2][1] );
+
+			vtx[3].uv[0] = FloatToHalf( sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][3][0] );
+			vtx[3].uv[1] = FloatToHalf( sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][3][1] );
+			*/
+
+			VectorSet2( worldPos[0], x, y );
+			VectorSet2( worldPos[1], x, y );
+			VectorSet2( worldPos[2], x, y );
+			VectorSet2( worldPos[3], x, y );
+
+			VectorCopy4( color[0], colorWhite );
+			VectorCopy4( color[1], colorWhite );
+			VectorCopy4( color[2], colorWhite );
+			VectorCopy4( color[3], colorWhite );
+
+			xyz += 4;
+			uv += 4;
+			worldPos += 4;
+			color += 4;
 		}
 	}
-
-	rg.texCoordData = GLSL_InitUniformBuffer( "u_TexCoords", (byte *)texCoords, sizeof( *texCoords ) * rg.world->width * rg.world->height * 4, qtrue );
-	GLSL_LinkUniformToShader( &rg.tileShader, UNIFORM_WORLD_TEXCOORDS, rg.texCoordData, qtrue );
-
-	rg.positionsData = GLSL_InitUniformBuffer( "u_WorldPositions", (byte *)worldPositions, sizeof( *worldPositions ) * rg.world->width * rg.world->height * 4, qtrue );
-	GLSL_LinkUniformToShader( &rg.tileShader, UNIFORM_WORLD_POSITIONS, rg.positionsData, qtrue );
-
-	ri.Hunk_FreeTempMemory( worldPositions );
-	ri.Hunk_FreeTempMemory( texCoords );
 #else
 	vtx = r_worldData.vertices;
 	for ( y = 0; y < r_worldData.height; y++ ) {
@@ -430,127 +445,6 @@ float R_CalcCacheEfficiency( void )
     return (float)numCacheMisses / (float)( r_worldData.numIndices / 3 );
 }
 
-void R_InitWorldBuffer( void )
-{
-	maptile_t *tile;
-	uint32_t numSurfs, i;
-	uint32_t y, x;
-	uint32_t offset;
-	vertexAttrib_t *attribs;
-	vec3_t pos;
-
-	r_worldData.numIndices = r_worldData.width * r_worldData.height * 6;
-	r_worldData.numVertices = r_worldData.width * r_worldData.height * 4;
-
-	r_worldData.buffer = R_AllocateBuffer( "worldDrawBuffer", NULL, sizeof( *r_worldData.vertices ) * r_worldData.numVertices, NULL,
-										sizeof( glIndex_t ) * r_worldData.numIndices, BUFFER_STREAM );
-	attribs = r_worldData.buffer->attribs;
-
-	VBO_MapBuffers( r_worldData.buffer, (void **)&r_worldData.vertices, (void **)&r_worldData.indices );
-
-	VBO_Bind( r_worldData.buffer );
-	nglFlushMappedBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, sizeof( glIndex_t ) * r_worldData.numIndices );
-	VBO_BindNull();
-
-//	r_worldData.indices = ri.Hunk_Alloc( sizeof( glIndex_t ) * r_worldData.numIndices, h_low );
-//	r_worldData.vertices = ri.Hunk_Alloc( sizeof( *r_worldData.vertices ) * r_worldData.numVertices, h_low );
-
-	// cache the indices so that we aren't calculating these every frame (there could be thousands)
-	for ( i = 0, offset = 0; i < r_worldData.numIndices; i += 6, offset += 4 ) {
-		r_worldData.indices[ i + 0 ] = offset + 0;
-		r_worldData.indices[ i + 1 ] = offset + 1;
-		r_worldData.indices[ i + 2 ] = offset + 2;
-
-		r_worldData.indices[ i + 3 ] = offset + 3;
-		r_worldData.indices[ i + 4 ] = offset + 2;
-		r_worldData.indices[ i + 5 ] = offset + 0;
-	}
-
-	ri.Printf( PRINT_INFO, "Optimizing vertex cache... (Current cache misses: %f)\n", R_CalcCacheEfficiency() );
-	R_OptimizeVertexCache();
-	ri.Printf( PRINT_INFO, "Optimized cache misses: %f\n", R_CalcCacheEfficiency() );
-
-#ifdef USE_SHADER_STORAGE_WORLD
-	attribs[ATTRIB_INDEX_POSITION].enabled		= qtrue;
-	attribs[ATTRIB_INDEX_COLOR].enabled			= qtrue;
-	attribs[ATTRIB_INDEX_TILEID].enabled		= qtrue;
-
-	attribs[ATTRIB_INDEX_POSITION].count		= 3;
-	attribs[ATTRIB_INDEX_COLOR].count			= 4;
-	attribs[ATTRIB_INDEX_TILEID].count			= 1;
-
-	attribs[ATTRIB_INDEX_POSITION].type			= GL_FLOAT;
-	attribs[ATTRIB_INDEX_COLOR].type			= GL_FLOAT;
-	attribs[ATTRIB_INDEX_TILEID].type			= GL_UNSIGNED_INT;
-
-	attribs[ATTRIB_INDEX_POSITION].index		= ATTRIB_INDEX_POSITION;
-	attribs[ATTRIB_INDEX_COLOR].index			= ATTRIB_INDEX_COLOR;
-	attribs[ATTRIB_INDEX_TILEID].index			= ATTRIB_INDEX_TILEID;
-
-	attribs[ATTRIB_INDEX_POSITION].normalized	= GL_FALSE;
-	attribs[ATTRIB_INDEX_COLOR].normalized		= GL_FALSE;
-	attribs[ATTRIB_INDEX_TILEID].normalized		= GL_FALSE;
-
-	attribs[ATTRIB_INDEX_POSITION].offset		= offsetof( tileVertex_t, xyz );
-	attribs[ATTRIB_INDEX_COLOR].offset			= offsetof( tileVertex_t, color );
-	attribs[ATTRIB_INDEX_TILEID].offset			= offsetof( tileVertex_t, tileID );
-
-	attribs[ATTRIB_INDEX_POSITION].stride		= sizeof( tileVertex_t );
-	attribs[ATTRIB_INDEX_COLOR].stride			= sizeof( tileVertex_t );
-	attribs[ATTRIB_INDEX_TILEID].stride			= sizeof( tileVertex_t );
-
-	VBO_Bind( r_worldData.buffer );
-	VBO_SetVertexPointers( r_worldData.buffer, ATTRIB_POSITION | ATTRIB_COLOR | ATTRIB_TILEID );
-//	nglVertexAttribDivisor( ATTRIB_INDEX_POSITION, 0 );
-//	nglVertexAttribDivisor( ATTRIB_INDEX_COLOR, 0 );
-//	nglVertexAttribDivisor( ATTRIB_INDEX_TILEID, 0 );
-	VBO_BindNull();
-#else
-	attribs[ATTRIB_INDEX_POSITION].enabled		= qtrue;
-	attribs[ATTRIB_INDEX_TEXCOORD].enabled		= qtrue;
-	attribs[ATTRIB_INDEX_COLOR].enabled			= qtrue;
-	attribs[ATTRIB_INDEX_WORLDPOS].enabled      = qtrue;
-
-	attribs[ATTRIB_INDEX_POSITION].count		= 3;
-	attribs[ATTRIB_INDEX_TEXCOORD].count		= 2;
-	attribs[ATTRIB_INDEX_COLOR].count			= 4;
-	attribs[ATTRIB_INDEX_WORLDPOS].count        = 2;
-
-	attribs[ATTRIB_INDEX_POSITION].type			= GL_FLOAT;
-	attribs[ATTRIB_INDEX_TEXCOORD].type			= GL_FLOAT;
-	attribs[ATTRIB_INDEX_COLOR].type			= GL_UNSIGNED_SHORT;
-	attribs[ATTRIB_INDEX_WORLDPOS].type         = GL_UNSIGNED_SHORT;
-
-	attribs[ATTRIB_INDEX_POSITION].index		= ATTRIB_INDEX_POSITION;
-	attribs[ATTRIB_INDEX_TEXCOORD].index		= ATTRIB_INDEX_TEXCOORD;
-	attribs[ATTRIB_INDEX_COLOR].index			= ATTRIB_INDEX_COLOR;
-	attribs[ATTRIB_INDEX_WORLDPOS].index        = ATTRIB_INDEX_WORLDPOS;
-
-	attribs[ATTRIB_INDEX_POSITION].normalized	= GL_FALSE;
-	attribs[ATTRIB_INDEX_TEXCOORD].normalized	= GL_FALSE;
-	attribs[ATTRIB_INDEX_COLOR].normalized		= GL_TRUE;
-	attribs[ATTRIB_INDEX_WORLDPOS].normalized	= GL_FALSE;
-
-	attribs[ATTRIB_INDEX_POSITION].offset		= offsetof( drawVert_t, xyz );
-	attribs[ATTRIB_INDEX_TEXCOORD].offset		= offsetof( drawVert_t, uv );
-	attribs[ATTRIB_INDEX_COLOR].offset			= offsetof( drawVert_t, color );
-	attribs[ATTRIB_INDEX_WORLDPOS].offset       = offsetof( drawVert_t, worldPos );
-
-	attribs[ATTRIB_INDEX_POSITION].stride		= sizeof( drawVert_t );
-	attribs[ATTRIB_INDEX_TEXCOORD].stride		= sizeof( drawVert_t );
-	attribs[ATTRIB_INDEX_COLOR].stride			= sizeof( drawVert_t );
-	attribs[ATTRIB_INDEX_WORLDPOS].stride       = sizeof( drawVert_t );
-
-	VBO_Bind( r_worldData.buffer );
-	VBO_SetVertexPointers( r_worldData.buffer, ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_COLOR | ATTRIB_WORLDPOS );
-	nglVertexAttribDivisor( ATTRIB_INDEX_POSITION, 0 );
-	nglVertexAttribDivisor( ATTRIB_INDEX_TEXCOORD, 0 );
-	nglVertexAttribDivisor( ATTRIB_INDEX_COLOR, 0 );
-	nglVertexAttribDivisor( ATTRIB_INDEX_WORLDPOS, 0 );
-	VBO_BindNull();
-#endif
-}
-
 static void R_ProcessLights( void )
 {
 	shaderLight_t *lights;
@@ -597,6 +491,151 @@ static void R_ProcessLights( void )
 	GLSL_SetUniformInt( &rg.tileShader, UNIFORM_NUM_LIGHTS, rg.world->numLights );
 	GLSL_LinkUniformToShader( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, qfalse );
 	GLSL_ShaderBufferData( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, sizeof( shaderLight_t ) * rg.world->numLights, qfalse );
+}
+
+
+static void R_InitWorldBuffer( tile2d_header_t *theader )
+{
+	maptile_t *tile;
+	uint32_t numSurfs, i;
+	uint32_t y, x;
+	uint32_t offset;
+	vertexAttrib_t *attribs;
+	vec3_t pos;
+	uint64_t dataSize;
+
+	r_worldData.numIndices = r_worldData.width * r_worldData.height * 6;
+	r_worldData.numVertices = r_worldData.width * r_worldData.height * 4;
+
+	r_worldData.buffer = R_AllocateBuffer( "worldDrawBuffer", NULL, sizeof( *r_worldData.vertices ) * r_worldData.numVertices, NULL,
+										sizeof( glIndex_t ) * r_worldData.numIndices, BUFFER_STREAM );
+	attribs = r_worldData.buffer->attribs;
+
+	VBO_MapBuffers( r_worldData.buffer, (void **)&r_worldData.vertices, (void **)&r_worldData.indices );
+
+//	r_worldData.indices = ri.Hunk_Alloc( sizeof( glIndex_t ) * r_worldData.numIndices, h_low );
+//	r_worldData.vertices = ri.Hunk_Alloc( sizeof( *r_worldData.vertices ) * r_worldData.numVertices, h_low );
+
+	// cache the indices so that we aren't calculating these every frame (there could be thousands)
+	for ( i = 0, offset = 0; i < r_worldData.numIndices; i += 6, offset += 4 ) {
+		r_worldData.indices[ i + 0 ] = offset + 0;
+		r_worldData.indices[ i + 1 ] = offset + 1;
+		r_worldData.indices[ i + 2 ] = offset + 2;
+
+		r_worldData.indices[ i + 3 ] = offset + 3;
+		r_worldData.indices[ i + 4 ] = offset + 2;
+		r_worldData.indices[ i + 5 ] = offset + 0;
+	}
+
+	ri.Printf( PRINT_INFO, "Optimizing vertex cache... (Current cache misses: %f)\n", R_CalcCacheEfficiency() );
+	R_OptimizeVertexCache();
+	ri.Printf( PRINT_INFO, "Optimized cache misses: %f\n", R_CalcCacheEfficiency() );
+
+#if 1
+	attribs[ATTRIB_INDEX_POSITION].enabled		= qtrue;
+	attribs[ATTRIB_INDEX_TEXCOORD].enabled		= qtrue;
+	attribs[ATTRIB_INDEX_COLOR].enabled			= qtrue;
+	attribs[ATTRIB_INDEX_WORLDPOS].enabled      = qtrue;
+
+	attribs[ATTRIB_INDEX_POSITION].count		= 3;
+	attribs[ATTRIB_INDEX_TEXCOORD].count		= 2;
+	attribs[ATTRIB_INDEX_COLOR].count			= 4;
+	attribs[ATTRIB_INDEX_WORLDPOS].count        = 2;
+
+	attribs[ATTRIB_INDEX_POSITION].type			= GL_FLOAT;
+	attribs[ATTRIB_INDEX_TEXCOORD].type			= GL_FLOAT;
+	attribs[ATTRIB_INDEX_COLOR].type			= GL_UNSIGNED_SHORT;
+	attribs[ATTRIB_INDEX_WORLDPOS].type         = GL_UNSIGNED_SHORT;
+
+	attribs[ATTRIB_INDEX_POSITION].index		= ATTRIB_INDEX_POSITION;
+	attribs[ATTRIB_INDEX_TEXCOORD].index		= ATTRIB_INDEX_TEXCOORD;
+	attribs[ATTRIB_INDEX_COLOR].index			= ATTRIB_INDEX_COLOR;
+	attribs[ATTRIB_INDEX_WORLDPOS].index        = ATTRIB_INDEX_WORLDPOS;
+
+	attribs[ATTRIB_INDEX_POSITION].normalized	= GL_FALSE;
+	attribs[ATTRIB_INDEX_TEXCOORD].normalized	= GL_FALSE;
+	attribs[ATTRIB_INDEX_COLOR].normalized		= GL_TRUE;
+	attribs[ATTRIB_INDEX_WORLDPOS].normalized	= GL_FALSE;
+
+	attribs[ATTRIB_INDEX_WORLDPOS].offset       = 0;
+	attribs[ATTRIB_INDEX_POSITION].offset		= attribs[ ATTRIB_INDEX_WORLDPOS ].offset + ( sizeof( worldPos_t ) * r_worldData.numVertices );
+	attribs[ATTRIB_INDEX_TEXCOORD].offset		= attribs[ ATTRIB_INDEX_POSITION ].offset + ( sizeof( vec3_t ) * r_worldData.numVertices );
+	attribs[ATTRIB_INDEX_COLOR].offset			= attribs[ ATTRIB_INDEX_TEXCOORD ].offset + ( sizeof( vec2_t ) * r_worldData.numVertices );
+
+	attribs[ATTRIB_INDEX_WORLDPOS].stride       = sizeof( worldPos_t );
+	attribs[ATTRIB_INDEX_POSITION].stride		= sizeof( vec3_t );
+	attribs[ATTRIB_INDEX_TEXCOORD].stride		= sizeof( vec2_t );
+	attribs[ATTRIB_INDEX_COLOR].stride			= sizeof( color_t );
+
+	VBO_Bind( r_worldData.buffer );
+	VBO_SetVertexPointers( r_worldData.buffer, ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_COLOR | ATTRIB_WORLDPOS );
+	nglVertexAttribDivisor( ATTRIB_INDEX_POSITION, 0 );
+	nglVertexAttribDivisor( ATTRIB_INDEX_TEXCOORD, 0 );
+	nglVertexAttribDivisor( ATTRIB_INDEX_COLOR, 0 );
+	nglVertexAttribDivisor( ATTRIB_INDEX_WORLDPOS, 0 );
+	VBO_BindNull();
+#else
+	attribs[ATTRIB_INDEX_POSITION].enabled		= qtrue;
+	attribs[ATTRIB_INDEX_TEXCOORD].enabled		= qtrue;
+	attribs[ATTRIB_INDEX_COLOR].enabled			= qtrue;
+	attribs[ATTRIB_INDEX_WORLDPOS].enabled      = qtrue;
+
+	attribs[ATTRIB_INDEX_POSITION].count		= 3;
+	attribs[ATTRIB_INDEX_TEXCOORD].count		= 2;
+	attribs[ATTRIB_INDEX_COLOR].count			= 4;
+	attribs[ATTRIB_INDEX_WORLDPOS].count        = 2;
+
+	attribs[ATTRIB_INDEX_POSITION].type			= GL_FLOAT;
+	attribs[ATTRIB_INDEX_TEXCOORD].type			= GL_FLOAT;
+	attribs[ATTRIB_INDEX_COLOR].type			= GL_UNSIGNED_SHORT;
+	attribs[ATTRIB_INDEX_WORLDPOS].type         = GL_UNSIGNED_SHORT;
+
+	attribs[ATTRIB_INDEX_POSITION].index		= ATTRIB_INDEX_POSITION;
+	attribs[ATTRIB_INDEX_TEXCOORD].index		= ATTRIB_INDEX_TEXCOORD;
+	attribs[ATTRIB_INDEX_COLOR].index			= ATTRIB_INDEX_COLOR;
+	attribs[ATTRIB_INDEX_WORLDPOS].index        = ATTRIB_INDEX_WORLDPOS;
+
+	attribs[ATTRIB_INDEX_POSITION].normalized	= GL_FALSE;
+	attribs[ATTRIB_INDEX_TEXCOORD].normalized	= GL_FALSE;
+	attribs[ATTRIB_INDEX_COLOR].normalized		= GL_TRUE;
+	attribs[ATTRIB_INDEX_WORLDPOS].normalized	= GL_FALSE;
+
+	attribs[ATTRIB_INDEX_POSITION].offset		= offsetof( drawVert_t, xyz );
+	attribs[ATTRIB_INDEX_TEXCOORD].offset		= offsetof( drawVert_t, uv );
+	attribs[ATTRIB_INDEX_COLOR].offset			= offsetof( drawVert_t, color );
+	attribs[ATTRIB_INDEX_WORLDPOS].offset       = offsetof( drawVert_t, worldPos );
+
+	attribs[ATTRIB_INDEX_POSITION].stride		= sizeof( drawVert_t );
+	attribs[ATTRIB_INDEX_TEXCOORD].stride		= sizeof( drawVert_t );
+	attribs[ATTRIB_INDEX_COLOR].stride			= sizeof( drawVert_t );
+	attribs[ATTRIB_INDEX_WORLDPOS].stride       = sizeof( drawVert_t );
+
+	VBO_Bind( r_worldData.buffer );
+	VBO_SetVertexPointers( r_worldData.buffer, ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_COLOR | ATTRIB_WORLDPOS );
+	nglVertexAttribDivisor( ATTRIB_INDEX_POSITION, 0 );
+	nglVertexAttribDivisor( ATTRIB_INDEX_TEXCOORD, 0 );
+	nglVertexAttribDivisor( ATTRIB_INDEX_COLOR, 0 );
+	nglVertexAttribDivisor( ATTRIB_INDEX_WORLDPOS, 0 );
+	VBO_BindNull();
+#endif
+
+	dataSize = 0;
+	r_worldData.worldPos = (worldPos_t *)r_worldData.vertices;
+	r_worldData.xyz = (vec3_t *)( (worldPos_t *)r_worldData.worldPos + r_worldData.numVertices );
+	r_worldData.uv = (vec2_t *)( (vec3_t *)r_worldData.xyz + r_worldData.numVertices );
+	r_worldData.color = (color_t *)( (vec2_t *)r_worldData.uv + r_worldData.numVertices );
+
+	R_GenerateTexCoords( &theader->info );
+	R_ProcessLights();
+	R_SetupTileLighting();
+
+	VBO_Bind( r_worldData.buffer );
+	nglFlushMappedBufferRange( GL_ARRAY_BUFFER, 0, sizeof( worldPos_t ) * r_worldData.numVertices );
+	nglFlushMappedBufferRange( GL_ARRAY_BUFFER, attribs[ATTRIB_INDEX_TEXCOORD].offset, sizeof( vec2_t ) * r_worldData.numVertices );
+	nglFlushMappedBufferRange( GL_ARRAY_BUFFER, attribs[ATTRIB_INDEX_COLOR].offset, sizeof( color_t ) * r_worldData.numVertices );
+
+	nglFlushMappedBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, sizeof( glIndex_t ) * r_worldData.numIndices );
+	VBO_BindNull();
 }
 
 void RE_LoadWorldMap( const char *filename )
@@ -678,10 +717,7 @@ void RE_LoadWorldMap( const char *filename )
 
 	rg.world = &r_worldData;
 
-	R_InitWorldBuffer();
-	R_GenerateTexCoords( &theader->info );
-	R_ProcessLights();
-	R_SetupTileLighting();
+	R_InitWorldBuffer( theader );
 
 	ri.FS_FreeFile( buffer.v );
 }

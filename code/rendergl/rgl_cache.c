@@ -764,7 +764,8 @@ void RB_FlushBatchBuffer( void )
 
 	if ( rg.world && rg.world->buffer == buf ) {
 //		nglFlushMappedBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, backend.drawBatch.idxDataSize * backend.drawBatch.idxOffset );
-		nglFlushMappedBufferRange( GL_ARRAY_BUFFER, 0, backend.drawBatch.vtxDataSize * backend.drawBatch.vtxOffset );
+		nglFlushMappedBufferRange( GL_ARRAY_BUFFER, sizeof( worldPos_t ) * rg.world->numVertices,
+			backend.drawBatch.vtxDataSize * backend.drawBatch.vtxOffset );
 	}
 	else {
 		void *data;

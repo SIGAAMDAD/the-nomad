@@ -433,9 +433,9 @@ typedef struct dlight_s {
 
 typedef struct {
 	uint16_t		worldPos[2];
-	vec3_t          xyz;
+	vec3_t			xyz;
 	vec2_t			uv;
-	uint16_t        color[4];
+	uint16_t		color[4];
 } drawVert_t;
 
 // when sgame directly specifies a polygon, it becomes a srfPoly_t
@@ -943,13 +943,8 @@ typedef struct {
 	uint64_t frameCount;
 } viewData_t;
 
-#ifdef USE_SHADER_STORAGE_WORLD
-typedef struct {
-	vec4_t color;
-	vec3_t xyz;
-	uint32_t tileID;
-} tileVertex_t;
-#endif
+typedef uint16_t worldPos_t[2];
+typedef uint16_t color_t[4];
 
 typedef struct {
 	char baseName[MAX_NPATH];
@@ -979,11 +974,11 @@ typedef struct {
 	glIndex_t *indices;
 	uint64_t numIndices;
 
-#ifdef USE_SHADER_STORAGE_WORLD
-	tileVertex_t *vertices;
-#else
+	worldPos_t *worldPos;
+	vec3_t *xyz;
+	vec2_t *uv;
+	color_t *color;
 	drawVert_t *vertices;
-#endif
 	uint64_t numVertices;
 
 	// frame based draw data
@@ -1571,8 +1566,6 @@ void RB_ExecuteRenderCommands(const void *data);
 const char *GL_ErrorString( GLenum error );
 
 void R_AddPostProcessCmd( void );
-
-void R_InitWorldBuffer( void );
 
 //
 // rgl_extensions.c
