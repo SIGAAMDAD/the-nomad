@@ -1788,14 +1788,14 @@ void GLSL_InitGPUShaders_f( void )
 		nglAttachShader( rg.computeShaderProgram, rg.computeShader );
 		GLSL_LinkProgram( rg.computeShaderProgram, -1 );
 #else
-		if ( !GLSL_InitComputeShader( &rg.computeShader, "generic", NULL, qtrue, NULL ) ) {
-			ri.Error( ERR_DROP, "Could not load compute shader!" );
-		}
-		if ( !GLSL_InitComputeShader( &rg.colormapShader, "colormap", NULL, qtrue, NULL ) ) {
-			ri.Error( ERR_DROP, "Could not load colormap comptue shader!" );
-		}
-		GLSL_InitUniforms( &rg.colormapShader );
-		GLSL_FinishGPUShader( &rg.colormapShader );
+//		if ( !GLSL_InitComputeShader( &rg.computeShader, "generic", NULL, qtrue, NULL ) ) {
+//			ri.Error( ERR_DROP, "Could not load compute shader!" );
+//		}
+//		if ( !GLSL_InitComputeShader( &rg.colormapShader, "colormap", NULL, qtrue, NULL ) ) {
+//			ri.Error( ERR_DROP, "Could not load colormap comptue shader!" );
+//		}
+//		GLSL_InitUniforms( &rg.colormapShader );
+//		GLSL_FinishGPUShader( &rg.colormapShader );
 #endif
 
 		/*
@@ -1841,9 +1841,9 @@ void GLSL_ShutdownGPUShaders( void )
 	
 	GL_BindNullProgram();
 
-	if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
-		GLSL_DeleteGPUShader( &rg.computeShader );
-	}
+//	if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
+//		GLSL_DeleteGPUShader( &rg.computeShader );
+//	}
 
 	GLSL_DeleteGPUShader( &rg.imguiShader );
 	GLSL_DeleteGPUShader( &rg.tileShader );

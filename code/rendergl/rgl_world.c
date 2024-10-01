@@ -570,9 +570,9 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 	VBO_Bind( r_worldData.buffer );
 	VBO_SetVertexPointers( r_worldData.buffer, ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_COLOR | ATTRIB_WORLDPOS );
 	nglVertexAttribDivisor( ATTRIB_INDEX_POSITION, 0 );
-	nglVertexAttribDivisor( ATTRIB_INDEX_TEXCOORD, 0 );
-	nglVertexAttribDivisor( ATTRIB_INDEX_COLOR, 0 );
-	nglVertexAttribDivisor( ATTRIB_INDEX_WORLDPOS, 0 );
+	nglVertexAttribDivisor( ATTRIB_INDEX_TEXCOORD, 1 );
+	nglVertexAttribDivisor( ATTRIB_INDEX_COLOR, 1 );
+	nglVertexAttribDivisor( ATTRIB_INDEX_WORLDPOS, 1 );
 	VBO_BindNull();
 #else
 	attribs[ATTRIB_INDEX_POSITION].enabled		= qtrue;
