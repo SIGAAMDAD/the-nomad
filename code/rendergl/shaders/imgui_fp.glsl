@@ -4,8 +4,9 @@ layout( location = 1 ) out vec4 a_BrightColor;
 in vec2 v_TexCoords;
 in vec4 v_Color;
 
-TEXTURE2D u_DiffuseMap;
+uniform sampler2D u_DiffuseMap;
 uniform float u_GammaAmount;
+uniform float u_CameraExposure;
 uniform bool u_HardwareGamma;
 uniform bool u_GamePaused;
 uniform int u_AntiAliasing;

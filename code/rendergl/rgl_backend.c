@@ -72,13 +72,13 @@ void GL_PopTexture( void )
 {
 	textureStackP--;
 
-	if (textureStackP < 0) {
+	if ( textureStackP < 0 ) {
 		ri.Error(ERR_DROP, "GL_PopTexture: texture stack underflow");
 	}
 
-	if (textureStackP) {
-		nglActiveTexture(GL_TEXTURE + textureStackP);
-		nglBindTexture(GL_TEXTURE_2D, textureStack[textureStackP - 1]);
+	if ( textureStackP ) {
+		nglActiveTexture( GL_TEXTURE + textureStackP );
+		nglBindTexture( GL_TEXTURE_2D, textureStack[ textureStackP - 1 ] );
 	}
 }
 
@@ -465,7 +465,7 @@ void RB_ShowImages( void ) {
 	ri.Printf( PRINT_INFO, "%lu msec to draw all images\n", end - start );
 }
 
-static const void *RB_SwapBuffers(const void *data)
+static const void *RB_SwapBuffers( const void *data )
 {
     const swapBuffersCmd_t *cmd;
 	uint64_t start, end;
@@ -535,11 +535,8 @@ static const void *RB_SwapBuffers(const void *data)
 //				FBO_FastBlit( &rg.ssaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
 				RB_FinishPostProcess( &rg.ssaaResolveFbo );
 			}
-			else if ( r_hdr->i ) {
-				RB_BloomPass( &rg.renderFbo, &rg.renderFbo );
-				RB_FinishPostProcess( &rg.renderFbo );
-			}
 			else {
+				RB_BloomPass( &rg.renderFbo, &rg.renderFbo );
 				RB_FinishPostProcess( &rg.renderFbo );
 //				FBO_FastBlit( &rg.renderFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 			}
@@ -662,8 +659,7 @@ static const void *RB_PostProcess( const void *data )
 	} else {
 //		RB_GaussianBlur( backend.refdef.blurFactor );
 	}
-
-	if ( r_hdr->i ) {
+	if ( r_bloom->i ) {
 		RB_BloomPass( srcFbo, srcFbo );
 	}
 	RB_FinishPostProcess( srcFbo );

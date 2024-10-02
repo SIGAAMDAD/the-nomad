@@ -1152,7 +1152,7 @@ extern "C" void UI_Init( void )
 
 	// for 640x480 virtualized screen
 	ui->scale = ui->gpuConfig.vidHeight * ( 1.0f / 768.0f );
-	if ( ui->gpuConfig.vidWidth * 768.0f > ui->gpuConfig.vidHeight * 1024.0f ) {
+	if ( ui->gpuConfig.vidWidth * 1024.0f > ui->gpuConfig.vidHeight * 768.0f ) {
 		// wide screen
 		ui->bias = 0.5f * ( ui->gpuConfig.vidWidth - ( ui->gpuConfig.vidHeight * ( 1024.0f / 768.0f ) ) );
 	}

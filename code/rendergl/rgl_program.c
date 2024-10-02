@@ -96,7 +96,7 @@ static uniformInfo_t uniformsInfo[UNIFORM_COUNT] = {
 	{ "u_VertexData",			GLSL_BUFFER },
 
 	{ "u_GammaAmount",          GLSL_FLOAT },
-	{ "u_Exposure",             GLSL_FLOAT },
+	{ "u_CameraExposure",		GLSL_FLOAT },
 	{ "u_ScreenSize",           GLSL_VEC2 },
 	{ "u_SharpenAmount",        GLSL_FLOAT },
 	{ "u_GamePaused",           GLSL_INT },

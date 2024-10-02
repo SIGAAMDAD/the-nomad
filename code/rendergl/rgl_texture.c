@@ -3053,14 +3053,14 @@ void R_CreateBuiltinTextures( void )
 
 		rgbFormat = GL_RGBA8;
 
-		rg.bloomImage = R_CreateImage( "_bloom", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE
+		rg.bloomImage = R_CreateImage( "_bloom", NULL, SCREEN_WIDTH, SCREEN_HEIGHT, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE
 			| IMGFLAG_FBO, GL_RGBA16F );
 			
-		rg.firstPassImage = R_CreateImage( "_bloomFirstPass", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION
+		rg.firstPassImage = R_CreateImage( "_bloomFirstPass", NULL, SCREEN_WIDTH, SCREEN_HEIGHT, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION
 			| IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_RGBA16F );
 			
 		for ( x = 0; x < 2; x++ ) {
-			rg.bloomPingPongImage[ x ] = R_CreateImage( va( "_bloomPingPong%i", x ), NULL, width, height, IMGTYPE_COLORALPHA,
+			rg.bloomPingPongImage[ x ] = R_CreateImage( va( "_bloomPingPong%i", x ), NULL, SCREEN_WIDTH, SCREEN_HEIGHT, IMGTYPE_COLORALPHA,
 				IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_RGBA16F );
 		}
 		/*

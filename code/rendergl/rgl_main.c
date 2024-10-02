@@ -299,7 +299,7 @@ void R_DrawWorld( void )
 	drawVert_t verts[4];
 	vec3_t *xyz;
 	ivec2_t begin, end;
-	vec3_t edge1, edge2, normal;
+	vec4_t normal;
 	vec4_t color;
 	uint16_t color16[4];
 	const renderEntityDef_t *refEntity;
@@ -334,7 +334,7 @@ void R_DrawWorld( void )
 
 			// convert the local world coordinates to OpenGL screen coordinates
 			R_WorldToGL( verts, pos );
-
+			
 			// generate normals
 			// FIXME: this is hideous
 			/*

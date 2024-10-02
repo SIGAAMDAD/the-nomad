@@ -493,7 +493,6 @@ static void R_ProcessLights( void )
 	GLSL_ShaderBufferData( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, sizeof( shaderLight_t ) * rg.world->numLights, qfalse );
 }
 
-
 static void R_InitWorldBuffer( tile2d_header_t *theader )
 {
 	maptile_t *tile;
@@ -570,9 +569,9 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 	VBO_Bind( r_worldData.buffer );
 	VBO_SetVertexPointers( r_worldData.buffer, ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_COLOR | ATTRIB_WORLDPOS );
 	nglVertexAttribDivisor( ATTRIB_INDEX_POSITION, 0 );
-	nglVertexAttribDivisor( ATTRIB_INDEX_TEXCOORD, 1 );
-	nglVertexAttribDivisor( ATTRIB_INDEX_COLOR, 1 );
-	nglVertexAttribDivisor( ATTRIB_INDEX_WORLDPOS, 1 );
+	nglVertexAttribDivisor( ATTRIB_INDEX_TEXCOORD, 0 );
+	nglVertexAttribDivisor( ATTRIB_INDEX_COLOR, 0 );
+	nglVertexAttribDivisor( ATTRIB_INDEX_WORLDPOS, 0 );
 	VBO_BindNull();
 #else
 	attribs[ATTRIB_INDEX_POSITION].enabled		= qtrue;
@@ -621,9 +620,9 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 
 	dataSize = 0;
 	r_worldData.worldPos = (worldPos_t *)r_worldData.vertices;
-	r_worldData.xyz = (vec3_t *)( (worldPos_t *)r_worldData.worldPos + r_worldData.numVertices );
-	r_worldData.uv = (vec2_t *)( (vec3_t *)r_worldData.xyz + r_worldData.numVertices );
-	r_worldData.color = (color_t *)( (vec2_t *)r_worldData.uv + r_worldData.numVertices );
+	r_worldData.xyz = (vec3_t *)( r_worldData.worldPos + r_worldData.numVertices );
+	r_worldData.uv = (vec2_t *)( r_worldData.xyz + r_worldData.numVertices );
+	r_worldData.color = (color_t *)( r_worldData.uv + r_worldData.numVertices );
 
 	R_GenerateTexCoords( &theader->info );
 	R_ProcessLights();

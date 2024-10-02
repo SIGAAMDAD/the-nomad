@@ -281,9 +281,6 @@ void main() {
 			}
 		}
 	}
-	else {
-		a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
-	}
 	if ( u_GamePaused ) {
 		a_Color.rgb = vec3( a_Color.rg * 0.5, 0.5 );
 	}

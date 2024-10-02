@@ -1172,6 +1172,7 @@ typedef struct
 	fbo_t					smaaWeightsFbo;
 	fbo_t					smaaBlendFbo;
 	fbo_t					smaaEdgesFbo;
+	fbo_t					hdrResolveFbo;
 
 	shader_t				*defaultShader;
 
@@ -1382,7 +1383,6 @@ extern cvar_t *r_floatLightmap;
 extern cvar_t *r_postProcess;
 extern cvar_t *r_lightmap;
 
-extern cvar_t *r_toneMapType;
 extern cvar_t *r_toneMap;
 extern cvar_t *r_forceToneMap;
 extern cvar_t *r_forceToneMapMin;
@@ -1915,6 +1915,9 @@ void RE_LoadWorldMap( const char *filename );
 void RE_SetColor( const float *rgba );
 void R_IssuePendingRenderCommands( void );
 void RE_AddDrawWorldCmd( void );
+
+void RB_TakeScreenshot( int x, int y, int width, int height, const char *fileName );
+byte *RB_ReadPixels( int x, int y, int width, int height, size_t *offset, int *padlen );
 
 // https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=516
 void RB_TakeScreenshotCmd( void );

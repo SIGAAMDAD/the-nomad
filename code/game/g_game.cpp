@@ -1296,19 +1296,19 @@ static void G_VM_Restart_f( void ) {
 }
 
 const vidmode_t r_vidModes[NUMVIDMODES] = {
-//	{ "Mode  0: 1280x1024",     1280,   1024,   1 },
-	{ "Mode  0: 1600x1050",     1600,   1050,   1 },
-	{ "Mode  1: 1600x1200",     1600,   1200,   1 },
-	{ "Mode  2: 1920x1080",     1920,   1080,   1 },
-	{ "Mode  3: 1920x1200",     1920,   1200,   1 },
-	{ "Mode  4: 1920x1280",     1920,   1280,   1 },
-	{ "Mode  5: 2560x1080",     2560,   1080,   1 },
-	{ "Mode  6: 2560x1440",     2560,   1440,   1 },
-	{ "Mode  7: 2560x1600",     2560,   1600,   1 },
-	{ "Mode  8: 2880x1620",     2880,   1620,   1 },
-	{ "Mode  9: 3200x1800",     3200,   1800,   1 },
-	{ "Mode 10: 3840x1600",     3840,   1600,   1 },
-	{ "Mode 11: 3840x2160",     3840,   2160,   1 }
+	{ "Mode  0: 1280x720",		1280,	720,	1 },
+	{ "Mode  1: 1600x1050",		1600,	1050,	1 },
+	{ "Mode  2: 1600x1200",		1600,	1200,	1 },
+	{ "Mode  3: 1920x1080",		1920,	1080,	1 },
+	{ "Mode  4: 1920x1200",		1920,	1200,	1 },
+	{ "Mode  5: 1920x1280",		1920,	1280,	1 },
+	{ "Mode  6: 2560x1080",		2560,	1080,	1 },
+	{ "Mode  7: 2560x1440",		2560,	1440,	1 },
+	{ "Mode  8: 2560x1600",		2560,	1600,	1 },
+	{ "Mode  9: 2880x1620",		2880,	1620,	1 },
+	{ "Mode 10: 3200x1800",		3200,	1800,	1 },
+	{ "Mode 11: 3840x1600",		3840,	1600,	1 },
+	{ "Mode 12: 3840x2160",		3840,	2160,	1 }
 };
 static const int64_t numVidModes = (int64_t)arraylen( r_vidModes );
 
@@ -1705,16 +1705,8 @@ static void G_InitRenderer_Cvars( void )
 	Cvar_SetDescription( r_multisampleType,
 							"Sets the anti-aliasing type to the desired:\n"
 							" 0: None\n"
-							" 1: 2x MSAA\n"
-							" 2: 4x MSAA\n"
-							" 3: 8x MSAA\n"
-							" 4: 16x MSAA\n"
-							" 5: 32x MSAA\n"
-							" 6: 2x SSAA\n"
-							" 7: 4x SSAA\n"
-							" 8: TAA\n"
-							" 9: SMAA\n"
-							" 10: FXAA\n"
+							" 1: MSAA\n"
+							" 2: FXAA\n"
 							"requires \\vid_restart." );
 	r_multisampleAmount = Cvar_Get( "r_multisampleAmount", "2", CVAR_SAVE );
 	Cvar_CheckRange( r_multisampleAmount, "0", "32", CVT_INT );

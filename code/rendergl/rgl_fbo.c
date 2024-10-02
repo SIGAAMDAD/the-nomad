@@ -263,6 +263,7 @@ static void FBO_Init_f( void )
 {
 	int hdrFormat, multisample;
 	int width, height;
+	int fboWidth, fboHeight;
 	int i;
 	int sampleCount;
 	qboolean restart = rg.numFBOs > 0;
@@ -296,6 +297,9 @@ static void FBO_Init_f( void )
 		}
 	}
 
+	fboWidth = SCREEN_WIDTH;
+	fboHeight = SCREEN_HEIGHT;
+
 	hdrFormat = GL_RGBA8;
 	if ( r_hdr->i && glContext.ARB_texture_float ) {
 		hdrFormat = GL_RGBA16F_ARB;
@@ -324,14 +328,14 @@ static void FBO_Init_f( void )
 	
 	if ( r_hdr->i && r_bloom->i ) {
 		for ( i = 0; i < 2; i++ ) {
-			FBO_Create( &rg.bloomPingPongFbo[ i ], va( "_bloomPingPong%i", i ), width, height );
+			FBO_Create( &rg.bloomPingPongFbo[ i ], va( "_bloomPingPong%i", i ), fboWidth, fboHeight );
 			FBO_AttachImage( &rg.bloomPingPongFbo[ i ], rg.bloomPingPongImage[ i ], GL_COLOR_ATTACHMENT0 );
 			R_CheckFBO( &rg.bloomPingPongFbo[ i ] );
 		}
 	}
 
 	if ( multisample && r_multisampleType->i == AntiAlias_MSAA ) {
-		FBO_Create( &rg.renderFbo, "_render", width, height );
+		FBO_Create( &rg.renderFbo, "_render", fboWidth, fboHeight );
 		if ( r_bloom->i && r_hdr->i ) {
 			GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo.frameBuffer );
 			GLuint buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
@@ -347,14 +351,14 @@ static void FBO_Init_f( void )
 		R_CheckFBO( &rg.renderFbo );
 		GL_CheckErrors();
 
-		FBO_Create( &rg.msaaResolveFbo, "_msaaResolve", width, height );
+		FBO_Create( &rg.msaaResolveFbo, "_msaaResolve", fboWidth, fboHeight );
 		FBO_AttachImage( &rg.msaaResolveFbo, rg.renderImage, GL_COLOR_ATTACHMENT0 );
 		FBO_AttachImage( &rg.msaaResolveFbo, rg.renderDepthImage, GL_DEPTH_ATTACHMENT );
 		R_CheckFBO( &rg.msaaResolveFbo );
 		GL_CheckErrors();
 	}
 	else if ( multisample && r_multisampleType->i == AntiAlias_SSAA ) {
-		FBO_Create( &rg.renderFbo, "_render", width, height );
+		FBO_Create( &rg.renderFbo, "_render", fboWidth, fboHeight );
 		if ( r_bloom->i && r_hdr->i ) {
 			GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo.frameBuffer );
 			GLuint buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
@@ -374,7 +378,7 @@ static void FBO_Init_f( void )
 		R_CheckFBO( &rg.ssaaResolveFbo );
 	}
 	else if ( r_hdr->i ) {
-		FBO_Create( &rg.renderFbo, "_render", width, height );
+		FBO_Create( &rg.renderFbo, "_render", fboWidth, fboHeight );
 		if ( r_bloom->i ) {
 			GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo.frameBuffer );
 			GLuint buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
@@ -1165,7 +1169,6 @@ static void R_ComputePass( fbo_t *srcFbo, fbo_t *dstFbo )
 	GLSL_UseProgram( &rg.colormapShader );
 	GLSL_SetUniformInt( &rg.colormapShader, UNIFORM_USE_BLOOM, r_bloom->i );
 	GLSL_SetUniformInt( &rg.colormapShader, UNIFORM_USE_HDR, r_hdr->i );
-	GLSL_SetUniformInt( &rg.colormapShader, UNIFORM_TONEMAPPING, r_toneMapType->i );
 	GLSL_SetUniformInt( &rg.colormapShader, UNIFORM_ANTIALIASING, r_multisampleType->i );
 	GLSL_SetUniformFloat( &rg.colormapShader, UNIFORM_EXPOSURE, r_autoExposure->f );
 	GLSL_SetUniformFloat( &rg.colormapShader, UNIFORM_GAMMA, r_gammaAmount->f );
@@ -1209,26 +1212,6 @@ void RB_BloomPass( fbo_t *srcFbo, fbo_t *dstFbo )
 		return;
 	}
 
-	if ( !r_bloom->i && r_hdr->i ) {
-		GL_BindFramebuffer( GL_READ_FRAMEBUFFER, srcFbo->frameBuffer );
-		GL_BindFramebuffer( GL_DRAW_FRAMEBUFFER, dstFbo->frameBuffer );
-		
-		GLSL_UseProgram( &rg.bloomResolveShader );
-		GL_BindTexture( UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
-		GLSL_SetUniformTexture( &rg.bloomResolveShader, UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
-		GLSL_SetUniformInt( &rg.bloomResolveShader, UNIFORM_TONEMAPPING, r_toneMapType->i );
-		GLSL_SetUniformInt( &rg.bloomResolveShader, UNIFORM_USE_HDR, r_hdr->i );
-		GLSL_SetUniformInt( &rg.bloomResolveShader, UNIFORM_USE_BLOOM, r_bloom->i );
-		GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_GAMMA, r_gammaAmount->f );
-		GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_EXPOSURE, r_autoExposure->f );
-		GL_BindTexture( UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
-
-		RB_RenderPass();
-
-		GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
-		return;
-	}
-
 	if ( !rg.bloomPingPongFbo[ 0 ].frameBuffer || !rg.bloomPingPongFbo[ 1 ].frameBuffer ) {
 		return;
 	}
@@ -1261,7 +1244,6 @@ void RB_BloomPass( fbo_t *srcFbo, fbo_t *dstFbo )
 	GL_BindTexture( UNIFORM_BRIGHT_MAP, rg.bloomImage );
 	GLSL_SetUniformTexture( &rg.bloomResolveShader, UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
 	GLSL_SetUniformTexture( &rg.bloomResolveShader, UNIFORM_BRIGHT_MAP, rg.bloomImage );
-	GLSL_SetUniformInt( &rg.bloomResolveShader, UNIFORM_TONEMAPPING, r_toneMapType->i );
 	GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_EXPOSURE, r_autoExposure->f );
 	GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_GAMMA, r_gammaAmount->f );
 
@@ -1287,7 +1269,17 @@ void RB_FinishPostProcess( fbo_t *srcFbo )
 		}
 	}
 	else if ( srcFbo ) {
-		FBO_FastBlit( srcFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+		GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
+		GLSL_UseProgram( &rg.bloomResolveShader );
+		GLSL_SetUniformInt( &rg.bloomResolveShader, UNIFORM_USE_HDR, r_hdr->i );
+		GL_BindTexture( UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
+		GLSL_SetUniformTexture( &rg.bloomResolveShader, UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
+		GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_EXPOSURE, r_autoExposure->f );
+		GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_GAMMA, r_gammaAmount->f );
+
+		RB_RenderPass();
+
+//		FBO_FastBlit( srcFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_LINEAR );
 	}
 	ri.ProfileFunctionEnd();
 }

@@ -476,6 +476,7 @@ void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, con
 		GLSL_SetUniformFloat( sp, UNIFORM_SHARPENING, r_imageSharpenAmount->f );
 		GLSL_SetUniformInt( sp, UNIFORM_ANTIALIASING, r_multisampleType->i );
 		GLSL_SetUniformInt( sp, UNIFORM_POSTPROCESS, r_postProcess->i );
+		GLSL_SetUniformFloat( sp, UNIFORM_EXPOSURE, r_autoExposure->f );
 		
 		{
 			vec2_t screenSize;
@@ -670,8 +671,6 @@ void RB_IterateShaderStages( shader_t *shader )
 		if ( stageP->bundle[0].filter != -1 ) {
 			nglBindSampler( TB_DIFFUSEMAP, rg.samplers[stageP->bundle[0].filter] );
 		}
-		
-		GLSL_SetUniformFloat( sp, UNIFORM_SHARPENING, r_imageSharpenAmount->f );
 
 		{
 			vec2_t screenSize;
@@ -679,19 +678,13 @@ void RB_IterateShaderStages( shader_t *shader )
 			GLSL_SetUniformVec2( sp, UNIFORM_SCREEN_SIZE, screenSize );
 		}
 
-		if ( r_toneMapType->i == 1 ) {
-			GLSL_SetUniformFloat( sp, UNIFORM_EXPOSURE, r_autoExposure->f );
-		}
+		GLSL_SetUniformFloat( sp, UNIFORM_EXPOSURE, r_autoExposure->f );
 
 		{
 			qboolean light = qtrue;
 			qboolean fastLight = !( r_normalMapping->i || r_specularMapping->i );
 
 			if ( light && !fastLight ) {
-				if ( r_toneMap->i && r_toneMapType->i == 1 ) {
-					GLSL_SetUniformFloat( sp, UNIFORM_EXPOSURE, r_autoExposure->f );
-				}
-
 				if ( stageP->bundle[TB_NORMALMAP].image[0] ) {
 					GL_BindTexture( 1, stageP->bundle[TB_NORMALMAP].image[0] );
 					GLSL_SetUniformTexture( sp, UNIFORM_NORMAL_MAP, stageP->bundle[ TB_NORMALMAP ].image[ 0 ] );

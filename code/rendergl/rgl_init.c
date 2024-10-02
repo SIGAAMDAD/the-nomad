@@ -78,7 +78,6 @@ cvar_t *r_floatLightmap;
 cvar_t *r_postProcess;
 cvar_t *r_lightmap;
 
-cvar_t *r_toneMapType;
 cvar_t *r_toneMap;
 cvar_t *r_forceToneMap;
 cvar_t *r_forceToneMapMin;
@@ -162,7 +161,6 @@ cvar_t *r_textureDetail;
 cvar_t *r_drawBuffer;
 cvar_t *r_customWidth;
 cvar_t *r_customHeight;
-cvar_t *r_mappedBuffers;
 cvar_t *r_glDiagnostics;
 cvar_t *r_colorMipLevels;
 
@@ -343,7 +341,7 @@ Return value must be freed with ri.Hunk_FreeTempMemory()
 ================== 
 */  
 
-static byte *RB_ReadPixels(int x, int y, int width, int height, size_t *offset, int *padlen)
+byte *RB_ReadPixels( int x, int y, int width, int height, size_t *offset, int *padlen )
 {
 	byte *buffer, *bufstart;
 	int padwidth, linelen, bytesPerPixel;
@@ -393,8 +391,8 @@ static byte *RB_ReadPixels(int x, int y, int width, int height, size_t *offset, 
 ================== 
 RB_TakeScreenshot
 ================== 
-*/  
-static void RB_TakeScreenshot(int x, int y, int width, int height, const char *fileName)
+*/
+void RB_TakeScreenshot( int x, int y, int width, int height, const char *fileName )
 {
 	byte *allbuf, *buffer;
 	byte *srcptr, *destptr;
@@ -404,7 +402,7 @@ static void RB_TakeScreenshot(int x, int y, int width, int height, const char *f
 	int linelen, padlen;
 	size_t offset = 18, memcount;
 		
-	allbuf = RB_ReadPixels(x, y, width, height, &offset, &padlen);
+	allbuf = RB_ReadPixels( x, y, width, height, &offset, &padlen );
 	buffer = allbuf + offset - 18;
 	
 	memset( buffer, 0, 18 );
@@ -419,14 +417,12 @@ static void RB_TakeScreenshot(int x, int y, int width, int height, const char *f
 	linelen = width * 3;
 	
 	srcptr = destptr = allbuf + offset;
-	endmem = srcptr + (linelen + padlen) * height;
+	endmem = srcptr + ( linelen + padlen ) * height;
 	
-	while(srcptr < endmem)
-	{
+	while ( srcptr < endmem ) {
 		endline = srcptr + linelen;
 
-		while(srcptr < endline)
-		{
+		while ( srcptr < endline ) {
 			temp = srcptr[0];
 			*destptr++ = srcptr[2];
 			*destptr++ = srcptr[1];
@@ -443,7 +439,7 @@ static void RB_TakeScreenshot(int x, int y, int width, int height, const char *f
 
 	// gamma correction
 	if ( glConfig.deviceSupportsGamma ) {
-		R_GammaCorrect(allbuf + offset, memcount);
+		R_GammaCorrect( allbuf + offset, memcount );
 	}
 
 	ri.FS_WriteFile( fileName, buffer, memcount + 18 );
@@ -894,11 +890,6 @@ static void R_Register( void )
 
 	r_floatLightmap = ri.Cvar_Get( "r_floatLightmap", "0", CVAR_SAVE | CVAR_LATCH );
 
-	r_toneMapType = ri.Cvar_Get( "r_toneMapType", "0", CVAR_SAVE );
-	ri.Cvar_SetDescription( r_toneMapType,
-							"Sets the desired tone mapping technique:\n"
-							" 0: Reinhard tone mapping, faster, but non adjustable brightness level leading to darker areas losing quality\n"
-							" 1: Exposure tone mapping, slightly slower, but adjustable brightness level" );
 	r_toneMap = ri.Cvar_Get( "r_toneMap", "1", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_toneMap, "Enable tone mapping. Requires r_hdr and r_postProcess." );
 	r_forceToneMap = ri.Cvar_Get( "r_forceToneMap", "0", CVAR_CHEAT );
@@ -1234,10 +1225,6 @@ static void R_InitGLContext( void )
 	N_strncpyz( glConfig.shader_version_str, (const char *)nglGetString( GL_SHADING_LANGUAGE_VERSION ), sizeof(glConfig.shader_version_str) );
 	N_strncpyz( glConfig.extensions_string, gl_extensions, sizeof(glConfig.extensions_string) );
 
-	if ( !NGL_VERSION_ATLEAST( 3, 3 ) ) {
-		ri.Printf( PRINT_ERROR, "Update your fucking drivers, jesus....\n" );
-	}
-
 	nglGetIntegerv( GL_NUM_EXTENSIONS, &glContext.numExtensions );
 	nglGetIntegerv( GL_STEREO, (GLint *)&glContext.stereo );
 	nglGetIntegerv( GL_MAX_IMAGE_UNITS, &glContext.maxTextureUnits );
@@ -1258,14 +1245,15 @@ static void R_InitGLContext( void )
 
 	ri.Printf( PRINT_INFO, "Getting OpenGL version...\n" );
 	// check OpenGL version
-	if (!NGL_VERSION_ATLEAST(3, 3)) {
-		if (!r_allowLegacy->i) {
-			ri.Error(ERR_FATAL, "OpenGL version must be at least 3.3, please install more recent drivers");
+	if ( !NGL_VERSION_ATLEAST( 3, 3 ) ) {
+		if ( !r_allowLegacy->i ) {
+			ri.Error( ERR_FATAL, "OpenGL version must be at least 3.3, please install more recent drivers" );
 		}
 		else {
-			ri.Printf(PRINT_DEVELOPER, "r_allowLegacy enabled and we have a legacy api version\n");
-			ri.Printf(PRINT_INFO, "...using Legacy OpenGL API:");
+			ri.Printf( PRINT_DEVELOPER, "r_allowLegacy enabled and we have a legacy api version\n" );
+			ri.Printf( PRINT_INFO, "...using Legacy OpenGL API:" );
 		}
+		ri.Printf( PRINT_ERROR, "Update your fucking drivers, jesus...\n" );
 	}
 	else {
 		ri.Printf( PRINT_INFO, "...using OpenGL API:" );

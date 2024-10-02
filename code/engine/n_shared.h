@@ -571,8 +571,8 @@ typedef enum { qfalse = 0, qtrue = 1 } qboolean;
 
 // all drawing is done to a 1600x1050 virtual screen size
 // and will be automatically scaled to the real resolution
-#define	SCREEN_WIDTH		1600
-#define	SCREEN_HEIGHT		1050
+#define	SCREEN_WIDTH		1280
+#define	SCREEN_HEIGHT		720
 
 #define TINYCHAR_WIDTH		(SMALLCHAR_WIDTH)
 #define TINYCHAR_HEIGHT		(SMALLCHAR_HEIGHT/2)

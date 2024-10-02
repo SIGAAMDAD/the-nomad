@@ -2367,7 +2367,7 @@ void Com_Frame( qboolean noDelay )
 	} else if ( com_maxfps->i > 0 ) {
 		minMsec = 1000 / com_maxfps->i;
 	} else {
-		minMsec = 1;
+		minMsec = 0;
 	}
 	do {
 		com_frameTime = Com_EventLoop();
