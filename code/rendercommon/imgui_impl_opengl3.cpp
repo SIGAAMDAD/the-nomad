@@ -249,6 +249,7 @@ struct ImGui_ImplOpenGL3_Data
 	unsigned int VboHandle, ElementsHandle;
 	GLsizeiptr VertexBufferSize;
 	GLsizeiptr IndexBufferSize;
+	GLuint vaoId;
 	int HasClipOrigin;
 	int UseBufferSubData;
 
@@ -506,10 +507,11 @@ static void ImGui_ImplOpenGL3_SetupRenderState(ImDrawData *draw_data, int fb_wid
 #ifdef IMGUI_IMPL_OPENGL_USE_VERTEX_ARRAY
 	renderImport.glBindVertexArray(vertex_array_object);
 #endif
-
+	
 	// Bind vertex/index buffers and setup attributes for ImDrawVert
 	renderImport.glBindBuffer(GL_ARRAY_BUFFER, bd->VboHandle);
 	renderImport.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bd->ElementsHandle);
+
 	renderImport.glEnableVertexAttribArray(bd->AttribLocationVtxPos);
 	renderImport.glEnableVertexAttribArray(bd->AttribLocationVtxUV);
 	renderImport.glEnableVertexAttribArray(bd->AttribLocationVtxColor);

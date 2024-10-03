@@ -146,10 +146,12 @@ typedef struct {
 	quality_t multisampleQuality;
 	quality_t textureDetail;
 	quality_t lightingQuality;
+	quality_t effectsQuality;
 
 	toggle_t autoExposure;
 	toggle_t dynamicLighting;
 	toggle_t bloom;
+	toggle_t fixedRendering;
 } performanceSettings_t;
 
 typedef struct {
@@ -704,7 +706,7 @@ static void SettingsMenu_MultiAdjustable( const char *name, const char *label, c
 static void SettingsMenu_MultiSliderFloat( const char *name, const char *label, const char *hint, float *curvalue, float minvalue, float maxvalue,
 	float delta )
 {
-	ImGui::PushStyleColor( ImGuiCol_Text, colorLimeGreen );
+	ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
 	ImGui::TableNextColumn();
 	SettingsMenu_Text( name, hint );
 	ImGui::TableNextColumn();
@@ -715,10 +717,8 @@ static void SettingsMenu_MultiSliderFloat( const char *name, const char *label, 
 			*curvalue = minvalue;
 		}
 	}
-	SfxFocused( (void *)( (uintptr_t)curvalue * 0xaf ) );
 	ImGui::SameLine();
 	ImGui::SliderFloat( va( "##%sSettingsMenuConfigSlider", label ), curvalue, minvalue, maxvalue );
-	SfxFocused( curvalue );
 	ImGui::SameLine();
 	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigRight", label ), ImGuiDir_Right ) ) {
 		Snd_PlaySfx( ui->sfx_select );
@@ -727,7 +727,6 @@ static void SettingsMenu_MultiSliderFloat( const char *name, const char *label, 
 			*curvalue = maxvalue;
 		}
 	}
-	SfxFocused( (void *)( (uintptr_t)curvalue * 0xfa ) );
 	ImGui::PopStyleColor();
 }
 
@@ -741,7 +740,7 @@ static void SettingsMenu_MultiSliderInt( const char *name, const char *label, co
 		ImGui::PushStyleColor( ImGuiCol_FrameBgHovered, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
 	}
 
-	ImGui::PushStyleColor( ImGuiCol_Text, colorLimeGreen );
+	ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
 	ImGui::TableNextColumn();
 	SettingsMenu_Text( name, hint );
 	ImGui::TableNextColumn();
@@ -754,10 +753,8 @@ static void SettingsMenu_MultiSliderInt( const char *name, const char *label, co
 			}
 		}
 	}
-	SfxFocused( (void *)( (uintptr_t)curvalue * 0xaf ) );
 	ImGui::SameLine();
 	ImGui::SliderInt( va( "##%sSettingsMenuConfigSlider", label ), curvalue, minvalue, maxvalue, "%d", enabled ? 0 : ImGuiSliderFlags_NoInput );
-	SfxFocused( curvalue );
 	ImGui::SameLine();
 	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigRight", label ), ImGuiDir_Right ) ) {
 		if ( enabled ) {
@@ -768,7 +765,7 @@ static void SettingsMenu_MultiSliderInt( const char *name, const char *label, co
 			}
 		}
 	}
-	SfxFocused( (void *)( (uintptr_t)curvalue * 0xfa ) );
+	ImGui::PopStyleColor();
 
 	if ( !enabled ) {
 		ImGui::PopStyleColor( 4 );
@@ -1959,18 +1956,19 @@ void SettingsMenu_Cache( void )
 
 	s_windowSizes[0] = strManager->ValueForKey( "GAMEUI_WINDOW_NATIVE" )->value;
 	s_windowSizes[1] = strManager->ValueForKey( "GAMEUI_WINDOW_CUSTOM" )->value;
-	s_windowSizes[2] = strManager->ValueForKey( "GAMEUI_WINDOW_1600X1200" )->value;
-	s_windowSizes[3] = strManager->ValueForKey( "GAMEUI_WINDOW_1600X1050" )->value;
-	s_windowSizes[4] = strManager->ValueForKey( "GAMEUI_WINDOW_1920X1080" )->value;
-	s_windowSizes[5] = strManager->ValueForKey( "GAMEUI_WINDOW_1920X1200" )->value;
-	s_windowSizes[6] = strManager->ValueForKey( "GAMEUI_WINDOW_1920X1280" )->value;
-	s_windowSizes[7] = strManager->ValueForKey( "GAMEUI_WINDOW_2560X1080" )->value;
-	s_windowSizes[8] = strManager->ValueForKey( "GAMEUI_WINDOW_2560X1440" )->value;
-	s_windowSizes[9] = strManager->ValueForKey( "GAMEUI_WINDOW_2560X1600" )->value;
-	s_windowSizes[10] = strManager->ValueForKey( "GAMEUI_WINDOW_2880X1620" )->value;
-	s_windowSizes[11] = strManager->ValueForKey( "GAMEUI_WINDOW_3200X1800" )->value;
-	s_windowSizes[12] = strManager->ValueForKey( "GAMEUI_WINDOW_3840X1600" )->value;
-	s_windowSizes[13] = strManager->ValueForKey( "GAMEUI_WINDOW_3840X2160" )->value;
+	s_windowSizes[2] = strManager->ValueForKey( "GAMEUI_WINDOW_1280X720" )->value;
+	s_windowSizes[3] = strManager->ValueForKey( "GAMEUI_WINDOW_1600X1200" )->value;
+	s_windowSizes[4] = strManager->ValueForKey( "GAMEUI_WINDOW_1600X1050" )->value;
+	s_windowSizes[5] = strManager->ValueForKey( "GAMEUI_WINDOW_1920X1080" )->value;
+	s_windowSizes[6] = strManager->ValueForKey( "GAMEUI_WINDOW_1920X1200" )->value;
+	s_windowSizes[7] = strManager->ValueForKey( "GAMEUI_WINDOW_1920X1280" )->value;
+	s_windowSizes[8] = strManager->ValueForKey( "GAMEUI_WINDOW_2560X1080" )->value;
+	s_windowSizes[9] = strManager->ValueForKey( "GAMEUI_WINDOW_2560X1440" )->value;
+	s_windowSizes[10] = strManager->ValueForKey( "GAMEUI_WINDOW_2560X1600" )->value;
+	s_windowSizes[11] = strManager->ValueForKey( "GAMEUI_WINDOW_2880X1620" )->value;
+	s_windowSizes[12] = strManager->ValueForKey( "GAMEUI_WINDOW_3200X1800" )->value;
+	s_windowSizes[13] = strManager->ValueForKey( "GAMEUI_WINDOW_3840X1600" )->value;
+	s_windowSizes[14] = strManager->ValueForKey( "GAMEUI_WINDOW_3840X2160" )->value;
 
 	s_hudOptions[0] = strManager->ValueForKey( "MENU_HUD" )->value;
 	s_hudOptions[1] = strManager->ValueForKey( "MENU_ADVANCED_HUD" )->value;

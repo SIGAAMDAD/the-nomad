@@ -8,27 +8,6 @@ uniform vec2 u_ScreenSize;
 out vec2 v_TexCoords;
 out vec4 v_Color;
 
-#if defined(USE_SMAA)
-#define mad(a,b,c) ( a * b + c )
-#if defined(SMAA_PRESET_LOW)
-#define SMAA_MAX_SEARCH_STEPS 4
-#elif defined(SMAA_PRESET_MEDIUM)
-#define SMAA_MAX_SEARCH_STEPS 8
-#elif defined(SMAA_PRESET_HIGH)
-#define SMAA_MAX_SEARCH_STEPS 16
-#elif defined(SMAA_PRESET_ULTRA)
-#define SMAA_MAX_SEARCH_STEPS 32
-#endif
-#endif
-
-#if defined(USE_SMAA)
-#if !defined(SMAA_MAX_SEARCH_STEPS)
-#define SMAA_MAX_SEARCH_STEPS 16
-#endif
-out vec4 v_Offset[3];
-#define mad( a, b, c ) ( a * b + c )
-#endif
-
 #if defined(USE_TCGEN)
 uniform vec4 u_DiffuseTexMatrix;
 uniform vec4 u_DiffuseTexOffTurb;
@@ -109,16 +88,6 @@ void main() {
 	v_TexCoords = texCoords;
 #endif
     v_Color = a_Color;
-
-#if defined(USE_SMAA)
-	vec4 SMAA_RT_METRICS = vec4( 1.0 / u_ScreenSize.x, 1.0 / u_ScreenSize.y, u_ScreenSize.x, u_ScreenSize.y );
-
-	v_TexCoords = vec2( ( a_Position + 1.0 ) / 2.0 );
-
-	v_Offset[0] = mad( SMAA_RT_METRICS.xyxy, vec4( -1.0, 0.0, 0.0, -1.0 ), v_TexCoords.xyxy );
-	v_Offset[1] = mad( SMAA_RT_METRICS.xyxy, vec4(  1.0, 0.0, 0.0,  1.0 ), v_TexCoords.xyxy );
-	v_Offset[2] = mad( SMAA_RT_METRICS.xyxy, vec4( -2.0, 0.0, 0.0, -2.0 ), v_TexCoords.xyxy );
-#endif
 
     gl_Position = u_ModelViewProjection * vec4( a_Position.xy, 0.0, 1.0 );
 }

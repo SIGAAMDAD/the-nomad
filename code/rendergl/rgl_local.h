@@ -448,9 +448,9 @@ typedef struct {
 
 typedef struct {
 	uint16_t		worldPos[2];
-	vec3_t          xyz;
-	vec2_t          st;
-	uint16_t        color[4];
+	vec3_t			xyz;
+	vec2_t			st;
+	uint16_t		color[4];
 } srfVert_t;
 
 typedef struct {
@@ -982,8 +982,8 @@ typedef struct {
 	uint64_t numVertices;
 
 	// frame based draw data
-	shader_t *shader;
 	vertexBuffer_t *buffer;
+	shader_t *shader;
 	nhandle_t tileset;
 } world_t;
 
@@ -994,6 +994,9 @@ typedef struct {
 	
 	uintptr_t vtxDataSize;      // size in bytes of each vertex
 	uintptr_t idxDataSize;      // size in bytes of each index
+
+	uint32_t batchVertexOffset;
+	uint32_t batchIndexOffset;
 
 	uint32_t maxVertices;       // total allocated vertices with glBufferData
 	uint32_t maxIndices;        // total allocated indices with glBufferData
@@ -1181,14 +1184,8 @@ typedef struct
 	texture_t				**lightmaps;
 	texture_t				**deluxemaps;
 
-	uniformBuffer_t			*texCoordData;
-	uniformBuffer_t			*positionsData;
 	uniformBuffer_t			*dlightData;
 	uniformBuffer_t         *lightData;
-	uniformBuffer_t         *fragData;
-	uniformBuffer_t         *graphicsConfigData;
-	uniformBuffer_t         *samplersData;
-	uniformBuffer_t         *vertexInput;
 
 	uniformBuffer_t *uniformBuffers[MAX_UNIFORM_BUFFERS];
 	uint64_t numUniformBuffers;
@@ -1227,15 +1224,6 @@ typedef struct
 	shaderProgram_t bloomResolveShader;
 	shaderProgram_t computeShader;
 	shaderProgram_t colormapShader;
-	/*
-	shaderProgram_t ssaoShader;
-	shaderProgram_t depthBlurShader[4];
-	shaderProgram_t calclevels4xShader[2];
-	shaderProgram_t down4xShader;
-	shaderProgram_t bokehShader;
-	shaderProgram_t blurShader;
-	shaderProgram_t tonemapShader;
-	*/
 	shaderProgram_t smaaEdgesShader;
 	shaderProgram_t smaaWeightsShader;
 	shaderProgram_t smaaBlendShader;
@@ -1440,6 +1428,7 @@ extern cvar_t *r_ignoreDstAlpha;
 extern cvar_t *r_fixedRendering;
 
 extern cvar_t *r_greyscale;
+extern cvar_t *r_fixedRendering;
 
 extern cvar_t *r_ignoreGLErrors;
 

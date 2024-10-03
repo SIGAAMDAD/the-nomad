@@ -3045,6 +3045,10 @@ void R_CreateBuiltinTextures( void )
 
 		width = glConfig.vidWidth;
 		height = glConfig.vidHeight;
+		if ( r_fixedRendering->i ) {
+			width = SCREEN_WIDTH;
+			height = SCREEN_HEIGHT;
+		}
 
 		hdrFormat = GL_RGBA8;
 		if ( r_fixedRendering->i ) {

@@ -28,10 +28,10 @@ qboolean screenshotFrame;
 
 void GL_SetObjectDebugName( GLenum target, GLuint id, const char *name, const char *add )
 {
-	if (r_glDebug->i) {
+	if ( r_glDebug->i ) {
 		static char newName[1024];
-		Com_snprintf(newName, sizeof(newName), "%s%s", name, add);
-		nglObjectLabel(target, id, strlen(newName), newName);
+		Com_snprintf( newName, sizeof(newName), "%s%s", name, add );
+		nglObjectLabel( target, id, strlen(newName), newName );
 	}
 }
 
@@ -63,8 +63,10 @@ void GL_PushTexture( texture_t *image )
 
 		textureStack[ textureStackP++ ] = id;
 		
-		nglActiveTexture( GL_TEXTURE0 + textureStackP );
-		nglBindTexture( GL_TEXTURE_2D, id );
+		if ( !r_loadTexturesOnDemand->i ) {
+			nglActiveTexture( GL_TEXTURE0 + textureStackP );
+			nglBindTexture( GL_TEXTURE_2D, id );
+		}
 	}
 }
 
@@ -73,7 +75,7 @@ void GL_PopTexture( void )
 	textureStackP--;
 
 	if ( textureStackP < 0 ) {
-		ri.Error(ERR_DROP, "GL_PopTexture: texture stack underflow");
+		ri.Error( ERR_DROP, "GL_PopTexture: texture stack underflow" );
 	}
 
 	if ( textureStackP ) {
@@ -86,6 +88,8 @@ void GL_BindTexture( int tmu, texture_t *image )
 {
 	GLuint texunit = GL_TEXTURE0 + tmu;
 	GLuint id = image ? image->id : 0;
+
+	GL_PushTexture( image );
 
 	if ( image ) {
 		R_TouchTexture( image );
@@ -921,6 +925,11 @@ static const void *RB_DrawImage( const void *data ) {
 		uint16_t color[4];
 
 //		VectorScale4( backend.color2D, 257, color );
+
+//		VectorCopy4( verts[0].color.rgba, backend.color2D );
+//		VectorCopy4( verts[1].color.rgba, backend.color2D );
+//		VectorCopy4( verts[2].color.rgba, backend.color2D );
+//		VectorCopy4( verts[3].color.rgba, backend.color2D );
 
 		R_VaoPackColor( verts[0].color, backend.color2D );
 		R_VaoPackColor( verts[1].color, backend.color2D );

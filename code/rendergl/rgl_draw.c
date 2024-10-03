@@ -6,7 +6,7 @@ void R_DrawElements( uint32_t numElements, uintptr_t nOffset ) {
 	switch ( r_drawMode->i ) {
 	case DRAWMODE_GPU:
 	case DRAWMODE_MAPPED: {
-		if ( rg.world && backend.drawBatch.buffer == rg.world->buffer ) {
+		if ( rg.world && rg.world->drawing ) {
 			nglDrawElementsInstanced( GL_TRIANGLES, numElements, GLN_INDEX_TYPE, NULL, backend.drawBatch.instanceCount );
 		} else if ( backend.drawBatch.instanced && backend.drawBatch.instanceCount > 1 ) {
 			nglDrawElementsInstanced( GL_TRIANGLES, numElements, GLN_INDEX_TYPE, NULL, backend.drawBatch.instanceCount );
