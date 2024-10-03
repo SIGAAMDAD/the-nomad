@@ -351,9 +351,6 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 	if ( !sys_forceSingleThreading->i ) {
 		R_IssuePendingRenderCommands();
 	}
-	
-	RB_SetBatchBuffer( backend.drawBuffer, backendData[ rg.smpFrame ]->verts, sizeof( srfVert_t ), backendData[ rg.smpFrame ]->indices,
-		sizeof( glIndex_t ) );
 
 	ri.ImGui_NewFrame();
 

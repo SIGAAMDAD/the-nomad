@@ -403,13 +403,11 @@ static void FBO_Init_f( void )
 		FBO_AttachImage( &rg.renderFbo, rg.firstPassImage, GL_COLOR_ATTACHMENT0 );
 		R_CheckFBO( &rg.renderFbo );
 	}
-	/*
 	if ( r_fixedRendering->i ) {
 		FBO_Create( &rg.scaleFbo, "_scale", glConfig.vidWidth, glConfig.vidHeight );
 		FBO_AttachImage( &rg.scaleFbo, rg.renderImage, GL_COLOR_ATTACHMENT0 );
 		R_CheckFBO( &rg.scaleFbo );
 	}
-	*/
 	/*
 	if ( r_multisampleType->i == AntiAlias_SMAA ) {
 		rg.smaaBlendFbo = FBO_Create( "_smaaBlend", width, height );
@@ -1298,7 +1296,7 @@ void RB_FinishPostProcess( fbo_t *srcFbo )
 			// on some of the higher resolutions, performance can be tanked by about
 			// 200-300 frame simply because of the amount of work each drawcall needs
 
-			GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
+			GL_BindFramebuffer( GL_FRAMEBUFFER, rg.scaleFbo.frameBuffer );
 			nglScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 			nglViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 
@@ -1311,12 +1309,12 @@ void RB_FinishPostProcess( fbo_t *srcFbo )
 
 			RB_RenderPass();
 
-//			GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
+			GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
 
-//			GLSL_UseProgram( &rg.textureColorShader );
-//			GLSL_SetUniformTexture( &rg.textureColorShader, UNIFORM_DIFFUSE_MAP, rg.renderImage );
-//			GL_BindTexture( UNIFORM_DIFFUSE_MAP, rg.renderImage );
-//			RB_RenderPass();
+			GLSL_UseProgram( &rg.textureColorShader );
+			GLSL_SetUniformTexture( &rg.textureColorShader, UNIFORM_DIFFUSE_MAP, rg.renderImage );
+			GL_BindTexture( UNIFORM_DIFFUSE_MAP, rg.renderImage );
+			RB_RenderPass();
 		} else {
 			GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
 			GLSL_UseProgram( &rg.bloomResolveShader );
