@@ -3051,6 +3051,10 @@ void R_CreateBuiltinTextures( void )
 		}
 
 		hdrFormat = GL_RGBA8;
+		if ( r_fixedRendering->i ) {
+			width = SCREEN_WIDTH;
+			height = SCREEN_HEIGHT;
+		}
 		if ( r_hdr->i && glContext.ARB_texture_float ) {
 			hdrFormat = GL_RGBA16F_ARB;
 		}

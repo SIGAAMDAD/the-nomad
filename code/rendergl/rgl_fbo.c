@@ -403,13 +403,19 @@ static void FBO_Init_f( void )
 		FBO_AttachImage( &rg.renderFbo, rg.firstPassImage, GL_COLOR_ATTACHMENT0 );
 		R_CheckFBO( &rg.renderFbo );
 	}
+<<<<<<< HEAD
 	/*
+=======
+>>>>>>> c0707ae1036327765409479e78aa083ff35cf94c
 	if ( r_fixedRendering->i ) {
 		FBO_Create( &rg.scaleFbo, "_scale", glConfig.vidWidth, glConfig.vidHeight );
 		FBO_AttachImage( &rg.scaleFbo, rg.renderImage, GL_COLOR_ATTACHMENT0 );
 		R_CheckFBO( &rg.scaleFbo );
 	}
+<<<<<<< HEAD
 	*/
+=======
+>>>>>>> c0707ae1036327765409479e78aa083ff35cf94c
 	/*
 	if ( r_multisampleType->i == AntiAlias_SMAA ) {
 		rg.smaaBlendFbo = FBO_Create( "_smaaBlend", width, height );

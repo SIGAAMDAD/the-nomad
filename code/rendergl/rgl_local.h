@@ -1172,6 +1172,9 @@ typedef struct
 	fbo_t					renderFbo;
 	fbo_t					msaaResolveFbo;
 	fbo_t                   ssaaResolveFbo;
+	fbo_t					smaaWeightsFbo;
+	fbo_t					smaaBlendFbo;
+	fbo_t					smaaEdgesFbo;
 	fbo_t					scaleFbo;
 
 	shader_t				*defaultShader;
@@ -1421,6 +1424,8 @@ extern cvar_t *r_shadowCascadeZNear;
 extern cvar_t *r_shadowCascadeZFar;
 extern cvar_t *r_shadowCascadeZBias;
 extern cvar_t *r_ignoreDstAlpha;
+
+extern cvar_t *r_fixedRendering;
 
 extern cvar_t *r_greyscale;
 extern cvar_t *r_fixedRendering;

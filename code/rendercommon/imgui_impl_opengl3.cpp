@@ -599,6 +599,10 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 	last_enable_primitive_restart = (bd->GlVersion >= 310) ? renderImport.glIsEnabled(GL_PRIMITIVE_RESTART) : GL_FALSE;
 #endif
 
+#ifdef IMGUI_IMPL_OPENGL_USE_VERTEX_ARRAY
+	renderImport.glGenVertexArrays(1, &vertex_array_object);
+#endif
+
 	ImGui_ImplOpenGL3_SetupRenderState(draw_data, fb_width, fb_height, vertex_array_object);
 	renderImport.glEnable(GL_ALPHA_TEST);
 	renderImport.glAlphaFunc( GL_ALWAYS, 0.5f );
@@ -711,6 +715,8 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 			}
 		}
 	}
+
+	renderImport.glDeleteVertexArrays( 1, &vertex_array_object );
 
 	renderImport.glBlendEquationSeparate(last_blend_equation_rgb, last_blend_equation_alpha);
 	renderImport.glBlendFuncSeparate(last_blend_src_rgb, last_blend_dst_rgb, last_blend_src_alpha, last_blend_dst_alpha);
@@ -903,21 +909,6 @@ int ImGui_ImplOpenGL3_CreateDeviceObjects( void )
 	renderImport.glBufferData( GL_ELEMENT_ARRAY_BUFFER, DEFAULT_INDEX_BUFFER_SIZE, NULL, GL_STREAM_DRAW );
 	bd->IndexBufferSize = DEFAULT_INDEX_BUFFER_SIZE;
 
-	renderImport.glGenVertexArrays( 1, &bd->vaoId );
-	renderImport.glBindVertexArray( bd->vaoId );
-
-	renderImport.glEnableVertexAttribArray( 0 );
-	renderImport.glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, sizeof( drawVert_t ), (const void *)offsetof( ImDrawVert, pos ) );
-
-	renderImport.glEnableVertexAttribArray( 1 );
-	renderImport.glVertexAttribPointer( 1, 2, GL_FLOAT, GL_FALSE, sizeof( drawVert_t ), (const void *)offsetof( ImDrawVert, uv ) );
-
-	renderImport.glEnableVertexAttribArray( 2 );
-	renderImport.glVertexAttribPointer( 2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof( drawVert_t ), (const void *)offsetof( ImDrawVert, col ) );
-
-	renderImport.glEnableVertexAttribArray( 3 );
-	renderImport.glVertexAttribPointer( 3, 2, GL_UNSIGNED_SHORT, GL_FALSE, sizeof( drawVert_t ), (const void *)offsetof( ImDrawVert, padding0 ) );
-
 	ImGui_ImplOpenGL3_CreateFontsTexture();
 
 	// Restore modified GL state
@@ -940,10 +931,6 @@ void ImGui_ImplOpenGL3_DestroyDeviceObjects(void)
 	if ( bd->ElementsHandle ) {
 		renderImport.glDeleteBuffers( 1, &bd->ElementsHandle );
 		bd->ElementsHandle = 0;
-	}
-	if ( bd->vaoId ) {
-		renderImport.glDeleteVertexArrays( 1, &bd->vaoId );
-		bd->vaoId = 0;
 	}
 #ifdef _WIN32
 
