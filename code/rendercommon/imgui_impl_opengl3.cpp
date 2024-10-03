@@ -122,6 +122,10 @@
 #include <TargetConditionals.h>
 #endif
 
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #define DEFAULT_VERTEX_BUFFER_SIZE sizeof( ImDrawVert ) * ( 8 * 1024 )
 #define DEFAULT_INDEX_BUFFER_SIZE sizeof( ImDrawIdx ) * ( 8 * 1024 )
 
@@ -482,17 +486,16 @@ static void ImGui_ImplOpenGL3_SetupRenderState(ImDrawData *draw_data, int fb_wid
 		B = tmp;
 	}
 #endif
-	const float ortho_projection[4][4] = {
-		{2.0f / (R - L), 0.0f, 0.0f, 0.0f},
-		{0.0f, 2.0f / (T - B), 0.0f, 0.0f},
-		{0.0f, 0.0f, -1.0f, 0.0f},
-		{(R + L) / (L - R), (T + B) / (B - T), 0.0f, 1.0f},
-	};
-	renderImport.glUseProgram(imguiShader);
-	renderImport.glUniform1i(bd->AttribLocationTex, 0);
+	glm::mat4 ortho = glm::ortho( L, R, B, T, -1.0f, 1.0f );
+//	const float ortho_projection[4][4] = {
+//		{2.0f / (R - L), 0.0f, 0.0f, 0.0f},
+//		{0.0f, 2.0f / (T - B), 0.0f, 0.0f},
+//		{0.0f, 0.0f, -1.0f, 0.0f},
+//		{(R + L) / (L - R), (T + B) / (B - T), 0.0f, 1.0f},
+//	};
+	renderImport.glUseProgram( imguiShader );
 	renderImport.glUniform1f( bd->AttribLocationGamma, r_gamma->f );
-
-	renderImport.glUniformMatrix4fv(bd->AttribLocationProjMtx, 1, GL_FALSE, &ortho_projection[0][0]);
+	renderImport.glUniformMatrix4fv( bd->AttribLocationProjMtx, 1, GL_FALSE, &ortho[0][0] );
 
 #ifdef IMGUI_IMPL_OPENGL_MAY_HAVE_BIND_SAMPLER
 	if (bd->GlVersion >= 330 || bd->GlProfileIsES3)
@@ -604,12 +607,10 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 	last_enable_primitive_restart = (bd->GlVersion >= 310) ? renderImport.glIsEnabled(GL_PRIMITIVE_RESTART) : GL_FALSE;
 #endif
 
-	// Setup desired GL state
-	// Recreate the VAO every time (this is to easily allow multiple GL contexts to be rendered to. VAO are not shared among GL contexts)
-	// The renderer would actually work without any VAO bound, but then our VertexAttrib calls would overwrite the default one currently bound.
 #ifdef IMGUI_IMPL_OPENGL_USE_VERTEX_ARRAY
 	renderImport.glGenVertexArrays(1, &vertex_array_object);
 #endif
+
 	ImGui_ImplOpenGL3_SetupRenderState(draw_data, fb_width, fb_height, vertex_array_object);
 	renderImport.glEnable(GL_ALPHA_TEST);
 	renderImport.glAlphaFunc( GL_ALWAYS, 0.5f );
@@ -696,6 +697,9 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 					continue;
 				}
 
+				// Apply scissor/clipping rectangle (Y is inverted in OpenGL)
+//				renderImport.glScissor((int)clip_min.x, (int)((float)fb_height - clip_max.y), (int)(clip_max.x - clip_min.x), (int)(clip_max.y - clip_min.y));
+
 				// Bind texture, Draw
 
 //                renderImport.glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)( (shader_t *)pcmd->GetTexID() )->index );
@@ -720,10 +724,8 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 		}
 	}
 
-	// Destroy the temporary VAO
-#ifdef IMGUI_IMPL_OPENGL_USE_VERTEX_ARRAY
-	renderImport.glDeleteVertexArrays(1, &vertex_array_object);
-#endif
+	renderImport.glDeleteVertexArrays( 1, &vertex_array_object );
+
 	renderImport.glBlendEquationSeparate(last_blend_equation_rgb, last_blend_equation_alpha);
 	renderImport.glBlendFuncSeparate(last_blend_src_rgb, last_blend_dst_rgb, last_blend_src_alpha, last_blend_dst_alpha);
 
@@ -883,7 +885,7 @@ void ImGui_ImplOpenGL3_DestroyFontsTexture( void )
 	}
 }
 
-int ImGui_ImplOpenGL3_CreateDeviceObjects(void)
+int ImGui_ImplOpenGL3_CreateDeviceObjects( void )
 {
 	ImGui_ImplOpenGL3_Data *bd = ImGui_ImplOpenGL3_GetBackendData();
 	GLint last_texture, last_array_buffer;
