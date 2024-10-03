@@ -1172,7 +1172,7 @@ typedef struct
 	fbo_t					smaaWeightsFbo;
 	fbo_t					smaaBlendFbo;
 	fbo_t					smaaEdgesFbo;
-	fbo_t					hdrResolveFbo;
+	fbo_t					scaleFbo;
 
 	shader_t				*defaultShader;
 

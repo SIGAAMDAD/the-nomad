@@ -393,6 +393,9 @@ static void FBO_Init_f( void )
 		}
 		R_CheckFBO( &rg.renderFbo );
 	}
+	else if ( ( glConfig.vidWidth != SCREEN_WIDTH || glConfig.vidHeight != SCREEN_HEIGHT ) ) {
+		
+	}
 	/*
 	if ( r_multisampleType->i == AntiAlias_SMAA ) {
 		rg.smaaBlendFbo = FBO_Create( "_smaaBlend", width, height );
