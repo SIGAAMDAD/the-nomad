@@ -110,11 +110,11 @@ issue any pending commands and wait for them to complete
 */
 void R_IssuePendingRenderCommands( void )
 {
-    if ( !rg.registered ) {
-        return;
-    }
+	if ( !rg.registered ) {
+		return;
+	}
 
-    R_IssueRenderCommands( qfalse, qfalse );
+	R_IssueRenderCommands( qfalse, qfalse );
 
 	if ( !glContext.smpActive ) {
 		return;
@@ -186,9 +186,9 @@ void RE_SetColor( const float *rgba )
 {
 	setColorCmd_t *cmd;
 
-    if ( !rg.registered ) {
-        return;
-    }
+	if ( !rg.registered ) {
+		return;
+	}
 	cmd = R_GetCommandBuffer( sizeof( *cmd ) );
 	if ( !cmd ) {
 		return;
@@ -252,11 +252,11 @@ void R_AddPostProcessCmd( void ) {
 
 void RE_BeginFrame( stereoFrame_t stereoFrame )
 {
-    int width, height;
-    unsigned clearBits;
+	int width, height;
+	unsigned clearBits;
 	int i;
 	char buf[ MAX_CVAR_VALUE ], *v[4];
-    mat4_t matrix;
+	mat4_t matrix;
 	drawBufferCmd_t *cmd = NULL;
 
 	ri.ProfileFunctionBegin( "BeginFrame" );
@@ -272,19 +272,18 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 		r_hdr->modified = qfalse;
 	}
 
-	if ( glContext.ARB_framebuffer_object && r_arb_framebuffer_object->i && rg.renderFbo.frameBuffer
-		&& ( ( r_multisampleType->i == AntiAlias_MSAA || r_multisampleType->i == AntiAlias_SSAA ) || r_hdr->i ) )
-	{
-		GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo.frameBuffer );
+	if ( glState.currentFbo ) {
+		width = glState.currentFbo->width;
+		height = glState.currentFbo->height;
+	} else {
+		if ( r_fixedRendering->i ) {
+			width = SCREEN_WIDTH;
+			height = SCREEN_HEIGHT;
+		} else {
+			width = glConfig.vidWidth;
+			height = glConfig.vidHeight;
+		}
 	}
-
-    if ( glState.currentFbo ) {
-        width = glState.currentFbo->width;
-        height = glState.currentFbo->height;
-    } else {
-        width = glConfig.vidWidth;
-        height = glConfig.vidHeight;
-    }
 
 	clearBits = GL_COLOR_BUFFER_BIT;
 
@@ -297,9 +296,13 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 		rg.beganQuery = qtrue;
 	}
 
-    if ( r_measureOverdraw->i ) {
-        clearBits |= GL_STENCIL_BUFFER_BIT;
-    }
+	if ( r_measureOverdraw->i ) {
+		clearBits |= GL_STENCIL_BUFFER_BIT;
+	}
+
+	if ( glContext.ARB_framebuffer_object && r_arb_framebuffer_object->i && rg.renderFbo.frameBuffer ) {
+		GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo.frameBuffer );
+	}
 
 	if ( r_clearColor->s ) {
 		// track changes
@@ -327,8 +330,12 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 	}
 	*/
 
-    // clear relevant buffers
-    nglClear( clearBits );
+	// set 2D virtual screen size
+	nglViewport( 0, 0, width, height );
+	nglScissor( 0, 0, width, height );
+
+	// clear relevant buffers
+	nglClear( clearBits );
 	nglActiveTexture( GL_TEXTURE0 );
 	nglClearColor( glState.clearColor[0], glState.clearColor[1], glState.clearColor[2], glState.clearColor[3] );
 
@@ -341,13 +348,12 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 
 	nglBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
-    // set 2D virtual screen size
-    nglViewport( 0, 0, width, height );
-    nglScissor( 0, 0, width, height );
-
 	if ( !sys_forceSingleThreading->i ) {
 		R_IssuePendingRenderCommands();
 	}
+	
+	RB_SetBatchBuffer( backend.drawBuffer, backendData[ rg.smpFrame ]->verts, sizeof( srfVert_t ), backendData[ rg.smpFrame ]->indices,
+		sizeof( glIndex_t ) );
 
 	ri.ImGui_NewFrame();
 
@@ -391,27 +397,27 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 		r_measureOverdraw->modified = qfalse;
 	}
 
-    //
-    // texture filtering
-    //
-    if ( r_textureMode->modified ) {
-        R_IssuePendingRenderCommands();
-        R_UpdateTextures();
+	//
+	// texture filtering
+	//
+	if ( r_textureMode->modified ) {
+		R_IssuePendingRenderCommands();
+		R_UpdateTextures();
 		r_textureMode->modified = qfalse;
-    }
+	}
 
-    // check for errors
-    if ( !r_ignoreGLErrors->i ) {
-        GLenum error;
+	// check for errors
+	if ( !r_ignoreGLErrors->i ) {
+		GLenum error;
 
-        R_IssuePendingRenderCommands();
-        if ( ( error = nglGetError() ) != GL_NO_ERROR ) {
-            ri.Error( ERR_FATAL, "RE_BeginFrame() - glGetError() failed (0x%04x)! %s", error, GL_ErrorString( error ) );
+		R_IssuePendingRenderCommands();
+		if ( ( error = nglGetError() ) != GL_NO_ERROR ) {
+			ri.Error( ERR_FATAL, "RE_BeginFrame() - glGetError() failed (0x%04x)! %s", error, GL_ErrorString( error ) );
 		}
-    }
+	}
 
 	/*
-    if ( glConfig.stereoEnabled ) {
+	if ( glConfig.stereoEnabled ) {
 		if ( !( cmd = R_GetCommandBuffer( sizeof(*cmd) ) ) )
 			return;
 		
@@ -426,8 +432,8 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 		else {
 			ri.Error( ERR_FATAL, "RE_BeginFrame: Stereo is enabled, but stereoFrame was %i", stereoFrame );
 		}
-    }
-    else {
+	}
+	else {
 		if ( stereoFrame != STEREO_CENTER )
 			ri.Error( ERR_FATAL, "RE_BeginFrame: Stereo is disabled, but stereoFrame was %i", stereoFrame );
 		if ( !( cmd = R_GetCommandBuffer( sizeof(*cmd) ) ) )
@@ -441,7 +447,7 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 			else
 				cmd->buffer = GL_BACK;
 		}
-    }
+	}
 	*/
 
 	backend.refdef.stereoFrame = stereoFrame;

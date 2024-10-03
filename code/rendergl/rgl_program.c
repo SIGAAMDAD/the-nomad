@@ -642,15 +642,15 @@ static void GLSL_PrepareHeader(GLenum shaderType, const GLchar *extra, char *des
 		N_strcat( dest, size, "#define TEXTURE2D uniform sampler2D\n" );
 	}
 
-	if (!(NGL_VERSION_ATLEAST(1, 30))) {
-		if (shaderType == GL_VERTEX_SHADER) {
-			N_strcat(dest, size, "#define in attribute\n");
-			N_strcat(dest, size, "#define out varying\n");
+	if ( !( NGL_VERSION_ATLEAST( 1, 30 ) ) ) {
+		if ( shaderType == GL_VERTEX_SHADER ) {
+			N_strcat( dest, size, "#define in attribute\n" );
+			N_strcat( dest, size, "#define out varying\n" );
 		}
 		else {
-			N_strcat(dest, size, "#define a_Color gl_FragColor\n");
-			N_strcat(dest, size, "#define in varying\n");
-			N_strcat(dest, size, "#define texture texture2D\n"); // texture2D is deprecated in modern GLSL
+			N_strcat( dest, size, "#define a_Color gl_FragColor\n" );
+			N_strcat( dest, size, "#define in varying\n" );
+			N_strcat( dest, size, "#define texture texture2D\n" ); // texture2D is deprecated in modern GLSL
 		}
 	}
 
@@ -735,6 +735,8 @@ static void GLSL_PrepareHeader(GLenum shaderType, const GLchar *extra, char *des
 	N_strcat( dest, size, "#define QUALITY_LOW 0\n" );
 	N_strcat( dest, size, "#define QUALITY_NORMAL 1\n" );
 	N_strcat( dest, size, "#define QUALITY_HIGH 2\n" );
+
+	N_strcat( dest, size, va( "#define MAX_TEXTURE_UNITS %i\n", glContext.maxTextureUnits ) );
 
 	fbufWidthScale = 1.0f / ((float)glConfig.vidWidth);
 	fbufHeightScale = 1.0f / ((float)glConfig.vidHeight);
@@ -1044,7 +1046,7 @@ void GLSL_SetUniformTexture( shaderProgram_t *program, uint32_t uniformNum, text
 	}
 	
 	*compare = (uintptr_t)(void *)value;
-	if ( r_loadTexturesOnDemand->i && !( value->flags & IMGFLAG_FBO ) ) {
+	if ( r_loadTexturesOnDemand->i ) {
 		nglUniformHandleui64ARB( uniforms[ uniformNum ], value->handle );
 	} else {
 		nglUniform1i( uniforms[ uniformNum ], uniformNum );

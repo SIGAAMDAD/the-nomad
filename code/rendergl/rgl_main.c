@@ -212,9 +212,6 @@ void R_DrawPolys( void )
 
 	rg.world->drawing = qtrue;
 
-	RB_SetBatchBuffer( backend.drawBuffer, backendData[ 0 ]->verts, sizeof( srfVert_t ),
-		backendData[ 0 ]->indices, sizeof( glIndex_t ) );
-
 	// sort the polys to be more efficient with our shaders
 	R_RadixSort( backend.refdef.polys, backend.refdef.numPolys );
 
@@ -231,17 +228,18 @@ void R_DrawPolys( void )
 	for ( i = 0; i < backend.refdef.numPolys; i++ ) {
 		if ( oldShader != backend.refdef.polys[i].hShader ) {
 			// if we have a new shader, flush the current batch
-			RB_FlushBatchBuffer();
 			oldShader = backend.refdef.polys[i].hShader;
 			backend.drawBatch.shader = R_GetShaderByHandle( backend.refdef.polys[i].hShader );
 			backend.drawBatch.instanceCount = 0;
 		}
 		
+		/*
 		if ( backend.drawBatch.vtxOffset + backend.refdef.polys[i].numVerts >= r_maxPolys->i * 4
 			|| backend.drawBatch.idxOffset + ( (int64_t)( backend.refdef.polys[i].numVerts ) - 2 ) >= r_maxPolys->i * 6 )
 		{
 			RB_FlushBatchBuffer();
 		}
+		*/
 		
 		// generate fan indexes into the buffer
 		for ( j = 0; j < backend.refdef.polys[i].numVerts - 2; j++ ) {
@@ -271,10 +269,10 @@ void R_DrawPolys( void )
 //            VectorCopy4( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].color, backend.refdef.polys[i].verts[j].modulate );
 //			R_CalcTangentVectors( (drawVert_t *)&vtx[j] );
 
-			backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].color[0] = (int)backend.refdef.polys[i].verts[j].modulate.rgba[0] * 257;
-			backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].color[1] = (int)backend.refdef.polys[i].verts[j].modulate.rgba[1] * 257;
-			backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].color[2] = (int)backend.refdef.polys[i].verts[j].modulate.rgba[2] * 257;
-			backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].color[3] = (int)backend.refdef.polys[i].verts[j].modulate.rgba[3] * 257;
+			backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].color.rgba[0] = (int)backend.refdef.polys[i].verts[j].modulate.rgba[0];
+			backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].color.rgba[1] = (int)backend.refdef.polys[i].verts[j].modulate.rgba[1];
+			backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].color.rgba[2] = (int)backend.refdef.polys[i].verts[j].modulate.rgba[2];
+			backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].color.rgba[3] = (int)backend.refdef.polys[i].verts[j].modulate.rgba[3];
 
 			backend.drawBatch.vtxOffset++;
 		}
@@ -314,9 +312,6 @@ void R_DrawWorld( void )
 	if ( !rg.world ) {
 		ri.Error( ERR_FATAL, "R_DrawWorld: no world model loaded" );
 	}
-
-	// prepare the batch
-	RB_SetBatchBuffer( rg.world->buffer, rg.world->vertices, sizeof( vec3_t ), rg.world->indices, sizeof( glIndex_t ) );
 
 	backend.drawBatch.shader = rg.world->shader;
 	rg.world->drawing = qtrue;
@@ -377,10 +372,20 @@ void R_DrawWorld( void )
 		}
 	}
 
-	RB_CommitDrawData( rg.world->vertices, rg.world->numVertices, rg.world->indices, rg.world->numIndices );
+	backend.drawBatch.vtxOffset = rg.world->numVertices;
 
-	// flush it we have anything left in there
-	RB_FlushBatchBuffer();
+	nglFlushMappedBufferRange( GL_ARRAY_BUFFER, backend.drawBatch.batchVertexOffset, sizeof( vec3_t ) * backend.drawBatch.vtxOffset );
+
+	backend.drawBatch.batchIndexOffset += backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize;
+	backend.drawBatch.batchVertexOffset += backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize;
+
+	RB_IterateShaderStages( backend.drawBatch.shader );
+
+	backend.pc.c_bufferIndices += backend.drawBatch.idxOffset;
+	backend.pc.c_bufferVertices += backend.drawBatch.vtxOffset;
+
+	backend.drawBuffer->index.offset += backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize;
+	backend.drawBuffer->vertex.offset += backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize;
 	rg.world->drawing = qfalse;
 
 	backend.drawBatch.instanced = qfalse;

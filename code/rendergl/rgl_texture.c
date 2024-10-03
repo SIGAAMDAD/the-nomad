@@ -3045,6 +3045,10 @@ void R_CreateBuiltinTextures( void )
 
 		width = glConfig.vidWidth;
 		height = glConfig.vidHeight;
+		if ( r_fixedRendering->i ) {
+			width = SCREEN_WIDTH;
+			height = SCREEN_HEIGHT;
+		}
 
 		hdrFormat = GL_RGBA8;
 		if ( r_hdr->i && glContext.ARB_texture_float ) {
@@ -3053,14 +3057,14 @@ void R_CreateBuiltinTextures( void )
 
 		rgbFormat = GL_RGBA8;
 
-		rg.bloomImage = R_CreateImage( "_bloom", NULL, SCREEN_WIDTH, SCREEN_HEIGHT, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE
+		rg.bloomImage = R_CreateImage( "_bloom", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE
 			| IMGFLAG_FBO, GL_RGBA16F );
 			
-		rg.firstPassImage = R_CreateImage( "_bloomFirstPass", NULL, SCREEN_WIDTH, SCREEN_HEIGHT, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION
+		rg.firstPassImage = R_CreateImage( "_bloomFirstPass", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION
 			| IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_RGBA16F );
 			
 		for ( x = 0; x < 2; x++ ) {
-			rg.bloomPingPongImage[ x ] = R_CreateImage( va( "_bloomPingPong%i", x ), NULL, SCREEN_WIDTH, SCREEN_HEIGHT, IMGTYPE_COLORALPHA,
+			rg.bloomPingPongImage[ x ] = R_CreateImage( va( "_bloomPingPong%i", x ), NULL, width, height, IMGTYPE_COLORALPHA,
 				IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_RGBA16F );
 		}
 		/*
@@ -3088,8 +3092,8 @@ void R_CreateBuiltinTextures( void )
 //			nglBindImageTexture( 0, rg.computeImage->id, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F );
 //		}
 
-		rg.renderImage = R_CreateImage( "_render", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, hdrFormat );
-		rg.renderDepthImage  = R_CreateImage( "*renderdepth",  NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_DEPTH_COMPONENT24 );
+		rg.renderImage = R_CreateImage( "_render", NULL, glConfig.vidWidth, glConfig.vidHeight, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, hdrFormat );
+		rg.renderDepthImage  = R_CreateImage( "*renderdepth",  NULL, glConfig.vidWidth, glConfig.vidHeight, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_DEPTH_COMPONENT24 );
 
 		/*
 		if ( r_shadowBlur->i ) {

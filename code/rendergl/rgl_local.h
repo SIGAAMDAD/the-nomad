@@ -434,8 +434,9 @@ typedef struct dlight_s {
 typedef struct {
 	uint16_t		worldPos[2];
 	vec3_t			xyz;
+	char			padding[4];
 	vec2_t			uv;
-	uint16_t		color[4];
+	color4ub_t		color;
 } drawVert_t;
 
 // when sgame directly specifies a polygon, it becomes a srfPoly_t
@@ -448,9 +449,10 @@ typedef struct {
 
 typedef struct {
 	uint16_t		worldPos[2];
-	vec3_t          xyz;
-	vec2_t          st;
-	uint16_t        color[4];
+	vec3_t			xyz;
+	char			padding[4];
+	vec2_t			st;
+	color4ub_t		color;
 } srfVert_t;
 
 typedef struct {
@@ -944,7 +946,7 @@ typedef struct {
 } viewData_t;
 
 typedef uint16_t worldPos_t[2];
-typedef uint16_t color_t[4];
+typedef color4ub_t color_t;
 
 typedef struct {
 	char baseName[MAX_NPATH];
@@ -983,7 +985,6 @@ typedef struct {
 
 	// frame based draw data
 	shader_t *shader;
-	vertexBuffer_t *buffer;
 	nhandle_t tileset;
 } world_t;
 
@@ -994,6 +995,9 @@ typedef struct {
 	
 	uintptr_t vtxDataSize;      // size in bytes of each vertex
 	uintptr_t idxDataSize;      // size in bytes of each index
+
+	uint32_t batchVertexOffset;
+	uint32_t batchIndexOffset;
 
 	uint32_t maxVertices;       // total allocated vertices with glBufferData
 	uint32_t maxIndices;        // total allocated indices with glBufferData
@@ -1169,10 +1173,7 @@ typedef struct
 	fbo_t					renderFbo;
 	fbo_t					msaaResolveFbo;
 	fbo_t                   ssaaResolveFbo;
-	fbo_t					smaaWeightsFbo;
-	fbo_t					smaaBlendFbo;
-	fbo_t					smaaEdgesFbo;
-	fbo_t					hdrResolveFbo;
+	fbo_t					scaleFbo;
 
 	shader_t				*defaultShader;
 
@@ -1181,14 +1182,8 @@ typedef struct
 	texture_t				**lightmaps;
 	texture_t				**deluxemaps;
 
-	uniformBuffer_t			*texCoordData;
-	uniformBuffer_t			*positionsData;
 	uniformBuffer_t			*dlightData;
 	uniformBuffer_t         *lightData;
-	uniformBuffer_t         *fragData;
-	uniformBuffer_t         *graphicsConfigData;
-	uniformBuffer_t         *samplersData;
-	uniformBuffer_t         *vertexInput;
 
 	uniformBuffer_t *uniformBuffers[MAX_UNIFORM_BUFFERS];
 	uint64_t numUniformBuffers;
@@ -1227,15 +1222,6 @@ typedef struct
 	shaderProgram_t bloomResolveShader;
 	shaderProgram_t computeShader;
 	shaderProgram_t colormapShader;
-	/*
-	shaderProgram_t ssaoShader;
-	shaderProgram_t depthBlurShader[4];
-	shaderProgram_t calclevels4xShader[2];
-	shaderProgram_t down4xShader;
-	shaderProgram_t bokehShader;
-	shaderProgram_t blurShader;
-	shaderProgram_t tonemapShader;
-	*/
 	shaderProgram_t smaaEdgesShader;
 	shaderProgram_t smaaWeightsShader;
 	shaderProgram_t smaaBlendShader;
@@ -1438,6 +1424,7 @@ extern cvar_t *r_shadowCascadeZBias;
 extern cvar_t *r_ignoreDstAlpha;
 
 extern cvar_t *r_greyscale;
+extern cvar_t *r_fixedRendering;
 
 extern cvar_t *r_ignoreGLErrors;
 
@@ -1714,7 +1701,8 @@ void R_VaoUnpackColor( vec4_t v, uint16_t *pack );
 vertexBuffer_t *R_AllocateBuffer( const char *name, void *vertices, uint32_t verticesSize, void *indices, uint32_t indicesSize,
 	bufferType_t type );
 void VBO_BindNull( void );
-void VBO_MapBuffers( vertexBuffer_t *vbo, void **vertexBuffer, void **indexBuffer );
+void VBO_MapBuffers( vertexBuffer_t *vbo, void **vertexBuffer, void **indexBuffer, uint32_t nVerticesSize, uint32_t nIndicesSize,
+	uint32_t nVertexOffset, uint32_t nIndexOffset );
 void R_InitGPUBuffers( void );
 void R_ShutdownGPUBuffers( void );
 void VBO_Bind( vertexBuffer_t *vbo );

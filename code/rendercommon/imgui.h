@@ -2712,10 +2712,11 @@ struct ImDrawCmd
 #ifndef IMGUI_OVERRIDE_DRAWVERT_STRUCT_LAYOUT
 struct ImDrawVert
 {
-	ImVec2  pos;
-	ImVec2  uv;
-	ImU32	col;
-	char	padding[12];
+	char			padding0[4];
+	ImVec2			pos;
+	char			padding1[8];
+	ImVec2			uv;
+	ImU32			col;
 };
 #else
 // You can override the vertex format layout by defining IMGUI_OVERRIDE_DRAWVERT_STRUCT_LAYOUT in imconfig.h

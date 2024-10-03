@@ -297,8 +297,13 @@ static void FBO_Init_f( void )
 		}
 	}
 
-	fboWidth = SCREEN_WIDTH;
-	fboHeight = SCREEN_HEIGHT;
+	if ( r_fixedRendering->i ) {
+		fboWidth = SCREEN_WIDTH;
+		fboHeight = SCREEN_HEIGHT;
+	} else {
+		fboWidth = glConfig.vidWidth;
+		fboHeight = glConfig.vidHeight;
+	}
 
 	hdrFormat = GL_RGBA8;
 	if ( r_hdr->i && glContext.ARB_texture_float ) {
@@ -393,6 +398,18 @@ static void FBO_Init_f( void )
 		}
 		R_CheckFBO( &rg.renderFbo );
 	}
+	else if ( r_fixedRendering->i ) {
+		FBO_Create( &rg.renderFbo, "_render", fboWidth, fboHeight );
+		FBO_AttachImage( &rg.renderFbo, rg.firstPassImage, GL_COLOR_ATTACHMENT0 );
+		R_CheckFBO( &rg.renderFbo );
+	}
+	/*
+	if ( r_fixedRendering->i ) {
+		FBO_Create( &rg.scaleFbo, "_scale", glConfig.vidWidth, glConfig.vidHeight );
+		FBO_AttachImage( &rg.scaleFbo, rg.renderImage, GL_COLOR_ATTACHMENT0 );
+		R_CheckFBO( &rg.scaleFbo );
+	}
+	*/
 	/*
 	if ( r_multisampleType->i == AntiAlias_SMAA ) {
 		rg.smaaBlendFbo = FBO_Create( "_smaaBlend", width, height );
@@ -1102,6 +1119,7 @@ void RB_PostProcessSMAA( fbo_t *srcFbo )
 {
 	assert( !"NOPE" );
 
+#if 0
 	//
 	// edges pass
 	//
@@ -1159,6 +1177,7 @@ void RB_PostProcessSMAA( fbo_t *srcFbo )
 	GLSL_SetUniformInt( &rg.textureColorShader, UNIFORM_FINALPASS, qtrue );
 	GLSL_SetUniformInt( &rg.textureColorShader, UNIFORM_ANTIALIASING, r_multisampleType->i );
 	FBO_Blit( &rg.smaaBlendFbo, NULL, NULL, srcFbo, NULL, &rg.textureColorShader, colorWhite, 0 );
+#endif
 }
 
 #define NUM_BLUR_PASSES 10
@@ -1269,17 +1288,46 @@ void RB_FinishPostProcess( fbo_t *srcFbo )
 		}
 	}
 	else if ( srcFbo ) {
-		GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
-		GLSL_UseProgram( &rg.bloomResolveShader );
-		GLSL_SetUniformInt( &rg.bloomResolveShader, UNIFORM_USE_HDR, r_hdr->i );
-		GL_BindTexture( UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
-		GLSL_SetUniformTexture( &rg.bloomResolveShader, UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
-		GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_EXPOSURE, r_autoExposure->f );
-		GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_GAMMA, r_gammaAmount->f );
+		if ( r_fixedRendering->i && ( glConfig.vidWidth != SCREEN_WIDTH || glConfig.vidHeight != SCREEN_HEIGHT ) ) {
+			// dynamically upscale to the real resolution from the virtual screen
+			// NOTE: while this might seem slow at first, in most cases it is faster
+			// especially when applying post-processing effects because we are
+			// only every processing a 1280x720 screen instead of something like a 4K
+			// window
+			//
+			// on some of the higher resolutions, performance can be tanked by about
+			// 200-300 frame simply because of the amount of work each drawcall needs
 
-		RB_RenderPass();
+			GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
+			nglScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+			nglViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 
-//		FBO_FastBlit( srcFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_LINEAR );
+			GLSL_UseProgram( &rg.bloomResolveShader );
+			GLSL_SetUniformInt( &rg.bloomResolveShader, UNIFORM_USE_HDR, r_hdr->i );
+			GL_BindTexture( UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
+			GLSL_SetUniformTexture( &rg.bloomResolveShader, UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
+			GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_EXPOSURE, r_autoExposure->f );
+			GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_GAMMA, r_gammaAmount->f );
+
+			RB_RenderPass();
+
+//			GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
+
+//			GLSL_UseProgram( &rg.textureColorShader );
+//			GLSL_SetUniformTexture( &rg.textureColorShader, UNIFORM_DIFFUSE_MAP, rg.renderImage );
+//			GL_BindTexture( UNIFORM_DIFFUSE_MAP, rg.renderImage );
+//			RB_RenderPass();
+		} else {
+			GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
+			GLSL_UseProgram( &rg.bloomResolveShader );
+			GLSL_SetUniformInt( &rg.bloomResolveShader, UNIFORM_USE_HDR, r_hdr->i );
+			GL_BindTexture( UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
+			GLSL_SetUniformTexture( &rg.bloomResolveShader, UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
+			GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_EXPOSURE, r_autoExposure->f );
+			GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_GAMMA, r_gammaAmount->f );
+
+			RB_RenderPass();
+		}
 	}
 	ri.ProfileFunctionEnd();
 }

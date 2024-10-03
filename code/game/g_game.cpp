@@ -197,8 +197,8 @@ static void G_RefImGuiNewFrame( void ) {
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableSetMousePos;
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
-	io.DisplaySize.x = r_customWidth->i;
-	io.DisplaySize.y = r_customHeight->i;
+	io.DisplaySize.x = SCREEN_WIDTH;
+	io.DisplaySize.y = SCREEN_HEIGHT;
 	io.DeltaTime = 1.0 / com_maxfps->i;
 	io.Fonts->Flags |= ImFontAtlasFlags_NoBakedLines;
 	io.BackendUsingLegacyNavInputArray = false;

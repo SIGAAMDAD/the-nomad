@@ -164,6 +164,8 @@ cvar_t *r_customHeight;
 cvar_t *r_glDiagnostics;
 cvar_t *r_colorMipLevels;
 
+cvar_t *r_fixedRendering;
+
 cvar_t *r_maxPolys;
 cvar_t *r_maxEntities;
 cvar_t *r_maxDLights;
@@ -1055,13 +1057,16 @@ static void R_Register( void )
 	r_finish = ri.Cvar_Get( "r_finish", "0", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_finish, "Force a glFinish call after rendering a scene." );
 
-	r_picmip = ri.Cvar_Get("r_picmip", "0", CVAR_SAVE | CVAR_LATCH );
+	r_picmip = ri.Cvar_Get( "r_picmip", "0", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_CheckRange( r_picmip, "0", "16", CVT_INT );
 	ri.Cvar_SetDescription( r_picmip, "Set texture quality, lower is better." );
-	r_colorMipLevels = ri.Cvar_Get ("r_colorMipLevels", "0", CVAR_LATCH );
+	r_colorMipLevels = ri.Cvar_Get( "r_colorMipLevels", "0", CVAR_LATCH );
 	ri.Cvar_SetDescription( r_colorMipLevels, "Debugging tool to artificially color different mipmap levels so that they are more apparent." );
-	r_roundImagesDown = ri.Cvar_Get("r_roundImagesDown", "1", CVAR_SAVE | CVAR_LATCH );
+	r_roundImagesDown = ri.Cvar_Get( "r_roundImagesDown", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_roundImagesDown, "When images are scaled, round images down instead of up." );
+
+	r_fixedRendering = ri.Cvar_Get( "r_fixedRendering", "1", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_SetDescription( r_fixedRendering, "Forces the engine the render the screen at a 1280x720 virtual resolution then scale up if needed." );
 
 	r_vertexLight = ri.Cvar_Get( "r_vertexLight", "0", CVAR_SAVE | CVAR_DEV );
 	ri.Cvar_SetDescription( r_vertexLight, "Set to 1 to use vertex light instead of lightmaps, collapse all multi-stage shaders into single-stage ones, might cause rendering artifacts." );
