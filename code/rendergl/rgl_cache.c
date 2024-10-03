@@ -200,23 +200,12 @@ void R_InitGPUBuffers( void )
 
 //	if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
 		// NOTE: NEVER CHANGE THIS
-		srfVert_t quadVertices[4];
-		memset( quadVertices, 0, sizeof( quadVertices ) );
-		
-		VectorSet( quadVertices[0].xyz, -1.0f, -1.0f, 0.0f );
-		VectorSet( quadVertices[1].xyz,  1.0f, -1.0f, 0.0f );
-		VectorSet( quadVertices[2].xyz,  1.0f,  1.0f, 0.0f );
-		VectorSet( quadVertices[3].xyz, -1.0f,  1.0f, 0.0f );
-
-		VectorSet2( quadVertices[0].st, 0.0f, 0.0f );
-		VectorSet2( quadVertices[1].st, 1.0f, 0.0f );
-		VectorSet2( quadVertices[2].st, 1.0f, 1.0f );
-		VectorSet2( quadVertices[3].st, 0.0f, 1.0f );
-
-		VectorSet4( quadVertices[0].color.rgba, 1, 1, 1, 1 );
-		VectorSet4( quadVertices[1].color.rgba, 1, 1, 1, 1 );
-		VectorSet4( quadVertices[2].color.rgba, 1, 1, 1, 1 );
-		VectorSet4( quadVertices[3].color.rgba, 1, 1, 1, 1 );
+		srfVert_t quadVertices[] = {
+			{ { 0, 0 }, { -1.0f, -1.0f, 0.0f }, { 0.0f, 0.0f }, { 1, 1, 1, 1 } },
+			{ { 0, 0 }, {  1.0f, -1.0f, 0.0f }, { 1.0f, 0.0f }, { 1, 1, 1, 1 } },
+			{ { 0, 0 }, {  1.0f,  1.0f, 0.0f }, { 1.0f, 1.0f }, { 1, 1, 1, 1 } },
+			{ { 0, 0 }, { -1.0f,  1.0f, 0.0f }, { 0.0f, 1.0f }, { 1, 1, 1, 1 } },
+		};
 
 		rg.buffers[ rg.numBuffers ] = rg.renderPassVBO = ri.Hunk_Alloc( sizeof( *rg.renderPassVBO ), h_low );
 		rg.numBuffers++;
@@ -251,11 +240,13 @@ void R_InitGPUBuffers( void )
 		rg.renderPassVBO->vertex.glUsage = GL_STATIC_DRAW;
 		rg.renderPassVBO->vertex.target = GL_ARRAY_BUFFER;
 		nglBufferData( GL_ARRAY_BUFFER, sizeof( quadVertices ), quadVertices, GL_STATIC_DRAW );
+		if ( nglMakeBufferResidentNV ) {
+			nglMakeBufferResidentNV( GL_ARRAY_BUFFER, GL_READ_ONLY );
+		}
 
 		VBO_BindNull();
 //	}
 
-	// 4 MiB should be enough
 	backend.drawBuffer = R_AllocateBuffer( "batchBuffer0", NULL, 4*1024*1024, NULL,
 		4*1024*1024, BUFFER_STREAM );
 
@@ -271,7 +262,7 @@ void R_InitGPUBuffers( void )
 
 	backend.drawBuffer->attribs[ATTRIB_INDEX_POSITION].type			= GL_FLOAT;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_TEXCOORD].type			= GL_FLOAT;
-	backend.drawBuffer->attribs[ATTRIB_INDEX_COLOR].type			= GL_UNSIGNED_BYTE;
+	backend.drawBuffer->attribs[ATTRIB_INDEX_COLOR].type			= GL_UNSIGNED_SHORT;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_WORLDPOS].type			= GL_UNSIGNED_SHORT;
 
 	backend.drawBuffer->attribs[ATTRIB_INDEX_POSITION].index		= ATTRIB_INDEX_POSITION;
@@ -564,17 +555,31 @@ void VBO_Bind( vertexBuffer_t *vbo )
 		glState.iboId = vbo->index.id;
 		backend.pc.c_bufferBinds++;
 
- 		nglBindVertexArray( vbo->vaoId );
-		nglBindBuffer( GL_ARRAY_BUFFER, vbo->vertex.id );
-		if ( vbo->index.id != 0 ) {
-			nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, vbo->index.id );
-		}
+		if ( r_drawMode->i == DRAWMODE_CLIENT ) {
+			nglEnableClientState( GL_COLOR_ARRAY );
+			nglEnableClientState( GL_VERTEX_ARRAY );
+			nglEnableClientState( GL_TEXTURE_COORD_ARRAY );
 
-		// Intel Graphics doesn't save GL_ELEMENT_ARRAY_BUFFER binding with VAO binding.
-		// [TheNomad] 6/10/24 you've gotta bind it, nothing saves the binding
-//		if ( glContext.intelGraphics ) {
-//			nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, vbo->index.id );
-//		}
+			nglBindVertexArray( vbo->vaoId );
+			nglBindBuffer( GL_ARRAY_BUFFER, vbo->vertex.id );
+			nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, vbo->index.id );
+
+			nglVertexPointer( 3, GL_FLOAT, sizeof( srfVert_t ), ( (srfVert_t *)vbo->vertex.data )->xyz );
+			nglTexCoordPointer( 2, GL_FLOAT, sizeof( srfVert_t ), ( (srfVert_t *)vbo->vertex.data )->st );
+			nglColorPointer( 4, GL_UNSIGNED_SHORT, sizeof( srfVert_t ), ( (srfVert_t *)vbo->vertex.data )->color );
+		} else if ( r_drawMode->i >= DRAWMODE_GPU ) {
+			nglBindVertexArray( vbo->vaoId );
+			nglBindBuffer( GL_ARRAY_BUFFER, vbo->vertex.id );
+			if ( vbo->index.id != 0 ) {
+				nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, vbo->index.id );
+			}
+
+			// Intel Graphics doesn't save GL_ELEMENT_ARRAY_BUFFER binding with VAO binding.
+			// [TheNomad] 6/10/24 you've gotta bind it, nothing saves the binding
+//			if ( glContext.intelGraphics ) {
+//				nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, vbo->index.id );
+//			}
+		}
 	}
 }
 
@@ -591,14 +596,25 @@ void VBO_BindNull( void )
 		glState.currentVao = NULL;
 		glState.vaoId = glState.vboId = glState.iboId = 0;
 
-		nglBindVertexArray( 0 );
-		nglBindBuffer( GL_ARRAY_BUFFER, 0 );
-		nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
+		if ( r_drawMode->i == DRAWMODE_CLIENT ) {
+			nglDisableClientState( GL_COLOR_ARRAY );
+			nglDisableClientState( GL_VERTEX_ARRAY );
+			nglDisableClientState( GL_TEXTURE_COORD_ARRAY );
 
-	    // why you no save GL_ELEMENT_ARRAY_BUFFER binding, Intel?
-//		if ( glContext.intelGraphics ) {
-//			nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
-//		}
+			nglBindBuffer( GL_ARRAY_BUFFER, 0 );
+			nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
+
+			nglBindVertexArray( 0 );
+		} else if ( r_drawMode->i >= DRAWMODE_GPU ) {
+	        nglBindVertexArray( 0 );
+			nglBindBuffer( GL_ARRAY_BUFFER, 0 );
+			nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
+
+	        // why you no save GL_ELEMENT_ARRAY_BUFFER binding, Intel?
+//	        if ( glContext.intelGraphics ) {
+//				nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
+//			}
+		}
 	}
 
 	GL_CheckErrors();
@@ -628,22 +644,37 @@ void R_ShutdownBuffer( vertexBuffer_t *vbo )
 	VBO_BindNull();
 }
 
-void VBO_MapBuffers( vertexBuffer_t *vbo, void **vertexBuffer, void **indexBuffer, uint32_t nVerticesSize, uint32_t nIndicesSize,
-	uint32_t nVertexOffset, uint32_t nIndexOffset )
+void VBO_MapBuffers( vertexBuffer_t *vbo, void **vertexBuffer, void **indexBuffer )
 {
 	if ( r_drawMode->i < DRAWMODE_MAPPED ) {
-		*vertexBuffer = ri.Hunk_Alloc( nVerticesSize, h_low );
-		*indexBuffer = ri.Hunk_Alloc( nIndicesSize, h_low );
+		*vertexBuffer = ri.Hunk_Alloc( vbo->vertex.size, h_low );
+		*indexBuffer = ri.Hunk_Alloc( vbo->index.size, h_low );
 
 		return;
 	}
 
 	VBO_Bind( vbo );
 
-	*vertexBuffer = nglMapBufferRange( GL_ARRAY_BUFFER, nVertexOffset, nVerticesSize, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT
-		| GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_PERSISTENT_BIT );
-	*indexBuffer = nglMapBufferRange( GL_ELEMENT_ARRAY_BUFFER, nIndexOffset, nIndicesSize, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT
-		| GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_PERSISTENT_BIT );
+/*
+	if ( nglMakeBufferResidentNV ) {
+		GLuint64 vertexAddress, indexAddress;
+
+		nglMakeBufferResidentNV( GL_ARRAY_BUFFER, GL_READ_ONLY );
+		nglMakeBufferResidentNV( GL_ELEMENT_ARRAY_BUFFER, GL_READ_ONLY );
+
+		nglGetBufferParameterui64vNV( GL_ARRAY_BUFFER, GL_BUFFER_GPU_ADDRESS_NV, &vertexAddress );
+		nglGetBufferParameterui64vNV( GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_GPU_ADDRESS_NV, &indexAddress );
+
+		*vertexBuffer = (void *)(uintptr_t)vertexAddress;
+		*indexBuffer = (void *)(uintptr_t)indexAddress;
+	}
+	else {
+	*/
+		*vertexBuffer = nglMapBufferRange( GL_ARRAY_BUFFER, 0, vbo->vertex.size, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT
+			| GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_PERSISTENT_BIT );
+		*indexBuffer = nglMapBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, vbo->index.size, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT
+			| GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_PERSISTENT_BIT );
+//	}
 
 	VBO_BindNull();
 }
@@ -696,17 +727,12 @@ void RB_SetBatchBuffer( vertexBuffer_t *buffer, void *vertexBuffer, uintptr_t vt
 		attribBits |= ATTRIB_TILEID;
 	}
 
-	backend.drawBatch.batchIndexOffset = 0;
-	backend.drawBatch.batchVertexOffset = 0;
-
-	/*
 	if ( ( glState.vertexAttribsEnabled & attribBits ) != 0 ) {
 		R_ClearVertexPointers();
 
 		// set the new vertex attrib array state
 		R_SetVertexPointers( buffer->attribs );
 	}
-	*/
 }
 
 /*
@@ -736,25 +762,30 @@ void RB_FlushBatchBuffer( void )
 
 	buf = backend.drawBatch.buffer;
 
-	void *data;
+	if ( rg.world && rg.world->buffer == buf ) {
+//		nglFlushMappedBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, backend.drawBatch.idxDataSize * backend.drawBatch.idxOffset );
+		nglFlushMappedBufferRange( GL_ARRAY_BUFFER, sizeof( worldPos_t ) * rg.world->numVertices,
+			backend.drawBatch.vtxDataSize * backend.drawBatch.vtxOffset );
+	}
+	else {
+		void *data;
 
-	data = nglMapBufferRange( GL_ELEMENT_ARRAY_BUFFER, backend.drawBatch.batchIndexOffset,
-		backend.drawBatch.idxDataSize * backend.drawBatch.idxOffset,
-		GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_INVALIDATE_RANGE_BIT );
-	if ( data ) {
-		memcpy( data, backend.drawBatch.indices,
-			backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize );
+		data = nglMapBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, backend.drawBatch.idxDataSize * backend.drawBatch.idxOffset,
+			GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_INVALIDATE_RANGE_BIT );
+		if ( data ) {
+			memcpy( data, backend.drawBatch.indices,
+				backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize );
+		}
+		nglUnmapBuffer( GL_ELEMENT_ARRAY_BUFFER );
+		
+		data = nglMapBufferRange( GL_ARRAY_BUFFER, 0, backend.drawBatch.vtxDataSize * backend.drawBatch.vtxOffset,
+			GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_INVALIDATE_BUFFER_BIT );
+		if ( data ) {
+			memcpy( data, backend.drawBatch.vertices,
+				backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize );
+		}
+		nglUnmapBuffer( GL_ARRAY_BUFFER );
 	}
-	nglUnmapBuffer( GL_ELEMENT_ARRAY_BUFFER );
-	
-	data = nglMapBufferRange( GL_ARRAY_BUFFER, backend.drawBatch.batchVertexOffset,
-		backend.drawBatch.vtxDataSize * backend.drawBatch.vtxOffset,
-		GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_INVALIDATE_BUFFER_BIT );
-	if ( data ) {
-		memcpy( data, backend.drawBatch.vertices,
-			backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize );
-	}
-	nglUnmapBuffer( GL_ARRAY_BUFFER );
 	if ( 1 ) {
 	}
 	else {
@@ -780,9 +811,6 @@ void RB_FlushBatchBuffer( void )
 
 	backend.pc.c_bufferIndices += backend.drawBatch.idxOffset;
 	backend.pc.c_bufferVertices += backend.drawBatch.vtxOffset;
-
-	backend.drawBatch.batchIndexOffset += backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize;
-	backend.drawBatch.batchVertexOffset += backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize;
 
 	backend.drawBatch.vtxOffset = 0;
 	backend.drawBatch.idxOffset = 0;
@@ -828,11 +856,6 @@ void RB_CommitDrawData( const void *verts, uint32_t numVerts, const void *indice
 
     backend.drawBatch.vtxOffset += numVerts;
     backend.drawBatch.idxOffset += numIndices;
-}
-
-void VBO_SetData( uint32_t nVertexCount, const drawVert_t *pVerts, uint32_t nIndexCount, const glIndex_t *pIndices )
-{
-	backend.drawBatch.vtxOffset += nVertexCount;
 }
 
 /*

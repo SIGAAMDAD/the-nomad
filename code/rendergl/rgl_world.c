@@ -158,10 +158,10 @@ static void R_GenerateTexCoords( tile2d_info_t *info )
 			VectorSet2( worldPos[2], x, y );
 			VectorSet2( worldPos[3], x, y );
 
-			VectorCopy4( color[0].rgba, colorWhite );
-			VectorCopy4( color[1].rgba, colorWhite );
-			VectorCopy4( color[2].rgba, colorWhite );
-			VectorCopy4( color[3].rgba, colorWhite );
+			VectorCopy4( color[0], colorWhite );
+			VectorCopy4( color[1], colorWhite );
+			VectorCopy4( color[2], colorWhite );
+			VectorCopy4( color[3], colorWhite );
 
 			xyz += 4;
 			uv += 4;
@@ -506,15 +506,11 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 	r_worldData.numIndices = r_worldData.width * r_worldData.height * 6;
 	r_worldData.numVertices = r_worldData.width * r_worldData.height * 4;
 
-//	r_worldData.buffer = R_AllocateBuffer( "worldDrawBuffer", NULL, sizeof( *r_worldData.vertices ) * r_worldData.numVertices, NULL,
-//										sizeof( glIndex_t ) * r_worldData.numIndices, BUFFER_STREAM );
+	r_worldData.buffer = R_AllocateBuffer( "worldDrawBuffer", NULL, sizeof( *r_worldData.vertices ) * r_worldData.numVertices, NULL,
+										sizeof( glIndex_t ) * r_worldData.numIndices, BUFFER_STREAM );
+	attribs = r_worldData.buffer->attribs;
 
-	VBO_MapBuffers( backend.drawBuffer,
-		(void **)&r_worldData.vertices, (void **)&r_worldData.indices,
-		sizeof( *r_worldData.vertices ) * r_worldData.numVertices,
-		sizeof( glIndex_t ) * r_worldData.numIndices,
-		sizeof( srfVert_t ) * ( r_maxPolys->i * 4 ),
-		sizeof( glIndex_t ) * ( r_maxPolys->i * 6 ) );
+	VBO_MapBuffers( r_worldData.buffer, (void **)&r_worldData.vertices, (void **)&r_worldData.indices );
 
 //	r_worldData.indices = ri.Hunk_Alloc( sizeof( glIndex_t ) * r_worldData.numIndices, h_low );
 //	r_worldData.vertices = ri.Hunk_Alloc( sizeof( *r_worldData.vertices ) * r_worldData.numVertices, h_low );
@@ -547,7 +543,7 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 
 	attribs[ATTRIB_INDEX_POSITION].type			= GL_FLOAT;
 	attribs[ATTRIB_INDEX_TEXCOORD].type			= GL_FLOAT;
-	attribs[ATTRIB_INDEX_COLOR].type			= GL_UNSIGNED_BYTE;
+	attribs[ATTRIB_INDEX_COLOR].type			= GL_UNSIGNED_SHORT;
 	attribs[ATTRIB_INDEX_WORLDPOS].type         = GL_UNSIGNED_SHORT;
 
 	attribs[ATTRIB_INDEX_POSITION].index		= ATTRIB_INDEX_POSITION;
@@ -570,14 +566,13 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 	attribs[ATTRIB_INDEX_TEXCOORD].stride		= sizeof( vec2_t );
 	attribs[ATTRIB_INDEX_COLOR].stride			= sizeof( color_t );
 
-/*
+	VBO_Bind( r_worldData.buffer );
 	VBO_SetVertexPointers( r_worldData.buffer, ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_COLOR | ATTRIB_WORLDPOS );
 	nglVertexAttribDivisor( ATTRIB_INDEX_POSITION, 0 );
 	nglVertexAttribDivisor( ATTRIB_INDEX_TEXCOORD, 0 );
 	nglVertexAttribDivisor( ATTRIB_INDEX_COLOR, 0 );
-	nglVertexAttribDivisor( ATTRIB_INDEX_WORLDPOS, 1 );
+	nglVertexAttribDivisor( ATTRIB_INDEX_WORLDPOS, 0 );
 	VBO_BindNull();
-*/
 #else
 	attribs[ATTRIB_INDEX_POSITION].enabled		= qtrue;
 	attribs[ATTRIB_INDEX_TEXCOORD].enabled		= qtrue;
@@ -633,13 +628,13 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 	R_ProcessLights();
 	R_SetupTileLighting();
 
-//	VBO_Bind( r_worldData.buffer );
-	nglFlushMappedBufferRange( GL_ARRAY_BUFFER, sizeof( srfVert_t ) * ( r_maxPolys->i * 4 ), sizeof( worldPos_t ) * r_worldData.numVertices );
+	VBO_Bind( r_worldData.buffer );
+	nglFlushMappedBufferRange( GL_ARRAY_BUFFER, 0, sizeof( worldPos_t ) * r_worldData.numVertices );
 	nglFlushMappedBufferRange( GL_ARRAY_BUFFER, attribs[ATTRIB_INDEX_TEXCOORD].offset, sizeof( vec2_t ) * r_worldData.numVertices );
 	nglFlushMappedBufferRange( GL_ARRAY_BUFFER, attribs[ATTRIB_INDEX_COLOR].offset, sizeof( color_t ) * r_worldData.numVertices );
 
-	nglFlushMappedBufferRange( GL_ELEMENT_ARRAY_BUFFER, sizeof( glIndex_t ) * ( r_maxPolys->i * 6 ), sizeof( glIndex_t ) * r_worldData.numIndices );
-//	VBO_BindNull();
+	nglFlushMappedBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, sizeof( glIndex_t ) * r_worldData.numIndices );
+	VBO_BindNull();
 }
 
 void RE_LoadWorldMap( const char *filename )

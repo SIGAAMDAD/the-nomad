@@ -434,9 +434,8 @@ typedef struct dlight_s {
 typedef struct {
 	uint16_t		worldPos[2];
 	vec3_t			xyz;
-	char			padding[4];
 	vec2_t			uv;
-	color4ub_t		color;
+	uint16_t		color[4];
 } drawVert_t;
 
 // when sgame directly specifies a polygon, it becomes a srfPoly_t
@@ -450,9 +449,8 @@ typedef struct {
 typedef struct {
 	uint16_t		worldPos[2];
 	vec3_t			xyz;
-	char			padding[4];
 	vec2_t			st;
-	color4ub_t		color;
+	uint16_t		color[4];
 } srfVert_t;
 
 typedef struct {
@@ -946,7 +944,7 @@ typedef struct {
 } viewData_t;
 
 typedef uint16_t worldPos_t[2];
-typedef color4ub_t color_t;
+typedef uint16_t color_t[4];
 
 typedef struct {
 	char baseName[MAX_NPATH];
@@ -984,6 +982,7 @@ typedef struct {
 	uint64_t numVertices;
 
 	// frame based draw data
+	vertexBuffer_t *buffer;
 	shader_t *shader;
 	nhandle_t tileset;
 } world_t;
@@ -1701,8 +1700,7 @@ void R_VaoUnpackColor( vec4_t v, uint16_t *pack );
 vertexBuffer_t *R_AllocateBuffer( const char *name, void *vertices, uint32_t verticesSize, void *indices, uint32_t indicesSize,
 	bufferType_t type );
 void VBO_BindNull( void );
-void VBO_MapBuffers( vertexBuffer_t *vbo, void **vertexBuffer, void **indexBuffer, uint32_t nVerticesSize, uint32_t nIndicesSize,
-	uint32_t nVertexOffset, uint32_t nIndexOffset );
+void VBO_MapBuffers( vertexBuffer_t *vbo, void **vertexBuffer, void **indexBuffer );
 void R_InitGPUBuffers( void );
 void R_ShutdownGPUBuffers( void );
 void VBO_Bind( vertexBuffer_t *vbo );
