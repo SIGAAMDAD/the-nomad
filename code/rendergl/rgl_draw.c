@@ -14,22 +14,6 @@ void R_DrawElements( uint32_t numElements, uintptr_t nOffset ) {
 			nglDrawElements( GL_TRIANGLES, numElements, GLN_INDEX_TYPE, BUFFER_OFFSET( nOffset ) );
 		}
 		break; }
-	case DRAWMODE_IMMEDIATE: {
-		// immediate mode drawing is the least supported, if there's a bug here, I probably will not try to fix it
-		// only use this if you really want a retro feel
-		// im not even sure if it'll really work
-
-		drawVert_t *vtx = backend.drawBatch.vertices;
-
-		nglBegin( GL_TRIANGLES );
-		for ( uint64_t i = 0; i < numElements; i++ ) {
-			nglVertex3f( vtx[ i + nOffset ].xyz[0], vtx[ i + nOffset ].xyz[1], vtx[ i + nOffset ].xyz[2] );
-			nglTexCoord2f( vtx[ i + nOffset ].uv[0], vtx[ i + nOffset ].uv[1] );
-			nglColor4us( vtx[ i + nOffset ].color[0], vtx[ i + nOffset ].color[1], vtx[ i + nOffset ].color[2],
-				vtx[ i + nOffset ].color[3] );
-		}
-		nglEnd();
-		break; }
 	case DRAWMODE_CLIENT: {
 		nglDrawElements( GL_TRIANGLES, numElements, GLN_INDEX_TYPE, (byte *)backend.drawBatch.indices + nOffset );
 		break; }
