@@ -1437,6 +1437,8 @@ extern cvar_t *r_shadowCascadeZFar;
 extern cvar_t *r_shadowCascadeZBias;
 extern cvar_t *r_ignoreDstAlpha;
 
+extern cvar_t *r_fixedRendering;
+
 extern cvar_t *r_greyscale;
 
 extern cvar_t *r_ignoreGLErrors;
