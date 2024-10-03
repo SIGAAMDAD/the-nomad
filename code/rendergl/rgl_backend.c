@@ -558,7 +558,7 @@ static const void *RB_SwapBuffers( const void *data )
 
 	backend.framePostProcessed = qfalse;
 
-    return (const void *)(cmd + 1);
+    return (const void *)( cmd + 1 );
 }
 
 /*
