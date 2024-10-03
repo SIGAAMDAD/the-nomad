@@ -503,11 +503,21 @@ static void ImGui_ImplOpenGL3_SetupRenderState(ImDrawData *draw_data, int fb_wid
 		renderImport.glBindSampler(0, 0); // We use combined texture/sampler state. Applications using GL 3.3 and GL ES 3.0 may set that otherwise.
 #endif
 
-	renderImport.glBindVertexArray( bd->vaoId );
-
+	(void)vertex_array_object;
+#ifdef IMGUI_IMPL_OPENGL_USE_VERTEX_ARRAY
+	renderImport.glBindVertexArray(vertex_array_object);
+#endif
+	
 	// Bind vertex/index buffers and setup attributes for ImDrawVert
 	renderImport.glBindBuffer(GL_ARRAY_BUFFER, bd->VboHandle);
 	renderImport.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bd->ElementsHandle);
+
+	renderImport.glEnableVertexAttribArray(bd->AttribLocationVtxPos);
+	renderImport.glEnableVertexAttribArray(bd->AttribLocationVtxUV);
+	renderImport.glEnableVertexAttribArray(bd->AttribLocationVtxColor);
+	renderImport.glVertexAttribPointer(bd->AttribLocationVtxPos, 3, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid *)IM_OFFSETOF(ImDrawVert, pos));
+	renderImport.glVertexAttribPointer(bd->AttribLocationVtxUV, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid *)IM_OFFSETOF(ImDrawVert, uv));
+	renderImport.glVertexAttribPointer(bd->AttribLocationVtxColor, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid *)IM_OFFSETOF(ImDrawVert, col));
 }
 
 // OpenGL3 Render function.

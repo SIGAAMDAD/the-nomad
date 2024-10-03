@@ -2712,9 +2712,7 @@ struct ImDrawCmd
 #ifndef IMGUI_OVERRIDE_DRAWVERT_STRUCT_LAYOUT
 struct ImDrawVert
 {
-	char			padding0[4];
 	ImVec2			pos;
-	char			padding1[8];
 	ImVec2			uv;
 	ImU32			col;
 };

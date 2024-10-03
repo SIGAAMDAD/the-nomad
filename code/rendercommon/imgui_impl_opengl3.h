@@ -106,7 +106,6 @@ typedef struct
     void (*glMakeTextureHandleResidentARB)( GLuint64 texture );
 
     // rendering engine api for imgui
-    void (*SetVBOData)( uint32_t nVertexCount, const drawVert_t *pVerts, uint32_t nIndexCount, const glIndex_t *pIndices );
     void (*GetTextureId)( nhandle_t hShader, uint32_t stageNum, uint32_t *id );
     void (*DrawShaderStages)( nhandle_t hShader, uint32_t elementCount, uint32_t elementType, const void *offset, int32_t baseVertex );
     void *(*GetShaderByHandle)( nhandle_t hShader );
