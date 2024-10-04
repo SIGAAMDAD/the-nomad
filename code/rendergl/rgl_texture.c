@@ -178,7 +178,7 @@ void R_EvictUnusedTextures( void )
 	texture_t *image;
 	static uint64_t lastEvictionTime = 0;
 	
-	if ( !r_loadTexturesOnDemand->i ) {
+	if ( !r_loadTexturesOnDemand->i || *ri.Cvar_VariableString( "mapname" ) ) {
 		return;
 	}
 
@@ -3046,15 +3046,16 @@ void R_CreateBuiltinTextures( void )
 		width = glConfig.vidWidth;
 		height = glConfig.vidHeight;
 		if ( r_fixedRendering->i ) {
-			width = SCREEN_WIDTH;
-			height = SCREEN_HEIGHT;
+			if ( r_fixedResolutionScale->f == 0.0f ) {
+				width = SCREEN_WIDTH;
+				height = SCREEN_HEIGHT;
+			} else {
+				width = glConfig.vidWidth * r_fixedResolutionScale->f;
+				height = glConfig.vidHeight * r_fixedResolutionScale->f;
+			}
 		}
 
 		hdrFormat = GL_RGBA8;
-		if ( r_fixedRendering->i ) {
-			width = SCREEN_WIDTH;
-			height = SCREEN_HEIGHT;
-		}
 		if ( r_hdr->i && glContext.ARB_texture_float ) {
 			hdrFormat = GL_RGBA16F_ARB;
 		}

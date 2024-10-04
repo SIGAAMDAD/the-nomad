@@ -147,6 +147,7 @@ typedef struct {
 	quality_t textureDetail;
 	quality_t lightingQuality;
 	quality_t effectsQuality;
+	float fixedResolutionScaling;
 
 	toggle_t autoExposure;
 	toggle_t dynamicLighting;
@@ -704,12 +705,20 @@ static void SettingsMenu_MultiAdjustable( const char *name, const char *label, c
 }
 
 static void SettingsMenu_MultiSliderFloat( const char *name, const char *label, const char *hint, float *curvalue, float minvalue, float maxvalue,
-	float delta )
+	float delta, bool enabled )
 {
+	if ( !enabled ) {
+		ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
+		ImGui::PushStyleColor( ImGuiCol_FrameBg, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
+		ImGui::PushStyleColor( ImGuiCol_FrameBgActive, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
+		ImGui::PushStyleColor( ImGuiCol_FrameBgHovered, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
+	}
+
 	ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
 	ImGui::TableNextColumn();
 	SettingsMenu_Text( name, hint );
 	ImGui::TableNextColumn();
+	/*
 	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigLeft", label ), ImGuiDir_Left ) ) {
 		Snd_PlaySfx( ui->sfx_select );
 		( *curvalue ) -= delta;
@@ -718,7 +727,9 @@ static void SettingsMenu_MultiSliderFloat( const char *name, const char *label, 
 		}
 	}
 	ImGui::SameLine();
-	ImGui::SliderFloat( va( "##%sSettingsMenuConfigSlider", label ), curvalue, minvalue, maxvalue );
+	*/
+	ImGui::SliderFloat( va( "##%sSettingsMenuConfigSlider", label ), curvalue, minvalue, maxvalue, "%.3f", enabled ? 0 : ImGuiSliderFlags_NoInput );
+	/*
 	ImGui::SameLine();
 	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigRight", label ), ImGuiDir_Right ) ) {
 		Snd_PlaySfx( ui->sfx_select );
@@ -727,7 +738,12 @@ static void SettingsMenu_MultiSliderFloat( const char *name, const char *label, 
 			*curvalue = maxvalue;
 		}
 	}
+	*/
 	ImGui::PopStyleColor();
+
+	if ( !enabled ) {
+		ImGui::PopStyleColor( 4 );
+	}
 }
 
 static void SettingsMenu_MultiSliderInt( const char *name, const char *label, const char *hint, int *curvalue, int minvalue, int maxvalue,
@@ -744,6 +760,7 @@ static void SettingsMenu_MultiSliderInt( const char *name, const char *label, co
 	ImGui::TableNextColumn();
 	SettingsMenu_Text( name, hint );
 	ImGui::TableNextColumn();
+	/*
 	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigLeft", label ), ImGuiDir_Left ) ) {
 		if ( enabled ) {
 			Snd_PlaySfx( ui->sfx_select );
@@ -754,7 +771,9 @@ static void SettingsMenu_MultiSliderInt( const char *name, const char *label, co
 		}
 	}
 	ImGui::SameLine();
+	*/
 	ImGui::SliderInt( va( "##%sSettingsMenuConfigSlider", label ), curvalue, minvalue, maxvalue, "%d", enabled ? 0 : ImGuiSliderFlags_NoInput );
+	/*
 	ImGui::SameLine();
 	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigRight", label ), ImGuiDir_Right ) ) {
 		if ( enabled ) {
@@ -766,6 +785,7 @@ static void SettingsMenu_MultiSliderInt( const char *name, const char *label, co
 		}
 	}
 	ImGui::PopStyleColor();
+	*/
 
 	if ( !enabled ) {
 		ImGui::PopStyleColor( 4 );
@@ -1059,15 +1079,14 @@ static void ControlsMenu_Draw( void )
 	
 	ImGui::BeginTable( "##ControlsSettingsMenuConfigTable", 2 );
 	{
-		SettingsMenu_MultiAdjustable( strManager->ValueForKey( "GAMEUI_MOUSEACCEL" )->value, "MouseAcceleration",
-			"Toggles mouse acceleration", s_settingsMenu->performance.onoff, 2,
-			&s_settingsMenu->controls.mouseAcceleration, true );
+		SettingsMenu_RadioButton( strManager->ValueForKey( "GAMEUI_MOUSEACCEL" )->value, "MouseAcceleration",
+			"Toggles mouse acceleration", &s_settingsMenu->controls.mouseAcceleration, true );
 		
 		ImGui::TableNextRow();
 		
 		SettingsMenu_MultiSliderFloat( strManager->ValueForKey( "GAMEUI_MOUSESENSITIVITY" )->value, "MouseSensitivity",
 			"Sets the speed of the mouse",
-			&s_settingsMenu->controls.mouseSensitivity, 1.0f, 50.0f, 1.0f );
+			&s_settingsMenu->controls.mouseSensitivity, 1.0f, 50.0f, 1.0f, true );
 
 		ImGui::TableNextRow();
 
@@ -1169,6 +1188,18 @@ static void PerformanceMenu_DrawBasic( void )
 	SettingsMenu_MultiAdjustable( "LIGHTING QUALITY", "LightingQuality",
 		"Sets lighting quality", s_settingsMenu->performance.qualityTypes + 1, s_settingsMenu->performance.numQualities - 2,
 		&s_settingsMenu->performance.lightingQuality, true );
+
+	ImGui::TableNextRow();
+
+	SettingsMenu_RadioButton( "FIXED RENDERING", "FixedRendering",
+		"Forces the engine to render at a fixed virtual resolution (based on \"FIXED RESOLUTION SCALE\")."
+		"This might increase performance on lower end systems", &s_settingsMenu->performance.fixedRendering, true );
+
+	ImGui::TableNextRow();
+
+	SettingsMenu_MultiSliderFloat( "FIXED RESOLUTION SCALE", "FixedResolutionScaling",
+		"Sets the fixed resolution scaling.", &s_settingsMenu->performance.fixedResolutionScaling, 0.0f, 1.0f, 0.01f,
+		s_settingsMenu->performance.fixedRendering );
 
 	ImGui::TableNextRow();
 	
@@ -1277,21 +1308,21 @@ static void VideoMenu_Draw( void )
 
 		ImGui::TableNextRow();
 
-		SettingsMenu_MultiSliderFloat( "BRIGHTNESS", "Gamma",
+		SettingsMenu_MultiSliderFloat( "GAMMA", "Gamma",
 			"Sets gamma linear light correction factor",
-			&s_settingsMenu->video.gamma, 0.5f, 3.0f, 0.10f );
+			&s_settingsMenu->video.gamma, 0.5f, 3.0f, 0.10f, true );
 
 		ImGui::TableNextRow();
 		
-		SettingsMenu_MultiSliderFloat( "EXPOSURE", "Exposure",
-			"Sets exposure level when rendered in a scene",
-			&s_settingsMenu->video.exposure, 0.10f, 10.0f, 1.0f );
+		SettingsMenu_MultiSliderFloat( "BRIGHTNESS", "Exposure",
+			"Sets brightness in a rendered scene",
+			&s_settingsMenu->video.exposure, 0.10f, 10.0f, 1.0f, true );
 		
 		ImGui::TableNextRow();
 		
 		SettingsMenu_MultiSliderFloat( "IMAGE SHARPENING", "ImageSharpening",
 			"Sets the amount of sharpening applied to a rendered texture",
-			&s_settingsMenu->video.sharpening, 0.5f, 20.0f, 0.1f );
+			&s_settingsMenu->video.sharpening, 0.5f, 20.0f, 0.1f, true );
 		
 		/* for now we will only really allow running at 60 fps
 		ImGui::TableNextRow();
@@ -1380,11 +1411,19 @@ static void VideoMenu_Save( void )
 {
 	extern SDL_Window *SDL_window;
 
+	switch ( s_settingsMenu->video.windowResolution ) {
+	case 0:
+		Cvar_SetIntegerValue( "r_mode", -2 );
+		break;
+	default:
+		Cvar_SetIntegerValue( "r_mode", s_settingsMenu->video.windowResolution - 1 );
+		break;
+	};
+
 	Cvar_SetIntegerValue( "r_fullscreen", s_settingsMenu->video.windowMode >= WINDOWMODE_FULLSCREEN );
 	Cvar_SetIntegerValue( "r_noborder", s_settingsMenu->video.windowMode % 2 != 0 );
 	Cvar_SetIntegerValue( "r_customWidth", s_settingsMenu->video.windowWidth );
 	Cvar_SetIntegerValue( "r_customHeight", s_settingsMenu->video.windowHeight );
-	Cvar_SetIntegerValue( "r_mode", s_settingsMenu->video.windowResolution - 2 );
 	Cvar_SetIntegerValue( "r_swapInterval", s_settingsMenu->video.vsync - 1 );
 	Cvar_SetFloatValue( "r_imageSharpenAmount", s_settingsMenu->video.sharpening );
 	Cvar_SetFloatValue( "r_autoExposure", s_settingsMenu->video.exposure );
@@ -1470,6 +1509,8 @@ static void PerformanceMenu_Save( void )
 	Cvar_SetIntegerValue( "r_textureDetail", s_settingsMenu->performance.textureDetail );
 	Cvar_SetIntegerValue( "r_dynamiclight", s_settingsMenu->performance.dynamicLighting );
 	Cvar_SetIntegerValue( "r_lightingQuality", s_settingsMenu->performance.lightingQuality );
+	Cvar_SetIntegerValue( "r_fixedRendering", s_settingsMenu->performance.fixedRendering );
+	Cvar_SetFloatValue( "r_fixedResolutionScaling", s_settingsMenu->performance.fixedResolutionScaling );
 
 	if ( needRestart || PerformanceMenu_FBO_Save() ) {
 		UI_ConfirmMenu( "Some settings that you have changed require a restart to take effect, apply them?",
@@ -1532,6 +1573,8 @@ static void PerformanceMenu_SetDefault( void )
 	s_settingsMenu->performance.bloom = Cvar_VariableInteger( "r_bloom" );
 	s_settingsMenu->performance.lightingQuality = Cvar_VariableInteger( "r_lightingQuality" );
 	s_settingsMenu->performance.multisampleQuality = Cvar_VariableInteger( "r_antialiasQuality" );
+	s_settingsMenu->performance.fixedRendering = Cvar_VariableInteger( "r_fixedRendering" );
+	s_settingsMenu->performance.fixedResolutionScaling = Cvar_VariableFloat( "r_fixedResolutionScaling" );
 	
 	textureMode = Cvar_VariableString( "r_textureMode" );
 	for ( i = 0; i < s_settingsMenu->performance.numTextureDetails; i++ ) {
@@ -1548,7 +1591,11 @@ static void VideoMenu_SetDefault( void )
 {
 	s_settingsMenu->video.windowWidth = Cvar_VariableInteger( "r_customWidth" );
 	s_settingsMenu->video.windowHeight = Cvar_VariableInteger( "r_customHeight" );
-	s_settingsMenu->video.windowResolution = Cvar_VariableInteger( "r_mode" ) + 2;
+	if ( Cvar_VariableInteger( "r_mode" ) == -2 ) {
+		s_settingsMenu->video.windowResolution = 0;
+	} else {
+		s_settingsMenu->video.windowResolution = Cvar_VariableInteger( "r_mode" ) + 1;
+	}
 	s_settingsMenu->video.vsync = Cvar_VariableInteger( "r_swapInterval" ) + 1;
 	s_settingsMenu->video.gamma = Cvar_VariableFloat( "r_gammaAmount" );
 	s_settingsMenu->video.windowMode = Cvar_VariableInteger( "r_fullscreen" ) + Cvar_VariableInteger( "r_noborder" );
@@ -1872,7 +1919,7 @@ qboolean R_HasExtension( const char *ext )
 #define NUM_HUD_OPTIONS 4
 #define NUM_VSYNC_TYPES 3
 #define NUM_WINDOW_MODES 4
-#define NUM_WINDOW_SIZES NUMVIDMODES
+#define NUM_WINDOW_SIZES NUMVIDMODES - 1
 #define NUM_TEXTURE_FILTERS 4
 #define NUM_TEXTURE_DETAILS 5
 
@@ -1955,20 +2002,19 @@ void SettingsMenu_Cache( void )
 	s_textureDetail[4] = strManager->ValueForKey( "GAMEUI_TEXDETAIL_ULTRA" )->value;
 
 	s_windowSizes[0] = strManager->ValueForKey( "GAMEUI_WINDOW_NATIVE" )->value;
-	s_windowSizes[1] = strManager->ValueForKey( "GAMEUI_WINDOW_CUSTOM" )->value;
-	s_windowSizes[2] = strManager->ValueForKey( "GAMEUI_WINDOW_1280X720" )->value;
-	s_windowSizes[3] = strManager->ValueForKey( "GAMEUI_WINDOW_1600X1200" )->value;
-	s_windowSizes[4] = strManager->ValueForKey( "GAMEUI_WINDOW_1600X1050" )->value;
-	s_windowSizes[5] = strManager->ValueForKey( "GAMEUI_WINDOW_1920X1080" )->value;
-	s_windowSizes[6] = strManager->ValueForKey( "GAMEUI_WINDOW_1920X1200" )->value;
-	s_windowSizes[7] = strManager->ValueForKey( "GAMEUI_WINDOW_1920X1280" )->value;
-	s_windowSizes[8] = strManager->ValueForKey( "GAMEUI_WINDOW_2560X1080" )->value;
-	s_windowSizes[9] = strManager->ValueForKey( "GAMEUI_WINDOW_2560X1440" )->value;
-	s_windowSizes[10] = strManager->ValueForKey( "GAMEUI_WINDOW_2560X1600" )->value;
-	s_windowSizes[11] = strManager->ValueForKey( "GAMEUI_WINDOW_2880X1620" )->value;
-	s_windowSizes[12] = strManager->ValueForKey( "GAMEUI_WINDOW_3200X1800" )->value;
-	s_windowSizes[13] = strManager->ValueForKey( "GAMEUI_WINDOW_3840X1600" )->value;
-	s_windowSizes[14] = strManager->ValueForKey( "GAMEUI_WINDOW_3840X2160" )->value;
+	s_windowSizes[1] = strManager->ValueForKey( "GAMEUI_WINDOW_1280X720" )->value;
+	s_windowSizes[2] = strManager->ValueForKey( "GAMEUI_WINDOW_1600X1200" )->value;
+	s_windowSizes[3] = strManager->ValueForKey( "GAMEUI_WINDOW_1600X1050" )->value;
+	s_windowSizes[4] = strManager->ValueForKey( "GAMEUI_WINDOW_1920X1080" )->value;
+	s_windowSizes[5] = strManager->ValueForKey( "GAMEUI_WINDOW_1920X1200" )->value;
+	s_windowSizes[6] = strManager->ValueForKey( "GAMEUI_WINDOW_1920X1280" )->value;
+	s_windowSizes[7] = strManager->ValueForKey( "GAMEUI_WINDOW_2560X1080" )->value;
+	s_windowSizes[8] = strManager->ValueForKey( "GAMEUI_WINDOW_2560X1440" )->value;
+	s_windowSizes[9] = strManager->ValueForKey( "GAMEUI_WINDOW_2560X1600" )->value;
+	s_windowSizes[10] = strManager->ValueForKey( "GAMEUI_WINDOW_2880X1620" )->value;
+	s_windowSizes[11] = strManager->ValueForKey( "GAMEUI_WINDOW_3200X1800" )->value;
+	s_windowSizes[12] = strManager->ValueForKey( "GAMEUI_WINDOW_3840X1600" )->value;
+	s_windowSizes[13] = strManager->ValueForKey( "GAMEUI_WINDOW_3840X2160" )->value;
 
 	s_hudOptions[0] = strManager->ValueForKey( "MENU_HUD" )->value;
 	s_hudOptions[1] = strManager->ValueForKey( "MENU_ADVANCED_HUD" )->value;

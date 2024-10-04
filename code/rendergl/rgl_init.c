@@ -165,6 +165,7 @@ cvar_t *r_glDiagnostics;
 cvar_t *r_colorMipLevels;
 
 cvar_t *r_fixedRendering;
+cvar_t *r_fixedResolutionScale;
 
 cvar_t *r_maxPolys;
 cvar_t *r_maxEntities;
@@ -1066,7 +1067,11 @@ static void R_Register( void )
 	ri.Cvar_SetDescription( r_roundImagesDown, "When images are scaled, round images down instead of up." );
 
 	r_fixedRendering = ri.Cvar_Get( "r_fixedRendering", "1", CVAR_SAVE | CVAR_LATCH );
-	ri.Cvar_SetDescription( r_fixedRendering, "Forces the engine the render the screen at a 1280x720 virtual resolution then scale up if needed." );
+	ri.Cvar_SetDescription( r_fixedRendering, "Forces the engine the render the screen at a lower virtual resolution then scale up if needed." );
+
+	r_fixedResolutionScale = ri.Cvar_Get( "r_fixedResolutionScale", "0", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_CheckRange( r_fixedResolutionScale, "0", "1", CVT_FLOAT );
+	ri.Cvar_SetDescription( r_fixedResolutionScale, "Sets the fixed rendering resolution, requires \\r_fixedRendering \"1\"" );
 
 	r_vertexLight = ri.Cvar_Get( "r_vertexLight", "0", CVAR_SAVE | CVAR_DEV );
 	ri.Cvar_SetDescription( r_vertexLight, "Set to 1 to use vertex light instead of lightmaps, collapse all multi-stage shaders into single-stage ones, might cause rendering artifacts." );
@@ -1641,9 +1646,9 @@ void RE_Shutdown( refShutdownCode_t code )
 	if ( code != REF_KEEP_CONTEXT ) {
 		ri.GLimp_Shutdown( code == REF_UNLOAD_DLL ? qtrue : qfalse );
 
-		memset( &glConfig, 0, sizeof(glConfig) );
-		memset( &glState, 0, sizeof(glState) );
-		memset( &glContext, 0, sizeof(glContext) );
+		memset( &glConfig, 0, sizeof( glConfig ) );
+		memset( &glState, 0, sizeof( glState ) );
+		memset( &glContext, 0, sizeof( glContext ) );
 	}
 
 	// free everything

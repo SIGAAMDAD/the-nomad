@@ -1425,6 +1425,7 @@ extern cvar_t *r_fixedRendering;
 
 extern cvar_t *r_greyscale;
 extern cvar_t *r_fixedRendering;
+extern cvar_t *r_fixedResolutionScale;
 
 extern cvar_t *r_ignoreGLErrors;
 

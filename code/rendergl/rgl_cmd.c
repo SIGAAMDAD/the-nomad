@@ -272,13 +272,22 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 		r_hdr->modified = qfalse;
 	}
 
+	if ( glContext.ARB_framebuffer_object && r_arb_framebuffer_object->i && rg.renderFbo.frameBuffer ) {
+		GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo.frameBuffer );
+	}
+
 	if ( glState.currentFbo ) {
 		width = glState.currentFbo->width;
 		height = glState.currentFbo->height;
 	} else {
 		if ( r_fixedRendering->i ) {
-			width = SCREEN_WIDTH;
-			height = SCREEN_HEIGHT;
+			if ( r_fixedResolutionScale->f == 0.0f ) {
+				width = SCREEN_WIDTH;
+				height = SCREEN_HEIGHT;
+			} else {
+				width = glConfig.vidWidth * r_fixedResolutionScale->f;
+				height = glConfig.vidHeight * r_fixedResolutionScale->f;
+			}
 		} else {
 			width = glConfig.vidWidth;
 			height = glConfig.vidHeight;
@@ -298,10 +307,6 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 
 	if ( r_measureOverdraw->i ) {
 		clearBits |= GL_STENCIL_BUFFER_BIT;
-	}
-
-	if ( glContext.ARB_framebuffer_object && r_arb_framebuffer_object->i && rg.renderFbo.frameBuffer ) {
-		GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo.frameBuffer );
 	}
 
 	if ( r_clearColor->s ) {

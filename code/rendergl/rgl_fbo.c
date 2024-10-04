@@ -337,8 +337,13 @@ static void FBO_Init_f( void )
 	}
 
 	if ( r_fixedRendering->i ) {
-		fboWidth = SCREEN_WIDTH;
-		fboHeight = SCREEN_HEIGHT;
+		if ( r_fixedResolutionScale->f == 0.0f ) {
+			fboWidth = SCREEN_WIDTH;
+			fboHeight = SCREEN_HEIGHT;
+		} else {
+			fboWidth = glConfig.vidWidth * r_fixedResolutionScale->f;
+			fboWidth = glConfig.vidHeight * r_fixedResolutionScale->f;
+		}
 	} else {
 		fboWidth = glConfig.vidWidth;
 		fboHeight = glConfig.vidHeight;
@@ -1328,7 +1333,7 @@ void RB_FinishPostProcess( fbo_t *srcFbo )
 	else if ( srcFbo )
 	*/
 	{
-		if ( r_fixedRendering->i && ( glConfig.vidWidth != SCREEN_WIDTH || glConfig.vidHeight != SCREEN_HEIGHT ) ) {
+		if ( r_fixedRendering->i ) {
 			// dynamically upscale to the real resolution from the virtual screen
 			// NOTE: while this might seem slow at first, in most cases it is faster
 			// especially when applying post-processing effects because we are
@@ -1344,18 +1349,23 @@ void RB_FinishPostProcess( fbo_t *srcFbo )
 
 			GLSL_UseProgram( &rg.bloomResolveShader );
 			GLSL_SetUniformInt( &rg.bloomResolveShader, UNIFORM_USE_HDR, r_hdr->i );
-			GL_BindTexture( UNIFORM_DIFFUSE_MAP, srcFbo->colorImage[ 0 ] );
-			GLSL_SetUniformTexture( &rg.bloomResolveShader, UNIFORM_DIFFUSE_MAP, srcFbo->colorImage[ 0 ] );
+			GLSL_SetUniformInt( &rg.bloomResolveShader, UNIFORM_USE_BLOOM, r_bloom->i );
+			GL_BindTexture( UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
+			GLSL_SetUniformTexture( &rg.bloomResolveShader, UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
 			GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_EXPOSURE, r_autoExposure->f );
 			GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_GAMMA, r_gammaAmount->f );
 
 			RB_RenderPass();
 		} else {
 			GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
+			nglScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+			nglViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+
 			GLSL_UseProgram( &rg.bloomResolveShader );
 			GLSL_SetUniformInt( &rg.bloomResolveShader, UNIFORM_USE_HDR, r_hdr->i );
-			GL_BindTexture( UNIFORM_DIFFUSE_MAP, srcFbo->colorImage[ 0 ] );
-			GLSL_SetUniformTexture( &rg.bloomResolveShader, UNIFORM_DIFFUSE_MAP, srcFbo->colorImage[ 0 ] );
+			GLSL_SetUniformInt( &rg.bloomResolveShader, UNIFORM_USE_BLOOM, r_bloom->i );
+			GL_BindTexture( UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
+			GLSL_SetUniformTexture( &rg.bloomResolveShader, UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
 			GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_EXPOSURE, r_autoExposure->f );
 			GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_GAMMA, r_gammaAmount->f );
 
