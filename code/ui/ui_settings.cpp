@@ -1433,12 +1433,14 @@ static void VideoMenu_Save( void )
 		SDL_GL_SetSwapInterval( s_settingsMenu->video.vsync - 1 );
 	}
 	if ( s_settingsMenu->video.windowResolution != s_initial->video.windowResolution
+		|| s_settingsMenu->video.windowMode != s_initial->video.windowMode
 		|| ( s_settingsMenu->video.windowWidth != s_initial->video.windowWidth
 		|| s_settingsMenu->video.windowHeight != s_initial->video.windowHeight )
 	)
 	{
 		Cbuf_ExecuteText( EXEC_APPEND, "vid_restart keep_context\n" );
 	}
+/*
 	switch ( s_settingsMenu->video.windowMode ) {
 	case WINDOWMODE_BORDERLESS_FULLSCREEN:
 	case WINDOWMODE_BORDERLESS_WINDOWED:
@@ -1449,6 +1451,7 @@ static void VideoMenu_Save( void )
 		SDL_SetWindowBordered( SDL_window, SDL_TRUE );
 		break;
 	};
+*/
 //	SDL_SetWindowPosition( SDL_window, vid_xpos->i, vid_ypos->i );
 }
 
@@ -1945,12 +1948,6 @@ void SettingsMenu_Cache( void )
 		"circle & dot",
 		"full crosshair",
 		"filled crosshair"
-	};
-	static const char *s_bufferModeOptions[] = {
-		"Immediate (Legacy, Untested)",
-		"Client (Legacy, Untested)",
-		"GPU Buffered (OpenGL 3.3)",
-		"GPU To Client Mapping (OpenGL 4.5)"
 	};
 	static const char *s_hudOptions[ NUM_HUD_OPTIONS ];
 	static const char *s_presetLabels[] = {

@@ -128,7 +128,9 @@ void UI_PushMenu( menuframework_t *menu )
         ui->stack[ ui->menusp++ ] = menu;
     }
 
-	Snd_ClearLoopingTracks();
+	if ( ui->activemenu && ui->activemenu->track != menu->track ) {
+		Snd_ClearLoopingTracks();
+	}
 
     ui->activemenu = menu;
 
