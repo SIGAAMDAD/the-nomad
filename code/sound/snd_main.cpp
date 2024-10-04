@@ -13,6 +13,8 @@ cvar_t *snd_noSound;
 cvar_t *snd_muteUnfocused;
 cvar_t *snd_maxChannels;
 
+CSoundWorld *g_pSoundWorld;
+
 static FMOD::Studio::System *s_pStudioSystem;
 static FMOD::System *s_pCoreSystem;
 
@@ -172,7 +174,20 @@ bool CSoundSource::Load( const char *npath, int64_t nTag )
 	return true;
 }
 
-void CSoundSource::Play( bool bLooping, uint64_t nTimeOffset )
+FMOD::Studio::EventInstance *CSoundSource::AllocEvent( void )
+{
+	FMOD::Studio::EventInstance *pEvent;
+
+	if ( !m_pData ) {
+		return NULL;
+	}
+
+	ERRCHECK( m_pData->createInstance( &pEvent ) );
+
+	return pEvent;
+}
+
+void CSoundSource::Play( bool bLooping, uint64_t nTimeOffset, bool bIsWorldSound )
 {
 	FMOD_STUDIO_PLAYBACK_STATE state;
 
@@ -193,7 +208,7 @@ void CSoundSource::Play( bool bLooping, uint64_t nTimeOffset )
 	{
 		bool isSnapshot;
 		m_pData->isSnapshot( &isSnapshot );
-		if ( !isSnapshot && m_nTag != TAG_MUSIC ) {
+		if ( !isSnapshot && m_nTag != TAG_MUSIC && !bIsWorldSound ) {
 			m_pEmitter->release();
 			m_pEmitter = NULL;
 		}

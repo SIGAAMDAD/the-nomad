@@ -16,38 +16,20 @@ namespace TheNomad::SGame {
 		PMoveData( PlayrObject@ ent ) {
 			@m_EntityData = @ent;
 
-			moveGravel0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveGravel0.ogg" );
-			moveGravel1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveGravel1.ogg" );
-			moveGravel2 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveGravel2.ogg" );
-			moveGravel3 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveGravel3.ogg" );
+			moveGravel0 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/move_gravel_0" );
+			moveGravel1 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/move_gravel_1" );
+			moveGravel2 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/move_gravel_2" );
+			moveGravel3 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/move_gravel_3" );
 
-			moveWater0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveWater0.ogg" );
-			moveWater1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveWater1.ogg" );
+			moveWater0 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/move_water_0" );
+			moveWater1 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/move_water_1" );
 
-			moveMetal0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal0.ogg" );
-			moveMetal1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal1.ogg" );
-			moveMetal2 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal2.ogg" );
-			moveMetal3 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal3.ogg" );
+			moveMetal0 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/move_metal_0" );
+			moveMetal1 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/move_metal_1" );
+			moveMetal2 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/move_metal_2" );
+			moveMetal3 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/move_metal_3" );
 		}
 		PMoveData() {
-		}
-		
-		private void ClipVelocity( vec3& out vel, const vec3& in normal, float overbounce ) {
-			float backoff;
-			float change;
-			int i;
-			
-			backoff = Util::DotProduct( vel, normal );
-			if ( backoff < 0.0f ) {
-				backoff *= overbounce;
-			} else {
-				backoff /= overbounce;
-			}
-			
-			for ( i = 0; i < 3; i++ ) {
-				change = normal[i] * backoff;
-				vel[i] = vel[i] - change;
-			}
 		}
 		
 		private void AirMove() {
@@ -115,26 +97,26 @@ namespace TheNomad::SGame {
 			if ( ( tile & SURFACEPARM_WATER ) != 0 ) {
 				switch ( TheNomad::Util::PRandom() & 2 ) {
 				case 0:
-					moveWater0.Play();
+					m_EntityData.m_Emitter.PlaySound( moveWater0, 1.0f, 0xff );
 					break;
 				case 1:
-					moveWater1.Play();
+					m_EntityData.m_Emitter.PlaySound( moveWater1, 1.0f, 0xff );
 					break;
 				};
 			}
 			if ( ( tile & SURFACEPARM_METAL ) != 0 ) {
 				switch ( TheNomad::Util::PRandom() & 3 ) {
 				case 0:
-					moveMetal0.Play();
+					m_EntityData.m_Emitter.PlaySound( moveMetal0, 1.0f, 0xff );
 					break;
 				case 1:
-					moveMetal1.Play();
+					m_EntityData.m_Emitter.PlaySound( moveMetal1, 1.0f, 0xff );
 					break;
 				case 2:
-					moveMetal2.Play();
+					m_EntityData.m_Emitter.PlaySound( moveMetal2, 1.0f, 0xff );
 					break;
 				case 3:
-					moveMetal3.Play();
+					m_EntityData.m_Emitter.PlaySound( moveMetal3, 1.0f, 0xff );
 					break;
 				};
 			}
@@ -143,11 +125,11 @@ namespace TheNomad::SGame {
 					switch ( TheNomad::Util::PRandom() & 3 ) {
 					case 0:
 					case 2:
-						moveGravel0.Play();
+						m_EntityData.m_Emitter.PlaySound( moveGravel0, 1.0f, 0xff );
 						break;
 					case 1:
 					case 3:
-						moveGravel1.Play();
+						m_EntityData.m_Emitter.PlaySound( moveGravel1, 1.0f, 0xff );
 						break;
 					};
 				}

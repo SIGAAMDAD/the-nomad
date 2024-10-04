@@ -1510,7 +1510,6 @@ void Hunk_SetMark( void )
 void Hunk_ClearToMark( void )
 {
 	Con_DPrintf( "Clearing to set hunk mark...\n" );
-	memset( hunkbase + hunk_low.mark, 0, hunk_low.permanent - hunk_low.mark );
 	hunk_low.permanent = hunk_low.temp = hunk_low.mark;
 	hunk_high.permanent = hunk_high.temp = hunk_high.mark;
 }

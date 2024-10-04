@@ -1,5 +1,6 @@
 #include "g_game.h"
 #include "g_world.h"
+#include "../sound/snd_local.h"
 
 CGameWorld *g_world;
 
@@ -254,7 +255,7 @@ void G_SetMap_f( void ) {
 		gi.state = GS_INACTIVE;
 		gi.mapCache.currentMapLoaded = FS_INVALID_HANDLE;
 
-		Cbuf_ExecuteText( EXEC_APPEND, "vid_restart keep_context\n" );
+		Hunk_ClearToMark();
 		return;
 	}
 
@@ -306,16 +307,21 @@ void G_GetSpawnData( uvec3_t xyz, uint32_t *type, uint32_t *id, uint32_t nIndex,
 	if ( !type || !id || !pCheckpointIndex ) {
 		N_Error( ERR_DROP, "G_GetSpawnData: invalid parameter" );
 	}
+
+	Hunk_SetMark();
 	
 	info = &gi.mapCache.info;
 	if ( nIndex >= info->numSpawns ) {
 		N_Error( ERR_DROP, "G_GetSpawnData: index out of range" );
 	}
-	
+
 	VectorCopy2( xyz, info->spawns[ nIndex ].xyz );
 	*type = info->spawns[ nIndex ].entitytype;
 	*id = info->spawns[ nIndex ].entityid;
 	*pCheckpointIndex = info->spawns[ nIndex ].checkpoint;
+
+	g_pSoundWorld = (CSoundWorld *)Hunk_Alloc( sizeof( *g_pSoundWorld ), h_high );
+	g_pSoundWorld->Init();
 
 	Con_DPrintf( "spawn[%u] has checkpoint %u (%u:%u)\n", nIndex, info->spawns[nIndex].checkpoint,
 		info->spawns[nIndex].entitytype, info->spawns[nIndex].entityid );
@@ -383,6 +389,8 @@ void CGameWorld::Init( mapinfo_t *info )
 	m_ActiveEnts.next =
 	m_ActiveEnts.prev =
 		&m_ActiveEnts;
+	
+	m_ActiveEnts.entityNumber = MAX_ENTITIES;
 }
 
 void CGameWorld::LinkEntity( linkEntity_t *ent )
@@ -399,6 +407,8 @@ void CGameWorld::UnlinkEntity( linkEntity_t *ent )
 {
 	ent->prev->next = ent->next;
 	ent->next->prev = ent->prev;
+	
+	m_nEntities--;
 }
 
 qboolean CGameWorld::CheckWallHit( const vec3_t origin, dirtype_t dir )

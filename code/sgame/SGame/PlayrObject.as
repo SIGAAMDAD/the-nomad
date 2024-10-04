@@ -611,26 +611,26 @@ namespace TheNomad::SGame {
 		}
 
 		private void CacheSfx() {
-			dieSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/death1.ogg" );
-			dieSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/death2.ogg" );
-			dieSfx2 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/death3.ogg" );
+			dieSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/death1" );
+			dieSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/death2" );
+			dieSfx2 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/death3" );
 
-			painSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain0.ogg" );
-			painSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain1.ogg" );
-			painSfx2 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain2.ogg" );
+			painSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/pain_scream_0" );
+			painSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/pain_scream_1" );
+			painSfx2 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/pain_scream_2" );
 
-			slideSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/slide0.ogg" );
-			slideSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/slide1.ogg" );
+			slideSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/slide_0" );
+			slideSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/slide_1" );
 
-			dashSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/dash.ogg" );
+			dashSfx = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/dash" );
 
-			meleeSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/melee.wav" );
+			meleeSfx = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/melee" );
 
-			weaponChangeHandSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/weaponChangeHand.wav" );
-			weaponChangeModeSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/weaponChangeMode.wav" );
+			weaponChangeHandSfx = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/weapon_change_hand" );
+			weaponChangeModeSfx = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/weapon_change_mode" );
 
-			crouchDownSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/clothRuffle0.ogg" );
-			crouchUpSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/clothRuffle1.ogg" );
+			crouchDownSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/player/clothRuffle0.ogg" );
+			crouchUpSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/player/clothRuffle1.ogg" );
 		}
 
 		private void CacheGfx() {

@@ -2,6 +2,7 @@
 #include "SGame/EntityStateSystem.as"
 #include "SGame/PlayrObject.as"
 #include "Engine/Physics/PhysicsObject.as"
+#include "Engine/SoundSystem/SoundEmitter.as"
 
 namespace TheNomad::SGame {
 	const int FACING_RIGHT = 0;
@@ -21,6 +22,7 @@ namespace TheNomad::SGame {
 			// just create a temporary bbox to link it in, we'll rebuild every frame anyway
 			TheNomad::GameSystem::BBox bounds( 1.0f, 1.0f, origin );
 			m_Link = TheNomad::GameSystem::LinkEntity( origin, bounds, id, uint( type ) );
+			m_Emitter.Register( @this );
 		}
 		
 		//
@@ -248,5 +250,7 @@ namespace TheNomad::SGame {
 		// linked list stuff
 		EntityObject@ next = null;
 		EntityObject@ prev = null;
+
+		TheNomad::Engine::SoundSystem::SoundEmitter m_Emitter;
 	};
 };

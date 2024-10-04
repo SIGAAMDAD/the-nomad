@@ -22,14 +22,10 @@ namespace TheNomad::Engine::SoundSystem {
         void Play() const {
             PlaySfx( m_hSfx );
         }
-        void Play( const vec3& in origin ) const {
-            PlayWorldSfx( origin, m_hSfx );
-        }
 
         int opConv() const {
             return m_hSfx;
         }
-
         int opImplConv() const {
             return m_hSfx;
         }

@@ -26,6 +26,9 @@ public:
     inline uint32_t NumEntities( void ) const {
         return m_nEntities;
     }
+    inline linkEntity_t *GetEntities( void ) {
+        return &m_ActiveEnts;
+    }
 private:
     linkEntity_t m_ActiveEnts;
     mapinfo_t *m_pMapInfo;

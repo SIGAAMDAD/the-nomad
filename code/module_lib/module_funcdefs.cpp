@@ -44,6 +44,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #ifdef USE_QUAKE3_SOUND
 #include "../game/snd_public.h"
 #endif
+#include "../sound/snd_local.h"
 
 //
 // c++ compatible wrappers around angelscript engine function calls
@@ -1000,6 +1001,31 @@ DEFINE_CALLBACK( SetColor ) {
 
 static nhandle_t RegisterSprite( nhandle_t hSpriteSheet, uint32_t nIndex ) {
 	return re.RegisterSprite( hSpriteSheet, nIndex );
+}
+
+static void PushListener( asIScriptGeneric *pGeneric )
+{
+	pGeneric->SetReturnDWord( (asDWORD)g_pSoundWorld->PushListener( pGeneric->GetArgDWord( 0 ) ) );
+}
+
+static void PlayEmitterSound( asIScriptGeneric *pGeneric )
+{
+	nhandle_t hEmitter = (nhandle_t )pGeneric->GetArgDWord( 0 );
+	float nVolume = pGeneric->GetArgFloat( 1 );
+	uint32_t nListenerMask = pGeneric->GetArgDWord( 2 );
+	sfxHandle_t hSfx = (sfxHandle_t)pGeneric->GetArgDWord( 3 );
+
+	g_pSoundWorld->PlayEmitterSound( hEmitter, nVolume, nListenerMask, hSfx );
+}
+
+static void RegisterEmitter( asIScriptGeneric *pGeneric )
+{
+	pGeneric->SetReturnDWord( (asDWORD)g_pSoundWorld->RegisterEmitter( pGeneric->GetArgDWord( 0 ) ) );
+}
+
+static void RemoveEmitter( asIScriptGeneric *pGeneric )
+{
+	g_pSoundWorld->RemoveEmitter( (nhandle_t)pGeneric->GetArgDWord( 0 ) );
 }
 
 static void CastRay( asIScriptGeneric *pGeneric ) {
@@ -2535,6 +2561,12 @@ void ModuleLib_Register_Engine( void )
 			
 			// could this be a class, YES, but I won't force it on the modder
 			
+			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::SoundSystem::RegisterEmitter( uint )", asFUNCTION( RegisterEmitter ) );
+			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::SoundSystem::PushListener( uint )", asFUNCTION( PushListener ) );
+			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::RemoveEmitter( int )", asFUNCTION( RemoveEmitter ) );
+			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::PlayEmitterSound( int, float, uint, int )", asFUNCTION( PlayEmitterSound ) );
+
+
 			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::PlaySfx( int )", WRAP_FN( Snd_PlaySfx ) );
 			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::AddLoopingTrack( int )", WRAP_FN( Snd_AddLoopingTrack ) );
 			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::ClearLoopingTracks()", WRAP_FN( Snd_ClearLoopingTracks ) );

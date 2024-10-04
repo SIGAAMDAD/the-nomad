@@ -32,8 +32,9 @@ public:
 	void Release( void );
 	bool Load( const char *npath,int64_t nTag );
 	
-	void Play( bool bLooping = false, uint64_t nTimeOffset = 0 );
+	void Play( bool bLooping = false, uint64_t nTimeOffset = 0, bool bIsWorldSound = false );
 	void Stop( void );
+	FMOD::Studio::EventInstance *AllocEvent( void );
 
 	inline const char *GetName( void ) const
 	{ return m_szName; }
@@ -67,18 +68,18 @@ private:
 };
 
 typedef struct emitter_s {
-	FMOD_3D_ATTRIBUTES attribs;
-	linkEntity_t *pLink;
-	struct emitter_s *pNext;
-	struct emitter_s *pPrev;
-	uint32_t nListenerMask;
-	float nVolume;
+	linkEntity_t *link;
+	FMOD::Studio::EventInstance *event;
+	struct emitter_s *next;
+	struct emitter_s *prev;
+	uint32_t listenerMask;
+	float volume;
 } emitter_t;
 
 typedef struct {
-	linkEntity_t *pLink;
-	uint32_t nListenerMask;
-	float nVolume;
+	linkEntity_t *link;
+	uint32_t listenerMask;
+	float volume;
 } listener_t;
 
 class CSoundWorld
@@ -89,7 +90,10 @@ public:
 	~CSoundWorld()
 	{ }
 
+	void Init( void );
 	void Update( void );
+
+	void PlayEmitterSound( nhandle_t hEmitter, float nVolume, uint32_t nListenerMask, sfxHandle_t hSfx );
 
 	void SetListenerVolume( nhandle_t hListener, float nVolume );
 	void SetListenerAudioMask( nhandle_t hListener, uint32_t nMask );
@@ -106,7 +110,7 @@ private:
 	linkEntity_t *m_pLinks;
 	
 	emitter_t *m_pszEmitters;
-	emitter_t *m_pCurrentEmitter;
+	emitter_t m_EmitterList;
 	uint32_t m_nEmitterCount;
 	
 	// one listener per player
@@ -177,5 +181,13 @@ private:
 
 extern cvar_t *snd_musicOn;
 extern cvar_t *snd_effectsOn;
+extern cvar_t *snd_musicVolume;
+extern cvar_t *snd_effectsVolume;
+extern cvar_t *snd_masterVolume;
+extern cvar_t *snd_debugPrint;
+extern cvar_t *snd_noSound;
+extern cvar_t *snd_muteUnfocused;
+extern cvar_t *snd_maxChannels;
+extern CSoundWorld *g_pSoundWorld;
 
 #endif
