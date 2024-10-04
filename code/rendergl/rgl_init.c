@@ -1511,6 +1511,7 @@ static void R_InitSamplers( void )
 void R_Init( void )
 {
 	GLenum error;
+	uint32_t i;
 
 	ri.Printf( PRINT_INFO, "---------- RE_Init ----------\n" );
 
@@ -1526,7 +1527,7 @@ void R_Init( void )
 	//
 	// init function tables
 	//
-	for ( uint32_t i = 0; i < FUNCTABLE_SIZE; i++ ) {
+	for ( i = 0; i < FUNCTABLE_SIZE; i++ ) {
 		rg.sinTable[i]		= sin( DEG2RAD( i * 360.0f / ( ( float ) ( FUNCTABLE_SIZE - 1 ) ) ) );
 		rg.squareTable[i]	= ( i < FUNCTABLE_SIZE/2 ) ? 1.0f : -1.0f;
 		rg.sawToothTable[i] = (float)i / FUNCTABLE_SIZE;
@@ -1573,8 +1574,9 @@ void R_Init( void )
 	R_InitSamplers();
 
 	error = nglGetError();
-	if ( error != GL_NO_ERROR )
-		ri.Printf(PRINT_INFO, COLOR_RED "glGetError() = 0x%x\n", error);
+	if ( error != GL_NO_ERROR ) {
+		ri.Printf( PRINT_INFO, COLOR_RED "glGetError() = 0x%x\n", error );
+	}
 	
 	//R_InitWorldBuffer();
 

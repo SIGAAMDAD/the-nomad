@@ -460,7 +460,7 @@ static void G_InitRenderRef( void )
 #endif
 
 	snprintf( dllName, sizeof( dllName ), DLL_PREFIX "TheNomad.RenderLib-%s." REND_ARCH_STRING DLL_EXT, dllPrefix );
-	renderLib = Sys_LoadDLL(dllName);
+	renderLib = Sys_LoadDLL( dllName );
 	if ( !renderLib ) {
 		Cvar_ForceReset( "g_renderer" );
 		snprintf( dllName, sizeof( dllName ), DLL_PREFIX "TheNomad.RenderLib-%s." REND_ARCH_STRING DLL_EXT, dllPrefix );
@@ -1254,7 +1254,7 @@ static void G_PlayDemo_f( void )
 
 static void G_Vid_Restart_f( void )
 {
-	if ( !N_stricmp( Cmd_Argv( 1 ), "keep_window" ) || !N_stricmp( Cmd_Argv( 1 ), "fast" ) ) {
+	if ( !N_stricmp( Cmd_Argv( 1 ), "fast" ) ) {
 		// fast path: keep window
 		G_Vid_Restart( REF_KEEP_WINDOW );
 	} else if ( !N_stricmp( Cmd_Argv( 1 ), "keep_context" ) ) {

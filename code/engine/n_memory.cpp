@@ -708,7 +708,7 @@ void *Z_Alloc( uint64_t size, memtag_t tag )
 		} else {
 			rover = rover->next;
 		}
-	} while (base->tag != TAG_FREE || base->size < size);
+	} while ( base->tag != TAG_FREE || base->size < size );
 #endif
 
 	//

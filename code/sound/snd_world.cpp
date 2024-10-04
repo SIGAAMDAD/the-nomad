@@ -43,11 +43,12 @@ void CSoundWorld::PlayEmitterSound( nhandle_t hEmitter, float nVolume, uint32_t 
 
 	em = &m_pszEmitters[ hEmitter ];
 	if ( em->event ) {
-		em->event->release();
+		ERRCHECK( em->event->release() );
 	}
 
 	pSource = sndManager->GetSound( hSfx );
 	if ( !pSource ) {
+		Con_DPrintf( "CSoundWorld::PlayEmitterSound: no sound for handle %i\n", hSfx );
 		return;
 	}
 	em->event = pSource->AllocEvent();
@@ -57,10 +58,13 @@ void CSoundWorld::PlayEmitterSound( nhandle_t hEmitter, float nVolume, uint32_t 
 
 	memset( &attribs, 0, sizeof( attribs ) );
 	memcpy( &attribs.position, em->link->origin, sizeof( vec3_t ) );
+	attribs.forward.x = attribs.forward.y = attribs.forward.z = 1.0f;
+	attribs.up.x = attribs.up.y = attribs.up.z = 1.0f;
 
-//	em->event->set3DAttributes( &attribs );
-	//em->event->setListenerMask( nListenerMask );
+	em->event->set3DAttributes( &attribs );
+	em->event->setListenerMask( nListenerMask );
 	em->event->setVolume( snd_effectsVolume->f / 100.0f );
+	em->event->start();
 }
 
 void CSoundWorld::SetListenerVolume( nhandle_t hListener, float nVolume )
@@ -134,9 +138,9 @@ nhandle_t CSoundWorld::RegisterEmitter( uint32_t nEntityNumber )
 			break;
 		}
 	}
-//	if ( ent == g_world->GetEntities() ) {
-//		N_Error( ERR_DROP, "CSoundWorld::RegisterEmitter: invalid entityNumber %u", nEntityNumber );
-//	}
+	if ( ent == g_world->GetEntities() && g_world->NumEntities() > 1 ) {
+		N_Error( ERR_DROP, "CSoundWorld::RegisterEmitter: invalid entityNumber %u", nEntityNumber );
+	}
 
 	hEmitter = m_nEmitterCount;
 	em = &m_pszEmitters[ m_nEmitterCount ];

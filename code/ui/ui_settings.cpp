@@ -1464,8 +1464,6 @@ static bool PerformanceMenu_FBO_Save( void )
 
 	if ( s_settingsMenu->performance.bloom ) {
 		Cvar_Set( "r_hdr", "1" );
-	} else {
-		Cvar_Set( "r_hdr", "0" );
 	}
 
 	if ( s_settingsMenu->performance.multisampleType != s_initial->performance.multisampleType ) {

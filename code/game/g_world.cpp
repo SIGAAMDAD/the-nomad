@@ -255,6 +255,8 @@ void G_SetMap_f( void ) {
 		gi.state = GS_INACTIVE;
 		gi.mapCache.currentMapLoaded = FS_INVALID_HANDLE;
 
+		Cbuf_ExecuteText( EXEC_APPEND, "vid_restart keep_context\n" );
+
 		Hunk_ClearToMark();
 		return;
 	}
@@ -401,6 +403,8 @@ void CGameWorld::LinkEntity( linkEntity_t *ent )
 	ent->prev = m_ActiveEnts.prev;
 	ent->next = &m_ActiveEnts;
 	m_ActiveEnts.prev = ent;
+
+	Con_DPrintf( "Allocated link entity %u\n", ent->entityNumber );
 }
 
 void CGameWorld::UnlinkEntity( linkEntity_t *ent )
