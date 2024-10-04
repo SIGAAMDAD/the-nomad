@@ -1046,7 +1046,7 @@ void GLSL_SetUniformTexture( shaderProgram_t *program, uint32_t uniformNum, text
 	}
 	
 	*compare = (uintptr_t)(void *)value;
-	if ( r_loadTexturesOnDemand->i ) {
+	if ( r_loadTexturesOnDemand->i /* && !( value == rg.firstPassImage && r_multisampleType->i == AntiAlias_MSAA ) */ ) {
 		nglUniformHandleui64ARB( uniforms[ uniformNum ], value->handle );
 	} else {
 		nglUniform1i( uniforms[ uniformNum ], uniformNum );
@@ -1501,6 +1501,13 @@ void GLSL_InitGPUShaders_f( void )
 
 	numGenShaders++;
 
+	extradefines[ 0 ] = '\0';
+	attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD;
+	if ( !GLSL_InitGPUShader( &rg.msaaShader, "msaa", attribs, qtrue, extradefines, qtrue, NULL, NULL ) ) {
+		ri.Error( ERR_FATAL, "Could not load msaa shader!" );
+	}
+	numGenShaders++;
+
 	for ( i = 0; i < LIGHTDEF_COUNT; i++ ) {
 		int lightType = i & LIGHTDEF_LIGHTTYPE_MASK;
 		qboolean fastLight = !( r_normalMapping->i || r_specularMapping->i || r_bloom->i );
@@ -1614,6 +1621,7 @@ void GLSL_InitGPUShaders_f( void )
 		numLightShaders++;
 	}
 
+	/*
 	attribs = ATTRIB_POSITION;
 	extradefines[0] = '\0';
 	if ( !GLSL_InitGPUShader( &rg.smaaEdgesShader, "SMAAEdges", attribs, qtrue, extradefines, qtrue, fallbackShader_SMAAEdges_vp, fallbackShader_SMAAEdges_fp ) ) {
@@ -1641,7 +1649,6 @@ void GLSL_InitGPUShaders_f( void )
 	GLSL_FinishGPUShader( &rg.smaaBlendShader );
 	numEtcShaders++;
 
-	/*
 	attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD;
 	extradefines[0] = '\0';
 	if ( !GLSL_InitGPUShader( &rg.ssaoShader, "ssao", attribs, qtrue, extradefines, qtrue, fallbackShader_ssao_vp, fallbackShader_ssao_fp ) ) {

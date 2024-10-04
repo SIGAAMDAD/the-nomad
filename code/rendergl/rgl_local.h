@@ -1222,11 +1222,7 @@ typedef struct
 	shaderProgram_t textureColorShader;
 	shaderProgram_t blurShader;
 	shaderProgram_t bloomResolveShader;
-	shaderProgram_t computeShader;
-	shaderProgram_t colormapShader;
-	shaderProgram_t smaaEdgesShader;
-	shaderProgram_t smaaWeightsShader;
-	shaderProgram_t smaaBlendShader;
+	shaderProgram_t msaaShader;
 
 	qboolean beganQuery;
 

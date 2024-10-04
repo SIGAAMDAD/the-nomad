@@ -524,8 +524,33 @@ static const void *RB_SwapBuffers( const void *data )
 			start = ri.Milliseconds();
 			if ( rg.msaaResolveFbo.frameBuffer && r_multisampleType->i == AntiAlias_MSAA ) {
 				// Resolving an RGB16F MSAA FBO to the screen messes with the brightness, so resolve to an RGB16F FBO first
-				FBO_FastBlit( &rg.renderFbo, NULL, &rg.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
-				FBO_FastBlit( &rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+				FBO_FastBlit( &rg.renderFbo, NULL, &rg.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT, GL_LINEAR );
+				RB_BloomPass( &rg.msaaResolveFbo, &rg.msaaResolveFbo );
+				
+				// FIXME: very hacky way of getting around the whole upscaling with msaa thing
+				GL_BindFramebuffer( GL_FRAMEBUFFER, rg.msaaResolveFbo.frameBuffer );
+
+				GLSL_UseProgram( &rg.bloomResolveShader );
+				GLSL_SetUniformInt( &rg.bloomResolveShader, UNIFORM_USE_HDR, r_hdr->i );
+				GL_BindTexture( UNIFORM_DIFFUSE_MAP, rg.msaaResolveFbo.colorImage[ 0 ] );
+				GLSL_SetUniformTexture( &rg.bloomResolveShader, UNIFORM_DIFFUSE_MAP, rg.msaaResolveFbo.colorImage[ 0 ] );
+				GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_EXPOSURE, r_autoExposure->f );
+				GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_GAMMA, r_gammaAmount->f );
+
+				RB_RenderPass();
+
+				GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
+				nglScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+				nglViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+
+				ivec4_t dstBox;
+
+				dstBox[0] = 0;
+				dstBox[1] = 0;
+				dstBox[2] = glConfig.vidWidth;
+				dstBox[3] = glConfig.vidHeight;
+
+				FBO_FastBlit( &rg.msaaResolveFbo, NULL, NULL, dstBox, GL_COLOR_BUFFER_BIT, GL_LINEAR );
 			}
 			else if ( rg.ssaaResolveFbo.frameBuffer && r_multisampleType->i == AntiAlias_SSAA ) {
 				ivec4_t dstBox;
@@ -608,7 +633,34 @@ static const void *RB_PostProcess( const void *data )
 	if ( rg.msaaResolveFbo.frameBuffer && r_multisampleType->i == AntiAlias_MSAA ) {
 		// Resolve the MSAA before anything else
 		// Can't resolve just part of the MSAA FBO, so multiple views will suffer a performance hit here
-		FBO_FastBlit( &rg.renderFbo, NULL, &rg.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+		// Resolving an RGB16F MSAA FBO to the screen messes with the brightness, so resolve to an RGB16F FBO first
+		FBO_FastBlit( &rg.renderFbo, NULL, &rg.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT, GL_LINEAR );
+		RB_BloomPass( &rg.msaaResolveFbo, &rg.msaaResolveFbo );
+				
+		// FIXME: very hacky way of getting around the whole upscaling with msaa thing
+		GL_BindFramebuffer( GL_FRAMEBUFFER, rg.msaaResolveFbo.frameBuffer );
+
+		GLSL_UseProgram( &rg.bloomResolveShader );
+		GLSL_SetUniformInt( &rg.bloomResolveShader, UNIFORM_USE_HDR, r_hdr->i );
+		GL_BindTexture( UNIFORM_DIFFUSE_MAP, rg.msaaResolveFbo.colorImage[ 0 ] );
+		GLSL_SetUniformTexture( &rg.bloomResolveShader, UNIFORM_DIFFUSE_MAP, rg.msaaResolveFbo.colorImage[ 0 ] );
+		GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_EXPOSURE, r_autoExposure->f );
+		GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_GAMMA, r_gammaAmount->f );
+
+		RB_RenderPass();
+
+		GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
+		nglScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+		nglViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+
+		ivec4_t dstBox;
+
+		dstBox[0] = 0;
+		dstBox[1] = 0;
+		dstBox[2] = glConfig.vidWidth;
+		dstBox[3] = glConfig.vidHeight;
+
+		FBO_FastBlit( &rg.msaaResolveFbo, NULL, NULL, dstBox, GL_COLOR_BUFFER_BIT, GL_LINEAR );
 		srcFbo = &rg.msaaResolveFbo;
 	} else if ( rg.ssaaResolveFbo.frameBuffer && r_multisampleType->i == AntiAlias_SSAA ) {
 		ivec4_t dstBox;

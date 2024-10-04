@@ -259,6 +259,45 @@ static void FBO_List_f( void )
 	ri.Printf( PRINT_INFO, " %0.02lf MB render buffer memory\n", (double)( renderBufferMemoryUsed / ( 1024 * 1024 ) ) );
 }
 
+static void FBO_CreateMultisampleTexture( fbo_t *fbo, texture_t *image, GLint index, GLenum hdrFormat )
+{
+	int sampleCount;
+
+	if ( image->id != 0 ) {
+		nglDeleteTextures( 1, &image->id );
+	}
+
+	sampleCount = 0;
+	if ( r_antialiasQuality->i == 0 ) {
+		sampleCount = 2;
+	} else if ( r_antialiasQuality->i == 1 ) {
+		sampleCount = 4;
+	} else if ( r_antialiasQuality->i == 2 ) {
+		sampleCount = 8;
+	}
+
+	nglGenTextures( 1, &image->id );
+
+	nglActiveTexture( GL_TEXTURE0 );
+	nglBindTexture( GL_TEXTURE_2D_MULTISAMPLE, image->id );
+//	nglTexParameteri( GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+//	nglTexParameteri( GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+//	nglTexParameteri( GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_BASE_LEVEL, 0 );
+	nglTexImage2DMultisample( GL_TEXTURE_2D_MULTISAMPLE, sampleCount, hdrFormat, fbo->width, fbo->height, GL_TRUE );
+	nglBindTexture( GL_TEXTURE_2D_MULTISAMPLE, 0 );
+
+	image->evicted = qtrue;
+
+	if ( r_loadTexturesOnDemand->i ) {
+		image->handle = nglGetTextureHandleARB( image->id );
+		nglMakeTextureHandleResidentARB( image->handle );
+	}
+
+	GL_BindFramebuffer( GL_FRAMEBUFFER, fbo->frameBuffer );
+	nglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D_MULTISAMPLE, image->id, 0 );
+	GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
+}
+
 static void FBO_Init_f( void )
 {
 	int hdrFormat, multisample;
@@ -341,24 +380,25 @@ static void FBO_Init_f( void )
 
 	if ( multisample && r_multisampleType->i == AntiAlias_MSAA ) {
 		FBO_Create( &rg.renderFbo, "_render", fboWidth, fboHeight );
+		FBO_CreateBuffer( &rg.renderFbo, hdrFormat, 0, multisample );
 		if ( r_bloom->i && r_hdr->i ) {
 			GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo.frameBuffer );
 			GLuint buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-
-			FBO_AttachImage( &rg.renderFbo, rg.firstPassImage, GL_COLOR_ATTACHMENT0 );
-			FBO_AttachImage( &rg.renderFbo, rg.bloomImage, GL_COLOR_ATTACHMENT1 );
-
+			FBO_CreateBuffer( &rg.renderFbo, hdrFormat, 1, multisample );
 			nglDrawBuffers( 2, buffers );
-		} else {
-			FBO_CreateBuffer( &rg.renderFbo, hdrFormat, 0, multisample );
-			FBO_CreateBuffer( &rg.renderFbo, GL_DEPTH24_STENCIL8, 0, multisample );
 		}
+		FBO_CreateBuffer( &rg.renderFbo, GL_DEPTH24_STENCIL8, 0, multisample );
 		R_CheckFBO( &rg.renderFbo );
 		GL_CheckErrors();
 
 		FBO_Create( &rg.msaaResolveFbo, "_msaaResolve", fboWidth, fboHeight );
-		FBO_AttachImage( &rg.msaaResolveFbo, rg.renderImage, GL_COLOR_ATTACHMENT0 );
-		FBO_AttachImage( &rg.msaaResolveFbo, rg.renderDepthImage, GL_DEPTH_ATTACHMENT );
+		FBO_AttachImage( &rg.msaaResolveFbo, rg.firstPassImage, GL_COLOR_ATTACHMENT0 );
+		if ( r_bloom->i && r_hdr->i ) {
+			GL_BindFramebuffer( GL_FRAMEBUFFER, rg.msaaResolveFbo.frameBuffer );
+			GLuint buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+			FBO_AttachImage( &rg.msaaResolveFbo, rg.bloomImage, GL_COLOR_ATTACHMENT1 );
+			nglDrawBuffers( 2, buffers );
+		}
 		R_CheckFBO( &rg.msaaResolveFbo );
 		GL_CheckErrors();
 	}
@@ -1182,6 +1222,7 @@ void RB_PostProcessSMAA( fbo_t *srcFbo )
 
 #define NUM_BLUR_PASSES 10
 
+/*
 static void R_ComputePass( fbo_t *srcFbo, fbo_t *dstFbo )
 {
 	ri.ProfileFunctionBegin( "ColorMapCompute" );
@@ -1220,16 +1261,12 @@ static void R_ComputePass( fbo_t *srcFbo, fbo_t *dstFbo )
 
 	GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
 }
+*/
 
 void RB_BloomPass( fbo_t *srcFbo, fbo_t *dstFbo )
 {
 	int i;
 	int horizontal;
-
-	if ( r_arb_compute_shader->i ) {
-		R_ComputePass( srcFbo, dstFbo );
-		return;
-	}
 
 	if ( !rg.bloomPingPongFbo[ 0 ].frameBuffer || !rg.bloomPingPongFbo[ 1 ].frameBuffer ) {
 		return;
@@ -1274,6 +1311,7 @@ void RB_BloomPass( fbo_t *srcFbo, fbo_t *dstFbo )
 void RB_FinishPostProcess( fbo_t *srcFbo )
 {
 	ri.ProfileFunctionBegin( "FinishPostProcess" );
+	/*
 	if ( r_arb_compute_shader->i ) {
 		if ( !r_bloom->i && !r_hdr->i ) {
 			// apply the gamma correction here
@@ -1287,7 +1325,9 @@ void RB_FinishPostProcess( fbo_t *srcFbo )
 			RB_RenderPass();
 		}
 	}
-	else if ( srcFbo ) {
+	else if ( srcFbo )
+	*/
+	{
 		if ( r_fixedRendering->i && ( glConfig.vidWidth != SCREEN_WIDTH || glConfig.vidHeight != SCREEN_HEIGHT ) ) {
 			// dynamically upscale to the real resolution from the virtual screen
 			// NOTE: while this might seem slow at first, in most cases it is faster
@@ -1304,25 +1344,18 @@ void RB_FinishPostProcess( fbo_t *srcFbo )
 
 			GLSL_UseProgram( &rg.bloomResolveShader );
 			GLSL_SetUniformInt( &rg.bloomResolveShader, UNIFORM_USE_HDR, r_hdr->i );
-			GL_BindTexture( UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
-			GLSL_SetUniformTexture( &rg.bloomResolveShader, UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
+			GL_BindTexture( UNIFORM_DIFFUSE_MAP, srcFbo->colorImage[ 0 ] );
+			GLSL_SetUniformTexture( &rg.bloomResolveShader, UNIFORM_DIFFUSE_MAP, srcFbo->colorImage[ 0 ] );
 			GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_EXPOSURE, r_autoExposure->f );
 			GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_GAMMA, r_gammaAmount->f );
 
 			RB_RenderPass();
-
-//			GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
-
-//			GLSL_UseProgram( &rg.textureColorShader );
-//			GLSL_SetUniformTexture( &rg.textureColorShader, UNIFORM_DIFFUSE_MAP, rg.renderImage );
-//			GL_BindTexture( UNIFORM_DIFFUSE_MAP, rg.renderImage );
-//			RB_RenderPass();
 		} else {
 			GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
 			GLSL_UseProgram( &rg.bloomResolveShader );
 			GLSL_SetUniformInt( &rg.bloomResolveShader, UNIFORM_USE_HDR, r_hdr->i );
-			GL_BindTexture( UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
-			GLSL_SetUniformTexture( &rg.bloomResolveShader, UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
+			GL_BindTexture( UNIFORM_DIFFUSE_MAP, srcFbo->colorImage[ 0 ] );
+			GLSL_SetUniformTexture( &rg.bloomResolveShader, UNIFORM_DIFFUSE_MAP, srcFbo->colorImage[ 0 ] );
 			GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_EXPOSURE, r_autoExposure->f );
 			GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_GAMMA, r_gammaAmount->f );
 

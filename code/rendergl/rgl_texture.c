@@ -3063,10 +3063,9 @@ void R_CreateBuiltinTextures( void )
 
 		rg.bloomImage = R_CreateImage( "_bloom", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE
 			| IMGFLAG_FBO, GL_RGBA16F );
-			
+		
 		rg.firstPassImage = R_CreateImage( "_bloomFirstPass", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION
 			| IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_RGBA16F );
-			
 		for ( x = 0; x < 2; x++ ) {
 			rg.bloomPingPongImage[ x ] = R_CreateImage( va( "_bloomPingPong%i", x ), NULL, width, height, IMGTYPE_COLORALPHA,
 				IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_FBO, GL_RGBA16F );

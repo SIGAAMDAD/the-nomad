@@ -2,8 +2,8 @@ layout( location = 0 ) out vec4 a_Color;
 
 in vec2 v_TexCoords;
 
-uniform sampler2D u_DiffuseMap;
-uniform sampler2D u_BrightMap;
+TEXTURE2D u_DiffuseMap;
+TEXTURE2D u_BrightMap;
 
 uniform int u_AntiAliasing;
 uniform int u_AntiAliasingQuality;
