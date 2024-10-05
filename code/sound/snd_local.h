@@ -67,13 +67,20 @@ private:
 	int m_nEventCount;
 };
 
+typedef struct {
+	FMOD::Studio::EventInstance *event;
+	uint64_t timestamp;
+} channel_t;
+
 typedef struct emitter_s {
 	linkEntity_t *link;
-	FMOD::Studio::EventInstance *event;
+	channel_t *channel;
 	struct emitter_s *next;
 	struct emitter_s *prev;
 	uint32_t listenerMask;
-	float volume;
+	float forward;
+	float up;
+	float velocity;
 } emitter_t;
 
 typedef struct {
@@ -91,6 +98,7 @@ public:
 	{ }
 
 	void Init( void );
+	void Shutdown( void );
 	void Update( void );
 
 	void PlayEmitterSound( nhandle_t hEmitter, float nVolume, uint32_t nListenerMask, sfxHandle_t hSfx );
@@ -98,7 +106,7 @@ public:
 	void SetListenerVolume( nhandle_t hListener, float nVolume );
 	void SetListenerAudioMask( nhandle_t hListener, uint32_t nMask );
 	
-	void SetEmitterPosition( nhandle_t hEmitter, const vec3_t origin );
+	void SetEmitterPosition( nhandle_t hEmitter, const vec3_t origin, float forward, float up, float speed );
 	void SetEmitterAudioMask( nhandle_t hEmitter, uint32_t nMask );
 	void SetEmitterVolume( nhandle_t hEmitter, float nVolume );
 	
@@ -107,6 +115,10 @@ public:
 	nhandle_t RegisterEmitter( uint32_t nEntityNumber );
 	void RemoveEmitter( nhandle_t hEmitter );
 private:
+	channel_t *AllocateChannel( CSoundSource *pSource );
+	void ReleaseChannel( channel_t *pChannel );
+	bool LoadOcclusionGeometry( void );
+
 	linkEntity_t *m_pLinks;
 	
 	emitter_t *m_pszEmitters;
@@ -116,6 +128,10 @@ private:
 	// one listener per player
 	listener_t m_szListeners[ 4 ];
 	uint32_t m_nListenerCount;
+
+	FMOD::Geometry *m_pGeomtryBuffer;
+
+	channel_t *m_pszChannels;
 };
 
 typedef struct {
@@ -123,6 +139,12 @@ typedef struct {
 	FMOD_GUID guid;
 	nhandle_t hBank;
 } soundEvent_t;
+
+typedef struct {
+	int samplerate;
+	int speakerCount;
+	FMOD_SPEAKERMODE audioMode;
+} soundInfo_t;
 
 class CSoundSystem
 {
@@ -177,6 +199,8 @@ private:
 
 	FMOD::ChannelGroup *m_pUIGroup;
 	FMOD::ChannelGroup *m_pSFXGroup;
+
+	soundInfo_t m_AudioInfo;
 };
 
 extern cvar_t *snd_musicOn;

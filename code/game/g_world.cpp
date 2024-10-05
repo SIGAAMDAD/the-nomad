@@ -17,7 +17,20 @@ const dirtype_t inversedirs[NUMDIRS] = {
 	DIR_NULL, // inside
 };
 
-static const uint64_t inversedirs_flags[ NUMDIRS ] = {
+const uint64_t tileside_flags[ NUMDIRS ] = {
+	TILESIDE_NORTH,
+	TILESIDE_NORTH_EAST,
+	TILESIDE_EAST,
+	TILESIDE_SOUTH_EAST,
+	TILESIDE_SOUTH,
+	TILESIDE_SOUTH_WEST,
+	TILESIDE_WEST,
+	TILESIDE_NORTH_WEST,
+
+	TILESIDE_INSIDE
+};
+
+const uint64_t inversedirs_flags[ NUMDIRS ] = {
 	TILESIDE_SOUTH,
 	TILESIDE_SOUTH_WEST,
 	TILESIDE_WEST,
@@ -27,7 +40,7 @@ static const uint64_t inversedirs_flags[ NUMDIRS ] = {
 	TILESIDE_EAST,
 	TILESIDE_SOUTH_EAST,
 
-	TILESIDE_INSIDE, // inside
+	TILESIDE_INSIDE
 };
 
 static bbox_t *wallBounds;
@@ -255,9 +268,9 @@ void G_SetMap_f( void ) {
 		gi.state = GS_INACTIVE;
 		gi.mapCache.currentMapLoaded = FS_INVALID_HANDLE;
 
-		Cbuf_ExecuteText( EXEC_APPEND, "vid_restart keep_context\n" );
-
 		Hunk_ClearToMark();
+
+		Cbuf_ExecuteText( EXEC_APPEND, "vid_restart keep_context\n" );
 		return;
 	}
 

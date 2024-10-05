@@ -25,9 +25,6 @@ namespace TheNomad::GameSystem {
 		void OnInit() {
 			m_nGameTic = 0;
 			m_nDeltaTics = 0;
-			if ( TheNomad::SGame::sgame_MaxFps.GetFloat() != 0.0f ) {
-				m_nLimitFPS = 1.0f / TheNomad::SGame::sgame_MaxFps.GetFloat();
-			}
 			m_nLastFrameTime = 0.0f;
 			m_nDeltaTime = 0.0f;
 
@@ -88,11 +85,15 @@ namespace TheNomad::GameSystem {
 			return m_nDeltaTime;
 		}
 		void SetMsec( uint msec ) {
+			if ( TheNomad::SGame::sgame_MaxFps.GetFloat() != 0.0f ) {
+				m_nLimitFPS = 1.0f / TheNomad::SGame::sgame_MaxFps.GetFloat();
+			}
+
+			m_nDeltaTics = msec - m_nGameTic;
+
 			m_nGameTic = msec;
 			m_nDeltaTime = ( float( msec ) - m_nLastFrameTime ) * m_nLimitFPS;
 			m_nLastFrameTime = float( msec );
-
-			m_nDeltaTics = msec - m_nGameTic;
 		}
 
 		TheNomad::Engine::Renderer::GPUConfig& GetGPUConfig() {
@@ -139,7 +140,7 @@ namespace TheNomad::GameSystem {
 		private int m_JoystichPitch = 0;
 
 		// timing
-		private uint m_nDeltaTics = 0;
+		private float m_nDeltaTics = 0;
 		private uint m_nGameTic = 0;
 		private float m_nLastFrameTime = 0.0f;
 		private float m_nDeltaTime = 0.0f;

@@ -907,11 +907,12 @@ static void Con_DrawNotify( void ) {
 	int32_t		i;
 	uint64_t	time;
 
-	const int windowFlags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize
-		| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_AlwaysAutoResize
+	const int windowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize
+		| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoMouseInputs
 		| ImGuiWindowFlags_NoBackground;
 
 	ImGui::Begin( "Notify", NULL, windowFlags );
+	ImGui::SetWindowSize( ImVec2( gi.gpuConfig.vidWidth, 360 * gi.scale ) );
 	ImGui::SetWindowPos( ImVec2( 0, 700 * gi.scale ) );
 	ImGui::SetWindowFontScale( 0.75f * gi.scale );
 

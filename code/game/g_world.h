@@ -35,6 +35,12 @@ private:
     uint32_t m_nEntities;
 };
 
+extern const uint64_t tileside_flags[ NUMDIRS ];
+extern const uint64_t inversedirs_flags[ NUMDIRS ];
+
+#define IsWall( dir, flags ) (qboolean)( ( flags ) & tileside_flags[ dir ] )
+#define IsDoubleSidedWall( dir, flags ) (qboolean)( ( flags ) & inversedirs_flags[ dir ] )
+
 #define ENTITYNUM_INVALID (unsigned)( ~0 )
 #define ENTITYNUM_WALL ENTITYNUM_INVALID - 1
 #define MAX_ENTITIES 4096

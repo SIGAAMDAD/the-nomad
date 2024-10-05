@@ -12,21 +12,15 @@ cvar_t *snd_debugPrint;
 cvar_t *snd_noSound;
 cvar_t *snd_muteUnfocused;
 cvar_t *snd_maxChannels;
+cvar_t *snd_speakerMode;
+cvar_t *snd_debug;
 
 CSoundWorld *g_pSoundWorld;
 
 static FMOD::Studio::System *s_pStudioSystem;
 static FMOD::System *s_pCoreSystem;
 
-#define SOUNDTHREAD_PLAYSOURCE	0
-#define SOUNDTHREAD_STOPSOURCE	1
-
-static pthread_cond_t s_SoundSignal;
-static pthread_mutex_t s_SoundMutex;
-static pthread_t s_hSoundThread;
-static eastl::atomic<qboolean> s_bExitThread;
-static eastl::atomic<uint32_t> s_nThreadCommand;
-static eastl::atomic<sfxHandle_t> s_nThreadData;
+static fileHandle_t fmodLogFile;
 
 void FMOD_Error( const char *call, FMOD_RESULT result )
 {
@@ -299,85 +293,59 @@ void CSoundSystem::SetParameter( const char *pName, float value )
 static FMOD_RESULT fmod_debug_callback( FMOD_DEBUG_FLAGS flags, const char *file, int line, const char *func, const char *message )
 {
 	if ( flags & FMOD_DEBUG_LEVEL_ERROR ) {
+		FS_Printf( fmodLogFile, "[%s:%s:%i] %s", file, func, line, message );
 		N_Error( ERR_DROP, COLOR_RED "[FMOD API][%s:%s:%i] %s", file, func, line, message );
 	} else if ( flags & FMOD_DEBUG_LEVEL_WARNING ) {
+		FS_Printf( fmodLogFile, "[%s:%s:%i] %s", file, func, line, message );
 		Con_Printf( COLOR_YELLOW "[FMOD API][%s:%s:%i] %s", file, func, line, message );
 	} else {
+		FS_Printf( fmodLogFile, "[%s:%s:%i] %s", file, func, line, message );
 		Con_Printf( "[FMOD API][%s:%s:%i] %s", file, func, line, message );
 	}
 
 	return FMOD_OK;
 }
 
-void *Sound_Thread( void *arg )
-{
-	CSoundSource *pSource;
-
-	while ( 1 ) {
-		if ( s_bExitThread.load() ) {
-			break;
-		}
-
-		pthread_mutex_lock( &s_SoundMutex );
-		pthread_cond_wait( &s_SoundSignal, &s_SoundMutex );
-		pthread_mutex_unlock( &s_SoundMutex );
-
-		if ( !s_nThreadData.load() ) {
-			continue;
-		}
-
-		switch ( s_nThreadCommand.load() ) {
-		case SOUNDTHREAD_PLAYSOURCE: {
-			pSource = sndManager->GetSound( s_nThreadData.load() );
-			if ( !pSource ) {
-				break;;
-			}
-			pSource->Play();
-			break; }
-		case SOUNDTHREAD_STOPSOURCE: {
-			pSource = sndManager->GetSound( s_nThreadData.load() );
-			if ( !pSource ) {
-				break;;
-			}
-			pSource->Stop();
-			break; }
-		};
-	}
-
-	return NULL;
-}
-
 void CSoundSystem::Init( void )
 {
 	int ret;
+	FMOD_INITFLAGS flags;
+
+	if ( snd_debug->i ) {
+		Con_Printf( "Sound debug log enabled, creating logfile...\n" );
+
+		fmodLogFile = FS_FOpenWrite( "Logs/fmod.log" );
+		if ( fmodLogFile ) {
+			Con_Printf( COLOR_YELLOW "WARNING: Error creating logfile!\n" );
+		}
+
+		ERRCHECK( FMOD::Debug_Initialize( FMOD_DEBUG_LEVEL_LOG | FMOD_DEBUG_LEVEL_ERROR | FMOD_DEBUG_LEVEL_WARNING | FMOD_DEBUG_TYPE_TRACE
+			| FMOD_DEBUG_DISPLAY_THREAD, FMOD_DEBUG_MODE_CALLBACK, fmod_debug_callback, NULL ) );
+	}
+
+	flags = FMOD_INIT_CHANNEL_DISTANCEFILTER | FMOD_INIT_PROFILE_ENABLE | FMOD_INIT_THREAD_UNSAFE | FMOD_INIT_VOL0_BECOMES_VIRTUAL
+		| FMOD_INIT_CHANNEL_LOWPASS;
 
 	ERRCHECK( FMOD::Studio::System::create( &s_pStudioSystem ) );
 	ERRCHECK( s_pStudioSystem->getCoreSystem( &s_pCoreSystem ) );
-	ERRCHECK( s_pCoreSystem->setSoftwareFormat( 48000, FMOD_SPEAKERMODE_5POINT1, 0 ) );
+
+	// get default audio info
+	memset( &m_AudioInfo, 0, sizeof( m_AudioInfo ) );
+	ERRCHECK( s_pCoreSystem->setSoftwareFormat( 48000, (FMOD_SPEAKERMODE)snd_speakerMode->i, 0 ) );
+	
+	ERRCHECK( s_pCoreSystem->getSoftwareFormat( &m_AudioInfo.samplerate, &m_AudioInfo.audioMode, &m_AudioInfo.speakerCount ) );
+	Cvar_SetIntegerValue( "snd_speakerMode", m_AudioInfo.audioMode );
+
 	ERRCHECK( s_pCoreSystem->set3DSettings( 1.0f, DISTANCEFACTOR, 0.5f ) );
-	ERRCHECK( FMOD::Debug_Initialize( FMOD_DEBUG_LEVEL_LOG | FMOD_DEBUG_LEVEL_ERROR | FMOD_DEBUG_LEVEL_WARNING | FMOD_DEBUG_TYPE_TRACE
-		| FMOD_DEBUG_DISPLAY_THREAD, FMOD_DEBUG_MODE_CALLBACK, fmod_debug_callback, NULL ) );
 #ifdef _NOMAD_DEBUG
 	ERRCHECK( s_pStudioSystem->initialize( snd_maxChannels->i, FMOD_STUDIO_INIT_LIVEUPDATE,
-		FMOD_INIT_PROFILE_ENABLE | FMOD_INIT_CHANNEL_DISTANCEFILTER, NULL ) );
+		flags, NULL ) );
 #else
 	ERRCHECK( s_pStudioSystem->initialize( snd_maxChannels->i, FMOD_STUDIO_INIT_NORMAL,
-		FMOD_INIT_PROFILE_ENABLE | FMOD_INIT_CHANNEL_DISTANCEFILTER, NULL ) );
+		flags, NULL ) );
 #endif
 	ERRCHECK( s_pCoreSystem->createChannelGroup( "SFX", &m_pSFXGroup ) );
 
-	if ( !sys_forceSingleThreading->i ) {
-		Con_Printf( "Launching SoundThread...\n" );
-
-		s_bExitThread.store( qfalse );
-		pthread_mutex_init( &s_SoundMutex, NULL );
-		pthread_cond_init( &s_SoundSignal, NULL );
-
-		ret = pthread_create( &s_hSoundThread, NULL, Sound_Thread, NULL );
-		if ( ret ) {
-			Con_Printf( COLOR_RED "Error creating SoundThread, pthread_create(): %s", strerror( errno ) );
-		}
-	}
 	m_pStudioSystem = s_pStudioSystem;
 	m_pSystem = s_pCoreSystem;
 
@@ -424,18 +392,17 @@ void CSoundSystem::Shutdown( void )
 //	ERRCHECK( s_pStudioSystem->unloadAll() );
 	ERRCHECK( s_pStudioSystem->release() );
 
-	if ( !sys_forceSingleThreading->i ) {
-		pthread_cond_signal( &s_SoundSignal );
-
-		s_bExitThread.store( qtrue );
-		pthread_join( s_hSoundThread, NULL );
-
-		pthread_cond_destroy( &s_SoundSignal );
-		pthread_mutex_destroy( &s_SoundMutex );
-	}
-
 	gi.soundRegistered = qfalse;
 	gi.soundStarted = qfalse;
+
+	if ( g_pSoundWorld ) {
+		g_pSoundWorld->Shutdown();
+	}
+	g_pSoundWorld = NULL;
+
+	if ( fmodLogFile ) {
+		FS_FClose( fmodLogFile );
+	}
 
 	Z_FreeTags( TAG_SFX );
 	Z_FreeTags( TAG_MUSIC );
@@ -522,18 +489,11 @@ void Snd_PlaySfx( sfxHandle_t sfx )
 	if ( sfx == -1 || !snd_effectsOn->i ) {
 		return;
 	}
-
-	if ( !sys_forceSingleThreading->i ) {
-		s_nThreadData.store( sfx );
-		s_nThreadCommand.store( SOUNDTHREAD_PLAYSOURCE );
-		pthread_cond_signal( &s_SoundSignal );
-	} else {
-		CSoundSource *pSource = sndManager->GetSound( sfx );
-		if ( !pSource ) {
-			return;
-		}
-		pSource->Play();
+	CSoundSource *pSource = sndManager->GetSound( sfx );
+	if ( !pSource ) {
+		return;
 	}
+	pSource->Play();
 }
 
 void Snd_StopSfx( sfxHandle_t sfx )
@@ -541,18 +501,11 @@ void Snd_StopSfx( sfxHandle_t sfx )
 	if ( sfx == -1 || !snd_effectsOn->i ) {
 		return;
 	}
-
-	if ( !sys_forceSingleThreading->i ) {
-		s_nThreadData.store( sfx );
-		s_nThreadCommand.store( SOUNDTHREAD_STOPSOURCE );
-		pthread_cond_signal( &s_SoundSignal );
-	} else {
-		CSoundSource *pSource = sndManager->GetSound( sfx );
-		if ( !pSource ) {
-			return;
-		}
-		pSource->Stop();
+	CSoundSource *pSource = sndManager->GetSound( sfx );
+	if ( !pSource ) {
+		return;
 	}
+	pSource->Stop();
 }
 
 static void Snd_Toggle_f( void )
@@ -744,83 +697,6 @@ void Snd_StartupLevel_f( void ) {
 	sndManager->m_nLevelSources = 0;
 }
 
-void Snd_Init( void )
-{
-	Con_Printf( "---------- Snd_Init ----------\n" );
-
-	snd_effectsOn = Cvar_Get( "snd_effectsOn", "1", CVAR_SAVE );
-	Cvar_CheckRange( snd_effectsOn, "0", "1", CVT_INT );
-	Cvar_SetDescription( snd_effectsOn, "Toggles sound effects." );
-
-	snd_musicOn = Cvar_Get( "snd_musicOn", "1", CVAR_SAVE );
-	Cvar_CheckRange( snd_musicOn, "0", "1", CVT_INT );
-	Cvar_SetDescription( snd_musicOn, "Toggles music." );
-
-	snd_effectsVolume = Cvar_Get( "snd_effectsVolume", "50", CVAR_SAVE );
-	Cvar_CheckRange( snd_effectsVolume, "0", "100", CVT_INT );
-	Cvar_SetDescription( snd_effectsVolume, "Sets global sound effects volume." );
-
-	snd_musicVolume = Cvar_Get( "snd_musicVolume", "80", CVAR_SAVE );
-	Cvar_CheckRange( snd_musicVolume, "0", "100", CVT_INT );
-	Cvar_SetDescription( snd_musicVolume, "Sets volume for music." );
-
-	snd_masterVolume = Cvar_Get( "snd_masterVolume", "80", CVAR_SAVE );
-	Cvar_CheckRange( snd_masterVolume, "0", "100", CVT_INT );
-	Cvar_SetDescription( snd_masterVolume, "Sets the cap for sfx and music volume." );
-
-/*
-	snd_debugPrint = Cvar_Get( "snd_debugPrint", "0", CVAR_CHEAT | CVAR_TEMP );
-	Cvar_CheckRange( snd_debugPrint, "0", "1", CVT_INT );
-	Cvar_SetDescription( snd_debugPrint, "Toggles OpenAL-soft debug messages." );
-*/
-
-	snd_maxChannels = Cvar_Get( "snd_maxChannels", "256", CVAR_SAVE );
-	Cvar_CheckRange( snd_maxChannels, "24", "512", CVT_INT );
-	Cvar_SetDescription( snd_maxChannels,
-		"Sets the maximum amount of channels the engine can process at a time.\n"
-		"Higher values will increase CPU load.\n"
-	);
-
-#ifdef _WIN32
-	Com_StartupVariable( "s_noSound" );
-	snd_noSound = Cvar_Get( "s_noSound", "1", CVAR_LATCH );
-#else
-	Com_StartupVariable( "s_noSound" );
-	snd_noSound = Cvar_Get( "s_noSound", "0", CVAR_LATCH );
-#endif
-
-//    snd_device = Cvar_Get( "snd_device", "default", CVAR_LATCH | CVAR_SAVE );
-  //  Cvar_SetDescription( snd_device, "the audio device to use ('default' for the default audio device)" );
-
-	Cvar_Get( "snd_specialFlag", "-1", CVAR_TEMP | CVAR_PROTECTED );
-
-	snd_muteUnfocused = Cvar_Get( "snd_muteUnfocused", "1", CVAR_SAVE );
-	Cvar_SetDescription( snd_muteUnfocused, "Toggles muting sounds when the game's window isn't focused." );
-
-	// init sound manager
-	sndManager = (CSoundSystem *)Hunk_Alloc( sizeof( *sndManager ), h_low );
-	sndManager->Init();
-
-	Cmd_AddCommand( "snd.setvolume", Snd_SetVolume_f );
-	Cmd_AddCommand( "snd.toggle", Snd_Toggle_f );
-	Cmd_AddCommand( "snd.updatevolume", Snd_UpdateVolume_f );
-	Cmd_AddCommand( "snd.list_files", Snd_ListFiles_f );
-	Cmd_AddCommand( "snd.clear_tracks", Snd_ClearTracks_f );
-	Cmd_AddCommand( "snd.play_sfx", Snd_PlaySfx_f );
-	Cmd_AddCommand( "snd.queue_track", Snd_QueueTrack_f );
-//    Cmd_AddCommand( "snd.audio_info", Snd_AudioInfo_f );
-	Cmd_AddCommand( "snd.startup_level", Snd_StartupLevel_f );
-	Cmd_AddCommand( "snd.unload_level", Snd_UnloadLevel_f );
-	Cmd_AddCommand( "snd.play_track", Snd_PlayTrack_f );
-
-	Snd_RegisterTrack( "warcrimes_are_permitted.ogg" );
-
-	gi.soundStarted = qtrue;
-	gi.soundRegistered = qtrue;
-
-	Con_Printf( "----------------------------------\n" );
-}
-
 void Snd_Restart( void )
 {
 	sndManager->Shutdown();
@@ -835,6 +711,9 @@ void Snd_Shutdown( void )
 
 void Snd_Update( int msec )
 {
+	if ( g_pSoundWorld ) {
+		g_pSoundWorld->Update();
+	}
 	sndManager->Update();
 }
 
@@ -916,4 +795,86 @@ void Snd_AddLoopingTrack( sfxHandle_t handle, uint64_t timeOffset )
 
 	track->Play( true, timeOffset );
 	sndManager->m_szLoopingTracks.emplace_back( track );
+}
+
+void Snd_Init( void )
+{
+	Con_Printf( "---------- Snd_Init ----------\n" );
+
+	snd_effectsOn = Cvar_Get( "snd_effectsOn", "1", CVAR_SAVE );
+	Cvar_CheckRange( snd_effectsOn, "0", "1", CVT_INT );
+	Cvar_SetDescription( snd_effectsOn, "Toggles sound effects." );
+
+	snd_musicOn = Cvar_Get( "snd_musicOn", "1", CVAR_SAVE );
+	Cvar_CheckRange( snd_musicOn, "0", "1", CVT_INT );
+	Cvar_SetDescription( snd_musicOn, "Toggles music." );
+
+	snd_effectsVolume = Cvar_Get( "snd_effectsVolume", "50", CVAR_SAVE );
+	Cvar_CheckRange( snd_effectsVolume, "0", "100", CVT_INT );
+	Cvar_SetDescription( snd_effectsVolume, "Sets global sound effects volume." );
+
+	snd_musicVolume = Cvar_Get( "snd_musicVolume", "80", CVAR_SAVE );
+	Cvar_CheckRange( snd_musicVolume, "0", "100", CVT_INT );
+	Cvar_SetDescription( snd_musicVolume, "Sets volume for music." );
+
+	snd_masterVolume = Cvar_Get( "snd_masterVolume", "80", CVAR_SAVE );
+	Cvar_CheckRange( snd_masterVolume, "0", "100", CVT_INT );
+	Cvar_SetDescription( snd_masterVolume, "Sets the cap for sfx and music volume." );
+
+/*
+	snd_debugPrint = Cvar_Get( "snd_debugPrint", "0", CVAR_CHEAT | CVAR_TEMP );
+	Cvar_CheckRange( snd_debugPrint, "0", "1", CVT_INT );
+	Cvar_SetDescription( snd_debugPrint, "Toggles OpenAL-soft debug messages." );
+*/
+
+	snd_maxChannels = Cvar_Get( "snd_maxChannels", "256", CVAR_SAVE );
+	Cvar_CheckRange( snd_maxChannels, "24", "512", CVT_INT );
+	Cvar_SetDescription( snd_maxChannels,
+		"Sets the maximum amount of channels the engine can process at a time.\n"
+		"Higher values will increase CPU load.\n"
+	);
+
+#ifdef _WIN32
+	Com_StartupVariable( "s_noSound" );
+	snd_noSound = Cvar_Get( "s_noSound", "1", CVAR_LATCH );
+#else
+	Com_StartupVariable( "s_noSound" );
+	snd_noSound = Cvar_Get( "s_noSound", "0", CVAR_LATCH );
+#endif
+
+//    snd_device = Cvar_Get( "snd_device", "default", CVAR_LATCH | CVAR_SAVE );
+  //  Cvar_SetDescription( snd_device, "the audio device to use ('default' for the default audio device)" );
+	snd_debug = Cvar_Get( "snd_debug", "0", CVAR_SAVE );
+	Cvar_SetDescription( snd_debug, "Enables fmod and sound system debug logging" );
+
+	Cvar_Get( "snd_specialFlag", "-1", CVAR_TEMP | CVAR_PROTECTED );
+
+	snd_muteUnfocused = Cvar_Get( "snd_muteUnfocused", "1", CVAR_SAVE );
+	Cvar_SetDescription( snd_muteUnfocused, "Toggles muting sounds when the game's window isn't focused." );
+
+	snd_speakerMode = Cvar_Get( "snd_speakerMode", "0", CVAR_SAVE );
+	Cvar_SetDescription( snd_speakerMode, "Sets the speaker mode used by fmod" );
+
+	// init sound manager
+	sndManager = (CSoundSystem *)Hunk_Alloc( sizeof( *sndManager ), h_low );
+	sndManager->Init();
+
+	Cmd_AddCommand( "snd.setvolume", Snd_SetVolume_f );
+	Cmd_AddCommand( "snd.toggle", Snd_Toggle_f );
+	Cmd_AddCommand( "snd.updatevolume", Snd_UpdateVolume_f );
+	Cmd_AddCommand( "snd.list_files", Snd_ListFiles_f );
+	Cmd_AddCommand( "snd.clear_tracks", Snd_ClearTracks_f );
+	Cmd_AddCommand( "snd.play_sfx", Snd_PlaySfx_f );
+	Cmd_AddCommand( "snd.queue_track", Snd_QueueTrack_f );
+//    Cmd_AddCommand( "snd.audio_info", Snd_AudioInfo_f );
+	Cmd_AddCommand( "snd.startup_level", Snd_StartupLevel_f );
+	Cmd_AddCommand( "snd.unload_level", Snd_UnloadLevel_f );
+	Cmd_AddCommand( "snd.play_track", Snd_PlayTrack_f );
+
+	Snd_RegisterTrack( "warcrimes_are_permitted.ogg" );
+
+	gi.soundStarted = qtrue;
+	gi.soundRegistered = qtrue;
+
+	Con_Printf( "----------------------------------\n" );
 }

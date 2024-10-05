@@ -47,15 +47,20 @@ namespace TheNomad::SGame {
 		
 		private void WalkMove() {
 			float speed;
-			const uint64 gameTic = TheNomad::GameSystem::GameManager.GetGameTic();
+			const uint gameTic = TheNomad::GameSystem::GameManager.GetGameTic();
 			vec3 accel = m_EntityData.GetPhysicsObject().GetAcceleration();
 			
 			KeyMove();
 
 			speed = sgame_BaseSpeed.GetFloat();
 
-			accel.y += forward * speed;
-			accel.x += side * speed;
+			if ( forward != 0.0f || side != 0.0f ) {
+				const vec3 dir = m_EntityData.GetOrigin() - accel;
+				const float len = Util::VectorLength( dir );
+				const vec3 normal = dir / len;
+			}
+			accel.x += side;
+			accel.y += forward;
 
 			if ( forward != 0.0f || side != 0.0f ) {
 				if ( ( gameTic % 10 ) == 0 ) {
@@ -121,7 +126,7 @@ namespace TheNomad::SGame {
 				};
 			}
 			if ( accel.x != 0.0f || accel.y != 0.0f ) {
-				if ( ( move_toggle % ( 16 + ( TheNomad::Engine::CvarVariableInteger( "com_maxfps" ) / 10 ) ) ) == 0.0f ) {
+				if ( TheNomad::GameSystem::GameManager.GetDeltaTics() - move_toggle >= 500 ) {
 					switch ( TheNomad::Util::PRandom() & 3 ) {
 					case 0:
 					case 2:
@@ -133,7 +138,7 @@ namespace TheNomad::SGame {
 						break;
 					};
 				}
-				move_toggle++;
+				move_toggle = gameTic;
 			}
 			
 			m_EntityData.GetPhysicsObject().SetAcceleration( accel );
@@ -373,6 +378,10 @@ namespace TheNomad::SGame {
 			ImGui::Text( "CameraPos: [ " + Game_CameraPos.x + ", " + Game_CameraPos.y + " ]" );
 			ImGui::Text( "Forward: " + forward );
 			ImGui::Text( "Side: " + side );
+			ImGui::Text( "ForwardVec: " + forwardvec.x + " "  + forwardvec.y + " " + forwardvec.z );
+			ImGui::Text( "SideVec: " + sidevec.x + " "  + sidevec.y + " " + sidevec.z );
+			const vec3 dirvec = forwardvec - sidevec;
+			ImGui::Text( "Direction: " + dirvec.x + " " + dirvec.y + " " + dirvec.z );
 			ImGui::Separator();
 			ImGui::Text( "North MSec: " + m_EntityData.key_MoveNorth.msec );
 			ImGui::Text( "South MSec: " + m_EntityData.key_MoveSouth.msec );
@@ -413,6 +422,9 @@ namespace TheNomad::SGame {
 			m_EntityData.key_MoveEast.msec = 0;
 			m_EntityData.key_MoveWest.msec = 0;
 
+			m_EntityData.m_Emitter.SetPosition( m_EntityData.GetOrigin(), forward, 0.0f,
+				m_EntityData.GetPhysicsObject().GetAcceleration().x + m_EntityData.GetPhysicsObject().GetAcceleration().y );
+
 			m_EntityData.GetPhysicsObject().OnRunTic();
 		}
 		
@@ -421,7 +433,7 @@ namespace TheNomad::SGame {
 			float val;
 
 			msec = key.msec;
-//			key.msec = 0;
+			key.msec = 0;
 			
 			if ( key.active ) {
 				// still down
@@ -474,6 +486,8 @@ namespace TheNomad::SGame {
 
 		float m_nJoystickAngle = 0.0f;
 		
+		vec3 forwardvec = vec3( 0.0f );
+		vec3 sidevec = vec3( 0.0f );
 		float forward = 0.0f;
 		float side = 0.0f;
 		float up = 0.0f;
@@ -489,7 +503,7 @@ namespace TheNomad::SGame {
 		uint frame_msec = 0;
 		int old_frame_msec = 0;
 
-		int move_toggle = 0;
+		uint move_toggle = 0;
 		
 		TheNomad::Engine::SoundSystem::SoundEffect moveGravel0;
 		TheNomad::Engine::SoundSystem::SoundEffect moveGravel1;

@@ -31,7 +31,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../rendergl/ngl.h"
 #include "../rendercommon/imgui_impl_opengl3.h"
 #include "../rendercommon/imgui.h"
-
+#include <fmod/fmod.h>
 
 #define DRAWMODE_IMMEDIATE 0
 #define DRAWMODE_CLIENT    1
@@ -122,6 +122,8 @@ typedef struct {
 	int windowResolution;
 	int windowWidth;
 	int windowHeight;
+	int maxFPS;
+	int performanceMonitor;
 
 	float gamma;
 	float exposure;
@@ -149,6 +151,8 @@ typedef struct {
 	quality_t effectsQuality;
 	float fixedResolutionScaling;
 
+	toggle_t loadTexturesOnDemand;
+	toggle_t particles;
 	toggle_t autoExposure;
 	toggle_t dynamicLighting;
 	toggle_t bloom;
@@ -160,6 +164,10 @@ typedef struct {
 } preset_t;
 
 typedef struct {
+	const char **speakermodeTypes;
+
+	int numSpeakermodeTypes;
+
 	int sfxVolume;
 	int musicVolume;
 	int masterVolume;
@@ -168,6 +176,7 @@ typedef struct {
 	int sfxOn;
 	int musicOn;
 
+	int speakerMode;
 	int maxSoundChannels;
 } audioSettings_t;
 
@@ -349,86 +358,6 @@ const char *Hunk_CopyString( const char *str, ha_pref pref ) {
     N_strncpyz( out, str, len );
 
     return out;
-}
-
-static void SettingsMenu_LoadBindings( void )
-{
-    union {
-        void *v;
-        char *b;
-    } f;
-    const char **text, *text_p, *tok;
-    bind_t *bind;
-    uint64_t i;
-
-    FS_LoadFile( "bindings.cfg", &f.v );
-    if ( !f.v ) {
-        N_Error( ERR_DROP, "SettingsMenu_Cache: no bindings file" );
-    }
-
-    text_p = f.b;
-    text = &text_p;
-
-    COM_BeginParseSession( "bindings.cfg" );
-
-    text_p = f.b;
-    text = &text_p;
-
-    bind = s_settingsMenu->controls.keybinds;
-    for ( i = 0; i < arraylen( s_defaultKeybinds ); i++ ) {
-        tok = COM_ParseExt( text, qtrue );
-        if ( !tok || !tok[0] ) {
-            break;
-        }
-        bind->command = Hunk_CopyString( tok, h_high );
-
-        tok = COM_ParseExt( text, qfalse );
-        bind->label = Hunk_CopyString( tok, h_high );
-
-        tok = COM_ParseExt( text, qfalse );
-        bind->id = atoi( tok );
-
-        tok = COM_ParseExt( text, qfalse );
-        if ( tok[0] != '-' && tok[1] != '1' ) {
-            bind->defaultBind1 = Key_StringToKeynum( tok );
-        } else {
-            bind->defaultBind1 = -1;
-        }
-
-        tok = COM_ParseExt( text, qfalse );
-        if ( tok[0] != '-' && tok[1] != '1' ) {
-            bind->defaultBind2 = Key_StringToKeynum( tok );
-        } else {
-            bind->defaultBind2 = -1;
-        }
-
-        tok = COM_ParseExt( text, qfalse );
-        if ( tok[0] != '-' && tok[1] != '1' ) {
-            bind->bind1 = Key_StringToKeynum( tok );
-        } else {
-            bind->bind1 = -1;
-        }
-
-        tok = COM_ParseExt( text, qfalse );
-        if ( tok[0] != '-' && tok[1] != '1' ) {
-            bind->bind2 = Key_StringToKeynum( tok );
-        } else {
-            bind->bind2 = -1;
-        }
-
-        if ( bind->defaultBind1 != -1 ) {
-            bind->bind1 = bind->defaultBind1;
-        }
-        if ( bind->defaultBind2 != -1 ) {
-            bind->bind2 = bind->defaultBind2;
-        }
-
-        Con_Printf( "Added keybind \"%s\": \"%s\"\n", bind->command, bind->label );
-
-        bind++;
-    }
-
-    FS_FreeFile( f.v );
 }
 
 static void SettingsMenu_InitPresets( void ) {
@@ -990,37 +919,6 @@ static void SettingsMenu_DrawHint( void )
 	ImGui::End();
 }
 
-static nhandle_t GetCustomButton( int button )
-{
-	switch ( button ) {
-	case KEY_PAD0_A: return ui->controller_a;
-	case KEY_PAD0_B: return ui->controller_b;
-	case KEY_PAD0_X: return ui->controller_x;
-	case KEY_PAD0_Y: return ui->controller_y;
-	case KEY_PAD0_LEFTTRIGGER: return ui->controller_left_trigger;
-	case KEY_PAD0_RIGHTTRIGGER: return ui->controller_right_trigger;
-	case KEY_PAD0_LEFTBUTTON: return ui->controller_left_button;
-	case KEY_PAD0_RIGHTBUTTON: return ui->controller_right_button;
-	case KEY_PAD0_LEFTSTICK_CLICK:
-	case KEY_PAD0_LEFTSTICK_UP:
-	case KEY_PAD0_LEFTSTICK_RIGHT:
-	case KEY_PAD0_LEFTSTICK_DOWN:
-	case KEY_PAD0_LEFTSTICK_LEFT:
-	case KEY_PAD0_RIGHTSTICK_CLICK:
-	case KEY_PAD0_RIGHTSTICK_UP:
-	case KEY_PAD0_RIGHTSTICK_RIGHT:
-	case KEY_PAD0_RIGHTSTICK_DOWN:
-	case KEY_PAD0_RIGHTSTICK_LEFT:
-	case KEY_PAD0_DPAD_UP: return ui->controller_dpad_up;
-	case KEY_PAD0_DPAD_RIGHT: return ui->controller_dpad_right;
-	case KEY_PAD0_DPAD_DOWN: return ui->controller_dpad_down;
-	case KEY_PAD0_DPAD_LEFT: return ui->controller_dpad_left;
-	default:
-		break;
-	};
-	return FS_INVALID_HANDLE;
-}
-
 static void ControlsMenu_DrawBindings( int group )
 {
 	static char bind[1024];
@@ -1252,6 +1150,13 @@ static void AudioMenu_Draw( void )
 
 	ImGui::BeginTable( "##AudioSettingsMenuConfigTable", 2 );
 	{
+		SettingsMenu_MultiAdjustable( "SPEAKER MODE", "SpeakerMode",
+			"Sets the speaker configuration",
+			s_settingsMenu->audio.speakermodeTypes, s_settingsMenu->audio.numSpeakermodeTypes,
+			&s_settingsMenu->audio.speakerMode, true );
+
+		ImGui::TableNextRow();
+
 		SettingsMenu_MultiSliderInt( "MASTER VOLUME", "MasterVolume",
 			"Sets overall volume",
 			&s_settingsMenu->audio.masterVolume, 0, 100, 1,
@@ -1278,6 +1183,12 @@ static void AudioMenu_Draw( void )
 
 		SettingsMenu_RadioButton( "SFX ON", "SfxOn",
 			"Toggles Sound Effects", &s_settingsMenu->audio.sfxOn, true );
+		
+		ImGui::TableNextRow();
+
+		SettingsMenu_MultiSliderInt( "MAX SOUND CHANNELS", "MaxSoundChannels",
+			"Sets the maximum amount of channels that can processed at a time, will increase CPU load.",
+			&s_settingsMenu->audio.maxSoundChannels, 64, 512, 1, true );
 	}
 	ImGui::EndTable();
 }
@@ -1324,12 +1235,18 @@ static void VideoMenu_Draw( void )
 			"Sets the amount of sharpening applied to a rendered texture",
 			&s_settingsMenu->video.sharpening, 0.5f, 20.0f, 0.1f, true );
 		
-		/* for now we will only really allow running at 60 fps
 		ImGui::TableNextRow();
 
 		SettingsMenu_MultiSliderInt( "FRAME LIMITER", "FrameLimiter",
 			"Sets the maximum amount of frames the game can render per second.",
 			&s_settingsMenu->video.maxFPS, 0, 1000, 1, true );
+		
+		/*
+		ImGui::TableNextRow();
+
+		SettingsMenu_MultiAdjustable( "PERFORMANCE MONITOR", "PerfomanceMonitor",
+			"", s_settingsMenu->performance.qualityTypes, s_settingsMenu->performance.numQualities,
+			&s_settingsMenu->video.performanceMonitor, true );
 		*/
 	}
 	ImGui::EndTable();
@@ -1504,6 +1421,12 @@ static void PerformanceMenu_Save( void )
 	if ( s_settingsMenu->performance.textureDetail != s_initial->performance.textureDetail ) {
 		needRestart = true;
 	}
+	if ( s_settingsMenu->performance.fixedRendering != s_initial->performance.fixedRendering ) {
+		needRestart = true;
+	}
+	if ( s_settingsMenu->performance.fixedResolutionScaling != s_initial->performance.fixedResolutionScaling ) {
+		needRestart = true;
+	}
 
 	Cvar_Set( "r_textureMode", s_settingsMenu->performance.textureFilters[ s_settingsMenu->performance.textureFilter ] );
 	Cvar_SetIntegerValue( "r_dynamiclight", s_settingsMenu->performance.dynamicLighting );
@@ -1527,6 +1450,7 @@ static void AudioMenu_Save( void )
 	Cvar_SetIntegerValue( "snd_effectsOn", s_settingsMenu->audio.sfxOn );
 	Cvar_SetIntegerValue( "snd_musicOn", s_settingsMenu->audio.musicOn );
 	Cvar_SetIntegerValue( "snd_maxSoundChannels", s_settingsMenu->audio.maxSoundChannels );
+	Cvar_SetIntegerValue( "snd_speakerMode", s_settingsMenu->audio.speakerMode );
 }
 
 static void ControlsMenu_Save( void )
@@ -1602,7 +1526,7 @@ static void VideoMenu_SetDefault( void )
 	s_settingsMenu->video.windowMode = Cvar_VariableInteger( "r_fullscreen" ) + Cvar_VariableInteger( "r_noborder" );
 	s_settingsMenu->video.sharpening = Cvar_VariableFloat( "r_imageSharpenAmount" );
 	s_settingsMenu->video.exposure = Cvar_VariableFloat( "r_autoExposure" );
-//	s_settingsMenu->video.maxFPS = Cvar_VariableInteger( "com_maxfps" );
+	s_settingsMenu->video.maxFPS = Cvar_VariableInteger( "com_maxfps" );
 }
 
 static void AudioMenu_SetDefault( void )
@@ -1613,6 +1537,7 @@ static void AudioMenu_SetDefault( void )
 	s_settingsMenu->audio.musicOn = Cvar_VariableInteger( "snd_musicOn" );
 	s_settingsMenu->audio.sfxOn = Cvar_VariableInteger( "snd_effectsOn" );
 	s_settingsMenu->audio.maxSoundChannels = Cvar_VariableInteger( "snd_maxSoundChannels" );
+	s_settingsMenu->audio.speakerMode = Cvar_VariableInteger( "snd_speakerMode" );
 }
 
 static void Controls_GetKeyAssignment( const char *command, int *twokeys )
@@ -1928,26 +1853,14 @@ void SettingsMenu_Cache( void )
 {
 	char str[MAXPRINTMSG];
 	char *p;
-	int i;
 
 	static const char *s_multisampleTypes[ NUM_ANTIALIAS_TYPES ];
 	static const char *s_anisotropyTypes[ NUM_ANISOTROPY_TYPES ];
 	static const char *s_textureDetail[ NUM_TEXTURE_DETAILS ];
 	static const char *s_textureFilters[ NUM_TEXTURE_FILTERS ];
-	static const char *s_toneMappingTypes[] = {
-	    "Reinhard",
-	    "Exposure"
-	};
 	static const char *s_windowSizes[ NUM_WINDOW_SIZES ];
 	static const char *s_vsync[ NUM_VSYNC_TYPES ];
 	static const char *difficulties[ NUMDIFS - 1 ];
-	static const char *s_mouseTypes[] = {
-		"dot",
-		"circle & dot",
-		"full crosshair",
-		"filled crosshair"
-	};
-	static const char *s_hudOptions[ NUM_HUD_OPTIONS ];
 	static const char *s_presetLabels[] = {
 		"Low",
 		"Normal",
@@ -1967,6 +1880,17 @@ void SettingsMenu_Cache( void )
 		"HIGH",
 		"VERY HIGH",
 //		"INSANE"
+	};
+	static const char *s_speakerModes[] = {
+		"Default",
+    	"Multichannel",
+    	"1 Speaker",
+    	"2 Speakers",
+    	"4 Speakers",
+    	"Surround Sound 5.0",
+    	"Surround Sound 5.1",
+    	"Surround Sound 7.1",
+    	"Surround Sound 7.1.4"
 	};
 	static const char *s_windowModes[ NUM_WINDOW_MODES ];
 
@@ -2011,11 +1935,6 @@ void SettingsMenu_Cache( void )
 	s_windowSizes[12] = strManager->ValueForKey( "GAMEUI_WINDOW_3840X1600" )->value;
 	s_windowSizes[13] = strManager->ValueForKey( "GAMEUI_WINDOW_3840X2160" )->value;
 
-	s_hudOptions[0] = strManager->ValueForKey( "MENU_HUD" )->value;
-	s_hudOptions[1] = strManager->ValueForKey( "MENU_ADVANCED_HUD" )->value;
-	s_hudOptions[2] = strManager->ValueForKey( "MENU_HUD_STYLE" )->value;
-	s_hudOptions[3] = strManager->ValueForKey( "MENU_HUD_PSTATS" )->value;
-
 	s_windowModes[0] = strManager->ValueForKey( "GAMEUI_MODE_WINDOWED" )->value;
 	s_windowModes[1] = strManager->ValueForKey( "GAMEUI_MODE_BORDERLESS_WINDOWED" )->value;
 	s_windowModes[2] = strManager->ValueForKey( "GAMEUI_MODE_FULLSCREEN" )->value;
@@ -2048,6 +1967,8 @@ void SettingsMenu_Cache( void )
 	s_settingsMenu->presetNames = s_presetLabels;
 	s_settingsMenu->performance.qualityTypes = s_qualityTypes;
 
+	s_settingsMenu->audio.speakermodeTypes = s_speakerModes;
+
 	s_settingsMenu->gameplay.difficultyNames = difficulties;
 
 	s_settingsMenu->video.vsyncList = s_vsync;
@@ -2057,6 +1978,8 @@ void SettingsMenu_Cache( void )
 	s_settingsMenu->video.numVSync = arraylen( s_vsync );
 	s_settingsMenu->video.numWindowSizes = arraylen( s_windowSizes );
 	s_settingsMenu->video.numWindowModes = arraylen( s_windowModes );
+
+	s_settingsMenu->audio.numSpeakermodeTypes = arraylen( s_speakerModes );
 
 	s_settingsMenu->performance.numQualities = arraylen( s_qualityTypes );
 	s_settingsMenu->performance.numMultisampleTypes = arraylen( s_multisampleTypes );

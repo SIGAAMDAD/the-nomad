@@ -1008,6 +1008,17 @@ static void PushListener( asIScriptGeneric *pGeneric )
 	pGeneric->SetReturnDWord( (asDWORD)g_pSoundWorld->PushListener( pGeneric->GetArgDWord( 0 ) ) );
 }
 
+static void SetEmitterPosition( asIScriptGeneric *pGeneric )
+{
+	nhandle_t hEmitter = (nhandle_t)pGeneric->GetArgDWord( 0 );
+	const vec3& position = *(const vec3 *)pGeneric->GetArgObject( 1 );
+	const float forward = pGeneric->GetArgFloat( 2 );
+	const float up = pGeneric->GetArgFloat( 3 );
+	const float speed = pGeneric->GetArgFloat( 4 );
+
+	g_pSoundWorld->SetEmitterPosition( hEmitter, glm::value_ptr( position ), forward, up, speed );
+}
+
 static void PlayEmitterSound( asIScriptGeneric *pGeneric )
 {
 	nhandle_t hEmitter = (nhandle_t )pGeneric->GetArgDWord( 0 );
@@ -2565,7 +2576,7 @@ void ModuleLib_Register_Engine( void )
 			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::SoundSystem::PushListener( uint )", asFUNCTION( PushListener ) );
 			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::RemoveEmitter( int )", asFUNCTION( RemoveEmitter ) );
 			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::PlayEmitterSound( int, float, uint, int )", asFUNCTION( PlayEmitterSound ) );
-
+			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::SetEmitterPosition( const vec3& in, float, float, float )", asFUNCTION( SetEmitterPosition ) );
 
 			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::PlaySfx( int )", WRAP_FN( Snd_PlaySfx ) );
 			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::AddLoopingTrack( int )", WRAP_FN( Snd_AddLoopingTrack ) );

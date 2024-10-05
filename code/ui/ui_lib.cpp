@@ -153,6 +153,7 @@ extern "C" void UI_DrawText( const char *txt )
 	int colorIndex, currentColorIndex;
 	qboolean usedColor = qfalse;
 	char s[2];
+	float width;
 
 	ImGuiStyle& style = ImGui::GetStyle();
 	const ImVec2 itemSpacing = style.ItemSpacing;
@@ -175,6 +176,11 @@ extern "C" void UI_DrawText( const char *txt )
 				usedColor = qtrue;
 			}
 			text += 2;
+		}
+
+		width = ImGui::GetContentRegionAvail().x;
+		if ( width < ImGui::GetFont()->Scale ) {
+			ImGui::NewLine();
 		}
 
 		switch ( *text ) {

@@ -494,6 +494,8 @@ void RE_EndFrame( uint64_t *frontEndMsec, uint64_t *backEndMsec, backendCounters
 //		ri.ProfileFunctionEnd();
 	}
 
+	backend.drawBatch.shaderTime = backend.refdef.floatTime;
+
 	R_IssueRenderCommands( qtrue, qtrue );
 	R_InitNextFrame();
 

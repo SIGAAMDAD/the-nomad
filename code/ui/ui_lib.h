@@ -191,7 +191,9 @@ typedef struct {
 
     nhandle_t backdrop;
 
-//    menustate_t state;
+    int screenWidth;
+    int screenHeight;
+
     uiMenu_t menustate;
     qboolean escapeToggle;
     qboolean backHovered;

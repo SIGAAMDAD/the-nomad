@@ -26,6 +26,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define ID_SAVENAMEPROMPT   2
 #define ID_DIFFICULTY       3
 
+#define ID_CONTINUE			0
+#define ID_EXIT				1
+
 typedef struct {
 	char name[ MAX_NPATH ];
 	gamedata_t gd;
@@ -36,6 +39,9 @@ typedef struct {
 
 typedef struct {
 	menuframework_t menu;
+
+	menutext_t continuePlay;
+	menutext_t exit;
 
 	nhandle_t accept_0;
 	nhandle_t accept_1;
@@ -188,6 +194,29 @@ static void PlayMenu_MissionSelect( void )
 	}
 }
 
+static void MissionMenu_Event( void *ptr, int event )
+{
+	if ( event != EVENT_ACTIVATED ) {
+		return;
+	}
+	
+	saveinfo_t *slot = &s_playMenu->saveSlots[ s_playMenu->selectedSaveSlot ];
+
+	switch ( ( (const menucommon_t *)ptr )->id ) {
+	case ID_CONTINUE:
+		Cvar_SetIntegerValue( "sgame_Difficulty", slot->gd.saveDif );
+		Cvar_Set( "sgame_SaveName", slot->name );
+		gi.state = GS_LEVEL;
+		gi.playTimeStart = Sys_Milliseconds();
+		g_pArchiveHandler->Load( slot->name );
+		Cbuf_ExecuteText( EXEC_APPEND, va( "setmap \"%s\"\n", gi.mapCache.mapList[ slot->gd.mapIndex ] ) );
+		break;
+	case ID_EXIT:
+		UI_PopMenu();
+		break;
+	};
+}
+
 static void PlayMenu_DrawSlotEdit( void )
 {
 	int i;
@@ -203,30 +232,8 @@ static void PlayMenu_DrawSlotEdit( void )
 		return;
 	}
 
-	SfxFocused( "CONTINUE" );
-	ImGui::TextUnformatted( "CONTINUE" );
-	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
-		Snd_PlaySfx( ui->sfx_select );
-		Cvar_SetIntegerValue( "sgame_Difficulty", slot->gd.saveDif );
-		Cvar_Set( "sgame_SaveName", slot->name );
-		gi.state = GS_LEVEL;
-		gi.playTimeStart = Sys_Milliseconds();
-		g_pArchiveHandler->Load( slot->name );
-		Cbuf_ExecuteText( EXEC_APPEND, va( "setmap \"%s\"\n", gi.mapCache.mapList[ slot->gd.mapIndex ] ) );
-	}
-	SfxFocused( "MISSIONSELECT" );
-	ImGui::TextUnformatted( "MISSION SELECT" );
-	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
-		Snd_PlaySfx( ui->sfx_select );
-		s_playMenu->missionSelect = qtrue;
-	}
-
-	SfxFocused( "EXIT" );
-	ImGui::TextUnformatted( "EXIT" );
-	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
-		Snd_PlaySfx( ui->sfx_select );
-		s_playMenu->selectedSaveSlot = -1;
-	}
+	Menu_DrawItemGeneric( &s_playMenu->continuePlay.generic );
+	Menu_DrawItemGeneric( &s_playMenu->exit.generic );
 }
 
 static void PlayMenu_DrawNewGameEdit( void )
@@ -369,7 +376,7 @@ static void PlayMenu_Draw_SaveSlotSelect( void )
 			}
 		} else {
 			if ( ImGui::MenuItem( va( "SLOT %lu : %u:%02u##USEDSAVESLOT%lu", i, s_playMenu->saveSlots[ i ].gd.playTimeHours,
-				s_playMenu->saveSlots[ i ].gd.playTimeMinutes ) ) )
+				s_playMenu->saveSlots[ i ].gd.playTimeMinutes, i ) ) )
 			{
 				Snd_PlaySfx( ui->sfx_select );
 				s_playMenu->selectedSaveSlot = i;
@@ -561,6 +568,22 @@ void PlayMenu_Cache( void )
 	s_playMenu->menu.x = 0;
 	s_playMenu->menu.y = 0;
 	s_playMenu->menu.track = Snd_RegisterSfx( "event:/music/main_theme" );
+
+	s_playMenu->continuePlay.generic.type = MTYPE_TEXT;
+	s_playMenu->continuePlay.generic.eventcallback = MissionMenu_Event;
+	s_playMenu->continuePlay.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
+	s_playMenu->continuePlay.generic.id = ID_CONTINUE;
+	s_playMenu->continuePlay.generic.parent = &s_playMenu->menu;
+	s_playMenu->continuePlay.color = color_white;
+	s_playMenu->continuePlay.text = "CONTINUE";
+
+	s_playMenu->exit.generic.type = MTYPE_TEXT;
+	s_playMenu->exit.generic.eventcallback = MissionMenu_Event;
+	s_playMenu->exit.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
+	s_playMenu->exit.generic.id = ID_EXIT;
+	s_playMenu->exit.generic.parent = &s_playMenu->menu;
+	s_playMenu->exit.color = color_white;
+	s_playMenu->exit.text = "EXIT";
 
 	for ( i = 0; i < NUMDIFS; i++ ) {
 		s_playMenu->difficulties[i].color = color_white;
