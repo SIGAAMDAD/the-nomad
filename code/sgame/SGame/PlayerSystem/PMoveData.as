@@ -62,28 +62,9 @@ namespace TheNomad::SGame {
 			accel.x += side;
 			accel.y += forward;
 
-			if ( forward != 0.0f || side != 0.0f ) {
-				if ( ( gameTic % 10 ) == 0 ) {
-					vec3 origin;
-					vec3 vel;
-
-					origin = m_EntityData.GetOrigin();
-					vel.y = -0.01f;
-					if ( m_EntityData.GetFacing() == FACING_LEFT ) {
-						origin.x += 0.15f;
-						vel.x = 0.1f;
-					} else if ( m_EntityData.GetFacing() == FACING_RIGHT ) {
-						origin.x -= 0.15f;
-						vel.x = -0.1f;
-					}
-
-					GfxManager.AddDustPoly( origin, vel, 500, m_EntityData.m_hDustTrailShader );
-				}
-			}
-
 			if ( m_EntityData.IsDashing() ) {
-				accel.y += 1.25f * forward;
-				accel.x += 1.25f * side;
+				accel.y += 1.05f * forward;
+				accel.x += 1.05f * side;
 
 				if ( m_EntityData.GetTimeSinceLastDash() > DASH_DURATION ) {
 					m_EntityData.SetDashing( false );
@@ -126,7 +107,15 @@ namespace TheNomad::SGame {
 				};
 			}
 			if ( accel.x != 0.0f || accel.y != 0.0f ) {
-				if ( TheNomad::GameSystem::GameManager.GetDeltaTics() - move_toggle >= 500 ) {
+				// sync the extra particles and sounds with the actual animation
+				uint lerpTime = m_EntityData.GetLegState().GetAnimation().GetTicRate() * m_EntityData.GetLegState().GetAnimation().NumFrames();
+				if ( m_EntityData.GetLegState().GetAnimation().IsFlipFlop() ) {
+					// with a flip-flop animation we're more likely to have a much faster
+					// ticrate
+					lerpTime *= 2;
+				}
+
+				if ( gameTic - move_toggle >= lerpTime ) {
 					switch ( TheNomad::Util::PRandom() & 3 ) {
 					case 0:
 					case 2:
@@ -137,8 +126,23 @@ namespace TheNomad::SGame {
 						m_EntityData.m_Emitter.PlaySound( moveGravel1, 1.0f, 0xff );
 						break;
 					};
+					move_toggle = gameTic;
+
+					vec3 origin;
+					vec3 vel;
+
+					origin = m_EntityData.GetOrigin();
+					vel.y = -0.01f;
+					if ( m_EntityData.GetFacing() == FACING_LEFT ) {
+						origin.x += 0.15f;
+						vel.x = 0.1f;
+					} else if ( m_EntityData.GetFacing() == FACING_RIGHT ) {
+						origin.x -= 0.15f;
+						vel.x = -0.1f;
+					}
+
+					GfxManager.AddDustPoly( origin, vel, 500, m_EntityData.m_hDustTrailShader );
 				}
-				move_toggle = gameTic;
 			}
 			
 			m_EntityData.GetPhysicsObject().SetAcceleration( accel );

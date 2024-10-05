@@ -11,6 +11,12 @@ namespace TheNomad::SGame {
 		uint NumFrames() const {
 			return m_nNumFrames;
 		}
+		uint GetTicRate() const {
+			return m_nTicRate;
+		}
+		bool IsFlipFlop() const {
+			return m_bOscillate;
+		}
 
 		void Log() const {
 			ConsolePrint( "TicRate: " + m_nTicRate + "\n" );
