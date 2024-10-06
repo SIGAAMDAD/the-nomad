@@ -212,6 +212,6 @@ extern cvar_t *snd_debugPrint;
 extern cvar_t *snd_noSound;
 extern cvar_t *snd_muteUnfocused;
 extern cvar_t *snd_maxChannels;
-extern CSoundWorld *g_pSoundWorld;
+extern CSoundWorld s_SoundWorld;
 
 #endif

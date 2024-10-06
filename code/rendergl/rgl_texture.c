@@ -2594,7 +2594,7 @@ static texture_t *R_CreateImage2( const char *name, byte *pic, int width, int he
 	} else {
 		if ( pic ) {
 			textureSize = CalculateTextureSize( width, height, picFormat );
-			image->data = ri.Malloc( textureSize );
+			image->data = ri.Hunk_Alloc( textureSize, h_low );
 			memcpy( image->data, pic, textureSize );
 		}
 	}

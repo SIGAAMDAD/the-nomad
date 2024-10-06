@@ -310,9 +310,25 @@ qboolean CGameArchive::LoadArchiveFile( const char *filename, uint64_t index )
 static void G_SaveGame_f( void )
 {
 	const char *filename;
+	char savename[MAX_NPATH];
 	char path[MAX_NPATH];
 
 	filename = Cmd_Argv( 1 );
+
+	/*
+	N_strncpyz( savename, Cvar_VariableString( "sgame_SaveName" ), sizeof( savename ) );
+	if ( !*savename ) {
+		struct tm *ts;
+		time_t current;
+		char timestr[ 32 ];
+
+		current = time( NULL );
+		ts = localtime( &current );
+
+		strftime( timestr, sizeof( timestr ) - 1, "%y%d%w_%H%M", ts );
+		Com_snprintf( savename, sizeof( savename ) - 1, "%s_%s", Cvar_VariableString( "mapname" ), timestr );
+	}
+	*/
 
 	if ( *filename ) {
 		COM_StripExtension( filename, path, sizeof( path ) );
@@ -709,6 +725,7 @@ const ngdfield_t *CGameArchive::FindField( const char *name, int32_t type, nhand
 	section = &m_pArchiveCache[ m_nCurrentArchive ]->m_pSectionList[ hSection ];
 
 	for ( i = 0; i < section->numFields; i++ ) {
+		Con_Printf( "...Comparing field \"%s\" to \"%s\"\n", section->m_pFieldCache[i]->name, name );
 		if ( !N_stricmp( section->m_pFieldCache[i]->name, name ) ) {
 			if ( section->m_pFieldCache[i]->type != type ) {
 				N_Error( ERR_DROP, "CGameArchive::FindField: save file corrupt or incompatible mod, field type doesn't match type given for '%s'",
@@ -730,7 +747,7 @@ float CGameArchive::LoadFloat( const char *name, nhandle_t hSection ) {
 	if ( !name ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
 	}
-	if ( !hSection ) {
+	if ( hSection == -1 ) {
 		N_Error( ERR_DROP, "%s: hSection is invalid", __func__ );
 	}
 	
@@ -748,7 +765,7 @@ uint8_t CGameArchive::LoadByte( const char *name, nhandle_t hSection ) {
 	if ( !name ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
 	}
-	if ( !hSection ) {
+	if ( hSection == -1 ) {
 		N_Error( ERR_DROP, "%s: hSection is invalid", __func__ );
 	}
 	
@@ -766,7 +783,7 @@ uint16_t CGameArchive::LoadUShort( const char *name, nhandle_t hSection ) {
 	if ( !name ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
 	}
-	if ( !hSection ) {
+	if ( hSection == -1 ) {
 		N_Error( ERR_DROP, "%s: hSection is invalid", __func__ );
 	}
 	
@@ -784,7 +801,7 @@ uint32_t CGameArchive::LoadUInt( const char *name, nhandle_t hSection ) {
 	if ( !name ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
 	}
-	if ( !hSection ) {
+	if ( hSection == -1 ) {
 		N_Error( ERR_DROP, "%s: hSection is invalid", __func__ );
 	}
 	
@@ -802,7 +819,7 @@ uint64_t CGameArchive::LoadULong( const char *name, nhandle_t hSection ) {
 	if ( !name ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
 	}
-	if ( !hSection ) {
+	if ( hSection == -1 ) {
 		N_Error( ERR_DROP, "%s: hSection is invalid", __func__ );
 	}
 	
@@ -820,7 +837,7 @@ int8_t CGameArchive::LoadChar( const char *name, nhandle_t hSection ) {
 	if ( !name ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
 	}
-	if ( !hSection ) {
+	if ( hSection == -1 ) {
 		N_Error( ERR_DROP, "%s: hSection is invalid", __func__ );
 	}
 	
@@ -838,7 +855,7 @@ int16_t CGameArchive::LoadShort( const char *name, nhandle_t hSection ) {
 	if ( !name ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
 	}
-	if ( !hSection ) {
+	if ( hSection == -1 ) {
 		N_Error( ERR_DROP, "%s: hSection is invalid", __func__ );
 	}
 	
@@ -856,7 +873,7 @@ int32_t CGameArchive::LoadInt( const char *name, nhandle_t hSection ) {
 	if ( !name ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
 	}
-	if ( !hSection ) {
+	if ( hSection == -1 ) {
 		N_Error( ERR_DROP, "%s: hSection is invalid", __func__ );
 	}
 	
@@ -874,7 +891,7 @@ int64_t CGameArchive::LoadLong( const char *name, nhandle_t hSection ) {
 	if ( !name ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
 	}
-	if ( !hSection ) {
+	if ( hSection == -1 ) {
 		N_Error( ERR_DROP, "%s: hSection is invalid", __func__ );
 	}
 	
@@ -893,7 +910,7 @@ void CGameArchive::LoadVec2( const char *name, vec2_t data, nhandle_t hSection )
 	if ( !name ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
 	}
-	if ( !hSection ) {
+	if ( hSection == -1 ) {
 		N_Error( ERR_DROP, "%s: hSection is invalid", __func__ );
 	}
 	
@@ -912,7 +929,7 @@ void CGameArchive::LoadVec3( const char *name, vec3_t data, nhandle_t hSection )
 	if ( !name ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
 	}
-	if ( !hSection ) {
+	if ( hSection == -1 ) {
 		N_Error( ERR_DROP, "%s: hSection is invalid", __func__ );
 	}
 	
@@ -931,7 +948,7 @@ void CGameArchive::LoadVec4( const char *name, vec4_t data, nhandle_t hSection )
 	if ( !name ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
 	}
-	if ( !hSection ) {
+	if ( hSection == -1 ) {
 		N_Error( ERR_DROP, "%s: hSection is invalid", __func__ );
 	}
 
@@ -949,7 +966,7 @@ void CGameArchive::LoadCString( const char *name, char *pBuffer, int32_t maxLeng
 	if ( !name ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
 	}
-	if ( !hSection ) {
+	if ( hSection == -1 ) {
 		N_Error( ERR_DROP, "%s: hSection is invalid", __func__ );
 	}
 	
@@ -969,7 +986,7 @@ void CGameArchive::LoadString( const char *name, string_t *pString, nhandle_t hS
 	if ( !name ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
 	}
-	if ( !hSection ) {
+	if ( hSection == -1 ) {
 		N_Error( ERR_DROP, "%s: hSection is invalid", __func__ );
 	}
 	
@@ -991,7 +1008,7 @@ void CGameArchive::LoadArray( const char *pszName, CScriptArray *pData, nhandle_
 	if ( !pszName ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
 	}
-	if ( !hSection ) {
+	if ( hSection == -1 ) {
 		N_Error( ERR_DROP, "%s: hSection is invalid", __func__ );
 	}
 
@@ -1012,6 +1029,37 @@ void CGameArchive::LoadArray( const char *pszName, CScriptArray *pData, nhandle_
 	if ( !FS_Read( pData->GetBuffer(), field->dataSize, m_hFile ) ) {
 		N_Error( ERR_DROP, "%s: failed to read field '%s'", __func__, pszName );
 	}
+}
+
+void CGameArchive::DeleteSlot( uint64_t nSlot )
+{
+	char path[ MAX_NPATH ];
+	uint64_t i, j;
+	
+	Com_snprintf( path, sizeof( path ) - 1, "SLOT_%lu", nSlot );
+
+	Con_Printf( "Deleting save slot %lu...\n", nSlot );
+
+	FS_HomeRemove( va( "SaveData/%s.ngd", path ) );
+	FS_Remove( va( "SaveData/%s.ngd", path ) );
+	
+	for ( i = 0; i < m_pArchiveCache[ nSlot ]->m_nSections; i++ ) {
+		for ( j = 0; j < m_pArchiveCache[ nSlot ]->m_pSectionList[i].numFields; j++ ) {
+			Z_Free( m_pArchiveCache[ nSlot ]->m_pSectionList[i].m_pFieldCache[j] );
+		}
+		Z_Free( m_pArchiveCache[ nSlot ]->m_pSectionList[i].m_pFieldCache );
+	}
+	Z_Free( m_pArchiveCache[ nSlot ] );
+	Z_Free( m_pArchiveFileList[ nSlot ] );
+	m_pArchiveFileList[ nSlot ] = NULL;
+	m_pArchiveCache[ nSlot ] = NULL;
+
+//	if ( nSlot < m_nArchiveFiles - 1 && m_nArchiveFiles > 1 ) {
+//		memmove( m_pArchiveCache[ nSlot ], m_pArchiveCache[ nSlot + 1 ], sizeof( *m_pArchiveCache ) * ( m_nArchiveFiles - 1 ) );
+//		memmove( m_pArchiveFileList[ nSlot ], m_pArchiveFileList[ nSlot + 1 ], sizeof( *m_pArchiveFileList ) * ( m_nArchiveFiles - 1 ) );
+//	}
+	m_nArchiveFiles--;
+	Cbuf_ExecuteText( EXEC_APPEND, "ui.reload_savefiles\n" );
 }
 
 bool CGameArchive::Save( const char *filename )
@@ -1154,13 +1202,16 @@ nhandle_t CGameArchive::GetSection( const char *name )
 	section = NULL;
 	Con_DPrintf( "Searching save file for section '%s'...\n", name );
 	for ( i = 0; i < m_pArchiveCache[ m_nCurrentArchive ]->m_nSections; i++ ) {
+		Con_Printf( "...Comparing \"%s\" to \"%s\"\n", m_pArchiveCache[ m_nCurrentArchive ]->m_pSectionList[i].name, name );
 		if ( !N_stricmp( m_pArchiveCache[ m_nCurrentArchive ]->m_pSectionList[i].name, name ) ) {
 			section = &m_pArchiveCache[ m_nCurrentArchive ]->m_pSectionList[i];
 			break;
 		}
 	}
 	if ( !section ) {
-		N_Error( ERR_DROP, "CGameArchive::GetSection: compatibility issue with save file section '%s', section not found in file", name );
+//		N_Error( ERR_DROP, "CGameArchive::GetSection: compatibility issue with save file section '%s', section not found in file", name );
+		Con_Printf( COLOR_RED "CGameArchive::GetSection: compatibility issue with save file section '%s', section not found in file", name );
+		return -1;
 	}
 	
 	return i;

@@ -335,8 +335,7 @@ void G_GetSpawnData( uvec3_t xyz, uint32_t *type, uint32_t *id, uint32_t nIndex,
 	*id = info->spawns[ nIndex ].entityid;
 	*pCheckpointIndex = info->spawns[ nIndex ].checkpoint;
 
-	g_pSoundWorld = (CSoundWorld *)Hunk_Alloc( sizeof( *g_pSoundWorld ), h_high );
-	g_pSoundWorld->Init();
+	s_SoundWorld.Init();
 
 	Con_DPrintf( "spawn[%u] has checkpoint %u (%u:%u)\n", nIndex, info->spawns[nIndex].checkpoint,
 		info->spawns[nIndex].entitytype, info->spawns[nIndex].entityid );

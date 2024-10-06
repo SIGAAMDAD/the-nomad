@@ -246,9 +246,11 @@ namespace TheNomad::SGame {
 					section.SaveString( "LevelNames" + i, m_LevelInfoDatas[i].m_Name );
 				}
 
+				section.SaveUInt( "Time", m_nLevelTimer );
+
 				// save checkpoint data
 				section.SaveUInt( "CurrentCheckpoint", m_CurrentCheckpoint );
-				for ( i = 0; i < m_MapData.GetCheckpoints().Count(); i++ ) {
+				for ( i = 0; i < m_CurrentCheckpoint; i++ ) {
 					section.SaveUInt64( "CheckpointTime_" + i, m_MapData.GetCheckpoints()[i].m_nTime );
 				}
 			}
@@ -278,7 +280,7 @@ namespace TheNomad::SGame {
 					save.SaveUInt( "DeathsRank", uint( stats.deaths_Rank ) );
 					
 					save.SaveBool( "CleanRun", stats.isClean );
-					save.SaveUInt64( "Time", stats.m_TimeMilliseconds );
+					save.SaveUInt( "Time", stats.m_TimeMilliseconds );
 					
 					save.SaveUInt( "NumKills", stats.numKills );
 					save.SaveUInt( "StylePoints", stats.stylePoints );
@@ -296,7 +298,7 @@ namespace TheNomad::SGame {
 			TheNomad::GameSystem::SaveSystem::LoadSection load( GetName() );
 			DebugPrint( "Loading level stats...\n" );
 			if ( !load.Found() ) {
-				GameError( "LevelSystem::OnLoad: save file corruption, section 'LevelStats' not found!" );
+				GameError( "LevelSystem::OnLoad: save file corruption, section '" + GetName() + "' not found!" );
 			}
 
 			const uint numLevels = load.LoadUInt( "NumLevels" );
@@ -308,6 +310,9 @@ namespace TheNomad::SGame {
 			}
 			m_nLevelTimer = load.LoadUInt( "Time" );
 			m_CurrentCheckpoint = load.LoadUInt( "CurrentCheckpoint" );
+			for ( uint i = 0; i < m_CurrentCheckpoint; i++ ) {
+				m_MapData.GetCheckpoints()[ i ].m_nTime = load.LoadUInt( "CheckpointTime_" + i );
+			}
 
 			for ( i = 0; i < m_LevelInfoDatas.Count(); i++ ) {
 				@data = @m_LevelInfoDatas[i];
@@ -334,7 +339,7 @@ namespace TheNomad::SGame {
 					stats.deaths_Rank = LevelRank( section.LoadUInt( "DeathsRank" ) );
 
 					stats.isClean = section.LoadBool( "CleanRun" );
-					stats.m_TimeMilliseconds = section.LoadUInt64( "Time" );
+					stats.m_TimeMilliseconds = section.LoadUInt( "Time" );
 					stats.m_TimeSeconds = stats.m_TimeMilliseconds / 1000;
 					stats.m_TimeMinutes = stats.m_TimeMilliseconds / 60000;
 					
@@ -533,7 +538,7 @@ namespace TheNomad::SGame {
 		}
 
 		private void CalcTotalLevelTime() {
-			uint64 total = 0;
+			uint total = 0;
 
 			for ( uint i = 0; i < m_MapData.GetCheckpoints().Count(); i++ ) {
 				total += m_MapData.GetCheckpoints()[i].m_nTime;
@@ -573,7 +578,7 @@ namespace TheNomad::SGame {
 			* ===========] pause [================================
 			* level time | delta | level time = level time + delta
 			*/
-			const uint64 delta = TheNomad::GameSystem::GameManager.GetGameTic() - m_nPauseTimer;
+			const uint delta = TheNomad::GameSystem::GameManager.GetGameTic() - m_nPauseTimer;
 			m_nLevelTimer += delta;
 		}
 
@@ -609,9 +614,9 @@ namespace TheNomad::SGame {
 			return @m_Current !is null ? m_Current.m_Name : "N/A";
 		}
 		
-		private uint64 m_nEndTime = 0;
-		private uint64 m_nPauseTimer = 0;
-		private uint64 m_nLevelTimer = 0;
+		private uint m_nEndTime = 0;
+		private uint m_nPauseTimer = 0;
+		private uint m_nLevelTimer = 0;
 		private uint m_CurrentCheckpoint = 0;
 		private array<json@> m_LevelInfos;
 		private array<LevelInfoData@> m_LevelInfoDatas;

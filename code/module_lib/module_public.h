@@ -15,18 +15,18 @@
 
 const char *AS_PrintErrorString( int code );
 GDR_INLINE void CheckValue( const char *caller, const char *func, int value ) {
-    if ( value < asSUCCESS ) {
-        N_Error( ERR_FATAL, "%s: %s failed -- %s", caller, func, AS_PrintErrorString( value ) );
-    }
+	if ( value < asSUCCESS ) {
+		N_Error( ERR_FATAL, "%s: %s failed -- %s", caller, func, AS_PrintErrorString( value ) );
+	}
 }
 
 #define CheckASCall( call ) \
-    CheckValue( __func__, #call, call )
+	CheckValue( __func__, #call, call )
 
 class CModuleAllocator
 {
 public:
-    EASTL_ALLOCATOR_EXPLICIT CModuleAllocator( const char* pName = EASTL_NAME_VAL( EASTL_ALLOCATOR_DEFAULT_NAME ) ) { }
+	EASTL_ALLOCATOR_EXPLICIT CModuleAllocator( const char* pName = EASTL_NAME_VAL( EASTL_ALLOCATOR_DEFAULT_NAME ) ) { }
 	CModuleAllocator( const CModuleAllocator& x ) { }
 	CModuleAllocator( const CModuleAllocator& x, const char* pName ) { }
 
@@ -45,16 +45,16 @@ private:
 };
 
 constexpr GDR_INLINE bool operator==( const eastl::allocator& a, const CModuleAllocator& b ) {
-    return true;
+	return true;
 }
 constexpr GDR_INLINE bool operator!=( const eastl::allocator& a, const CModuleAllocator& b ) {
-    return true;
+	return true;
 }
 constexpr GDR_INLINE bool operator==( const CModuleAllocator& a, const eastl::allocator& b ) {
-    return true;
+	return true;
 }
 constexpr GDR_INLINE bool operator!=( const CModuleAllocator& a, const eastl::allocator& b ) {
-    return true;
+	return true;
 }
 
 #include "module_memory.h"
@@ -82,81 +82,81 @@ class CModuleAllocatorTemplated
 {
 public:
 
-    EASTL_ALLOCATOR_EXPLICIT CModuleAllocatorTemplated( const char* pName = EASTL_NAME_VAL( EASTL_ALLOCATOR_DEFAULT_NAME ) ) { }
+	EASTL_ALLOCATOR_EXPLICIT CModuleAllocatorTemplated( const char* pName = EASTL_NAME_VAL( EASTL_ALLOCATOR_DEFAULT_NAME ) ) { }
 	CModuleAllocatorTemplated( const CModuleAllocatorTemplated& x ) { }
 	CModuleAllocatorTemplated( const CModuleAllocatorTemplated& x, const char* pName ) { }
 
 	CModuleAllocatorTemplated& operator=( const CModuleAllocatorTemplated& x ) = default;
 
 	T* allocate( size_t n, int flags = 0 ) {
-        return (T *)Mem_ClearedAlloc( sizeof( T ) );
-    }
+		return (T *)Mem_ClearedAlloc( sizeof( T ) );
+	}
 	T* allocate( size_t n, size_t alignment, size_t offset, int flags = 0 ) {
-        return (T *)Mem_ClearedAlloc( sizeof( T ) );
-    }
+		return (T *)Mem_ClearedAlloc( sizeof( T ) );
+	}
 	void  deallocate( T* p, size_t n ) {
-        Mem_Free( p );
-    }
+		Mem_Free( p );
+	}
 };
 
 class CModuleStringAllocator
 {
 public:
-    EASTL_ALLOCATOR_EXPLICIT CModuleStringAllocator( const char* pName = EASTL_NAME_VAL( EASTL_ALLOCATOR_DEFAULT_NAME ) ) { }
+	EASTL_ALLOCATOR_EXPLICIT CModuleStringAllocator( const char* pName = EASTL_NAME_VAL( EASTL_ALLOCATOR_DEFAULT_NAME ) ) { }
 	CModuleStringAllocator( const CModuleStringAllocator& x ) { }
 	CModuleStringAllocator( const CModuleStringAllocator& x, const char* pName ) { }
 
 	CModuleStringAllocator& operator=( const CModuleStringAllocator& x ) = default;
 
 	void* allocate( size_t n, int flags = 0 ) {
-        return Mem_Alloc( n );
-    }
+		return Mem_Alloc( n );
+	}
 	void* allocate( size_t n, size_t alignment, size_t offset, int flags = 0 ) {
-        return Mem_Alloc( n );
-    }
+		return Mem_Alloc( n );
+	}
 	void  deallocate( void *p, size_t n ) {
-        Mem_Free( p );
-    }
+		Mem_Free( p );
+	}
 };
 
 constexpr GDR_INLINE bool operator==( const CModuleAllocator& a, const CModuleAllocator& b ) {
-    return true;
+	return true;
 }
 constexpr GDR_INLINE bool operator!=( const CModuleAllocator& a, const CModuleAllocator& b ) {
-    return false;
+	return false;
 }
 
 constexpr GDR_INLINE bool operator==( const CModuleStringAllocator& a, const CModuleStringAllocator& b ) {
-    return true;
+	return true;
 }
 constexpr GDR_INLINE bool operator!=( const CModuleStringAllocator& a, const CModuleStringAllocator& b ) {
-    return false;
+	return false;
 }
 
 constexpr GDR_INLINE bool operator==( const eastl::allocator& a, const CModuleStringAllocator& b ) {
-    return true;
+	return true;
 }
 constexpr GDR_INLINE bool operator!=( const eastl::allocator& a, const CModuleStringAllocator& b ) {
-    return true;
+	return true;
 }
 constexpr GDR_INLINE bool operator==( const CModuleStringAllocator& a, const eastl::allocator& b ) {
-    return true;
+	return true;
 }
 constexpr GDR_INLINE bool operator!=( const CModuleStringAllocator& a, const eastl::allocator& b ) {
-    return true;
+	return true;
 }
 
 constexpr GDR_INLINE bool operator==( const CModuleAllocator& a, const CModuleStringAllocator& b ) {
-    return true;
+	return true;
 }
 constexpr GDR_INLINE bool operator!=( const CModuleAllocator& a, const CModuleStringAllocator& b ) {
-    return true;
+	return true;
 }
 constexpr GDR_INLINE bool operator==( const CModuleStringAllocator& a, const CModuleAllocator& b ) {
-    return true;
+	return true;
 }
 constexpr GDR_INLINE bool operator!=( const CModuleStringAllocator& a, const CModuleAllocator& b ) {
-    return true;
+	return true;
 }
 
 using string_view_t = eastl::basic_string_view<char>;
@@ -215,95 +215,95 @@ using UtlList = eastl::list<T, Allocator>;
 
 typedef struct
 {
-    void *(*Malloc)(uint64_t size);
-    void *(*Realloc)(void *ptr, uint64_t nsize); // really just for stb_image.h
-    void (*FreeAll)(void);
+	void *(*Malloc)(uint64_t size);
+	void *(*Realloc)(void *ptr, uint64_t nsize); // really just for stb_image.h
+	void (*FreeAll)(void);
 	void (*Free)(void *ptr);
-    char *(*CopyString)(const char *str);
+	char *(*CopyString)(const char *str);
 #ifdef _NOMAD_DEBUG
-    void *(*Hunk_AllocDebug)(uint64_t size, ha_pref where, const char *label, const char *file, uint64_t line);
+	void *(*Hunk_AllocDebug)(uint64_t size, ha_pref where, const char *label, const char *file, uint64_t line);
 #else
 	void *(*Hunk_Alloc)(uint64_t size, ha_pref where);
 #endif
-    void *(*Hunk_AllocateTempMemory)( uint64_t size );
-    void (*Hunk_FreeTempMemory)( void *buf );
+	void *(*Hunk_AllocateTempMemory)( uint64_t size );
+	void (*Hunk_FreeTempMemory)( void *buf );
 
-    void (*Sys_FreeFileList)( char **list );
+	void (*Sys_FreeFileList)( char **list );
 
-    void (GDR_DECL *Printf)( int level, const char *fmt, ... ) GDR_ATTRIBUTE((format(printf, 2, 3)));
-    void GDR_NORETURN (GDR_DECL *Error)(errorCode_t code, const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 2, 3)));
+	void (GDR_DECL *Printf)( int level, const char *fmt, ... ) GDR_ATTRIBUTE((format(printf, 2, 3)));
+	void GDR_NORETURN (GDR_DECL *Error)(errorCode_t code, const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 2, 3)));
 
-    void (*Cvar_VariableStringBuffer)(const char *name, char *buffer, uint64_t bufferSize);
-    void (*Cvar_VariableStringBufferSafe)(const char *name, char *buffer, uint64_t bufferSize, uint32_t flag);
-    int64_t (*Cvar_VariableInteger)(const char *name);
-    cvar_t *(*Cvar_Get)(const char *name, const char *value, uint32_t flags);
-    void (*Cvar_SetGroup)(cvar_t *cv, cvarGroup_t group);
-    void (*Cvar_SetDescription)(cvar_t *cv, const char *description);
-    void (*Cvar_Set)(const char *name, const char *value);
-    void (*Cvar_CheckRange)(cvar_t *var, const char *mins, const char *maxs, cvartype_t type);
-    int (*Cvar_CheckGroup)(cvarGroup_t group);
-    void (*Cvar_ResetGroup)( cvarGroup_t group, qboolean resetModifiedFlags );
-    void (*Cvar_Reset)(const char *name);
-    const char *(*Cvar_VariableString)(const char *name);
+	void (*Cvar_VariableStringBuffer)(const char *name, char *buffer, uint64_t bufferSize);
+	void (*Cvar_VariableStringBufferSafe)(const char *name, char *buffer, uint64_t bufferSize, uint32_t flag);
+	int64_t (*Cvar_VariableInteger)(const char *name);
+	cvar_t *(*Cvar_Get)(const char *name, const char *value, uint32_t flags);
+	void (*Cvar_SetGroup)(cvar_t *cv, cvarGroup_t group);
+	void (*Cvar_SetDescription)(cvar_t *cv, const char *description);
+	void (*Cvar_Set)(const char *name, const char *value);
+	void (*Cvar_CheckRange)(cvar_t *var, const char *mins, const char *maxs, cvartype_t type);
+	int (*Cvar_CheckGroup)(cvarGroup_t group);
+	void (*Cvar_ResetGroup)( cvarGroup_t group, qboolean resetModifiedFlags );
+	void (*Cvar_Reset)(const char *name);
+	const char *(*Cvar_VariableString)(const char *name);
 
-    void (*Cmd_AddCommand)(const char* name, cmdfunc_t function);
-    void (*Cmd_RemoveCommand)(const char* name);
-    void (*Cmd_ExecuteCommand)(const char* name);
-    void (*Cmd_ExecuteString)(const char *str);
-    uint32_t (*Cmd_Argc)(void);
-    char *(*Cmd_ArgsFrom)(uint32_t index);
-    const char *(*Cmd_Argv)(uint32_t index);
+	void (*Cmd_AddCommand)(const char* name, cmdfunc_t function);
+	void (*Cmd_RemoveCommand)(const char* name);
+	void (*Cmd_ExecuteCommand)(const char* name);
+	void (*Cmd_ExecuteString)(const char *str);
+	uint32_t (*Cmd_Argc)(void);
+	char *(*Cmd_ArgsFrom)(uint32_t index);
+	const char *(*Cmd_Argv)(uint32_t index);
 
-    uint64_t (*Milliseconds)(void);
+	uint64_t (*Milliseconds)(void);
 
-    qboolean (*Key_IsDown)(uint32_t keynum);
+	qboolean (*Key_IsDown)(uint32_t keynum);
 
-    void (*FS_FreeFileList)(char **list);
-    uint64_t (*FS_Write)(const void *buffer, uint64_t size, fileHandle_t f);
-    uint64_t (*FS_Read)(void *buffer, uint64_t size, fileHandle_t);
-    fileOffset_t (*FS_FileSeek)(fileHandle_t f, fileOffset_t offset, uint32_t whence);
-    fileOffset_t (*FS_FileTell)(fileHandle_t f);
-    uint64_t (*FS_FileLength)(fileHandle_t f);
-    qboolean (*FS_FileExists)(const char *filename);
-    fileHandle_t (*FS_FOpenRead)(const char *path);
-    fileHandle_t (*FS_FOpenWrite)(const char *path);
-    void (*FS_FClose)(fileHandle_t f);
-    void (*FS_FreeFile)(void *buffer);
-    uint64_t (*FS_LoadFile)(const char *path, void **buffer);
-    char **(*FS_ListFiles)(const char *path, const char *extension, uint64_t *numfiles);
-    void (*FS_WriteFile)(const char *npath, const void *buffer, uint64_t size);
+	void (*FS_FreeFileList)(char **list);
+	uint64_t (*FS_Write)(const void *buffer, uint64_t size, fileHandle_t f);
+	uint64_t (*FS_Read)(void *buffer, uint64_t size, fileHandle_t);
+	fileOffset_t (*FS_FileSeek)(fileHandle_t f, fileOffset_t offset, uint32_t whence);
+	fileOffset_t (*FS_FileTell)(fileHandle_t f);
+	uint64_t (*FS_FileLength)(fileHandle_t f);
+	qboolean (*FS_FileExists)(const char *filename);
+	fileHandle_t (*FS_FOpenRead)(const char *path);
+	fileHandle_t (*FS_FOpenWrite)(const char *path);
+	void (*FS_FClose)(fileHandle_t f);
+	void (*FS_FreeFile)(void *buffer);
+	uint64_t (*FS_LoadFile)(const char *path, void **buffer);
+	char **(*FS_ListFiles)(const char *path, const char *extension, uint64_t *numfiles);
+	void (*FS_WriteFile)(const char *npath, const void *buffer, uint64_t size);
 
-    void *(*Sys_LoadDLL)(const char *name);
-    void *(*Sys_GetProcAddress)(void *handle, const char *name);
-    void (*Sys_CloseDLL)(void *handle);
+	void *(*Sys_LoadDLL)(const char *name);
+	void *(*Sys_GetProcAddress)(void *handle, const char *name);
+	void (*Sys_CloseDLL)(void *handle);
 } moduleImport_t;
 
 class CModuleHandle;
 
 template<typename T, typename... Args>
 inline T *CreateObject( Args&&... args ) {
-    return (T *)::new ( Mem_Alloc( sizeof(T) ) ) T( eastl::forward<Args>( args )... );
+	return (T *)::new ( Mem_Alloc( sizeof(T) ) ) T( eastl::forward<Args>( args )... );
 }
 template<typename T>
 inline void DeleteObject( T *pObject ) {
-    pObject->~T();
-    Mem_Free( (void *)pObject );
+	pObject->~T();
+	Mem_Free( (void *)pObject );
 }
 
 struct CModuleInfo
 {
 	CModuleInfo( nlohmann::json& parse, CModuleHandle *pHandle ) {
-        string_t *pString;
+		string_t *pString;
 
 		N_strncpyz( m_szName, parse[ "Name" ].get<string_t>().c_str(), MAX_NPATH );
-        N_strncpyz( m_szId, parse[ "Id" ].get<string_t>().c_str(), MAX_NPATH );
-        
-        m_nDependencies = parse.at( "DependedModules" ).size();
-        m_pDependencies = (string_t *)Hunk_Alloc( sizeof( *m_pDependencies ) * m_nDependencies, h_high );
-        pString = m_pDependencies;
-        for ( const auto& it : parse.at( "DependedModules" ) ) {
-            *pString++ = eastl::move( it.get<string_t>() );
-        }
+		N_strncpyz( m_szId, parse[ "Id" ].get<string_t>().c_str(), MAX_NPATH );
+		
+		m_nDependencies = parse.at( "DependedModules" ).size();
+		m_pDependencies = (string_t *)Hunk_Alloc( sizeof( *m_pDependencies ) * m_nDependencies, h_high );
+		pString = m_pDependencies;
+		for ( const auto& it : parse.at( "DependedModules" ) ) {
+			*pString++ = eastl::move( it.get<string_t>() );
+		}
 
 		m_GameVersion.m_nVersionMajor = parse[ "Version" ][ "GameVersionMajor" ];
 		m_GameVersion.m_nVersionUpdate = parse[ "Version" ][ "GameVersionUpdate" ];
@@ -315,18 +315,18 @@ struct CModuleInfo
 
 		m_pHandle = pHandle;
 
-        Con_Printf( "...loaded module \"%s\", v%i.%i.%i\n", m_szName, m_nModVersionMajor, m_nModVersionUpdate, m_nModVersionPatch );
+		Con_Printf( "...loaded module \"%s\", v%i.%i.%i\n", m_szName, m_nModVersionMajor, m_nModVersionUpdate, m_nModVersionPatch );
 	}
 	~CModuleInfo() {
 	}
 
-    inline bool operator==( const UtlString& other ) const {
-        return N_stricmp( m_szName, other.c_str() ) == 0;
-    }
+	inline bool operator==( const UtlString& other ) const {
+		return N_stricmp( m_szName, other.c_str() ) == 0;
+	}
 
 	char m_szName[MAX_NPATH];
-    char m_szId[MAX_NPATH];
-    uint32_t m_nDependencies;
+	char m_szId[MAX_NPATH];
+	uint32_t m_nDependencies;
 	string_t *m_pDependencies;
 
 	CModuleHandle *m_pHandle;
@@ -339,7 +339,7 @@ struct CModuleInfo
 };
 
 inline bool operator==( CModuleInfo *const m1, const UtlString& m2 ) {
-    return *m1 == m2;
+	return *m1 == m2;
 }
 
 class CContextMgr;
@@ -350,51 +350,51 @@ class CScriptBuilder;
 class CModuleCrashData
 {
 public:
-    CModuleCrashData( const char *pType, CModuleHandle *pModule )
-        : m_pExceptionType( pType ), m_pMainModule( pModule )
-    { }
-    CModuleCrashData( void ) = default;
-    CModuleCrashData( const CModuleCrashData & ) = default;
-    ~CModuleCrashData() = default;
+	CModuleCrashData( const char *pType, CModuleHandle *pModule )
+		: m_pExceptionType( pType ), m_pMainModule( pModule )
+	{ }
+	CModuleCrashData( void ) = default;
+	CModuleCrashData( const CModuleCrashData & ) = default;
+	~CModuleCrashData() = default;
 
-    const char *m_pExceptionType;
-    CModuleHandle *m_pMainModule;
-    eastl::vector<CModuleHandle *> m_InvolvedModules;
+	const char *m_pExceptionType;
+	CModuleHandle *m_pMainModule;
+	eastl::vector<CModuleHandle *> m_InvolvedModules;
 };
 
 typedef struct module_s {
-    CModuleInfo *info;
-    uint64_t numDependencies;
-    uint64_t bootIndex;
-    qboolean active;        // is it active?
-    qboolean valid;         // did it fail to load?
-    qboolean isRequired;
-    qboolean allDepsActive;
+	CModuleInfo *info;
+	uint64_t numDependencies;
+	uint64_t bootIndex;
+	qboolean active;        // is it active?
+	qboolean valid;         // did it fail to load?
+	qboolean isRequired;
+	qboolean allDepsActive;
 
 	module_s& operator=( module_s& other );
 	module_s& operator=( const module_s& other );
 	bool operator==( const string_t& other ) const;
 	bool operator!=( const string_t& other ) const;
-    bool operator<( const module_s& other ) const;
-    bool operator>( const module_s& other ) const;
-    bool operator==( const module_s& other ) const;
-    bool operator!=( const module_s& other ) const;
+	bool operator<( const module_s& other ) const;
+	bool operator>( const module_s& other ) const;
+	bool operator==( const module_s& other ) const;
+	bool operator!=( const module_s& other ) const;
 } module_t;
 
 //
 // required modules, those made with love, by Your Resident Fiend
 //
 inline const char *requiredModules[] = {
-    "nomadmain"
+	"nomadmain"
 };
 
 inline qboolean IsRequiredModule( const char *name ) {
-    for ( const auto& it : requiredModules ) {
-        if ( N_streq( name, it ) ) {
-            return qtrue;
-        }
-    }
-    return qfalse;
+	for ( const auto& it : requiredModules ) {
+		if ( N_streq( name, it ) ) {
+			return qtrue;
+		}
+	}
+	return qfalse;
 }
 
 inline qboolean IsLoadedAfter( const module_t *mod, const module_t *dep ) {
@@ -445,19 +445,19 @@ inline bool module_s::operator<( const module_s& other ) const {
 	if ( IsDependentOn( eastl::addressof( other ), this ) ) {
 		return true;
 	}
-    return N_strcmp( info->m_szName, other.info->m_szName ) == 1 ? true : false;
+	return N_strcmp( info->m_szName, other.info->m_szName ) == 1 ? true : false;
 }
 inline bool module_s::operator>( const module_s& other ) const {
 	if ( IsDependentOn( this, eastl::addressof( other ) ) ) {
 		return false;
 	}
-    return N_strcmp( other.info->m_szName, info->m_szName ) == -1 ? true : false;
+	return N_strcmp( other.info->m_szName, info->m_szName ) == -1 ? true : false;
 }
 inline bool module_s::operator==( const module_s& other ) const {
-    return N_strcmp( info->m_szName, other.info->m_szName ) == 0;
+	return N_strcmp( info->m_szName, other.info->m_szName ) == 0;
 }
 inline bool module_s::operator!=( const module_s& other ) const {
-    return N_strcmp( info->m_szName, other.info->m_szName ) != 0;
+	return N_strcmp( info->m_szName, other.info->m_szName ) != 0;
 }
 
 inline bool module_s::operator==( const string_t& other ) const {
@@ -468,66 +468,84 @@ inline bool module_s::operator!=( const string_t& other ) const {
 	return N_strcmp( info->m_szName, other.c_str() ) != 0;
 }
 
+typedef struct {
+	int64_t ident;
+	version_t gameVersion;
+	int32_t moduleVersionMajor;
+	int32_t moduleVersionUpdate;
+	int32_t moduleVersionPatch;
+	uint32_t checksum;
+	qboolean hasDebugSymbols;
+	uint64_t modCount;
+	char modList[0];
+} asCodeCacheHeader_t;
+
 class CModuleLib
 {
 public:
-    CModuleLib( void );
-    ~CModuleLib();
+	CModuleLib( void );
+	~CModuleLib();
 
-    void Shutdown( qboolean quit );
+	void Shutdown( qboolean quit );
 	CModuleInfo *GetModule( const char *pName );
 	int ModuleCall( CModuleInfo *pModule, EModuleFuncId nCallId, uint32_t nArgs, ... );
-    CModuleInfo *GetLoadList( void );
-    uint64_t GetModCount( void ) const;
+	CModuleInfo *GetLoadList( void );
+	uint64_t GetModCount( void ) const;
 
-    // runs all modules besides for sgame
-    void RunModules( EModuleFuncId nCallId, uint32_t nArgs, ... );
+	// runs all modules besides for sgame
+	void RunModules( EModuleFuncId nCallId, uint32_t nArgs, ... );
 
 	// only for module_lib
 	CScriptBuilder *GetScriptBuilder( void );
 	asIScriptEngine *GetScriptEngine( void );
 	CContextMgr *GetContextManager( void );
-    void RegisterCvar( const UtlString& name, const UtlString& value, uint32_t flags, bool trackChanges, uint32_t privateFlag );
-    bool AddDefaultProcs( void ) const;
+	void RegisterCvar( const UtlString& name, const UtlString& value, uint32_t flags, bool trackChanges, uint32_t privateFlag );
+	bool AddDefaultProcs( void ) const;
 
-    void SetHandle( CModuleHandle *pHandle ) {
-        m_pCurrentHandle = pHandle;
-    }
-    const CModuleHandle *GetCurrentHandle( void ) const {
-        return m_pCurrentHandle;
-    }
-    CModuleHandle *GetCurrentHandle( void ) {
-        return m_pCurrentHandle;
-    }
-    asIScriptModule *GetScriptModule( void ) {
-        return m_pModule;
-    }
-    asIScriptContext *GetScriptContext( void ) {
-        return m_pContext;
-    }
+	void SetHandle( CModuleHandle *pHandle ) {
+		m_pCurrentHandle = pHandle;
+	}
+	const CModuleHandle *GetCurrentHandle( void ) const {
+		return m_pCurrentHandle;
+	}
+	CModuleHandle *GetCurrentHandle( void ) {
+		return m_pCurrentHandle;
+	}
+	asIScriptModule *GetScriptModule( void ) {
+		return m_pModule;
+	}
+	asIScriptContext *GetScriptContext( void ) {
+		return m_pContext;
+	}
 
-    CDebugger *GetDebugger( void );
+	CDebugger *GetDebugger( void );
 
-    module_t *m_pModList;
+	qboolean IsModuleInCache( const char *name ) const;
+
+	module_t *m_pModList;
 private:
-    void LoadModList( void );
+	void SaveByteCodeCache( void );
+	bool LoadByteCodeCache( void );
+	void LoadModList( void );
 	void LoadModule( const char *pModuleName );
 
 	CModuleInfo *m_pLoadList;
-    uint64_t m_nModuleCount;
+	uint64_t m_nModuleCount;
 
 	CScriptBuilder *m_pScriptBuilder;
 	CContextMgr *m_pContextManager;
 	asIScriptEngine *m_pEngine;
 
-    qboolean m_bRegistered;
-    qboolean m_bRecursiveShutdown;
+	qboolean m_bRegistered;
+	qboolean m_bRecursiveShutdown;
 
-    asCJITCompiler *m_pCompiler;
-    CModuleHandle *m_pCurrentHandle;
+	asCJITCompiler *m_pCompiler;
+	CModuleHandle *m_pCurrentHandle;
 
-    asIScriptModule *m_pModule;
-    asIScriptContext *m_pContext;
+	asIScriptModule *m_pModule;
+	asIScriptContext *m_pContext;
+
+	asCodeCacheHeader_t *m_pCacheData;
 };
 
 extern moduleImport_t moduleImport;

@@ -409,9 +409,9 @@ namespace TheNomad::SGame {
 			return rank;
 		}
 
-		uint64 m_TimeMilliseconds = 0;
-		int64 m_TimeSeconds = 0;
-		int64 m_TimeMinutes = 0;
+		uint m_TimeMilliseconds = 0;
+		int m_TimeSeconds = 0;
+		int m_TimeMinutes = 0;
 
 		uint stylePoints = 0;
 		uint numKills = 0;

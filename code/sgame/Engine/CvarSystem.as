@@ -61,7 +61,7 @@ namespace TheNomad::Engine {
 		}
 		
 		void ListVars_f() {
-			ConsolePrint( "VM " + MODULE_NAME + " Cvars:\n" );
+			ConsolePrint( "VM Cvars:\n" );
 
 			for ( uint i = 0; i < m_CvarCache.Count(); i++ ) {
 				ConsolePrint( m_CvarCache[i].m_Handle.GetName() + " " + m_CvarCache[i].m_Handle.GetValue() );

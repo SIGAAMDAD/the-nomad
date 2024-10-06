@@ -70,7 +70,7 @@ static void Field_CharEvent( ImGuiInputTextCallbackData *data, int ch );
 static void Field_Paste( ImGuiInputTextCallbackData *data );
 static void Field_Clear( menufield_t *edit );
 
-static void Menu_DrawItemList( void **items, int numitems );
+void Menu_DrawItemList( void **items, int numitems );
 void Menu_DrawItemGeneric( menucommon_t *generic );
 
 static void Field_Clear( menufield_t *edit )
@@ -632,7 +632,7 @@ void Menu_DrawItemGeneric( menucommon_t *generic )
 	ImGui::SetWindowFontScale( fontScale * ui->scale );
 }
 
-static void Menu_DrawItemList( void **items, int numitems )
+void Menu_DrawItemList( void **items, int numitems )
 {
 	int i;
 	menucommon_t *generic;

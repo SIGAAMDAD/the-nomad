@@ -1005,7 +1005,7 @@ static nhandle_t RegisterSprite( nhandle_t hSpriteSheet, uint32_t nIndex ) {
 
 static void PushListener( asIScriptGeneric *pGeneric )
 {
-	pGeneric->SetReturnDWord( (asDWORD)g_pSoundWorld->PushListener( pGeneric->GetArgDWord( 0 ) ) );
+	pGeneric->SetReturnDWord( (asDWORD)s_SoundWorld.PushListener( pGeneric->GetArgDWord( 0 ) ) );
 }
 
 static void SetEmitterPosition( asIScriptGeneric *pGeneric )
@@ -1016,7 +1016,7 @@ static void SetEmitterPosition( asIScriptGeneric *pGeneric )
 	const float up = pGeneric->GetArgFloat( 3 );
 	const float speed = pGeneric->GetArgFloat( 4 );
 
-	g_pSoundWorld->SetEmitterPosition( hEmitter, glm::value_ptr( position ), forward, up, speed );
+	s_SoundWorld.SetEmitterPosition( hEmitter, glm::value_ptr( position ), forward, up, speed );
 }
 
 static void PlayEmitterSound( asIScriptGeneric *pGeneric )
@@ -1026,17 +1026,17 @@ static void PlayEmitterSound( asIScriptGeneric *pGeneric )
 	uint32_t nListenerMask = pGeneric->GetArgDWord( 2 );
 	sfxHandle_t hSfx = (sfxHandle_t)pGeneric->GetArgDWord( 3 );
 
-	g_pSoundWorld->PlayEmitterSound( hEmitter, nVolume, nListenerMask, hSfx );
+	s_SoundWorld.PlayEmitterSound( hEmitter, nVolume, nListenerMask, hSfx );
 }
 
 static void RegisterEmitter( asIScriptGeneric *pGeneric )
 {
-	pGeneric->SetReturnDWord( (asDWORD)g_pSoundWorld->RegisterEmitter( pGeneric->GetArgDWord( 0 ) ) );
+	pGeneric->SetReturnDWord( (asDWORD)s_SoundWorld.RegisterEmitter( pGeneric->GetArgDWord( 0 ) ) );
 }
 
 static void RemoveEmitter( asIScriptGeneric *pGeneric )
 {
-	g_pSoundWorld->RemoveEmitter( (nhandle_t)pGeneric->GetArgDWord( 0 ) );
+	s_SoundWorld.RemoveEmitter( (nhandle_t)pGeneric->GetArgDWord( 0 ) );
 }
 
 static void CastRay( asIScriptGeneric *pGeneric ) {
@@ -3094,13 +3094,6 @@ void ModuleLib_Register_Engine( void )
 	#ifdef _NOMAD_DEBUG
 		g_pModuleLib->GetScriptBuilder()->DefineWord( "NOMAD_DEBUG" );
 	#endif
-	}
-
-	{ // ModuleInfo
-		REGISTER_GLOBAL_VAR( "const int32 MODULE_VERSION_MAJOR", g_pModuleLib->GetCurrentHandle()->VersionMajor() );
-		REGISTER_GLOBAL_VAR( "const int32 MODULE_VERSION_UPDATE", g_pModuleLib->GetCurrentHandle()->VersionUpdate() );
-		REGISTER_GLOBAL_VAR( "const int32 MODULE_VERSION_PATCH", g_pModuleLib->GetCurrentHandle()->VersionPatch() );
-		REGISTER_GLOBAL_VAR( "const string MODULE_NAME", eastl::addressof( g_pModuleLib->GetCurrentHandle()->GetName() ) );
 	}
 
 	CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void DebugPrint( const string& in )",
