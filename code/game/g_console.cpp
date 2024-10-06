@@ -166,6 +166,8 @@ typedef struct {
 	int32_t contimes[NUM_CON_TIMES];
 
 	vec4_t	color;
+
+	qboolean scrolled;
 } console_t;
 
 static void Con_DrawSolidConsole( float frac );
@@ -190,6 +192,7 @@ Con_ToggleConsole_f
 */
 void Con_ToggleConsole_f( void ) {
 	const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar;
+	con.scrolled = qfalse;
 
 	// Can't toggle the console when it's the only thing available
     if ( Key_GetCatcher() == KEYCATCH_CONSOLE ) {
@@ -208,11 +211,6 @@ void Con_ToggleConsole_f( void ) {
 		Key_SetCatcher( Key_GetCatcher() & ~KEYCATCH_CONSOLE );
 	} else {
 		Key_SetCatcher( Key_GetCatcher() | KEYCATCH_CONSOLE );
-	}
-
-	// set the scroll to the absolute bottom
-	if ( Key_GetCatcher() & KEYCATCH_CONSOLE ) {
-		Con_DrawConsole( qtrue );
 	}
 }
 
@@ -448,6 +446,8 @@ void Con_Init( void )
 	Field_Clear( &g_consoleField );
 	g_consoleField.widthInChars = g_console_field_width;
 
+	gi.consoleShader = re.RegisterShader( "console" );
+
 	memset( &con, 0, sizeof( con ) );
 
 	Cmd_AddCommand( "clear", Con_Clear_f );
@@ -541,6 +541,8 @@ void G_ConsolePrint( const char *txt ) {
 		};
 		*txt++;
 	}
+
+	con.scrolled = qfalse;
 }
 
 
@@ -558,6 +560,7 @@ static int Con_TextCallback( ImGuiInputTextCallbackData *data )
 {
 	field_t *edit;
 	uint32_t len;
+	field_t history;
 
 	edit = &g_consoleField;
 
@@ -590,21 +593,17 @@ static int Con_TextCallback( ImGuiInputTextCallbackData *data )
 	if ( ( keys[KEY_WHEEL_UP].down && keys[KEY_SHIFT].down ) || keys[KEY_UPARROW].down
 		|| ( keys[KEY_P].down && keys[KEY_CTRL].down ) )
 	{
-		if ( Con_HistoryGetPrev( &g_consoleField ) ) {
+		if ( Con_HistoryGetPrev( &history ) ) {
 			data->DeleteChars( 0, data->BufTextLen );
-			data->InsertChars( data->CursorPos, edit->buffer + data->CursorPos, edit->buffer + edit->cursor );
-		} else {
-			edit->cursor = data->CursorPos = 0;
+			data->InsertChars( 0, history.buffer, history.buffer + history.cursor );
 		}
 	}
 	if ( ( keys[KEY_WHEEL_DOWN].down && keys[KEY_SHIFT].down ) || keys[KEY_DOWNARROW].down
 		|| ( keys[KEY_N].down && keys[KEY_CTRL].down ) )
 	{
-		if ( Con_HistoryGetNext( &g_consoleField ) ) {
+		if ( Con_HistoryGetNext( &history ) ) {
 			data->DeleteChars( 0, data->BufTextLen );
-			data->InsertChars( data->CursorPos, edit->buffer + data->CursorPos, edit->buffer + edit->cursor );
-		} else {
-			data->DeleteChars( 0, data->BufTextLen );
+			data->InsertChars( 0, history.buffer, history.buffer + history.cursor );
 		}
 	}
 
@@ -665,7 +664,7 @@ static void Con_DrawInput( float height, bool scroll ) {
 	}
 
 	ImGui::Begin( "##ConsoleInputWidgetWindow", NULL, windowFlags );
-	ImGui::SetWindowPos( ImVec2( 0, height - 60 ) );
+	ImGui::SetWindowPos( ImVec2( 0, height - 42 ) );
 	ImGui::SetWindowSize( ImVec2( gi.gpuConfig.vidWidth, 128 ) );
 	ImGui::PushStyleColor( ImGuiCol_FrameBg, ImVec4( 1.0f, 1.0f, 1.0f, 0.0f ) );
 	ImGui::PushStyleColor( ImGuiCol_FrameBgActive, ImVec4( 1.0f, 1.0f, 1.0f, 0.0f ) );
@@ -714,6 +713,8 @@ static void Con_DrawInput( float height, bool scroll ) {
 		}
 
 		Con_Printf( "]%s\n", g_consoleField.buffer );
+		// copy line to history buffer
+		Con_SaveField( &g_consoleField );
 
 		// leading slash is an explicit command
 		if ( g_consoleField.buffer[0] == '\\' || g_consoleField.buffer[0] == '/' ) {
@@ -729,9 +730,6 @@ static void Con_DrawInput( float height, bool scroll ) {
 				Cbuf_AddText( "\n" );
 			}
 		}
-
-		// copy line to history buffer
-		Con_SaveField( &g_consoleField );
 
 		Field_Clear( &g_consoleField );
 		g_consoleField.widthInChars = g_console_field_width;
@@ -825,10 +823,9 @@ static void Con_DrawSolidConsole( float frac, qboolean open )
 
 	height = gi.gpuConfig.vidHeight * frac;
 	if ( (int)height <= 0 ) {
+		con.scrolled = qfalse;
 		return;
 	}
-
-	gi.consoleShader = re.RegisterShader( "console" );
 
 	// draw the background
 	// custom console background color
@@ -851,11 +848,13 @@ static void Con_DrawSolidConsole( float frac, qboolean open )
 		ImGui::Image( (ImTextureID)(uintptr_t)gi.whiteShader, ImVec2( (float)gi.gpuConfig.vidWidth, height ) );
 		customColor = qtrue;
 	} else {
-		ImGui::Begin( "##ConsoleWindowBackground", NULL, windowFlags | ImGuiWindowFlags_NoBackground );
+		ImGui::PushStyleColor( ImGuiCol_WindowBg, colorBlack );
+		ImGui::Begin( "##ConsoleWindowBackground", NULL, windowFlags );
 		ImGui::SetWindowPos( ImVec2( -16, -16 ) );
 		ImGui::SetWindowSize( ImVec2( gi.gpuConfig.vidWidth + 16, height + 54 ) );
-		ImGui::Image( (ImTextureID)(uintptr_t)gi.consoleShader, ImVec2( (float)gi.gpuConfig.vidWidth, height ) );
+		ImGui::Image( (ImTextureID)(uintptr_t)gi.consoleShader, ImVec2( 0, 0 ) );
 		ImGui::End();
+		ImGui::PopStyleColor();
 	}
 
 	ImGui::Begin( "CommandConsole", NULL, windowFlags | ImGuiWindowFlags_NoBackground );
@@ -879,16 +878,20 @@ static void Con_DrawSolidConsole( float frac, qboolean open )
 		ImGui::NewLine();
 	}
 
-	if ( height == gi.gpuConfig.vidHeight ) {
+	bool scroll = false;
+	if ( !ImGui::IsWindowCollapsed() && height == ImGui::GetWindowSize().y + 48 ) {
 		Con_DrawText( con.text );
 		ImGui::TextUnformatted( "" );
-		if ( open ) {
-			ImGui::SetScrollY( ImGui::GetScrollMaxY() );
+		scroll = ImGui::GetScrollY() != ImGui::GetScrollMaxY();
+		if ( ImGui::GetScrollY() >= ImGui::GetScrollMaxY() ) {
+            ImGui::SetScrollHereY( 1.0f );
 		}
+//		if ( !con.scrolled ) {
+//			con.scrolled = qtrue;
+//		//	ImGui::SetScrollY( 0.0 );
+//			ImGui::SetScrollY( ImGui::GetScrollY() );
+//		}
 	}
-
-	const bool scroll = ImGui::GetScrollY() != ImGui::GetScrollMaxY();
-
 	ImGui::End();
 
 	Con_DrawInput( height, scroll );
@@ -977,10 +980,11 @@ Scroll it up or down
 void Con_RunConsole( void ) 
 {
 	// decide on the destination height of the console
-	if ( Key_GetCatcher( ) & KEYCATCH_CONSOLE ) {
-		con.finalFrac = 1.0f;	// half screen
+	if ( Key_GetCatcher() & KEYCATCH_CONSOLE ) {
+		con.finalFrac = 0.75f;	// half screen
 	} else {
 		con.finalFrac = 0.0f;	// none visible
+		con.scrolled = qfalse;
 	}
 	
 	// scroll towards the destination height
@@ -1004,6 +1008,8 @@ void Con_Close( void )
 {
 //	if ( !com_cl_running->i )
 //		return;
+
+	con.scrolled = qfalse;
 
 	Field_Clear( &g_consoleField );
 	Con_ClearNotify();

@@ -2142,7 +2142,7 @@ void G_Frame( int msec, int realMsec )
 			G_ReadGamestate();
 		}
 	}
-
+	
 	// save the msec before checking pause
 	gi.realFrameTime = realMsec;
 

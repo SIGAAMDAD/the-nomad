@@ -385,7 +385,7 @@ void SCR_UpdateScreen( void )
 	// we're in a level
 	// if the user is ending a level through the pause menu,
 	// we let the ui handle the sgame call
-	if ( gi.mapLoaded && ( gi.state == GS_LEVEL || gi.state == GS_STATS_MENU ) && !( Key_GetCatcher() & KEYCATCH_CONSOLE ) ) {
+	if ( gi.mapLoaded && ( gi.state == GS_LEVEL || gi.state == GS_STATS_MENU ) ) {
 		switch ( g_pModuleLib->ModuleCall( sgvm, ModuleOnRunTic, 1, gi.realtime ) ) {
 		case 0:
 		default:

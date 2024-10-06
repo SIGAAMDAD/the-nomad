@@ -46,19 +46,11 @@ namespace TheNomad::SGame {
 		}
 		
 		private void WalkMove() {
-			float speed;
 			const uint gameTic = TheNomad::GameSystem::GameManager.GetGameTic();
 			vec3 accel = m_EntityData.GetPhysicsObject().GetAcceleration();
 			
 			KeyMove();
 
-			speed = sgame_BaseSpeed.GetFloat();
-
-			if ( forward != 0.0f || side != 0.0f ) {
-				const vec3 dir = m_EntityData.GetOrigin() - accel;
-				const float len = Util::VectorLength( dir );
-				const vec3 normal = dir / len;
-			}
 			accel.x += side;
 			accel.y += forward;
 
@@ -79,33 +71,6 @@ namespace TheNomad::SGame {
 			}
 
 			const uint tile = LevelManager.GetMapData().GetTile( m_EntityData.GetOrigin(), m_EntityData.GetBounds() );
-			// it sound like a machine gun if it isn't spaced out
-			if ( ( tile & SURFACEPARM_WATER ) != 0 ) {
-				switch ( TheNomad::Util::PRandom() & 2 ) {
-				case 0:
-					m_EntityData.m_Emitter.PlaySound( moveWater0, 1.0f, 0xff );
-					break;
-				case 1:
-					m_EntityData.m_Emitter.PlaySound( moveWater1, 1.0f, 0xff );
-					break;
-				};
-			}
-			if ( ( tile & SURFACEPARM_METAL ) != 0 ) {
-				switch ( TheNomad::Util::PRandom() & 3 ) {
-				case 0:
-					m_EntityData.m_Emitter.PlaySound( moveMetal0, 1.0f, 0xff );
-					break;
-				case 1:
-					m_EntityData.m_Emitter.PlaySound( moveMetal1, 1.0f, 0xff );
-					break;
-				case 2:
-					m_EntityData.m_Emitter.PlaySound( moveMetal2, 1.0f, 0xff );
-					break;
-				case 3:
-					m_EntityData.m_Emitter.PlaySound( moveMetal3, 1.0f, 0xff );
-					break;
-				};
-			}
 			if ( accel.x != 0.0f || accel.y != 0.0f ) {
 				// sync the extra particles and sounds with the actual animation
 				uint lerpTime = m_EntityData.GetLegState().GetAnimation().GetTicRate() * m_EntityData.GetLegState().GetAnimation().NumFrames();
@@ -116,29 +81,63 @@ namespace TheNomad::SGame {
 				}
 
 				if ( gameTic - move_toggle >= lerpTime ) {
+					// we can mix in different surfaceparm sound effects for more complex environments
+					if ( ( tile & SURFACEPARM_WATER ) != 0 ) {
+						switch ( TheNomad::Util::PRandom() & 2 ) {
+						case 0:
+							m_EntityData.m_Emitter.PlaySound( moveWater0, 1.0f, 0xff );
+							break;
+						case 1:
+							m_EntityData.m_Emitter.PlaySound( moveWater1, 1.0f, 0xff );
+							break;
+						};
+					}
+					if ( ( tile & SURFACEPARM_METAL ) != 0 ) {
+						switch ( TheNomad::Util::PRandom() & 3 ) {
+						case 0:
+							m_EntityData.m_Emitter.PlaySound( moveMetal0, 1.0f, 0xff );
+							break;
+						case 1:
+							m_EntityData.m_Emitter.PlaySound( moveMetal1, 1.0f, 0xff );
+							break;
+						case 2:
+							m_EntityData.m_Emitter.PlaySound( moveMetal2, 1.0f, 0xff );
+							break;
+						case 3:
+							m_EntityData.m_Emitter.PlaySound( moveMetal3, 1.0f, 0xff );
+							break;
+						};
+					}
 					switch ( TheNomad::Util::PRandom() & 3 ) {
 					case 0:
-					case 2:
 						m_EntityData.m_Emitter.PlaySound( moveGravel0, 1.0f, 0xff );
 						break;
-					case 1:
-					case 3:
+					case 2:
 						m_EntityData.m_Emitter.PlaySound( moveGravel1, 1.0f, 0xff );
+						break;
+					case 1:
+						m_EntityData.m_Emitter.PlaySound( moveGravel2, 1.0f, 0xff );
+						break;
+					case 3:
+						m_EntityData.m_Emitter.PlaySound( moveGravel3, 1.0f, 0xff );
 						break;
 					};
 					move_toggle = gameTic;
 
 					vec3 origin;
-					vec3 vel;
+					vec3 vel = vec3( 0.01f, 0.01f, 0.0f );
 
 					origin = m_EntityData.GetOrigin();
-					vel.y = -0.01f;
+					if ( accel.y > accel.x ) {
+						vel.y = accel.y;
+					} else {
+						vel.x = accel.x;
+					}
+
 					if ( m_EntityData.GetFacing() == FACING_LEFT ) {
 						origin.x += 0.15f;
-						vel.x = 0.1f;
 					} else if ( m_EntityData.GetFacing() == FACING_RIGHT ) {
 						origin.x -= 0.15f;
-						vel.x = -0.1f;
 					}
 
 					GfxManager.AddDustPoly( origin, vel, 500, m_EntityData.m_hDustTrailShader );
