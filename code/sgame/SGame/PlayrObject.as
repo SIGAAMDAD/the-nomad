@@ -284,10 +284,11 @@ namespace TheNomad::SGame {
 			m_RightHandMode = InfoSystem::WeaponProperty( section.LoadUInt( "rightHandMode" ) );
 			m_nHandsUsed = section.LoadInt( "handsUsed" );
 
-			for ( uint i = 0; i < m_WeaponSlots.Count(); i++ ) {
-				m_WeaponSlots[i].Load( section );
-			}
+//			for ( uint i = 0; i < m_WeaponSlots.Count(); i++ ) {
+//				m_WeaponSlots[i].Load( section );
+//			}
 
+			/*
 			@slots = @m_Inventory.GetSlots();
 			for ( uint i = 0; i < slots.Count(); i++ ) {
 				const uint count = section.LoadUInt( "itemSlotCount_" + i );
@@ -300,6 +301,7 @@ namespace TheNomad::SGame {
 					}
 				}
 			}
+			*/
 
 			return true;
 		}
@@ -331,10 +333,10 @@ namespace TheNomad::SGame {
 			section.SaveUInt( "rightHandMode", uint( m_RightHandMode ) );
 			section.SaveInt( "handsUsed", m_nHandsUsed );
 
-			for ( uint i = 0; i < m_WeaponSlots.Count(); i++ ) {
-				m_WeaponSlots[i].Save( section );
-			}
-
+//			for ( uint i = 0; i < m_WeaponSlots.Count(); i++ ) {
+//				m_WeaponSlots[i].Save( section );
+//			}
+//
 			@slots = @m_Inventory.GetSlots();
 			for ( uint i = 0; i < slots.Count(); i++ ) {
 				if ( @slots[i] is null ) {

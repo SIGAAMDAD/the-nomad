@@ -233,12 +233,12 @@ static void MissionMenu_Event( void *ptr, int event )
 
 	switch ( ( (const menucommon_t *)ptr )->id ) {
 	case ID_CONTINUE:
-		Cvar_SetIntegerValue( "sgame_Difficulty", slot->gd.saveDif );
+		Cvar_SetIntegerValue( "g_paused", 0 );
 		Cvar_Set( "sgame_SaveName", va( "SLOT_%lu", slot - s_playMenu->saveSlots ) );
 		gi.state = GS_LEVEL;
 		gi.playTimeStart = Sys_Milliseconds();
-		g_pArchiveHandler->Load( slot->name );
-		Cbuf_ExecuteText( EXEC_APPEND, va( "setmap \"%s\"\n", gi.mapCache.mapList[ slot->gd.mapIndex ] ) );
+//		Cbuf_ExecuteText( EXEC_APPEND, va( "setmap \"%s\"\n", gi.mapCache.mapList[ slot->gd.mapIndex ] ) );
+		g_pArchiveHandler->Load( va( "SLOT_%lu", slot - s_playMenu->saveSlots ) );
 		break;
 	case ID_DELETE:
 		UI_ConfirmMenu( "", DeleteSlot_Draw, DeleteSlot_Event );

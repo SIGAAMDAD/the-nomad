@@ -725,7 +725,6 @@ const ngdfield_t *CGameArchive::FindField( const char *name, int32_t type, nhand
 	section = &m_pArchiveCache[ m_nCurrentArchive ]->m_pSectionList[ hSection ];
 
 	for ( i = 0; i < section->numFields; i++ ) {
-		Con_Printf( "...Comparing field \"%s\" to \"%s\"\n", section->m_pFieldCache[i]->name, name );
 		if ( !N_stricmp( section->m_pFieldCache[i]->name, name ) ) {
 			if ( section->m_pFieldCache[i]->type != type ) {
 				N_Error( ERR_DROP, "CGameArchive::FindField: save file corrupt or incompatible mod, field type doesn't match type given for '%s'",
@@ -1054,10 +1053,6 @@ void CGameArchive::DeleteSlot( uint64_t nSlot )
 	m_pArchiveFileList[ nSlot ] = NULL;
 	m_pArchiveCache[ nSlot ] = NULL;
 
-//	if ( nSlot < m_nArchiveFiles - 1 && m_nArchiveFiles > 1 ) {
-//		memmove( m_pArchiveCache[ nSlot ], m_pArchiveCache[ nSlot + 1 ], sizeof( *m_pArchiveCache ) * ( m_nArchiveFiles - 1 ) );
-//		memmove( m_pArchiveFileList[ nSlot ], m_pArchiveFileList[ nSlot + 1 ], sizeof( *m_pArchiveFileList ) * ( m_nArchiveFiles - 1 ) );
-//	}
 	m_nArchiveFiles--;
 	Cbuf_ExecuteText( EXEC_APPEND, "ui.reload_savefiles\n" );
 }
@@ -1202,7 +1197,6 @@ nhandle_t CGameArchive::GetSection( const char *name )
 	section = NULL;
 	Con_DPrintf( "Searching save file for section '%s'...\n", name );
 	for ( i = 0; i < m_pArchiveCache[ m_nCurrentArchive ]->m_nSections; i++ ) {
-		Con_Printf( "...Comparing \"%s\" to \"%s\"\n", m_pArchiveCache[ m_nCurrentArchive ]->m_pSectionList[i].name, name );
 		if ( !N_stricmp( m_pArchiveCache[ m_nCurrentArchive ]->m_pSectionList[i].name, name ) ) {
 			section = &m_pArchiveCache[ m_nCurrentArchive ]->m_pSectionList[i];
 			break;
@@ -1294,19 +1288,19 @@ bool CGameArchive::Load( const char *name )
 	N_strncpyz( szName, name, sizeof( szName ) );
 	COM_DefaultExtension( szName, sizeof( szName ), ".ngd" );
 
-	Con_Printf( "Loading save file '%s', please do not close out of the game...\n", name );
+	Con_Printf( "Loading save file '%s', please do not close out of the game...\n", szName );
 
 	m_nCurrentArchive = m_nArchiveFiles;
 	found = false;
 	for ( i = 0; i < m_nArchiveFiles; i++ ) {
-		if ( !N_stricmp( szName, m_pArchiveCache[i]->name ) ) {
+		if ( !N_stricmp( szName, m_pArchiveFileList[i] ) ) {
 			m_nCurrentArchive = i;
 			found = true;
 			break;
 		}
 	}
 	if ( !found ) {
-		N_Error( ERR_DROP, "CGameArchive::Load: attempted to load non-existing save file (... HOW?)" );
+		N_Error( ERR_DROP, "CGameArchive::Load: attempted to load non-existing save file '%s' (... HOW?)", szName );
 	}
 
 	for ( i = 0; i < m_pArchiveCache[ m_nCurrentArchive ]->m_nSections; i++ ) {

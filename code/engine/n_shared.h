@@ -64,6 +64,12 @@ Platform Specific Preprocessors
 #endif
 
 #ifdef _WIN32
+	#ifndef _CRT_SECURE_NO_WARNINGS
+		#define _CRT_SECURE_NO_WARNINGS
+	#endif
+
+	#include <string.h>
+
 	// dlls
 	#pragma comment(lib, "comctl32")
 	#pragma comment(lib, "gdi32")
@@ -487,10 +493,12 @@ Compiler Macro Abstraction
 #endif
 #endif
 
+#if 0
 #ifdef offsetof
 #undef offsetof
 // GCC's __builtin_offsetof doesn't do well with some template types
 #define offsetof( type, member ) (size_t)( &( ( (type *)0 )->( member ) ) )
+#endif
 #endif
 
 #ifndef Q3_VM
@@ -503,6 +511,7 @@ Compiler Macro Abstraction
 		typedef unsigned __int32 uint32_t;
 		typedef unsigned __int16 uint16_t;
 		typedef unsigned __int8 uint8_t;
+		typedef int64_t ssize_t;
 		#ifdef __cplusplus
 			// for THOSE people
 			namespace std {
@@ -1018,7 +1027,8 @@ typedef struct {
 #define COLOR_WHITE		"^7"
 #define COLOR_RESET		"^8"
 
-#if defined(_NOMAD_DEBUG) && defined(__cplusplus) && !defined(_WIN32)
+/*#if defined(_NOMAD_DEBUG) && defined(__cplusplus) && !defined(_WIN32)*/
+#if 0
 	#define USING_EASY_PROFILER
 	#include <easy/profiler.h>
 
