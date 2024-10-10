@@ -18,6 +18,8 @@ typedef struct {
 
 static confirmMenu_t *s_confirm;
 
+extern void Menu_DrawItemList( void **items, int numitems );
+
 static void ConfirmMenu_Event( void *ptr, int event )
 {
 	qboolean result;
@@ -71,7 +73,31 @@ static void MessageMenu_Draw( void )
 
 static void ConfirmMenu_Draw( void )
 {
-	Menu_Draw( &s_confirm->menu );
+	menuframework_t *menu;
+
+	menu = &s_confirm->menu;
+
+	ImGui::Begin( va( "%s##%sMainMenu", menu->name, menu->name ), NULL, menu->flags );
+	if ( !( Key_GetCatcher() & KEYCATCH_CONSOLE ) ) {
+		ImGui::SetWindowFocus();
+	}
+	ImGui::SetWindowPos( ImVec2( menu->x, menu->y ) );
+	ImGui::SetWindowSize( ImVec2( menu->width, menu->height ) );
+
+	UI_EscapeMenuToggle();
+	if ( UI_MenuTitle( menu->name, menu->titleFontScale ) ) {
+		UI_PopMenu();
+		Snd_PlaySfx( ui->sfx_back );
+
+		ImGui::End();
+		return;
+	}
+
+	if ( s_confirm->draw ) {
+		s_confirm->draw();
+	}
+
+	Menu_DrawItemList( menu->items, menu->nitems );
 
     if ( Key_IsDown( KEY_ENTER ) || Key_IsDown( KEY_Y ) ) {
         ConfirmMenu_Event( &s_confirm->yes, EVENT_ACTIVATED );
@@ -79,10 +105,8 @@ static void ConfirmMenu_Draw( void )
     if ( Key_IsDown( KEY_ESCAPE ) || Key_IsDown( KEY_N ) ) {
         ConfirmMenu_Event( &s_confirm->no, EVENT_ACTIVATED );
     }
-	
-	if ( s_confirm->draw ) {
-		s_confirm->draw();
-	}
+
+	ImGui::End();
 }
 
 void ConfirmMenu_Cache( void )
@@ -103,7 +127,7 @@ void UI_ConfirmMenu( const char *question, void (*draw)( void ), void (*action)(
 	n1 = ImGui::CalcTextSize( "YES/NO" ).x;
 	n2 = ImGui::CalcTextSize( "YES" ).x + 3;
 	n3 = ImGui::CalcTextSize( "/" ).x + 3;
-	l1 = 528 - ( n1 / 2 );
+	l1 = 380 - ( n1 / 2 );
 	l2 = l1 + n2;
 	l3 = l2 + n3;
 	
@@ -111,9 +135,9 @@ void UI_ConfirmMenu( const char *question, void (*draw)( void ), void (*action)(
 	s_confirm->action = action;
 
 	s_confirm->menu.draw = ConfirmMenu_Draw;
-	s_confirm->menu.x = 480 - ( n1 * ui->scale + ui->bias );
+	s_confirm->menu.x = 720 - ( n1 * ui->scale );
 	s_confirm->menu.y = 280 * ui->scale;
-	s_confirm->menu.width = l1 * ui->scale;
+	s_confirm->menu.width = l1 * ui->scale + ui->bias;
 	s_confirm->menu.height = 372 * ui->scale;
 	s_confirm->menu.textFontScale = 1.0f;
 	s_confirm->menu.name = "ConfirmMenu";

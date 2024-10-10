@@ -143,10 +143,10 @@ void CModuleLib::LoadModule( const char *pModule )
 {
 	PROFILE_FUNCTION();
 
-	CModuleHandle *pHandle;
 	nlohmann::json parse;
 	nlohmann::json includePaths;
 	string_t description;
+	CModuleHandle *pHandle;
 	union {
 		void *v;
 		char *b;
@@ -443,6 +443,132 @@ bool CModuleLib::AddDefaultProcs( void ) const {
 	return true;
 }
 
+#define AS_CACHE_CODE_IDENT (('C'<<24)+('B'<<16)+('S'<<8)+'A')
+
+void CModuleLib::SaveByteCodeCache( void )
+{
+	int ret;
+	asCodeCacheHeader_t *header;
+	CModuleCacheHandle dataStream( va( CACHE_DIR "/ascodecache.dat" ), FS_OPEN_WRITE );
+	byte *pByteCode;
+	uint64_t nLength;
+	fileHandle_t hFile;
+	uint64_t i;
+	char *ptr;
+
+	const CModuleInfo *pModule = GetModule( "nomadmain" );
+
+	header = (asCodeCacheHeader_t *)Hunk_AllocateTempMemory( sizeof( *header ) + ( MAX_NPATH * m_nModuleCount ) );
+	header->hasDebugSymbols = ml_debugMode->i;
+	header->gameVersion.m_nVersionMajor = _NOMAD_VERSION;
+	header->gameVersion.m_nVersionUpdate = _NOMAD_VERSION_UPDATE;
+	header->gameVersion.m_nVersionPatch = _NOMAD_VERSION_PATCH;
+	header->ident = AS_CACHE_CODE_IDENT;
+	header->moduleVersionMajor = pModule->m_nModVersionMajor;
+	header->moduleVersionUpdate = pModule->m_nModVersionUpdate;
+	header->moduleVersionPatch = pModule->m_nModVersionPatch;
+	header->modCount = m_nModuleCount;
+	
+	ptr = header->modList;
+	for ( i = 0; i < m_nModuleCount; i++ ) {
+		memcpy( ptr, m_pModList[ i ].info->m_szId, MAX_NPATH );
+		ptr += MAX_NPATH;
+	}
+
+	ret = m_pModule->SaveByteCode( &dataStream, header->hasDebugSymbols );
+	if ( ret != asSUCCESS ) {
+		Con_Printf( COLOR_RED "ERROR: failed to save module bytecode cache\n" );
+	}
+	FS_FClose( dataStream.m_hFile );
+
+	Hunk_FreeTempMemory( header );
+
+	FS_WriteFile( va( CACHE_DIR "/asmetadata.bin" ), header, sizeof( *header ) + ( MAX_NPATH * m_nModuleCount ) );
+}
+
+bool CModuleLib::LoadByteCodeCache( void )
+{
+	const char *path;
+	uint64_t nLength;
+	uint64_t i;
+	asCodeCacheHeader_t *header;
+	fileStats_t cacheStats, dataStats;
+
+	if ( ml_alwaysCompile->i ) {
+		Con_Printf( "Forced recompilation is on.\n" );
+		return false;
+	}
+
+	path = va( CACHE_DIR "/asmetadata.bin" );
+
+	nLength = FS_LoadFile( path, (void **)&header );
+	if ( !nLength || !header ) {
+		Con_Printf( "Error opening '" CACHE_DIR "/asmetadata.bin'\n" );
+		return false;
+	}
+
+	if ( nLength < sizeof( *header ) ) {
+		Con_Printf( COLOR_RED "LoadByteCodeCache: metadata header too small for a valid file\n" );
+		return false;
+	}
+
+	if ( header->gameVersion.m_nVersionMajor != _NOMAD_VERSION || header->gameVersion.m_nVersionUpdate != _NOMAD_VERSION_UPDATE
+		|| header->gameVersion.m_nVersionPatch != _NOMAD_VERSION_PATCH )
+	{
+		// recompile, different version
+		return false;
+	}
+	else {
+		// load the bytecode
+		CModuleCacheHandle dataStream( va( CACHE_DIR "/ascodecache.dat" ), FS_OPEN_READ );
+		int ret;
+		
+		ret = m_pModule->LoadByteCode( &dataStream, (bool *)&header->hasDebugSymbols );
+		/*
+		if ( ret != asSUCCESS ) {
+			// clean cache to get rid of any old and/or corrupt code
+			FS_Remove( va( CACHE_DIR "/%s_code.dat", moduleName.c_str() ) );
+			FS_HomeRemove( va( CACHE_DIR "/%s_code.dat", moduleName.c_str() ) );
+			FS_Remove( va( CACHE_DIR "/%s_metadata.bin", moduleName.c_str() ) );
+			FS_HomeRemove( va( CACHE_DIR "/%s_metadata.bin", moduleName.c_str() ) );
+			Con_Printf( COLOR_RED "Error couldn't load cached byte code for '%s'\n", moduleName.c_str() );
+			return false;
+		}
+		*/
+		if ( ret != asSUCCESS ) {
+			Con_Printf( COLOR_RED "Error couldn't load cached script code (error: %i)\n", ret );
+			return false;
+		}
+	}
+
+	m_pCacheData = (asCodeCacheHeader_t *)Hunk_Alloc( sizeof( *header ) + ( MAX_NPATH * header->modCount ), h_high );
+	memcpy( m_pCacheData, header, sizeof( *header ) + ( MAX_NPATH * header->modCount ) );
+
+	FS_FreeFile( header );
+
+	return true;
+}
+
+qboolean CModuleLib::IsModuleInCache( const char *name ) const
+{
+	uint64_t i;
+	char *ptr;
+
+	if ( !m_pCacheData ) {
+		// failed to load
+		return qfalse;
+	}
+
+	ptr = m_pCacheData->modList;
+	for ( i = 0; i < m_nModuleCount; i++ ) {
+		if ( !N_stricmp( ptr, name ) ) {
+			return qtrue;
+		}
+		ptr += MAX_NPATH;
+	}
+	return qfalse;
+}
+
 void CModuleLib::LoadModList( void )
 {
 	char *b;
@@ -577,6 +703,7 @@ CModuleLib::CModuleLib( void )
 	char **fileList;
 	uint64_t nFiles, i;
 	int error;
+	bool loaded;
 
 	if ( s_pModuleInstance && s_pModuleInstance->m_pEngine ) {
 		return;
@@ -607,7 +734,6 @@ CModuleLib::CModuleLib( void )
 	CheckASCall( m_pEngine->SetEngineProperty( asEP_COPY_SCRIPT_SECTIONS, true ) );
 	CheckASCall( m_pEngine->SetEngineProperty( asEP_AUTO_GARBAGE_COLLECT, true ) );
 	CheckASCall( m_pEngine->SetEngineProperty( asEP_HEREDOC_TRIM_MODE, 0 ) );
-	CheckASCall( m_pEngine->SetEngineProperty( asEP_INIT_GLOBAL_VARS_AFTER_BUILD, true ) );
 
 	m_pScriptBuilder = new ( Hunk_Alloc( sizeof( *m_pScriptBuilder ), h_high ) ) CScriptBuilder();
 	g_pDebugger = new ( Hunk_Alloc( sizeof( *g_pDebugger ), h_high ) ) CDebugger();
@@ -622,7 +748,7 @@ CModuleLib::CModuleLib( void )
 		N_Error( ERR_DROP, "CModuleHandle::CModuleHandle: failed to start module 'GlobalModule' -- %s", AS_PrintErrorString( error ) );
 	}
 
-	m_pModule = m_pEngine->GetModule( "GlobalModule", asGM_CREATE_IF_NOT_EXISTS );
+	m_pModule = m_pScriptBuilder->GetModule();
 	Assert( m_pModule );
 
 	m_pContext = m_pEngine->CreateContext();
@@ -636,6 +762,12 @@ CModuleLib::CModuleLib( void )
 	path = "modules/";
 	fileList = FS_ListFiles( "modules/", "/", &nFiles );
 	m_pLoadList = (CModuleInfo *)Hunk_Alloc( sizeof( *m_pLoadList ) * nFiles, h_high );
+
+	// add standard definitions
+	g_pModuleLib->AddDefaultProcs();
+	loaded = LoadByteCodeCache();
+
+	CheckASCall( m_pEngine->SetEngineProperty( asEP_INIT_GLOBAL_VARS_AFTER_BUILD, !loaded ) );
 
 	for ( i = 0; i < nFiles; i++ ) {
 		if ( N_streq( fileList[i], "." ) || N_streq( fileList[i], ".." ) ) {
@@ -665,19 +797,21 @@ CModuleLib::CModuleLib( void )
 	}
 	*/
 
-	try {
-		if ( ( error = g_pModuleLib->GetScriptBuilder()->BuildModule() ) != asSUCCESS ) {
-			N_Error( ERR_DROP, "Error building GlobalModule" );
-			// clean cache to get rid of any old and/or corrupt code
-			Cbuf_ExecuteText( EXEC_APPEND, "ml.clean_script_cache\n" );
+	if ( !loaded ) {
+		try {
+			if ( ( error = g_pModuleLib->GetScriptBuilder()->BuildModule() ) != asSUCCESS ) {
+				N_Error( ERR_DROP, "Error building GlobalModule" );
+				// clean cache to get rid of any old and/or corrupt code
+				Cbuf_ExecuteText( EXEC_APPEND, "ml.clean_script_cache\n" );
+			}
+		} catch ( const std::exception& e ) {
+			Con_Printf( COLOR_RED "ERROR: std::exception thrown when compiling GlobalModule, %s\n", e.what() );
+			return;
 		}
-	} catch ( const std::exception& e ) {
-		Con_Printf( COLOR_RED "ERROR: std::exception thrown when compiling GlobalModule, %s\n", e.what() );
-		return;
 	}
 
+	SaveByteCodeCache();
 	for ( i = 0; i < m_nModuleCount; i++ ) {
-		m_pLoadList[i].m_pHandle->SaveToCache();
 		if ( !m_pLoadList[i].m_pHandle->InitCalls() ) {
 			Con_Printf( COLOR_YELLOW "WARNING: failed to initialize calling procs for module '%s'\n", m_pLoadList[i].m_szName );
 		}
@@ -721,7 +855,7 @@ CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *
 	ml_garbageCollectionIterations = Cvar_Get( "ml_garbageCollectionIterations", "4", CVAR_TEMP | CVAR_PRIVATE );
 	Cvar_SetDescription( ml_garbageCollectionIterations, "Sets the number of iterations per garbage collection loop" );
 
-	Cmd_AddCommand( "ml.clean_script_cache", ML_CleanCache_f );
+//	Cmd_AddCommand( "ml.clean_script_cache", ML_CleanCache_f );
 	Cmd_AddCommand( "ml.garbage_collection_stats", ML_GarbageCollectionStats_f );
 	Cmd_AddCommand( "ml_debug.print_string_cache", ML_PrintStringCache_f );
 
@@ -759,7 +893,7 @@ void CModuleLib::Shutdown( qboolean quit )
 		// TODO: use the serializer to create a sort of coredump like file for the active script
 	}
 
-	Cmd_RemoveCommand( "ml.clean_script_cache" );
+//	Cmd_RemoveCommand( "ml.clean_script_cache" );
 	Cmd_RemoveCommand( "ml.garbage_collection_stats" );
 	Cmd_RemoveCommand( "ml_debug.set_active" );
 	Cmd_RemoveCommand( "ml_debug.print_help" );

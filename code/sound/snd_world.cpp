@@ -26,13 +26,6 @@ bool CSoundWorld::LoadOcclusionGeometry( void )
 	return true;
 }
 
-void CSoundWorld::Shutdown( void )
-{
-	if ( m_pGeomtryBuffer ) {
-		m_pGeomtryBuffer->release();
-	}
-}
-
 channel_t *CSoundWorld::AllocateChannel( CSoundSource *pSource )
 {
 	uint32_t i;
@@ -80,6 +73,17 @@ void CSoundWorld::ReleaseChannel( channel_t *pChannel )
 		pChannel->event->release();
 		pChannel->timestamp = 0;
 	}
+}
+
+void CSoundWorld::Shutdown( void )
+{
+	if ( m_pGeomtryBuffer ) {
+		m_pGeomtryBuffer->release();
+	}
+
+	m_pGeomtryBuffer = NULL;
+	m_pszEmitters = NULL;
+	m_pszChannels = NULL;
 }
 
 void CSoundWorld::Init( void )
@@ -190,17 +194,20 @@ void CSoundWorld::Update( void )
 	memset( &attribs, 0, sizeof( attribs ) );
 
 	for ( em = m_EmitterList.next; em != &m_EmitterList; em = em->next ) {
-		memcpy( &attribs.position, em->link->origin, sizeof( vec3_t ) );
+		if ( !em->channel ) {
+			continue;
+		}
+		if ( em->link ) {
+			memcpy( &attribs.position, em->link->origin, sizeof( vec3_t ) );
+		}
 
-		if ( em->channel ) {
-			em->channel->event->set3DAttributes( &attribs );
-			em->channel->event->setListenerMask( em->listenerMask );
-			em->channel->event->getPlaybackState( &state );
+		em->channel->event->set3DAttributes( &attribs );
+		em->channel->event->setListenerMask( em->listenerMask );
+		em->channel->event->getPlaybackState( &state );
 
-			if ( state == FMOD_STUDIO_PLAYBACK_STOPPED ) {
-				em->channel->event->release();
-				em->channel = NULL;
-			}
+		if ( state == FMOD_STUDIO_PLAYBACK_STOPPED ) {
+			em->channel->event->release();
+			em->channel = NULL;
 		}
 	}
 
@@ -369,7 +376,8 @@ void CSoundWorld::RemoveEmitter( nhandle_t hEmitter )
 	emitter_t *em;
 
 	if ( hEmitter >= m_nEmitterCount || hEmitter < 0 ) {
-		N_Error( ERR_DROP, "CSoundWorld::RemoveEmitter: invalid emitterID %i", hEmitter );
+		Con_Printf( COLOR_RED "ERROR: CSoundWorld::RemoveEmitter: invalid emitterID %i\n", hEmitter );
+		return;
 	}
 
 	em = &m_pszEmitters[ hEmitter ];

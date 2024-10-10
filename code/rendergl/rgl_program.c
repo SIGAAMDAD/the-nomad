@@ -1046,7 +1046,7 @@ void GLSL_SetUniformTexture( shaderProgram_t *program, uint32_t uniformNum, text
 	}
 	
 	*compare = (uintptr_t)(void *)value;
-	if ( r_loadTexturesOnDemand->i /* && !( value == rg.firstPassImage && r_multisampleType->i == AntiAlias_MSAA ) */ ) {
+	if ( r_loadTexturesOnDemand->i ) {
 		nglUniformHandleui64ARB( uniforms[ uniformNum ], value->handle );
 	} else {
 		nglUniform1i( uniforms[ uniformNum ], uniformNum );

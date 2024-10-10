@@ -5,7 +5,7 @@ namespace TheNomad::GameSystem::SaveSystem {
 		}
 
 		bool Found() const {
-			return handle != FS_INVALID_HANDLE;
+			return handle != -1;
 		}
 
 		vec2 LoadVec2( const string& in name ) const {

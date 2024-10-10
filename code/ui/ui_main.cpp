@@ -406,6 +406,10 @@ extern "C" void UI_Shutdown( void )
 	Cmd_RemoveCommand( "ui.fontinfo" );
 	Cmd_RemoveCommand( "togglepausemenu" );
 	Cmd_RemoveCommand( "ui.reload_savefiles" );
+
+	if ( gi.soundStarted ) {
+		Snd_StopAll();
+	}
 }
 
 // FIXME: call UI_Shutdown instead
@@ -687,6 +691,7 @@ extern "C" void UI_Refresh( int32_t realtime )
 {
 	extern cvar_t *in_joystick;
 	static qboolean windowFocus = qfalse;
+	static qboolean setMusic = qfalse;
 
 	ui->realtime = realtime;
 	ui->frametime = ui->frametime - realtime;
@@ -722,7 +727,9 @@ extern "C" void UI_Refresh( int32_t realtime )
 	}
 
 	if ( ui->activemenu ) {
-		if ( ui->activemenu->track != FS_INVALID_HANDLE ) {
+		if ( ui->activemenu->track != FS_INVALID_HANDLE && !ui->setMusic ) {
+			ui->setMusic = qtrue;
+			Snd_ClearLoopingTracks();
 			Snd_AddLoopingTrack( ui->activemenu->track );
 		}
 

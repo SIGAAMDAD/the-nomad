@@ -163,9 +163,10 @@ namespace TheNomad::SGame {
 		//
 		// functions that should be implemented by the derived class
 		//
-
 		protected void LoadBase( const TheNomad::GameSystem::SaveSystem::LoadSection& in section ) {
 			m_Link.m_Origin = section.LoadVec3( "origin" );
+			m_Link.m_Bounds.m_nWidth = section.LoadFloat( "width" );
+			m_Link.m_Bounds.m_nHeight = section.LoadFloat( "height" );
 			m_Link.m_nEntityId = section.LoadUInt( "id" );
 			m_Link.m_nEntityType = TheNomad::GameSystem::EntityType( section.LoadUInt( "type" ) );
 			m_Flags = EntityFlags( section.LoadUInt( "flags" ) );
@@ -174,6 +175,8 @@ namespace TheNomad::SGame {
 
 		protected void SaveBase( const TheNomad::GameSystem::SaveSystem::SaveSection& in section ) const {
 			section.SaveVec3( "origin", m_Link.m_Origin );
+			section.SaveFloat( "width", m_Link.m_Bounds.m_nWidth );
+			section.SaveFloat( "height", m_Link.m_Bounds.m_nHeight );
 			section.SaveUInt( "id",  m_Link.m_nEntityId );
 			section.SaveUInt( "type", uint( m_Link.m_nEntityType ) );
 			section.SaveUInt( "flags", uint( m_Flags ) );

@@ -15,7 +15,7 @@ cvar_t *snd_maxChannels;
 cvar_t *snd_speakerMode;
 cvar_t *snd_debug;
 
-CSoundWorld *g_pSoundWorld;
+CSoundWorld s_SoundWorld;
 
 static FMOD::Studio::System *s_pStudioSystem;
 static FMOD::System *s_pCoreSystem;
@@ -395,10 +395,7 @@ void CSoundSystem::Shutdown( void )
 	gi.soundRegistered = qfalse;
 	gi.soundStarted = qfalse;
 
-	if ( g_pSoundWorld ) {
-		g_pSoundWorld->Shutdown();
-	}
-	g_pSoundWorld = NULL;
+	s_SoundWorld.Shutdown();
 
 	if ( fmodLogFile ) {
 		FS_FClose( fmodLogFile );
@@ -711,8 +708,8 @@ void Snd_Shutdown( void )
 
 void Snd_Update( int msec )
 {
-	if ( g_pSoundWorld ) {
-		g_pSoundWorld->Update();
+	if ( gi.mapLoaded ) {
+		s_SoundWorld.Update();
 	}
 	sndManager->Update();
 }

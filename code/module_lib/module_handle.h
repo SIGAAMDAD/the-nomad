@@ -70,9 +70,6 @@ public:
 		const nlohmann::json& includePaths, bool bIsDynamicModule );
     ~CModuleHandle();
 
-    void SaveToCache( void ) const;
-	int LoadFromCache( void );
-
     void ClearMemory( void );
     const string_t& GetName( void ) const;
 	const string_t& GetDescription( void ) const;

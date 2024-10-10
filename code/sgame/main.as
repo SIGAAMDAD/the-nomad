@@ -260,6 +260,11 @@ int ModuleOnSaveGame() {
 }
 
 int ModuleOnLoadGame() {
+	//
+	// load assets
+	//
+	InitResources();
+
 	TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::InLevel;
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnLoad();
@@ -286,8 +291,6 @@ int ModuleOnLevelEnd() {
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnLevelEnd();
 	}
-
-	TheNomad::Engine::CmdExecuteCommand( "sgame.save_game\n" );
 
 	TheNomad::Engine::ResourceCache.ClearCache();
 	return 1;

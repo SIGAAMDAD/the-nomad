@@ -74,7 +74,8 @@ namespace TheNomad::SGame {
 			return "EntityManager";
 		}
 		void OnLoad() {
-			EntityObject@ ent;
+			EntityObject@ ent = null;
+			uint numEntities = 0;
 
 			TheNomad::GameSystem::SaveSystem::LoadSection section( GetName() );
 			m_ActivePlayer.Load( section );
@@ -88,24 +89,30 @@ namespace TheNomad::SGame {
 					return;
 				}
 
-				const uint numEntities = section.LoadUInt( "NumEntities" );
+				numEntities = section.LoadUInt( "NumEntities" );
 				DebugPrint( "Loading entity data from save file...\n" );
 
 				if ( numEntities == 0 ) {
+					ConsolePrint( "No entities.\n" );
 					return;
 				}
-				m_EntityList.Resize( numEntities );
 			}
 
-			for ( uint i = 0; i < m_EntityList.Count(); i++ ) {
+			for ( uint i = 0; i < numEntities; i++ ) {
 				TheNomad::GameSystem::SaveSystem::LoadSection data( "EntityData_" + i );
 				if ( !data.Found() ) {
 					GameError( "EntitySystem::OnLoad: save section \"EntityData_" + i + "\" not found" );
 				}
-				@ent = @m_EntityList[i];
-				ent = EntityObject();
 
-				switch ( TheNomad::GameSystem::EntityType( data.LoadUInt( "type" ) ) ) {
+				const vec3 origin = data.LoadVec3( "origin" );
+				const float width = data.LoadFloat( "width" );
+				const float height = data.LoadFloat( "height" );
+				const uint id = data.LoadUInt( "id" );
+				const TheNomad::GameSystem::EntityType type = TheNomad::GameSystem::EntityType( data.LoadUInt( "type" ) );
+
+				@ent = Spawn( type, id, origin, vec2( width, height ) );
+
+				switch ( type ) {
 				case TheNomad::GameSystem::EntityType::Playr: {
 					if ( !cast<PlayrObject@>( @ent ).Load( data ) ) {
 						GameError( "EntitySystem::OnLoad: failed to load player data" );
@@ -147,7 +154,10 @@ namespace TheNomad::SGame {
 				section.SaveUInt( "NumEntities", m_EntityList.Count() );
 			}
 
+			DebugPrint( "Saving " + m_EntityList.Count() + " entities...\n" );
+
 			for ( uint i = 0; i < m_EntityList.Count(); i++ ) {
+				DebugPrint( "...saving entity " + i + "\n" );
 				TheNomad::GameSystem::SaveSystem::SaveSection data( "EntityData_" + i );
 				m_EntityList[i].Save( data );
 			}
@@ -285,6 +295,7 @@ namespace TheNomad::SGame {
 			ent.GetBounds().m_nHeight = size.y;
 			ent.GetBounds().MakeBounds( origin );
 
+			DebugPrint( "Spawned entity " + m_EntityList.Count() + "\n" );
 			m_EntityList.Add( @ent );
 			
 			return @ent;

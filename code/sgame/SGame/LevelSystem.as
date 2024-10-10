@@ -35,7 +35,6 @@ namespace TheNomad::SGame {
 
     class LevelSystem : TheNomad::GameSystem::GameObject {
 		LevelSystem() {
-			m_PassedCheckpointSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/misc/passCheckpoint.ogg" );
 		}
 		
 		void OnInit() {
@@ -45,6 +44,8 @@ namespace TheNomad::SGame {
 			string mapname;
 			string levelName;
 			string music;
+
+			m_PassedCheckpointSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/misc/passCheckpoint.ogg" );
 
 			ConsolePrint( "Loading level infos...\n" );
 
@@ -200,6 +201,12 @@ namespace TheNomad::SGame {
 				cp.Activate( m_nLevelTimer );
 
 				DebugPrint( "Setting checkpoint " + m_CurrentCheckpoint + " to completed.\n" );
+				
+				TheNomad::Engine::CmdExecuteCommand( "sgame.save_game\n" );
+
+				for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
+					TheNomad::GameSystem::GameSystems[i].OnCheckpointPassed( i );
+				}
 
 				// done with the level?
 				if ( @cp is @m_MapData.GetCheckpoints()[ m_MapData.GetCheckpoints().Count() - 1 ] ) {
@@ -208,12 +215,6 @@ namespace TheNomad::SGame {
 					GlobalState = GameState::LevelFinish;
 					return;
 				}
-				
-				for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
-					TheNomad::GameSystem::GameSystems[i].OnCheckpointPassed( i );
-				}
-				
-				TheNomad::Engine::CmdExecuteCommand( "sgame.save_game\n" );
 			}
 			
 			m_RankData.Draw( false, m_nLevelTimer );
@@ -246,9 +247,13 @@ namespace TheNomad::SGame {
 					section.SaveString( "LevelNames" + i, m_LevelInfoDatas[i].m_Name );
 				}
 
+				section.SaveUInt( "Time", m_nLevelTimer );
+				section.SaveUInt( "MapIndex", m_nIndex );
+				section.SaveInt( "Difficulty", TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" ) );
+
 				// save checkpoint data
 				section.SaveUInt( "CurrentCheckpoint", m_CurrentCheckpoint );
-				for ( i = 0; i < m_MapData.GetCheckpoints().Count(); i++ ) {
+				for ( i = 0; i < m_CurrentCheckpoint; i++ ) {
 					section.SaveUInt64( "CheckpointTime_" + i, m_MapData.GetCheckpoints()[i].m_nTime );
 				}
 			}
@@ -278,7 +283,7 @@ namespace TheNomad::SGame {
 					save.SaveUInt( "DeathsRank", uint( stats.deaths_Rank ) );
 					
 					save.SaveBool( "CleanRun", stats.isClean );
-					save.SaveUInt64( "Time", stats.m_TimeMilliseconds );
+					save.SaveUInt( "Time", stats.m_TimeMilliseconds );
 					
 					save.SaveUInt( "NumKills", stats.numKills );
 					save.SaveUInt( "StylePoints", stats.stylePoints );
@@ -287,6 +292,44 @@ namespace TheNomad::SGame {
 				}
 			}
 		}
+
+		private void LoadLevel() {
+			const int difficulty = TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" );
+			@m_Current = @m_LevelInfoDatas[ m_nIndex ];
+			@m_MapData = MapData();
+
+			ConsolePrint( "Loading map \"" + m_LevelInfoDatas[ m_nIndex ].m_MapHandles[ difficulty ].m_Name + "\"...\n" );
+			m_MapData.Init( m_LevelInfoDatas[ m_nIndex ].m_MapHandles[ difficulty ].m_Name, 1 );
+			m_MapData.Load( m_LevelInfoDatas[ m_nIndex ].m_MapHandles[ difficulty ].mapHandle );
+
+			switch ( TheNomad::GameSystem::GameDifficulty( difficulty ) ) {
+			case TheNomad::GameSystem::GameDifficulty::Easy: // Recruit
+				m_nDifficultyScale = 0.75f;
+				break;
+			case TheNomad::GameSystem::GameDifficulty::Normal: // Mercenary
+				m_nDifficultyScale = 1.0f;
+				break;
+			case TheNomad::GameSystem::GameDifficulty::Hard: // Nomad
+				m_nDifficultyScale = 1.90f;
+				break;
+			case TheNomad::GameSystem::GameDifficulty::VeryHard: // The Black Death
+				m_nDifficultyScale = 2.5f;
+				break;
+			case TheNomad::GameSystem::GameDifficulty::Insane: // Insane
+				m_nDifficultyScale = 5.0f; // ... ;)
+				break;
+			};
+
+			if ( m_Current.m_StartLevelScript.Length() != 0 ) {
+				string script;
+				if ( TheNomad::Engine::FileSystem::LoadFile( m_Current.m_StartLevelScript, script ) == 0 ) {
+					ConsoleWarning( "Error loading StartOfLevel script\n" );
+				} else {
+					TheNomad::Engine::CmdExecuteCommand( script );
+				}
+			}
+		}
+
 		void OnLoad() {
 			LevelStats@ stats;
 			LevelInfoData@ data;
@@ -296,7 +339,7 @@ namespace TheNomad::SGame {
 			TheNomad::GameSystem::SaveSystem::LoadSection load( GetName() );
 			DebugPrint( "Loading level stats...\n" );
 			if ( !load.Found() ) {
-				GameError( "LevelSystem::OnLoad: save file corruption, section 'LevelStats' not found!" );
+				GameError( "LevelSystem::OnLoad: save file corruption, section '" + GetName() + "' not found!" );
 			}
 
 			const uint numLevels = load.LoadUInt( "NumLevels" );
@@ -306,13 +349,19 @@ namespace TheNomad::SGame {
 			for ( i = 0; i < m_LevelInfoDatas.Count(); i++ ) {
 				load.LoadString( "LevelNames" + i, names[i] );
 			}
+
 			m_nLevelTimer = load.LoadUInt( "Time" );
+			m_nIndex = load.LoadUInt( "MapIndex" );
+			const int difficulty = load.LoadInt( "Difficulty" );
 			m_CurrentCheckpoint = load.LoadUInt( "CurrentCheckpoint" );
+			for ( uint i = 0; i < m_CurrentCheckpoint; i++ ) {
+				m_MapData.GetCheckpoints()[ i ].m_nTime = load.LoadUInt( "CheckpointTime_" + i );
+			}
 
 			for ( i = 0; i < m_LevelInfoDatas.Count(); i++ ) {
 				@data = @m_LevelInfoDatas[i];
 				ConsolePrint( "Loading level stats for " + names[i] + "\n" );
-				TheNomad::GameSystem::SaveSystem::LoadSection section( names[i] + "_RankData" );
+				TheNomad::GameSystem::SaveSystem::LoadSection section( data.m_Name + "_RankData" );
 				if ( !section.Found() ) {
 					GameError( "LevelSystem::OnLoad: save file corruption, section '" + names[i] + "_RankData' not found!" );
 				}
@@ -334,7 +383,7 @@ namespace TheNomad::SGame {
 					stats.deaths_Rank = LevelRank( section.LoadUInt( "DeathsRank" ) );
 
 					stats.isClean = section.LoadBool( "CleanRun" );
-					stats.m_TimeMilliseconds = section.LoadUInt64( "Time" );
+					stats.m_TimeMilliseconds = section.LoadUInt( "Time" );
 					stats.m_TimeSeconds = stats.m_TimeMilliseconds / 1000;
 					stats.m_TimeMinutes = stats.m_TimeMilliseconds / 60000;
 					
@@ -344,13 +393,17 @@ namespace TheNomad::SGame {
 					stats.numDeaths = section.LoadUInt( "NumDeaths" );
 				}
 			}
+
+			//
+			// setup the level
+			//
+			TheNomad::Engine::CvarSet( "g_levelIndex", formatUInt( m_nIndex ) );
+
+			LoadLevel();
 		}
 		const string& GetName() const {
 			return "LevelSystem";
 		}
-		//!
-		//!
-		//!
 		void OnLevelStart() {
 			int difficulty;
 
@@ -364,10 +417,10 @@ namespace TheNomad::SGame {
 			ConsolePrint( "Loading level \"" + m_LevelInfoDatas[m_nIndex].m_MapHandles[difficulty].m_Name + "\"...\n" );
 			
 			m_RankData = LevelStats();
-			@m_Current = @m_LevelInfoDatas[m_nIndex];
+			@m_Current = @m_LevelInfoDatas[ m_nIndex ];
 			@m_MapData = MapData();
-			m_MapData.Init( m_LevelInfoDatas[m_nIndex].m_MapHandles[difficulty].m_Name, 1 );
-			m_MapData.Load( m_LevelInfoDatas[m_nIndex].m_MapHandles[difficulty].mapHandle );
+			m_MapData.Init( m_LevelInfoDatas[ m_nIndex ].m_MapHandles[ difficulty ].m_Name, 1 );
+			m_MapData.Load( m_LevelInfoDatas[ m_nIndex ].m_MapHandles[ difficulty ].mapHandle );
 
 			switch ( TheNomad::GameSystem::GameDifficulty( difficulty ) ) {
 			case TheNomad::GameSystem::GameDifficulty::Easy: // Recruit
@@ -412,8 +465,6 @@ namespace TheNomad::SGame {
 			}
 			
 			m_nLevelTimer = TheNomad::GameSystem::GameManager.GetGameTic();
-
-			m_PassedCheckpointSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/misc/passCheckpoint.ogg" );
 		}
 		
 		private void ForcePlayerSpawn() {
@@ -533,7 +584,7 @@ namespace TheNomad::SGame {
 		}
 
 		private void CalcTotalLevelTime() {
-			uint64 total = 0;
+			uint total = 0;
 
 			for ( uint i = 0; i < m_MapData.GetCheckpoints().Count(); i++ ) {
 				total += m_MapData.GetCheckpoints()[i].m_nTime;
@@ -573,7 +624,7 @@ namespace TheNomad::SGame {
 			* ===========] pause [================================
 			* level time | delta | level time = level time + delta
 			*/
-			const uint64 delta = TheNomad::GameSystem::GameManager.GetGameTic() - m_nPauseTimer;
+			const uint delta = TheNomad::GameSystem::GameManager.GetGameTic() - m_nPauseTimer;
 			m_nLevelTimer += delta;
 		}
 
@@ -609,9 +660,9 @@ namespace TheNomad::SGame {
 			return @m_Current !is null ? m_Current.m_Name : "N/A";
 		}
 		
-		private uint64 m_nEndTime = 0;
-		private uint64 m_nPauseTimer = 0;
-		private uint64 m_nLevelTimer = 0;
+		private uint m_nEndTime = 0;
+		private uint m_nPauseTimer = 0;
+		private uint m_nLevelTimer = 0;
 		private uint m_CurrentCheckpoint = 0;
 		private array<json@> m_LevelInfos;
 		private array<LevelInfoData@> m_LevelInfoDatas;

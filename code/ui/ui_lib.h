@@ -182,8 +182,9 @@ typedef struct {
 	nhandle_t controller_right_trigger;
 	nhandle_t controller_right_button;
 
-	qboolean uiAllocated;
-	virtualKeyboard_t virtKeyboard;
+    qboolean uiAllocated;
+    qboolean setMusic;
+    virtualKeyboard_t virtKeyboard;
 
 	float scale;
 	float bias;

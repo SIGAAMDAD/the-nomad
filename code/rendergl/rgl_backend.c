@@ -89,8 +89,6 @@ void GL_BindTexture( int tmu, texture_t *image )
 	GLuint texunit = GL_TEXTURE0 + tmu;
 	GLuint id = image ? image->id : 0;
 
-	GL_PushTexture( image );
-
 	if ( image ) {
 		R_TouchTexture( image );
 	}
@@ -134,7 +132,7 @@ void GL_BindNullTextures( void )
 	glState.currentTexture = NULL;
 }
 
-int GL_UseProgram( GLuint program) 
+int GL_UseProgram( GLuint program ) 
 {
     if ( glState.shaderId == program ) {
         return 0;

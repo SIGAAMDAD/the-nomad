@@ -134,6 +134,8 @@ public:
     CGameArchive( void );
     ~CGameArchive() = default;
 
+    void DeleteSlot( uint64_t nSlot );
+
     void BeginSaveSection( const char *moduleName, const char *name );
     void EndSaveSection( void );
 

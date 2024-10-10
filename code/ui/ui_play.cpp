@@ -27,7 +27,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define ID_DIFFICULTY       3
 
 #define ID_CONTINUE			0
-#define ID_EXIT				1
+#define ID_DELETE			1
+#define ID_EXIT				2
 
 typedef struct {
 	char name[ MAX_NPATH ];
@@ -41,6 +42,7 @@ typedef struct {
 	menuframework_t menu;
 
 	menutext_t continuePlay;
+	menutext_t deleteData;
 	menutext_t exit;
 
 	nhandle_t accept_0;
@@ -72,6 +74,7 @@ typedef struct {
 static playMenu_t *s_playMenu;
 
 extern void Menu_DrawItemGeneric( menucommon_t *generic );
+extern void Menu_DrawItemList( void **items, int numitems );
 
 static void SfxFocused( const void *ptr ) {
 	if ( ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone ) ) {
@@ -94,7 +97,7 @@ static void BeginNewGame( void )
 
 	Cvar_SetIntegerValue( "g_paused", 0 );
 	Cvar_SetIntegerValue( "g_levelIndex", 0 );
-	Cvar_Set( "sgame_SaveName", slot->name );
+	Cvar_Set( "sgame_SaveName", va( "SLOT_%lu", slot - s_playMenu->saveSlots ) );
 	Cvar_Set( "mapname", *gi.mapCache.mapList );
 
 	gi.playTimeStart = Sys_Milliseconds();
@@ -194,6 +197,32 @@ static void PlayMenu_MissionSelect( void )
 	}
 }
 
+static void DeleteSlot_Draw( void )
+{
+	ImGui::TextUnformatted( "                   *** WARNING ***             " );
+	ImGui::TextUnformatted( "You are about to delete a save slot permanently" );
+	ImGui::TextUnformatted( "              Are you sure about this?         " );
+}
+
+static void DeleteSlot_Event( qboolean action )
+{
+	if ( !action ) {
+		return;
+	}
+
+	g_pArchiveHandler->DeleteSlot( s_playMenu->hoveredSaveSlot );
+
+	s_playMenu->deleteSlot = qfalse;
+	if ( s_playMenu->saveSlots[ s_playMenu->hoveredSaveSlot ].gd.modList ) {
+		Z_Free( s_playMenu->saveSlots[ s_playMenu->hoveredSaveSlot ].gd.modList );
+	}
+	memset( &s_playMenu->saveSlots[ s_playMenu->hoveredSaveSlot ], 0, sizeof( saveinfo_t ) );
+	s_playMenu->hoveredSaveSlot = 0;
+	s_playMenu->numSaveFiles = 0;
+
+	UI_PopMenu();
+}
+
 static void MissionMenu_Event( void *ptr, int event )
 {
 	if ( event != EVENT_ACTIVATED ) {
@@ -204,12 +233,15 @@ static void MissionMenu_Event( void *ptr, int event )
 
 	switch ( ( (const menucommon_t *)ptr )->id ) {
 	case ID_CONTINUE:
-		Cvar_SetIntegerValue( "sgame_Difficulty", slot->gd.saveDif );
-		Cvar_Set( "sgame_SaveName", slot->name );
+		Cvar_SetIntegerValue( "g_paused", 0 );
+		Cvar_Set( "sgame_SaveName", va( "SLOT_%lu", slot - s_playMenu->saveSlots ) );
 		gi.state = GS_LEVEL;
 		gi.playTimeStart = Sys_Milliseconds();
-		g_pArchiveHandler->Load( slot->name );
-		Cbuf_ExecuteText( EXEC_APPEND, va( "setmap \"%s\"\n", gi.mapCache.mapList[ slot->gd.mapIndex ] ) );
+//		Cbuf_ExecuteText( EXEC_APPEND, va( "setmap \"%s\"\n", gi.mapCache.mapList[ slot->gd.mapIndex ] ) );
+		g_pArchiveHandler->Load( va( "SLOT_%lu", slot - s_playMenu->saveSlots ) );
+		break;
+	case ID_DELETE:
+		UI_ConfirmMenu( "", DeleteSlot_Draw, DeleteSlot_Event );
 		break;
 	case ID_EXIT:
 		UI_PopMenu();
@@ -233,6 +265,7 @@ static void PlayMenu_DrawSlotEdit( void )
 	}
 
 	Menu_DrawItemGeneric( &s_playMenu->continuePlay.generic );
+	Menu_DrawItemGeneric( &s_playMenu->deleteData.generic );
 	Menu_DrawItemGeneric( &s_playMenu->exit.generic );
 }
 
@@ -298,6 +331,7 @@ static void PlayMenu_DrawNewGameEdit( void )
 	ImGui::End();
 }
 
+/*
 static void PlayMenu_DeleteSlot( void )
 {
 	ImGui::Begin( "Delete Save Slot", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse
@@ -326,6 +360,7 @@ static void PlayMenu_DeleteSlot( void )
 
 	ImGui::End();
 }
+*/
 
 static void PlayMenu_SaveConflict( void )
 {
@@ -444,8 +479,6 @@ static void PlayMenu_Draw( void )
 
 	if ( s_playMenu->slotConflict ) {
 		PlayMenu_SaveConflict();
-	} else if ( s_playMenu->deleteSlot ) {
-		PlayMenu_DeleteSlot();
 	} else {
 		UI_EscapeMenuToggle();
 	}
@@ -493,13 +526,13 @@ void UI_ReloadSaveFiles_f( void )
 		char szMapName[ MAX_NPATH ];
 
 		Com_snprintf( info->name, sizeof( info->name ), "SLOT_%lu", i );
-		if ( i >= g_pArchiveHandler->NumUsedSaveSlots() ) {
+		if ( !g_pArchiveHandler->SlotIsUsed( i ) ) {
 			info->valid = qtrue;
 			info->gd.highestDif = DIF_HARD;
 			continue;
 		}
 
-		info->valid = !g_pArchiveHandler->LoadPartial( saveFiles[ i ], &info->gd );
+		info->valid = g_pArchiveHandler->LoadPartial( saveFiles[ i ], &info->gd );
 		if ( !info->valid ) {
 			Con_Printf( COLOR_YELLOW "WARNING: Failed to get valid header data from savefile '%s'\n", info->name );
 		}
@@ -576,6 +609,14 @@ void PlayMenu_Cache( void )
 	s_playMenu->continuePlay.generic.parent = &s_playMenu->menu;
 	s_playMenu->continuePlay.color = color_white;
 	s_playMenu->continuePlay.text = "CONTINUE";
+
+	s_playMenu->deleteData.generic.type = MTYPE_TEXT;
+	s_playMenu->deleteData.generic.eventcallback = MissionMenu_Event;
+	s_playMenu->deleteData.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
+	s_playMenu->deleteData.generic.id = ID_DELETE;
+	s_playMenu->deleteData.generic.parent = &s_playMenu->menu;
+	s_playMenu->deleteData.color = color_white;
+	s_playMenu->deleteData.text = "DELETE";
 
 	s_playMenu->exit.generic.type = MTYPE_TEXT;
 	s_playMenu->exit.generic.eventcallback = MissionMenu_Event;

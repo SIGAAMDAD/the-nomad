@@ -756,26 +756,26 @@ void *Z_Alloc( uint64_t size, memtag_t tag )
 }
 
 #ifdef _NOMAD_DEBUG
-void *Z_ReallocDebug(void *ptr, uint64_t nsize, memtag_t tag, const char *label, const char *file, uint32_t line) {
+void *Z_ReallocDebug( void *ptr, uint64_t nsize, memtag_t tag, const char *label, const char *file, uint32_t line ) {
 	void *p;
 
-	p = Z_AllocDebug(nsize, tag, label, file, line);
-	if (ptr) {
-		memblock_t *block = (memblock_t *)((byte *)ptr - sizeof(memblock_t));
-		memcpy(p, ptr, block->size <= nsize ? nsize : block->size);
-		Z_Free(ptr);
+	p = Z_AllocDebug( nsize, tag, label, file, line );
+	if ( ptr ) {
+		memblock_t *block = (memblock_t *)( (byte *)ptr - sizeof( memblock_t ) );
+		memcpy( p, ptr, block->size <= nsize ? nsize : block->size );
+		Z_Free( ptr );
 	}
 	return p;
 }
 #else
-void *Z_Realloc(void *ptr, uint64_t nsize, memtag_t tag) {
+void *Z_Realloc( void *ptr, uint64_t nsize, memtag_t tag ) {
 	void *p;
 
-	p = Z_Alloc(nsize, tag);
-	if (ptr) {
-		memblock_t *block = (memblock_t *)((byte *)ptr - sizeof(memblock_t));
-		memcpy(p, ptr, block->size <= nsize ? nsize : block->size);
-		Z_Free(ptr);
+	p = Z_Alloc( nsize, tag );
+	if ( ptr ) {
+		memblock_t *block = (memblock_t *)( (byte *)ptr - sizeof( memblock_t ) );
+		memcpy( p, ptr, block->size <= nsize ? nsize : block->size );
+		Z_Free( ptr );
 	}
 	return p;
 }
@@ -788,11 +788,11 @@ Z_Malloc
 */
 #ifdef _NOMAD_DEBUG
 void *Z_MallocDebug( uint64_t size, memtag_t tag, const char *label, const char *file, uint32_t line ) {
-	return Z_AllocDebug(size, tag, label, file, line);
+	return Z_AllocDebug( size, tag, label, file, line );
 }
 #else
 void *Z_Malloc( uint64_t size, memtag_t tag ) {
-	return Z_Alloc(size, tag);
+	return Z_Alloc( size, tag );
 }
 #endif
 
@@ -863,14 +863,15 @@ void Z_LogZoneHeap( memzone_t *zone, const char *name )
 	uint64_t size, allocSize, numBlocks;
 	uint64_t len;
 
-	if ( logfile == FS_INVALID_HANDLE || !FS_Initialized() )
+	if ( logfile == FS_INVALID_HANDLE || !FS_Initialized() ) {
 		return;
+	}
 
 	size = numBlocks = 0;
 #ifdef _NOMAD_DEBUG
 	allocSize = 0;
 #endif
-	len = Com_snprintf( buf, sizeof(buf), "\r\n================\r\n%s log\r\n================\r\n", name );
+	len = Com_snprintf( buf, sizeof( buf ), "\r\n================\r\n%s log\r\n================\r\n", name );
 	FS_Write( buf, len, logfile );
 	for ( block = zone->blocklist.next ; ; ) {
 		if ( block->tag != TAG_FREE ) {

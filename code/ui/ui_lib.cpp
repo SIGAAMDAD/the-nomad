@@ -129,6 +129,7 @@ void UI_PushMenu( menuframework_t *menu )
     }
 
 	if ( ui->activemenu && ui->activemenu->track != menu->track ) {
+		ui->setMusic = qfalse;
 		Snd_ClearLoopingTracks();
 	}
 

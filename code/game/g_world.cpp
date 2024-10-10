@@ -335,9 +335,6 @@ void G_GetSpawnData( uvec3_t xyz, uint32_t *type, uint32_t *id, uint32_t nIndex,
 	*id = info->spawns[ nIndex ].entityid;
 	*pCheckpointIndex = info->spawns[ nIndex ].checkpoint;
 
-	g_pSoundWorld = (CSoundWorld *)Hunk_Alloc( sizeof( *g_pSoundWorld ), h_high );
-	g_pSoundWorld->Init();
-
 	Con_DPrintf( "spawn[%u] has checkpoint %u (%u:%u)\n", nIndex, info->spawns[nIndex].checkpoint,
 		info->spawns[nIndex].entitytype, info->spawns[nIndex].entityid );
 }
@@ -386,6 +383,8 @@ void G_SetActiveMap( nhandle_t hMap, uint32_t *nCheckpoints, uint32_t *nSpawns, 
 
 	g_world->Init( &gi.mapCache.info );
 	Key_SetCatcher( Key_GetCatcher() | KEYCATCH_SGAME );
+
+	s_SoundWorld.Init();
 
 	Cbuf_ExecuteText( EXEC_APPEND, va( "setmap %s\n", gi.mapCache.info.name ) );
 }
