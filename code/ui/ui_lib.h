@@ -37,33 +37,33 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 typedef enum : uint64_t
 {
-    STATE_MAIN,
-        STATE_SINGLEPLAYER,
-            STATE_NEWGAME,
-            STATE_LOADGAME,
-            STATE_PLAYMISSION,
+	STATE_MAIN,
+		STATE_SINGLEPLAYER,
+			STATE_NEWGAME,
+			STATE_LOADGAME,
+			STATE_PLAYMISSION,
 
-    STATE_LEGAL,
+	STATE_LEGAL,
 
-    STATE_MODS,
+	STATE_MODS,
 
-    STATE_SETTINGS,
-        STATE_PERFORMANCE,
-        STATE_GRAPHICS,
-        STATE_CONTROLS,
-        STATE_AUDIO,
-        STATE_GAMEPLAY,
-    
-    STATE_CREDITS,
+	STATE_SETTINGS,
+		STATE_PERFORMANCE,
+		STATE_GRAPHICS,
+		STATE_CONTROLS,
+		STATE_AUDIO,
+		STATE_GAMEPLAY,
+	
+	STATE_CREDITS,
 
-    STATE_PAUSE,
-        STATE_HELP,
-            STATE_HELP_SHOW,
-    
-    STATE_THANK_YOU_FOR_PLAYING_DEMO,
+	STATE_PAUSE,
+		STATE_HELP,
+			STATE_HELP_SHOW,
+	
+	STATE_THANK_YOU_FOR_PLAYING_DEMO,
 
-    STATE_NONE,
-    STATE_ERROR
+	STATE_NONE,
+	STATE_ERROR
 } menustate_t;
 
 #define MAX_MENU_DEPTH 8
@@ -119,92 +119,88 @@ extern vec4_t		color_dim;
 #define NUM_VIRT_KEYBOARD_MODES 2
 
 typedef struct {
-    char *pBuffer;
-    int bufTextLen;
-    int bufMaxLen;
+	char *pBuffer;
+	int bufTextLen;
+	int bufMaxLen;
 
-    int mode;
-    int caps;
-    qboolean open;
+	int mode;
+	int caps;
+	qboolean open;
 
-    qboolean capsToggle;
-    qboolean backspaceToggle;
-    qboolean spaceToggle;
-    qboolean doneToggle;
-    qboolean modeToggle;
+	qboolean capsToggle;
+	qboolean backspaceToggle;
+	qboolean spaceToggle;
+	qboolean doneToggle;
+	qboolean modeToggle;
 } virtualKeyboard_t;
 
 typedef struct {
-    int frametime;
-    int realtime;
-    int menusp;
+	int frametime;
+	int realtime;
+	int menusp;
 
-    menuframework_t *activemenu;
-    menuframework_t *stack[MAX_MENU_DEPTH];
+	menuframework_t *activemenu;
+	menuframework_t *stack[MAX_MENU_DEPTH];
 
-    ImFont *currentFont;
+	ImFont *currentFont;
 
-    gpuConfig_t gpuConfig;
-    qboolean debug;
+	gpuConfig_t gpuConfig;
+	qboolean debug;
 
-    nhandle_t whiteShader;
-    nhandle_t menubackShader;
+	nhandle_t whiteShader;
+	nhandle_t menubackShader;
 
-    sfxHandle_t sfx_null;
-    sfxHandle_t sfx_back;
-    sfxHandle_t sfx_select;
-//    sfxHandle_t sfx_move;
-    qboolean sfx_scroll_toggle;
+	sfxHandle_t sfx_null;
+	sfxHandle_t sfx_back;
+	sfxHandle_t sfx_select;
+	qboolean sfx_scroll_toggle;
 
-    nhandle_t rb_on;
-    nhandle_t rb_off;
-    nhandle_t arrow_horz_left;
-    nhandle_t arrow_horz_right;
-    nhandle_t back_0;
-    nhandle_t back_1;
-    nhandle_t arrows_vert_0;
-    nhandle_t arrow_vert_bot;
-    nhandle_t arrow_vert_top;
+	nhandle_t rb_on;
+	nhandle_t rb_off;
+	nhandle_t arrow_horz_left;
+	nhandle_t arrow_horz_right;
+	nhandle_t back_0;
+	nhandle_t back_1;
+	nhandle_t arrows_vert_0;
+	nhandle_t arrow_vert_bot;
+	nhandle_t arrow_vert_top;
 
-    // xbox specific
-    nhandle_t controller_x;
-    nhandle_t controller_y;
-    nhandle_t controller_a;
-    nhandle_t controller_b;
+	// xbox specific
+	nhandle_t controller_x;
+	nhandle_t controller_y;
+	nhandle_t controller_a;
+	nhandle_t controller_b;
 
-    nhandle_t controller_start;
-    nhandle_t controller_back;
-    nhandle_t controller_dpad_up;
-    nhandle_t controller_dpad_down;
-    nhandle_t controller_dpad_left;
-    nhandle_t controller_dpad_right;
-    nhandle_t controller_left_trigger;
-    nhandle_t controller_left_button;
-    nhandle_t controller_right_trigger;
-    nhandle_t controller_right_button;
+	nhandle_t controller_start;
+	nhandle_t controller_back;
+	nhandle_t controller_dpad_up;
+	nhandle_t controller_dpad_down;
+	nhandle_t controller_dpad_left;
+	nhandle_t controller_dpad_right;
+	nhandle_t controller_left_trigger;
+	nhandle_t controller_left_button;
+	nhandle_t controller_right_trigger;
+	nhandle_t controller_right_button;
 
-    qboolean uiAllocated;
-    virtualKeyboard_t virtKeyboard;
+	qboolean uiAllocated;
+	virtualKeyboard_t virtKeyboard;
 
-    float scale;
-    float bias;
+	float scale;
+	float bias;
 
-    nhandle_t backdrop;
+	nhandle_t backdrop;
 
-    int screenWidth;
-    int screenHeight;
-
-    uiMenu_t menustate;
-    qboolean escapeToggle;
-    qboolean backHovered;
-    qboolean demoVersion;
+	uiMenu_t menustate;
+	qboolean escapeToggle;
+	qboolean backHovered;
+	qboolean demoVersion;
 } uiGlobals_t;
 
 extern uiGlobals_t *ui;
 
 typedef struct {
-    const char *name;
-    const char *tooltip;
+	const char *name;
+	const char *tooltip;
 } dif_t;
 
 extern dif_t difficultyTable[NUMDIFS];

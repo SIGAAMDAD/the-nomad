@@ -626,19 +626,6 @@ void Menu_Cache( void )
 
 	ui->backdrop = re.RegisterShader( "menu/mainbackdrop" );
 
-	if ( Cvar_VariableInteger( "r_fixedRendering" ) ) {
-		if ( Cvar_VariableFloat( "r_fixedResolutionScaling" ) == 0.0f ) {
-			ui->screenWidth = SCREEN_WIDTH;
-			ui->screenHeight = SCREEN_HEIGHT;
-		} else {
-			ui->screenWidth = ui->gpuConfig.vidWidth * Cvar_VariableFloat( "r_fixedResolutionScaling" );
-			ui->screenHeight = ui->gpuConfig.vidHeight * Cvar_VariableFloat( "r_fixedResolutionScaling" );
-		}
-	} else {
-		ui->screenWidth = ui->gpuConfig.vidWidth;
-		ui->screenHeight = ui->gpuConfig.vidHeight;
-	}
-
 	// IT MUST BE THERE!
 	if ( !FS_LoadFile( "textures/coconut.jpg", NULL ) || ui->backdrop == FS_INVALID_HANDLE ) {
 		N_Error( ERR_FATAL, "YOU DARE DEFY THE WILL OF THE GODS!?!?!?!?!?" );

@@ -76,6 +76,10 @@ namespace TheNomad::SGame {
 		void OnLoad() {
 			EntityObject@ ent;
 
+			TheNomad::GameSystem::SaveSystem::LoadSection section( GetName() );
+			m_ActivePlayer.Load( section );
+
+			/*
 			{
 				TheNomad::GameSystem::SaveSystem::LoadSection section( GetName() );
 
@@ -129,10 +133,15 @@ namespace TheNomad::SGame {
 			}
 
 			DebugPrint( "Loaded " + m_EntityList.Count() + " entities.\n" );
+			*/
 		}
 		void OnSave() const {
 			DebugPrint( "Saving entity data...\n" );
 
+			TheNomad::GameSystem::SaveSystem::SaveSection section( GetName() );
+			m_ActivePlayer.Save( section );
+
+			/*
 			{
 				TheNomad::GameSystem::SaveSystem::SaveSection section( GetName() );
 				section.SaveUInt( "NumEntities", m_EntityList.Count() );
@@ -142,6 +151,7 @@ namespace TheNomad::SGame {
 				TheNomad::GameSystem::SaveSystem::SaveSection data( "EntityData_" + i );
 				m_EntityList[i].Save( data );
 			}
+			*/
 		}
 		void OnRenderScene() {
 			EntityObject@ ent;
