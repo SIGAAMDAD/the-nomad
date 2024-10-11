@@ -266,11 +266,9 @@ namespace TheNomad::SGame {
 			return @m_ArmState;
 		}
 
-		bool Load( const TheNomad::GameSystem::SaveSystem::LoadSection& in section ) override {
+		bool Load( const TheNomad::GameSystem::SaveSystem::LoadSection& in section ) {
 			string skin;
 			array<InventoryStack@>@ slots;
-
-			LoadBase( section );
 
 			section.LoadString( "playerSkin", skin );
 			TheNomad::Engine::CvarSet( "skin", skin );
@@ -308,9 +306,7 @@ namespace TheNomad::SGame {
 		void Save( const TheNomad::GameSystem::SaveSystem::SaveSection& in section ) const {
 			uint index;
 			const array<InventoryStack@>@ slots;
-
-			SaveBase( section );
-
+			
 			section.SaveString( "playerSkin", TheNomad::Engine::CvarVariableString( "skin" ) );
 			section.SaveFloat( "health", m_nHealth );
 			section.SaveFloat( "rage", m_nRage );

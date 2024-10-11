@@ -317,6 +317,7 @@ void R_DrawWorld( void )
 
 	// prepare the batch
 	RB_SetBatchBuffer( rg.world->buffer, rg.world->vertices, sizeof( vec3_t ), rg.world->indices, sizeof( glIndex_t ) );
+	GL_CheckErrors();
 
 	backend.drawBatch.shader = rg.world->shader;
 	rg.world->drawing = qtrue;

@@ -12,6 +12,7 @@
 #include <unistd.h> // For getcwd()
 #endif
 
+static const UtlVector<UtlString> emptyList;
 
 CScriptBuilder::CScriptBuilder()
 {
@@ -39,12 +40,15 @@ void CScriptBuilder::SetPragmaCallback(PRAGMACALLBACK_t callback, void *userPara
 
 int CScriptBuilder::StartNewModule(asIScriptEngine *inEngine, const char *moduleName)
 {
-	if(inEngine == 0 ) return -1;
+	if ( inEngine == 0 ) {
+		return -1;
+	}
 
 	engine = inEngine;
 	module = inEngine->GetModule(moduleName, asGM_ALWAYS_CREATE);
-	if( module == 0 )
+	if ( module == 0 ) {
 		return -1;
+	}
 
 	ClearAll();
 
@@ -68,32 +72,34 @@ unsigned int CScriptBuilder::GetSectionCount() const
 
 const UtlString& CScriptBuilder::GetSectionName(unsigned int idx) const
 {
-	if( idx >= includedScripts.size() ) return "";
+	static UtlString tmp = "";
+	if ( idx >= includedScripts.size() ) {
+		return tmp;
+	}
 
 #ifdef _WIN32
 	UtlSet<UtlString, ci_less>::const_iterator it = includedScripts.begin();
 #else
 	UtlSet<UtlString>::const_iterator it = includedScripts.begin();
 #endif
-	while( idx-- > 0 ) it++;
+	while ( idx-- > 0 ) {
+		it++;
+	}
 	return *it;
 }
 
 // Returns 1 if the section was included
 // Returns 0 if the section was not included because it had already been included before
 // Returns <0 if there was an error
-int CScriptBuilder::AddSectionFromFile(const char *filename)
+int CScriptBuilder::AddSectionFromFile( const char *filename )
 {
 	// The file name stored in the set should be the fully resolved name because
 	// it is possible to name the same file in multiple ways using relative paths.
 	const char *fullpath = COM_SkipPath( const_cast<char *>( filename ) );
 
-	if( IncludeIfNotAlreadyIncluded( fullpath ) ) {
+	if ( IncludeIfNotAlreadyIncluded( fullpath ) ) {
 		int r = LoadScriptSection( fullpath );
-		if( r < 0 )
-			return r;
-		else
-			return 1;
+		return r < 0 ? r : 1;
 	}
 
 	return 0;
@@ -104,13 +110,9 @@ int CScriptBuilder::AddSectionFromFile(const char *filename)
 // Returns <0 if there was an error
 int CScriptBuilder::AddSectionFromMemory(const char *sectionName, const char *scriptCode, unsigned int scriptLength, int lineOffset)
 {
-	if( IncludeIfNotAlreadyIncluded(sectionName) )
-	{
-		int r = ProcessScriptSection(scriptCode, scriptLength, sectionName, lineOffset);
-		if( r < 0 )
-			return r;
-		else
-			return 1;
+	if ( IncludeIfNotAlreadyIncluded( sectionName ) ) {
+		int r = ProcessScriptSection( scriptCode, scriptLength, sectionName, lineOffset );
+		return r < 0 ? r : 1;
 	}
 
 	return 0;
@@ -126,7 +128,7 @@ void CScriptBuilder::DefineWord(const char *word)
 	UtlString sword = word;
 
 	Con_Printf( "Added preprocessor #define \"%s\"\n", word );
-	if( definedWords.find( sword ) == definedWords.end() ) {
+	if ( definedWords.find( sword ) == definedWords.end() ) {
 		definedWords.insert( sword );
 	}
 }
@@ -183,7 +185,7 @@ int CScriptBuilder::LoadScriptSection(const char *filename)
 #else
 	FILE *f = fopen(scriptFile.c_str(), "rb");
 #endif
-	if( f == 0 )
+	if ( f == 0 )
 	{
 		// Write a message to the engine's message callback
 		UtlString msg = "Failed to open script file '" + GetAbsolutePath(scriptFile) + "'";
@@ -205,7 +207,7 @@ int CScriptBuilder::LoadScriptSection(const char *filename)
 	// Read the entire file
 	UtlString code;
 	size_t c = 0;
-	if( len > 0 )
+	if ( len > 0 )
 	{
 		code.resize(len);
 		c = fread(&code[0], len, 1, f);
@@ -213,7 +215,7 @@ int CScriptBuilder::LoadScriptSection(const char *filename)
 
 	fclose(f);
 
-	if( c == 0 && len > 0 )
+	if ( c == 0 && len > 0 )
 	{
 		// Write a message to the engine's message callback
 		UtlString msg = "Failed to load script file '" + GetAbsolutePath(scriptFile) + "'";
@@ -229,27 +231,27 @@ int CScriptBuilder::LoadScriptSection(const char *filename)
 	return ret;
 }
 
-int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length, const char *sectionname, int lineOffset)
+int CScriptBuilder::ProcessScriptSection( const char *script, unsigned int length, const char *sectionname, int lineOffset )
 {
 	UtlVector<UtlString> includes;
 
 	row = col = 0;
 
 	// Perform a superficial parsing of the script first to store the metadata
-	if( length )
-		modifiedScript.assign(script, length);
-	else
+	if ( length ) {
+		modifiedScript.assign( script, length );
+	} else {
 		modifiedScript = script;
+	}
 
 	// First perform the checks for preprocessor directives to exclude code that shouldn't be compiled
 	unsigned int pos = 0;
 	int nested = 0;
-	while( pos < modifiedScript.size() ) {
+	while ( pos < modifiedScript.size() ) {
 		asUINT len = 0;
-		asETokenClass t = engine->ParseToken(&modifiedScript[pos], modifiedScript.size() - pos, &len);
+		asETokenClass t = engine->ParseToken( &modifiedScript[pos], modifiedScript.size() - pos, &len );
 
-		if( t == asTC_UNKNOWN && modifiedScript[pos] == '#' && (pos + 1 < modifiedScript.size()) )
-		{
+		if ( t == asTC_UNKNOWN && modifiedScript[pos] == '#' && ( pos + 1 < modifiedScript.size() ) ) {
 			int start = pos++;
 
 			// Is this an #if directive?
@@ -260,43 +262,36 @@ int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length
 
 			pos += len;
 
-			if( token == "if" )
-			{
-				t = engine->ParseToken(&modifiedScript[pos], modifiedScript.size() - pos, &len);
-				if( t == asTC_WHITESPACE )
-				{
+			if ( token == "if" || token == "ifdef" ) {
+				t = engine->ParseToken( &modifiedScript[pos], modifiedScript.size() - pos, &len );
+				if ( t == asTC_WHITESPACE ) {
 					pos += len;
-					t = engine->ParseToken(&modifiedScript[pos], modifiedScript.size() - pos, &len);
+					t = engine->ParseToken( &modifiedScript[pos], modifiedScript.size() - pos, &len );
 				}
 
-				if( t == asTC_IDENTIFIER )
-				{
+				if ( t == asTC_IDENTIFIER ) {
 					UtlString word;
-					word.assign(&modifiedScript[pos], len);
+					word.assign( &modifiedScript[pos], len );
 
 					// Overwrite the #if directive with space characters to avoid compiler error
 					pos += len;
-					OverwriteCode(start, pos-start);
+					OverwriteCode( start, pos-start );
 
 					// Has this identifier been defined by the application or not?
-					if( definedWords.find(word) == definedWords.end() )
-					{
+					if ( definedWords.find( word ) == definedWords.end() ) {
 						// Exclude all the code until and including the #endif
-						pos = ExcludeCode(pos);
+						pos = ExcludeCode( pos );
 					}
-					else
-					{
+					else {
 						nested++;
 					}
 				} else {
 					engine->WriteMessage( sectionname, 0, 0, asMSGTYPE_ERROR, "invalid #if directive, no condition" );
 				}
 			}
-			else if( token == "endif" )
-			{
+			else if ( token == "endif" ) {
 				// Only remove the #endif if there was a matching #if
-				if( nested > 0 )
-				{
+				if ( nested > 0 ) {
 					OverwriteCode(start, pos-start);
 					nested--;
 				} else {
@@ -304,8 +299,9 @@ int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length
 				}
 			}
 		}
-		else
+		else {
 			pos += len;
+		}
 	}
 
 	// Preallocate memory
@@ -314,39 +310,35 @@ int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length
 
 	// Then check for meta data and pre-processor directives
 	pos = 0;
-	while( pos < modifiedScript.size() ) {
+	while ( pos < modifiedScript.size() ) {
 		asUINT len = 0;
-		asETokenClass t = engine->ParseToken(&modifiedScript[pos], modifiedScript.size() - pos, &len);
-		if( t == asTC_COMMENT || t == asTC_WHITESPACE ) {
+		asETokenClass t = engine->ParseToken( &modifiedScript[pos], modifiedScript.size() - pos, &len );
+		if ( t == asTC_COMMENT || t == asTC_WHITESPACE ) {
 			pos += len;
 			continue;
 		}
 		UtlString token;
-		token.assign(&modifiedScript[pos], len);
+		token.assign( &modifiedScript[pos], len );
 
 		// Skip possible decorators before class and interface declarations
-		if (token == "shared" || token == "abstract" || token == "mixin" || token == "external") {
+		if ( token == "shared" || token == "abstract" || token == "mixin" || token == "external" ) {
 			pos += len;
 			continue;
 		}
 
 		// Check if class or interface so the metadata for members can be gathered
-		if( currentClass == "" && (token == "class" || token == "interface") )
-		{
+		if ( currentClass == "" && ( token == "class" || token == "interface" ) ) {
 			// Get the identifier after "class"
-			do
-			{
+			do {
 				pos += len;
-				if( pos >= modifiedScript.size() )
-				{
+				if ( pos >= modifiedScript.size() ) {
 					t = asTC_UNKNOWN;
 					break;
 				}
-				t = engine->ParseToken(&modifiedScript[pos], modifiedScript.size() - pos, &len);
-			} while(t == asTC_COMMENT || t == asTC_WHITESPACE);
+				t = engine->ParseToken( &modifiedScript[pos], modifiedScript.size() - pos, &len );
+			} while ( t == asTC_COMMENT || t == asTC_WHITESPACE );
 
-			if( t == asTC_IDENTIFIER )
-			{
+			if ( t == asTC_IDENTIFIER ) {
 				currentClass = modifiedScript.substr(pos,len);
 
 				// Search until first { or ; is encountered
@@ -355,7 +347,7 @@ int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length
 					engine->ParseToken(&modifiedScript[pos], modifiedScript.size() - pos, &len);
 
 					// If start of class section encountered stop
-					if( modifiedScript[pos] == '{' )
+					if ( modifiedScript[pos] == '{' )
 					{
 						pos += len;
 						break;
@@ -377,35 +369,31 @@ int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length
 		}
 
 		// Check if end of class
-		if( currentClass != "" && token == "}" )
-		{
+		if ( currentClass != "" && token == "}" ) {
 			currentClass = "";
 			pos += len;
 			continue;
 		}
 
 		// Check if namespace so the metadata for members can be gathered
-		if( token == "namespace" )
-		{
+		if ( token == "namespace" ) {
 			// Get the identifier after "namespace"
-			do
-			{
+			do {
 				pos += len;
-				t = engine->ParseToken(&modifiedScript[pos], modifiedScript.size() - pos, &len);
-			} while(t == asTC_COMMENT || t == asTC_WHITESPACE);
+				t = engine->ParseToken( &modifiedScript[pos], modifiedScript.size() - pos, &len );
+			} while ( t == asTC_COMMENT || t == asTC_WHITESPACE );
 
-			if( currentNamespace != "" )
+			if ( currentNamespace != "" ) {
 				currentNamespace += "::";
-			currentNamespace += modifiedScript.substr(pos,len);
+			}
+			currentNamespace += modifiedScript.substr( pos, len );
 
 			// Search until first { is encountered
-			while( pos < modifiedScript.length() )
-			{
-				engine->ParseToken(&modifiedScript[pos], modifiedScript.size() - pos, &len);
+			while ( pos < modifiedScript.length() ) {
+				engine->ParseToken( &modifiedScript[pos], modifiedScript.size() - pos, &len );
 
 				// If start of namespace section encountered stop
-				if( modifiedScript[pos] == '{' )
-				{
+				if ( modifiedScript[pos] == '{' ) {
 					pos += len;
 					break;
 				}
@@ -418,15 +406,12 @@ int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length
 		}
 
 		// Check if end of namespace
-		if( currentNamespace != "" && token == "}" )
-		{
+		if ( currentNamespace != "" && token == "}" ) {
 			size_t found = currentNamespace.rfind( "::" );
-			if( found != UtlString::npos )
-			{
+			if ( found != UtlString::npos ) {
 				currentNamespace.erase( found );
 			}
-			else
-			{
+			else {
 				currentNamespace = "";
 			}
 			pos += len;
@@ -434,8 +419,7 @@ int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length
 		}
 
 		// Is this the start of metadata?
-		if( token == "[" )
-		{
+		if ( token == "[" ) {
 			// Get the metadata UtlString
 			pos = ExtractMetadata(pos, metadata);
 
@@ -444,20 +428,17 @@ int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length
 			ExtractDeclaration(pos, name, declaration, type);
 
 			// Store away the declaration in a map for lookup after the build has completed
-			if( type > 0 )
-			{
+			if ( type > 0 ) {
 				SMetadataDecl decl(metadata, name, declaration, type, currentClass, currentNamespace);
 				foundDeclarations.push_back(decl);
 			}
 		}
 		// Is this a preprocessor directive?
-		else if( token == "#" && (pos + 1 < modifiedScript.size()) )
-		{
+		else if ( token == "#" && (pos + 1 < modifiedScript.size()) ) {
 			int start = pos++;
 
 			t = engine->ParseToken(&modifiedScript[pos], modifiedScript.size() - pos, &len);
-			if (t == asTC_IDENTIFIER)
-			{
+			if (t == asTC_IDENTIFIER) {
 				token.assign(&modifiedScript[pos], len);
 				if (token == "include")
 				{
@@ -503,14 +484,14 @@ int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length
 					OverwriteCode(start, pos - start);
 				}
 			}
-			else
-			{
+			else {
 				// Check for lines starting with #!, e.g. shebang interpreter directive. These will be treated as comments and removed by the preprocessor
 				if (modifiedScript[pos] == '!')
 				{
 					// Read until the end of the line
 					pos += len;
-					for (; pos < modifiedScript.size() && modifiedScript[pos] != '\n'; pos++);
+					for ( ; pos < modifiedScript.size() && modifiedScript[pos] != '\n'; pos++ )
+						;
 
 					// Overwrite the directive with space characters to avoid compiler error
 					OverwriteCode(start, pos - start);
@@ -528,16 +509,15 @@ int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length
 	engine->SetEngineProperty(asEP_COPY_SCRIPT_SECTIONS, true);
 	module->AddScriptSection(sectionname, modifiedScript.c_str(), modifiedScript.size(), lineOffset);
 
-	if( includes.size() > 0 )
+	if ( includes.size() > 0 )
 	{
 		// If the callback has been set, then call it for each included file
-		if( includeCallback )
-		{
-			for( int n = 0; n < (int)includes.size(); n++ )
-			{
+		if ( includeCallback ) {
+			for ( int n = 0; n < (int)includes.size(); n++ ) {
 				int r = includeCallback(includes[n].c_str(), sectionname, this, includeParam);
-				if( r < 0 )
+				if ( r < 0 ) {
 					return r;
+				}
 			}
 		}
 		else
@@ -547,16 +527,15 @@ int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length
 			// Determine the path of the current script so that we can resolve relative paths for includes
 			UtlString path = sectionname;
 			size_t posOfSlash = path.find_last_of("/\\");
-			if( posOfSlash != UtlString::npos )
+			if ( posOfSlash != UtlString::npos )
 				path.resize(posOfSlash+1);
 			else
 				path = "";
 
 			// Load the included scripts
-			for( int n = 0; n < (int)includes.size(); n++ )
-			{
+			for( int n = 0; n < (int)includes.size(); n++ ) {
 				// If the include is a relative path, then prepend the path of the originating script
-				if( includes[n].find_first_of("/\\") != 0 &&
+				if ( includes[n].find_first_of("/\\") != 0 &&
 					includes[n].find_first_of(":") == UtlString::npos )
 				{
 					includes[n] = path + includes[n];
@@ -564,8 +543,9 @@ int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length
 
 				// Include the script section
 				int r = AddSectionFromFile(includes[n].c_str());
-				if( r < 0 )
+				if ( r < 0 ) {
 					return r;
+				}
 			}
 		}
 	}
@@ -576,8 +556,9 @@ int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length
 int CScriptBuilder::Build()
 {
 	int r = module->Build();
-	if( r < 0 )
+	if ( r < 0 ) {
 		return r;
+	}
 
 	// After the script has been built, the metadata UtlStrings should be
 	// stored for later lookup by function id, type id, and variable index
@@ -585,31 +566,29 @@ int CScriptBuilder::Build()
 	{
 		SMetadataDecl *decl = &foundDeclarations[n];
 		module->SetDefaultNamespace(decl->nameSpace.c_str());
-		if( decl->type == MDT_TYPE )
-		{
+		if ( decl->type == MDT_TYPE ) {
 			// Find the type id
 			int typeId = module->GetTypeIdByDecl(decl->declaration.c_str());
 			Assert( typeId >= 0 );
-			if( typeId >= 0 )
+			if ( typeId >= 0 ) {
 				typeMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(typeId, decl->metadata));
+			}
 		}
-		else if( decl->type == MDT_FUNC )
-		{
-			if( decl->parentClass == "" )
-			{
+		else if ( decl->type == MDT_FUNC ) {
+			if ( decl->parentClass == "" ) {
 				// Find the function id
 				asIScriptFunction *func = module->GetFunctionByDecl(decl->declaration.c_str());
 				Assert( func );
-				if( func )
+				if ( func ) {
 					funcMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
+				}
 			}
-			else
-			{
+			else {
 				// Find the method id
 				int typeId = module->GetTypeIdByDecl(decl->parentClass.c_str());
 				Assert( typeId > 0 );
 				UtlHashMap<int, SClassMetadata>::iterator it = classMetadataMap.find(typeId);
-				if( it == classMetadataMap.end() )
+				if ( it == classMetadataMap.end() )
 				{
 					classMetadataMap.insert(UtlHashMap<int, SClassMetadata>::value_type(typeId, SClassMetadata(decl->parentClass)));
 					it = classMetadataMap.find(typeId);
@@ -618,29 +597,28 @@ int CScriptBuilder::Build()
 				asITypeInfo *type = engine->GetTypeInfoById(typeId);
 				asIScriptFunction *func = type->GetMethodByDecl(decl->declaration.c_str());
 				Assert( func );
-				if( func )
+				if ( func ) {
 					it->second.funcMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
+				}
 			}
 		}
-		else if( decl->type == MDT_VIRTPROP )
-		{
-			if( decl->parentClass == "" )
-			{
+		else if ( decl->type == MDT_VIRTPROP ) {
+			if ( decl->parentClass == "" ) {
 				// Find the global virtual property accessors
 				asIScriptFunction *func = module->GetFunctionByName(("get_" + decl->declaration).c_str());
-				if( func )
+				if ( func ) {
 					funcMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
+				}
 				func = module->GetFunctionByName(("set_" + decl->declaration).c_str());
-				if( func )
+				if ( func )
 					funcMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
 			}
-			else
-			{
+			else {
 				// Find the method virtual property accessors
 				int typeId = module->GetTypeIdByDecl(decl->parentClass.c_str());
 				Assert( typeId > 0 );
 				UtlHashMap<int, SClassMetadata>::iterator it = classMetadataMap.find(typeId);
-				if( it == classMetadataMap.end() )
+				if ( it == classMetadataMap.end() )
 				{
 					classMetadataMap.insert(UtlHashMap<int, SClassMetadata>::value_type(typeId, SClassMetadata(decl->parentClass)));
 					it = classMetadataMap.find(typeId);
@@ -648,31 +626,30 @@ int CScriptBuilder::Build()
 
 				asITypeInfo *type = engine->GetTypeInfoById(typeId);
 				asIScriptFunction *func = type->GetMethodByName(("get_" + decl->declaration).c_str());
-				if( func )
-					it->second.funcMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
+				if ( func ) {
+					it->second.funcMetadataMap.insert( UtlHashMap<int, UtlVector<UtlString>>::value_type( func->GetId(), decl->metadata ) );
+				}
 				func = type->GetMethodByName(("set_" + decl->declaration).c_str());
-				if( func )
-					it->second.funcMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
+				if ( func ) {
+					it->second.funcMetadataMap.insert( UtlHashMap<int, UtlVector<UtlString>>::value_type( func->GetId(), decl->metadata ) );
+				}
 			}
 		}
-		else if( decl->type == MDT_VAR )
-		{
-			if( decl->parentClass == "" )
-			{
+		else if ( decl->type == MDT_VAR ) {
+			if ( decl->parentClass == "" ) {
 				// Find the global variable index
 				int varIdx = module->GetGlobalVarIndexByName(decl->declaration.c_str());
 				Assert( varIdx >= 0 );
-				if( varIdx >= 0 )
+				if ( varIdx >= 0 )
 					varMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(varIdx, decl->metadata));
 			}
-			else
-			{
+			else {
 				int typeId = module->GetTypeIdByDecl(decl->parentClass.c_str());
 				Assert( typeId > 0 );
 
 				// Add the classes if needed
 				UtlHashMap<int, SClassMetadata>::iterator it = classMetadataMap.find(typeId);
-				if( it == classMetadataMap.end() )
+				if ( it == classMetadataMap.end() )
 				{
 					classMetadataMap.insert(UtlHashMap<int, SClassMetadata>::value_type(typeId, SClassMetadata(decl->parentClass)));
 					it = classMetadataMap.find(typeId);
@@ -687,7 +664,7 @@ int CScriptBuilder::Build()
 				{
 					const char *name;
 					objectType->GetProperty(i, &name);
-					if( decl->declaration == name )
+					if ( decl->declaration == name )
 					{
 						idx = i;
 						break;
@@ -696,27 +673,24 @@ int CScriptBuilder::Build()
 
 				// If found, add it
 				Assert( idx >= 0 );
-				if( idx >= 0 ) it->second.varMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(idx, decl->metadata));
+				if ( idx >= 0 ) it->second.varMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(idx, decl->metadata));
 			}
 		}
-		else if (decl->type == MDT_FUNC_OR_VAR)
-		{
-			if (decl->parentClass == "")
-			{
+		else if (decl->type == MDT_FUNC_OR_VAR) {
+			if (decl->parentClass == "") {
 				// Find the global variable index
 				int varIdx = module->GetGlobalVarIndexByName(decl->name.c_str());
-				if (varIdx >= 0)
+				if ( varIdx >= 0 ) {
 					varMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(varIdx, decl->metadata));
-				else
-				{
+				} else {
 					asIScriptFunction *func = module->GetFunctionByDecl(decl->declaration.c_str());
 					Assert(func);
-					if (func)
+					if (func) {
 						funcMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
+					}
 				}
 			}
-			else
-			{
+			else {
 				int typeId = module->GetTypeIdByDecl(decl->parentClass.c_str());
 				Assert(typeId > 0);
 
@@ -745,26 +719,26 @@ int CScriptBuilder::Build()
 				}
 
 				// If found, add it
-				if (idx >= 0) 
+				if ( idx >= 0 ) { 
 					it->second.varMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(idx, decl->metadata));
-				else
-				{
+				} else {
 					// Look for the matching method instead
 					asITypeInfo *type = engine->GetTypeInfoById(typeId);
 					asIScriptFunction *func = type->GetMethodByDecl(decl->declaration.c_str());
 					Assert(func);
-					if (func)
+					if ( func ) {
 						it->second.funcMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
+					}
 				}
 			}
 		}
 	}
-	module->SetDefaultNamespace("");
+	module->SetDefaultNamespace( "" );
 
 	return 0;
 }
 
-int CScriptBuilder::SkipStatement(int pos)
+int CScriptBuilder::SkipStatement( int pos )
 {
 	asUINT len = 0;
 
@@ -776,21 +750,20 @@ int CScriptBuilder::SkipStatement(int pos)
 	}
 
 	// Skip entire statement block
-	if( pos < (int)modifiedScript.length() && modifiedScript[pos] == '{' )
+	if ( pos < (int)modifiedScript.length() && modifiedScript[pos] == '{' )
 	{
 		pos += 1;
 
 		// Find the end of the statement block
 		int level = 1;
-		while( level > 0 && pos < (int)modifiedScript.size() )
-		{
+		while( level > 0 && pos < (int)modifiedScript.size() ) {
 			asETokenClass t = engine->ParseToken(&modifiedScript[pos], modifiedScript.size() - pos, &len);
-			if( t == asTC_KEYWORD )
-			{
-				if( modifiedScript[pos] == '{' )
+			if ( t == asTC_KEYWORD ) {
+				if ( modifiedScript[pos] == '{' ) {
 					level++;
-				else if( modifiedScript[pos] == '}' )
+				} else if ( modifiedScript[pos] == '}' ) {
 					level--;
+				}
 			}
 
 			pos += len;
@@ -810,8 +783,7 @@ int CScriptBuilder::ExcludeCode(int pos)
 	while( pos < (int)modifiedScript.size() )
 	{
 		engine->ParseToken(&modifiedScript[pos], modifiedScript.size() - pos, &len);
-		if( modifiedScript[pos] == '#' )
-		{
+		if ( modifiedScript[pos] == '#' ) {
 			modifiedScript[pos] = ' ';
 			pos++;
 
@@ -821,21 +793,18 @@ int CScriptBuilder::ExcludeCode(int pos)
 			token.assign(&modifiedScript[pos], len);
 			OverwriteCode(pos, len);
 
-			if( token == "if" )
-			{
+			if ( token == "if" ) {
 				nested++;
 			}
-			else if( token == "endif" )
-			{
-				if( nested-- == 0 )
+			else if ( token == "endif" ) {
+				if ( nested-- == 0 )
 				{
 					pos += len;
 					break;
 				}
 			}
 		}
-		else if( modifiedScript[pos] != '\n' )
-		{
+		else if ( modifiedScript[pos] != '\n' ) {
 			OverwriteCode(pos, len);
 		}
 		pos += len;
@@ -845,24 +814,27 @@ int CScriptBuilder::ExcludeCode(int pos)
 }
 
 // Overwrite all characters except line breaks with blanks
-void CScriptBuilder::OverwriteCode(int start, int len)
+void CScriptBuilder::OverwriteCode( int start, int len )
 {
-	char *code = &modifiedScript[start];
-	for( int n = 0; n < len; n++ )
-	{
-		if( *code != '\n' )
-			*code = ' ';
-		code++;
+	int n;
+	char *pCode;
+
+	pCode = &modifiedScript[ start ];
+
+	for ( n = 0; n < len; n++ ) {
+		if ( *pCode != '\n' ) {
+			*pCode = ' ';
+		}
+		pCode++;
 	}
 }
 
-int CScriptBuilder::ExtractMetadata(int pos, UtlVector<UtlString> &metadata)
+int CScriptBuilder::ExtractMetadata( int pos, UtlVector<UtlString>& metadata )
 {
 	metadata.clear();
 
 	// Extract all metadata. They can be separated by whitespace and comments
-	for (;;)
-	{
+	for ( ; ; ) {
 		UtlString metadataString = "";
 
 		// Overwrite the metadata with space characters to allow compilation
@@ -873,24 +845,25 @@ int CScriptBuilder::ExtractMetadata(int pos, UtlVector<UtlString> &metadata)
 
 		int level = 1;
 		asUINT len = 0;
-		while (level > 0 && pos < (int)modifiedScript.size())
-		{
+		while (level > 0 && pos < (int)modifiedScript.size()) {
 			asETokenClass t = engine->ParseToken(&modifiedScript[pos], modifiedScript.size() - pos, &len);
-			if (t == asTC_KEYWORD)
-			{
-				if (modifiedScript[pos] == '[')
+			if (t == asTC_KEYWORD) {
+				if (modifiedScript[pos] == '[')  {
 					level++;
-				else if (modifiedScript[pos] == ']')
+				} else if (modifiedScript[pos] == ']') {
 					level--;
+				}
 			}
 
 			// Copy the metadata to our buffer
-			if (level > 0)
+			if (level > 0) {
 				metadataString.append(&modifiedScript[pos], len);
+			}
 
 			// Overwrite the metadata with space characters to allow compilation
-			if (t != asTC_WHITESPACE)
+			if (t != asTC_WHITESPACE) {
 				OverwriteCode(pos, len);
+			}
 
 			pos += len;
 		}
@@ -899,14 +872,14 @@ int CScriptBuilder::ExtractMetadata(int pos, UtlVector<UtlString> &metadata)
 
 		// Check for more metadata. Possibly separated by comments
 		asETokenClass t = engine->ParseToken(&modifiedScript[pos], modifiedScript.size() - pos, &len);
-		while (t == asTC_COMMENT || t == asTC_WHITESPACE)
-		{
+		while (t == asTC_COMMENT || t == asTC_WHITESPACE) {
 			pos += len;
 			t = engine->ParseToken(&modifiedScript[pos], modifiedScript.size() - pos, &len);
 		}
 
-		if (modifiedScript[pos] != '[')
+		if (modifiedScript[pos] != '[') {
 			break;
+		}
 	}
 
 	return pos;
@@ -935,11 +908,10 @@ int CScriptBuilder::ExtractDeclaration(int pos, UtlString &name, UtlString &decl
 	          token == "final" || token == "abstract" );
 
 	// We're expecting, either a class, interface, function, or variable declaration
-	if( t == asTC_KEYWORD || t == asTC_IDENTIFIER )
+	if ( t == asTC_KEYWORD || t == asTC_IDENTIFIER )
 	{
 		token.assign(&modifiedScript[pos], len);
-		if( token == "interface" || token == "class" || token == "enum" )
-		{
+		if ( token == "interface" || token == "class" || token == "enum" ) {
 			// Skip white spaces and comments
 			do
 			{
@@ -947,8 +919,7 @@ int CScriptBuilder::ExtractDeclaration(int pos, UtlString &name, UtlString &decl
 				t = engine->ParseToken(&modifiedScript[pos], modifiedScript.size() - pos, &len);
 			} while ( t == asTC_WHITESPACE || t == asTC_COMMENT );
 
-			if( t == asTC_IDENTIFIER )
-			{
+			if ( t == asTC_IDENTIFIER ) {
 				type = MDT_TYPE;
 				declaration.assign(&modifiedScript[pos], len);
 				pos += len;
@@ -968,8 +939,7 @@ int CScriptBuilder::ExtractDeclaration(int pos, UtlString &name, UtlString &decl
 			int nestedParenthesis = 0;
 			declaration.append(&modifiedScript[pos], len);
 			pos += len;
-			for(; pos < (int)modifiedScript.size();)
-			{
+			for(; pos < (int)modifiedScript.size();) {
 				t = engine->ParseToken(&modifiedScript[pos], modifiedScript.size() - pos, &len);
 				token.assign(&modifiedScript[pos], len);
 				if (t == asTC_KEYWORD)
@@ -1018,14 +988,15 @@ int CScriptBuilder::ExtractDeclaration(int pos, UtlString &name, UtlString &decl
 						nestedParenthesis--;
 					}
 				}
-				else if( t == asTC_IDENTIFIER )
+				else if ( t == asTC_IDENTIFIER )
 				{
 					name = token;
 				}
 
 				// Skip trailing decorators
-				if( !hasParenthesis || nestedParenthesis > 0 || t != asTC_IDENTIFIER || (token != "final" && token != "override") )
+				if ( !hasParenthesis || nestedParenthesis > 0 || t != asTC_IDENTIFIER || (token != "final" && token != "override") ) {
 					declaration += token;
+				}
 
 				pos += len;
 			}
@@ -1035,61 +1006,70 @@ int CScriptBuilder::ExtractDeclaration(int pos, UtlString &name, UtlString &decl
 	return start;
 }
 
-const UtlVector<UtlString>& CScriptBuilder::GetMetadataForType(int typeId)
+const UtlVector<UtlString>& CScriptBuilder::GetMetadataForType( int typeId )
 {
-	UtlHashMap<int,UtlVector<UtlString> >::iterator it = typeMetadataMap.find(typeId);
-	if( it != typeMetadataMap.end() )
+	UtlHashMap<int, UtlVector<UtlString>>::iterator it = typeMetadataMap.find( typeId );
+	if ( it != typeMetadataMap.end() ) {
 		return it->second;
-
-	return UtlVector<UtlString>();
-}
-
-const UtlVector<UtlString>& CScriptBuilder::GetMetadataForFunc(asIScriptFunction *func)
-{
-	if( func )
-	{
-		UtlHashMap<int,UtlVector<UtlString> >::iterator it = funcMetadataMap.find(func->GetId());
-		if( it != funcMetadataMap.end() )
-			return it->second;
 	}
 
-	return UtlVector<UtlString>();
+	return emptyList;
 }
 
-const UtlVector<UtlString>& CScriptBuilder::GetMetadataForVar(int varIdx)
+const UtlVector<UtlString>& CScriptBuilder::GetMetadataForFunc( asIScriptFunction *func )
 {
-	UtlHashMap<int,UtlVector<UtlString> >::iterator it = varMetadataMap.find(varIdx);
-	if( it != varMetadataMap.end() )
+	if ( func ) {
+		UtlHashMap<int, UtlVector<UtlString>>::iterator it = funcMetadataMap.find( func->GetId() );
+		if ( it != funcMetadataMap.end() ) {
+			return it->second;
+		}
+	}
+
+	return emptyList;
+}
+
+const UtlVector<UtlString>& CScriptBuilder::GetMetadataForVar( int varIdx )
+{
+	UtlHashMap<int, UtlVector<UtlString>>::iterator it = varMetadataMap.find( varIdx );
+	if ( it != varMetadataMap.end() ) {
 		return it->second;
+	}
 
-	return UtlVector<UtlString>();
+	return emptyList;
 }
 
-const UtlVector<UtlString>& CScriptBuilder::GetMetadataForTypeProperty(int typeId, int varIdx)
+const UtlVector<UtlString>& CScriptBuilder::GetMetadataForTypeProperty( int typeId, int varIdx )
 {
-	UtlHashMap<int, SClassMetadata>::iterator typeIt = classMetadataMap.find(typeId);
-	if(typeIt == classMetadataMap.end()) return UtlVector<UtlString>();
+	UtlHashMap<int, SClassMetadata>::iterator typeIt = classMetadataMap.find( typeId );
+	if ( typeIt == classMetadataMap.end() ) {
+		return emptyList;
+	}
 
-	UtlHashMap<int, UtlVector<UtlString> >::iterator propIt = typeIt->second.varMetadataMap.find(varIdx);
-	if(propIt == typeIt->second.varMetadataMap.end()) return UtlVector<UtlString>();
+	UtlHashMap<int, UtlVector<UtlString>>::iterator propIt = typeIt->second.varMetadataMap.find( varIdx );
+	if ( propIt == typeIt->second.varMetadataMap.end() ) {
+		return emptyList;
+	}
 
 	return propIt->second;
 }
 
-const UtlVector<UtlString>& CScriptBuilder::GetMetadataForTypeMethod(int typeId, asIScriptFunction *method)
+const UtlVector<UtlString>& CScriptBuilder::GetMetadataForTypeMethod( int typeId, asIScriptFunction *method )
 {
-	if( method )
-	{
-		UtlHashMap<int, SClassMetadata>::iterator typeIt = classMetadataMap.find(typeId);
-		if (typeIt == classMetadataMap.end()) return UtlVector<UtlString>();
+	if ( method ) {
+		UtlHashMap<int, SClassMetadata>::iterator typeIt = classMetadataMap.find( typeId );
+		if ( typeIt == classMetadataMap.end() ) {
+			return emptyList;
+		}
 
-		UtlHashMap<int, UtlVector<UtlString> >::iterator methodIt = typeIt->second.funcMetadataMap.find(method->GetId());
-		if(methodIt == typeIt->second.funcMetadataMap.end()) return UtlVector<UtlString>();
+		UtlHashMap<int, UtlVector<UtlString> >::iterator methodIt = typeIt->second.funcMetadataMap.find( method->GetId() );
+		if ( methodIt == typeIt->second.funcMetadataMap.end() ) {
+			return emptyList;
+		}
 
 		return methodIt->second;
 	}
 
-	return UtlVector<UtlString>();
+	return emptyList;
 }
 
 

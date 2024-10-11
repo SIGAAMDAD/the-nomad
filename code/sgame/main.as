@@ -265,10 +265,14 @@ int ModuleOnLoadGame() {
 	//
 	InitResources();
 
+	TheNomad::GameSystem::GameManager.SetLoadGame( true );
+
 	TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::InLevel;
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnLoad();
+		TheNomad::GameSystem::GameSystems[i].OnLevelStart();
 	}
+	TheNomad::GameSystem::GameManager.SetLoadGame( false );
 
 	return 1;
 }

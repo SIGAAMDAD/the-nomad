@@ -26,14 +26,12 @@ namespace TheNomad::SGame {
 		}
 
 		void Save( const TheNomad::GameSystem::SaveSystem::SaveSection& in section ) const {
-			SaveBase( section );
 			section.SaveBool( "hasOwner", m_Owner !is null );
 			if ( @m_Owner !is null ) {
 				section.SaveUInt( "owner", m_Owner.GetEntityNum() );
 			}
 		}
 		bool Load( const TheNomad::GameSystem::SaveSystem::LoadSection& in section ) {
-			LoadBase( section );
 			if ( section.LoadBool( "hasOwner" ) ) {
 				@m_Owner = @EntityManager.GetEntityForNum( section.LoadUInt( "owner" ) );
 			}

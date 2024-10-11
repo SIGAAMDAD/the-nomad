@@ -162,9 +162,11 @@ constexpr GDR_INLINE bool operator!=( const CModuleStringAllocator& a, const CMo
 using string_view_t = eastl::basic_string_view<char>;
 using string_t = eastl::fixed_string<char, 256, true, eastl::allocator_malloc<char>>;
 //using string_t = eastl::basic_string<char, memory::std_allocator<char, memory::virtual_memory_allocator>>;
-using UtlString = eastl::fixed_string<char, 528, true, eastl::allocator_malloc<char>>;
+//using UtlString = eastl::fixed_string<char, 528, true, eastl::allocator_malloc<char>>;
+using UtlString = string_t;
 namespace eastl {
 	// for some reason, the eastl doesn't support eastl::hash<eastl::fixed_string>
+/*
 	template<> struct hash<UtlString> {
 		size_t operator()( const UtlString& str ) const {
 			const unsigned char *p = (const unsigned char *)str.c_str(); // To consider: limit p to at most 256 chars.
@@ -174,6 +176,7 @@ namespace eastl {
 			return (size_t)result;
 		}
 	};
+*/
 	template<> struct hash<string_t> {
 		size_t operator()( const string_t& str ) const {
 			const unsigned char *p = (const unsigned char *)str.c_str(); // To consider: limit p to at most 256 chars.

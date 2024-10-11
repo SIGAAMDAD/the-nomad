@@ -257,7 +257,8 @@ void Com_WriteCrashReport( void )
     fprintf( fp, "Build Information:\n" );
 	fprintf( fp, "\tC++ Version: %li\n", __cplusplus );
 	fprintf( fp, "\tCompiler: " COMPILER_STRING "\n" );
-	fprintf( fp, "\tCompiler Version: %lu", (uint64_t)EA_COMPILER_VERSION );
+	fprintf( fp, "\tCompiler Version: %lu\n", (uint64_t)EA_COMPILER_VERSION );
+	fprintf( fp, "Compiler Macros:\n" );
 #ifdef USE_CPU_AFFINITY
     fprintf( fp, "\tUSE_CPU_AFFINITY\n" );
 #endif
@@ -417,11 +418,11 @@ EVENT LOOP
 */
 
 
-static void Com_InitPushEvent(void)
+static void Com_InitPushEvent( void )
 {
 	// clear the static buffer array
 	// this requires SE_NONE to be accepted as a valid but NOP event
-	memset( com_pushedEvents, 0, sizeof(com_pushedEvents) );
+	memset( com_pushedEvents, 0, sizeof( com_pushedEvents ) );
 	// reset counters while we are at it
 	// beware: GetEvent might still return an SE_NONE from the buffer
 	com_pushedEventsHead = 0;
@@ -439,10 +440,11 @@ static const char *Com_EventName(sysEventType_t evType)
 		"SE_WINDOW"
 	};
 
-	if ((unsigned)evType >= arraylen(evNames))
+	if ( (unsigned)evType >= arraylen(evNames) ) {
 		return "SE_UNKOWN";
-	else
+	} else {
 		return evNames[evType];
+	}
 }
 
 static void Com_PushEvent(const sysEvent_t *event)
@@ -953,18 +955,18 @@ static void Com_ExecuteCfg( void )
 /*
 * Com_InitJournals: initializes the logfile and the event journal
 */
-void Com_InitJournals(void)
+void Com_InitJournals( void )
 {
-	if (!com_journal->i) { // no journaling wanted
+	if ( !com_journal->i ) { // no journaling wanted
 		return;
 	}
 
 	Con_Printf( "Checking for jounaling...\n" );
-	if (com_journal->i == 1) {
+	if ( com_journal->i == 1 ) {
 		Con_Printf( "Journaling events.\n" );
 
 		com_journalFile = FS_FOpenWrite( CACHE_DIR "/journal.dat" );
-	} else if (com_journal->i == 2) {
+	} else if ( com_journal->i == 2 ) {
 		Con_Printf( "Replaying journaled events.\n" );
 
 		FS_FOpenFileRead( CACHE_DIR "/journal.dat", &com_journalFile );
@@ -1019,13 +1021,13 @@ static void Com_GameRestart_f( void ) {
 /*
 * Com_Shutdown: closes logging files
 */
-void Com_Shutdown(void)
+void Com_Shutdown( void )
 {
-	if (logfile != FS_INVALID_HANDLE) {
+	if ( logfile != FS_INVALID_HANDLE ) {
 		FS_FClose( logfile );
 		logfile = FS_INVALID_HANDLE;
 	}
-	if (com_journalFile != FS_INVALID_HANDLE) {
+	if ( com_journalFile != FS_INVALID_HANDLE ) {
 		FS_FClose( com_journalFile );
 		com_journalFile = FS_INVALID_HANDLE;
 	}

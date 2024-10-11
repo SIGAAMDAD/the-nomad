@@ -628,6 +628,7 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 	R_ProcessLights();
 	R_SetupTileLighting();
 
+	ri.Printf( PRINT_DEVELOPER, "Flushing mapped world buffer regions...\n" );
 	VBO_Bind( r_worldData.buffer );
 	nglFlushMappedBufferRange( GL_ARRAY_BUFFER, 0, sizeof( worldPos_t ) * r_worldData.numVertices );
 	nglFlushMappedBufferRange( GL_ARRAY_BUFFER, attribs[ATTRIB_INDEX_TEXCOORD].offset, sizeof( vec2_t ) * r_worldData.numVertices );
@@ -649,6 +650,8 @@ void RE_LoadWorldMap( const char *filename )
 		byte *b;
 		void *v;
 	} buffer;
+
+	VBO_BindNull();
 
 	ri.Printf( PRINT_INFO, "------ RE_LoadWorldMap( %s ) ------\n", filename );
 

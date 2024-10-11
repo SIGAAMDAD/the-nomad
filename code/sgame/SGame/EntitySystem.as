@@ -74,94 +74,21 @@ namespace TheNomad::SGame {
 			return "EntityManager";
 		}
 		void OnLoad() {
-			EntityObject@ ent = null;
-			uint numEntities = 0;
-
-			TheNomad::GameSystem::SaveSystem::LoadSection section( GetName() );
+			
+			TheNomad::GameSystem::SaveSystem::LoadSection section( "PlayerData" );
+			if ( !section.Found() ) {
+				GameError( "EntitySystem::OnLoad: save file missing section \"PlayerData\"" );
+			}
+			@m_ActivePlayer = cast<PlayrObject>( Spawn( TheNomad::GameSystem::EntityType::Playr, 0, vec3( 0.0f ), vec2( 1.0f ) ) );
 			m_ActivePlayer.Load( section );
 
-			/*
-			{
-				TheNomad::GameSystem::SaveSystem::LoadSection section( GetName() );
-
-				if ( !section.Found() ) {
-					ConsoleWarning( "EntitySystem::OnLoad: no save section for entity data found\n" );
-					return;
-				}
-
-				numEntities = section.LoadUInt( "NumEntities" );
-				DebugPrint( "Loading entity data from save file...\n" );
-
-				if ( numEntities == 0 ) {
-					ConsolePrint( "No entities.\n" );
-					return;
-				}
-			}
-
-			for ( uint i = 0; i < numEntities; i++ ) {
-				TheNomad::GameSystem::SaveSystem::LoadSection data( "EntityData_" + i );
-				if ( !data.Found() ) {
-					GameError( "EntitySystem::OnLoad: save section \"EntityData_" + i + "\" not found" );
-				}
-
-				const vec3 origin = data.LoadVec3( "origin" );
-				const float width = data.LoadFloat( "width" );
-				const float height = data.LoadFloat( "height" );
-				const uint id = data.LoadUInt( "id" );
-				const TheNomad::GameSystem::EntityType type = TheNomad::GameSystem::EntityType( data.LoadUInt( "type" ) );
-
-				@ent = Spawn( type, id, origin, vec2( width, height ) );
-
-				switch ( type ) {
-				case TheNomad::GameSystem::EntityType::Playr: {
-					if ( !cast<PlayrObject@>( @ent ).Load( data ) ) {
-						GameError( "EntitySystem::OnLoad: failed to load player data" );
-					}
-					break; }
-				case TheNomad::GameSystem::EntityType::Mob: {
-					if ( !cast<MobObject@>( @ent ).Load( data ) ) {
-						GameError( "EntitySystem::OnLoad: failed to load mob data" );
-					}
-					break; }
-				case TheNomad::GameSystem::EntityType::Item: {
-					if ( !cast<ItemObject@>( @ent ).Load( data ) ) {
-						GameError( "EntitySystem::OnLoad: failed to load item data" );
-					}
-					break; }
-				case TheNomad::GameSystem::EntityType::Weapon: {
-					if ( !cast<WeaponObject@>( @ent ).Load( data ) ) {
-						GameError( "EntitySystem::OnLoad: failed to weapon data" );
-					}
-					break; }
-				default:
-					GameError( "EntityObject::OnLoad: invalid entity type" );
-					break;
-				};
-			}
-
-			DebugPrint( "Loaded " + m_EntityList.Count() + " entities.\n" );
-			*/
+			ScreenData.InitPlayers();
 		}
 		void OnSave() const {
 			DebugPrint( "Saving entity data...\n" );
 
-			TheNomad::GameSystem::SaveSystem::SaveSection section( GetName() );
+			TheNomad::GameSystem::SaveSystem::SaveSection section( "PlayerData" );
 			m_ActivePlayer.Save( section );
-
-			/*
-			{
-				TheNomad::GameSystem::SaveSystem::SaveSection section( GetName() );
-				section.SaveUInt( "NumEntities", m_EntityList.Count() );
-			}
-
-			DebugPrint( "Saving " + m_EntityList.Count() + " entities...\n" );
-
-			for ( uint i = 0; i < m_EntityList.Count(); i++ ) {
-				DebugPrint( "...saving entity " + i + "\n" );
-				TheNomad::GameSystem::SaveSystem::SaveSection data( "EntityData_" + i );
-				m_EntityList[i].Save( data );
-			}
-			*/
 		}
 		void OnRenderScene() {
 			EntityObject@ ent;
@@ -238,7 +165,7 @@ namespace TheNomad::SGame {
 		void OnLevelStart() {
 			vec2 size;
 
-			array<MapSpawn@>@ spawns = @LevelManager.GetMapData().GetCheckpoints()[0].m_Spawns;
+			array<MapSpawn@>@ spawns = @LevelManager.GetMapData().GetCheckpoints()[ LevelManager.GetCheckpointIndex() ].m_Spawns;
 
 			DebugPrint( "Initializing entities...\n" );
 
@@ -247,14 +174,13 @@ namespace TheNomad::SGame {
 					vec3( float( spawns[i].m_Origin.x ), float( spawns[i].m_Origin.y ), float( spawns[i].m_Origin.z ) ),
 					vec2( 0.0f, 0.0f ) );
 			}
-			LevelManager.GetMapData().GetCheckpoints()[0].m_bPassed = true;
+			LevelManager.GetMapData().GetCheckpoints()[ LevelManager.GetCheckpointIndex() ].m_bPassed = true;
 
 			DebugPrint( formatUInt( m_EntityList.Count() ) + " total entities.\n" );
 		}
 		void OnLevelEnd() {
 			// clear all level locals
 			m_EntityList.Clear();
-			@m_ActivePlayer = null;
 		}
 		void OnPlayerDeath( int ) {
 		}

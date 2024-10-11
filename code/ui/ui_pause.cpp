@@ -312,5 +312,7 @@ void UI_PauseMenu( void )
 
 	if ( !ui_active->i ) {
 		Snd_PlaySfx( s_pauseMenu->hPausedSnapshot );
+	} else {
+		Snd_StopSfx( s_pauseMenu->hPausedSnapshot );
 	}
 }

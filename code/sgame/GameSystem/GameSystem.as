@@ -128,7 +128,16 @@ namespace TheNomad::GameSystem {
 			return m_MousePos;
 		}
 
+		void SetLoadGame( bool bIsLoadActive ) {
+			m_bIsLoadGameActive = bIsLoadActive;
+		}
+		bool IsLoadActive() const {
+			return m_bIsLoadGameActive;
+		}
+
 		private TheNomad::Engine::Renderer::GPUConfig m_GPUConfig;
+
+		private bool m_bIsLoadGameActive = false;
 
 		// input
 		private ivec2 m_MousePos = ivec2( 0 );
@@ -171,10 +180,10 @@ namespace TheNomad::GameSystem {
 		vec3 m_Start = vec3( 0.0f );
 		vec3 m_End = vec3( 0.0f );
 		vec3 m_Origin = vec3( 0.0f );
-	    uint32 m_nEntityNumber = 0;
+	    uint m_nEntityNumber = 0;
 		float m_nLength = 0.0f;
 		float m_nAngle = 0.0f;
-	    uint32 m_Flags = 0; // unused for now
+	    uint m_Flags = 0; // unused for now
 	};
 
 	CampaignManager@ GameManager = null;

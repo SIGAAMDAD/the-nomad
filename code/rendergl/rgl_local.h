@@ -336,6 +336,7 @@ typedef enum {
 	UNIFORM_LIGHTDATA,
 	UNIFORM_DLIGHTDATA,
 	UNIFORM_VERTEXDATA,
+	UNIFORM_TEXTUREDATA,
 
 	UNIFORM_GAMMA,
 	UNIFORM_EXPOSURE,
@@ -1186,6 +1187,7 @@ typedef struct
 
 	uniformBuffer_t			*dlightData;
 	uniformBuffer_t         *lightData;
+	uniformBuffer_t			*textureData;
 
 	uniformBuffer_t *uniformBuffers[MAX_UNIFORM_BUFFERS];
 	uint64_t numUniformBuffers;

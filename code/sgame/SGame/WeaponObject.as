@@ -176,8 +176,6 @@ namespace TheNomad::SGame {
 				m_Flags = EntityFlags( section.LoadUInt( "flags" ) );
 
 				@m_Owner = @EntityManager.GetEntityForNum( section.LoadUInt( "owner" ) );
-			} else {
-				LoadBase( section );
 			}
 
 			Spawn( m_Link.m_nEntityId, m_Link.m_Origin );
@@ -185,9 +183,6 @@ namespace TheNomad::SGame {
 			return true;
 		}
 		void Save( const TheNomad::GameSystem::SaveSystem::SaveSection& in section ) {
-			if ( @m_Owner is null ) {
-				SaveBase( section );
-			}
 			section.SaveBool( "hasOwner", @m_Owner !is null );
 			if ( @m_Owner !is null ) {
 				section.SaveUInt( "id",  m_Link.m_nEntityId );

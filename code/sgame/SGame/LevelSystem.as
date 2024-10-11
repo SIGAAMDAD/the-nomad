@@ -333,7 +333,6 @@ namespace TheNomad::SGame {
 		void OnLoad() {
 			LevelStats@ stats;
 			LevelInfoData@ data;
-			uint i, a;
 			array<string> names;
 
 			TheNomad::GameSystem::SaveSystem::LoadSection load( GetName() );
@@ -346,7 +345,7 @@ namespace TheNomad::SGame {
 			ConsolePrint( "Got " + numLevels + " levels\n" );
 			m_LevelInfoDatas.Resize( numLevels );
 			names.Resize( numLevels );
-			for ( i = 0; i < m_LevelInfoDatas.Count(); i++ ) {
+			for ( uint i = 0; i < m_LevelInfoDatas.Count(); i++ ) {
 				load.LoadString( "LevelNames" + i, names[i] );
 			}
 
@@ -358,7 +357,7 @@ namespace TheNomad::SGame {
 				m_MapData.GetCheckpoints()[ i ].m_nTime = load.LoadUInt( "CheckpointTime_" + i );
 			}
 
-			for ( i = 0; i < m_LevelInfoDatas.Count(); i++ ) {
+			for ( uint i = 0; i < m_LevelInfoDatas.Count(); i++ ) {
 				@data = @m_LevelInfoDatas[i];
 				ConsolePrint( "Loading level stats for " + names[i] + "\n" );
 				TheNomad::GameSystem::SaveSystem::LoadSection section( data.m_Name + "_RankData" );
@@ -371,7 +370,7 @@ namespace TheNomad::SGame {
 				
 				const uint mapCount = section.LoadUInt( "MapCount" );
 				data.m_MapHandles.Resize( mapCount );
-				for ( a = 0; a < mapCount; a++ ) {
+				for ( uint a = 0; a < mapCount; a++ ) {
 					@stats = @data.m_MapHandles[a].highStats;
 					
 					data.m_MapHandles[a].difficulty = TheNomad::GameSystem::GameDifficulty( section.LoadUInt( "GameDifficulty" ) );
@@ -399,7 +398,7 @@ namespace TheNomad::SGame {
 			//
 			TheNomad::Engine::CvarSet( "g_levelIndex", formatUInt( m_nIndex ) );
 
-			LoadLevel();
+//			LoadLevel();
 		}
 		const string& GetName() const {
 			return "LevelSystem";
@@ -410,7 +409,9 @@ namespace TheNomad::SGame {
 			// get the level index
 			m_nIndex = TheNomad::Engine::CvarVariableInteger( "g_levelIndex" );
 			difficulty = sgame_Difficulty.GetInt();
-			m_CurrentCheckpoint = 0;
+			if ( !TheNomad::GameSystem::GameManager.IsLoadActive() ) {
+				m_CurrentCheckpoint = 0;
+			}
 
 			DebugPrint( "Initializing level at " + m_nIndex + ", difficulty set to \"" + SP_DIFF_STRINGS[ difficulty ] + "\".\n" );
 			
@@ -446,12 +447,14 @@ namespace TheNomad::SGame {
 			//
 			// in the case we're in a split-screen co-op situation, then all the players after the
 			// first will be spawned around them
-			if ( m_MapData.GetSpawns().Count() < 1 || m_MapData.GetCheckpoints().Count() < 1 ) {
-				ForcePlayerSpawn();
-			} else {
-				const MapSpawn@ spawn = @m_MapData.GetSpawns()[ 0 ];
-				if ( spawn.m_nEntityType != TheNomad::GameSystem::EntityType::Playr ) {
+			if ( !TheNomad::GameSystem::GameManager.IsLoadActive() ) {
+				if ( m_MapData.GetSpawns().Count() < 1 || m_MapData.GetCheckpoints().Count() < 1 ) {
 					ForcePlayerSpawn();
+				} else {
+					const MapSpawn@ spawn = @m_MapData.GetSpawns()[ 0 ];
+					if ( spawn.m_nEntityType != TheNomad::GameSystem::EntityType::Playr ) {
+						ForcePlayerSpawn();
+					}
 				}
 			}
 
@@ -463,8 +466,10 @@ namespace TheNomad::SGame {
 					TheNomad::Engine::CmdExecuteCommand( script );
 				}
 			}
-			
-			m_nLevelTimer = TheNomad::GameSystem::GameManager.GetGameTic();
+
+			if ( !TheNomad::GameSystem::GameManager.IsLoadActive() ) {
+				m_nLevelTimer = TheNomad::GameSystem::GameManager.GetGameTic();
+			}
 		}
 		
 		private void ForcePlayerSpawn() {
@@ -480,7 +485,7 @@ namespace TheNomad::SGame {
 				MapCheckpoint cp = MapCheckpoint( uvec3( 0, 0, 0 ), uvec2( 0, 0 ) );
 				m_MapData.GetCheckpoints().InsertAt( 0, cp );
 			}
-			m_MapData.GetCheckpoints()[0].m_Spawns.Add( @spawn );
+			m_MapData.GetCheckpoints()[0].m_Spawns.InsertAt( 0, @spawn );
 		}
 		
 		//
@@ -641,6 +646,9 @@ namespace TheNomad::SGame {
 		}
 		uint LoadedIndex() const {
 			return m_nIndex;
+		}
+		uint GetCheckpointIndex() const {
+			return m_CurrentCheckpoint;
 		}
 
 		const MapData@ GetMapData() const {

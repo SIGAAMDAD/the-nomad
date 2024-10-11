@@ -488,10 +488,10 @@ bool CModuleHandle::LoadSourceFile( const string_t& filename )
 	int retn, errCount;
 	const char *path;
 	uint64_t length;
-	Preprocessor preprocessor;
-	Preprocessor::FileSource fileSource;
+//	Preprocessor preprocessor;
+//	Preprocessor::FileSource fileSource;
 	UtlString data;
-	UtlVector<char> out;
+//	UtlVector<char> out;
 
 	path = va( "modules/%s/%s", m_szName.c_str(), filename.c_str() );
 	length = FS_LoadFile( path, &f.v );
@@ -503,15 +503,17 @@ bool CModuleHandle::LoadSourceFile( const string_t& filename )
 	data.resize( length );
 	memcpy( data.data(), f.v, length );
 
-	if ( ( errCount = preprocessor.preprocess( filename.c_str(), data, fileSource, out ) ) > 0 ) {
-		retn = g_pModuleLib->GetScriptBuilder()->AddSectionFromMemory( filename.c_str(), f.b, length );
+	errCount = 0;
+
+	if ( errCount > 0 ) {
+		retn = g_pModuleLib->GetScriptBuilder()->AddSectionFromMemory( filename.c_str(), data.data(), data.size() );
 		if ( retn < 0 ) {
 			Con_Printf( COLOR_RED "ERROR: failed to compile source file '%s' -- %s, %i errors\n", filename.c_str(),
 				AS_PrintErrorString( retn ), errCount );
 			return false;
 		}
 	} else {
-		retn = g_pModuleLib->GetScriptBuilder()->AddSectionFromMemory( filename.c_str(), out.data(), out.size() );
+		retn = g_pModuleLib->GetScriptBuilder()->AddSectionFromMemory( filename.c_str(), data.data(), data.size() );
 		if ( retn < 0 ) {
 			Con_Printf( COLOR_RED "ERROR: failed to compile source file '%s' -- %s\n", filename.c_str(), AS_PrintErrorString( retn ) );
 			return false;

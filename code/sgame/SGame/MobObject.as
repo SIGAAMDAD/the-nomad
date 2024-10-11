@@ -24,21 +24,17 @@ namespace TheNomad::SGame {
 			return m_Info.type;
 		}
 		
-		bool Load( const TheNomad::GameSystem::SaveSystem::LoadSection& in section ) override {
-			LoadBase( section );
+		bool Load( const TheNomad::GameSystem::SaveSystem::LoadSection& in section ) {
 			m_nHealth = section.LoadFloat( "health" );
 			m_MFlags = InfoSystem::MobFlags( section.LoadUInt( "mobFlags" ) );
 			if ( section.LoadBool( "hasTarget" ) ) {
 				@m_Target = @EntityManager.GetEntityForNum( section.LoadUInt( "target" ) );
 			}
-
-			Spawn( m_Link.m_nEntityId, m_Link.m_Origin );
 			
 			return true;
 		}
 		
 		void Save( const TheNomad::GameSystem::SaveSystem::SaveSection& in section ) const {
-			SaveBase( section );
 			section.SaveFloat( "health", m_nHealth );
 			section.SaveUInt( "mobFlags", uint( m_MFlags ) );
 			section.SaveBool( "hasTarget", @m_Target !is null );

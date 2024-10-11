@@ -53,13 +53,13 @@ GDR_INLINE void operator delete[]( void *p, int t1, int t2, const char *fileName
 GDR_INLINE void *operator new( size_t s ) {
 	return Mem_AllocDebug( s, "", 0 );
 }
-GDR_INLINE void operator delete( void *p ) {
+GDR_INLINE void operator delete( void *p ) noexcept {
 	Mem_FreeDebug( p, "", 0 );
 }
 GDR_INLINE void *operator new[]( size_t s ) {
 	return Mem_AllocDebug( s, "", 0 );
 }
-GDR_INLINE void operator delete[]( void *p ) {
+GDR_INLINE void operator delete[]( void *p ) noexcept {
 	Mem_FreeDebug( p, "", 0 );
 }
 

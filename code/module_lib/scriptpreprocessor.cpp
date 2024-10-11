@@ -786,62 +786,64 @@ void Preprocessor::recursivePreprocess(
 
 	UtlVector<char> data;
 
-	if (fromString)
-	{
-		data.resize (filedata.length());
+	if ( fromString ) {
+		data.resize( filedata.length() );
 		memcpy( data.data(), filedata.data(), data.size() );
 	}
-	else
-	{
-		bool loaded = file_source.LoadFile(filename,data);
-		if (!loaded) 
-		{
+	else {
+		const bool loaded = file_source.LoadFile( filename, data );
+		if ( !loaded ) {
 			PrintErrorMessage( va( "Could not open file %s", filename.c_str() ) );
 			return;
 		}
 	}
 
-	if (data.size() == 0) return;
-	data.push_back('\n');
-	char* d_end = &data[data.size()-1];
+	if ( data.size() == 0 ) {
+		return;
+	}
+
+	data.push_back( '\n' );
+	char *d_end = &data[ data.size() - 1 ];
 	++d_end;
-	lex(&data[0],d_end,lexems);
+	lex( &data[0], d_end, lexems );
 
 	Preprocessor::LexemList::iterator ITR = lexems.begin();
 	Preprocessor::LexemList::iterator END = lexems.end();
-	while ( ITR != END )
-	{
-		if (ITR->type == Preprocessor::LEX_NEWLINE)
-		{
+	while ( ITR != END ) {
+		if ( ITR->type == Preprocessor::LEX_NEWLINE ) {
 			current_line++;
 			lines_this_file++;
 			++ITR;
-			setLineMacro(define_table,lines_this_file);
+			setLineMacro( define_table, lines_this_file );
 		}
-		else if (ITR->type == Preprocessor::LEX_PREPROCESSOR && ITR->value.find( "#include" ) == UtlString::npos )
-		{
+		else if ( ITR->type == Preprocessor::LEX_PREPROCESSOR ) {
 			Preprocessor::LLITR start_of_line = ITR;
-			Preprocessor::LLITR end_of_line = findLexem(ITR,END,LEX_NEWLINE);
-			Preprocessor::LexemList directive(start_of_line,end_of_line);
-			ITR = lexems.erase(start_of_line,end_of_line);
-			
+			Preprocessor::LLITR end_of_line = findLexem(ITR, END, LEX_NEWLINE);
+			Preprocessor::LexemList directive(start_of_line, end_of_line);
+
+			Con_Printf( "Processing macro of \"%s\"...\n", directive.begin()->value.c_str() );
+			if ( directive.begin()->value.find( "#include" ) != UtlString::npos ) {
+				ITR = end_of_line;
+				continue;
+			} else {
+				ITR = lexems.erase(start_of_line, end_of_line);
+			}
+
 			UtlString value = directive.begin()->value;
-			if (value == "#define")
-			{
-				parseDefine(define_table,directive);
-			} 
-			else if (value == "#ifdef")
-			{
+			if ( value.find( "#define" ) != UtlString::npos ) {
+				parseDefine(define_table, directive);
+			}
+			else if ( value.find( "#ifdef" ) != UtlString::npos ) {
 				UtlString def_name;
-				parseIf(directive,def_name);
+				parseIf(directive, def_name);
 				Preprocessor::DefineTable::iterator DTI = define_table.find(def_name);
 				if (DTI == define_table.end())
 				{
 					Preprocessor::LLITR splice_to = parseIfDef(ITR,END);
-					ITR = lexems.erase(ITR,splice_to);
+					ITR = lexems.erase(ITR, splice_to);
 				}
 			} 
-			else if (value == "#ifndef")
+			else if ( value.find( "#if" ) != UtlString::npos )
 			{
 				UtlString def_name;
 				parseIf(directive,def_name);
@@ -849,20 +851,22 @@ void Preprocessor::recursivePreprocess(
 				if (DTI != define_table.end())
 				{
 					Preprocessor::LLITR splice_to = parseIfDef(ITR,END);
-					ITR = lexems.erase(ITR,splice_to);
+					ITR = lexems.erase(ITR, splice_to);
 				}
 			}
-			else if (value == "#endif")
+			else if ( value.find( "#endif" ) != UtlString::npos )
 			{
 				//ignore
 			}
 			else if (value == "#include")
 			{
 				/*
-				if (LNT) LNT->AddLineRange(filename,start_line,current_line-lines_this_file);
-				unsigned int save_lines_this_file = lines_this_file;
+				if ( LNT ) {
+					LNT->AddLineRange(filename, start_line, current_line - lines_this_file);
+				}
+				const unsigned int save_lines_this_file = lines_this_file;
 				UtlString file_name;
-				parseIf(directive,file_name);
+				parseIf(directive, file_name);
 				Preprocessor::LexemList next_file;
 				recursivePreprocess(
 					addPaths(filename,removeQuotes(file_name)),
@@ -871,22 +875,22 @@ void Preprocessor::recursivePreprocess(
 					next_file,
 					define_table,
 					false);
-				lexems.splice(ITR,next_file);
+				lexems.splice(ITR, next_file);
 				start_line = current_line;
 				lines_this_file = save_lines_this_file;
 				current_file = filename;
-				setFileMacro(define_table,current_file);
-				setLineMacro(define_table,lines_this_file);
+				setFileMacro(define_table, current_file);
+				setLineMacro(define_table, lines_this_file);
 				*/
 			}
-			else if (value == "#pragma")
+			else if ( value.find( "#pragma" ) != UtlString::npos )
 			{
 				parsePragma(directive);
 			}
-			else if (value == "#warning")
+			else if ( value.find( "#warning" ) != UtlString::npos )
 			{
 				UtlString msg;
-				parseIf(directive,msg);
+				parseIf(directive, msg);
 				PrintWarningMessage(msg);
 			}
 			else 
@@ -896,12 +900,12 @@ void Preprocessor::recursivePreprocess(
 		} 
 		else if (ITR->type == LEX_IDENTIFIER)
 		{ 
-			ITR = expandDefine(ITR,END,lexems,define_table);
+			ITR = expandDefine(ITR, END, lexems, define_table);
 		} 
 		else { ++ITR; }
 	}
 
-	if (LNT) LNT->AddLineRange(filename,start_line,current_line-lines_this_file);
+	if (LNT) LNT->AddLineRange(filename, start_line, current_line - lines_this_file);
 }
 
 int Preprocessor::preprocess(
@@ -911,8 +915,11 @@ int Preprocessor::preprocess(
 	UtlVector<char>& destination,
 	Preprocessor::LineNumberTranslator* trans)
 {
-	if (trans) LNT = new Preprocessor::LineNumberTranslator::Table;
-	else LNT = 0;
+	if ( trans ) {
+		LNT = new Preprocessor::LineNumberTranslator::Table;
+	} else {
+		LNT = 0;
+	}
 
 	current_file = source_file;
 	current_line = 0;
@@ -921,16 +928,15 @@ int Preprocessor::preprocess(
 	number_of_errors = 0;
 	root_file = source_file;
 	
-	recursivePreprocess((const char*)source_file.c_str(),
-	                    (const char*)source_data.c_str(),
+	recursivePreprocess( (const char *)source_file.c_str(),
+	                    (const char *)source_data.c_str(),
 	                    file_source,
 	                    lexems,
 	                    define_table,
-	                    true);
-	printLexemList(lexems,destination);
+	                    true );
+	printLexemList(lexems, destination);
 	
-	if (trans) 
-	{
+	if (trans) {
 		trans->SetTable(LNT);
 		LNT = 0;
 	}
