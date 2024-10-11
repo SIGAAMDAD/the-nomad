@@ -104,6 +104,7 @@ typedef struct
     void (*glTexImage2D)( GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels );
     GLuint64 (*glGetTextureHandleARB)( GLuint texture );
     void (*glMakeTextureHandleResidentARB)( GLuint64 texture );
+    void (*glFlushMappedBufferRangeARB)( GLenum target, GLintptr offset, GLsizeiptr length );
 
     // rendering engine api for imgui
     void (*GetTextureId)( nhandle_t hShader, uint32_t stageNum, uint32_t *id );

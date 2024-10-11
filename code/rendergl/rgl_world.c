@@ -651,8 +651,6 @@ void RE_LoadWorldMap( const char *filename )
 		void *v;
 	} buffer;
 
-	VBO_BindNull();
-
 	ri.Printf( PRINT_INFO, "------ RE_LoadWorldMap( %s ) ------\n", filename );
 
 	if ( strlen( filename ) >= MAX_NPATH ) {

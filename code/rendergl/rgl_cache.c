@@ -683,7 +683,7 @@ void RB_SetBatchBuffer( vertexBuffer_t *buffer, void *vertexBuffer, uintptr_t vt
 {
 	uint32_t attribBits;
 
-    // is it already bound?
+	// is it already bound?
     if ( backend.drawBatch.buffer != buffer ) {
 		VBO_BindNull();
 	} else if ( backend.drawBatch.buffer == buffer ) {
@@ -692,9 +692,9 @@ void RB_SetBatchBuffer( vertexBuffer_t *buffer, void *vertexBuffer, uintptr_t vt
 	}
 
     // clear anything currently queued
-//    if ( backend.drawBatch.buffer && ( backend.drawBatch.vtxOffset || backend.drawBatch.idxOffset ) ) {
-//        RB_FlushBatchBuffer();
-//    }
+//	if ( backend.drawBatch.buffer && ( backend.drawBatch.vtxOffset || backend.drawBatch.idxOffset ) ) {
+//		RB_FlushBatchBuffer();
+//	}
 
     backend.drawBatch.buffer = buffer;
 
@@ -763,7 +763,6 @@ void RB_FlushBatchBuffer( void )
 	buf = backend.drawBatch.buffer;
 
 	if ( rg.world && rg.world->buffer == buf ) {
-//		nglFlushMappedBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, backend.drawBatch.idxDataSize * backend.drawBatch.idxOffset );
 		nglFlushMappedBufferRange( GL_ARRAY_BUFFER, sizeof( worldPos_t ) * rg.world->numVertices,
 			backend.drawBatch.vtxDataSize * backend.drawBatch.vtxOffset );
 		GL_CheckErrors();

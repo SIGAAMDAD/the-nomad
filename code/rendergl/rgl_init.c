@@ -1378,6 +1378,7 @@ static void R_InitImGui( void )
 	import.glBufferStorage = nglBufferStorage;
 	import.glGetTextureHandleARB = nglGetTextureHandleARB;
 	import.glMakeTextureHandleResidentARB = nglMakeTextureHandleResidentARB;
+	import.glFlushMappedBufferRangeARB = nglFlushMappedBufferRange;
 
 	import.DrawShaderStages = RB_DrawShaderStages;
 	import.GetTextureId = RE_GetTextureId;

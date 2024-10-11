@@ -253,6 +253,9 @@ struct ImGui_ImplOpenGL3_Data
 	int HasClipOrigin;
 	int UseBufferSubData;
 
+	ImDrawVert *pVertexData;
+	ImDrawIdx *pIndexData;
+
 	ImGui_ImplOpenGL3_Data() { memset((void *)this, 0, sizeof(*this)); }
 };
 
@@ -437,6 +440,198 @@ void ImGui_ImplOpenGL3_Shutdown(void)
 void ImGui_ImplOpenGL3_NewFrame(void) {
 }
 
+#define LRU_CACHE_SIZE 64
+
+float stsvco_valenceScore( const uint32_t numTris ) {
+    return 2 * powf( numTris, -0.5f );
+}
+
+static void R_OptimizeVertexCache( uint32_t nIndexCount, uint32_t nVertexCount, ImDrawVert *pVert, uint32_t *pIndices )
+{
+	uint64_t i, j, t, v;
+
+	typedef struct {
+		int numAdjecentTris;
+		int numTrisLeft;
+		int triListIndex;
+		int cacheIndex;
+	} vertex_t;
+
+	typedef struct {
+		int vertices[3];
+		qboolean drawn;
+	} triangle_t;
+
+	vertex_t *vertices;
+	triangle_t *triangles;
+	uint32_t *vertToTri;
+
+	const uint64_t numTriangles = nIndexCount / 3;
+
+	vertices = (vertex_t *)Hunk_AllocateTempMemory( nVertexCount * sizeof( *vertices ) );
+	triangles = (triangle_t *)Hunk_AllocateTempMemory( numTriangles * sizeof( *triangles ) );
+	
+	for ( i = 0; i < nVertexCount; ++i ) {
+		vertices[i].numAdjecentTris = 0;
+		vertices[i].numTrisLeft = 0;
+		vertices[i].triListIndex = 0;
+		vertices[i].cacheIndex = -1;
+	}
+	
+	for ( i = 0; i < numTriangles; ++i ) {
+		for ( j = 0; j < 3; ++j ) {
+			triangles[i].vertices[j] = pIndices[ i * 3 + j ];
+			++vertices[ triangles[i].vertices[j] ].numAdjecentTris;
+		}
+		triangles[i].drawn = false;
+	}
+	
+	// Loop through and find index for the tri list for vertex->tri
+	for ( i = 1; i < nVertexCount; ++i ) {
+		vertices[i].triListIndex = vertices[ i - 1 ].triListIndex+vertices[ i - 1 ].numAdjecentTris;
+	}
+	
+	const int numVertToTri = vertices[ nVertexCount - 1 ].triListIndex+vertices[ nVertexCount - 1 ].numAdjecentTris;
+	vertToTri = (uint32_t *)Hunk_AllocateTempMemory( numVertToTri * sizeof( *vertToTri ) );
+	
+	for ( i = 0; i < numTriangles; ++i ) {
+		for ( j = 0; j < 3; ++j ) {
+			const int index = triangles[ i ].vertices[ j ];
+			const int triListIndex = vertices[ index ].triListIndex + vertices[index].numTrisLeft;
+			vertToTri[ triListIndex ] = i;
+			++vertices[index].numTrisLeft;
+		}
+	}
+	
+	// Make LRU cache
+	const int LRUCacheSize = 64;
+	int *LRUCache = (int *)alloca( LRUCacheSize * sizeof( *LRUCache ) );
+	float *scoring = (float *)alloca( LRUCacheSize * sizeof( *scoring ) );
+
+	for ( i = 0; i < LRUCacheSize; ++i ) {
+		LRUCache[i] = -1;
+		scoring[i] = -1.0f;
+	}
+	
+	int numIndicesDone = 0;
+	while ( numIndicesDone != nIndexCount ) {
+		// update vertex scoring
+		for ( i = 0; i < LRUCacheSize && LRUCache[i] >= 0; ++i ) {
+			int vertexIndex = LRUCache[i];
+			if ( vertexIndex != -1 ) {
+				// Do scoring based on cache position
+				if ( i < 3 ) {
+					scoring[i] = 0.75f;
+				} else {
+					const float scaler = 1.0f / ( LRUCacheSize - 3 );
+					const float scoreBase = 1.0f - ( i - 3 ) * scaler;
+					scoring[i] = powf ( scoreBase, 1.5f );
+				}
+				// Add score based on tris left for vertex (valence score)
+				const int numTrisLeft = vertices[ vertexIndex ].numTrisLeft;
+				scoring[i] += stsvco_valenceScore(numTrisLeft);
+			}
+		}
+		// find triangle to draw based on score
+		// Update score for all triangles with vertexes in cache
+		int triangleToDraw = -1;
+		float bestTriScore = 0.0f;
+		for ( i = 0; i < LRUCacheSize && LRUCache[i] >= 0; ++i ) {
+			const int vIndex = LRUCache[i];
+			if ( vertices[vIndex].numTrisLeft > 0 ) {
+				for ( t = 0; t < vertices[vIndex].numAdjecentTris; ++t ) {
+					const int tIndex = vertToTri[ vertices[vIndex].triListIndex + t];
+					if ( !triangles[ tIndex ].drawn ) {
+						float triScore = .0f;
+						for ( v = 0; v < 3; ++v ) {
+							const int cacheIndex = vertices[ triangles[ tIndex ].vertices[v] ].cacheIndex;
+							if ( cacheIndex >= 0 ) {
+								triScore += scoring[ cacheIndex ];
+							}
+						}
+						if ( triScore > bestTriScore ) {
+							triangleToDraw = tIndex;
+							bestTriScore = triScore;
+						}
+					}
+				}
+			}
+		}
+		
+		if ( triangleToDraw < 0 ) {
+			// No triangle can be found by heuristic, simply choose first and best
+			for ( t = 0; t < numTriangles; ++t ) {
+				if ( !triangles[t].drawn ) {
+					//compute valence for each vertex
+					float triScore = .0f;
+					for ( v = 0; v < 3; ++v ) {
+						const uint32_t vertexIndex = triangles[t].vertices[v];
+						// Add score based on tris left for vertex (valence score)
+						const int numTrisLeft = vertices[ vertexIndex ].numTrisLeft;
+						triScore += stsvco_valenceScore( numTrisLeft );
+					}
+					if ( triScore >= bestTriScore ) {
+						triangleToDraw = t;
+						bestTriScore = triScore;
+					}
+				}
+			}
+		}
+		
+		// update cache
+		int cacheIndex = 3;
+		int numVerticesFound = 0;
+		while ( LRUCache[numVerticesFound] >= 0 && numVerticesFound < 3 && cacheIndex < LRUCacheSize ) {
+			qboolean topOfCacheInTri = qfalse;
+			// Check if index is in triangle
+			for ( i = 0; i < 3; ++i ) {
+				if( triangles[triangleToDraw].vertices[i] == LRUCache[numVerticesFound]) {
+					++numVerticesFound;
+					topOfCacheInTri = qtrue;
+					break;
+				}
+			}
+			
+			if ( !topOfCacheInTri ) {
+				int topIndex = LRUCache[ numVerticesFound ];
+				for ( int j = numVerticesFound; j < 2; ++j) {
+					LRUCache[j] = LRUCache[j+1];
+				}
+				LRUCache[2] = LRUCache[cacheIndex];
+				if ( LRUCache[2] >= 0 ) {
+					vertices[ LRUCache[2] ].cacheIndex = -1;
+				}
+				
+				LRUCache[cacheIndex] = topIndex;
+				if ( topIndex >= 0 ) {
+					vertices[ topIndex ].cacheIndex = cacheIndex;
+				}
+				++cacheIndex;
+			}
+		}
+		
+		// Set triangle as drawn
+		for ( v = 0; v < 3; ++v ) {
+			const int index = triangles[triangleToDraw].vertices[v];
+			
+			LRUCache[ v ] = index;
+			vertices[ index ].cacheIndex = v;
+			
+			--vertices[index].numTrisLeft;
+			
+			pIndices[ numIndicesDone ] = index;
+			++numIndicesDone;
+		}
+		
+		
+		triangles[ triangleToDraw ].drawn = qtrue;
+	}
+	// Memory cleanup
+	Hunk_FreeTempMemory( vertToTri );
+	Hunk_FreeTempMemory( triangles );
+	Hunk_FreeTempMemory( vertices );
+}
+
 static void ImGui_ImplOpenGL3_SetupRenderState(ImDrawData *draw_data, int fb_width, int fb_height, GLuint vertex_array_object)
 {
 	ImGui_ImplOpenGL3_Data *bd = ImGui_ImplOpenGL3_GetBackendData();
@@ -566,12 +761,10 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 	renderImport.glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
 	renderImport.glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
 #ifdef IMGUI_IMPL_OPENGL_MAY_HAVE_BIND_SAMPLER
-	if (bd->GlVersion >= 330 || bd->GlProfileIsES3)
-	{
+	if (bd->GlVersion >= 330 || bd->GlProfileIsES3) {
 		renderImport.glGetIntegerv(GL_SAMPLER_BINDING, &last_sampler);
 	}
-	else
-	{
+	else {
 		last_sampler = 0;
 	}
 #endif
@@ -622,8 +815,7 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 	clip_scale = draw_data->FramebufferScale; // (1,1) unless using retina display which are often (2,2)
 
 	// Render command lists
-	for (int n = 0; n < draw_data->CmdListsCount; n++)
-	{
+	for ( int n = 0; n < draw_data->CmdListsCount; n++ ) {
 		const ImDrawList *cmd_list = draw_data->CmdLists[n];
 
 		// Upload vertex/index buffers
@@ -636,8 +828,7 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 		// - See https://github.com/ocornut/imgui/issues/4468 and please report any corruption issues.
 		const GLsizeiptr vtx_buffer_size = (GLsizeiptr)cmd_list->VtxBuffer.Size * (int)sizeof(ImDrawVert);
 		const GLsizeiptr idx_buffer_size = (GLsizeiptr)cmd_list->IdxBuffer.Size * (int)sizeof(ImDrawIdx);
-		if (bd->UseBufferSubData)
-		{
+		if ( bd->UseBufferSubData ) {
 			if (bd->VertexBufferSize < vtx_buffer_size)
 			{
 				bd->VertexBufferSize = vtx_buffer_size;
@@ -662,6 +853,13 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 				bd->IndexBufferSize = idx_buffer_size;
 			}
 
+			memcpy( bd->pVertexData, cmd_list->VtxBuffer.Data, vtx_buffer_size );
+			renderImport.glFlushMappedBufferRangeARB( GL_ARRAY_BUFFER, 0, vtx_buffer_size );
+
+			memcpy( bd->pIndexData, cmd_list->IdxBuffer.Data, idx_buffer_size );
+			renderImport.glFlushMappedBufferRangeARB( GL_ELEMENT_ARRAY_BUFFER, 0, idx_buffer_size );
+
+/*
 			void *vtx = renderImport.glMapBufferRange( GL_ARRAY_BUFFER, 0, vtx_buffer_size, GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_WRITE_BIT
 				| GL_MAP_INVALIDATE_BUFFER_BIT );
 			if ( vtx ) {
@@ -671,10 +869,11 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 
 			void *idx = renderImport.glMapBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, idx_buffer_size, GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_WRITE_BIT
 				| GL_MAP_INVALIDATE_BUFFER_BIT );
-			if ( idx) {
+			if ( idx ) {
 				memcpy( idx, cmd_list->IdxBuffer.Data, idx_buffer_size );
 			}
 			renderImport.glUnmapBuffer( GL_ELEMENT_ARRAY_BUFFER );
+			*/
 		}
 
 		for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
@@ -900,12 +1099,12 @@ int ImGui_ImplOpenGL3_CreateDeviceObjects( void )
 	renderImport.glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &last_vertex_array);
 #endif
 
-	bd->AttribLocationTex = renderImport.glGetUniformLocation(imguiShader, "u_DiffuseMap");
-	bd->AttribLocationProjMtx = renderImport.glGetUniformLocation(imguiShader, "u_ModelViewProjection");
-	bd->AttribLocationGamma = renderImport.glGetUniformLocation(imguiShader, "u_GammaAmount");
-	bd->AttribLocationVtxPos = (GLuint)renderImport.glGetAttribLocation(imguiShader, "a_Position");
-	bd->AttribLocationVtxUV = (GLuint)renderImport.glGetAttribLocation(imguiShader, "a_TexCoords");
-	bd->AttribLocationVtxColor = (GLuint)renderImport.glGetAttribLocation(imguiShader, "a_Color");
+	bd->AttribLocationTex = renderImport.glGetUniformLocation( imguiShader, "u_DiffuseMap" );
+	bd->AttribLocationProjMtx = renderImport.glGetUniformLocation( imguiShader, "u_ModelViewProjection" );
+	bd->AttribLocationGamma = renderImport.glGetUniformLocation( imguiShader, "u_GammaAmount" );
+	bd->AttribLocationVtxPos = (GLuint)renderImport.glGetAttribLocation( imguiShader, "a_Position" );
+	bd->AttribLocationVtxUV = (GLuint)renderImport.glGetAttribLocation( imguiShader, "a_TexCoords" );
+	bd->AttribLocationVtxColor = (GLuint)renderImport.glGetAttribLocation( imguiShader, "a_Color" );
 
 	// Create buffers
 	renderImport.glGenBuffers( 1, &bd->VboHandle );
@@ -913,10 +1112,14 @@ int ImGui_ImplOpenGL3_CreateDeviceObjects( void )
 
 	renderImport.glBindBuffer( GL_ARRAY_BUFFER, bd->VboHandle );
 	renderImport.glBufferData( GL_ARRAY_BUFFER, DEFAULT_VERTEX_BUFFER_SIZE, NULL, GL_STREAM_DRAW );
+	bd->pVertexData = (ImDrawVert *)renderImport.glMapBufferRange( GL_ARRAY_BUFFER, 0, DEFAULT_VERTEX_BUFFER_SIZE, GL_MAP_WRITE_BIT
+		| GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_FLUSH_EXPLICIT_BIT );
 	bd->VertexBufferSize = DEFAULT_VERTEX_BUFFER_SIZE;
 
 	renderImport.glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, bd->ElementsHandle );
 	renderImport.glBufferData( GL_ELEMENT_ARRAY_BUFFER, DEFAULT_INDEX_BUFFER_SIZE, NULL, GL_STREAM_DRAW );
+	bd->pIndexData = (ImDrawIdx *)renderImport.glMapBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, DEFAULT_INDEX_BUFFER_SIZE, GL_MAP_WRITE_BIT
+		| GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_FLUSH_EXPLICIT_BIT );
 	bd->IndexBufferSize = DEFAULT_INDEX_BUFFER_SIZE;
 
 	ImGui_ImplOpenGL3_CreateFontsTexture();
