@@ -13,6 +13,7 @@ uniform float u_GammaAmount;
 uniform bool u_GamePaused;
 uniform float u_CameraExposure;
 
+uniform mat4 u_ModelViewProjection;
 uniform bool u_HardwareGamma;
 uniform bool u_HDR;
 uniform bool u_PBR;
@@ -67,6 +68,9 @@ layout( std140, binding = 0 ) buffer u_DLightBuffer {
 uniform int u_NumLights;
 uniform vec3 u_AmbientColor;
 
+#include "image_sharpen.glsl"
+#include "fxaa.glsl"
+
 float CalcLightAttenuation(float point, float normDist)
 {
 	// zero light at 1.0, approximating q3 style
@@ -101,7 +105,6 @@ vec3 CalcNormal() {
 	vec3 normal = texture2D( u_NormalMap, v_TexCoords ).rgb;
 	normal = normalize( normal * 2.0 - 1.0 );
 	return normal;
-//	return vec3( normal * 0.5 + 0.5 );
 #else
 	return vec3( 0.0 );
 #endif
@@ -183,7 +186,7 @@ vec3 CalcTangent() {
 
 vec3 CalcPointLight( Light light ) {
 	vec3 diffuse = a_Color.rgb;
-	float dist = distance( v_WorldPos, vec3( light.origin, v_WorldPos.z ) );
+	float dist = distance( v_WorldPos, vec3( light.origin, v_FragPos.z ) );
 	float diff = 0.0;
 	float range = light.range;
 	vec3 specular = vec3( 0.0 );
@@ -193,10 +196,12 @@ vec3 CalcPointLight( Light light ) {
 		diff = 1.0 - abs( dist / range );
 	}
 	diff += light.brightness;
+	diffuse = min( diff * ( diffuse + vec3( light.color ) ), diffuse );
 
 	range = light.range + light.brightness;
-	attenuation = ( light.constant + light.linear * range
-		+ light.quadratic * ( range * range ) );
+//	attenuation = ( light.constant + light.linear + light.quadratic * ( range * range ) );
+	attenuation = ( light.constant + light.linear * light.range
+		+ light.quadratic * ( light.range * light.range ) );
 	if ( u_LightingQuality == 2 ) {
 		vec3 lightDir = vec3( light.origin.xy, 0.0 ) - v_FragPos;
 		vec3 viewDir = normalize( u_ViewOrigin - v_WorldPos );
@@ -227,11 +232,12 @@ vec3 CalcPointLight( Light light ) {
 		specular *= attenuation;
 	}
 	else {
-		const vec3 normal = CalcNormal();
-		diffuse += normal;
+//		const vec3 normal = CalcNormal();
+//		const vec3 lightDir = normalize( v_WorldPos ) - normalize( vec3( light.origin.xy, 0.0 ) );
+//		diff = max( dot( lightDir, normal ), 0.0 );
+//		vec3 color = clamp( diffuse.rgb + diff, vec3( 0.0 ), vec3( 1.0 ) );
+//		diffuse = color;
 	}
-
-	diffuse = min( diff * ( diffuse + vec3( light.color ) ), diffuse );
 
 	diffuse *= attenuation;
 
@@ -251,9 +257,6 @@ void ApplyLighting() {
 	a_Color.rgb *= u_AmbientColor;
 }
 
-#include "image_sharpen.glsl"
-#include "fxaa.glsl"
-
 void main() {
 	// calculate a slight x offset, otherwise we get some black line bleeding
 	// going on
@@ -272,6 +275,24 @@ void main() {
 	} else {
 		a_Color = texture2D( u_DiffuseMap, texCoord );
 	}
+
+	const float alpha = a_Color.a * v_Color.a;
+	if ( u_AlphaTest == 1 ) {
+		if ( alpha == 0.0 ) {
+			discard;
+		}
+	}
+	else if ( u_AlphaTest == 2 ) {
+		if ( alpha >= 0.5 ) {
+			discard;
+		}
+	}
+	else if ( u_AlphaTest == 3 ) {
+		if ( alpha < 0.5 ) {
+			discard;
+		}
+	}
+	a_Color.a = alpha;
 
 	ApplyLighting();
 

@@ -258,6 +258,7 @@ enum
 	ATTRIB_TILEID				= BIT( ATTRIB_INDEX_TILEID ),
 	ATTRIB_TANGENT				= BIT( ATTRIB_INDEX_TANGENT ),
 	ATTRIB_BITANGENT			= BIT( ATTRIB_INDEX_BITANGENT ),
+	ATTRIB_NORMAL				= BIT( ATTRIB_INDEX_NORMAL ),
 
 	ATTRIB_BITS =
 		ATTRIB_POSITION |
@@ -438,10 +439,7 @@ typedef struct {
 	uint16_t		worldPos[2];
 	vec3_t			xyz;
 	vec2_t			uv;
-	int16_t			normal[4];
-	int16_t			tangent[4];
-	int16_t			bitangent[4];
-//	uint16_t		color[4];
+	uint16_t		color[4];
 } drawVert_t;
 
 // when sgame directly specifies a polygon, it becomes a srfPoly_t
@@ -953,6 +951,7 @@ typedef uint16_t worldPos_t[2];
 typedef uint16_t color_t[4];
 typedef int16_t tangent_t[4];
 typedef int16_t bitangent_t[4];
+typedef int16_t normal_t[4];
 
 typedef struct {
 	char baseName[MAX_NPATH];
@@ -985,9 +984,10 @@ typedef struct {
 	worldPos_t *worldPos;
 	vec3_t *xyz;
 	vec2_t *uv;
-	tangent_t *tangent;
-	bitangent_t *bitanget;
-//	color_t *color;
+//	tangent_t *tangent;
+//	bitangent_t *bitangent;
+//	normal_t *normal;
+	color_t *color;
 	drawVert_t *vertices;
 	uint64_t numVertices;
 

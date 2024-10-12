@@ -151,7 +151,11 @@ namespace TheNomad::SGame {
 			return ( m_iFlags & PF_SLIDING ) != 0;
 		}
 		void SetSliding( bool bSliding ) {
-			m_iFlags |= bSliding ? PF_SLIDING : 0;
+			if ( bSliding ) {
+				m_iFlags |= PF_SLIDING;
+			} else {
+				m_iFlags &= ~PF_SLIDING;
+			}
 		}
 		uint GetTimeSinceLastSlide() const {
 			return TheNomad::GameSystem::GameManager.GetGameTic() - m_nTimeSinceSlide;
@@ -164,7 +168,11 @@ namespace TheNomad::SGame {
 			return ( m_iFlags & PF_CROUCHING ) != 0;
 		}
 		void SetCrouching( bool bCrouching ) {
-			m_iFlags |= bCrouching ? PF_CROUCHING : 0;
+			if ( bCrouching ) {
+				m_iFlags |= PF_CROUCHING;
+			} else {
+				m_iFlags &= ~PF_CROUCHING;
+			}
 		}
 
 		bool IsDoubleJumping() const {
@@ -175,7 +183,11 @@ namespace TheNomad::SGame {
 			return ( m_iFlags & PF_DASHING ) != 0;
 		}
 		void SetDashing( bool bDashing ) {
-			m_iFlags |= bDashing ? PF_DASHING : 0;
+			if ( bDashing ) {
+				m_iFlags |= PF_DASHING;
+			} else {
+				m_iFlags &= ~PF_DASHING;
+			}
 		}
 		uint GetTimeSinceLastDash() const {
 			return TheNomad::GameSystem::GameManager.GetGameTic() - m_nTimeSinceDash;
@@ -433,11 +445,6 @@ namespace TheNomad::SGame {
 				m_nFrameDamage += GetCurrentWeapon().Use( cast<EntityObject>( @this ), GetCurrentWeaponMode() );
 			} else if ( ( m_iFlags & PF_USING_WEAPON_ALT ) != 0 ) {
 				m_nFrameDamage += GetCurrentWeapon().UseAlt( cast<EntityObject>( @this ), GetCurrentWeaponMode() );
-			}
-
-			if ( ( m_iFlags & PF_AFTER_IMAGE ) != 0 ) {
-				// draw the common silhouette after image for the player's last known position to the enemies
-				m_AfterImage.Draw();
 			}
 
 			m_Link.m_Bounds.m_nWidth = sgame_PlayerWidth.GetFloat();
@@ -779,6 +786,11 @@ namespace TheNomad::SGame {
 
 			DrawLegs();
 			DrawArms();
+
+			if ( ( m_iFlags & PF_AFTER_IMAGE ) != 0 ) {
+				// draw the common silhouette after image for the player's last known position to the enemies
+				m_AfterImage.Draw();
+			}
 
 			m_HudData.Draw();
 		}
