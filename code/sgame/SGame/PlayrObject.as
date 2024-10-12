@@ -5,6 +5,15 @@
 namespace TheNomad::SGame {
 	const float HEAL_MULT_BASE = 0.001f;
 
+	const uint PF_SLIDING			= 0x00000001;
+	const uint PF_CROUCHING			= 0x00000002;
+	const uint PF_JUMPING			= 0x00000004;
+	const uint PF_DASHING			= 0x00000008;
+	const uint PF_BULLET_TIME		= 0x00000010;
+	const uint PF_DEMON_RAGE		= 0x00000020;
+	const uint PF_USING_WEAPON		= 0x00000100;
+	const uint PF_USING_WEAPON_ALT	= 0x00000200;
+
 	const uint[] sgame_WeaponModeList = {
 		uint( InfoSystem::WeaponProperty::OneHandedBlade | InfoSystem::WeaponProperty::TwoHandedBlade ),
 		uint( InfoSystem::WeaponProperty::OneHandedBlunt | InfoSystem::WeaponProperty::TwoHandedBlunt ),
@@ -138,23 +147,23 @@ namespace TheNomad::SGame {
 		}
 
 		bool IsSliding() const {
-			return m_bSliding;
+			return ( m_iFlags & PF_SLIDING ) != 0;
 		}
 		void SetSliding( bool bSliding ) {
-			m_bSliding = bSliding;
+			m_iFlags |= bSliding ? PF_SLIDING : 0;
 		}
-		uint64 GetTimeSinceLastSlide() const {
-			return TheNomad::Engine::System::Milliseconds() - m_nTimeSinceSlide;
+		uint GetTimeSinceLastSlide() const {
+			return TheNomad::GameSystem::GameManager.GetGameTic() - m_nTimeSinceSlide;
 		}
 		void ResetSlide() {
-			m_nTimeSinceSlide = TheNomad::Engine::System::Milliseconds();
+			m_nTimeSinceSlide = TheNomad::GameSystem::GameManager.GetGameTic();
 		}
 		
 		bool IsCrouching() const {
-			return m_bCrouching;
+			return ( m_iFlags & PF_CROUCHING ) != 0;
 		}
 		void SetCrouching( bool bCrouching ) {
-			m_bCrouching = bCrouching;
+			m_iFlags |= bCrouching ? PF_CROUCHING : 0;
 		}
 
 		bool IsDoubleJumping() const {
@@ -162,26 +171,26 @@ namespace TheNomad::SGame {
 		}
 
 		bool IsDashing() const {
-			return m_bDashing;
+			return ( m_iFlags & PF_DASHING ) != 0;
 		}
 		void SetDashing( bool bDashing ) {
-			m_bDashing = bDashing;
+			m_iFlags |= bDashing ? PF_DASHING : 0;
 		}
-		uint64 GetTimeSinceLastDash() const {
-			return TheNomad::Engine::System::Milliseconds() - m_nTimeSinceDash;
+		uint GetTimeSinceLastDash() const {
+			return TheNomad::GameSystem::GameManager.GetGameTic() - m_nTimeSinceDash;
 		}
-		void SetTimeSinceLastDash( uint64 time ) {
+		void SetTimeSinceLastDash( uint time ) {
 			m_nTimeSinceDash = time;
 		}
 		void ResetDash() {
-			m_nTimeSinceDash = TheNomad::Engine::System::Milliseconds();
+			m_nTimeSinceDash = TheNomad::GameSystem::GameManager.GetGameTic();
 		}
 
 		void SetUsingWeapon( bool bUseWeapon ) {
-			m_bUseWeapon = bUseWeapon;
+			m_iFlags |= bUseWeapon ? PF_USING_WEAPON : 0;
 		}
 		void SetUsingWeaponAlt( bool bUseAltWeapon ) {
-			m_bAltUseWeapon = bUseAltWeapon;
+			m_iFlags |= bUseAltWeapon ? PF_USING_WEAPON_ALT : 0;
 		}
 		void SetLeftHandMode( InfoSystem::WeaponProperty weaponProps ) {
 			m_LeftHandMode = weaponProps;
@@ -206,10 +215,10 @@ namespace TheNomad::SGame {
 		}
 
 		bool UsingWeapon() const {
-			return m_bUseWeapon;
+			return ( m_iFlags & PF_USING_WEAPON ) != 0;
 		}
 		bool UsingWeaponAlt() const {
-			return m_bAltUseWeapon;
+			return ( m_iFlags & PF_USING_WEAPON_ALT ) != 0;
 		}
 		InfoSystem::WeaponProperty GetLeftHandMode() const {
 			return m_LeftHandMode;
@@ -419,9 +428,9 @@ namespace TheNomad::SGame {
 				m_QuickShot.Think();
 			}
 
-			if ( m_bUseWeapon ) {
+			if ( ( m_iFlags & PF_USING_WEAPON ) != 0 ) {
 				m_nFrameDamage += GetCurrentWeapon().Use( cast<EntityObject>( @this ), GetCurrentWeaponMode() );
-			} else if ( m_bAltUseWeapon ) {
+			} else if ( ( m_iFlags & PF_USING_WEAPON_ALT ) != 0 ) {
 				m_nFrameDamage += GetCurrentWeapon().UseAlt( cast<EntityObject>( @this ), GetCurrentWeaponMode() );
 			}
 
@@ -508,40 +517,6 @@ namespace TheNomad::SGame {
 			GfxManager.AddExplosionGfx( vec3( m_Link.m_Origin.x + GetGfxDirection(), m_Link.m_Origin.y, m_Link.m_Origin.z ) );
 
 			return true;
-		}
-		
-		void MakeSound() {
-			if ( m_bCrouching ) {
-				return;
-			}
-			
-			array<EntityObject@>@ entList = @EntityManager.GetEntities();
-			for ( uint i = 0; i < entList.Count(); i++ ) {
-				if ( entList[i].GetType() != TheNomad::GameSystem::EntityType::Mob ) {
-					continue;
-				}
-				MobObject@ mob = cast<MobObject@>( @entList[i] );
-				InfoSystem::MobInfo@ info = cast<InfoSystem::MobInfo@>( @mob.GetInfo() );
-				const vec3 detection = vec3( float( info.detectionRangeX ), float( info.detectionRangeY ), 0.0f );
-				const float dist = Util::Distance( mob.GetOrigin(), m_Link.m_Origin );
-
-				if ( dist < Util::VectorLength( detection ) ) {
-					// is there a wall there?
-					TheNomad::GameSystem::RayCast ray;
-					const vec3 origin = mob.GetOrigin();
-					
-					ray.m_nLength = dist;
-					ray.m_nAngle = atan2( ( origin.x - m_Link.m_Origin.x ), ( origin.y - m_Link.m_Origin.y ) );
-					ray.m_Start = m_Link.m_Origin;
-					
-					ray.Cast();
-					if ( ray.m_nEntityNumber == ENTITYNUM_INVALID || ray.m_nEntityNumber == ENTITYNUM_WALL ) {
-						continue; // hit a wall or dead air, no detection
-					}
-					
-					mob.SetAlert( @this, dist );
-				}
-			}
 		}
 		
 		//
@@ -748,7 +723,7 @@ namespace TheNomad::SGame {
 
 			if ( m_PhysicsObject.GetVelocity() == Vec3Origin ) {
 				@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_GROUND );
-			} else if ( m_bSliding ) {
+			} else if ( IsSliding() ) {
 				@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_SLIDE );
 			} else {
 				@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_MOVE_GROUND );
@@ -765,7 +740,7 @@ namespace TheNomad::SGame {
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 
 			if ( m_ArmState.Done() && @m_ArmState !is @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_MOVE )
-				&& m_PhysicsObject.GetVelocity() != Vec3Origin )
+				&& m_PhysicsObject.GetVelocity() != Vec3Origin && !IsSliding() )
 			{
 				@m_ArmState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_MOVE );
 			}
@@ -868,9 +843,6 @@ namespace TheNomad::SGame {
 		private WeaponObject@ m_RightHandWeapon = null;
 		private InfoSystem::WeaponProperty m_LeftHandMode = InfoSystem::WeaponProperty::None;
 		private InfoSystem::WeaponProperty m_RightHandMode = InfoSystem::WeaponProperty::None;
-		
-		private bool m_bUseWeapon = false;
-		private bool m_bAltUseWeapon = false;
 
 		// the lore goes: the harder and faster you hit The Nomad, the harder and faster he hits back
 		private float m_nDamageMult = 0.0f;
@@ -887,20 +859,18 @@ namespace TheNomad::SGame {
 		private EntityState@ m_LegState = null;
 		private int m_LegsFacing = 0;
 
-		private uint64 m_nTimeSinceDash = 0;
+		private uint m_nTimeSinceDash = 0;
 		private uint m_nDashCounter = 0;
-		private bool m_bDashing = false;
-
-		private uint64 m_nTimeSinceSlide = 0;
-		private bool m_bSliding = false;
+		private uint m_nTimeSinceSlide = 0;
 
 		bool m_bMeleeActive = false;
-		private bool m_bCrouching = false;
 
 		private bool m_bEmoting = false;
 		
 		private PlayerDisplayUI m_HudData;
 		PMoveData Pmove( @this );
+
+		private uint m_iFlags = 0;
 
 		private InventoryManager m_Inventory;
 	};

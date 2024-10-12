@@ -1638,7 +1638,7 @@ int asCJITCompiler::CompileFunction(asIScriptFunction *function, asJITFunction *
 			} break;
 		case asBC_CMPIf:
 			{
-				fpu.load_float(MemAddress(cpu,&asBC_FLOATARG(pOp)));
+				fpu.load_float(MemAddress(cpu, &asBC_FLOATARG(pOp)));
 				fpu.load_float(*edi-offset0);
 				fpu.compare_toCPU(FPU_1);
 

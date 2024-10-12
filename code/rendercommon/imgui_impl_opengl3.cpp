@@ -248,13 +248,12 @@ struct ImGui_ImplOpenGL3_Data
 	GLuint AttribLocationVtxColor;
 	unsigned int VboHandle, ElementsHandle;
 	GLsizeiptr VertexBufferSize;
+	GLsizeiptr VertexBufferOffset;
 	GLsizeiptr IndexBufferSize;
+	GLsizeiptr IndexBufferOffset;
 	GLuint vaoId;
 	int HasClipOrigin;
 	int UseBufferSubData;
-
-	ImDrawVert *pVertexData;
-	ImDrawIdx *pIndexData;
 
 	ImGui_ImplOpenGL3_Data() { memset((void *)this, 0, sizeof(*this)); }
 };
@@ -842,38 +841,44 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 			renderImport.glBufferSubData(GL_ARRAY_BUFFER, 0, vtx_buffer_size, (const GLvoid *)cmd_list->VtxBuffer.Data);
 			renderImport.glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, idx_buffer_size, (const GLvoid *)cmd_list->IdxBuffer.Data);
 		}
-		else
-		{
+		else {
+
 			if ( vtx_buffer_size >= bd->VertexBufferSize ) {
 				renderImport.glBufferData( GL_ARRAY_BUFFER, vtx_buffer_size, NULL, GL_STREAM_DRAW );
 				bd->VertexBufferSize = vtx_buffer_size;
+			}
+			else if ( vtx_buffer_size + bd->VertexBufferOffset >= bd->VertexBufferSize ) {
+				bd->VertexBufferOffset = 0;
 			}
 			if ( idx_buffer_size >= bd->IndexBufferSize ) {
 				renderImport.glBufferData( GL_ELEMENT_ARRAY_BUFFER, idx_buffer_size, NULL, GL_STREAM_DRAW );
 				bd->IndexBufferSize = idx_buffer_size;
 			}
+			else if ( idx_buffer_size + bd->IndexBufferOffset >= bd->IndexBufferSize ) {
+				bd->IndexBufferOffset = 0;
+			}
 
-			memcpy( bd->pVertexData, cmd_list->VtxBuffer.Data, vtx_buffer_size );
-			renderImport.glFlushMappedBufferRangeARB( GL_ARRAY_BUFFER, 0, vtx_buffer_size );
-
-			memcpy( bd->pIndexData, cmd_list->IdxBuffer.Data, idx_buffer_size );
-			renderImport.glFlushMappedBufferRangeARB( GL_ELEMENT_ARRAY_BUFFER, 0, idx_buffer_size );
+			renderImport.glBufferSubData( GL_ARRAY_BUFFER, 0, vtx_buffer_size, cmd_list->VtxBuffer.Data );
+			renderImport.glBufferSubData( GL_ELEMENT_ARRAY_BUFFER, 0, idx_buffer_size, cmd_list->IdxBuffer.Data );
 
 /*
-			void *vtx = renderImport.glMapBufferRange( GL_ARRAY_BUFFER, 0, vtx_buffer_size, GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_WRITE_BIT
-				| GL_MAP_INVALIDATE_BUFFER_BIT );
+			void *vtx = renderImport.glMapBufferRange( GL_ARRAY_BUFFER, bd->VertexBufferOffset, vtx_buffer_size,
+				GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_WRITE_BIT );
 			if ( vtx ) {
 				memcpy( vtx, cmd_list->VtxBuffer.Data, vtx_buffer_size );
 			}
 			renderImport.glUnmapBuffer( GL_ARRAY_BUFFER );
 
-			void *idx = renderImport.glMapBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, idx_buffer_size, GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_WRITE_BIT
-				| GL_MAP_INVALIDATE_BUFFER_BIT );
+			void *idx = renderImport.glMapBufferRange( GL_ELEMENT_ARRAY_BUFFER, bd->IndexBufferOffset, idx_buffer_size,
+				GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_WRITE_BIT );
 			if ( idx ) {
 				memcpy( idx, cmd_list->IdxBuffer.Data, idx_buffer_size );
 			}
 			renderImport.glUnmapBuffer( GL_ELEMENT_ARRAY_BUFFER );
-			*/
+
+			bd->VertexBufferOffset += vtx_buffer_size;
+			bd->IndexBufferOffset += idx_buffer_size;
+*/
 		}
 
 		for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
@@ -1112,14 +1117,10 @@ int ImGui_ImplOpenGL3_CreateDeviceObjects( void )
 
 	renderImport.glBindBuffer( GL_ARRAY_BUFFER, bd->VboHandle );
 	renderImport.glBufferData( GL_ARRAY_BUFFER, DEFAULT_VERTEX_BUFFER_SIZE, NULL, GL_STREAM_DRAW );
-	bd->pVertexData = (ImDrawVert *)renderImport.glMapBufferRange( GL_ARRAY_BUFFER, 0, DEFAULT_VERTEX_BUFFER_SIZE, GL_MAP_WRITE_BIT
-		| GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_FLUSH_EXPLICIT_BIT );
 	bd->VertexBufferSize = DEFAULT_VERTEX_BUFFER_SIZE;
 
 	renderImport.glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, bd->ElementsHandle );
 	renderImport.glBufferData( GL_ELEMENT_ARRAY_BUFFER, DEFAULT_INDEX_BUFFER_SIZE, NULL, GL_STREAM_DRAW );
-	bd->pIndexData = (ImDrawIdx *)renderImport.glMapBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, DEFAULT_INDEX_BUFFER_SIZE, GL_MAP_WRITE_BIT
-		| GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_FLUSH_EXPLICIT_BIT );
 	bd->IndexBufferSize = DEFAULT_INDEX_BUFFER_SIZE;
 
 	ImGui_ImplOpenGL3_CreateFontsTexture();

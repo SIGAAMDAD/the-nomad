@@ -113,9 +113,6 @@ namespace TheNomad::SGame {
 				TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( m_Info.dieSfx );
 				EntityManager.KillEntity( @source, cast<EntityObject@>( @this ) );
 				
-				// alert mobs within the vicinity
-				EntityManager.GetActivePlayer().MakeSound();
-				
 				return;
 			}
 			
