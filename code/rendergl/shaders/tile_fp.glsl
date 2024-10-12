@@ -228,7 +228,8 @@ vec3 CalcPointLight( Light light ) {
 	}
 	else {
 		const vec3 normal = CalcNormal();
-		diffuse += normal;
+		const vec3 lightDir = normalize( v_WorldPos ) - normalize( vec3( light.origin.xy, 0.0 ) );
+		diffuse *= normal;
 	}
 
 	diffuse = min( diff * ( diffuse + vec3( light.color ) ), diffuse );

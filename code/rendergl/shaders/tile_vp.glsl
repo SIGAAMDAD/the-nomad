@@ -13,12 +13,8 @@ uniform bool u_WorldDrawing;
 uniform mat4 u_ModelViewProjection;
 uniform vec4 u_BaseColor;
 uniform vec4 u_VertColor;
-
-#if defined(USE_RGBAGEN)
 uniform int u_ColorGen;
 uniform int u_AlphaGen;
-uniform vec3 u_DirectedLight;
-#endif
 
 #if defined(USE_TCGEN)
 uniform vec4 u_DiffuseTexMatrix;
@@ -117,7 +113,11 @@ void main() {
 #else
 	v_TexCoords = texCoord;
 #endif
-	v_Color = a_Color;
+	if ( u_ColorGen == CGEN_VERTEX ) {
+		v_Color = vec4( 1.0 );
+	} else {
+		v_Color = u_VertColor * a_Color + u_BaseColor;
+	}
 	v_WorldPos = vec3( a_WorldPos.xy, 0.0 );
 	v_Position = position;
 
