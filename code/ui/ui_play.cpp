@@ -210,14 +210,14 @@ static void DeleteSlot_Event( qboolean action )
 		return;
 	}
 
-	g_pArchiveHandler->DeleteSlot( s_playMenu->hoveredSaveSlot );
+	g_pArchiveHandler->DeleteSlot( s_playMenu->selectedSaveSlot );
 
 	s_playMenu->deleteSlot = qfalse;
-	if ( s_playMenu->saveSlots[ s_playMenu->hoveredSaveSlot ].gd.modList ) {
-		Z_Free( s_playMenu->saveSlots[ s_playMenu->hoveredSaveSlot ].gd.modList );
+	if ( s_playMenu->saveSlots[ s_playMenu->selectedSaveSlot ].gd.modList ) {
+		Z_Free( s_playMenu->saveSlots[ s_playMenu->selectedSaveSlot ].gd.modList );
 	}
-	memset( &s_playMenu->saveSlots[ s_playMenu->hoveredSaveSlot ], 0, sizeof( saveinfo_t ) );
-	s_playMenu->hoveredSaveSlot = 0;
+	memset( &s_playMenu->saveSlots[ s_playMenu->selectedSaveSlot ], 0, sizeof( saveinfo_t ) );
+	s_playMenu->selectedSaveSlot = 0;
 	s_playMenu->numSaveFiles = 0;
 
 	UI_PopMenu();
@@ -234,11 +234,11 @@ static void MissionMenu_Event( void *ptr, int event )
 	switch ( ( (const menucommon_t *)ptr )->id ) {
 	case ID_CONTINUE:
 		Cvar_SetIntegerValue( "g_paused", 0 );
-		Cvar_Set( "sgame_SaveName", va( "SLOT_%lu", slot - s_playMenu->saveSlots ) );
+		Cvar_Set( "sgame_SaveName", va( "SLOT_%lu", ( slot - s_playMenu->saveSlots ) - 1 ) );
 		gi.state = GS_LEVEL;
 		gi.playTimeStart = Sys_Milliseconds();
 //		Cbuf_ExecuteText( EXEC_APPEND, va( "setmap \"%s\"\n", gi.mapCache.mapList[ slot->gd.mapIndex ] ) );
-		g_pArchiveHandler->Load( va( "SLOT_%lu", slot - s_playMenu->saveSlots ) );
+		g_pArchiveHandler->Load( va( "SLOT_%lu", ( slot - s_playMenu->saveSlots ) - 1 ) );
 		break;
 	case ID_DELETE:
 		UI_ConfirmMenu( "", DeleteSlot_Draw, DeleteSlot_Event );

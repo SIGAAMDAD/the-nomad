@@ -232,11 +232,9 @@ vec3 CalcPointLight( Light light ) {
 		specular *= attenuation;
 	}
 	else {
-//		const vec3 normal = CalcNormal();
-//		const vec3 lightDir = normalize( v_WorldPos ) - normalize( vec3( light.origin.xy, 0.0 ) );
-//		diff = max( dot( lightDir, normal ), 0.0 );
-//		vec3 color = clamp( diffuse.rgb + diff, vec3( 0.0 ), vec3( 1.0 ) );
-//		diffuse = color;
+		const vec3 normal = CalcNormal();
+		const vec3 lightDir = normalize( v_WorldPos ) - normalize( vec3( light.origin.xy, 0.0 ) );
+		diffuse *= normal;
 	}
 
 	diffuse *= attenuation;

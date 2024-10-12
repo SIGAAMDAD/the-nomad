@@ -346,8 +346,8 @@ CGameArchive::CGameArchive( void )
 {
 	PROFILE_FUNCTION();
 
-	uint64_t i, numFiles;
-	char **fileList;
+	uint64_t i;
+	fileStats_t stats;
 
 	Con_Printf( "G_InitArchiveHandler: initializing save file cache...\n" );
 
@@ -355,8 +355,7 @@ CGameArchive::CGameArchive( void )
 	Cvar_CheckRange( g_maxSaveSlots, "0", "1000", CVT_INT );
 	Cvar_SetDescription( g_maxSaveSlots, "Sets the maximum allowed save slots, unlimited if \"0\"." );
 
-	fileList = FS_ListFiles( "SaveData", ".ngd", &numFiles );
-
+#ifdef SAVE_NOLIMIT
 	m_nArchiveFiles = numFiles;
 	if ( m_nArchiveFiles >= g_maxSaveSlots->i ) {
 		Con_Printf( COLOR_YELLOW "WARNING: more save files found than save slots allowed.\n" );
@@ -364,28 +363,25 @@ CGameArchive::CGameArchive( void )
 	if ( g_maxSaveSlots->i != 0 ) {
 		m_nArchiveFiles = g_maxSaveSlots->i;
 	}
+#else
+	m_nArchiveFiles = g_maxSaveSlots->i;
+#endif
 
 	m_pArchiveCache = (ngd_file_t **)Z_Malloc( sizeof( *m_pArchiveCache ) * m_nArchiveFiles, TAG_SAVEFILE );
 	m_pArchiveFileList = (char **)Z_Malloc( sizeof( *m_pArchiveFileList ) * m_nArchiveFiles, TAG_SAVEFILE );
 	m_nUsedSaveSlots = 0;
 
 	for ( i = 0; i < m_nArchiveFiles; i++ ) {
-		if ( i >= numFiles ) {
-			m_pArchiveFileList[i] = (char *)Z_Malloc( strlen( va( "Save Slot %lu", i + 1 ) ) + 1, TAG_SAVEFILE );
-			strcpy( m_pArchiveFileList[i], va( "Save Slot %lu", i + 1 ) );
-			m_pArchiveCache[i] = NULL;
-			continue;
+		m_pArchiveFileList[i] = (char *)Z_Malloc( strlen( va( "SLOT_%lu", i ) ) + 1, TAG_SAVEFILE );
+		strcpy( m_pArchiveFileList[i], va( "SLOT_%lu", i ) );
+		if ( Sys_GetFileStats( &stats, va( "SaveData/%s.ngd", m_pArchiveFileList[ i ] ) ) ) {
+			LoadArchiveFile( va( "SaveData/%s.ngd", m_pArchiveFileList[i] ), i );
 		}
-		m_pArchiveFileList[i] = (char *)Z_Malloc( strlen( fileList[i] ) + 1, TAG_SAVEFILE );
-		strcpy( m_pArchiveFileList[i], fileList[i] );
-		LoadArchiveFile( fileList[i], i );
 
 		m_nUsedSaveSlots++;
 
-		Con_Printf( "...Cached save file '%s'\n", fileList[i] );
+		Con_Printf( "...Cached save file '%s'\n", m_pArchiveFileList[i] );
 	}
-
-	FS_FreeFileList( fileList );
 }
 
 void G_InitArchiveHandler( void )

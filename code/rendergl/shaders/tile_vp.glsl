@@ -14,8 +14,6 @@ uniform mat4 u_ModelViewProjection;
 uniform mat4 u_ModelMatrix;
 uniform vec4 u_BaseColor;
 uniform vec4 u_VertColor;
-uniform vec3 u_ViewOrigin;
-
 uniform int u_ColorGen;
 uniform int u_AlphaGen;
 
