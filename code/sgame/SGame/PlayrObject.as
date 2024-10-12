@@ -13,6 +13,7 @@ namespace TheNomad::SGame {
 	const uint PF_DEMON_RAGE		= 0x00000020;
 	const uint PF_USING_WEAPON		= 0x00000100;
 	const uint PF_USING_WEAPON_ALT	= 0x00000200;
+	const uint PF_AFTER_IMAGE		= 0x10000000;
 
 	const uint[] sgame_WeaponModeList = {
 		uint( InfoSystem::WeaponProperty::OneHandedBlade | InfoSystem::WeaponProperty::TwoHandedBlade ),
@@ -434,6 +435,11 @@ namespace TheNomad::SGame {
 				m_nFrameDamage += GetCurrentWeapon().UseAlt( cast<EntityObject>( @this ), GetCurrentWeaponMode() );
 			}
 
+			if ( ( m_iFlags & PF_AFTER_IMAGE ) != 0 ) {
+				// draw the common silhouette after image for the player's last known position to the enemies
+				m_AfterImage.Draw();
+			}
+
 			m_Link.m_Bounds.m_nWidth = sgame_PlayerWidth.GetFloat();
 			m_Link.m_Bounds.m_nHeight = sgame_PlayerHeight.GetFloat();
 			m_Link.m_Bounds.MakeBounds( m_Link.m_Origin ); // breaks movement
@@ -671,6 +677,9 @@ namespace TheNomad::SGame {
 			}
 			m_ArmsFacing = FACING_RIGHT;
 
+			m_AfterImage.Create( @this );
+			m_iFlags |= PF_AFTER_IMAGE;
+
 //			@GoreManager = cast<GoreSystem>( @TheNomad::GameSystem::AddSystem( GoreSystem() ) );
 		}
 
@@ -858,6 +867,8 @@ namespace TheNomad::SGame {
 		private SpriteSheet@[] m_LegSpriteSheet( NUMFACING );
 		private EntityState@ m_LegState = null;
 		private int m_LegsFacing = 0;
+
+		private AfterImage m_AfterImage;
 
 		private uint m_nTimeSinceDash = 0;
 		private uint m_nDashCounter = 0;

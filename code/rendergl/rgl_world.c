@@ -533,44 +533,53 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 #if 1
 	attribs[ATTRIB_INDEX_POSITION].enabled		= qtrue;
 	attribs[ATTRIB_INDEX_TEXCOORD].enabled		= qtrue;
-	attribs[ATTRIB_INDEX_COLOR].enabled			= qtrue;
-	attribs[ATTRIB_INDEX_WORLDPOS].enabled      = qtrue;
+//	attribs[ATTRIB_INDEX_COLOR].enabled			= qtrue;
+	attribs[ATTRIB_INDEX_BITANGENT].enabled		= qtrue;
+	attribs[ATTRIB_INDEX_TANGENT].enabled		= qtrue;
+	attribs[ATTRIB_INDEX_WORLDPOS].enabled		= qtrue;
 
 	attribs[ATTRIB_INDEX_POSITION].count		= 3;
 	attribs[ATTRIB_INDEX_TEXCOORD].count		= 2;
-	attribs[ATTRIB_INDEX_COLOR].count			= 4;
-	attribs[ATTRIB_INDEX_WORLDPOS].count        = 2;
+//	attribs[ATTRIB_INDEX_COLOR].count			= 4;
+	attribs[ATTRIB_INDEX_WORLDPOS].count		= 2;
+	attribs[ATTRIB_INDEX_TANGENT].count			= 4;
+	attribs[ATTRIB_INDEX_BITANGENT].count		= 4;
 
 	attribs[ATTRIB_INDEX_POSITION].type			= GL_FLOAT;
 	attribs[ATTRIB_INDEX_TEXCOORD].type			= GL_FLOAT;
-	attribs[ATTRIB_INDEX_COLOR].type			= GL_UNSIGNED_SHORT;
-	attribs[ATTRIB_INDEX_WORLDPOS].type         = GL_UNSIGNED_SHORT;
+//	attribs[ATTRIB_INDEX_COLOR].type			= GL_UNSIGNED_SHORT;
+	attribs[ATTRIB_INDEX_WORLDPOS].type			= GL_UNSIGNED_SHORT;
+	attribs[ATTRIB_INDEX_TANGENT].type			= GL_SHORT;
+	attribs[ATTRIB_INDEX_BITANGENT].type		= GL_SHORT;
 
 	attribs[ATTRIB_INDEX_POSITION].index		= ATTRIB_INDEX_POSITION;
 	attribs[ATTRIB_INDEX_TEXCOORD].index		= ATTRIB_INDEX_TEXCOORD;
-	attribs[ATTRIB_INDEX_COLOR].index			= ATTRIB_INDEX_COLOR;
-	attribs[ATTRIB_INDEX_WORLDPOS].index        = ATTRIB_INDEX_WORLDPOS;
+//	attribs[ATTRIB_INDEX_COLOR].index			= ATTRIB_INDEX_COLOR;
+	attribs[ATTRIB_INDEX_WORLDPOS].index		= ATTRIB_INDEX_WORLDPOS;
 
 	attribs[ATTRIB_INDEX_POSITION].normalized	= GL_FALSE;
 	attribs[ATTRIB_INDEX_TEXCOORD].normalized	= GL_FALSE;
-	attribs[ATTRIB_INDEX_COLOR].normalized		= GL_TRUE;
+//	attribs[ATTRIB_INDEX_COLOR].normalized		= GL_TRUE;
 	attribs[ATTRIB_INDEX_WORLDPOS].normalized	= GL_FALSE;
 
-	attribs[ATTRIB_INDEX_WORLDPOS].offset       = 0;
 	attribs[ATTRIB_INDEX_POSITION].offset		= attribs[ ATTRIB_INDEX_WORLDPOS ].offset + ( sizeof( worldPos_t ) * r_worldData.numVertices );
 	attribs[ATTRIB_INDEX_TEXCOORD].offset		= attribs[ ATTRIB_INDEX_POSITION ].offset + ( sizeof( vec3_t ) * r_worldData.numVertices );
-	attribs[ATTRIB_INDEX_COLOR].offset			= attribs[ ATTRIB_INDEX_TEXCOORD ].offset + ( sizeof( vec2_t ) * r_worldData.numVertices );
+//	attribs[ATTRIB_INDEX_COLOR].offset			= attribs[ ATTRIB_INDEX_TEXCOORD ].offset + ( sizeof( vec2_t ) * r_worldData.numVertices );
+	attribs[ATTRIB_INDEX_WORLDPOS].offset		= 0;
 
-	attribs[ATTRIB_INDEX_WORLDPOS].stride       = sizeof( worldPos_t );
 	attribs[ATTRIB_INDEX_POSITION].stride		= sizeof( vec3_t );
 	attribs[ATTRIB_INDEX_TEXCOORD].stride		= sizeof( vec2_t );
-	attribs[ATTRIB_INDEX_COLOR].stride			= sizeof( color_t );
+//	attribs[ATTRIB_INDEX_COLOR].stride			= sizeof( color_t );
+	attribs[ATTRIB_INDEX_WORLDPOS].stride		= sizeof( worldPos_t );
+	attribs[ATTRIB_INDEX_TANGENT].stride		= sizeof( tangent_t );
 
 	VBO_Bind( r_worldData.buffer );
-	VBO_SetVertexPointers( r_worldData.buffer, ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_COLOR | ATTRIB_WORLDPOS );
+	VBO_SetVertexPointers( r_worldData.buffer, ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_WORLDPOS | ATTRIB_TANGENT | ATTRIB_BITANGENT );
 	nglVertexAttribDivisor( ATTRIB_INDEX_POSITION, 0 );
 	nglVertexAttribDivisor( ATTRIB_INDEX_TEXCOORD, 0 );
-	nglVertexAttribDivisor( ATTRIB_INDEX_COLOR, 0 );
+	nglVertexAttribDivisor( ATTRIB_INDEX_BITANGENT, 0 );
+	nglVertexAttribDivisor( ATTRIB_INDEX_TANGENT, 0 );
+//	nglVertexAttribDivisor( ATTRIB_INDEX_COLOR, 0 );
 	nglVertexAttribDivisor( ATTRIB_INDEX_WORLDPOS, 0 );
 	VBO_BindNull();
 #else
@@ -622,7 +631,7 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 	r_worldData.worldPos = (worldPos_t *)r_worldData.vertices;
 	r_worldData.xyz = (vec3_t *)( r_worldData.worldPos + r_worldData.numVertices );
 	r_worldData.uv = (vec2_t *)( r_worldData.xyz + r_worldData.numVertices );
-	r_worldData.color = (color_t *)( r_worldData.uv + r_worldData.numVertices );
+//	r_worldData.color = (color_t *)( r_worldData.uv + r_worldData.numVertices );
 
 	R_GenerateTexCoords( &theader->info );
 	R_ProcessLights();
@@ -632,7 +641,7 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 	VBO_Bind( r_worldData.buffer );
 	nglFlushMappedBufferRange( GL_ARRAY_BUFFER, 0, sizeof( worldPos_t ) * r_worldData.numVertices );
 	nglFlushMappedBufferRange( GL_ARRAY_BUFFER, attribs[ATTRIB_INDEX_TEXCOORD].offset, sizeof( vec2_t ) * r_worldData.numVertices );
-	nglFlushMappedBufferRange( GL_ARRAY_BUFFER, attribs[ATTRIB_INDEX_COLOR].offset, sizeof( color_t ) * r_worldData.numVertices );
+//	nglFlushMappedBufferRange( GL_ARRAY_BUFFER, attribs[ATTRIB_INDEX_COLOR].offset, sizeof( color_t ) * r_worldData.numVertices );
 
 	nglFlushMappedBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, sizeof( glIndex_t ) * r_worldData.numIndices );
 	VBO_BindNull();

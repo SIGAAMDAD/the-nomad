@@ -38,6 +38,7 @@ gfx/fonts
     }
 }
 
+/*
 console
 {
 	nopicmip
@@ -59,6 +60,7 @@ console
         tcmod scroll 0.2  .1
 	}
 }
+*/
 
 //
 // hud elements

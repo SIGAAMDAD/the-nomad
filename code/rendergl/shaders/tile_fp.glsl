@@ -100,7 +100,8 @@ vec3 CalcNormal() {
 #if defined(USE_NORMALMAP)
 	vec3 normal = texture2D( u_NormalMap, v_TexCoords ).rgb;
 	normal = normalize( normal * 2.0 - 1.0 );
-	return vec3( normal * 0.5 + 0.5 );
+	return normal;
+//	return vec3( normal * 0.5 + 0.5 );
 #else
 	return vec3( 0.0 );
 #endif
@@ -192,7 +193,6 @@ vec3 CalcPointLight( Light light ) {
 		diff = 1.0 - abs( dist / range );
 	}
 	diff += light.brightness;
-	diffuse = min( diff * ( diffuse + vec3( light.color ) ), diffuse );
 
 	range = light.range + light.brightness;
 	attenuation = ( light.constant + light.linear * range
@@ -226,6 +226,12 @@ vec3 CalcPointLight( Light light ) {
 		specular = light.color.rgb * vec3( spec );
 		specular *= attenuation;
 	}
+	else {
+		const vec3 normal = CalcNormal();
+		diffuse += normal;
+	}
+
+	diffuse = min( diff * ( diffuse + vec3( light.color ) ), diffuse );
 
 	diffuse *= attenuation;
 

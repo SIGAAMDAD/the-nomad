@@ -10,6 +10,7 @@
 #include "SGame/PlayerSystem/QuickTimeEvent.as"
 #include "SGame/PlayerSystem/ScreenShake.as"
 #include "SGame/PlayerSystem/GoreSystem.as"
+#include "SGame/PlayerSystem/AfterImage.as"
 
 // misc
 #include "SGame/PlayerSystem/PMoveData.as"
