@@ -44,8 +44,9 @@ static void ConstructString( string_t *thisPointer )
 
 static void CopyConstructString(const string_t& other, string_t *thisPointer)
 {
-	thisPointer->clear();
-	thisPointer->append( other.cbegin(), other.cend() );
+	new ( thisPointer ) string_t( other );
+//	thisPointer->clear();
+//	thisPointer->append( other.cbegin(), other.cend() );
 }
 
 static void DestructString(string_t *thisPointer)
@@ -74,48 +75,48 @@ static bool StringIsEmpty(const string_t& str)
 	return str.empty();
 }
 
-static string_t& AssignUInt64ToString(asQWORD i, string_t& dest)
+static string_t& AssignUInt32ToString(asDWORD i, string_t& dest)
 {
-	dest.sprintf( "%lu", i );
+	dest.sprintf( "%u", i );
 	return dest;
 }
 
-static string_t& AddAssignUInt64ToString(asQWORD i, string_t& dest)
+static string_t& AddAssignUInt32ToString(asDWORD i, string_t& dest)
 {
-	dest.append_sprintf( "%lu", i );
+	dest.append_sprintf( "%u", i );
 	return dest;
 }
 
-static string_t AddStringUInt64(const string_t& str, asQWORD i)
+static string_t AddStringUInt32(const string_t& str, asDWORD i)
 {
-	return str + va( "%lu", i );
+	return str + va( "%u", i );
 }
 
-static string_t AddInt64String(asINT64 i, const string_t& str)
+static string_t AddInt32String(asINT32 i, const string_t& str)
 {
-	return string_t( va( "%li", i ) ) + str;
+	return string_t( va( "%i", i ) ) + str;
 }
 
-static string_t& AssignInt64ToString(asINT64 i, string_t& dest)
+static string_t& AssignInt32ToString(asINT32 i, string_t& dest)
 {
-	dest.sprintf( "%li", i );
+	dest.sprintf( "%i", i );
 	return dest;
 }
 
-static string_t& AddAssignInt64ToString(asINT64 i, string_t& dest)
+static string_t& AddAssignInt32ToString(asINT32 i, string_t& dest)
 {
-	dest.append_sprintf( "%li", i );
+	dest.append_sprintf( "%i", i );
 	return dest;
 }
 
-static string_t AddStringInt64(const string_t& str, asINT64 i)
+static string_t AddStringInt32(const string_t& str, asINT32 i)
 {
-	return str + va( "%li", i );
+	return str + va( "%i", i );
 }
 
-static string_t AddUInt64String(asQWORD i, const string_t& str)
+static string_t AddUInt32String(asDWORD i, const string_t& str)
 {
-	return string_t( va( "%li", i ) ) + str;
+	return string_t( va( "%u", i ) ) + str;
 }
 
 static string_t& AssignDoubleToString(double f, string_t& dest)
@@ -184,7 +185,7 @@ static string_t AddBoolString(bool b, const string_t& str)
 	return string_t( va( "%s", b ? "true" : "false" ) ) + str;
 }
 
-static char *StringCharAt( asQWORD i, string_t& str)
+static char *StringCharAt( asDWORD i, string_t& str)
 {
 	if( i >= str.size() )
 	{
@@ -200,7 +201,7 @@ static char *StringCharAt( asQWORD i, string_t& str)
 
 // AngelScript signature:
 // int string::opCmp(const string_t& in) const
-static asQWORD StringCmp(const string_t& a, const string_t& b)
+static asDWORD StringCmp(const string_t& a, const string_t& b)
 {
 	return strcmp( a.c_str(), b.c_str() );
 }
@@ -211,7 +212,7 @@ static asQWORD StringCmp(const string_t& a, const string_t& b)
 //
 // AngelScript signature:
 // int string::findFirst(const string_t& in sub, uint start = 0) const
-static asQWORD StringFindFirst(const string_t& sub, asQWORD start, const string_t& str)
+static asDWORD StringFindFirst(const string_t& sub, asDWORD start, const string_t& str)
 {
 	// We don't register the method directly because the argument types change between 32bit and 64bit platforms
 	return (asQWORD)str.find(sub, (asQWORD)(start < 0 ? string_t::npos : start));
@@ -223,7 +224,7 @@ static asQWORD StringFindFirst(const string_t& sub, asQWORD start, const string_
 //
 // AngelScript signature:
 // int string::findFirstOf(const string_t& in sub, uint start = 0) const
-static asQWORD StringFindFirstOf(const string_t& sub, asQWORD start, const string_t& str)
+static asDWORD StringFindFirstOf(const string_t& sub, asDWORD start, const string_t& str)
 {
 	// We don't register the method directly because the argument types change between 32bit and 64bit platforms
 	return (asQWORD)str.find_first_of(sub, (asQWORD)(start < 0 ? string_t::npos : start));
@@ -235,7 +236,7 @@ static asQWORD StringFindFirstOf(const string_t& sub, asQWORD start, const strin
 //
 // AngelScript signature:
 // int string::findLastOf(const string_t& in sub, uint start = -1) const
-static asQWORD StringFindLastOf(const string_t& sub, asQWORD start, const string_t& str)
+static asDWORD StringFindLastOf(const string_t& sub, asDWORD start, const string_t& str)
 {
 	// We don't register the method directly because the argument types change between 32bit and 64bit platforms
 	return (asQWORD)str.find_last_of(sub, (asQWORD)(start < 0 ? string_t::npos : start));
@@ -246,7 +247,7 @@ static asQWORD StringFindLastOf(const string_t& sub, asQWORD start, const string
 //
 // AngelScript signature:
 // int string::findFirstNotOf(const string_t& in sub, uint start = 0) const
-static asQWORD StringFindFirstNotOf(const string_t& sub, asQWORD start, const string_t& str)
+static asDWORD StringFindFirstNotOf(const string_t& sub, asDWORD start, const string_t& str)
 {
 	// We don't register the method directly because the argument types change between 32bit and 64bit platforms
 	return (asQWORD)str.find_first_not_of(sub, (asQWORD)(start < 0 ? string_t::npos : start));
@@ -257,7 +258,7 @@ static asQWORD StringFindFirstNotOf(const string_t& sub, asQWORD start, const st
 //
 // AngelScript signature:
 // int string::findLastNotOf(const string_t& in sub, uint start = -1) const
-static asQWORD StringFindLastNotOf(const string_t& sub, asQWORD start, const string_t& str)
+static asDWORD StringFindLastNotOf(const string_t& sub, asDWORD start, const string_t& str)
 {
 	// We don't register the method directly because the argument types change between 32bit and 64bit platforms
 	return (asQWORD)str.find_last_not_of(sub, (asQWORD)(start < 0 ? string_t::npos : start));
@@ -269,7 +270,7 @@ static asQWORD StringFindLastNotOf(const string_t& sub, asQWORD start, const str
 //
 // AngelScript signature:
 // int string::findLast(const string_t& in sub, int start = -1) const
-static asQWORD StringFindLast(const string_t& sub, asQWORD start, const string_t& str)
+static asDWORD StringFindLast(const string_t& sub, asDWORD start, const string_t& str)
 {
 	// We don't register the method directly because the argument types change between 32bit and 64bit platforms
 	return (asQWORD)str.rfind(sub, (asQWORD)(start < 0 ? string_t::npos : start));
@@ -277,7 +278,7 @@ static asQWORD StringFindLast(const string_t& sub, asQWORD start, const string_t
 
 // AngelScript signature:
 // void string::insert(uint pos, const string_t& in other)
-static void StringInsert( asQWORD pos, const string_t& other, string_t& str)
+static void StringInsert( asDWORD pos, const string_t& other, string_t& str)
 {
 	// We don't register the method directly because the argument types change between 32bit and 64bit platforms
 	str.insert(pos, other);
@@ -285,7 +286,7 @@ static void StringInsert( asQWORD pos, const string_t& other, string_t& str)
 
 // AngelScript signature:
 // void string::erase(uint pos, int count = -1)
-static void StringErase( asQWORD pos, asQWORD count, string_t& str)
+static void StringErase( asDWORD pos, asDWORD count, string_t& str)
 {
 	// We don't register the method directly because the argument types change between 32bit and 64bit platforms
 	str.erase(pos, (asQWORD)(count < 0 ? string_t::npos : count));
@@ -294,7 +295,7 @@ static void StringErase( asQWORD pos, asQWORD count, string_t& str)
 
 // AngelScript signature:
 // uint string::length() const
-static asQWORD StringLength(const string_t& str)
+static asDWORD StringLength(const string_t& str)
 {
 	// We don't register the method directly because the return type changes between 32bit and 64bit platforms
 	return str.length();
@@ -303,7 +304,7 @@ static asQWORD StringLength(const string_t& str)
 
 // AngelScript signature:
 // void string::resize(uint l)
-static void StringResize(asQWORD l, string_t& str)
+static void StringResize(asDWORD l, string_t& str)
 {
 	// We don't register the method directly because the argument types change between 32bit and 64bit platforms
 	str.resize(l);
@@ -311,14 +312,14 @@ static void StringResize(asQWORD l, string_t& str)
 
 // AngelScript signature:
 // string_t formatInt(int64 val, const string_t& in options, uint width)
-static string_t formatInt(asINT64 value, const string_t& format)
+static string_t formatInt(asINT32 value, const string_t& format)
 {
 	return va( format.c_str(), value );
 }
 
 // AngelScript signature:
 // string_t formatUInt(uint64 val, const string_t& in options, uint width)
-static string_t formatUInt(asQWORD value, const string_t& format)
+static string_t formatUInt(asDWORD value, const string_t& format)
 {
 	return va( format.c_str(), value );
 }
@@ -331,8 +332,8 @@ static string_t formatFloat(double value, const string_t& format)
 }
 
 // AngelScript signature:
-// int64 parseInt(const string_t& in val, uint base = 10, uint &out byteCount = 0)
-static asINT64 parseInt(const string_t& val, asUINT base, asUINT *byteCount)
+// int32 parseInt(const string_t& in val, uint base = 10, uint &out byteCount = 0)
+static asINT32 parseInt(const string_t& val, asUINT base, asUINT *byteCount)
 {
 	// Only accept base 10 and 16
 	if( base != 10 && base != 16 )
@@ -389,7 +390,7 @@ static asINT64 parseInt(const string_t& val, asUINT base, asUINT *byteCount)
 
 // AngelScript signature:
 // uint64 parseUInt(const string_t& in val, uint base = 10, uint &out byteCount = 0)
-static asQWORD parseUInt(const string_t& val, asUINT base, asUINT *byteCount)
+static asDWORD parseUInt(const string_t& val, asUINT base, asUINT *byteCount)
 {
 	// Only accept base 10 and 16
 	if (base != 10 && base != 16)
@@ -400,7 +401,7 @@ static asQWORD parseUInt(const string_t& val, asUINT base, asUINT *byteCount)
 
 	const char *end = &val[0];
 
-	asQWORD res = 0;
+	asDWORD res = 0;
 	if (base == 10)
 	{
 		while (*end >= '0' && *end <= '9')
@@ -493,106 +494,87 @@ static string_t StringAppend( const string_t& value, const string_t& add )
 
 void RegisterStdString_Native(asIScriptEngine *engine)
 {
-	int r = 0;
-	UNUSED_VAR(r);
-
 	// Register the string_t type
 #if AS_CAN_USE_CPP11
 	// With C++11 it is possible to use asGetTypeTraits to automatically determine the correct flags to use
-	r = engine->RegisterObjectType("string", sizeof(string_t), asOBJ_VALUE | asGetTypeTraits<string_t>()); assert( r >= 0 );
+	CheckASCall( engine->RegisterObjectType("string", sizeof(string_t), asOBJ_VALUE | asGetTypeTraits<string_t>()) );
 #else
-	r = engine->RegisterObjectType("string", sizeof(string_t), asOBJ_VALUE | asOBJ_APP_CLASS_CDAK); assert( r >= 0 );
+	CheckASCall( engine->RegisterObjectType("string", sizeof(string_t), asOBJ_VALUE | asOBJ_APP_CLASS_CDAK) );
 #endif
 
-	r = engine->RegisterStringFactory("string", GetStringFactorySingleton());
+	CheckASCall( engine->RegisterStringFactory("string", GetStringFactorySingleton()) );
 
 	// Register the object operator overloads
-	r = engine->RegisterObjectBehaviour("string", asBEHAVE_CONSTRUCT,  "void f()",                    asFUNCTION(ConstructString), asCALL_CDECL_OBJLAST); assert( r >= 0 );
-	r = engine->RegisterObjectBehaviour("string", asBEHAVE_CONSTRUCT,  "void f(const string& in)",    asFUNCTION(CopyConstructString), asCALL_CDECL_OBJLAST); assert( r >= 0 );
-	r = engine->RegisterObjectBehaviour("string", asBEHAVE_DESTRUCT,   "void f()",                    asFUNCTION(DestructString),  asCALL_CDECL_OBJLAST); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "string &opAssign(const string& in)", asMETHODPR(string_t, operator =, (const string_t&), string_t&), asCALL_THISCALL); assert( r >= 0 );
+	CheckASCall( engine->RegisterObjectBehaviour("string", asBEHAVE_CONSTRUCT,  "void f()",                    asFUNCTION(ConstructString), asCALL_CDECL_OBJLAST) );
+	CheckASCall( engine->RegisterObjectBehaviour("string", asBEHAVE_CONSTRUCT,  "void f(const string& in)",    asFUNCTION(CopyConstructString), asCALL_CDECL_OBJLAST) );
+	CheckASCall( engine->RegisterObjectBehaviour("string", asBEHAVE_DESTRUCT,   "void f()",                    asFUNCTION(DestructString),  asCALL_CDECL_OBJLAST) );
+	CheckASCall( engine->RegisterObjectMethod("string", "string &opAssign(const string& in)", asMETHODPR(string_t, operator=, (const string_t&), string_t&), asCALL_THISCALL) );
 	// Need to use a wrapper on Mac OS X 10.7/XCode 4.3 and CLang/LLVM, otherwise the linker fails
-	r = engine->RegisterObjectMethod("string", "string &opAddAssign(const string& in)", asFUNCTION(AddAssignStringToString), asCALL_CDECL_OBJLAST); assert( r >= 0 );
-//	r = engine->RegisterObjectMethod("string", "string &opAddAssign(const string& in)", asMETHODPR(string, operator+=, (const string&), string&), asCALL_THISCALL); assert( r >= 0 );
+	CheckASCall( engine->RegisterObjectMethod("string", "string &opAddAssign(const string& in)", asFUNCTION(AddAssignStringToString), asCALL_CDECL_OBJLAST) );
+//	CheckASCall( engine->RegisterObjectMethod("string", "string &opAddAssign(const string& in)", asMETHODPR(string, operator+=, (const string&), string&), asCALL_THISCALL) );
 
 	// Need to use a wrapper for operator== otherwise gcc 4.7 fails to compile
-	r = engine->RegisterObjectMethod("string", "bool opEquals(const string& in) const", asFUNCTIONPR(StringEquals, (const string_t& , const string_t& ), bool), asCALL_CDECL_OBJFIRST); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "int opCmp(const string& in) const", asFUNCTION(StringCmp), asCALL_CDECL_OBJFIRST); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "string opAdd(const string& in) const", asFUNCTION(StringAppend), asCALL_CDECL_OBJFIRST); assert( r >= 0 );
+	CheckASCall( engine->RegisterObjectMethod("string", "bool opEquals(const string& in) const", asFUNCTIONPR(StringEquals, (const string_t& , const string_t& ), bool), asCALL_CDECL_OBJFIRST) );
+	CheckASCall( engine->RegisterObjectMethod("string", "int opCmp(const string& in) const", asFUNCTION(StringCmp), asCALL_CDECL_OBJFIRST) );
+	CheckASCall( engine->RegisterObjectMethod("string", "string opAdd(const string& in) const", asFUNCTION(StringAppend), asCALL_CDECL_OBJFIRST) );
 
 	// The string_t length can be accessed through methods or through virtual property
 	// TODO: Register as size() for consistency with other types
-#if AS_USE_ACCESSORS != 1
-	r = engine->RegisterObjectMethod("string", "uint length() const", asFUNCTION(StringLength), asCALL_CDECL_OBJLAST); assert( r >= 0 );
-#endif
-	r = engine->RegisterObjectMethod("string", "void resize(uint)", asFUNCTION(StringResize), asCALL_CDECL_OBJLAST); assert( r >= 0 );
-#if AS_USE_STLNAMES != 1 && AS_USE_ACCESSORS == 1
-	// Don't register these if STL names is used, as they conflict with the method size()
-	r = engine->RegisterObjectMethod("string", "uint length() const property", asFUNCTION(StringLength), asCALL_CDECL_OBJLAST); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "void resize(uint) property", asFUNCTION(StringResize), asCALL_CDECL_OBJLAST); assert( r >= 0 );
-#endif
+	CheckASCall( engine->RegisterObjectMethod("string", "uint Length() const", asFUNCTION(StringLength), asCALL_CDECL_OBJLAST) );
+	CheckASCall( engine->RegisterObjectMethod("string", "uint Size() const", asFUNCTION(StringLength), asCALL_CDECL_OBJLAST) );
+	CheckASCall( engine->RegisterObjectMethod("string", "void Resize( uint )", asFUNCTION(StringResize), asCALL_CDECL_OBJLAST) );
 	// Need to use a wrapper on Mac OS X 10.7/XCode 4.3 and CLang/LLVM, otherwise the linker fails
-//	r = engine->RegisterObjectMethod("string", "bool isEmpty() const", asMETHOD(string, empty), asCALL_THISCALL); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "bool isEmpty() const", asFUNCTION(StringIsEmpty), asCALL_CDECL_OBJLAST); assert( r >= 0 );
+//	CheckASCall( engine->RegisterObjectMethod("string", "bool isEmpty() const", asMETHOD(string, empty), asCALL_THISCALL) );
+	CheckASCall( engine->RegisterObjectMethod("string", "bool IsEmpty() const", asFUNCTION(StringIsEmpty), asCALL_CDECL_OBJLAST) );
 
 	// Register the index operator, both as a mutator and as an inspector
 	// Note that we don't register the operator[] directly, as it doesn't do bounds checking
-	r = engine->RegisterObjectMethod("string", "uint8 &opIndex(uint)", asFUNCTION(StringCharAt), asCALL_CDECL_OBJLAST); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "const uint8 &opIndex(uint) const", asFUNCTION(StringCharAt), asCALL_CDECL_OBJLAST); assert( r >= 0 );
+	CheckASCall( engine->RegisterObjectMethod("string", "uint8 &opIndex(uint)", asFUNCTION(StringCharAt), asCALL_CDECL_OBJLAST) );
+	CheckASCall( engine->RegisterObjectMethod("string", "const uint8 &opIndex(uint) const", asFUNCTION(StringCharAt), asCALL_CDECL_OBJLAST) );
 
 	// Automatic conversion from values
-	r = engine->RegisterObjectMethod("string", "string &opAssign(double)", asFUNCTION(AssignDoubleToString), asCALL_CDECL_OBJLAST); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "string &opAddAssign(double)", asFUNCTION(AddAssignDoubleToString), asCALL_CDECL_OBJLAST); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "string opAdd(double) const", asFUNCTION(AddStringDouble), asCALL_CDECL_OBJFIRST); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "string opAdd_r(double) const", asFUNCTION(AddDoubleString), asCALL_CDECL_OBJLAST); assert( r >= 0 );
+	CheckASCall( engine->RegisterObjectMethod("string", "string &opAssign(double)", asFUNCTION(AssignDoubleToString), asCALL_CDECL_OBJLAST) );
+	CheckASCall( engine->RegisterObjectMethod("string", "string &opAddAssign(double)", asFUNCTION(AddAssignDoubleToString), asCALL_CDECL_OBJLAST) );
+	CheckASCall( engine->RegisterObjectMethod("string", "string opAdd(double) const", asFUNCTION(AddStringDouble), asCALL_CDECL_OBJFIRST) );
+	CheckASCall( engine->RegisterObjectMethod("string", "string opAdd_r(double) const", asFUNCTION(AddDoubleString), asCALL_CDECL_OBJLAST) );
 
-	r = engine->RegisterObjectMethod("string", "string &opAssign(float)", asFUNCTION(AssignFloatToString), asCALL_CDECL_OBJLAST); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "string &opAddAssign(float)", asFUNCTION(AddAssignFloatToString), asCALL_CDECL_OBJLAST); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "string opAdd(float) const", asFUNCTION(AddStringFloat), asCALL_CDECL_OBJFIRST); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "string opAdd_r(float) const", asFUNCTION(AddFloatString), asCALL_CDECL_OBJLAST); assert( r >= 0 );
+	CheckASCall( engine->RegisterObjectMethod("string", "string &opAssign(float)", asFUNCTION(AssignFloatToString), asCALL_CDECL_OBJLAST) );
+	CheckASCall( engine->RegisterObjectMethod("string", "string &opAddAssign(float)", asFUNCTION(AddAssignFloatToString), asCALL_CDECL_OBJLAST) );
+	CheckASCall( engine->RegisterObjectMethod("string", "string opAdd(float) const", asFUNCTION(AddStringFloat), asCALL_CDECL_OBJFIRST) );
+	CheckASCall( engine->RegisterObjectMethod("string", "string opAdd_r(float) const", asFUNCTION(AddFloatString), asCALL_CDECL_OBJLAST) );
 
-	r = engine->RegisterObjectMethod("string", "string &opAssign(int64)", asFUNCTION(AssignInt64ToString), asCALL_CDECL_OBJLAST); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "string &opAddAssign(int64)", asFUNCTION(AddAssignInt64ToString), asCALL_CDECL_OBJLAST); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "string opAdd(int64) const", asFUNCTION(AddStringInt64), asCALL_CDECL_OBJFIRST); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "string opAdd_r(int64) const", asFUNCTION(AddInt64String), asCALL_CDECL_OBJLAST); assert( r >= 0 );
+	CheckASCall( engine->RegisterObjectMethod("string", "string &opAssign(int32)", asFUNCTION(AssignInt32ToString), asCALL_CDECL_OBJLAST) );
+	CheckASCall( engine->RegisterObjectMethod("string", "string &opAddAssign(int32)", asFUNCTION(AddAssignInt32ToString), asCALL_CDECL_OBJLAST) );
+	CheckASCall( engine->RegisterObjectMethod("string", "string opAdd(int32) const", asFUNCTION(AddStringInt32), asCALL_CDECL_OBJFIRST) );
+	CheckASCall( engine->RegisterObjectMethod("string", "string opAdd_r(int32) const", asFUNCTION(AddInt32String), asCALL_CDECL_OBJLAST) );
 
-	r = engine->RegisterObjectMethod("string", "string &opAssign(uint64)", asFUNCTION(AssignUInt64ToString), asCALL_CDECL_OBJLAST); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "string &opAddAssign(uint64)", asFUNCTION(AddAssignUInt64ToString), asCALL_CDECL_OBJLAST); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "string opAdd(uint64) const", asFUNCTION(AddStringUInt64), asCALL_CDECL_OBJFIRST); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "string opAdd_r(uint64) const", asFUNCTION(AddUInt64String), asCALL_CDECL_OBJLAST); assert( r >= 0 );
+	CheckASCall( engine->RegisterObjectMethod("string", "string &opAssign(uint32)", asFUNCTION(AssignUInt32ToString), asCALL_CDECL_OBJLAST) );
+	CheckASCall( engine->RegisterObjectMethod("string", "string &opAddAssign(uint32)", asFUNCTION(AddAssignUInt32ToString), asCALL_CDECL_OBJLAST) );
+	CheckASCall( engine->RegisterObjectMethod("string", "string opAdd(uint32) const", asFUNCTION(AddStringUInt32), asCALL_CDECL_OBJFIRST) );
+	CheckASCall( engine->RegisterObjectMethod("string", "string opAdd_r(uint32) const", asFUNCTION(AddUInt32String), asCALL_CDECL_OBJLAST) );
 
-	r = engine->RegisterObjectMethod("string", "string &opAssign(bool)", asFUNCTION(AssignBoolToString), asCALL_CDECL_OBJLAST); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "string &opAddAssign(bool)", asFUNCTION(AddAssignBoolToString), asCALL_CDECL_OBJLAST); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "string opAdd(bool) const", asFUNCTION(AddStringBool), asCALL_CDECL_OBJFIRST); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "string opAdd_r(bool) const", asFUNCTION(AddBoolString), asCALL_CDECL_OBJLAST); assert( r >= 0 );
+	CheckASCall( engine->RegisterObjectMethod("string", "string &opAssign(bool)", asFUNCTION(AssignBoolToString), asCALL_CDECL_OBJLAST) );
+	CheckASCall( engine->RegisterObjectMethod("string", "string &opAddAssign(bool)", asFUNCTION(AddAssignBoolToString), asCALL_CDECL_OBJLAST) );
+	CheckASCall( engine->RegisterObjectMethod("string", "string opAdd(bool) const", asFUNCTION(AddStringBool), asCALL_CDECL_OBJFIRST) );
+	CheckASCall( engine->RegisterObjectMethod("string", "string opAdd_r(bool) const", asFUNCTION(AddBoolString), asCALL_CDECL_OBJLAST) );
 
 	// Utilities
-	r = engine->RegisterObjectMethod("string", "string substr(uint start = 0, int count = -1) const", asFUNCTION(StringSubString), asCALL_CDECL_OBJLAST); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "int findFirst(const string& in, uint start = 0) const", asFUNCTION(StringFindFirst), asCALL_CDECL_OBJLAST); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "int findFirstOf(const string&, uint start = 0) const", asFUNCTION(StringFindFirstOf), asCALL_CDECL_OBJLAST); assert(r >= 0);
-	r = engine->RegisterObjectMethod("string", "int findFirstNotOf(const string&, uint start = 0) const", asFUNCTION(StringFindFirstNotOf), asCALL_CDECL_OBJLAST); assert(r >= 0);
-	r = engine->RegisterObjectMethod("string", "int findLast(const string&, int start = -1) const", asFUNCTION(StringFindLast), asCALL_CDECL_OBJLAST); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "int findLastOf(const string&, int start = -1) const", asFUNCTION(StringFindLastOf), asCALL_CDECL_OBJLAST); assert(r >= 0);
-	r = engine->RegisterObjectMethod("string", "int findLastNotOf(const string&, int start = -1) const", asFUNCTION(StringFindLastNotOf), asCALL_CDECL_OBJLAST); assert(r >= 0);
-	r = engine->RegisterObjectMethod("string", "void insert(uint pos, const string& in other)", asFUNCTION(StringInsert), asCALL_CDECL_OBJLAST); assert(r >= 0);
-	r = engine->RegisterObjectMethod("string", "void erase(uint pos, int count = -1)", asFUNCTION(StringErase), asCALL_CDECL_OBJLAST); assert(r >= 0);
+	CheckASCall( engine->RegisterObjectMethod("string", "string SubString(uint start = 0, int count = -1) const", asFUNCTION(StringSubString), asCALL_CDECL_OBJLAST) );
+	CheckASCall( engine->RegisterObjectMethod("string", "int FindFirst(const string& in, uint start = 0) const", asFUNCTION(StringFindFirst), asCALL_CDECL_OBJLAST) );
+	CheckASCall( engine->RegisterObjectMethod("string", "int FindFirstOf(const string& in, uint start = 0) const", asFUNCTION(StringFindFirstOf), asCALL_CDECL_OBJLAST) );
+	CheckASCall( engine->RegisterObjectMethod("string", "int FindFirstNotOf(const string& in, uint start = 0) const", asFUNCTION(StringFindFirstNotOf), asCALL_CDECL_OBJLAST) );
+	CheckASCall( engine->RegisterObjectMethod("string", "int FindLast(const string& in, int start = -1) const", asFUNCTION(StringFindLast), asCALL_CDECL_OBJLAST) );
+	CheckASCall( engine->RegisterObjectMethod("string", "int FindLastOf(const string& in, int start = -1) const", asFUNCTION(StringFindLastOf), asCALL_CDECL_OBJLAST) );
+	CheckASCall( engine->RegisterObjectMethod("string", "int FindLastNotOf(const string& in, int start = -1) const", asFUNCTION(StringFindLastNotOf), asCALL_CDECL_OBJLAST) );
+	CheckASCall( engine->RegisterObjectMethod("string", "void Insert(uint pos, const string& in other)", asFUNCTION(StringInsert), asCALL_CDECL_OBJLAST) );
+	CheckASCall( engine->RegisterObjectMethod("string", "void Erase(uint pos, int count = -1)", asFUNCTION(StringErase), asCALL_CDECL_OBJLAST) );
 
-
-	r = engine->RegisterGlobalFunction("string formatInt(int64 val, const string& in options = \"\", uint width = 0)", asFUNCTION(formatInt), asCALL_CDECL); assert(r >= 0);
-	r = engine->RegisterGlobalFunction("string formatUInt(uint64 val, const string& in options = \"\", uint width = 0)", asFUNCTION(formatUInt), asCALL_CDECL); assert(r >= 0);
-	r = engine->RegisterGlobalFunction("string formatFloat(double val, const const string& in options = \"\", uint width = 0, uint precision = 0)", asFUNCTION(formatFloat), asCALL_CDECL); assert(r >= 0);
-	r = engine->RegisterGlobalFunction("int64 parseInt(const string& in, uint base = 10, uint &out byteCount = 0)", asFUNCTION(parseInt), asCALL_CDECL); assert(r >= 0);
-	r = engine->RegisterGlobalFunction("uint64 parseUInt(const string& in, uint base = 10, uint &out byteCount = 0)", asFUNCTION(parseUInt), asCALL_CDECL); assert(r >= 0);
-	r = engine->RegisterGlobalFunction("double parseFloat(const string& in, uint &out byteCount = 0)", asFUNCTION(parseFloat), asCALL_CDECL); assert(r >= 0);
-
-	// Same as length
-	r = engine->RegisterObjectMethod("string", "uint size() const", asFUNCTION(StringLength), asCALL_CDECL_OBJLAST); assert( r >= 0 );
-	// Same as isEmpty
-	r = engine->RegisterObjectMethod("string", "bool empty() const", asFUNCTION(StringIsEmpty), asCALL_CDECL_OBJLAST); assert( r >= 0 );
-	// Same as findFirst
-	r = engine->RegisterObjectMethod("string", "int find(const string& in, uint start = 0) const", asFUNCTION(StringFindFirst), asCALL_CDECL_OBJLAST); assert( r >= 0 );
-	// Same as findLast
-	r = engine->RegisterObjectMethod("string", "int rfind(const string& in, int start = -1) const", asFUNCTION(StringFindLast), asCALL_CDECL_OBJLAST); assert( r >= 0 );
+	CheckASCall( engine->RegisterGlobalFunction("string formatInt(int32 val, const string& in options = \"\", uint width = 0)", asFUNCTION(formatInt), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("string formatUInt(uint32 val, const string& in options = \"\", uint width = 0)", asFUNCTION(formatUInt), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("string formatFloat(double val, const string& in options = \"\", uint width = 0, uint precision = 0)", asFUNCTION(formatFloat), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("int32 parseInt(const string& in, uint base = 10, uint &out byteCount = 0)", asFUNCTION(parseInt), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("uint32 parseUInt(const string& in, uint base = 10, uint &out byteCount = 0)", asFUNCTION(parseUInt), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("double parseFloat(const string& in, uint &out byteCount = 0)", asFUNCTION(parseFloat), asCALL_CDECL) );
 
 	// TODO: Implement the following
 	// findAndReplace - replaces a text found in the string
@@ -753,14 +735,14 @@ static void StringFindLastNotOf_Generic(asIScriptGeneric *gen)
 
 static void formatInt_Generic(asIScriptGeneric *gen)
 {
-	asINT64 val = gen->GetArgQWord(0);
+	asINT32 val = gen->GetArgDWord(0);
 	string_t *fmt = reinterpret_cast<string_t*>(gen->GetArgAddress(1));
 	new(gen->GetAddressOfReturnLocation()) string_t(formatInt(val, *fmt));
 }
 
 static void formatUInt_Generic(asIScriptGeneric *gen)
 {
-	asQWORD val = gen->GetArgQWord(0);
+	asDWORD val = gen->GetArgDWord(0);
 	string_t *fmt = reinterpret_cast<string_t*>(gen->GetArgAddress(1));
 	new(gen->GetAddressOfReturnLocation()) string_t(formatUInt(val, *fmt));
 }
@@ -816,7 +798,7 @@ static void StringCharAtGeneric(asIScriptGeneric *gen)
 
 static void AssignInt2StringGeneric(asIScriptGeneric *gen)
 {
-	asINT64 *a = static_cast<asINT64*>(gen->GetAddressOfArg(0));
+	asINT32 *a = static_cast<asINT32*>(gen->GetAddressOfArg(0));
 	string_t *self = static_cast<string_t*>(gen->GetObjectData());
 	self->append_sprintf( "%lu", *a );
 	gen->SetReturnAddress(self);
@@ -824,7 +806,7 @@ static void AssignInt2StringGeneric(asIScriptGeneric *gen)
 
 static void AssignUInt2StringGeneric(asIScriptGeneric *gen)
 {
-	asQWORD *a = static_cast<asQWORD*>(gen->GetAddressOfArg(0));
+	asDWORD *a = static_cast<asDWORD*>(gen->GetAddressOfArg(0));
 	string_t *self = static_cast<string_t*>(gen->GetObjectData());
 	self->append_sprintf( "%lu", *a );
 	gen->SetReturnAddress(self);
@@ -872,7 +854,7 @@ static void AddAssignFloat2StringGeneric(asIScriptGeneric *gen)
 
 static void AddAssignInt2StringGeneric(asIScriptGeneric *gen)
 {
-	asINT64 *a = static_cast<asINT64 *>(gen->GetAddressOfArg(0));
+	asINT32 *a = static_cast<asINT32 *>(gen->GetAddressOfArg(0));
 	string_t *self = static_cast<string_t *>(gen->GetObjectData());
 	self->append_sprintf( "%li", *a );
 	gen->SetReturnAddress(self);
@@ -880,7 +862,7 @@ static void AddAssignInt2StringGeneric(asIScriptGeneric *gen)
 
 static void AddAssignUInt2StringGeneric(asIScriptGeneric *gen)
 {
-	asQWORD *a = static_cast<asQWORD *>(gen->GetAddressOfArg(0));
+	asDWORD *a = static_cast<asDWORD *>(gen->GetAddressOfArg(0));
 	string_t *self = static_cast<string_t *>(gen->GetObjectData());
 	self->append_sprintf("%lu", *a );
 	gen->SetReturnAddress(self);
@@ -915,7 +897,7 @@ static void AddString2FloatGeneric(asIScriptGeneric *gen)
 static void AddString2IntGeneric(asIScriptGeneric *gen)
 {
 	string_t *a = static_cast<string_t *>(gen->GetObjectData());
-	asINT64 *b = static_cast<asINT64 *>(gen->GetAddressOfArg(0));
+	asINT32 *b = static_cast<asINT32 *>(gen->GetAddressOfArg(0));
 	string_t ret_val;
 	ret_val.sprintf( "%s%li", a->c_str(), *b );
 	gen->SetReturnObject(&ret_val);
@@ -924,7 +906,7 @@ static void AddString2IntGeneric(asIScriptGeneric *gen)
 static void AddString2UIntGeneric(asIScriptGeneric *gen)
 {
 	string_t *a = static_cast<string_t *>(gen->GetObjectData());
-	asQWORD *b = static_cast<asQWORD *>(gen->GetAddressOfArg(0));
+	asDWORD *b = static_cast<asDWORD *>(gen->GetAddressOfArg(0));
 	string_t ret_val;
 	ret_val.sprintf( "%s%lu", a->c_str(), *b );
 	gen->SetReturnObject(&ret_val);
@@ -959,17 +941,17 @@ static void AddFloat2StringGeneric(asIScriptGeneric *gen)
 
 static void AddInt2StringGeneric(asIScriptGeneric *gen)
 {
-	asINT64*a = static_cast<asINT64 *>(gen->GetAddressOfArg(0));
+	asINT32 *a = static_cast<asINT32 *>(gen->GetAddressOfArg(0));
 	string_t *b = static_cast<string_t *>(gen->GetObjectData());
-	string_t ret_val = va( "%li%s", *a, b->c_str() );
+	string_t ret_val = va( "%i%s", *a, b->c_str() );
 	gen->SetReturnObject(&ret_val);
 }
 
 static void AddUInt2StringGeneric(asIScriptGeneric *gen)
 {
-	asQWORD*a = static_cast<asQWORD *>(gen->GetAddressOfArg(0));
+	asDWORD *a = static_cast<asDWORD *>(gen->GetAddressOfArg(0));
 	string_t *b = static_cast<string_t *>(gen->GetObjectData());
-	string_t ret_val = va( "%lu%s", *a, b->c_str() );;
+	string_t ret_val = va( "%u%s", *a, b->c_str() );;
 	gen->SetReturnObject(&ret_val);
 }
 
@@ -1089,8 +1071,8 @@ void RegisterStdString_Generic(asIScriptEngine *engine)
 	CheckASCall( engine->RegisterObjectMethod("string", "void Insert(uint pos, const string &in other)", asFUNCTION(StringInsert_Generic), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("string", "void Erase(uint pos, int count = -1)", asFUNCTION(StringErase_Generic), asCALL_GENERIC ) );
 
-	CheckASCall( engine->RegisterGlobalFunction("string formatInt(int64 val, const string& in formatting = \"%i\")", asFUNCTION(formatInt_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterGlobalFunction("string formatUInt(uint64 val, const string& in formatting = \"%u\")", asFUNCTION(formatUInt_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterGlobalFunction("string formatInt(int32 val, const string& in formatting = \"%i\")", asFUNCTION(formatInt_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterGlobalFunction("string formatUInt(uint32 val, const string& in formatting = \"%u\")", asFUNCTION(formatUInt_Generic), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterGlobalFunction("string formatFloat(double val, const string& in formatting = \"%0.02f\")", asFUNCTION(formatFloat_Generic), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterGlobalFunction("int64 parseInt(const string &in, uint base = 10, uint &out byteCount = 0)", asFUNCTION(parseInt_Generic), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterGlobalFunction("uint64 parseUInt(const string &in, uint base = 10, uint &out byteCount = 0)", asFUNCTION(parseUInt_Generic), asCALL_GENERIC ) );
@@ -1099,10 +1081,9 @@ void RegisterStdString_Generic(asIScriptEngine *engine)
 
 void RegisterStdString(asIScriptEngine *engine)
 {
-	if (strstr(asGetLibraryOptions(), "AS_MAX_PORTABILITY"))
+	if ( strstr(asGetLibraryOptions(), "AS_MAX_PORTABILITY") ) {
 		RegisterStdString_Generic(engine);
-	else
+	} else {
 		RegisterStdString_Native(engine);
+	}
 }
-
-

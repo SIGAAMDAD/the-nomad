@@ -82,19 +82,19 @@ float fpFromIEEE(asUINT raw)
 {
 	// TODO: Identify CPU family to provide proper conversion
 	//        if the CPU doesn't natively use IEEE style floats
-	return *reinterpret_cast<float*>(&raw);
+	return *(float *)&raw;
 }
 asUINT fpToIEEE(float fp)
 {
-	return *reinterpret_cast<asUINT*>(&fp);
+	return *(asUINT *)&fp;
 }
 double fpFromIEEE(asQWORD raw)
 {
-	return *reinterpret_cast<double*>(&raw);
+	return *(double *)&raw;
 }
 asQWORD fpToIEEE(double fp)
 {
-	return *reinterpret_cast<asQWORD*>(&fp);
+	return *(asQWORD *)&fp;
 }
 
 // closeTo() is used to determine if the binary representation of two numbers are 
@@ -110,12 +110,15 @@ asQWORD fpToIEEE(double fp)
 bool closeTo(float a, float b, float epsilon)
 {
 	// Equal numbers and infinity will return immediately
-	if( a == b ) return true;
+	if ( a == b ) {
+		return true;
+	}
 
 	// When very close to 0, we can use the absolute comparison
 	float diff = fabsf(a - b);
-	if( (a == 0 || b == 0) && (diff < epsilon) )
+	if ( (a == 0 || b == 0) && (diff < epsilon) ) {
 		return true;
+	}
 	
 	// Otherwise we need to use relative comparison to account for precision
 	return diff / (fabs(a) + fabs(b)) < epsilon;
@@ -123,11 +126,14 @@ bool closeTo(float a, float b, float epsilon)
 
 bool closeTo(double a, double b, double epsilon)
 {
-	if( a == b ) return true;
-
-	double diff = fabs(a - b);
-	if( (a == 0 || b == 0) && (diff < epsilon) )
+	if ( a == b ) {
 		return true;
+	}
+
+	double diff = fabs( a - b );
+	if ( ( a == 0 || b == 0 ) && ( diff < epsilon ) ) {
+		return true;
+	}
 	
 	return diff / (fabs(a) + fabs(b)) < epsilon;
 }
@@ -137,66 +143,66 @@ void RegisterScriptMath_Native(asIScriptEngine *engine)
 	int r;
 
 	// Conversion between floating point and IEEE bits representations
-	r = engine->RegisterGlobalFunction("float fpFromIEEE(uint)", asFUNCTIONPR(fpFromIEEE, (asUINT), float), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("uint fpToIEEE(float)", asFUNCTIONPR(fpToIEEE, (float), asUINT), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double fpFromIEEE(uint64)", asFUNCTIONPR(fpFromIEEE, (asQWORD), double), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("uint64 fpToIEEE(double)", asFUNCTIONPR(fpToIEEE, (double), asQWORD), asCALL_CDECL); assert( r >= 0 );
+	CheckASCall( engine->RegisterGlobalFunction("float fpFromIEEE(uint)", asFUNCTIONPR(fpFromIEEE, (asUINT), float), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("uint fpToIEEE(float)", asFUNCTIONPR(fpToIEEE, (float), asUINT), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("double fpFromIEEE(uint64)", asFUNCTIONPR(fpFromIEEE, (asQWORD), double), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("uint64 fpToIEEE(double)", asFUNCTIONPR(fpToIEEE, (double), asQWORD), asCALL_CDECL) );
 
 	// Close to comparison with epsilon 
-	r = engine->RegisterGlobalFunction("bool closeTo(float, float, float = 0.00001f)", asFUNCTIONPR(closeTo, (float, float, float), bool), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("bool closeTo(double, double, double = 0.0000000001)", asFUNCTIONPR(closeTo, (double, double, double), bool), asCALL_CDECL); assert( r >= 0 );
+	CheckASCall( engine->RegisterGlobalFunction("bool closeTo(float, float, float = 0.00001f)", asFUNCTIONPR(closeTo, (float, float, float), bool), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("bool closeTo(double, double, double = 0.0000000001)", asFUNCTIONPR(closeTo, (double, double, double), bool), asCALL_CDECL) );
 
 #ifdef AS_USE_FLOAT
 	// Trigonometric functions
-	r = engine->RegisterGlobalFunction("float cos(float)", asFUNCTIONPR(cosf, (float), float), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("float sin(float)", asFUNCTIONPR(sinf, (float), float), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("float tan(float)", asFUNCTIONPR(tanf, (float), float), asCALL_CDECL); assert( r >= 0 );
+	CheckASCall( engine->RegisterGlobalFunction("float cos(float)", asFUNCTIONPR(cosf, (float), float), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("float sin(float)", asFUNCTIONPR(sinf, (float), float), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("float tan(float)", asFUNCTIONPR(tanf, (float), float), asCALL_CDECL) );
 
-	r = engine->RegisterGlobalFunction("float acos(float)", asFUNCTIONPR(acosf, (float), float), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("float asin(float)", asFUNCTIONPR(asinf, (float), float), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("float atan(float)", asFUNCTIONPR(atanf, (float), float), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("float atan2(float,float)", asFUNCTIONPR(atan2f, (float, float), float), asCALL_CDECL); assert( r >= 0 );
+	CheckASCall( engine->RegisterGlobalFunction("float acos(float)", asFUNCTIONPR(acosf, (float), float), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("float asin(float)", asFUNCTIONPR(asinf, (float), float), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("float atan(float)", asFUNCTIONPR(atanf, (float), float), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("float atan2(float,float)", asFUNCTIONPR(atan2f, (float, float), float), asCALL_CDECL) );
 
 	// Hyberbolic functions
-	r = engine->RegisterGlobalFunction("float cosh(float)", asFUNCTIONPR(coshf, (float), float), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("float sinh(float)", asFUNCTIONPR(sinhf, (float), float), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("float tanh(float)", asFUNCTIONPR(tanhf, (float), float), asCALL_CDECL); assert( r >= 0 );
+	CheckASCall( engine->RegisterGlobalFunction("float cosh(float)", asFUNCTIONPR(coshf, (float), float), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("float sinh(float)", asFUNCTIONPR(sinhf, (float), float), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("float tanh(float)", asFUNCTIONPR(tanhf, (float), float), asCALL_CDECL) );
 
 	// Exponential and logarithmic functions
-	r = engine->RegisterGlobalFunction("float log(float)", asFUNCTIONPR(logf, (float), float), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("float log10(float)", asFUNCTIONPR(log10f, (float), float), asCALL_CDECL); assert( r >= 0 );
+	CheckASCall( engine->RegisterGlobalFunction("float log(float)", asFUNCTIONPR(logf, (float), float), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("float log10(float)", asFUNCTIONPR(log10f, (float), float), asCALL_CDECL) );
 
 	// Power functions
-	r = engine->RegisterGlobalFunction("float pow(float, float)", asFUNCTIONPR(powf, (float, float), float), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("float sqrt(float)", asFUNCTIONPR(sqrtf, (float), float), asCALL_CDECL); assert( r >= 0 );
+	CheckASCall( engine->RegisterGlobalFunction("float pow(float, float)", asFUNCTIONPR(powf, (float, float), float), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("float sqrt(float)", asFUNCTIONPR(sqrtf, (float), float), asCALL_CDECL) );
 
 	// Nearest integer, absolute value, and remainder functions
-	r = engine->RegisterGlobalFunction("float ceil(float)", asFUNCTIONPR(ceilf, (float), float), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("float abs(float)", asFUNCTIONPR(fabsf, (float), float), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("float floor(float)", asFUNCTIONPR(floorf, (float), float), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("float fraction(float)", asFUNCTIONPR(fractionf, (float), float), asCALL_CDECL); assert( r >= 0 );
+	CheckASCall( engine->RegisterGlobalFunction("float ceil(float)", asFUNCTIONPR(ceilf, (float), float), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("float abs(float)", asFUNCTIONPR(fabsf, (float), float), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("float floor(float)", asFUNCTIONPR(floorf, (float), float), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("float fraction(float)", asFUNCTIONPR(fractionf, (float), float), asCALL_CDECL) );
 
 	// Don't register modf because AngelScript already supports the % operator
 #else
 	// double versions of the same
-	r = engine->RegisterGlobalFunction("double cos(double)", asFUNCTIONPR(cos, (double), double), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double sin(double)", asFUNCTIONPR(sin, (double), double), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double tan(double)", asFUNCTIONPR(tan, (double), double), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double acos(double)", asFUNCTIONPR(acos, (double), double), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double asin(double)", asFUNCTIONPR(asin, (double), double), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double atan(double)", asFUNCTIONPR(atan, (double), double), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double atan2(double,double)", asFUNCTIONPR(atan2, (double, double), double), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double cosh(double)", asFUNCTIONPR(cosh, (double), double), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double sinh(double)", asFUNCTIONPR(sinh, (double), double), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double tanh(double)", asFUNCTIONPR(tanh, (double), double), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double log(double)", asFUNCTIONPR(log, (double), double), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double log10(double)", asFUNCTIONPR(log10, (double), double), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double pow(double, double)", asFUNCTIONPR(pow, (double, double), double), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double sqrt(double)", asFUNCTIONPR(sqrt, (double), double), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double ceil(double)", asFUNCTIONPR(ceil, (double), double), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double abs(double)", asFUNCTIONPR(fabs, (double), double), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double floor(double)", asFUNCTIONPR(floor, (double), double), asCALL_CDECL); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double fraction(double)", asFUNCTIONPR(fraction, (double), double), asCALL_CDECL); assert( r >= 0 );
+	CheckASCall( engine->RegisterGlobalFunction("double cos(double)", asFUNCTIONPR(cos, (double), double), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("double sin(double)", asFUNCTIONPR(sin, (double), double), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("double tan(double)", asFUNCTIONPR(tan, (double), double), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("double acos(double)", asFUNCTIONPR(acos, (double), double), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("double asin(double)", asFUNCTIONPR(asin, (double), double), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("double atan(double)", asFUNCTIONPR(atan, (double), double), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("double atan2(double,double)", asFUNCTIONPR(atan2, (double, double), double), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("double cosh(double)", asFUNCTIONPR(cosh, (double), double), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("double sinh(double)", asFUNCTIONPR(sinh, (double), double), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("double tanh(double)", asFUNCTIONPR(tanh, (double), double), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("double log(double)", asFUNCTIONPR(log, (double), double), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("double log10(double)", asFUNCTIONPR(log10, (double), double), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("double pow(double, double)", asFUNCTIONPR(pow, (double, double), double), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("double sqrt(double)", asFUNCTIONPR(sqrt, (double), double), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("double ceil(double)", asFUNCTIONPR(ceil, (double), double), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("double abs(double)", asFUNCTIONPR(fabs, (double), double), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("double floor(double)", asFUNCTIONPR(floor, (double), double), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("double fraction(double)", asFUNCTIONPR(fraction, (double), double), asCALL_CDECL) );
 #endif
 }
 
@@ -327,33 +333,34 @@ void RegisterScriptMath_Generic(asIScriptEngine *engine)
 	// Don't register modf because AngelScript already supports the % operator
 #else
 	// double versions of the same
-	r = engine->RegisterGlobalFunction("double cos(double)", asFUNCTION(cos_generic), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double sin(double)", asFUNCTION(sin_generic), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double tan(double)", asFUNCTION(tan_generic), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double acos(double)", asFUNCTION(acos_generic), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double asin(double)", asFUNCTION(asin_generic), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double atan(double)", asFUNCTION(atan_generic), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double atan2(double,double)", asFUNCTION(atan2_generic), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double cosh(double)", asFUNCTION(cosh_generic), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double sinh(double)", asFUNCTION(sinh_generic), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double tanh(double)", asFUNCTION(tanh_generic), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double log(double)", asFUNCTION(log_generic), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double log10(double)", asFUNCTION(log10_generic), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double pow(double, double)", asFUNCTION(pow_generic), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double sqrt(double)", asFUNCTION(sqrt_generic), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double ceil(double)", asFUNCTION(ceil_generic), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double abs(double)", asFUNCTION(fabs_generic), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double floor(double)", asFUNCTION(floor_generic), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("double fraction(double)", asFUNCTION(fraction_generic), asCALL_GENERIC); assert( r >= 0 );
+	CheckASCall( engine->RegisterGlobalFunction("double cos(double)", asFUNCTION(cos_generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterGlobalFunction("double sin(double)", asFUNCTION(sin_generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterGlobalFunction("double tan(double)", asFUNCTION(tan_generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterGlobalFunction("double acos(double)", asFUNCTION(acos_generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterGlobalFunction("double asin(double)", asFUNCTION(asin_generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterGlobalFunction("double atan(double)", asFUNCTION(atan_generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterGlobalFunction("double atan2(double,double)", asFUNCTION(atan2_generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterGlobalFunction("double cosh(double)", asFUNCTION(cosh_generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterGlobalFunction("double sinh(double)", asFUNCTION(sinh_generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterGlobalFunction("double tanh(double)", asFUNCTION(tanh_generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterGlobalFunction("double log(double)", asFUNCTION(log_generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterGlobalFunction("double log10(double)", asFUNCTION(log10_generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterGlobalFunction("double pow(double, double)", asFUNCTION(pow_generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterGlobalFunction("double sqrt(double)", asFUNCTION(sqrt_generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterGlobalFunction("double ceil(double)", asFUNCTION(ceil_generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterGlobalFunction("double abs(double)", asFUNCTION(fabs_generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterGlobalFunction("double floor(double)", asFUNCTION(floor_generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterGlobalFunction("double fraction(double)", asFUNCTION(fraction_generic), asCALL_GENERIC) );
 #endif
 }
 
-void RegisterScriptMath(asIScriptEngine *engine)
+void RegisterScriptMath( asIScriptEngine *engine )
 {
-	if( strstr(asGetLibraryOptions(), "AS_MAX_PORTABILITY") )
-		RegisterScriptMath_Generic(engine);
-	else
-		RegisterScriptMath_Native(engine);
+	if ( strstr( asGetLibraryOptions(), "AS_MAX_PORTABILITY" ) ) {
+		RegisterScriptMath_Generic( engine );
+	} else {
+		RegisterScriptMath_Native( engine );
+	}
 }
 
 END_AS_NAMESPACE

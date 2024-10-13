@@ -134,6 +134,9 @@ static void ScriptAny_RetrievePrimitive_Generic( asIScriptGeneric *gen )
     case asTYPEID_DOUBLE:
         out = self->Retrieve( *(double *)ref);
         break;
+	default:
+		out = false;
+		break;
     };
 
 	*(bool *)gen->GetAddressOfReturnLocation() = out;
@@ -183,7 +186,52 @@ static void ScriptAny_ReleaseAllHandles_Generic( asIScriptGeneric *gen )
 	self->ReleaseAllHandles(engine);
 }
 
-void RegisterScriptAny( asIScriptEngine *engine )
+void RegisterScriptAny_Native( asIScriptEngine *engine )
+{
+	CheckASCall( engine->RegisterObjectType( "any", sizeof( CScriptAny ), asOBJ_REF | asOBJ_GC ) );
+
+	// We'll use the generic interface for the constructor as we need the engine pointer
+	CheckASCall( engine->RegisterObjectBehaviour( "any", asBEHAVE_FACTORY, "any@ f()", asFUNCTION(ScriptAnyFactory_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectBehaviour( "any", asBEHAVE_FACTORY, "any@ f(?&in) explicit", asFUNCTION(ScriptAnyFactory2_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectBehaviour( "any", asBEHAVE_FACTORY, "any@ f(const int64&in) explicit", asFUNCTION(ScriptAnyFactory2_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectBehaviour( "any", asBEHAVE_FACTORY, "any@ f(const double&in) explicit", asFUNCTION(ScriptAnyFactory2_Generic), asCALL_GENERIC ) );
+
+	CheckASCall( engine->RegisterObjectBehaviour( "any", asBEHAVE_ADDREF, "void f()", asMETHOD(CScriptAny,AddRef), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectBehaviour( "any", asBEHAVE_RELEASE, "void f()", asMETHOD(CScriptAny,Release), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "any &opAssign(any&in)", asFUNCTION(ScriptAnyAssignment), asCALL_CDECL_OBJLAST ) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "void store(?&in)", asMETHODPR(CScriptAny,Store,(void*,int),void), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "void store(const int8&in)", asMETHODPR(CScriptAny,Store,(asINT8&),void), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "void store(const int16&in)", asMETHODPR(CScriptAny,Store,(asINT16&),void), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "void store(const int32&in)", asMETHODPR(CScriptAny,Store,(asINT32&),void), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "void store(const int64&in)", asMETHODPR(CScriptAny,Store,(asINT64&),void), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "void store(const uint8&in)", asMETHODPR(CScriptAny,Store,(asBYTE&),void), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "void store(const uint16&in)", asMETHODPR(CScriptAny,Store,(asWORD&),void), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "void store(const uint32&in)", asMETHODPR(CScriptAny,Store,(asDWORD&),void), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "void store(const uint64&in)", asMETHODPR(CScriptAny,Store,(asQWORD&),void), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "void store(const double&in)", asMETHODPR(CScriptAny,Store,(double&),void), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "void store(const float&in)", asMETHODPR(CScriptAny,Store,(float&),void), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "void store(const bool&in)", asMETHODPR(CScriptAny,Store,(bool&),void), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "bool load(?&out)", asMETHODPR(CScriptAny,Retrieve,(void*,int) const,bool), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "bool load(int8&out)", asMETHODPR(CScriptAny,Retrieve,(asINT8&) const,bool), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "bool load(int16&out)", asMETHODPR(CScriptAny,Retrieve,(asINT16&) const,bool), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "bool load(int32&out)", asMETHODPR(CScriptAny,Retrieve,(asINT32&) const,bool), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "bool load(int64&out)", asMETHODPR(CScriptAny,Retrieve,(asINT64&) const,bool), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "bool load(uint8&out)", asMETHODPR(CScriptAny,Retrieve,(asBYTE&) const,bool), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "bool load(uint16&out)", asMETHODPR(CScriptAny,Retrieve,(asWORD&) const,bool), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "bool load(uint32&out)", asMETHODPR(CScriptAny,Retrieve,(asDWORD&) const,bool), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "bool load(uint64&out)", asMETHODPR(CScriptAny,Retrieve,(asQWORD&) const,bool), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "bool load(double&out)", asMETHODPR(CScriptAny,Retrieve,(double&) const,bool), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "bool load(float&out)", asMETHODPR(CScriptAny,Retrieve,(float&) const,bool), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "any", "bool load(bool&out)", asMETHODPR(CScriptAny,Retrieve,(bool&) const,bool), asCALL_THISCALL ) );
+	// Register GC behaviours
+	CheckASCall( engine->RegisterObjectBehaviour( "any", asBEHAVE_GETREFCOUNT, "int f()", asMETHOD(CScriptAny,GetRefCount), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectBehaviour( "any", asBEHAVE_SETGCFLAG, "void f()", asMETHOD(CScriptAny,SetFlag), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectBehaviour( "any", asBEHAVE_GETGCFLAG, "bool f()", asMETHOD(CScriptAny,GetFlag), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectBehaviour( "any", asBEHAVE_ENUMREFS, "void f(int&in)", asMETHOD(CScriptAny,EnumReferences), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectBehaviour( "any", asBEHAVE_RELEASEREFS, "void f(int&in)", asMETHOD(CScriptAny,ReleaseAllHandles), asCALL_THISCALL ) );
+}
+
+void RegisterScriptAny_Generic( asIScriptEngine *engine )
 {
 	CheckASCall( engine->RegisterObjectType( "any", sizeof( CScriptAny ), asOBJ_REF | asOBJ_GC ) );
 
@@ -229,6 +277,14 @@ void RegisterScriptAny( asIScriptEngine *engine )
 	CheckASCall( engine->RegisterObjectBehaviour("any", asBEHAVE_RELEASEREFS, "void f(int&in)", asFUNCTION(ScriptAny_ReleaseAllHandles_Generic), asCALL_GENERIC) );
 }
 
+void RegisterScriptAny( asIScriptEngine *engine )
+{
+	if ( strstr( asGetLibraryOptions(), "AS_MAX_PORTABILITY" ) ) {
+		RegisterScriptAny_Generic( engine );
+	} else {
+		RegisterScriptAny_Native( engine );
+	}
+}
 
 CScriptAny &CScriptAny::operator=( const CScriptAny& other )
 {

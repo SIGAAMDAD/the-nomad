@@ -428,7 +428,7 @@ bool CModuleLib::AddDefaultProcs( void ) const {
 	}
 
 	RegisterScriptArray( m_pEngine );
-	RegisterStdString_Generic( g_pModuleLib->GetScriptEngine() );
+	RegisterStdString( g_pModuleLib->GetScriptEngine() );
 	RegisterScriptHandle( m_pEngine );
 	RegisterScriptAny( m_pEngine );
 	RegisterScriptParser( m_pEngine );
