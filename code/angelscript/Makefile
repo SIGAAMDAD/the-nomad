@@ -27,7 +27,7 @@ VERSION_DEFINE=-D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPD
 
 .PHONY: all clean
 
-DEFINES       =$(VERSION_DEFINE) $(DEBUGDEF) -D_NOMAD_ENGINE -DMODULE_LIB -DAS_NO_THREADS -DAS_MAX_PORTABILITY
+DEFINES       =$(VERSION_DEFINE) $(DEBUGDEF) -D_NOMAD_ENGINE -DMODULE_LIB -DAS_NO_THREADS #-DAS_MAX_PORTABILITY
 ifndef release
 DEFINES      +=-DAS_DEBUG
 endif
@@ -35,8 +35,8 @@ OPTIMIZERS    =\
 				-fexpensive-optimizations \
 				-funroll-loops \
 				-ffast-math \
-				-mfma -msse3 -msse2 -mno-avx2 -mno-avx
-#				-ftree-vectorize \
+				-mfma -msse3 -msse2 -mavx2 -mavx \
+				-ftree-vectorize \
 				-finline-functions \
 				-finline-small-functions \
 
@@ -58,7 +58,7 @@ INTERNAL_OBJS=\
 	$(O)/angelscript/as_atomic.o \
 	$(O)/angelscript/as_builder.o \
 	$(O)/angelscript/as_bytecode.o \
-	$(O)/angelscript/as_callfunc_x86.o \
+	$(O)/angelscript/as_callfunc_x64_gcc.o \
 	$(O)/angelscript/as_callfunc.o \
 	$(O)/angelscript/as_compiler.o \
 	$(O)/angelscript/as_configgroup.o \

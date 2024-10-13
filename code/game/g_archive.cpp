@@ -209,7 +209,6 @@ qboolean CGameArchive::LoadArchiveFile( const char *filename, uint64_t index )
     int i, j;
 	int32_t nameLength, numFields;
 	uint64_t size;
-	uint64_t bufSize;
     fileHandle_t hFile;
 	ngdsection_read_t *section;
 	ngdfield_t *field;
@@ -310,7 +309,6 @@ qboolean CGameArchive::LoadArchiveFile( const char *filename, uint64_t index )
 static void G_SaveGame_f( void )
 {
 	const char *filename;
-	char savename[MAX_NPATH];
 	char path[MAX_NPATH];
 
 	filename = Cmd_Argv( 1 );
@@ -347,40 +345,32 @@ CGameArchive::CGameArchive( void )
 	PROFILE_FUNCTION();
 
 	uint64_t i;
-	fileStats_t stats;
+	char *namePtr;
 
 	Con_Printf( "G_InitArchiveHandler: initializing save file cache...\n" );
 
-	g_maxSaveSlots = Cvar_Get( "g_maxSaveSlots", "10", CVAR_SAVE );
-	Cvar_CheckRange( g_maxSaveSlots, "0", "1000", CVT_INT );
-	Cvar_SetDescription( g_maxSaveSlots, "Sets the maximum allowed save slots, unlimited if \"0\"." );
+	g_maxSaveSlots = Cvar_Get( "g_maxSaveSlots", "10", CVAR_SAVE | CVAR_LATCH );
+	Cvar_CheckRange( g_maxSaveSlots, "1", "1000", CVT_INT );
+	Cvar_SetDescription( g_maxSaveSlots, "Sets the maximum allowed save slots." );
 
-#ifdef SAVE_NOLIMIT
-	m_nArchiveFiles = numFiles;
-	if ( m_nArchiveFiles >= g_maxSaveSlots->i ) {
-		Con_Printf( COLOR_YELLOW "WARNING: more save files found than save slots allowed.\n" );
-	}
-	if ( g_maxSaveSlots->i != 0 ) {
-		m_nArchiveFiles = g_maxSaveSlots->i;
-	}
-#else
-	m_nArchiveFiles = g_maxSaveSlots->i;
-#endif
+	m_pArchiveCache = (ngd_file_t **)Hunk_Alloc( sizeof( *m_pArchiveCache ) * g_maxSaveSlots->i, h_low );
+	m_pArchiveFileList = (char **)Hunk_Alloc( sizeof( *m_pArchiveCache ) * g_maxSaveSlots->i, h_low );
+	namePtr = (char *)Hunk_Alloc( MAX_NPATH * g_maxSaveSlots->i, h_low );
 
-	m_pArchiveCache = (ngd_file_t **)Z_Malloc( sizeof( *m_pArchiveCache ) * m_nArchiveFiles, TAG_SAVEFILE );
-	m_pArchiveFileList = (char **)Z_Malloc( sizeof( *m_pArchiveFileList ) * m_nArchiveFiles, TAG_SAVEFILE );
 	m_nUsedSaveSlots = 0;
 
-	for ( i = 0; i < m_nArchiveFiles; i++ ) {
-		m_pArchiveFileList[i] = (char *)Z_Malloc( strlen( va( "SLOT_%lu", i ) ) + 1, TAG_SAVEFILE );
-		strcpy( m_pArchiveFileList[i], va( "SLOT_%lu", i ) );
-		if ( Sys_GetFileStats( &stats, va( "SaveData/%s.ngd", m_pArchiveFileList[ i ] ) ) ) {
-			LoadArchiveFile( va( "SaveData/%s.ngd", m_pArchiveFileList[i] ), i );
+	for ( i = 0; i < g_maxSaveSlots->i; i++ ) {
+		m_pArchiveFileList[ i ] = namePtr;
+
+		Com_snprintf( namePtr, MAX_NPATH - 1, "SLOT_%lu", i );
+
+		if ( FS_FileExists( va( "SaveData/%s.ngd", namePtr ) ) ) {
+			LoadArchiveFile( va( "SaveData/%s.ngd", namePtr ), i );
+			Con_Printf( "...Cached save slot %lu\n", i );
+			m_nUsedSaveSlots++;
 		}
 
-		m_nUsedSaveSlots++;
-
-		Con_Printf( "...Cached save file '%s'\n", m_pArchiveFileList[i] );
+		namePtr += MAX_NPATH;
 	}
 }
 
@@ -402,7 +392,7 @@ void G_ShutdownArchiveHandler( void ) {
 }
 
 const char **CGameArchive::GetSaveFiles( uint64_t *nFiles ) const {
-	*nFiles = m_nArchiveFiles;
+	*nFiles = g_maxSaveSlots->i;
 	return (const char **)m_pArchiveFileList;
 }
 
@@ -1045,11 +1035,11 @@ void CGameArchive::DeleteSlot( uint64_t nSlot )
 		Z_Free( m_pArchiveCache[ nSlot ]->m_pSectionList[i].m_pFieldCache );
 	}
 	Z_Free( m_pArchiveCache[ nSlot ] );
-	Z_Free( m_pArchiveFileList[ nSlot ] );
-	m_pArchiveFileList[ nSlot ] = NULL;
 	m_pArchiveCache[ nSlot ] = NULL;
 
-	m_nArchiveFiles--;
+	memset( m_pArchiveFileList[ nSlot ], 0, MAX_NPATH );
+
+	m_nUsedSaveSlots--;
 	Cbuf_ExecuteText( EXEC_APPEND, "ui.reload_savefiles\n" );
 }
 
@@ -1057,14 +1047,7 @@ bool CGameArchive::Save( const char *filename )
 {
 	const char *path;
 	ngdheader_t header;
-	char **partFiles;
-	uint64_t nPartFiles;
-	union {
-		void *v;
-		char *b;
-	} f;
-	uint64_t length, i, size;
-	char *namePtr;
+	uint64_t i;
 	uint64_t now;
 
 	PROFILE_FUNCTION();
@@ -1211,8 +1194,7 @@ bool CGameArchive::LoadPartial( const char *filename, gamedata_t *gd )
 {
     fileHandle_t f;
     ngdheader_t header;
-	uint64_t i, size;
-	char *namePtr;
+	uint64_t i;
 
     f = FS_FOpenRead( filename );
     if ( f == FS_INVALID_HANDLE ) {
@@ -1274,29 +1256,19 @@ bool CGameArchive::LoadPartial( const char *filename, gamedata_t *gd )
     return true;
 }
 
-bool CGameArchive::Load( const char *name )
+bool CGameArchive::Load( uint64_t nSlot )
 {
 	uint64_t i;
 	char szName[MAX_NPATH];
 	uint64_t offset;
-	bool found;
 
-	N_strncpyz( szName, name, sizeof( szName ) );
-	COM_DefaultExtension( szName, sizeof( szName ), ".ngd" );
+	Com_snprintf( szName, sizeof( szName ) - 1, "SLOT_%lu", nSlot );
 
 	Con_Printf( "Loading save file '%s', please do not close out of the game...\n", szName );
 
-	m_nCurrentArchive = m_nArchiveFiles;
-	found = false;
-	for ( i = 0; i < m_nArchiveFiles; i++ ) {
-		if ( !N_stricmp( szName, m_pArchiveFileList[i] ) ) {
-			m_nCurrentArchive = i;
-			found = true;
-			break;
-		}
-	}
-	if ( !found ) {
-		N_Error( ERR_DROP, "CGameArchive::Load: attempted to load non-existing save file '%s' (... HOW?)", szName );
+	m_nCurrentArchive = nSlot;
+	if ( !m_pArchiveCache[ nSlot ] || nSlot > g_maxSaveSlots->i ) {
+		N_Error( ERR_DROP, "CGameArchive::Load: couldn't invalid slot" );
 	}
 
 	for ( i = 0; i < m_pArchiveCache[ m_nCurrentArchive ]->m_nSections; i++ ) {

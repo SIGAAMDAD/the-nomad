@@ -234,11 +234,11 @@ static void MissionMenu_Event( void *ptr, int event )
 	switch ( ( (const menucommon_t *)ptr )->id ) {
 	case ID_CONTINUE:
 		Cvar_SetIntegerValue( "g_paused", 0 );
-		Cvar_Set( "sgame_SaveName", va( "SLOT_%lu", ( slot - s_playMenu->saveSlots ) - 1 ) );
+		Cvar_Set( "sgame_SaveName", va( "SLOT_%lu", s_playMenu->selectedSaveSlot ) );
 		gi.state = GS_LEVEL;
 		gi.playTimeStart = Sys_Milliseconds();
 //		Cbuf_ExecuteText( EXEC_APPEND, va( "setmap \"%s\"\n", gi.mapCache.mapList[ slot->gd.mapIndex ] ) );
-		g_pArchiveHandler->Load( va( "SLOT_%lu", ( slot - s_playMenu->saveSlots ) - 1 ) );
+		g_pArchiveHandler->Load( s_playMenu->selectedSaveSlot );
 		break;
 	case ID_DELETE:
 		UI_ConfirmMenu( "", DeleteSlot_Draw, DeleteSlot_Event );
@@ -532,7 +532,7 @@ void UI_ReloadSaveFiles_f( void )
 			continue;
 		}
 
-		info->valid = g_pArchiveHandler->LoadPartial( saveFiles[ i ], &info->gd );
+		info->valid = g_pArchiveHandler->LoadPartial( va( "SaveData/%s.ngd", info->name ), &info->gd );
 		if ( !info->valid ) {
 			Con_Printf( COLOR_YELLOW "WARNING: Failed to get valid header data from savefile '%s'\n", info->name );
 		}

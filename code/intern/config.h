@@ -1,0 +1,3 @@
+#define PAGE_SIZE 4096
+#define MMAP_PAGES
+#define INLINE_UNSIGNED

@@ -183,7 +183,7 @@ public:
     void LoadString( const char *name, string_t *pString, nhandle_t hSection );
     void LoadArray( const char *pszName, CScriptArray *pData, nhandle_t hSection );
 
-    bool Load( const char *filename );
+    bool Load( uint64_t nSlot );
     bool Save( const char *filename = Cvar_VariableString( "sgame_SaveName" ) );
     bool LoadPartial( const char *filename, gamedata_t *gd );
 
@@ -201,7 +201,6 @@ private:
     qboolean LoadArchiveFile( const char *filename, uint64_t index );
     const ngdfield_t *FindField( const char *name, int32_t type, nhandle_t hSection ) const;
 
-//    fileHandle_t m_szSectionStack[MAX_SAVE_SECTION_DEPTH];
     fileHandle_t m_hFile;
     
     int64_t m_nSections;
@@ -211,7 +210,6 @@ private:
 
     ngd_file_t **m_pArchiveCache;
     char **m_pArchiveFileList;
-    uint64_t m_nArchiveFiles;
     uint64_t m_nCurrentArchive;
     uint64_t m_nUsedSaveSlots;
 };

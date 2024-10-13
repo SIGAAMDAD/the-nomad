@@ -31,8 +31,6 @@ static void PrintArrayMemoryStats_f( void ) {
 	memstats.currentBytesAllocated, memstats.overHeadBytes );
 }
 
-//static idDynamicBlockAlloc<byte, 1<<20, 1<<10> arrayCacheAllocator;
-
 // Set the default memory routines
 // Use the angelscript engine's memory routines by default
 
@@ -43,35 +41,35 @@ void CScriptArray::SetMemoryFunctions(asALLOCFUNC_t allocFunc, asFREEFUNC_t free
 {
 }
 
-static void RegisterScriptList_Native(asIScriptEngine *engine);
-static void RegisterScriptList_Generic(asIScriptEngine *engine);
+static void RegisterScriptList_Native( asIScriptEngine *engine );
+static void RegisterScriptList_Generic( asIScriptEngine *engine );
 
 // We just define a number here that we assume nobody else is using for
 // object type user data. The add-ons have reserved the numbers 1000
 // through 1999 for this purpose, so we should be fine.
 
-static void CleanupTypeInfoArrayCache(asITypeInfo *type)
+static void CleanupTypeInfoArrayCache( asITypeInfo *type )
 {
-	SArrayCache *cache = reinterpret_cast<SArrayCache*>(type->GetUserData(ARRAY_CACHE));
-	if( cache )
-	{
+	SArrayCache *cache = (SArrayCache *)type->GetUserData( ARRAY_CACHE );
+	if ( cache ) {
 		cache->~SArrayCache();
-		Mem_Free( (byte *)cache );
+		Mem_Free( cache );
 	}
 }
 
 CScriptArray *CScriptArray::Create( asITypeInfo *ti, asUINT length )
 {
 	void *mem = Mem_ClearedAlloc( sizeof( CScriptArray ) );
-	if( mem == 0 ) {
+	if ( mem == NULL ) {
 		asIScriptContext *ctx = asGetActiveContext();
-		if( ctx )
-			ctx->SetException("out of memory");
+		if ( ctx ) {
+			ctx->SetException( "out of memory" );
+		}
 
-		return 0;
+		return NULL;
 	}
 
-	CScriptArray *a = new(mem) CScriptArray(length, ti);
+	CScriptArray *a = new ( mem ) CScriptArray( length, ti );
 
 	return a;
 }
@@ -79,15 +77,16 @@ CScriptArray *CScriptArray::Create( asITypeInfo *ti, asUINT length )
 CScriptArray *CScriptArray::Create( asITypeInfo *ti, void *initList )
 {
 	void *mem = Mem_ClearedAlloc( sizeof( CScriptArray ) );
-	if( mem == 0 ) {
+	if ( mem == NULL ) {
 		asIScriptContext *ctx = asGetActiveContext();
-		if( ctx )
-			ctx->SetException("out of memory");
+		if ( ctx ) {
+			ctx->SetException( "out of memory" );
+		}
 
-		return 0;
+		return NULL;
 	}
 
-	CScriptArray *a = new(mem) CScriptArray(ti, initList);
+	CScriptArray *a = new ( mem ) CScriptArray( ti, initList );
 
 	return a;
 }
@@ -95,15 +94,16 @@ CScriptArray *CScriptArray::Create( asITypeInfo *ti, void *initList )
 CScriptArray *CScriptArray::Create( asITypeInfo *ti, asUINT length, void *defVal )
 {
 	void *mem = Mem_ClearedAlloc( sizeof( CScriptArray ) );
-	if ( mem == 0 ) {
+	if ( mem == NULL ) {
 		asIScriptContext *ctx = asGetActiveContext();
-		if( ctx )
-			ctx->SetException("out of memory");
+		if ( ctx ) {
+			ctx->SetException( "out of memory" );
+		}
 
-		return 0;
+		return NULL;
 	}
 
-	CScriptArray *a = new(mem) CScriptArray(length, defVal, ti);
+	CScriptArray *a = new ( mem ) CScriptArray( length, defVal, ti );
 
 	return a;
 }
@@ -239,108 +239,110 @@ static bool ScriptListTemplateCallback( asITypeInfo *ti, bool *dontGarbageCollec
 // Registers the template array type
 void RegisterScriptArray(asIScriptEngine *engine)
 {
-	if( strstr(asGetLibraryOptions(), "AS_MAX_PORTABILITY") == 0 )
-		RegisterScriptList_Native(engine);
-	else
-		RegisterScriptList_Generic(engine);
+	if ( !strstr( asGetLibraryOptions(), "AS_MAX_PORTABILITY" ) ) {
+		RegisterScriptList_Native( engine );
+	} else {
+		RegisterScriptList_Generic( engine );
+	}
 	
 	engine->RegisterDefaultArrayType( "array<T>" );
 }
 
-static void RegisterScriptList_Native(asIScriptEngine *engine)
+static void RegisterScriptList_Native( asIScriptEngine *engine )
 {
-	int r = 0;
-	UNUSED_VAR(r);
+	Cmd_AddCommand( "ml_debug.print_list_memory_stats", PrintArrayMemoryStats_f );
 
-	// Register the object type user data clean up
-	engine->SetTypeInfoUserDataCleanupCallback(CleanupTypeInfoArrayCache, ARRAY_CACHE);
+	memset( &memstats, 0, sizeof( memstats ) );
 
-	// Register the array type as a template
-	r = engine->RegisterObjectType("array<class T>", 0, asOBJ_REF | asOBJ_GC | asOBJ_TEMPLATE); Assert( r >= 0 );
+	engine->SetTypeInfoUserDataCleanupCallback( CleanupTypeInfoArrayCache, ARRAY_CACHE );
 
-	// Register a callback for validating the subtype before it is used
-//	r = engine->RegisterObjectBehaviour("array<T>", asBEHAVE_TEMPLATE_CALLBACK, "bool f(int&in, bool&out)", asFUNCTION(ScriptListTemplateCallback), asCALL_CDECL); Assert( r >= 0 );
+	CheckASCall( engine->RegisterObjectType( "array<class T>", 0, asOBJ_REF | asOBJ_GC | asOBJ_TEMPLATE ) );
 
-	// Templates receive the object type as the first parameter. To the script writer this is hidden
-	r = engine->RegisterObjectBehaviour("array<T>", asBEHAVE_FACTORY, "array<T>@ f(int&in)", asFUNCTIONPR(CScriptArray::Create, (asITypeInfo*), CScriptArray*), asCALL_CDECL); Assert( r >= 0 );
-	r = engine->RegisterObjectBehaviour("array<T>", asBEHAVE_FACTORY, "array<T>@ f(int&in, uint length) explicit", asFUNCTIONPR(CScriptArray::Create, (asITypeInfo*, asUINT), CScriptArray*), asCALL_CDECL); Assert( r >= 0 );
-	r = engine->RegisterObjectBehaviour("array<T>", asBEHAVE_FACTORY, "array<T>@ f(int&in, uint length, const T &in value)", asFUNCTIONPR(CScriptArray::Create, (asITypeInfo*, asUINT, void *), CScriptArray*), asCALL_CDECL); Assert( r >= 0 );
+	CScriptArray::SetMemoryFunctions( AS_Alloc, AS_Free );
 
-	// Register the factory that will be used for initialization lists
-	r = engine->RegisterObjectBehaviour("array<T>", asBEHAVE_LIST_FACTORY, "array<T>@ f(int&in type, int&in list) {repeat T}", asFUNCTIONPR(CScriptArray::Create, (asITypeInfo*, void*), CScriptArray*), asCALL_CDECL); Assert( r >= 0 );
+	CheckASCall( engine->RegisterObjectBehaviour( "array<T>", asBEHAVE_TEMPLATE_CALLBACK, "bool f(int&in, bool&out)", asFUNCTION( ScriptListTemplateCallback ), asCALL_CDECL ) );
 
-	// The memory management methods
-	r = engine->RegisterObjectBehaviour("array<T>", asBEHAVE_ADDREF, "void f()", asMETHOD(CScriptArray,AddRef), asCALL_THISCALL); Assert( r >= 0 );
-	r = engine->RegisterObjectBehaviour("array<T>", asBEHAVE_RELEASE, "void f()", asMETHOD(CScriptArray,Release), asCALL_THISCALL); Assert( r >= 0 );
+	CheckASCall( engine->RegisterObjectBehaviour( "array<T>", asBEHAVE_FACTORY, "array<T>@ f(int&in)", asFUNCTIONPR( CScriptArray::Create, ( asITypeInfo * ), CScriptArray * ), asCALL_CDECL ) );
+	CheckASCall( engine->RegisterObjectBehaviour( "array<T>", asBEHAVE_FACTORY, "array<T>@ f(int&in, uint length) explicit", asFUNCTIONPR( CScriptArray::Create, ( asITypeInfo *, asUINT ), CScriptArray * ), asCALL_CDECL ) );
+	CheckASCall( engine->RegisterObjectBehaviour( "array<T>", asBEHAVE_FACTORY, "array<T>@ f(int&in, uint length, const T &in value)", asFUNCTIONPR( CScriptArray::Create, ( asITypeInfo *, asUINT, void * ), CScriptArray * ), asCALL_CDECL ) );
+	CheckASCall( engine->RegisterObjectBehaviour( "array<T>", asBEHAVE_LIST_FACTORY, "array<T>@ f(int&in, int&in) {repeat T}", asFUNCTIONPR( CScriptArray::Create, ( asITypeInfo *, void * ), CScriptArray * ), asCALL_CDECL ) );
 
-	// The index operator returns the template subtype
-	r = engine->RegisterObjectMethod("array<T>", "T &opIndex(uint index)", asMETHODPR(CScriptArray, At, (asUINT), void*), asCALL_THISCALL); Assert( r >= 0 );
-	r = engine->RegisterObjectMethod("array<T>", "const T &opIndex(uint index) const", asMETHODPR(CScriptArray, At, (asUINT) const, const void*), asCALL_THISCALL); Assert( r >= 0 );
+	CheckASCall( engine->RegisterObjectBehaviour( "array<T>", asBEHAVE_ADDREF, "void f()", asMETHOD( CScriptArray, AddRef ), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectBehaviour( "array<T>", asBEHAVE_RELEASE, "void f()", asMETHOD( CScriptArray, Release ), asCALL_THISCALL ) );
 
-	// The assignment operator
-	r = engine->RegisterObjectMethod("array<T>", "array<T> &opAssign(const array<T>&in)", asMETHOD(CScriptArray, operator=), asCALL_THISCALL); Assert( r >= 0 );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "T &opIndex(uint index)", asMETHODPR( CScriptArray, At, ( asUINT ), void * ), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "const T &opIndex(uint index) const", asMETHODPR( CScriptArray, At, ( asUINT ) const, const void * ), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "array<T> &opAssign(const array<T>&in)", asMETHOD( CScriptArray, operator= ), asCALL_THISCALL ) );
 
-	// Other methods
-//	r = engine->RegisterObjectMethod("array<T>", "void insertAt(uint index, const T&in value)", asMETHODPR(CScriptArray, InsertAt, (asUINT, void *), void), asCALL_THISCALL); Assert( r >= 0 );
-//	r = engine->RegisterObjectMethod("array<T>", "void insertAt(uint index, const array<T>& arr)", asMETHODPR(CScriptArray, InsertAt, (asUINT, const CScriptArray &), void), asCALL_THISCALL); Assert(r >= 0);
-//	r = engine->RegisterObjectMethod("array<T>", "void insertLast(const T&in value)", asMETHOD(CScriptArray, InsertLast), asCALL_THISCALL); Assert(r >= 0);
-//	r = engine->RegisterObjectMethod("array<T>", "void removeAt(uint index)", asMETHOD(CScriptArray, RemoveAt), asCALL_THISCALL); Assert(r >= 0);
-//	r = engine->RegisterObjectMethod("array<T>", "void removeLast()", asMETHOD(CScriptArray, RemoveLast), asCALL_THISCALL); Assert( r >= 0 );
-//	r = engine->RegisterObjectMethod("array<T>", "void removeRange(uint start, uint count)", asMETHOD(CScriptArray, RemoveRange), asCALL_THISCALL); Assert(r >= 0);
-	// TODO: Should length() and resize() be deprecated as the property accessors do the same thing?
-	// TODO: Register as size() for consistency with other types
-#if AS_USE_ACCESSORS != 1
-	r = engine->RegisterObjectMethod("array<T>", "uint length() const", asMETHOD(CScriptArray, GetSize), asCALL_THISCALL); Assert( r >= 0 );
-#endif
-//	r = engine->RegisterObjectMethod("array<T>", "void reserve(uint length)", asMETHOD(CScriptArray, Reserve), asCALL_THISCALL); Assert( r >= 0 );
-//	r = engine->RegisterObjectMethod("array<T>", "void resize(uint length)", asMETHODPR(CScriptArray, Resize, (asUINT), void), asCALL_THISCALL); Assert( r >= 0 );
-	r = engine->RegisterObjectMethod("array<T>", "void sortAsc()", asMETHODPR(CScriptArray, SortAsc, (), void), asCALL_THISCALL); Assert( r >= 0 );
-	r = engine->RegisterObjectMethod("array<T>", "void sortAsc(uint startAt, uint count)", asMETHODPR(CScriptArray, SortAsc, (asUINT, asUINT), void), asCALL_THISCALL); Assert( r >= 0 );
-	r = engine->RegisterObjectMethod("array<T>", "void sortDesc()", asMETHODPR(CScriptArray, SortDesc, (), void), asCALL_THISCALL); Assert( r >= 0 );
-	r = engine->RegisterObjectMethod("array<T>", "void sortDesc(uint startAt, uint count)", asMETHODPR(CScriptArray, SortDesc, (asUINT, asUINT), void), asCALL_THISCALL); Assert( r >= 0 );
-	r = engine->RegisterObjectMethod("array<T>", "void reverse()", asMETHOD(CScriptArray, Reverse), asCALL_THISCALL); Assert( r >= 0 );
-	// The token 'if_handle_then_const' tells the engine that if the type T is a handle, then it should refer to a read-only object
-	r = engine->RegisterObjectMethod("array<T>", "int find(const T&in if_handle_then_const value) const", asMETHODPR(CScriptArray, Find, (void*) const, int), asCALL_THISCALL); Assert( r >= 0 );
-	// TODO: It should be "int find(const T&in value, uint startAt = 0) const"
-	r = engine->RegisterObjectMethod("array<T>", "int find(uint startAt, const T&in if_handle_then_const value) const", asMETHODPR(CScriptArray, Find, (asUINT, void*) const, int), asCALL_THISCALL); Assert( r >= 0 );
-	r = engine->RegisterObjectMethod("array<T>", "int findByRef(const T&in if_handle_then_const value) const", asMETHODPR(CScriptArray, FindByRef, (void*) const, int), asCALL_THISCALL); Assert( r >= 0 );
-	// TODO: It should be "int findByRef(const T&in value, uint startAt = 0) const"
-	r = engine->RegisterObjectMethod("array<T>", "int findByRef(uint startAt, const T&in if_handle_then_const value) const", asMETHODPR(CScriptArray, FindByRef, (asUINT, void*) const, int), asCALL_THISCALL); Assert( r >= 0 );
-	r = engine->RegisterObjectMethod("array<T>", "bool opEquals(const array<T>&in) const", asMETHOD(CScriptArray, operator==), asCALL_THISCALL); Assert( r >= 0 );
-	r = engine->RegisterObjectMethod("array<T>", "bool isEmpty() const", asMETHOD(CScriptArray, IsEmpty), asCALL_THISCALL); Assert( r >= 0 );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "void InsertAt( uint, const T& in )", asMETHODPR( CScriptArray, InsertAt, ( asUINT, void * ), void ), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "void InsertAt( uint, const array<T>& in )", asMETHODPR( CScriptArray, InsertAt, ( asUINT, const CScriptArray& ), void ), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "void Insert( uint, const T& in )", asMETHODPR( CScriptArray, InsertAt, ( asUINT, void * ), void ), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "void Insert( uint, const array<T>& in )", asMETHODPR( CScriptArray, InsertAt, ( asUINT, const CScriptArray& ), void ), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "void InsertLast( const T& in )", asMETHOD( CScriptArray, InsertLast ), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "void RemoveAt( uint )", asMETHOD( CScriptArray, RemoveAt ), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "void RemoveLast()", asMETHOD( CScriptArray, RemoveLast ), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "void Erase( uint )", asMETHOD( CScriptArray, RemoveAt ), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "uint Size() const", asMETHOD( CScriptArray, GetSize ), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "uint Count() const", asMETHOD( CScriptArray, GetSize ), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "int Find( const T&in if_handle_then_const ) const", asMETHODPR( CScriptArray, Find, ( void * ) const, int ), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "int Find( uint, const T&in if_handle_then_const ) const", asMETHODPR( CScriptArray, Find, ( asUINT, void * ) const, int ), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "void Add(const T&in value)", asMETHOD( CScriptArray, InsertLast ), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "void Clear()", asMETHOD( CScriptArray, Clear ), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "void Resize( uint )", asMETHOD( CScriptArray, Resize ), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "void Reserve( uint )", asMETHOD( CScriptArray, Reserve ), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "void SortAsc()", asMETHODPR( CScriptArray, SortAsc, ( void ), void ), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "void SortAsc( uint, uint )", asMETHODPR( CScriptArray, SortAsc, ( asUINT, asUINT ), void ), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "void SortDesc()", asMETHODPR( CScriptArray, SortDesc, ( void ), void ), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "void SortDesc( uint, uint )", asMETHODPR( CScriptArray, SortDesc, ( asUINT, asUINT ), void ), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "void Reverse()", asMETHOD( CScriptArray, Reverse ), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterFuncdef( "bool array<T>::Less(const T&in if_handle_then_const a, const T&in if_handle_then_const b)" ) );
+	CheckASCall( engine->RegisterObjectBehaviour( "array<T>", asBEHAVE_GETREFCOUNT, "int f()", asMETHOD( CScriptArray, GetRefCount ), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectBehaviour( "array<T>", asBEHAVE_SETGCFLAG, "void f()", asMETHOD( CScriptArray, SetFlag ), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectBehaviour( "array<T>", asBEHAVE_GETGCFLAG, "bool f()", asMETHOD( CScriptArray, GetFlag ), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectBehaviour( "array<T>", asBEHAVE_ENUMREFS, "void f(int&in)", asMETHOD( CScriptArray, EnumReferences ), asCALL_THISCALL ) );
+	CheckASCall( engine->RegisterObjectBehaviour( "array<T>", asBEHAVE_RELEASEREFS, "void f(int&in)", asMETHOD( CScriptArray, ReleaseAllHandles ), asCALL_THISCALL ) );
 
-	// Sort with callback for comparison
-	r = engine->RegisterFuncdef("bool array<T>::less(const T&in if_handle_then_const a, const T&in if_handle_then_const b)");
-	r = engine->RegisterObjectMethod("array<T>", "void sort(const less &in, uint startAt = 0, uint count = uint(-1))", asMETHODPR(CScriptArray, Sort, (asIScriptFunction*, asUINT, asUINT), void), asCALL_THISCALL); Assert(r >= 0);
+	//========================================================================
+	// Inheriting container classes
+	//
 
-#if AS_USE_STLNAMES != 1 && AS_USE_ACCESSORS == 1
-	// Register virtual properties
-//	r = engine->RegisterObjectMethod("array<T>", "uint get_length() const property", asMETHOD(CScriptArray, GetSize), asCALL_THISCALL); Assert( r >= 0 );
-//	r = engine->RegisterObjectMethod("array<T>", "void set_length(uint) property", asMETHODPR(CScriptArray, Resize, (asUINT), void), asCALL_THISCALL); Assert( r >= 0 );
-#endif
+/*
+	CheckASCall( engine->RegisterObjectType( "stack<class T>", 0, asOBJ_REF | asOBJ_GC | asOBJ_TEMPLATE ) );
+	CheckASCall( engine->RegisterObjectBehaviour( "stack<T>", asBEHAVE_TEMPLATE_CALLBACK, "bool f(int&in, bool&out)", asFUNCTION( ScriptListTemplateCallback_Generic ), asCALL_GENERIC ) );
 
-	// Register GC behaviours in case the array needs to be garbage collected
-	r = engine->RegisterObjectBehaviour("array<T>", asBEHAVE_GETREFCOUNT, "int f()", asMETHOD(CScriptArray, GetRefCount), asCALL_THISCALL); Assert( r >= 0 );
-	r = engine->RegisterObjectBehaviour("array<T>", asBEHAVE_SETGCFLAG, "void f()", asMETHOD(CScriptArray, SetFlag), asCALL_THISCALL); Assert( r >= 0 );
-	r = engine->RegisterObjectBehaviour("array<T>", asBEHAVE_GETGCFLAG, "bool f()", asMETHOD(CScriptArray, GetFlag), asCALL_THISCALL); Assert( r >= 0 );
-	r = engine->RegisterObjectBehaviour("array<T>", asBEHAVE_ENUMREFS, "void f(int&in)", asMETHOD(CScriptArray, EnumReferences), asCALL_THISCALL); Assert( r >= 0 );
-	r = engine->RegisterObjectBehaviour("array<T>", asBEHAVE_RELEASEREFS, "void f(int&in)", asMETHOD(CScriptArray, ReleaseAllHandles), asCALL_THISCALL); Assert( r >= 0 );
+	CheckASCall( engine->RegisterObjectBehaviour( "stack<T>", asBEHAVE_FACTORY, "stack<T>@ f(int&in)", asFUNCTION(ScriptListFactory_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectBehaviour( "stack<T>", asBEHAVE_FACTORY, "stack<T>@ f(int&in, uint length) explicit", asFUNCTION(ScriptListFactory2_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectBehaviour( "stack<T>", asBEHAVE_FACTORY, "stack<T>@ f(int&in, uint length, const T &in value)", asFUNCTION(ScriptListFactoryDefVal_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectBehaviour( "stack<T>", asBEHAVE_LIST_FACTORY, "stack<T>@ f(int&in, int&in) {repeat T}", asFUNCTION(ScriptListListFactory_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectBehaviour( "stack<T>", asBEHAVE_ADDREF, "void f()", asFUNCTION(ScriptListAddRef_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectBehaviour( "stack<T>", asBEHAVE_RELEASE, "void f()", asFUNCTION(ScriptListRelease_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod( "stack<T>", "T &opIndex(uint index)", asFUNCTION(ScriptListAt_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod( "stack<T>", "const T &opIndex(uint index) const", asFUNCTION(ScriptListAt_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod( "stack<T>", "stack<T> &opAssign(const stack<T>&in)", asFUNCTION(ScriptListAssignment_Generic), asCALL_GENERIC ) );
 
-#ifdef AS_USE_STLNAMES
-	// Same as length
-	r = engine->RegisterObjectMethod("array<T>", "uint size() const", asMETHOD(CScriptArray, GetSize), asCALL_THISCALL); Assert( r >= 0 );
-	// Same as isEmpty
-	r = engine->RegisterObjectMethod("array<T>", "bool empty() const", asMETHOD(CScriptArray, IsEmpty), asCALL_THISCALL); Assert( r >= 0 );
-	// Same as insertLast
-//	r = engine->RegisterObjectMethod("array<T>", "void push_back(const T&in)", asMETHOD(CScriptArray, InsertLast), asCALL_THISCALL); Assert( r >= 0 );
-	// Same as removeLast
-//	r = engine->RegisterObjectMethod("array<T>", "void pop_back()", asMETHOD(CScriptArray, RemoveLast), asCALL_THISCALL); Assert( r >= 0 );
-	// Same as insertAt
-//	r = engine->RegisterObjectMethod("array<T>", "void insert(uint index, const T&in value)", asMETHODPR(CScriptArray, InsertAt, (asUINT, void *), void), asCALL_THISCALL); Assert(r >= 0);
-//	r = engine->RegisterObjectMethod("array<T>", "void insert(uint index, const array<T>& arr)", asMETHODPR(CScriptArray, InsertAt, (asUINT, const CScriptArray &), void), asCALL_THISCALL); Assert(r >= 0);
-	// Same as removeAt
-//	r = engine->RegisterObjectMethod("array<T>", "void erase(uint)", asMETHOD(CScriptArray, RemoveAt), asCALL_THISCALL); Assert( r >= 0 );
-#endif
+	CheckASCall( engine->RegisterObjectMethod( "stack<T>", "void Push( const T& in )", asFUNCTION(ScriptListInsertLast_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod( "stack<T>", "void Pop()", asFUNCTION(ScriptListRemoveLast_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod( "stack<T>", "void Erase(uint index)", asFUNCTION(ScriptListRemoveAt_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod( "stack<T>", "uint Size() const", asFUNCTION(ScriptListLength_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod( "stack<T>", "uint Count() const", asFUNCTION(ScriptListLength_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod( "stack<T>", "int Find(const T&in if_handle_then_const value) const", asFUNCTION(ScriptListFind_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod( "stack<T>", "int Find(uint startAt, const T&in if_handle_then_const value) const", asFUNCTION(ScriptListFind2_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod( "stack<T>", "void Add(const T&in value)", asFUNCTION(ScriptListInsertLast_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod( "stack<T>", "void Clear()", asFUNCTION(ScriptListClear_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod( "stack<T>", "void Resize( uint )", asFUNCTION(ScriptListResize_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod( "stack<T>", "void Reserve( uint )", asFUNCTION( ScriptListReserve_Generic ), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod( "stack<T>", "void SortAsc()", asFUNCTION(ScriptListSortAsc_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod( "stack<T>", "void SortAsc(uint startAt, uint count)", asFUNCTION(ScriptListSortAsc2_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod( "stack<T>", "void SortDesc()", asFUNCTION(ScriptListSortDesc_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod( "stack<T>", "void SortDesc(uint startAt, uint count)", asFUNCTION(ScriptListSortDesc2_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod( "stack<T>", "void Reverse()", asFUNCTION(ScriptListReverse_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterFuncdef( "bool stack<T>::Less(const T&in if_handle_then_const a, const T&in if_handle_then_const b)" ) );
+	CheckASCall( engine->RegisterObjectBehaviour( "stack<T>", asBEHAVE_GETREFCOUNT, "int f()", asFUNCTION(ScriptListGetRefCount_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectBehaviour( "stack<T>", asBEHAVE_SETGCFLAG, "void f()", asFUNCTION(ScriptListSetFlag_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectBehaviour( "stack<T>", asBEHAVE_GETGCFLAG, "bool f()", asFUNCTION(ScriptListGetFlag_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectBehaviour( "stack<T>", asBEHAVE_ENUMREFS, "void f(int&in)", asFUNCTION(ScriptListEnumReferences_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectBehaviour( "stack<T>", asBEHAVE_RELEASEREFS, "void f(int&in)", asFUNCTION(ScriptListReleaseAllHandles_Generic), asCALL_GENERIC ) );
+*/
 }
 
 CScriptArray &CScriptArray::operator=(const CScriptArray &other)
@@ -2241,8 +2243,6 @@ static void ScriptListClear_Generic( asIScriptGeneric *gen ) {
 static void RegisterScriptList_Generic( asIScriptEngine *engine )
 {
 	Cmd_AddCommand( "ml_debug.print_list_memory_stats", PrintArrayMemoryStats_f );
-
-//	arrayCacheAllocator.Init();
 
 	memset( &memstats, 0, sizeof( memstats ) );
 
