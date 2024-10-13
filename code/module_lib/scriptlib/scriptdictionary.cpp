@@ -1109,7 +1109,6 @@ void RegisterScriptDictionary_Native( asIScriptEngine *engine )
 
 	CheckASCall( engine->RegisterObjectMethod("dictionary", "bool TryGetValue(const string &in, ?&out) const", asMETHODPR(CScriptDictionary,Get,(const dictKey_t&,void*,int) const,bool), asCALL_THISCALL) );
 	CheckASCall( engine->RegisterObjectMethod("dictionary", "bool TryGetValue(const string &in, int64&out) const", asMETHODPR(CScriptDictionary,Get,(const dictKey_t&,asINT64&) const,bool), asCALL_THISCALL) );
-	CheckASCall( engine->RegisterObjectMethod("dictionary", "bool TryGetValue(const string &in, int64&out) const", asMETHODPR(CScriptDictionary,Get,(const dictKey_t&,asINT64&) const,bool), asCALL_THISCALL) );	
 	CheckASCall( engine->RegisterObjectMethod("dictionary", "bool TryGetValue(const string &in, double&out) const", asMETHODPR(CScriptDictionary,Get,(const dictKey_t&,double&) const,bool), asCALL_THISCALL) );
 
 	CheckASCall( engine->RegisterObjectMethod("dictionary", "bool Contains( const string& in ) const", asMETHOD(CScriptDictionary,Exists), asCALL_THISCALL) );
