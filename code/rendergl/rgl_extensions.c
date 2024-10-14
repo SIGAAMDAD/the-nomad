@@ -254,7 +254,7 @@ void R_InitExtensions( void )
 	ext = "GL_ARB_texture_filter_anisotropic";
 	glContext.ARB_texture_filter_anisotropic = qfalse;
 	if ( R_HasExtension( ext ) ) {
-		nglGetFloatv( GL_MAX_TEXTURE_MAX_ANISOTROPY, &glContext.maxAnisotropy );
+		nglGetFloatv( GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &glContext.maxAnisotropy );
 		glContext.ARB_texture_filter_anisotropic = r_arb_texture_filter_anisotropic->i;
 
 		if ( glContext.maxAnisotropy <= 0 ) {
