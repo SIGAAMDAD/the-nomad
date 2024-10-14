@@ -2000,6 +2000,8 @@ static void Register_VecType( const char *name, const char *p_name )
 }
 */
 
+extern void ScriptLib_Register_GLM( void );
+
 void ModuleLib_Register_Engine( void )
 {
 	PROFILE_FUNCTION();
@@ -2281,6 +2283,7 @@ void ModuleLib_Register_Engine( void )
 			g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "uvec4", "uvec4 opDiv( const uvec4& in ) const", asFUNCTION( ModuleLib_DivUVec4Generic ), asCALL_GENERIC );
 			g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "uvec4", "uvec4 opMul( const uvec4& in ) const", asFUNCTION( ModuleLib_MulUVec4Generic ), asCALL_GENERIC );
 		}
+//		ScriptLib_Register_GLM();
 	}
 
 	SET_NAMESPACE( "ImGui" );

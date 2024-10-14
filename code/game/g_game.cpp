@@ -1531,7 +1531,7 @@ static void G_LoadSkins( void )
 	nLength = FS_LoadFile( LOG_DIR "/skins.cfg", (void **)&b );
 	if ( !nLength || !b ) {
 		Con_Printf( COLOR_YELLOW "Error loading " LOG_DIR "/skins.cfg, using default\n" );
-		Cvar_Set( "skin", "raio" );
+		Cvar_Set( "skin", "" );
 		return;
 	}
 
@@ -1797,7 +1797,7 @@ void G_Init( void )
 	
 	// userinfo
 	Cvar_Get( "name", "The Ultimate Lad", CVAR_USERINFO | CVAR_SAVE );
-	Cvar_Get( "skin", "raio", CVAR_USERINFO | CVAR_SAVE );
+	Cvar_Get( "skin", "", CVAR_USERINFO | CVAR_SAVE );
 	Cvar_Get( "voice", "0", CVAR_USERINFO | CVAR_ARCHIVE_ND ); // for the future
 	
 	if ( !isValidRenderer( g_renderer->s ) ) {

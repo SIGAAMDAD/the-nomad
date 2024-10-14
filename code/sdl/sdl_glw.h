@@ -15,7 +15,7 @@
 
 typedef struct
 {
-	FILE *log_fp;
+	fileHandle_t logFile;
 
 	qboolean isFullscreen;
 
