@@ -69,6 +69,7 @@ Platform Specific Preprocessors
 	#endif
 
 	#include <string.h>
+	#include <math.h>
 
 	// dlls
 	#pragma comment(lib, "comctl32")
@@ -106,7 +107,7 @@ Platform Specific Preprocessors
 		#endif
 	#endif
 	
-	#if defined(_MSC_VER) && _MSVC_VER >= 1400
+	#if defined(_MSC_VER)
 		#define COMPILER_STRING "msvc"
 	#elif defined(__MINGW32__) && !defined(_WIN64)
 		#define COMPILER_STRING "mingw32"
@@ -320,6 +321,7 @@ Compiler Macro Abstraction
 	#define GDR_INLINE __attribute__((always_inline)) inline
 	#define GDR_WARN_UNUSED __attribute__((warn_unused_result))
 	#define GDR_NORETURN __attribute__((noreturn))
+	#define GDR_NORETURN_FUNCPTR GDR_NORETURN
 	#define GDR_ALIGN(x) __attribute__((alignment(x)))
 	#define GDR_ATTRIBUTE(x) __attribute__(x)
 	#define GDR_NOINLINE __attribute__((noinline))
@@ -337,6 +339,7 @@ Compiler Macro Abstraction
 	#define GDR_INLINE __forceinline
 	#define GDR_WARN_UNUSED _Check_return
 	#define GDR_NORETURN __declspec(noreturn)
+	#define GDR_NORETURN_FUNCPTR
 	#define GDR_ALIGN(x) __declspec(alignment((x)))
 	#define GDR_ATTRIBUTE(x)
 	#define GDR_NOINLINE __declspec(noinline)
@@ -445,19 +448,19 @@ Compiler Macro Abstraction
 #endif
 
 #define NOMAD_VERSION_FULL \
-			(uint32_t)(_NOMAD_VERSION * 10000 \
+			(uint32_t)(_NOMAD_VERSION_MAJOR * 10000 \
 						+ _NOMAD_VERSION_UPDATE * 100 \
 						+ _NOMAD_VERSION_PATCH)
-#define NOMAD_VERSION _NOMAD_VERSION
+#define NOMAD_VERSION _NOMAD_VERSION_MAJOR
 #define NOMAD_VERSION_UPDATE _NOMAD_VERSION_UPDATE
 #define NOMAD_VERSION_PATCH _NOMAD_VERSION_PATCH
 #define VSTR_HELPER(x) #x
 #define VSTR(x) VSTR_HELPER(x)
-#define NOMAD_VERSION_STRING "v" VSTR( _NOMAD_VERSION ) "." VSTR( _NOMAD_VERSION_UPDATE ) "." VSTR( _NOMAD_VERSION_PATCH )
+#define NOMAD_VERSION_STRING "v" VSTR( _NOMAD_VERSION_MAJOR ) "." VSTR( _NOMAD_VERSION_UPDATE ) "." VSTR( _NOMAD_VERSION_PATCH )
 
-#if _NOMAD_VERSION == 1
+#if _NOMAD_VERSION_MAJOR == 1
 #define GLN_VERSION "The Nomad " NOMAD_VERSION_STRING " Alpha"
-#elif _NOMAD_VERSION == 2
+#elif _NOMAD_VERSION_MAJOR == 2
 #define GLN_VERSION "The Nomad " NOMAD_VERSION_STRING " Beta"
 #else
 #define GLN_VERSION "The Nomad " NOMAD_VERSION_STRING ""
