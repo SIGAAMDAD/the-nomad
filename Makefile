@@ -121,7 +121,7 @@ OPTIMIZERS    =\
 			-ffast-math \
 			-mfma -msse3 -msse2 -msse -mavx2 -mavx \
 			-fno-omit-frame-pointer \
-#			-ftree-vectorize \
+			-ftree-vectorize \
 			-finline-functions \
 			-finline-small-functions \
 

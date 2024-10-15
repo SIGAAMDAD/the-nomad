@@ -1784,105 +1784,105 @@ void R_GLDebug_Callback_AMD(GLuint id, GLenum category, GLenum severity, GLsizei
 }
 
 #define MAX_CACHED_GL_MESSAGES 8192
-static char *cachedGLMessages[MAX_CACHED_GL_MESSAGES];
+static char *cachedGLMessages[ MAX_CACHED_GL_MESSAGES ];
 static int numCachedGLMessages = 0;
 
-void R_GLDebug_Callback_ARB(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const GLvoid *userParam)
+void R_GLDebug_Callback_ARB( GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const GLvoid *userParam )
 {
-	static const char *color;
-	int i;
-	uint64_t len;
-
-	if (!r_glDebug->i)
-		return; // we don't want to confuse non-developers...
+	const char *color;
+	uint64_t len, i;
+	char msg[1024];
 
 	// save the messages so OpenGL can't spam us with useless shit
-	for (i = 0; i < numCachedGLMessages; i++) {
-		if (!N_stricmp(cachedGLMessages[i], message)) {
+	for ( i = 0; i < numCachedGLMessages; i++ ) {
+		if ( !N_stricmp( cachedGLMessages[i], message ) ) {
 			return;
 		}
 	}
 
-	len = strlen(message) + 1;
-	cachedGLMessages[numCachedGLMessages] = (char *)ri.Hunk_Alloc( len, h_low );
-	cachedGLMessages[numCachedGLMessages][len - 1] = '\0';
-	strcpy(cachedGLMessages[numCachedGLMessages], message);
+	len = strlen( message ) + 1;
+	cachedGLMessages[ numCachedGLMessages ] = ri.Hunk_Alloc( len, h_low );
+	cachedGLMessages[ numCachedGLMessages ][ len - 1 ] = '\0';
+	strcpy( cachedGLMessages[ numCachedGLMessages ], message );
 	numCachedGLMessages++;
 
-	if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) {
-		ri.Printf(PRINT_INFO, COLOR_MAGENTA "[GLDebug Log]:" COLOR_WHITE " %s\n", message);
+	if ( severity == GL_DEBUG_SEVERITY_NOTIFICATION ) {
+		ri.Printf( PRINT_INFO, COLOR_MAGENTA "[GLDebug Log]:" COLOR_WHITE " %s\n", message );
 		return;
 	}
 
-	if (!color) {
-		if (type == GL_DEBUG_TYPE_ERROR_ARB || type == GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB) {
+	if ( !color ) {
+		if ( type == GL_DEBUG_TYPE_ERROR_ARB || type == GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB ) {
 			color = COLOR_RED;
-		}
-		else if (type == GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB) {
+		} else if ( type == GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB ) {
 			color = COLOR_YELLOW;
-		}
-		else if (type == GL_DEBUG_TYPE_PERFORMANCE_ARB || type == GL_DEBUG_TYPE_PORTABILITY_ARB) {
+		} else if ( type == GL_DEBUG_TYPE_PERFORMANCE_ARB || type == GL_DEBUG_TYPE_PORTABILITY_ARB ) {
 			color = COLOR_CYAN;
-		}
-		else {
+		} else {
 			color = COLOR_WHITE;
 		}
 	}
 
-	ri.Printf(PRINT_INFO, "%s[GLDebug Log]:" COLOR_WHITE" %s\n", color, message);
+	msg[ 0 ] = '\0';
+	N_strcat( msg, sizeof( msg ) - 1, va( "%s[GLDebug Log] " COLOR_WHITE " %s\n", color, message ) );
 
-	switch (source) {
+	switch ( source ) {
 	case GL_DEBUG_SOURCE_API_ARB:
-		ri.Printf(PRINT_INFO, "\tSource: GL_DEBUG_SOURCE_API_ARB\n");
+		N_strcat( msg, sizeof( msg ) - 1, "\tSource: GL_DEBUG_SOURCE_API_ARB\n" );
 		break;
 	case GL_DEBUG_SOURCE_APPLICATION_ARB:
-		ri.Printf(PRINT_INFO, "\tSource: GL_DEBUG_SOURCE_APPLICATION_ARB\n");
+		N_strcat( msg, sizeof( msg ) - 1, "\tSource: GL_DEBUG_SOURCE_APPLICATION_ARB\n" );
 		break;
 	case GL_DEBUG_SOURCE_OTHER_ARB:
-		ri.Printf(PRINT_INFO, "\tSource: GL_DEBUG_SOURCE_OTHER_ARB\n");
+		N_strcat( msg, sizeof( msg ) - 1, "\tSource: GL_DEBUG_SOURCE_OTHER_ARB\n" );
 		break;
 	case GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB:
-		ri.Printf(PRINT_INFO, "\tSource: GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB\n");
+		N_strcat( msg, sizeof( msg ) - 1, "\tSource: GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB\n" );
 		break;
 	case GL_DEBUG_SOURCE_THIRD_PARTY_ARB:
-		ri.Printf(PRINT_INFO, "\tSource: GL_DEBUG_SOURCE_THIRD_PARTY_ARB\n");
+		N_strcat( msg, sizeof( msg ) - 1, "\tSource: GL_DEBUG_SOURCE_THIRD_PARTY_ARB\n" );
 		break;
 	case GL_DEBUG_SOURCE_SHADER_COMPILER_ARB:
-		ri.Printf(PRINT_INFO, "\tSource: GL_DEBUG_SOURCE_SHADER_COMPILER_ARB\n");
+		N_strcat( msg, sizeof( msg ) - 1, "\tSource: GL_DEBUG_SOURCE_SHADER_COMPILER_ARB\n" );
 		break;
 	};
 
-	switch (type) {
+	switch ( type ) {
 	case GL_DEBUG_TYPE_ERROR_ARB:
-		ri.Printf(PRINT_INFO, "\tType: GL_DEBUG_TYPE_ERROR_ARB\n");
+		N_strcat( msg, sizeof( msg ) - 1, "\tType: GL_DEBUG_TYPE_ERROR_ARB\n" );
 		break;
 	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB:
-		ri.Printf(PRINT_INFO, "\tType: GL_DEBUG_TYPE_DEPRECATED_BEHAVIOUR_ARB\n");
+		N_strcat( msg, sizeof( msg ) - 1, "\tType: GL_DEBUG_TYPE_DEPRECATED_BEHAVIOUR_ARB\n" );
 		break;
 	case GL_DEBUG_TYPE_PERFORMANCE_ARB:
-		ri.Printf(PRINT_INFO, "\tType: GL_DEBUG_TYPE_PERFORMANCE_ARB\n");
+		N_strcat( msg, sizeof( msg ) - 1, "\tType: GL_DEBUG_TYPE_PERFORMANCE_ARB\n" );
 		break;
 	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB:
-		ri.Printf(PRINT_INFO, "\tType: GL_DEBUG_TYPE_UNDEFINED_BEHAVIOUR_ARB\n");
+		N_strcat( msg, sizeof( msg ) - 1, "\tType: GL_DEBUG_TYPE_UNDEFINED_BEHAVIOUR_ARB\n" );
 		break;
 	case GL_DEBUG_TYPE_PORTABILITY_ARB:
-		ri.Printf(PRINT_INFO, "\tType: GL_DEBUG_TYPE_PORTABILITY_ARB\n");
+		N_strcat( msg, sizeof( msg ) - 1, "\tType: GL_DEBUG_TYPE_PORTABILITY_ARB\n" );
 		break;
 	case GL_DEBUG_TYPE_OTHER_ARB:
-		ri.Printf(PRINT_INFO, "\tType: GL_DEBUG_TYPE_OTHER_ARB\n");
+		N_strcat( msg, sizeof( msg ) - 1, "\tType: GL_DEBUG_TYPE_OTHER_ARB\n" );
 		break;
 	};
 
-	switch (severity) {
+	switch ( severity ) {
 	case GL_DEBUG_SEVERITY_HIGH_ARB:
-		ri.Printf(PRINT_INFO, "\tSeverity: GL_DEBUG_SEVERITY_HIGH_ARB\n");
+		N_strcat( msg, sizeof( msg ) - 1, "\tSeverity: GL_DEBUG_SEVERITY_HIGH_ARB\n" );
 		break;
 	case GL_DEBUG_SEVERITY_MEDIUM_ARB:
-		ri.Printf(PRINT_INFO, "\tSeverity: GL_DEBUG_SEVERITY_MEDIUM_ARB\n");
+		N_strcat( msg, sizeof( msg ) - 1, "\tSeverity: GL_DEBUG_SEVERITY_MEDIUM_ARB\n" );
 		break;
 	case GL_DEBUG_SEVERITY_LOW_ARB:
-		ri.Printf(PRINT_INFO, "\tSeverity: GL_DEBUG_SEVERITY_LOW_ARB\n");
+		N_strcat( msg, sizeof( msg ) - 1, "\tSeverity: GL_DEBUG_SEVERITY_LOW_ARB\n" );
 		break;
 	};
-	ri.Printf(PRINT_INFO, "\n");
+	N_strcat( msg, sizeof( msg ) - 1, "\n" );
+
+	if ( r_glDebug->i ) {
+		ri.Printf( PRINT_INFO, "%s", msg );
+	}
+	ri.GLimp_LogComment( msg );
 }

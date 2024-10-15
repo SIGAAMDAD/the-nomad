@@ -234,7 +234,7 @@ vec3 CalcPointLight( Light light ) {
 	else {
 		const vec3 normal = CalcNormal();
 		const vec3 lightDir = normalize( v_WorldPos ) - normalize( vec3( light.origin.xy, 0.0 ) );
-		diffuse *= normal;
+		diffuse = mix( diffuse, normal, 0.025 );
 	}
 
 	diffuse *= attenuation;

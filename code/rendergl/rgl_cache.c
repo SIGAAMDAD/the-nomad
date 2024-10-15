@@ -85,6 +85,8 @@ static void R_SetVertexPointers( const vertexAttrib_t attribs[ATTRIB_INDEX_COUNT
 		return;
 	}
 
+	ri.GLimp_LogComment( "Setting vertex array attribute pointers...\n" );
+
     for ( i = 0; i < ATTRIB_INDEX_COUNT; i++ ) {
 		attribBit = 1 << i;
 		vAtb = &attribs[i];
@@ -143,6 +145,8 @@ static void R_ClearVertexPointers( void )
 	if ( r_drawMode->i < DRAWMODE_GPU ) {
 		return;
 	}
+
+	ri.GLimp_LogComment( "Clearing vertex array attribute pointers...\n" );
 
     for ( i = 0; i < ATTRIB_INDEX_COUNT; i++ ) {
 		attribBit = 1 << i;
@@ -590,8 +594,6 @@ VBO_BindNull
 */
 void VBO_BindNull( void )
 {
-	ri.GLimp_LogComment( "--- VBO_BindNull ---\n" );
-
 	if ( glState.currentVao ) {
 		glState.currentVao = NULL;
 		glState.vaoId = glState.vboId = glState.iboId = 0;
@@ -653,28 +655,16 @@ void VBO_MapBuffers( vertexBuffer_t *vbo, void **vertexBuffer, void **indexBuffe
 		return;
 	}
 
+	ri.GLimp_LogComment( "Mapping vertex and index buffer into CPU DMA...\n" );
+
 	VBO_Bind( vbo );
 
-/*
-	if ( nglMakeBufferResidentNV ) {
-		GLuint64 vertexAddress, indexAddress;
-
-		nglMakeBufferResidentNV( GL_ARRAY_BUFFER, GL_READ_ONLY );
-		nglMakeBufferResidentNV( GL_ELEMENT_ARRAY_BUFFER, GL_READ_ONLY );
-
-		nglGetBufferParameterui64vNV( GL_ARRAY_BUFFER, GL_BUFFER_GPU_ADDRESS_NV, &vertexAddress );
-		nglGetBufferParameterui64vNV( GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_GPU_ADDRESS_NV, &indexAddress );
-
-		*vertexBuffer = (void *)(uintptr_t)vertexAddress;
-		*indexBuffer = (void *)(uintptr_t)indexAddress;
-	}
-	else {
-	*/
-		*vertexBuffer = nglMapBufferRange( GL_ARRAY_BUFFER, 0, vbo->vertex.size, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT
-			| GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_PERSISTENT_BIT );
-		*indexBuffer = nglMapBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, vbo->index.size, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT
-			| GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_PERSISTENT_BIT );
-//	}
+	*vertexBuffer = nglMapBufferRange( GL_ARRAY_BUFFER, 0, vbo->vertex.size, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT
+		| GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_PERSISTENT_BIT );
+	*indexBuffer = nglMapBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, vbo->index.size, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT
+		| GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_PERSISTENT_BIT );
+	
+	GL_CheckErrors();
 
 	VBO_BindNull();
 }

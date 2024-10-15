@@ -1,11 +1,13 @@
 
 #ifdef USE_LOCAL_HEADERS
 #	include "SDL2/SDL.h"
+#	include "SDL2/SDL_opengl.h"
 #ifdef USE_VULKAN_API
 #	include "SDL2/SDL_vulkan.h"
 #endif
 #else
 #	include <SDL2/SDL.h>
+#	include <SDL2/SDL_opengl.h>
 #ifdef USE_VULKAN_API
 #	include <SDL2/SDL_vulkan.h>
 #endif
@@ -36,6 +38,7 @@ PFN_vkGetInstanceProcAddr qvkGetInstanceProcAddr;
 #endif
 
 cvar_t *r_stereoEnabled;
+cvar_t *r_logfile;
 cvar_t *in_nograb;
 
 static int FindNearestDisplay( int *x, int *y, int width, int height )
@@ -99,6 +102,46 @@ static int FindNearestDisplay( int *x, int *y, int width, int height )
 	}
 
 	return index;
+}
+
+static void GLimp_QuerySystemContext( void )
+{
+	typedef const GLubyte *(*GetString_t)( GLenum );
+
+	SDL_GLContext queryContext;
+	GetString_t GetString;
+	int hardwareGL;
+	int versionMinor, versionMajor;
+	const GLubyte *renderer;
+
+	queryContext = SDL_GL_CreateContext( SDL_window );
+	if ( !queryContext ) {
+		N_Error( ERR_FATAL, "Error creating OpenGL System Query Context" );
+	}
+	SDL_GL_MakeCurrent( SDL_window, queryContext );
+	
+	SDL_GL_GetAttribute( SDL_GL_ACCELERATED_VISUAL, &hardwareGL );
+	SDL_GL_GetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, &versionMinor );
+	SDL_GL_GetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, &versionMajor );
+
+	if ( versionMajor < 4 && versionMinor < 0 ) {
+		N_Error( ERR_FATAL, "ERROR: cannot create an OpenGL context with version < 4.0" );
+	}
+
+	GetString = (GetString_t)SDL_GL_GetProcAddress( "glGetString" );
+	if ( !GetString ) {
+		N_Error( ERR_FATAL, "ERROR: couldn't get glGetString proc" );
+	}
+
+	renderer = GetString( GL_RENDERER );
+	if ( N_stristr( "Intel", (const char *)renderer ) ) {
+		hardwareGL = false;
+	}
+
+	SDL_GL_MakeCurrent( SDL_window, NULL );
+	SDL_GL_DeleteContext( queryContext );
+
+	Cvar_SetIntegerValue( "r_allowSoftwareGL", !hardwareGL );
 }
 
 static int GLimp_CreateBaseWindow( gpuConfig_t *config )
@@ -237,29 +280,6 @@ static int GLimp_CreateBaseWindow( gpuConfig_t *config )
 		SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 0 );
 		SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, 0 );
 
-		contextFlags = 0;
-		if ( r_glDebug->i ) {
-			contextFlags |= SDL_GL_CONTEXT_DEBUG_FLAG;
-		}
-		if ( !r_allowLegacy->i ) {
-			contextFlags |= SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG;
-		}
-
-		// set the recommended version, this is not mandatory,
-		// however if your driver isn't >= 3.3, that'll be
-		// deprecated stuff
-		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 4 );
-		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 5 );
-		SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY );
-
-		if ( contextFlags ) {
-			SDL_GL_SetAttribute( SDL_GL_CONTEXT_FLAGS, contextFlags );
-		}
-		
-		SDL_GL_SetAttribute( SDL_GL_STEREO, r_stereoEnabled->i );
-		SDL_GL_SetAttribute( SDL_GL_ACCELERATED_VISUAL, !r_allowSoftwareGL->i );
-		SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
-
 		// [the-nomad] make sure we only create ONE window
 		if ( !SDL_window ) {
 			if ( ( SDL_window = SDL_CreateWindow( cl_title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
@@ -296,6 +316,32 @@ static int GLimp_CreateBaseWindow( gpuConfig_t *config )
 				config->vidHeight = mode.h;
 			}
 		}
+
+		contextFlags = 0;
+		if ( r_glDebug->i ) {
+			contextFlags |= SDL_GL_CONTEXT_DEBUG_FLAG;
+		}
+		if ( !r_allowLegacy->i ) {
+			contextFlags |= SDL_GL_CONTEXT_PROFILE_CORE;
+		}
+
+		GLimp_QuerySystemContext();
+
+		// set the recommended version, this is not mandatory,
+		// however if your driver isn't >= 3.3, that'll be
+		// deprecated stuff
+		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 4 );
+		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 5 );
+		SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY );
+
+		if ( contextFlags ) {
+			SDL_GL_SetAttribute( SDL_GL_CONTEXT_FLAGS, contextFlags );
+		}
+
+		SDL_GL_SetAttribute( SDL_GL_STEREO, r_stereoEnabled->i );
+		SDL_GL_SetAttribute( SDL_GL_ACCELERATED_VISUAL, !r_allowSoftwareGL->i );
+		SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
+
 		if ( !SDL_glContext ) {
 			if ( ( SDL_glContext = SDL_GL_CreateContext( SDL_window ) ) == NULL ) {
 				Con_DPrintf( "SDL_GL_CreateContext failed: %s\n", SDL_GetError( ) );
@@ -304,6 +350,7 @@ static int GLimp_CreateBaseWindow( gpuConfig_t *config )
 				continue;
 			}
 		}
+		SDL_GL_MakeCurrent( SDL_window, SDL_glContext );
 		if ( SDL_GL_SetSwapInterval( r_swapInterval->i ) == -1 ) {
 			// NOTE: if you get negative swap isn't supported, that just means dynamic
 			// vsync isn't available
@@ -355,6 +402,11 @@ static int GLimp_CreateBaseWindow( gpuConfig_t *config )
 
 void GLimp_LogComment( const char *msg )
 {
+	if ( glw_state.logFile == FS_INVALID_HANDLE ) {
+		return;
+	}
+
+	FS_Write( msg, strlen( msg ), glw_state.logFile );
 }
 
 void GLimp_Minimize( void )
@@ -397,6 +449,10 @@ void GLimp_Init( gpuConfig_t *config )
 	Cvar_SetDescription( in_nograb, "Do not capture mouse in game, may be useful during online streaming." );
 
 	r_allowSoftwareGL = Cvar_Get( "r_allowSoftwareGL", "0", CVAR_LATCH );
+	Cvar_SetDescription( r_allowSoftwareGL, "When enabled turns off SDL_GL_ACCELERATED_VISUAL for software rendering." );
+
+	r_logfile = Cvar_Get( "r_logfile", "1", CVAR_LATCH | CVAR_SAVE );
+	Cvar_SetDescription( r_logfile, "Writes a dedicated OpenGL log." );
 
 	r_swapInterval = Cvar_Get( "r_swapInterval", "1", CVAR_SAVE );
 	r_stereoEnabled = Cvar_Get( "r_stereoEnabled", "0", CVAR_SAVE | CVAR_LATCH );
@@ -406,6 +462,14 @@ void GLimp_Init( gpuConfig_t *config )
 		if ( SDL_Init( SDL_INIT_VIDEO ) != 0 ) {
 			N_Error( ERR_FATAL, "SDL_Init(SDL_INIT_VIDEO) Failed: %s", SDL_GetError() );
 			return;
+		}
+	}
+
+	if ( r_logfile->i ) {
+		Con_Printf( "Creating dedicated OpenGL logfile...\n" );
+		glw_state.logFile = FS_FOpenWrite( "Log/graphics.log" );
+		if ( glw_state.logFile ) {
+			Con_Printf( COLOR_RED "Error opening file \"Log/graphics.log\"!\n" );
 		}
 	}
 
@@ -440,6 +504,10 @@ void GLimp_Shutdown( qboolean unloadDLL )
 
 	SDL_DestroyWindow( SDL_window );
 	SDL_window = NULL;
+
+	if ( glw_state.logFile ) {
+		FS_FClose( glw_state.logFile );
+	}
 
 	if ( glw_state.isFullscreen ) {
 		SDL_WarpMouseGlobal( glw_state.desktop_width / 2, glw_state.desktop_height / 2 );
