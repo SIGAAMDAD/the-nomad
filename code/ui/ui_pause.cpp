@@ -22,13 +22,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "ui_lib.h"
 
-#define ID_TITLE       0
-#define ID_HELP        1
-#define ID_RESUME      2
-#define ID_SETTINGS    3
-#define ID_CHECKPOINT  4
-#define ID_PHOTOMODE   5
-#define ID_EXIT        6
+#define ID_TITLE		0
+#define ID_HELP			1
+#define ID_RESUME		2
+#define ID_SETTINGS		3
+#define ID_CHECKPOINT	4
+#define ID_PHOTOMODE	5
+#define ID_EXIT_LEVEL	6
+#define ID_EXIT_GAME	7
 
 typedef struct {
 	float exposure;
@@ -46,6 +47,7 @@ typedef struct {
 	menutext_t settings;
 	menutext_t checkpoint;
 	menutext_t exitToMainMenu;
+	menutext_t exitToDesktop;
 
 	menutext_t dailyTipText;
 
@@ -91,7 +93,7 @@ static void PauseMenu_EventCallback( void *ptr, int event )
 		Cvar_SetIntegerValue( "g_paused", 0 );
 		UI_SettingsMenu();
 		break;
-	case ID_EXIT:
+	case ID_EXIT_LEVEL:
 		UI_PopMenu();
 		UI_SetActiveMenu( UI_MENU_MAIN );
 		gi.mapLoaded = qfalse;
@@ -102,6 +104,9 @@ static void PauseMenu_EventCallback( void *ptr, int event )
 		Snd_StopSfx( s_pauseMenu->hPausedSnapshot );
 		Cvar_SetIntegerValue( "g_paused", 0 );
 		Cbuf_ExecuteText( EXEC_APPEND, "setmap\n" ); // setting an empty mapname will unload the level
+		break;
+	case ID_EXIT_GAME:
+		Cbuf_ExecuteText( EXEC_NOW, "quit Closed window\n" );
 		break;
 	default:
 		break;
@@ -208,31 +213,17 @@ static void PauseMenu_LoadDailyTips( void )
 
 void PauseMenu_Cache( void )
 {
-	const stringHash_t *titleString;
-	const stringHash_t *helpString;
-	const stringHash_t *resumeString;
-	const stringHash_t *settingsString;
-	const stringHash_t *checkpointString;
-	const stringHash_t *exitToMainMenuString;
-
 	if ( !ui->uiAllocated ) {
 		s_pauseMenu = (pauseMenu_t *)Hunk_Alloc( sizeof( *s_pauseMenu ), h_high );
 		PauseMenu_LoadDailyTips();
 	}
-
-	titleString = strManager->ValueForKey( "MENU_PAUSE_TITLE" );
-	resumeString = strManager->ValueForKey( "MENU_PAUSE_RESUME" );
-	checkpointString = strManager->ValueForKey( "MENU_PAUSE_CHECKPOINT" );
-	exitToMainMenuString = strManager->ValueForKey( "MENU_PAUSE_ETMM" );
-	helpString = strManager->ValueForKey( "MENU_PAUSE_HELP" );
-	settingsString = strManager->ValueForKey( "MENU_PAUSE_SETTINGS" );
 
 	s_pauseMenu->hPausedSnapshot = Snd_RegisterSfx( "snapshot:/PauseMenu" );
 
 	s_pauseMenu->menu.width = ui->gpuConfig.vidWidth;
 	s_pauseMenu->menu.height = ui->gpuConfig.vidHeight;
 	s_pauseMenu->menu.fullscreen = qfalse;
-	s_pauseMenu->menu.name = titleString->value;
+	s_pauseMenu->menu.name = "PAUSED";
 	s_pauseMenu->menu.draw = PauseMenu_Draw;
 	s_pauseMenu->menu.titleFontScale = 3.5f;
 	s_pauseMenu->menu.textFontScale = 1.90f;
@@ -245,7 +236,7 @@ void PauseMenu_Cache( void )
 	s_pauseMenu->resume.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
 	s_pauseMenu->resume.generic.eventcallback = PauseMenu_EventCallback;
 	s_pauseMenu->resume.generic.font = AlegreyaSC;
-	s_pauseMenu->resume.text = resumeString->value;
+	s_pauseMenu->resume.text = "RESUME";
 	s_pauseMenu->resume.color = color_white;
 
 	s_pauseMenu->checkpoint.generic.type = MTYPE_TEXT;
@@ -253,7 +244,7 @@ void PauseMenu_Cache( void )
 	s_pauseMenu->checkpoint.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
 	s_pauseMenu->checkpoint.generic.eventcallback = PauseMenu_EventCallback;
 	s_pauseMenu->checkpoint.generic.font = AlegreyaSC;
-	s_pauseMenu->checkpoint.text = checkpointString->value;
+	s_pauseMenu->checkpoint.text = "RESTART CHECKPOINT";
 	s_pauseMenu->checkpoint.color = color_white;
 
 	s_pauseMenu->settings.generic.type = MTYPE_TEXT;
@@ -261,7 +252,7 @@ void PauseMenu_Cache( void )
 	s_pauseMenu->settings.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
 	s_pauseMenu->settings.generic.eventcallback = PauseMenu_EventCallback;
 	s_pauseMenu->settings.generic.font = AlegreyaSC;
-	s_pauseMenu->settings.text = settingsString->value;
+	s_pauseMenu->settings.text = "SETTINGS";
 	s_pauseMenu->settings.color = color_white;
 
 	s_pauseMenu->help.generic.type = MTYPE_TEXT;
@@ -269,16 +260,28 @@ void PauseMenu_Cache( void )
 	s_pauseMenu->help.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
 	s_pauseMenu->help.generic.eventcallback = PauseMenu_EventCallback;
 	s_pauseMenu->help.generic.font = AlegreyaSC;
-	s_pauseMenu->help.text = helpString->value;
+	s_pauseMenu->help.text = "HELP";
 	s_pauseMenu->help.color = color_white;
 
 	s_pauseMenu->exitToMainMenu.generic.type = MTYPE_TEXT;
-	s_pauseMenu->exitToMainMenu.generic.id = ID_EXIT;
+	s_pauseMenu->exitToMainMenu.generic.id = ID_EXIT_LEVEL;
 	s_pauseMenu->exitToMainMenu.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
 	s_pauseMenu->exitToMainMenu.generic.eventcallback = PauseMenu_EventCallback;
 	s_pauseMenu->exitToMainMenu.generic.font = AlegreyaSC;
-	s_pauseMenu->exitToMainMenu.text = exitToMainMenuString->value;
+	s_pauseMenu->exitToMainMenu.text = "EXIT TO MAIN MENU";
 	s_pauseMenu->exitToMainMenu.color = color_white;
+
+	s_pauseMenu->exitToDesktop.generic.type = MTYPE_TEXT;
+	s_pauseMenu->exitToDesktop.generic.id = ID_EXIT_GAME;
+	s_pauseMenu->exitToDesktop.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
+	s_pauseMenu->exitToDesktop.generic.eventcallback = PauseMenu_EventCallback;
+	s_pauseMenu->exitToDesktop.generic.font = AlegreyaSC;
+#ifdef _WIN2
+	s_pauseMenu->exitToDesktop.text = "EXIT TO WINDOWS";
+#else
+	s_pauseMenu->exitToDesktop.text = "EXIT TO DESKTOP";
+#endif
+	s_pauseMenu->exitToDesktop.color = color_white;
 
 	s_pauseMenu->dailyTipText.generic.type = MTYPE_TEXT;
 	s_pauseMenu->dailyTipText.generic.flags = QMF_OWNERDRAW;
