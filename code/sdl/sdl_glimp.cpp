@@ -449,12 +449,19 @@ void GLimp_Init( gpuConfig_t *config )
 	Cvar_SetDescription( in_nograb, "Do not capture mouse in game, may be useful during online streaming." );
 
 	r_allowSoftwareGL = Cvar_Get( "r_allowSoftwareGL", "0", CVAR_LATCH );
-	Cvar_SetDescription( r_allowSoftwareGL, "When enabled turns off SDL_GL_ACCELERATED_VISUAL for software rendering." );
+	Cvar_SetDescription( r_allowSoftwareGL,
+		"Disables hardware acceleration to allow for a software (IGPU) graphics driver.\n"
+		"Set this to \"0\" if you have a dedicated/discrete GPU."
+	);
 
 	r_logfile = Cvar_Get( "r_logfile", "1", CVAR_LATCH | CVAR_SAVE );
 	Cvar_SetDescription( r_logfile, "Writes a dedicated OpenGL log." );
 
 	r_swapInterval = Cvar_Get( "r_swapInterval", "1", CVAR_SAVE );
+
+	r_logfile = Cvar_Get( "r_logfile", "0", CVAR_SAVE );
+	Cvar_SetDescription( r_logfile, "Enables dedicated Renderer Driver logfile, use only for debugging purposes." );
+
 	r_stereoEnabled = Cvar_Get( "r_stereoEnabled", "0", CVAR_SAVE | CVAR_LATCH );
 	Cvar_SetDescription( r_stereoEnabled, "Enable stereo rendering for techniques like shutter glasses." );
 

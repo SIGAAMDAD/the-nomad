@@ -648,7 +648,7 @@ namespace TheNomad::SGame {
 			m_PhysicsObject.Init( cast<EntityObject>( @this ) );
 			m_PhysicsObject.SetAngle( Util::Dir2Angle( TheNomad::GameSystem::DirType::East ) );
 
-			@m_SpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/" +
+			@m_SpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/raio" +
 				TheNomad::Engine::CvarVariableString( "skin" ) + "_torso", 512, 512, 32, 32 );
 			if ( @m_SpriteSheet is null ) {
 				GameError( "PlayrObject::Spawn: failed to load torso sprite sheet" );
@@ -660,14 +660,14 @@ namespace TheNomad::SGame {
 			m_Facing = FACING_RIGHT;
 
 			for ( i = 0; i < NUMFACING; i++ ) {
-				@m_LegSpriteSheet[ i ] = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/"
-					+ TheNomad::Engine::CvarVariableString( "skin" ) + "_legs_" + i, 512, 512, 32, 32 );
+				@m_LegSpriteSheet[ i ] = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/raio"
+					+ TheNomad::Engine::CvarVariableString( "skin" ) + "raio_legs_" + i, 512, 512, 32, 32 );
 				if ( @m_LegSpriteSheet[ i ] is null ) {
 					GameError( "PlayrObject::Spawn: failed to load leg sprite sheet" );
 				}
 
 				@m_ArmSpriteSheet[ i ] = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/"
-					+ TheNomad::Engine::CvarVariableString( "skin" ) + "_arms_" + i, 512, 512, 32, 32 );
+					+ TheNomad::Engine::CvarVariableString( "skin" ) + "raio_arms_" + i, 512, 512, 32, 32 );
 				if ( @m_ArmSpriteSheet[ i ] is null ) {
 					GameError( "PlayrObject::Spawn: failed to load arm sprite sheet" );
 				}

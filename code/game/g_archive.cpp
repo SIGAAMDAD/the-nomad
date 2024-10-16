@@ -345,7 +345,7 @@ CGameArchive::CGameArchive( void )
 	PROFILE_FUNCTION();
 
 	uint64_t i;
-	char *namePtr;
+	char szName[ MAX_NPATH ];
 
 	Con_Printf( "G_InitArchiveHandler: initializing save file cache...\n" );
 
@@ -355,22 +355,19 @@ CGameArchive::CGameArchive( void )
 
 	m_pArchiveCache = (ngd_file_t **)Hunk_Alloc( sizeof( *m_pArchiveCache ) * g_maxSaveSlots->i, h_low );
 	m_pArchiveFileList = (char **)Hunk_Alloc( sizeof( *m_pArchiveCache ) * g_maxSaveSlots->i, h_low );
-	namePtr = (char *)Hunk_Alloc( MAX_NPATH * g_maxSaveSlots->i, h_low );
 
 	m_nUsedSaveSlots = 0;
 
 	for ( i = 0; i < g_maxSaveSlots->i; i++ ) {
-		m_pArchiveFileList[ i ] = namePtr;
+		Com_snprintf( szName, sizeof( szName ) - 1, "SLOT_%lu", i );
+		m_pArchiveFileList[ i ] = (char *)Z_Malloc( strlen( szName ) + 1, TAG_SAVEFILE );
+		N_strncpyz( m_pArchiveFileList[ i ], szName, strlen( szName ) + 1 );
 
-		Com_snprintf( namePtr, MAX_NPATH - 1, "SLOT_%lu", i );
-
-		if ( FS_FileExists( va( "SaveData/%s.ngd", namePtr ) ) ) {
-			LoadArchiveFile( va( "SaveData/%s.ngd", namePtr ), i );
+		if ( FS_FileExists( va( "SaveData/%s.ngd", szName ) ) ) {
+			LoadArchiveFile( va( "SaveData/%s.ngd", szName ), i );
 			Con_Printf( "...Cached save slot %lu\n", i );
 			m_nUsedSaveSlots++;
 		}
-
-		namePtr += MAX_NPATH;
 	}
 }
 
@@ -1278,7 +1275,7 @@ bool CGameArchive::Load( uint64_t nSlot )
 
 	CModuleInfo *loadList = g_pModuleLib->GetLoadList();
 
-	m_hFile = FS_FOpenRead( szName );
+	m_hFile = FS_FOpenRead( va( "SaveData/%s.ngd", szName ) );
 	if ( m_hFile == FS_INVALID_HANDLE ) {
 		N_Error( ERR_DROP, "CGameArchive::Load: failed to open save file '%s'", szName );
 	}

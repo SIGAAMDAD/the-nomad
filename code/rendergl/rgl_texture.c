@@ -111,6 +111,7 @@ static const char *R_TextureFormatName( GLenum format )
 	};
 	#undef FORMAT
 	ri.Error( ERR_DROP, "R_TextureFormatName: invalid format 0x%x", format );
+	return "";
 }
 
 /*

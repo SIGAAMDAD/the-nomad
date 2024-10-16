@@ -255,6 +255,9 @@ SRC=\
 	$(O)/module_lib/module_main.o \
 	$(O)/module_lib/module_handle.o \
 	$(O)/module_lib/module_renderlib.o \
+	$(O)/module_lib/funcdefs/module_funcdef_glm.o \
+	$(O)/module_lib/funcdefs/module_funcdef_imgui.o \
+	$(O)/module_lib/funcdefs/module_funcdef_filesystem.o \
 	$(O)/module_lib/module_funcdefs.o \
 	$(O)/module_lib/module_jit.o \
 	$(O)/module_lib/module_virtual_asm_x64.o \
@@ -338,6 +341,7 @@ makedirs:
 	@if [ ! -d $(O)/angelscript/ ];then $(MKDIR) $(O)/angelscript;fi
 	@if [ ! -d $(O)/libjpeg/ ];then $(MKDIR) $(O)/libjpeg;fi
 	@if [ ! -d $(O)/sdl ];then $(MKDIR) $(O)/sdl;fi
+	@if [ ! -d $(O)/module_lib/funcdefs ];then $(MKDIR) $(O)/module_lib/funcdefs;fi
 
 targets: makedirs
 	@echo ""
@@ -390,6 +394,8 @@ $(O)/sys/%.o: $(SYS_DIR)/%.cpp
 $(O)/sdl/%.o: $(SDIR)/sdl/%.cpp
 	$(COMPILE_SRC) $(VERSION_CC)
 $(O)/module_lib/%.o: $(SDIR)/module_lib/%.cpp
+	$(COMPILE_SRC) $(VERSION_CC) -DMODULE_LIB
+$(O)/module_lib/funcdefs/%.o: $(SDIR)/module_lib/funcdefs/%.cpp
 	$(COMPILE_SRC) $(VERSION_CC) -DMODULE_LIB
 $(O)/module_lib/%.o: $(SDIR)/module_lib/scriptlib/%.cpp
 	$(COMPILE_SRC) $(VERSION_CC) -DMODULE_LIB
