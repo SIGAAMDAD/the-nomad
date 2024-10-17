@@ -423,7 +423,7 @@ Compiler Macro Abstraction
 //#define vsnprintf _vsnprintf
 #endif
 
-#ifndef _NOMAD_VERSION
+#if !defined(_NOMAD_VERSION_MAJOR) || !defined(_NOMAD_VERSION_UPDATE) || !defined(_NOMAD_VERSION_PATCH)
 #   error a version must be supplied when compiling the engine or a mod
 #endif
 

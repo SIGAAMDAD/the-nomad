@@ -460,7 +460,7 @@ void CModuleLib::SaveByteCodeCache( void )
 
 	header = (asCodeCacheHeader_t *)Hunk_AllocateTempMemory( sizeof( *header ) + ( MAX_NPATH * m_nModuleCount ) );
 	header->hasDebugSymbols = ml_debugMode->i;
-	header->gameVersion.m_nVersionMajor = _NOMAD_VERSION;
+	header->gameVersion.m_nVersionMajor = _NOMAD_VERSION_MAJOR;
 	header->gameVersion.m_nVersionUpdate = _NOMAD_VERSION_UPDATE;
 	header->gameVersion.m_nVersionPatch = _NOMAD_VERSION_PATCH;
 	header->ident = AS_CACHE_CODE_IDENT;
@@ -512,7 +512,7 @@ bool CModuleLib::LoadByteCodeCache( void )
 		return false;
 	}
 
-	if ( header->gameVersion.m_nVersionMajor != _NOMAD_VERSION || header->gameVersion.m_nVersionUpdate != _NOMAD_VERSION_UPDATE
+	if ( header->gameVersion.m_nVersionMajor != _NOMAD_VERSION_MAJOR || header->gameVersion.m_nVersionUpdate != _NOMAD_VERSION_UPDATE
 		|| header->gameVersion.m_nVersionPatch != _NOMAD_VERSION_PATCH )
 	{
 		// recompile, different version

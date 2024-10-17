@@ -20,12 +20,13 @@ DEBUGDEF  =
 FTYPE     =-Ofast -s
 endif
 
-VERSION       = 1
+VERSION_MAJOR = 1
 VERSION_UPDATE= 1
 VERSION_PATCH = 0
+VERSION_STRING= $(VERSION_MAJOR).$(VERSION_UPDATE).$(VERSION_PATCH)
 
 INCLUDE       =-Idependencies/include/ -Idependencies/include/EA/ $(OS_INCLUDE) -I. -Icode/ -Idependencies/include/jdk
-VERSION_DEFINE=-D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPDATE) -D_NOMAD_VERSION_PATCH=$(VERSION_PATCH)
+VERSION_DEFINE=-D_NOMAD_VERSION_MAJOR=$(VERSION_MAJOR) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPDATE) -D_NOMAD_VERSION_PATCH=$(VERSION_PATCH)
 
 .PHONY: all clean
 
@@ -34,8 +35,8 @@ OPTIMIZERS    =\
 				-fexpensive-optimizations \
 				-funroll-loops \
 				-ffast-math \
-				-mfma -msse3 -msse2 -mno-avx2 -mno-avx
-#				-ftree-vectorize \
+				-mfma -msse3 -msse2 -mavx2 -mavx \
+				-ftree-vectorize \
 				-finline-functions \
 				-finline-small-functions \
 
