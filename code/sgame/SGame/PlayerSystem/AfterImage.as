@@ -1,20 +1,20 @@
 namespace TheNomad::SGame {
 	class AfterImage {
 		AfterImage() {
-			@m_TorsoSpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/after_image_" +
-				TheNomad::Engine::CvarVariableString( "skin" ) + "_torso", 512, 512, 32, 32 );
+			@m_TorsoSpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/" +
+				TheNomad::Engine::CvarVariableString( "skin" ) + "raio_torso", 512, 512, 32, 32 );
 			if ( @m_TorsoSpriteSheet is null ) {
 				GameError( "AfterImage::AfterImage: failed to load torso sprite sheet" );
 			}
 			for ( int i = 0; i < NUMFACING; i++ ) {
-				@m_LegSpriteSheet[ i ] = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/after_image_"
-					+ TheNomad::Engine::CvarVariableString( "skin" ) + "_legs_" + i, 512, 512, 32, 32 );
+				@m_LegSpriteSheet[ i ] = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/"
+					+ TheNomad::Engine::CvarVariableString( "skin" ) + "raio_legs_" + i, 512, 512, 32, 32 );
 				if ( @m_LegSpriteSheet[ i ] is null ) {
 					GameError( "AfterImage::AfterImage: failed to load leg sprite sheet" );
 				}
 
-				@m_ArmSpriteSheet[ i ] = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/after_image_"
-					+ TheNomad::Engine::CvarVariableString( "skin" ) + "_arms_" + i, 512, 512, 32, 32 );
+				@m_ArmSpriteSheet[ i ] = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/"
+					+ TheNomad::Engine::CvarVariableString( "skin" ) + "raio_arms_" + i, 512, 512, 32, 32 );
 				if ( @m_ArmSpriteSheet[ i ] is null ) {
 					GameError( "AfterImage::AfterImage: failed to load arm sprite sheet" );
 				}
