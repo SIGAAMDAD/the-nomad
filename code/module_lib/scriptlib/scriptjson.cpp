@@ -35,7 +35,7 @@ void CScriptJson::Release( void ) const
 	}
 }
 
-CScriptJson& CScriptJson::operator=(bool other)
+CScriptJson& CScriptJson::operator=( bool other )
 {
 	// Clear everything we had before
 	js_info.clear();
@@ -45,7 +45,7 @@ CScriptJson& CScriptJson::operator=(bool other)
 	return *this;
 }
 
-CScriptJson& CScriptJson::operator=(json::number_integer_t other)
+CScriptJson& CScriptJson::operator=( asINT32 other )
 {
 	// Clear everything we had before
 	js_info.clear();
@@ -55,7 +55,7 @@ CScriptJson& CScriptJson::operator=(json::number_integer_t other)
 	return *this;
 }
 
-CScriptJson& CScriptJson::operator=(json::number_unsigned_t other)
+CScriptJson& CScriptJson::operator=( asDWORD other )
 {
 	// Clear everything we had before
 	js_info.clear();
@@ -65,7 +65,7 @@ CScriptJson& CScriptJson::operator=(json::number_unsigned_t other)
 	return *this;
 }
 
-CScriptJson& CScriptJson::operator=(json::number_float_t other)
+CScriptJson& CScriptJson::operator=( float other )
 {
 	// Clear everything we had before
 	js_info.clear();
@@ -116,42 +116,42 @@ CScriptJson& CScriptJson::operator=( const CScriptJson& other )
 	return *this;
 }
 
-void CScriptJson::Set(const jsonKey_t &key, const bool &value)
+void CScriptJson::Set( const jsonKey_t& key, const bool *value)
 {
-	(js_info)[key] = value;
+	js_info[key] = *value;
 }
 
-void CScriptJson::Set(const jsonKey_t &key, const asDWORD &value)
+void CScriptJson::Set( const jsonKey_t& key, const asDWORD *value )
 {
-	(js_info)[key] = value;
+	js_info[key] = *value;
 }
 
-void CScriptJson::Set(const jsonKey_t &key, const asQWORD &value)
+void CScriptJson::Set( const jsonKey_t& key, const asQWORD *value )
 {
-	(js_info)[key] = value;
+	js_info[key] = *value;
 }
 
-void CScriptJson::Set(const jsonKey_t &key, const asINT32 &value)
+void CScriptJson::Set( const jsonKey_t& key, const asINT32 *value )
 {
-	(js_info)[key] = value;
+	js_info[key] = *value;
 }
 
-void CScriptJson::Set(const jsonKey_t &key, const asINT64 &value)
+void CScriptJson::Set( const jsonKey_t& key, const asINT64 *value )
 {
-	(js_info)[key] = value;
+	js_info[key] = *value;
 }
 
-void CScriptJson::Set(const jsonKey_t &key, const json::number_float_t &value)
+void CScriptJson::Set( const jsonKey_t& key, const float *value )
 {
-	(js_info)[key] = value;
+	js_info[key] = *value;
 }
 
-void CScriptJson::Set(const jsonKey_t &key, const string_t& value)
+void CScriptJson::Set( const jsonKey_t& key, const string_t& value )
 {
-	(js_info)[key] = value;
+	js_info[key] = value;
 }
 
-void CScriptJson::Set(const jsonKey_t &key, const CScriptArray& value)
+void CScriptJson::Set( const jsonKey_t& key, const CScriptArray& value )
 {
 	json js_temp = json::array({});
 
@@ -169,124 +169,76 @@ void CScriptJson::Set(const jsonKey_t &key, const CScriptArray& value)
 	(js_info)[key] = eastl::move( js_temp );
 }
 
-void CScriptJson::Set(const jsonKey_t &key, const CScriptJson& value)
+void CScriptJson::Set(const jsonKey_t& key, const CScriptJson& value)
 {
 	(js_info)[key] = value.js_info;
 }
 
-bool CScriptJson::Get(const jsonKey_t &key, bool &value) const
+bool CScriptJson::Get( const jsonKey_t& key, bool *value ) const
 {
-	if(js_info.contains(key))
-	{
-//        if(js_info.is_boolean())
-//        {
-			value = (js_info)[key];
-			return true;
-//        }
+	if ( js_info.contains( key ) ) {
+		*value = js_info.at( key );
+		return true;
 	}
 	return false;
 }
 
-bool CScriptJson::Get(const jsonKey_t &key, asINT32 &value) const
+bool CScriptJson::Get( const jsonKey_t& key, asINT32 *value ) const
 {
-	if(js_info.contains(key))
-	{
-//        if(js_info.is_number())
-//        {
-			value = (json::number_integer_t)js_info.at( key );
-			return true;
-//        }
+	if ( js_info.contains( key ) ) {
+		*value = js_info.at( key );
+		return true;
 	}
 	return false;
 }
 
-/*
-bool CScriptJson::Get(const jsonKey_t &key, asINT64 &value) const
+bool CScriptJson::Get( const jsonKey_t& key, asDWORD *value ) const
 {
-	if(js_info.contains(key))
-	{
-//        if(js_info.is_number())
-//        {
-			value = (int64_t)(js_info)[key];
-			return true;
-//        }
-	}
-	return false;
-}
-*/
-
-bool CScriptJson::Get(const jsonKey_t &key, asDWORD &value) const
-{
-	if(js_info.contains(key))
-	{
-//        if(js_info.is_number())
-//        {
-			value = (json::number_unsigned_t)js_info.at( key );
-			return true;
-//        }
+	if ( js_info.contains( key ) ) {
+		*value = js_info.at( key );
+		Con_Printf( "Got value %u for json.\n", *value );
+		return true;
 	}
 	return false;
 }
 
-/*
-bool CScriptJson::Get(const jsonKey_t &key, asQWORD &value) const
+bool CScriptJson::Get( const jsonKey_t& key, float *value) const
 {
-	if(js_info.contains(key))
-	{
-//        if(js_info.is_number())
-//        {
-			value = (js_info)[key];
-			return true;
-//        }
-	}
-	return false;
-}
-*/
-
-bool CScriptJson::Get(const jsonKey_t &key, json::number_float_t &value) const
-{
-	if(js_info.contains(key))
-	{
-//        if(js_info.is_number())
-//        {
-			value = (js_info)[key];
-			return true;
-//        }
+	if ( js_info.contains( key ) ) {
+		*value = js_info.at( key );
+		return true;
 	}
 	return false;
 }
 
-bool CScriptJson::Get(const jsonKey_t &key, string_t &value) const
+bool CScriptJson::Get(const jsonKey_t& key, string_t& value) const
 {
-	if(js_info.contains(key))
-	{
-//        if(js_info.is_string())
-//        {
-			value = (js_info)[key].get<string_t>();
-			return true;
-//        }
+	if ( js_info.contains( key ) ) {
+		value = js_info.at( key ).get<string_t>();
+		return true;
 	}
 	return false;
 }
 
-bool CScriptJson::Get(const jsonKey_t &key, CScriptArray& value) const
+bool CScriptJson::Get( const jsonKey_t& key, CScriptArray& value ) const
 {
-	if(!js_info.contains(key) || !(js_info)[key].is_array())
+	if ( !js_info.contains( key ) || !js_info.at( key ).is_array() ) {
 		return false;
+	}
 
 	json& js_temp = *const_cast<json *>( &js_info[ key ] );
 	value.Resize( js_temp.size() );
 
-	for (asUINT i = 0; i < js_temp.size(); ++i) {
-		CScriptJson* childNode = Create(engine);
-		(childNode->js_info) = js_temp[i];
+	for ( asUINT i = 0; i < js_temp.size(); ++i ) {
+		CScriptJson* childNode = Create( engine );
+		childNode->js_info = js_temp[i];
 		value.SetValue( i, &childNode );
 		childNode->Release();
 	}
 	return true;
 }
 
-bool CScriptJson::Get(const jsonKey_t& key, CScriptJson& value) const
+bool CScriptJson::Get( const jsonKey_t& key, CScriptJson& value ) const
 {
 	if ( !js_info.contains( key ) ) {
 		return false;
@@ -295,22 +247,22 @@ bool CScriptJson::Get(const jsonKey_t& key, CScriptJson& value) const
 	return true;
 }
 
-bool CScriptJson::GetBool()
+bool CScriptJson::GetBool( void )
 {
 	return js_info;
 }
 
-json::number_integer_t CScriptJson::GetNumber()
+asINT32 CScriptJson::GetNumber( void )
 {
 	return js_info;
 }
 
-json::number_unsigned_t CScriptJson::GetUNumber()
+asDWORD CScriptJson::GetUNumber( void )
 {
 	return js_info;
 }
 
-json::number_float_t CScriptJson::GetReal()
+float CScriptJson::GetReal( void )
 {
 	return js_info;
 }
@@ -335,7 +287,7 @@ CScriptArray* CScriptJson::GetArray()
 	return retVal;
 }
 
-CScriptJson *CScriptJson::operator[](const jsonKey_t &key)
+CScriptJson *CScriptJson::operator[](const jsonKey_t& key)
 {
 	CScriptJson* retVal = Create(engine);
 	retVal->js_info = eastl::move( (js_info)[key] );
@@ -343,7 +295,7 @@ CScriptJson *CScriptJson::operator[](const jsonKey_t &key)
 	return retVal;
 }
 
-const CScriptJson *CScriptJson::operator[](const jsonKey_t &key) const
+const CScriptJson *CScriptJson::operator[](const jsonKey_t& key) const
 {
 	if(js_info.contains(key))
 	{
@@ -375,7 +327,7 @@ const CScriptJson *CScriptJson::operator[](const uint32_t key) const
 	return retVal;
 }
 
-bool CScriptJson::Exists(const jsonKey_t &key) const
+bool CScriptJson::Exists(const jsonKey_t& key) const
 {
 	return js_info.contains(key);
 }
@@ -464,7 +416,14 @@ void ScriptJsonAssignBool_Generic(asIScriptGeneric *gen)
 void ScriptJsonAssignInt_Generic(asIScriptGeneric *gen)
 {
 	CScriptJson *json = (CScriptJson*)gen->GetObjectData();
-	*json = (json::number_integer_t)gen->GetArgDWord(0);
+	*json = (asINT32)gen->GetArgDWord(0);
+	CATCH_JSON_BLOCK( *(CScriptJson**)gen->GetAddressOfReturnLocation() = json; );
+}
+
+void ScriptJsonAssignUInt_Generic(asIScriptGeneric *gen)
+{
+	CScriptJson *json = (CScriptJson*)gen->GetObjectData();
+	*json = (asDWORD)gen->GetArgDWord(0);
 	CATCH_JSON_BLOCK( *(CScriptJson**)gen->GetAddressOfReturnLocation() = json; );
 }
 
@@ -504,7 +463,7 @@ void ScriptJsonSetBool_Generic(asIScriptGeneric *gen)
 	CScriptJson *json = (CScriptJson*)gen->GetObjectData();
 	jsonKey_t *key = (jsonKey_t*)gen->GetArgObject(0);
 	void *ref = (void*)gen->GetAddressOfArg(1);
-	CATCH_JSON_BLOCK( json->Set(*key, *(bool*)ref); );
+	CATCH_JSON_BLOCK( json->Set(*key, (bool *)ref); );
 }
 
 void ScriptJsonSetInt_Generic(asIScriptGeneric *gen)
@@ -512,7 +471,7 @@ void ScriptJsonSetInt_Generic(asIScriptGeneric *gen)
 	CScriptJson *json = (CScriptJson*)gen->GetObjectData();
 	jsonKey_t *key = (jsonKey_t*)gen->GetArgObject(0);
 	void *ref = (void*)gen->GetAddressOfArg(1);
-	CATCH_JSON_BLOCK( json->Set(*key, *(asINT32 *)ref); );
+	CATCH_JSON_BLOCK( json->Set(*key, (asINT32 *)ref); );
 }
 
 void ScriptJsonSetUInt_Generic(asIScriptGeneric *gen)
@@ -520,7 +479,7 @@ void ScriptJsonSetUInt_Generic(asIScriptGeneric *gen)
 	CScriptJson *json = (CScriptJson*)gen->GetObjectData();
 	jsonKey_t *key = (jsonKey_t*)gen->GetArgObject(0);
 	void *ref = (void*)gen->GetAddressOfArg(1);
-	CATCH_JSON_BLOCK( json->Set(*key, *(asDWORD *)ref); );
+	CATCH_JSON_BLOCK( json->Set(*key, (asDWORD *)ref); );
 }
 
 void ScriptJsonSetFlt_Generic(asIScriptGeneric *gen)
@@ -528,7 +487,7 @@ void ScriptJsonSetFlt_Generic(asIScriptGeneric *gen)
 	CScriptJson *json = (CScriptJson*)gen->GetObjectData();
 	jsonKey_t *key = (jsonKey_t*)gen->GetArgObject(0);
 	void *ref = (void*)gen->GetAddressOfArg(1);
-	CATCH_JSON_BLOCK( json->Set(*key, *(json::number_float_t*)ref); );
+	CATCH_JSON_BLOCK( json->Set(*key, (float *)ref); );
 }
 
 void ScriptJsonSetStr_Generic(asIScriptGeneric *gen)
@@ -559,21 +518,21 @@ void ScriptJsonGetBool_Generic(asIScriptGeneric *gen)
 {
 	CScriptJson *json = (CScriptJson*)gen->GetObjectData();
 	jsonKey_t *key = (jsonKey_t*)gen->GetArgObject(0);
-	CATCH_JSON_BLOCK( *(bool*)gen->GetAddressOfReturnLocation() = json->Get(*key, *(bool*)gen->GetAddressOfArg(1)) );
+	CATCH_JSON_BLOCK( *(bool*)gen->GetAddressOfReturnLocation() = json->Get(*key, (bool *)gen->GetAddressOfArg(1)) );
 }
 
 void ScriptJsonGetUInt_Generic(asIScriptGeneric *gen)
 {
 	CScriptJson *json = (CScriptJson*)gen->GetObjectData();
 	jsonKey_t *key = (jsonKey_t*)gen->GetArgObject(0);
-	CATCH_JSON_BLOCK( *(bool*)gen->GetAddressOfReturnLocation() = json->Get(*key, *(asDWORD *)gen->GetAddressOfArg(1)) );
+	CATCH_JSON_BLOCK( *(bool*)gen->GetAddressOfReturnLocation() = json->Get(*key, (asDWORD *)gen->GetAddressOfArg(1)) );
 }
 
 void ScriptJsonGetInt_Generic(asIScriptGeneric *gen)
 {
 	CScriptJson *json = (CScriptJson*)gen->GetObjectData();
 	jsonKey_t *key = (jsonKey_t*)gen->GetArgObject(0);
-	CATCH_JSON_BLOCK( *(bool*)gen->GetAddressOfReturnLocation() = json->Get(*key, *(asINT32 *)gen->GetAddressOfArg(1)) );
+	CATCH_JSON_BLOCK( *(bool*)gen->GetAddressOfReturnLocation() = json->Get(*key, (asINT32 *)gen->GetAddressOfArg(1)) );
 }
 
 void ScriptJsonGetFlt_Generic(asIScriptGeneric *gen)
@@ -581,28 +540,28 @@ void ScriptJsonGetFlt_Generic(asIScriptGeneric *gen)
 	CScriptJson *json = (CScriptJson*)gen->GetObjectData();
 	jsonKey_t *key = (jsonKey_t*)gen->GetArgObject(0);
 	void *ref = (void*)gen->GetAddressOfArg(1);
-	CATCH_JSON_BLOCK( *(bool*)gen->GetAddressOfReturnLocation() = json->Get(*key, *(json::number_float_t*)ref) );
+	CATCH_JSON_BLOCK( *(bool*)gen->GetAddressOfReturnLocation() = json->Get(*key, (float *)ref) );
 }
 
 void ScriptJsonGetStr_Generic(asIScriptGeneric *gen)
 {
 	CScriptJson *json = (CScriptJson*)gen->GetObjectData();
 	jsonKey_t *key = (jsonKey_t*)gen->GetArgObject(0);
-	CATCH_JSON_BLOCK( *(bool*)gen->GetAddressOfReturnLocation() = json->Get(*key, *(string_t*)gen->GetArgObject( 1 )) );
+	CATCH_JSON_BLOCK( *(bool*)gen->GetAddressOfReturnLocation() = json->Get(*key, *(string_t *)gen->GetArgObject( 1 )) );
 }
 
 void ScriptJsonGetArr_Generic(asIScriptGeneric *gen)
 {
 	CScriptJson *json = (CScriptJson*)gen->GetObjectData();
 	jsonKey_t *key = (jsonKey_t*)gen->GetArgObject(0);
-	CATCH_JSON_BLOCK( *(bool*)gen->GetAddressOfReturnLocation() = json->Get(*key, *(CScriptArray*)gen->GetArgObject( 1 )) );
+	CATCH_JSON_BLOCK( *(bool*)gen->GetAddressOfReturnLocation() = json->Get(*key, *(CScriptArray *)gen->GetArgObject( 1 )) );
 }
 
 void ScriptJsonGetObj_Generic(asIScriptGeneric *gen)
 {
 	CScriptJson *json = (CScriptJson*)gen->GetObjectData();
 	jsonKey_t *key = (jsonKey_t*)gen->GetArgObject(0);
-	CATCH_JSON_BLOCK( *(bool*)gen->GetAddressOfReturnLocation() = json->Get(*key, *(CScriptJson*)gen->GetArgObject( 1 )) );
+	CATCH_JSON_BLOCK( *(bool*)gen->GetAddressOfReturnLocation() = json->Get(*key, *(CScriptJson *)gen->GetArgObject( 1 )) );
 }
 
 void ScriptJsonConvBool_Generic( asIScriptGeneric *gen )
@@ -614,19 +573,19 @@ void ScriptJsonConvBool_Generic( asIScriptGeneric *gen )
 void ScriptJsonConvInt_Generic( asIScriptGeneric *gen )
 {
 	CScriptJson *json = (CScriptJson *)gen->GetObjectData();
-	CATCH_JSON_BLOCK( *(int32_t *)gen->GetAddressOfReturnLocation() = json->GetNumber() );
+	CATCH_JSON_BLOCK( gen->SetReturnDWord( json->GetNumber() ) );
 }
 
 void ScriptJsonConvUInt_Generic( asIScriptGeneric *gen )
 {
 	CScriptJson *json = (CScriptJson *)gen->GetObjectData();
-	CATCH_JSON_BLOCK( *(uint32_t *)gen->GetAddressOfReturnLocation() = json->GetUNumber() );
+	CATCH_JSON_BLOCK( gen->SetReturnDWord( json->GetUNumber() ) );
 }
 
 void ScriptJsonConvFlt_Generic( asIScriptGeneric *gen )
 {
 	CScriptJson *json = (CScriptJson *)gen->GetObjectData();
-	CATCH_JSON_BLOCK( *(json::number_float_t *)gen->GetAddressOfReturnLocation() = json->GetReal() );
+	CATCH_JSON_BLOCK( gen->SetReturnFloat( json->GetReal() ) );
 }
 
 void ScriptJsonConvString_Generic( asIScriptGeneric *gen )
@@ -960,34 +919,35 @@ void RegisterScriptJson_Generic( asIScriptEngine *engine )
 	CheckASCall( engine->RegisterObjectBehaviour("json", asBEHAVE_RELEASE, "void f()", asFUNCTION(ScriptJsonRelease_Generic), asCALL_GENERIC) );
 
 	CheckASCall( engine->RegisterObjectMethod("json", "json& opAssign(bool)", asFUNCTION(ScriptJsonAssignBool_Generic), asCALL_GENERIC) );
-	CheckASCall( engine->RegisterObjectMethod("json", "json& opAssign(int64)", asFUNCTION(ScriptJsonAssignInt_Generic), asCALL_GENERIC) );
-	CheckASCall( engine->RegisterObjectMethod("json", "json& opAssign(double)", asFUNCTION(ScriptJsonAssignFlt_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod("json", "json& opAssign(int)", asFUNCTION(ScriptJsonAssignInt_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod("json", "json& opAssign(uint)", asFUNCTION(ScriptJsonAssignUInt_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod("json", "json& opAssign(float)", asFUNCTION(ScriptJsonAssignFlt_Generic), asCALL_GENERIC) );
 	CheckASCall( engine->RegisterObjectMethod("json", "json& opAssign(const string &in)", asFUNCTION(ScriptJsonAssignStr_Generic), asCALL_GENERIC) );
 	CheckASCall( engine->RegisterObjectMethod("json", "json& opAssign(const array<json@> &in)", asFUNCTION(ScriptJsonAssignArr_Generic), asCALL_GENERIC) );
 	CheckASCall( engine->RegisterObjectMethod("json", "json& opAssign(const json &in)", asFUNCTION(ScriptJsonAssign_Generic), asCALL_GENERIC) );
 
-	CheckASCall( engine->RegisterObjectMethod("json", "void set(const string &in, const bool&in)", asFUNCTION(ScriptJsonSetBool_Generic), asCALL_GENERIC) );
-	CheckASCall( engine->RegisterObjectMethod("json", "bool get(const string &in, bool&out) const", asFUNCTION(ScriptJsonGetBool_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod("json", "void set(const string& in, const bool& in)", asFUNCTION(ScriptJsonSetBool_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod("json", "bool get(const string& in, bool& out) const", asFUNCTION(ScriptJsonGetBool_Generic), asCALL_GENERIC) );
 
-	CheckASCall( engine->RegisterObjectMethod("json", "void set(const string &in, const int32&in)", asFUNCTION(ScriptJsonSetInt_Generic), asCALL_GENERIC) );
-	CheckASCall( engine->RegisterObjectMethod("json", "bool get(const string &in, int32&out) const", asFUNCTION(ScriptJsonGetInt_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod("json", "void set(const string& in, const int32& in)", asFUNCTION(ScriptJsonSetInt_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod("json", "bool get(const string& in, int32& out) const", asFUNCTION(ScriptJsonGetInt_Generic), asCALL_GENERIC) );
 
-	CheckASCall( engine->RegisterObjectMethod("json", "void set(const string &in, const uint32&in)", asFUNCTION(ScriptJsonSetUInt_Generic), asCALL_GENERIC) );
-	CheckASCall( engine->RegisterObjectMethod("json", "bool get(const string &in, uint32&out) const", asFUNCTION(ScriptJsonGetUInt_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod("json", "void set(const string& in, const uint32& in)", asFUNCTION(ScriptJsonSetUInt_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod("json", "bool get(const string& in, uint32& out) const", asFUNCTION(ScriptJsonGetUInt_Generic), asCALL_GENERIC) );
 
-	CheckASCall( engine->RegisterObjectMethod("json", "void set(const string &in, const double&in)", asFUNCTION(ScriptJsonSetFlt_Generic), asCALL_GENERIC) );
-	CheckASCall( engine->RegisterObjectMethod("json", "bool get(const string &in, double&out) const", asFUNCTION(ScriptJsonGetFlt_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod("json", "void set(const string& in, const float& in)", asFUNCTION(ScriptJsonSetFlt_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod("json", "bool get(const string& in, float& out) const", asFUNCTION(ScriptJsonGetFlt_Generic), asCALL_GENERIC) );
 
-	CheckASCall( engine->RegisterObjectMethod("json", "void set(const string &in, const string&in)", asFUNCTION(ScriptJsonSetStr_Generic), asCALL_GENERIC) );
-	CheckASCall( engine->RegisterObjectMethod("json", "bool get(const string &in, string&out) const", asFUNCTION(ScriptJsonGetStr_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod("json", "void set(const string& in, const string& in)", asFUNCTION(ScriptJsonSetStr_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod("json", "bool get(const string& in, string& out) const", asFUNCTION(ScriptJsonGetStr_Generic), asCALL_GENERIC) );
 
-	CheckASCall( engine->RegisterObjectMethod("json", "void set(const string &in, const array<json@>& in)", asFUNCTION(ScriptJsonSetArr_Generic), asCALL_GENERIC) );
-	CheckASCall( engine->RegisterObjectMethod("json", "bool get(const string &in, array<json@>& out) const", asFUNCTION(ScriptJsonGetArr_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod("json", "void set(const string& in, const array<json@>& in)", asFUNCTION(ScriptJsonSetArr_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod("json", "bool get(const string& in, array<json@>& out) const", asFUNCTION(ScriptJsonGetArr_Generic), asCALL_GENERIC) );
 
-	CheckASCall( engine->RegisterObjectMethod("json", "void set(const string &in, const json@)", asFUNCTION(ScriptJsonSetObj_Generic), asCALL_GENERIC) );
-	CheckASCall( engine->RegisterObjectMethod("json", "bool get(const string &in, json@) const", asFUNCTION(ScriptJsonGetObj_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod("json", "void set(const string& in, const json@)", asFUNCTION(ScriptJsonSetObj_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod("json", "bool get(const string& in, json@) const", asFUNCTION(ScriptJsonGetObj_Generic), asCALL_GENERIC) );
 
-	CheckASCall( engine->RegisterObjectMethod("json", "bool Exists(const string &in) const", asFUNCTION(ScriptJsonExists_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod("json", "bool Exists(const string& in) const", asFUNCTION(ScriptJsonExists_Generic), asCALL_GENERIC) );
 	CheckASCall( engine->RegisterObjectMethod("json", "bool IsEmpty() const", asFUNCTION(ScriptJsonIsEmpty_Generic), asCALL_GENERIC) );
 	CheckASCall( engine->RegisterObjectMethod("json", "uint Count() const", asFUNCTION(ScriptJsonGetSize_Generic), asCALL_GENERIC) );
 	CheckASCall( engine->RegisterObjectMethod("json", "void Clear()", asFUNCTION(ScriptJsonClear_Generic), asCALL_GENERIC) );
@@ -1008,12 +968,12 @@ void RegisterScriptJson_Generic( asIScriptEngine *engine )
 	CheckASCall( engine->RegisterObjectMethod("json", "float opConv() const", asFUNCTION(ScriptJsonConvFlt_Generic), asCALL_GENERIC) );
 	CheckASCall( engine->RegisterObjectMethod("json", "array<json@>@ opConv()", asFUNCTION(ScriptJsonConvArray_Generic), asCALL_GENERIC) );
 
-//    CheckASCall( engine->RegisterObjectMethod("json", "const bool opConv() const", asFUNCTION(ScriptJsonGetBool_Generic), asCALL_GENERIC) );
-//    CheckASCall( engine->RegisterObjectMethod("json", "const string& opConv() const", asFUNCTION(ScriptJsonGetStr_Generic), asCALL_GENERIC) );
-//    CheckASCall( engine->RegisterObjectMethod("json", "const int opConv() const", asFUNCTION(ScriptJsonGetInt_Generic), asCALL_GENERIC) );
-//    CheckASCall( engine->RegisterObjectMethod("json", "const uint opConv() const", asFUNCTION(ScriptJsonGetUInt_Generic), asCALL_GENERIC) );
-//    CheckASCall( engine->RegisterObjectMethod("json", "const float opConv() const", asFUNCTION(ScriptJsonGetFlt_Generic), asCALL_GENERIC) );
-//    CheckASCall( engine->RegisterObjectMethod("json", "const array<json@>& opConv() const", asFUNCTION(ScriptJsonGetArr_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod("json", "const bool opImplConv() const", asFUNCTION(ScriptJsonGetBool_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod("json", "const string& opImplConv() const", asFUNCTION(ScriptJsonGetStr_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod("json", "const int opImplConv() const", asFUNCTION(ScriptJsonGetInt_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod("json", "const uint opConv() const", asFUNCTION(ScriptJsonGetUInt_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod("json", "const float opConv() const", asFUNCTION(ScriptJsonGetFlt_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod("json", "const array<json@>& opConv() const", asFUNCTION(ScriptJsonGetArr_Generic), asCALL_GENERIC) );
 
 	// Json functions
 	CheckASCall( engine->RegisterGlobalFunction("json@ JsonParseFile(const string& in file)", asFUNCTION(ScriptJson_ParseFile_Generic), asCALL_GENERIC) );

@@ -54,11 +54,13 @@ namespace TheNomad::SGame {
 		bool Load( json@ json ) {
 			string base;
 
-			if ( !json.get( "TicRate", base ) ) {
-				ConsoleWarning( "invalid animation info, missing variable 'TicRate'\n" );
-				return false;
-			}
-			m_nTicRate = Convert().ToInt( base );
+			m_nTicRate = uint( json[ "TicRate" ] );
+
+//			if ( !json.get( "TicRate", base ) ) {
+//				ConsoleWarning( "invalid animation info, missing variable 'TicRate'\n" );
+//				return false;
+//			}
+//			m_nTicRate = Convert().ToInt( base );
 			if ( !json.get( "FlipFlop", base ) ) {
 				ConsoleWarning( "invalid animation info, missing variable 'FlipFlop'\n" );
 				return false;
@@ -94,9 +96,9 @@ namespace TheNomad::SGame {
 
 		private EntityState@ m_State = null;
 		
-		private uint64 m_nOldTic = 0;
+		private uint m_nOldTic = 0;
 		private uint m_nNumFrames = 1;
-		private int m_nTicRate = 1;
+		private uint m_nTicRate = 1;
 		private int m_nTicker = 0;
 		private int m_nCurrentFrame = 0;
 		private bool m_bOscillate = false;

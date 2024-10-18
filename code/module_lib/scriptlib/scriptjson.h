@@ -37,43 +37,43 @@ public:
 	void Release() const;
 
 	// Reassign the json
-	CScriptJson& operator=(bool other);
-	CScriptJson& operator=(json::number_unsigned_t other);
-	CScriptJson& operator=(json::number_integer_t other);
-	CScriptJson& operator=(json::number_float_t other);
-	CScriptJson& operator=(const string_t& other);
-	CScriptJson& operator=(const CScriptArray& other);
-	CScriptJson& operator=(const CScriptJson& other);
+	CScriptJson& operator=( bool other );
+	CScriptJson& operator=( asDWORD other );
+	CScriptJson& operator=( asINT32 other );
+	CScriptJson& operator=( float other );
+	CScriptJson& operator=( const string_t& other );
+	CScriptJson& operator=( const CScriptArray& other );
+	CScriptJson& operator=( const CScriptJson& other );
 
 	// Sets a key/value pair
-	void Set(const jsonKey_t& key, const bool& value);
-	void Set(const jsonKey_t& key, const asINT32& value);
-	void Set(const jsonKey_t& key, const asINT64& value);
-	void Set(const jsonKey_t& key, const asDWORD& value);
-	void Set(const jsonKey_t& key, const asQWORD& value);
-	void Set(const jsonKey_t& key, const json::number_float_t& value);
+	void Set(const jsonKey_t& key, const bool *value);
+	void Set(const jsonKey_t& key, const asINT32 *value);
+	void Set(const jsonKey_t& key, const asINT64 *value);
+	void Set(const jsonKey_t& key, const asDWORD *value);
+	void Set(const jsonKey_t& key, const asQWORD *value);
+	void Set(const jsonKey_t& key, const float *value);
 	void Set(const jsonKey_t& key, const string_t& value);
 	void Set(const jsonKey_t& key, const CScriptArray  &value);
 	void Set(const jsonKey_t& key, const CScriptJson& value);
 
 	// Gets the stored value. Returns false if the value isn't compatible
-	bool Get(const jsonKey_t& key, bool& value) const;
-	bool Get(const jsonKey_t& key, asINT32& value) const;
-//	bool Get(const jsonKey_t& key, asINT64& value) const;
-	bool Get(const jsonKey_t& key, asDWORD& value) const;
-//	bool Get(const jsonKey_t& key, asQWORD& value) const;
-	bool Get(const jsonKey_t& key, json::number_float_t& value) const;
+	bool Get(const jsonKey_t& key, bool *value) const;
+	bool Get(const jsonKey_t& key, asINT32 *value) const;
+	bool Get(const jsonKey_t& key, asINT64 *value) const;
+	bool Get(const jsonKey_t& key, asDWORD *value) const;
+	bool Get(const jsonKey_t& key, asQWORD *value) const;
+	bool Get(const jsonKey_t& key, float *value) const;
 	bool Get(const jsonKey_t& key, string_t& value) const;
 	bool Get(const jsonKey_t& key, CScriptArray& value) const;
 	bool Get(const jsonKey_t& key, CScriptJson& value) const;
 
-    bool            GetBool();
-    string_t		GetString();
-    json::number_integer_t GetNumber();
-	json::number_unsigned_t GetUNumber();
-    json::number_float_t   GetReal();
-    CScriptArray*   GetArray();
-	CScriptJson*   GetObject();
+    bool			GetBool( void );
+    string_t		GetString( void );
+    asINT32			GetNumber( void );
+	asDWORD			GetUNumber( void );
+    float			GetReal( void );
+    CScriptArray	*GetArray( void );
+	CScriptJson		*GetObject( void );
 
 	// Index accessors. If the json is not const it inserts the value if it doesn't already exist
 	// If the json is const then a script exception is set if it doesn't exist and a null pointer is returned
