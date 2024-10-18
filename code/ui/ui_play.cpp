@@ -303,64 +303,8 @@ static void PlayMenu_DrawNewGameEdit( void )
 		hShader = s_playMenu->accept_0;
 	}
 
-	/*
-	ImGui::Begin( "##AcceptNewGameButton", NULL, MENU_DEFAULT_FLAGS );
-	ImGui::SetWindowSize( ImVec2( imageSize.x + 26, imageSize.y + 26 ) );
-	ImGui::SetWindowPos( ImVec2( 900 * ui->scale, 680 * ui->scale ) );
-	ImGui::SetCursorScreenPos( ImVec2( 900 * ui->scale, 680 * ui->scale ) );
-	ImGui::Image( (ImTextureID)(uintptr_t)hShader, imageSize );
-	if ( !s_playMenu->slotConflict ) {
-		s_playMenu->acceptHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
-		if ( sgvm->m_pHandle->IsValid() ) {
-			if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) || Key_IsDown( KEY_PAD0_START ) ) {
-				Snd_PlaySfx( ui->sfx_select );
-				if ( Cvar_VariableInteger( "g_maxSaveSlots" ) != 0 && g_pArchiveHandler->SlotIsUsed( s_playMenu->selectedSaveSlot ) ) {
-					s_playMenu->slotConflict = qtrue;
-				} else {
-					BeginNewGame();
-				}
-			}
-		} else {
-			if ( s_playMenu->acceptHovered ) {
-				FontCache()->SetActiveFont( RobotoMono );
-				ImGui::SetItemTooltip( "ERROR: cannot begin new game, SGame module isn't valid, check the console log for details" );
-			}
-		}
-	}
-	*/
 	ImGui::End();
 }
-
-/*
-static void PlayMenu_DeleteSlot( void )
-{
-	ImGui::Begin( "Delete Save Slot", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse
-		| ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoMove );
-	
-	ImGui::SetWindowSize( ImVec2( 256 * ui->scale, 72 * ui->scale ) );
-	ImGui::SetWindowPos( ImVec2( 480 * ui->scale, 460 * ui->scale ) );
-	ImGui::TextUnformatted( "                   *** WARNING ***             " );
-	ImGui::TextUnformatted( "You are about to delete a save slot permanently" );
-	ImGui::TextUnformatted( "Are you sure about this?                       " );
-	ImGui::SetCursorScreenPos( ImVec2( 106 * ui->scale, 490 * ui->scale ) );
-	if ( ImGui::Button( "YES" ) ) {
-		s_playMenu->deleteSlot = qfalse;
-		if ( s_playMenu->saveSlots[ s_playMenu->hoveredSaveSlot ].gd.modList ) {
-			Z_Free( s_playMenu->saveSlots[ s_playMenu->hoveredSaveSlot ].gd.modList );
-		}
-		memset( &s_playMenu->saveSlots[ s_playMenu->hoveredSaveSlot ], 0, sizeof( saveinfo_t ) );
-		s_playMenu->hoveredSaveSlot = 0;
-	}
-	ImGui::SameLine();
-	ImGui::TextUnformatted( "/" );
-	ImGui::SameLine();
-	if ( ImGui::Button( "NO" ) ) {
-		s_playMenu->deleteSlot = qfalse;
-	}
-
-	ImGui::End();
-}
-*/
 
 static void PlayMenu_SaveConflict( void )
 {
@@ -651,15 +595,6 @@ void PlayMenu_Cache( void )
 	ui->menubackShader = re.RegisterShader( "menu/playBackground" );
 
 	PlayMenu_InitSlots();
-
-	/*
-	for ( i = 0; i < s_playMenu->numSaveFiles; i++ ) {
-		if ( !g_pArchiveHandler->SlotIsUsed( i ) ) {
-			s_playMenu->selectedSaveSlot = i;
-			break;
-		}
-	}
-	*/
 
 	ImGui::SetNextWindowFocus();
 }

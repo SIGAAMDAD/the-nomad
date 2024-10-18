@@ -129,36 +129,43 @@ static void MainMenu_ToggleMenu( void ) {
 	s_main->noMenu = !s_main->noMenu;
 }
 
-/*
-* MainMenu_DrawCrashWindow: since module crashes almost always aren't fatal,
-* we can display exactly what happened without any engine failures (for the most part)
-*/
-static void MainMenu_DrawCrashWindow( void )
+extern void Menu_DrawItemList( void **items, int numitems );
+
+static void DrawMenu_Text( void )
 {
-	const int windowFlags = ImGuiWindowFlags_NoCollapse;
-	const int treeNodeFlags = ImGuiTreeNodeFlags_CollapsingHeader | ImGuiTreeNodeFlags_Framed;
+	menuframework_t *menu;
 
-	ImGui::BeginPopupModal( "Crash Report", NULL, windowFlags );
-	if ( ImGui::TreeNodeEx( (void *)(uintptr_t)"Stacktrace", treeNodeFlags, "Stacktrace" ) ) {
+	menu = &s_main->menu;
 
+	ImGui::Begin( va( "%s##%sMainMenu", menu->name, menu->name ), NULL, menu->flags );
+	if ( !( Key_GetCatcher() & KEYCATCH_CONSOLE ) ) {
+		ImGui::SetWindowFocus();
 	}
-	ImGui::EndPopup();
-}
+	ImGui::SetWindowPos( ImVec2( menu->x, menu->y ) );
+	ImGui::SetWindowSize( ImVec2( menu->width, menu->height ) );
 
-static void DrawMenu_Text( void ) {
-	const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
-							ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoBackground;
+	UI_EscapeMenuToggle();
+	if ( UI_MenuTitle( menu->name, menu->titleFontScale ) ) {
+		UI_PopMenu();
+		Snd_PlaySfx( ui->sfx_back );
 
-	Menu_Draw( &s_main->menu );
+		ImGui::End();
+		return;
+	}
+	ImGui::SetCursorScreenPos( ImVec2( 8, 420 * ui->scale ) );
+
+	Menu_DrawItemList( menu->items, menu->nitems );
+
+	ImGui::End();
 
 	//
 	// draw the version
 	//
 	FontCache()->SetActiveFont( RobotoMono );
 
-	ImGui::Begin( "MainMenuVersion", NULL, windowFlags | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_AlwaysAutoResize );
+	ImGui::Begin( "MainMenuVersion", NULL, MENU_DEFAULT_FLAGS | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_AlwaysAutoResize );
 	ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * 1.5f );
-	ImGui::SetWindowPos( ImVec2( 700 * ui->scale + ui->bias, 710 * ui->scale ) );
+	ImGui::SetWindowPos( ImVec2( 500 * ui->scale + ui->bias, 700 * ui->scale ) );
 	if ( ui->demoVersion ) {
 		ImGui::TextUnformatted( "(DEMO) FOR MATURE AUDIENCES" );
 	} else {
@@ -253,7 +260,7 @@ void MainMenu_Draw( void )
 			DrawMenu_Blocks();
 			break;
 		default:
-			Con_Printf( COLOR_YELLOW "WARNING: bad ui_menuStyle %li\n", ui_menuStyle->i );
+			Con_Printf( COLOR_YELLOW "WARNING: bad ui_menuStyle %i\n", ui_menuStyle->i );
 			Cvar_Set( "ui_menuStyle", "0" );
 			break;
 		};
@@ -399,7 +406,7 @@ void MainMenu_Cache( void )
 	s_main->font = FontCache()->AddFontToCache( "AlegreyaSC-Bold" );
 	RobotoMono = FontCache()->AddFontToCache( "RobotoMono-Bold" );
 
-	s_main->menu.titleFontScale = 6.5f;
+	s_main->menu.titleFontScale = 3.5f;
 	s_main->menu.textFontScale = 1.5f;
 	s_main->menu.name = strManager->ValueForKey( "MENU_LOGO_STRING" )->value;
 	s_main->menu.x = 0;
@@ -466,10 +473,10 @@ void MainMenu_Cache( void )
 	ui->menubackShader = s_main->background;
 
 	Menu_AddItem( &s_main->menu, &s_main->singleplayer );
-	Menu_AddItem( &s_main->menu, &s_main->mods );
 	Menu_AddItem( &s_main->menu, &s_main->settings );
 	Menu_AddItem( &s_main->menu, &s_main->database );
 	Menu_AddItem( &s_main->menu, &s_main->credits );
+	Menu_AddItem( &s_main->menu, &s_main->mods );
 	Menu_AddItem( &s_main->menu, &s_main->exitGame );
 
 	// add in background ambience
