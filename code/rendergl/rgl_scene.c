@@ -349,7 +349,7 @@ void RE_RenderScene( const renderSceneRef_t *fd )
 	startTime = ri.Milliseconds();
 
 	if ( !rg.world && !( fd->flags & RSF_NOWORLDMODEL ) ) {
-		ri.Error(ERR_FATAL, "RE_RenderScene: no world loaded");
+		ri.Error( ERR_FATAL, "RE_RenderScene: no world loaded" );
 	}
 
 	RE_BeginScene( fd );

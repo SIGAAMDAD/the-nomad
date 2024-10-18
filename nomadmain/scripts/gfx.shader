@@ -7,35 +7,35 @@
 
 white
 {
-    nomipmaps
-    nopicmip
-    {
-        texFilter bilinear
-        map $whiteimage
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-        rgbGen vertex
-    }
+	nomipmaps
+	nopicmip
+	{
+		texFilter bilinear
+		map $whiteimage
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+	}
 }
 
 gfx/bigchars
 {
-    nomipmaps
-    nopicmip
-    {
-        texFilter bilinear
-        map gfx/bigchars.tga
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-        rgbGen vertex
-    }
+	nomipmaps
+	nopicmip
+	{
+		texFilter bilinear
+		map gfx/bigchars.tga
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+	}
 }
 
 gfx/fonts
 {
-    nomipmaps
-    {
-        texFilter bilinear
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-    }
+	nomipmaps
+	{
+		texFilter bilinear
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+	}
 }
 
 /*
@@ -43,21 +43,21 @@ console
 {
 	nopicmip
 	nomipmaps
-    {
-        texFilter bilinear
+	{
+		texFilter bilinear
 		map gfx/console01.tga
-        blendFunc GL_ONE GL_ZERO
-        tcMod scroll .02  0
-        tcmod scale 2 1
+		blendFunc GL_ONE GL_ZERO
+		tcMod scroll .02  0
+		tcmod scale 2 1
 	}
-    {
-        texFilter bilinear
-        map gfx/console02.jpg
-        //map gfx/effects/firegorre3.tga
-        blendFunc add
-        tcMod turb 0 .1 0 .1
-        tcMod scale 2 1
-        tcmod scroll 0.2  .1
+	{
+		texFilter bilinear
+		map gfx/console02.jpg
+		//map gfx/effects/firegorre3.tga
+		blendFunc add
+		tcMod turb 0 .1 0 .1
+		tcMod scale 2 1
+		tcmod scroll 0.2  .1
 	}
 }
 */
@@ -67,48 +67,48 @@ console
 //
 gfx/hud/blood_screen
 {
-    nopicmip
-    nomipmaps
-    {
-        texFilter bilinear
-        map textures/hud/PAIN1.tga
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-        rgbGen vertex
-        tcGen vertex
-    }
-    {
-        texFilter bilinear
-        map textures/hud/ARBLS1.tga
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-        rgbGen vertex
-        tcMod scroll 0.0 -0.9
-    }
-    {
-        texFilter bilinear
-        map textures/hud/ARBLS2.tga
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-        rgbGen vertex
-        tcMod scroll 0.0 -0.4
-    }
-    {
-        texFilter bilinear
-        map textures/hud/ARBLS3.tga
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-        rgbGen vertex
-        tcMod scroll 0.0 -0.25
-    }
-    {
-        texFilter bilinear
-        map textures/hud/ARBLS4.tga
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-        rgbGen vertex
-    }
-    {
-        texFilter bilinear
-        map textures/hud/ARBLS5.tga
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-        rgbGen vertex
-    }
+	nopicmip
+	nomipmaps
+	{
+		texFilter bilinear
+		map textures/hud/PAIN1.tga
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+		tcGen vertex
+	}
+	{
+		texFilter bilinear
+		map textures/hud/ARBLS1.tga
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+		tcMod scroll 0.0 -0.9
+	}
+	{
+		texFilter bilinear
+		map textures/hud/ARBLS2.tga
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+		tcMod scroll 0.0 -0.4
+	}
+	{
+		texFilter bilinear
+		map textures/hud/ARBLS3.tga
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+		tcMod scroll 0.0 -0.25
+	}
+	{
+		texFilter bilinear
+		map textures/hud/ARBLS4.tga
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+	}
+	{
+		texFilter bilinear
+		map textures/hud/ARBLS5.tga
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+	}
 }
 
 //
@@ -116,24 +116,24 @@ gfx/hud/blood_screen
 //
 icons/iconpw_pewpew
 {
-    nopicmip
-    nomipmaps
-    {
-        map textures/icons/iconpw_pewpew.tga
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-        rgbGen wave sin 0.3 5.0 0.0 0.4
-    }
+	nopicmip
+	nomipmaps
+	{
+		map textures/icons/iconpw_pewpew.tga
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen wave sin 0.3 5.0 0.0 0.4
+	}
 }
 
 icons/iconpw_angry
 {
-    nopicmip
-    nomipmaps
-    {
-        map textures/icons/iconpw_angry.tga
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-        rgbGen wave sin 0.3 5.0 0.0 0.4
-    }
+	nopicmip
+	nomipmaps
+	{
+		map textures/icons/iconpw_angry.tga
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen wave sin 0.3 5.0 0.0 0.4
+	}
 }
 
 //
@@ -141,73 +141,73 @@ icons/iconpw_angry
 //
 icons/iconw_murstar
 {
-    nopicmip
-    nomipmaps
-    {
-        map textures/icons/iconw_murstar.tga
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-    }
+	nopicmip
+	nomipmaps
+	{
+		map textures/icons/iconw_murstar.tga
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+	}
 }
 
 icons/iconw_db
 {
-    nopicmip
-    nomipmaps
-    {
-        texFilter nearest
-        map textures/icons/iconw_db.tga
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-    }
+	nopicmip
+	nomipmaps
+	{
+		texFilter nearest
+		map textures/icons/iconw_db.tga
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+	}
 }
 
 icons/iconw_fab
 {
-    nopicmip
-    nomipmaps
-    {
-        map textures/icons/iconw_fullauto_shotty.tga
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-    }
+	nopicmip
+	nomipmaps
+	{
+		map textures/icons/iconw_fullauto_shotty.tga
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+	}
 }
 
 icons/iconw_plasma
 {
-    nopicmip
-    nomipmaps
-    {
-        map textures/icons/iconw_plasma.tga
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-    }
+	nopicmip
+	nomipmaps
+	{
+		map textures/icons/iconw_plasma.tga
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+	}
 }
 
 icons/iconw_frag
 {
-    nopicmip
-    nomipmaps
-    {
-        map textures/icons/iconw_frag.tga
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-    }
+	nopicmip
+	nomipmaps
+	{
+		map textures/icons/iconw_frag.tga
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+	}
 }
 
 icons/iconw_incendiary
 {
-    nopicmip
-    nomipmaps
-    {
-        map textures/icons/iconw_incendiary.tga
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-    }
+	nopicmip
+	nomipmaps
+	{
+		map textures/icons/iconw_incendiary.tga
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+	}
 }
 
 icons/iconw_smoke
 {
-    nopicmip
-    nomipmaps
-    {
-        map textures/icons/iconw_smoke.tga
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-    }
+	nopicmip
+	nomipmaps
+	{
+		map textures/icons/iconw_smoke.tga
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+	}
 }
 
 //
@@ -215,12 +215,12 @@ icons/iconw_smoke
 //
 icons/icon_healthpack
 {
-    nopicmip
-    nomipmaps
-    {
-        map textures/icons/icon_health.tga
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-    }
+	nopicmip
+	nomipmaps
+	{
+		map textures/icons/icon_health.tga
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+	}
 }
 
 //
@@ -228,82 +228,210 @@ icons/icon_healthpack
 //
 icons/icona_bullets
 {
-    nopicmip
-    nomipmaps
-    {
-        map textures/icons/icona_bullets.tga
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-    }
+	nopicmip
+	nomipmaps
+	{
+		map textures/icons/icona_bullets.tga
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+	}
 }
 
 icons/icona_shells
 {
-    nopicmip
-    nomipmaps
-    {
-        map textures/icons/icona_shells.tga
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-    }
+	nopicmip
+	nomipmaps
+	{
+		map textures/icons/icona_shells.tga
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+	}
 }
 
 icons/icona_rockets
 {
-    nopicmip
-    nomipmaps
-    {
-        map textures/icons/icona_rockets.tga
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-    }
+	nopicmip
+	nomipmaps
+	{
+		map textures/icons/icona_rockets.tga
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+	}
 }
 
 icons/icona_frag
 {
-    nopicmip
-    nomipmaps
-    {
-        map textures/icons/icona_frag.tga
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-    }
+	nopicmip
+	nomipmaps
+	{
+		map textures/icons/icona_frag.tga
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+	}
 }
 
 icons/icona_incendiary
 {
-    nopicmip
-    nomipmaps
-    {
-        map textures/icons/icona_incendiary.tga
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-    }
+	nopicmip
+	nomipmaps
+	{
+		map textures/icons/icona_incendiary.tga
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+	}
 }
 
 icons/icona_smoke
 {
-    nopicmip
-    nomipmaps
-    {
-        map textures/icons/icona_smoke.tga
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-    }
+	nopicmip
+	nomipmaps
+	{
+		map textures/icons/icona_smoke.tga
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+	}
 }
 
 gfx/effects/flame
 {
-    nomipmaps
-    nopicmip
-    {
+	nomipmaps
+	nopicmip
+	{
 		animMap 10 gfx/effects/flame1.tga gfx/effects/flame2.tga gfx/effects/flame3.tga gfx/effects/flame4.tga gfx/effects/flame5.tga gfx/effects/flame6.tga gfx/effects/flame7.tga gfx/effects/flame8.tga
 		blendFunc GL_ONE GL_ONE
-		rgbGen wave inverseSawtooth 0 1 0 10
-	}	
+//		rgbGen wave inverseSawtooth 0 1 0 10
+	}
 	{
 		animMap 10 gfx/effects/flame2.tga gfx/effects/flame3.tga gfx/effects/flame4.tga gfx/effects/flame5.tga gfx/effects/flame6.tga gfx/effects/flame7.tga gfx/effects/flame8.tga gfx/effects/flame1.tga
 		blendFunc GL_ONE GL_ONE
-		rgbGen wave sawtooth 0 1 0 10
+//		rgbGen wave sawtooth 0 1 0 10
 	}
 	{
 		map gfx/effects/flameball.jpg
 		blendFunc GL_ONE GL_ONE
-		rgbGen wave sin .6 .2 0 .6	
+//		rgbGen wave sin .6 .2 0 .6	
+	}
+}
+
+gfx/effects/flame0
+{
+	nomipmaps
+	nopicmip
+	{
+		map gfx/effects/flame1.tga
+		blendFunc GL_ONE GL_ONE
+		rgbGen wave inverseSawtooth 0 1 0 10
+	}
+	{
+		map gfx/effects/flame2.tga
+		blendFunc GL_ONE GL_ONE
+		rgbGen wave sawtooth 0 1 0 10
+	}
+}
+
+gfx/effects/flame1
+{
+	nomipmaps
+	nopicmip
+	{
+		map gfx/effects/flame2.tga
+		blendFunc GL_ONE GL_ONE
+		rgbGen wave inverseSawtooth 0 1 0 10
+	}
+	{
+		map gfx/effects/flame3.tga
+		blendFunc GL_ONE GL_ONE
+		rgbGen wave sawtooth 0 1 0 10
+	}
+}
+
+gfx/effects/flame2
+{
+	nomipmaps
+	nopicmip
+	{
+		map gfx/effects/flame3.tga
+		blendFunc GL_ONE GL_ONE
+		rgbGen wave inverseSawtooth 0 1 0 10
+	}
+	{
+		map gfx/effects/flame4.tga
+		blendFunc GL_ONE GL_ONE
+		rgbGen wave sawtooth 0 1 0 10
+	}
+}
+
+gfx/effects/flame3
+{
+	nomipmaps
+	nopicmip
+	{
+		map gfx/effects/flame4.tga
+		blendFunc GL_ONE GL_ONE
+		rgbGen wave inverseSawtooth 0 1 0 10
+	}
+	{
+		map gfx/effects/flame5.tga
+		blendFunc GL_ONE GL_ONE
+		rgbGen wave sawtooth 0 1 0 10
+	}
+}
+
+gfx/effects/flame4
+{
+	nomipmaps
+	nopicmip
+	{
+		map gfx/effects/flame5.tga
+		blendFunc GL_ONE GL_ONE
+		rgbGen wave inverseSawtooth 0 1 0 10
+	}
+	{
+		map gfx/effects/flame6.tga
+		blendFunc GL_ONE GL_ONE
+		rgbGen wave sawtooth 0 1 0 10
+	}
+}
+
+gfx/effects/flame5
+{
+	nomipmaps
+	nopicmip
+	{
+		map gfx/effects/flame6.tga
+		blendFunc GL_ONE GL_ONE
+		rgbGen wave inverseSawtooth 0 1 0 10
+	}
+	{
+		map gfx/effects/flame7.tga
+		blendFunc GL_ONE GL_ONE
+		rgbGen wave sawtooth 0 1 0 10
+	}
+}
+
+gfx/effects/flame6
+{
+	nomipmaps
+	nopicmip
+	{
+		map gfx/effects/flame7.tga
+		blendFunc GL_ONE GL_ONE
+		rgbGen wave inverseSawtooth 0 1 0 10
+	}
+	{
+		map gfx/effects/flame8.tga
+		blendFunc GL_ONE GL_ONE
+		rgbGen wave sawtooth 0 1 0 10
+	}
+}
+
+gfx/effects/flame7
+{
+	nomipmaps
+	nopicmip
+	{
+		map gfx/effects/flame8.tga
+		blendFunc GL_ONE GL_ONE
+		rgbGen wave inverseSawtooth 0 1 0 10
+	}
+	{
+		map gfx/effects/flame1.tga
+		blendFunc GL_ONE GL_ONE
+		rgbGen wave sawtooth 0 1 0 10
 	}
 }
 
@@ -313,13 +441,13 @@ gfx/effects/flame
 //
 gfx/hud/health_bar
 {
-    nomipmaps
-    nopicmip
-    {
-        texFilter bilinear
-        map $whiteimage
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-    }
+	nomipmaps
+	nopicmip
+	{
+		texFilter bilinear
+		map $whiteimage
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+	}
 }
 
 //
@@ -327,13 +455,13 @@ gfx/hud/health_bar
 //
 gfx/bloodSplatter0
 {
-    nopicmip
-    {
-        clampmap gfx/env/blood_spurt.dds
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-        rgbGen identityLighting
-        alphaGen vertex
-    }
+	nopicmip
+	{
+		clampmap gfx/env/blood_spurt.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen identityLighting
+		alphaGen vertex
+	}
 }
 
 gfx/bloodSplatter1
@@ -353,13 +481,13 @@ gfx/bloodSplatter3
 
 gfx/bulletMarks
 {
-    nomipmaps
-    nopicmip
-    polygonOffset
-    {
-        map gfx/bullet_mrk.jpg
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-    }
+	nomipmaps
+	nopicmip
+	polygonOffset
+	{
+		map gfx/bullet_mrk.jpg
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+	}
 }
 
 bloodMark
@@ -376,12 +504,12 @@ bloodMark
 
 bloodTrail
 {
-        
+		
 	nopicmip			// make sure a border remains
 	entityMergable		// allow all the sprites to be merged together
 	{
 		//clampmap gfx/misc/blood.tga
-                clampmap gfx/damage/blood_spurt.tga
+				clampmap gfx/damage/blood_spurt.tga
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		rgbGen		vertex
 		alphaGen	vertex
@@ -430,14 +558,14 @@ gfx/damage/plasma_mrk
 // markShadow is a very cheap blurry blob underneath the player
 markShadow
 {
-    nopicmip
-    nomipmaps
-    polygonOffset
-    {
-        map gfx/shadow.tga
-        blendFunc GL_ZERO GL_ONE_MINUS_SRC_COLOR
-        rgbGen exactVertex
-    }
+	nopicmip
+	nomipmaps
+	polygonOffset
+	{
+		map gfx/shadow.tga
+		blendFunc GL_ZERO GL_ONE_MINUS_SRC_COLOR
+		rgbGen exactVertex
+	}
 }
 
 // wake is the mark on water surfaces for paddling players
@@ -447,16 +575,16 @@ wake
 		clampmapmap sprites/splash.tga
 		blendFunc GL_ONE GL_ONE
 		rgbGen vertex
-                tcmod rotate 250
-                tcMod stretch sin .9 0.1 0 0.7
+				tcmod rotate 250
+				tcMod stretch sin .9 0.1 0 0.7
 		rgbGen wave sin .7 .3 .25 .5
 	}	
-    {
+	{
 		clampmap sprites/splash.tga
 		blendFunc GL_ONE GL_ONE
 		rgbGen vertex
-                tcmod rotate -230
-                tcMod stretch sin .9 0.05 0 0.9
+				tcmod rotate -230
+				tcMod stretch sin .9 0.05 0 0.9
 		rgbGen wave sin .7 .3 .25 .4
 	}	
 }
@@ -475,8 +603,8 @@ waterBubble
 
 gfx/env/smokePuff
 {
-    nomipmaps
-    nopicmip
+	nomipmaps
+	nopicmip
 //	entityMergable		// allow all the sprites to be merged together
 	{
 		map gfx/env/smokepuff3.dds
@@ -502,28 +630,28 @@ lightningBolt
 		map gfx/misc/lightning3.tga
 		blendFunc GL_ONE GL_ONE
 //                rgbgen wave sin 1 5.1 0 7.1
-                rgbgen wave sin 1 0.5 0 7.1
-                 tcmod scale  2 1
+				rgbgen wave sin 1 0.5 0 7.1
+				 tcmod scale  2 1
 		tcMod scroll -5 0
 	}
-    {
+	{
 		map gfx/misc/lightning3.tga
 		blendFunc GL_ONE GL_ONE
 //                rgbgen wave sin 1 8.3 0 8.1
-                rgbgen wave sin 1 0.8 0 8.1
-                tcmod scale  -1.3 -1
+				rgbgen wave sin 1 0.8 0 8.1
+				tcmod scale  -1.3 -1
 		tcMod scroll -7.2 0
 	}
 }
 
 gfx/effects/fireBlast
 {
-    nopicmip
-    nomipmaps
-    {
-        texFilter nearest
-        map gfx/effects/fire.tga
-        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-        rgbGen vertex
-    }
+	nopicmip
+	nomipmaps
+	{
+		texFilter nearest
+		map gfx/effects/fire.tga
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+	}
 }

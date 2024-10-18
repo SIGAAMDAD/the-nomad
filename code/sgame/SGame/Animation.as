@@ -55,12 +55,16 @@ namespace TheNomad::SGame {
 			string base;
 
 			m_nTicRate = uint( json[ "TicRate" ] );
+			m_bOscillate = bool( json[ "FlipFlop" ] );
+			m_nNumFrames = uint( json[ "Frames" ] );
+			m_bReverse = bool( json[ "Reverse" ] );
 
-//			if ( !json.get( "TicRate", base ) ) {
-//				ConsoleWarning( "invalid animation info, missing variable 'TicRate'\n" );
-//				return false;
-//			}
-//			m_nTicRate = Convert().ToInt( base );
+		/*
+			if ( !json.get( "TicRate", base ) ) {
+				ConsoleWarning( "invalid animation info, missing variable 'TicRate'\n" );
+				return false;
+			}
+			m_nTicRate = Convert().ToInt( base );
 			if ( !json.get( "FlipFlop", base ) ) {
 				ConsoleWarning( "invalid animation info, missing variable 'FlipFlop'\n" );
 				return false;
@@ -76,6 +80,7 @@ namespace TheNomad::SGame {
 				return false;
 			}
 			m_bReverse = Convert().ToBool( base );
+		*/
 
 			if ( m_bReverse ) {
 				m_nTicker = -1;
@@ -99,8 +104,8 @@ namespace TheNomad::SGame {
 		private uint m_nOldTic = 0;
 		private uint m_nNumFrames = 1;
 		private uint m_nTicRate = 1;
-		private int m_nTicker = 0;
-		private int m_nCurrentFrame = 0;
+		private uint m_nTicker = 0;
+		private uint m_nCurrentFrame = 0;
 		private bool m_bOscillate = false;
 		private bool m_bReverse = false;
 	};

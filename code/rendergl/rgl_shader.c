@@ -842,7 +842,7 @@ static qboolean ParseStage(shaderStage_t *stage, const char **text)
 
 			// parse up to MAX_IMAGE_ANIMATIONS animations
 			while ( 1 ) {
-				int		num;
+				int	num;
 
 				tok = COM_ParseExt( text, qfalse );
 				if ( !tok[0] ) {

@@ -49,13 +49,16 @@ static void R_BindAnimatedImageToTMU( const textureBundle_t *bundle, int tmu ) {
 	// exactly with waveforms of the same frequency
 	//index = myftol(tess.shaderTime * bundle->imageAnimationSpeed * FUNCTABLE_SIZE);
 	//index >>= FUNCTABLE_SIZE2;
-	v = backend.drawBatch.shaderTime * bundle->imageAnimationSpeed; // fix for frameloss bug -EC-
-	index = v;
+	index = (int64_t)( backend.drawBatch.shaderTime * bundle->imageAnimationSpeed ) * FUNCTABLE_SIZE; // fix for frameloss bug -EC-
+	index >>= FUNCTABLE_SIZE2;
 
 	if ( index < 0 ) {
 		index = 0;	// may happen with shader time offsets
 	}
-	index %= bundle->numImageAnimations;
+	
+	while ( index >= bundle->numImageAnimations ) {
+		index -= bundle->numImageAnimations;
+	}
 
 	GL_BindTexture( tmu, bundle->image[ index ] );
 }
@@ -468,9 +471,8 @@ void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, con
 			GLSL_SetUniformVec2( sp, UNIFORM_SCREEN_SIZE, screenSize );
 		}
 
-		GL_BindTexture( TB_DIFFUSEMAP, stageP->bundle[0].image[0] );
+		R_BindAnimatedImageToTMU( &stageP->bundle[TB_DIFFUSEMAP], TB_DIFFUSEMAP );
 		GLSL_SetUniformTexture( sp, UNIFORM_DIFFUSE_MAP, stageP->bundle[ TB_DIFFUSEMAP ].image[ 0 ] );
-//		GLSL_SetUniformTexture( sp, UNIFORM_DIFFUSE_MAP, 0 );
 
 		// custom texture filtering
 		if ( stageP->bundle[0].filter != -1 ) {
@@ -670,7 +672,7 @@ void RB_IterateShaderStages( shader_t *shader )
 
 			if ( light && !fastLight ) {
 				if ( stageP->bundle[TB_NORMALMAP].image[0] ) {
-					GL_BindTexture( 1, stageP->bundle[TB_NORMALMAP].image[0] );
+					R_BindAnimatedImageToTMU( &stageP->bundle[TB_NORMALMAP], TB_NORMALMAP );
 					GLSL_SetUniformTexture( sp, UNIFORM_NORMAL_MAP, stageP->bundle[ TB_NORMALMAP ].image[ 0 ] );
 				} else if ( r_normalMapping->i ) {
 					GL_BindTexture( 1, rg.whiteImage );
@@ -678,7 +680,7 @@ void RB_IterateShaderStages( shader_t *shader )
 				}
 
 				if ( stageP->bundle[TB_SPECULARMAP].image[0] ) {
-					GL_BindTexture( 2, stageP->bundle[TB_SPECULARMAP].image[0] );
+					R_BindAnimatedImageToTMU( &stageP->bundle[TB_SPECULARMAP], TB_SPECULARMAP );
 					GLSL_SetUniformTexture( sp, UNIFORM_SPECULAR_MAP, stageP->bundle[ TB_SPECULARMAP ].image[ 0 ] );
 				} else if ( r_specularMapping->i ) {
 					GL_BindTexture( 2, rg.whiteImage );
@@ -686,7 +688,7 @@ void RB_IterateShaderStages( shader_t *shader )
 				}
 
 				if ( stageP->bundle[ TB_LEVELSMAP ].image[0] ) {
-					GL_BindTexture( 3, stageP->bundle[ TB_LEVELSMAP ].image[0] );
+					R_BindAnimatedImageToTMU( &stageP->bundle[TB_LEVELSMAP], TB_LEVELSMAP );
 					GLSL_SetUniformTexture( sp, UNIFORM_LEVELS_MAP, stageP->bundle[ TB_LEVELSMAP ].image[ 0 ] );
 				} else {
 					GL_BindTexture( 3, rg.whiteImage );
@@ -699,7 +701,7 @@ void RB_IterateShaderStages( shader_t *shader )
 			ri.Error( ERR_DROP, "RB_IterateShaderStages: shader has missing diffuseMap stage texture" );
 		}
 
-		GL_BindTexture( TB_DIFFUSEMAP, stageP->bundle[TB_DIFFUSEMAP].image[0] );
+		R_BindAnimatedImageToTMU( &stageP->bundle[TB_DIFFUSEMAP], TB_DIFFUSEMAP );
 		GLSL_SetUniformTexture( sp, UNIFORM_DIFFUSE_MAP, stageP->bundle[ TB_DIFFUSEMAP ].image[ 0 ] );
 //		GLSL_SetUniformTexture( sp, TB_DIFFUSEMAP, 0 );
 		nglUniform1i( nglGetUniformLocation( sp->programId, "u_InLevel" ), rg.world != NULL );

@@ -44,11 +44,13 @@ namespace TheNomad::SGame {
 				m_SpriteOffset.x = uint( values[0] );
 				m_SpriteOffset.y = uint( values[1] );
 			}
-			if ( !data.get( "Tics", base ) ) {
-				ConsoleWarning( "invalid state info, missing variable 'Tics'\n" );
-				return false;
-			}
-			m_nTics = Convert().ToInt( base );
+
+			m_nTics = uint( data[ "Tics" ] );
+//			if ( !data.get( "Tics", base ) ) {
+//				ConsoleWarning( "invalid state info, missing variable 'Tics'\n" );
+//				return false;
+//			}
+//			m_nTics = Convert().ToInt( base );
 			if ( !data.get( "Entity", base ) ) {
 				ConsoleWarning( "invalid state info, missing variable 'Entity'\n" );
 				return false;
@@ -142,11 +144,11 @@ namespace TheNomad::SGame {
 		private uvec2 m_SpriteOffset = uvec2( 0 );
 		private EntityState@ m_NextState = null;
 		private Animation m_Animation;
-		private uint64 m_nTics = 0;
+		private uint m_nTics = 0;
 		private uint m_nStateNum = 0;
 		private uint m_nStateOffset = 0;
 
 		// runtime data
-		private uint64 m_nTicker = 0;
+		private uint m_nTicker = 0;
 	};
 };
