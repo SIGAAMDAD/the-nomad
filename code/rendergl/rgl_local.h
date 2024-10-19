@@ -984,9 +984,6 @@ typedef struct {
 	worldPos_t *worldPos;
 	vec3_t *xyz;
 	vec2_t *uv;
-//	tangent_t *tangent;
-//	bitangent_t *bitangent;
-//	normal_t *normal;
 	color_t *color;
 	drawVert_t *vertices;
 	uint64_t numVertices;
@@ -1248,10 +1245,6 @@ typedef struct
 	float sawToothTable[FUNCTABLE_SIZE];
 	float inverseSawToothTable[FUNCTABLE_SIZE];
 	qboolean vertexLightingAllowed;
-
-	GLuint pixelPackBuffer[2];
-	int pixelPackBufferIndex;
-	int pixelPackBufferNextIndex;
 } renderGlobals_t;
 
 extern renderGlobals_t rg;

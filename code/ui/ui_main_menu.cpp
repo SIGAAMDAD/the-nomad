@@ -171,7 +171,7 @@ static void DrawMenu_Text( void )
 	} else {
 		ImGui::NewLine();
 	}
-	ImGui::TextUnformatted( GLN_VERSION " (C) 2020-2024, GDR Games, All Rights Reserved" );
+	ImGui::TextUnformatted( GLN_VERSION );
 	ImGui::End();
 }
 

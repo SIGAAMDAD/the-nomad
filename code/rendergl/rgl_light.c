@@ -2,10 +2,24 @@
 
 static void R_LightForPoint( const vec3_t origin, const maplight_t *light, vec3_t color )
 {
+	/*
 	vec3_t lightPos;
-	float distance, diffuse;
+	vec3_t diffuse;
+	float distance, diff;
 	float range, attenuation;
-	
+
+	VectorClear( diffuse );
+	attenuation = 0.0f;
+
+	distance = disBetweenOBJ( origin, light->origin );
+	if ( distance <= light->range ) {
+		diff = 1.0 - abs( distance / range );
+	}
+	diff = light->brightness;
+	diffuse[0] = MIN( diff * ( diff + light->color[0] ), diffuse );
+
+	attenuation = ( light->constant + light->linear * light->range + light->quadratic * ( light->range * light->range ) );
+
 	VectorClear( lightPos );
 	VectorCopy2( lightPos, light->origin );
 	
@@ -27,6 +41,7 @@ static void R_LightForPoint( const vec3_t origin, const maplight_t *light, vec3_
 	attenuation = ( light->constant + light->linear * range + light->quadratic * ( range * range ) );
 	
 	VectorScale( color, attenuation, color );
+	*/
 }
 
 static void R_DlightForPoint( const vec3_t origin, const dlight_t *dl, vec3_t color )

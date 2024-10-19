@@ -983,17 +983,17 @@ static const void *RB_DrawImage( const void *data ) {
 	{
 		uint16_t color[4];
 
-//		VectorScale4( backend.color2D, 257, color );
+		VectorScale4( backend.color2D, 257, color );
+
+		VectorCopy4( verts[0].color, color );
+		VectorCopy4( verts[1].color, color );
+		VectorCopy4( verts[2].color, color );
+		VectorCopy4( verts[3].color, color );
 
 //		VectorCopy4( verts[0].color.rgba, backend.color2D );
 //		VectorCopy4( verts[1].color.rgba, backend.color2D );
 //		VectorCopy4( verts[2].color.rgba, backend.color2D );
 //		VectorCopy4( verts[3].color.rgba, backend.color2D );
-
-		R_VaoPackColor( verts[0].color, backend.color2D );
-		R_VaoPackColor( verts[1].color, backend.color2D );
-		R_VaoPackColor( verts[2].color, backend.color2D );
-		R_VaoPackColor( verts[3].color, backend.color2D );
 	}
 
 	verts[ 0 ].xyz[0] = cmd->x;

@@ -251,9 +251,6 @@ void RE_ProcessEntities( void )
 			break;
 		}
 
-//        refEntity->e.origin[0] = Com_Clamp( 0.0f, rg.world->width, refEntity->e.origin[0] );
-//        refEntity->e.origin[1] = Com_Clamp( 0.0f, rg.world->height, refEntity->e.origin[1] );
-
 		origin[0] = refEntity->e.origin[0];
 		origin[1] = rg.world->height - refEntity->e.origin[1];
 		origin[2] = refEntity->e.origin[2];
@@ -276,16 +273,32 @@ void RE_ProcessEntities( void )
 			VectorSet2( verts[2].uv, 1, 1 );
 			VectorSet2( verts[3].uv, 0, 1 );
 		} else {
-			for ( j = 0; j < 4; j++ ) {
-				VectorCopy2( verts[ j ].uv, rg.sheets[ refEntity->e.sheetNum ]->sprites[ refEntity->e.spriteId ].texCoords[j] );
-			}
+			VectorCopy2( verts[ 0 ].uv, rg.sheets[ refEntity->e.sheetNum ]->sprites[ refEntity->e.spriteId ].texCoords[0] );
+			VectorCopy2( verts[ 1 ].uv, rg.sheets[ refEntity->e.sheetNum ]->sprites[ refEntity->e.spriteId ].texCoords[1] );
+			VectorCopy2( verts[ 2 ].uv, rg.sheets[ refEntity->e.sheetNum ]->sprites[ refEntity->e.spriteId ].texCoords[2] );
+			VectorCopy2( verts[ 3 ].uv, rg.sheets[ refEntity->e.sheetNum ]->sprites[ refEntity->e.spriteId ].texCoords[3] );
 		}
 
-		for ( j = 0; j < 4; j++ ) {
-			VectorSet2( verts[j].worldPos, refEntity->e.origin[0], refEntity->e.origin[1] + refEntity->e.origin[2] );
-			VectorCopy( verts[j].xyz, xyz[j] );
-			verts[j].modulate.u32 = refEntity->ambientLightInt;
-		}
+		VectorSet2( verts[0].worldPos, refEntity->e.origin[0], refEntity->e.origin[1] + refEntity->e.origin[2] );
+		VectorCopy( verts[0].xyz, xyz[0] );
+		verts[0].modulate.u32 = refEntity->e.shader.u32;
+		verts[0].modulate.u32 += refEntity->ambientLightInt;
+
+		VectorSet2( verts[1].worldPos, refEntity->e.origin[0], refEntity->e.origin[1] + refEntity->e.origin[2] );
+		VectorCopy( verts[1].xyz, xyz[1] );
+		verts[1].modulate.u32 = refEntity->e.shader.u32;
+		verts[1].modulate.u32 += refEntity->ambientLightInt;
+
+		VectorSet2( verts[2].worldPos, refEntity->e.origin[0], refEntity->e.origin[1] + refEntity->e.origin[2] );
+		VectorCopy( verts[2].xyz, xyz[2] );
+		verts[2].modulate.u32 = refEntity->e.shader.u32;
+		verts[2].modulate.u32 += refEntity->ambientLightInt;
+
+		VectorSet2( verts[3].worldPos, refEntity->e.origin[0], refEntity->e.origin[1] + refEntity->e.origin[2] );
+		VectorCopy( verts[3].xyz, xyz[3] );
+		verts[3].modulate.u32 = refEntity->e.shader.u32;
+		verts[3].modulate.u32 += refEntity->ambientLightInt;
+
 		verts += 4;
 		r_numPolyVerts += 4;
 

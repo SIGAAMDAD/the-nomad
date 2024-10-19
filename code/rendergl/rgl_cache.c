@@ -558,32 +558,17 @@ void VBO_Bind( vertexBuffer_t *vbo )
 		glState.vboId = vbo->vertex.id;
 		glState.iboId = vbo->index.id;
 		backend.pc.c_bufferBinds++;
-
-		if ( r_drawMode->i == DRAWMODE_CLIENT ) {
-			nglEnableClientState( GL_COLOR_ARRAY );
-			nglEnableClientState( GL_VERTEX_ARRAY );
-			nglEnableClientState( GL_TEXTURE_COORD_ARRAY );
-
-			nglBindVertexArray( vbo->vaoId );
-			nglBindBuffer( GL_ARRAY_BUFFER, vbo->vertex.id );
+		nglBindVertexArray( vbo->vaoId );
+		nglBindBuffer( GL_ARRAY_BUFFER, vbo->vertex.id );
+		if ( vbo->index.id != 0 ) {
 			nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, vbo->index.id );
-
-			nglVertexPointer( 3, GL_FLOAT, sizeof( srfVert_t ), ( (srfVert_t *)vbo->vertex.data )->xyz );
-			nglTexCoordPointer( 2, GL_FLOAT, sizeof( srfVert_t ), ( (srfVert_t *)vbo->vertex.data )->st );
-			nglColorPointer( 4, GL_UNSIGNED_SHORT, sizeof( srfVert_t ), ( (srfVert_t *)vbo->vertex.data )->color );
-		} else if ( r_drawMode->i >= DRAWMODE_GPU ) {
-			nglBindVertexArray( vbo->vaoId );
-			nglBindBuffer( GL_ARRAY_BUFFER, vbo->vertex.id );
-			if ( vbo->index.id != 0 ) {
-				nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, vbo->index.id );
-			}
-
-			// Intel Graphics doesn't save GL_ELEMENT_ARRAY_BUFFER binding with VAO binding.
-			// [TheNomad] 6/10/24 you've gotta bind it, nothing saves the binding
-//			if ( glContext.intelGraphics ) {
-//				nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, vbo->index.id );
-//			}
 		}
+
+		// Intel Graphics doesn't save GL_ELEMENT_ARRAY_BUFFER binding with VAO binding.
+		// [TheNomad] 6/10/24 you've gotta bind it, nothing saves the binding
+//		if ( glContext.intelGraphics ) {
+//			nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, vbo->index.id );
+//		}
 	}
 }
 
@@ -597,26 +582,15 @@ void VBO_BindNull( void )
 	if ( glState.currentVao ) {
 		glState.currentVao = NULL;
 		glState.vaoId = glState.vboId = glState.iboId = 0;
+		
+		nglBindVertexArray( 0 );
+		nglBindBuffer( GL_ARRAY_BUFFER, 0 );
+		nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
 
-		if ( r_drawMode->i == DRAWMODE_CLIENT ) {
-			nglDisableClientState( GL_COLOR_ARRAY );
-			nglDisableClientState( GL_VERTEX_ARRAY );
-			nglDisableClientState( GL_TEXTURE_COORD_ARRAY );
-
-			nglBindBuffer( GL_ARRAY_BUFFER, 0 );
-			nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
-
-			nglBindVertexArray( 0 );
-		} else if ( r_drawMode->i >= DRAWMODE_GPU ) {
-	        nglBindVertexArray( 0 );
-			nglBindBuffer( GL_ARRAY_BUFFER, 0 );
-			nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
-
-	        // why you no save GL_ELEMENT_ARRAY_BUFFER binding, Intel?
-//	        if ( glContext.intelGraphics ) {
-//				nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
-//			}
-		}
+	    // why you no save GL_ELEMENT_ARRAY_BUFFER binding, Intel?
+//		if ( glContext.intelGraphics ) {
+//			nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
+//		}
 	}
 
 	GL_CheckErrors();
@@ -761,20 +735,24 @@ void RB_FlushBatchBuffer( void )
 		void *data;
 
 		data = nglMapBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, backend.drawBatch.idxDataSize * backend.drawBatch.idxOffset,
-			GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_INVALIDATE_RANGE_BIT );
+			GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT );
 		if ( data ) {
 			memcpy( data, backend.drawBatch.indices,
 				backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize );
 		}
 		nglUnmapBuffer( GL_ELEMENT_ARRAY_BUFFER );
 		
-		data = nglMapBufferRange( GL_ARRAY_BUFFER, 0, backend.drawBatch.vtxDataSize * backend.drawBatch.vtxOffset,
-			GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_INVALIDATE_BUFFER_BIT );
-		if ( data ) {
-			memcpy( data, backend.drawBatch.vertices,
-				backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize );
+		if ( glContext.intelGraphics ) {
+			data = nglMapBufferRange( GL_ARRAY_BUFFER, 0, backend.drawBatch.vtxDataSize * backend.drawBatch.vtxOffset,
+				GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT );
+			if ( data ) {
+				memcpy( data, backend.drawBatch.vertices,
+					backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize );
+			}
+			nglUnmapBuffer( GL_ARRAY_BUFFER );
+		} else {
+			nglBufferSubData( GL_ARRAY_BUFFER, 0, backend.drawBatch.vtxDataSize * backend.drawBatch.vtxOffset, backend.drawBatch.vertices );
 		}
-		nglUnmapBuffer( GL_ARRAY_BUFFER );
 	}
 	if ( 1 ) {
 	}
