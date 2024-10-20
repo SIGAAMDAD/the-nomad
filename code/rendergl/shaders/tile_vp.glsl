@@ -3,11 +3,13 @@ in vec2 a_TexCoords;
 in uvec2 a_WorldPos;
 in vec4 a_Color;
 
-out vec2 v_TexCoords;
-out vec3 v_FragPos;
-out vec4 v_Color;
-out vec3 v_WorldPos;
-out vec3 v_Position;
+layout( xfb_buffer = 0 ) out VertexData {
+	out vec2 v_TexCoords;
+	out vec3 v_FragPos;
+	out vec4 v_Color;
+	out vec3 v_WorldPos;
+	out vec3 v_Position;
+};
 
 uniform bool u_WorldDrawing;
 uniform mat4 u_ModelViewProjection;

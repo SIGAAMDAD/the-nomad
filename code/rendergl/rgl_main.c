@@ -299,10 +299,6 @@ void R_DrawWorld( void )
 	drawVert_t *vtx;
 	drawVert_t verts[4];
 	vec3_t *xyz;
-	ivec2_t begin, end;
-	vec4_t normal;
-	vec4_t color;
-	uint16_t color16[4];
 	const renderEntityDef_t *refEntity;
 
 	if ( ( backend.refdef.flags & RSF_NOWORLDMODEL ) ) {
@@ -349,20 +345,6 @@ void R_DrawWorld( void )
 
 			// convert the local world coordinates to OpenGL screen coordinates
 			R_WorldToGL( verts, pos );
-			
-			// generate normals
-			// FIXME: this is hideous
-			/*
-			if ( &vtx[3] != &rg.world->vertices[rg.world->numVertices] ) {
-				VectorSubtract( vtx->xyz, vtx[1].xyz, edge1 );
-				VectorSubtract( vtx->xyz, vtx[3].xyz, edge2 );
-				CrossProduct( edge1, edge2, normal );
-			} else {
-				VectorSubtract( vtx->xyz, vtx[1].xyz, edge1 );
-				VectorSubtract( vtx->xyz, vtx[2].xyz, edge2 );
-				CrossProduct( edge1, edge2, normal );
-			}
-			*/
 
 			VectorCopy( xyz[ 0 ], verts[0].xyz );
 			VectorCopy( xyz[ 1 ], verts[1].xyz );
@@ -370,7 +352,7 @@ void R_DrawWorld( void )
 			VectorCopy( xyz[ 3 ], verts[3].xyz );
 
 			// check if there's any entities in the way
-			VectorSet4( color, 1.0f, 1.0f, 1.0f, 1.0f );
+//			VectorSet4( color, 1.0f, 1.0f, 1.0f, 1.0f );
 			for ( j = 0; j < backend.refdef.numEntities; j++ ) {
 				refEntity = &backend.refdef.entities[j];
 
@@ -383,7 +365,7 @@ void R_DrawWorld( void )
 				}
 
 				if ( rg.world->tiles[ origin[1] * rg.world->width + origin[0] ].flags & TILESIDE_SOUTH ) {
-					color[3] = 0.10f;
+//					color[3] = 0.10f;
 					break;
 				}
 			}

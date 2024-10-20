@@ -309,6 +309,15 @@ typedef void*(*NGLloadproc)(const char *name);
 	NGL( void, glUniformHandleui64ARB, GLint location, GLuint64 value ) \
 	NGL( void, glUniformHandleui64vARB, GLint location, GLsizei count, const GLuint64 *value )
 
+#define NGL_ARB_transform_feedback \
+	NGL( void, glGenTransformFeedback, GLsizei n, GLuint *ids ) \
+	NGL( void, glDeleteTransformFeedbacks, GLsizei n, const GLuint *ids ) \
+	NGL( void, glBindTransformFeedback, GLenum target, GLuint id ) \
+	NGL( void, glBeginTransformFeedback, GLenum primitiveMode ) \
+	NGL( void, glEndTransformFeedback, void ) \
+	NGL( void, glPauseTransformFeedback, void ) \
+	NGL( void, glTransformFeedbackVaryings, GLuint program, GLsizei count, const char **varyings, GLenum bufferMode ) \
+
 #define NGL_NV_shader_buffer_load \
 	NGL( void, glMakeBufferResidentNV, GLenum target, GLenum access ) \
 	NGL( void, glMakeBufferNonResidentNV, GLenum target ) \
@@ -361,6 +370,7 @@ NGL_BufferARB_Procs
 NGL_Buffer_Procs
 NGL_Texture_Procs
 
+NGL_ARB_transform_feedback
 NGL_ARB_map_buffer_range
 NGL_ARB_buffer_storage
 NGL_ARB_sync

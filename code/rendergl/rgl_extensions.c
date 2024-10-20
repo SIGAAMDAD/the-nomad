@@ -54,6 +54,26 @@ void R_InitExtensions( void )
 	}
 
 	//
+	// ARB_transform_feedback
+	//
+	ext = "GL_ARB_transform_feedback";
+	glContext.transformFeedback = qfalse;
+	if ( ( NGL_VERSION_ATLEAST( 4, 0 ) ) || R_HasExtension( ext ) ) {
+		NGL_ARB_transform_feedback
+
+		glContext.transformFeedback = qtrue;
+
+		if ( !nglBeginTransformFeedback || !nglEndTransformFeedback ) {
+			ri.Printf( PRINT_INFO, result[EXT_FAILED], ext );
+			glContext.transformFeedback = qfalse;
+		} else {
+			ri.Printf( PRINT_INFO, result[EXT_USING], ext );
+		}
+	} else {
+		ri.Printf( PRINT_INFO, result[EXT_NOTFOUND], ext );
+	}
+
+	//
 	// ARB_bindless_texture
 	//
 	ext = "GL_ARB_bindless_texture";

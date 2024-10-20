@@ -23,6 +23,7 @@ NGL_ARB_map_buffer_range
 NGL_ARB_sync
 NGL_ARB_bindless_texture
 NGL_NV_shader_buffer_load
+NGL_ARB_transform_feedback
 #undef NGL
 
 // because they're edgy...

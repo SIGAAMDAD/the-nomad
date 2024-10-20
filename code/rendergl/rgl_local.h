@@ -133,6 +133,7 @@ typedef struct
 	qboolean swizzleNormalmap;
 	qboolean smpActive;
 	qboolean bindlessTextures;
+	qboolean transformFeedback;
 
 	int maxTextureUnits;
 	int maxTextureSize;
@@ -983,9 +984,6 @@ typedef struct {
 	worldPos_t *worldPos;
 	vec3_t *xyz;
 	vec2_t *uv;
-//	tangent_t *tangent;
-//	bitangent_t *bitangent;
-//	normal_t *normal;
 	color4ub_t *color;
 	drawVert_t *vertices;
 	uint64_t numVertices;

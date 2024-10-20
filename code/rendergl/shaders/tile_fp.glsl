@@ -3,11 +3,13 @@ layout( location = 0 ) out vec4 a_Color;
 layout( location = 1 ) out vec4 a_BrightColor;
 #endif
 
-in vec2 v_TexCoords;
-in vec3 v_FragPos;
-in vec4 v_Color;
-in vec3 v_WorldPos;
-in vec3 v_Position;
+in VertexData {
+	in vec2 v_TexCoords;
+	in vec3 v_FragPos;
+	in vec4 v_Color;
+	in vec3 v_WorldPos;
+	in vec3 v_Position;
+};
 
 uniform float u_GammaAmount;
 uniform bool u_GamePaused;
