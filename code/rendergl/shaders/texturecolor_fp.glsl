@@ -2,7 +2,7 @@
 layout( location = 0 ) out vec4 a_Color;
 #endif
 
-uniform sampler2D u_DiffuseMap;
+TEXTURE2D u_DiffuseMap;
 uniform vec4 u_Color;
 uniform int u_AntiAliasing;
 uniform int u_AntiAliasingQuality;
@@ -15,12 +15,12 @@ in vec2 v_TexCoords;
 #include "fxaa.glsl"
 
 void main() {
-	if ( u_FinalPass ) {
-		if ( u_AntiAliasing == AntiAlias_FXAA ) {
-			a_Color = ApplyFXAA( u_DiffuseMap, v_TexCoords );
-		}
-		a_Color *= sharpenImage( u_DiffuseMap, v_TexCoords );
-	} else {
+//	if ( u_FinalPass ) {
+//		if ( u_AntiAliasing == AntiAlias_FXAA ) {
+//			a_Color = ApplyFXAA( u_DiffuseMap, v_TexCoords );
+//		}
+//		a_Color *= sharpenImage( u_DiffuseMap, v_TexCoords );
+//	} else {
 		a_Color = texture2D( u_DiffuseMap, v_TexCoords );
-	}
+//	}
 }

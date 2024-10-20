@@ -19,13 +19,17 @@ bool CSoundWorld::LoadOcclusionGeometry( void )
 
 	Con_Printf( "...Loaded geometry occlusion file\n" );
 
-	CSoundSystem::GetCoreSystem()->loadGeometry( f.v, nLength, &m_pGeomtryBuffer );
+	CSoundSystem::GetCoreSystem()->loadGeometry( f.v, nLength, &m_pGeometryBuffer );
 
 	FS_FreeFile( f.v );
 
 	return true;
 }
 
+/*
+* CSoundWorld::AllocateChannel: finds the first free or oldest channel and
+* returns that to be used
+*/
 channel_t *CSoundWorld::AllocateChannel( CSoundSource *pSource )
 {
 	uint32_t i;
@@ -77,11 +81,11 @@ void CSoundWorld::ReleaseChannel( channel_t *pChannel )
 
 void CSoundWorld::Shutdown( void )
 {
-	if ( m_pGeomtryBuffer ) {
-		m_pGeomtryBuffer->release();
+	if ( m_pGeometryBuffer ) {
+		m_pGeometryBuffer->release();
 	}
 
-	m_pGeomtryBuffer = NULL;
+	m_pGeometryBuffer = NULL;
 	m_pszEmitters = NULL;
 	m_pszChannels = NULL;
 }
@@ -126,7 +130,7 @@ void CSoundWorld::Init( void )
 			}
 		}
 
-		CSoundSystem::GetCoreSystem()->createGeometry( numPolys, numVertices, &m_pGeomtryBuffer );
+		CSoundSystem::GetCoreSystem()->createGeometry( numPolys, numVertices, &m_pGeometryBuffer );
 
 		for ( y = 0; y < gi.mapCache.info.width; y++ ) {
 			for ( x = 0; x < gi.mapCache.info.height; x++ ) {
@@ -137,7 +141,7 @@ void CSoundWorld::Init( void )
 					vertices[2] = {  1.0f,  1.0f, 0.0f };
 					vertices[3] = { -1.0f, -1.0f, 0.0f };
 
-					ERRCHECK( m_pGeomtryBuffer->addPolygon( 1.0f, 1.0f, IsDoubleSidedWall( DIR_NORTH, tiles[ y * gi.mapCache.info.width + x ].flags ),
+					ERRCHECK( m_pGeometryBuffer->addPolygon( 1.0f, 1.0f, IsDoubleSidedWall( DIR_NORTH, tiles[ y * gi.mapCache.info.width + x ].flags ),
 						4, vertices, &polyIndex ) );
 				}
 				if ( IsWall( DIR_EAST, tiles[ y * gi.mapCache.info.width + x ].flags ) ) {
@@ -147,7 +151,7 @@ void CSoundWorld::Init( void )
 					vertices[2] = {  1.0f,  1.0f, 0.0f };
 					vertices[3] = { -1.0f, -1.0f, 0.0f };
 
-					ERRCHECK( m_pGeomtryBuffer->addPolygon( 1.0f, 1.0f, IsDoubleSidedWall( DIR_EAST, tiles[ y * gi.mapCache.info.width + x ].flags ),
+					ERRCHECK( m_pGeometryBuffer->addPolygon( 1.0f, 1.0f, IsDoubleSidedWall( DIR_EAST, tiles[ y * gi.mapCache.info.width + x ].flags ),
 						4, vertices, &polyIndex ) );
 				}
 				if ( IsWall( DIR_SOUTH, tiles[ y * gi.mapCache.info.width + x ].flags ) ) {
@@ -157,7 +161,7 @@ void CSoundWorld::Init( void )
 					vertices[2] = {  1.0f,  1.0f, 0.0f };
 					vertices[3] = { -1.0f, -1.0f, 0.0f };
 
-					ERRCHECK( m_pGeomtryBuffer->addPolygon( 1.0f, 1.0f, IsDoubleSidedWall( DIR_SOUTH, tiles[ y * gi.mapCache.info.width + x ].flags ),
+					ERRCHECK( m_pGeometryBuffer->addPolygon( 1.0f, 1.0f, IsDoubleSidedWall( DIR_SOUTH, tiles[ y * gi.mapCache.info.width + x ].flags ),
 						4, vertices, &polyIndex ) );
 				}
 				if ( IsWall( DIR_WEST, tiles[ y * gi.mapCache.info.width + x ].flags ) ) {
@@ -167,7 +171,7 @@ void CSoundWorld::Init( void )
 					vertices[2] = {  1.0f,  1.0f, 0.0f };
 					vertices[3] = { -1.0f, -1.0f, 0.0f };
 
-					ERRCHECK( m_pGeomtryBuffer->addPolygon( 1.0f, 1.0f, IsDoubleSidedWall( DIR_WEST, tiles[ y * gi.mapCache.info.width + x ].flags ),
+					ERRCHECK( m_pGeometryBuffer->addPolygon( 1.0f, 1.0f, IsDoubleSidedWall( DIR_WEST, tiles[ y * gi.mapCache.info.width + x ].flags ),
 						4, vertices, &polyIndex ) );
 				}
 			}
@@ -175,9 +179,9 @@ void CSoundWorld::Init( void )
 
 		COM_StripExtension( Cvar_VariableString( "mapname" ), path, sizeof( path ) );
 
-		ERRCHECK( m_pGeomtryBuffer->save( NULL, &savedGeometrySize ) );
+		ERRCHECK( m_pGeometryBuffer->save( NULL, &savedGeometrySize ) );
 		savedGeometry = Hunk_AllocateTempMemory( savedGeometrySize );
-		ERRCHECK( m_pGeomtryBuffer->save( savedGeometry, &savedGeometrySize ) );
+		ERRCHECK( m_pGeometryBuffer->save( savedGeometry, &savedGeometrySize ) );
 		FS_WriteFile( va( "Cache/occlusion/%s.fsb.geom", COM_SkipPath( path ) ), savedGeometry, savedGeometrySize );
 		Hunk_FreeTempMemory( savedGeometry );
 	}
@@ -296,6 +300,14 @@ void CSoundWorld::SetEmitterPosition( nhandle_t hEmitter, const vec3_t origin, f
 
 void CSoundWorld::SetEmitterAudioMask( nhandle_t hEmitter, uint32_t nMask )
 {
+	emitter_t *em;
+
+	if ( hEmitter >= m_nEmitterCount || hEmitter < 0 ) {
+		N_Error( ERR_DROP, "CSoundWorld::SetEmitterAudioMask: invalid emitter ID %i", hEmitter );
+	}
+
+	em = &m_pszEmitters[ hEmitter ];
+	em->listenerMask = nMask;
 }
 
 void CSoundWorld::SetEmitterVolume( nhandle_t hEmitter, float nVolume )

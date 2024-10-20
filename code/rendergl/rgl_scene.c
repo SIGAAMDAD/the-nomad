@@ -132,10 +132,17 @@ void RE_AddDynamicLightToScene( const vec3_t origin, float brightness, const vec
 		return;
 	}
 
-	dl = &backendData[ rg.smpFrame ]->dlights[ r_numDLights++ ];
+	dl = &backendData[ rg.smpFrame ]->dlights[ r_numDLights ];
 	VectorCopy( dl->origin, origin );
 	VectorCopy( dl->color, color );
 	dl->brightness = brightness;
+	dl->range = brightness;
+	dl->specular = 10.0f;
+	dl->ambient = 10.0f;
+	dl->diffuse = 10.0f;
+	dl->ltype = LIGHT_POINT;
+
+	r_numDLights++;
 }
 
 void RE_AddPolyListToScene( const poly_t *polys, uint32_t numPolys )
@@ -193,9 +200,7 @@ void RE_ProcessDLights( void )
 	shaderLight_t *gpuLight;
 	uint64_t i;
 
-	if ( !r_dynamiclight->i || !r_numDLights || !backend.refdef.numDLights ||
-		( backend.refdef.flags & RSF_ORTHO_BITS ) != RSF_ORTHO_TYPE_WORLD )
-	{
+	if ( !r_dynamiclight->i || !r_numDLights || !backend.refdef.numDLights || ( backend.refdef.flags & RSF_ORTHO_BITS ) != RSF_ORTHO_TYPE_WORLD ) {
 		return;
 	}
 
@@ -203,25 +208,32 @@ void RE_ProcessDLights( void )
 	gpuLight = (shaderLight_t *)rg.lightData->data + rg.world->numLights;
 
 	for ( i = 0; i < backend.refdef.numDLights; i++ ) {
-		if ( r_numDLights >= r_maxDLights->i || r_numDLights + rg.world->numLights >= MAX_MAP_LIGHTS ) {
+		if ( r_numDLights >= r_maxDLights->i ) {
 			ri.Printf( PRINT_DEVELOPER, "R_ProcessDLights: too many lights, dropping %lu lights\n", backend.refdef.numDLights - i );
 		}
 
 		memset( gpuLight, 0, sizeof( *gpuLight ) );
-		VectorCopy( gpuLight->origin, dlight->origin );
+		VectorSet2( gpuLight->origin, dlight->origin[0], dlight->origin[1] );
 		VectorCopy( gpuLight->color, dlight->color );
 
-		gpuLight->color[0] *= dlight->ambient;
-		gpuLight->color[1] *= dlight->ambient;
-		gpuLight->color[2] *= dlight->ambient;	
+//		gpuLight->color[0] *= dlight->ambient;
+//		gpuLight->color[1] *= dlight->ambient;
+//		gpuLight->color[2] *= dlight->ambient;
+		gpuLight->color[3] = 1.0f;
 		
-		gpuLight->brightness = 1.0f;
-		gpuLight->range = dlight->brightness;
+		gpuLight->brightness = 0.1f;
+		gpuLight->range = dlight->range;
 		gpuLight->type = dlight->ltype;
+		gpuLight->quadratic = 0.0f;
+		gpuLight->linear = 1.0f;
+		gpuLight->constant = 6.0f;
 
 		gpuLight++;
 		dlight++;
 	}
+	GLSL_ShaderBufferData( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, sizeof( *gpuLight ) * backend.refdef.numDLights,
+		sizeof( *gpuLight ) * MAX_MAP_LIGHTS, qfalse );
+	GLSL_SetUniformInt( &rg.tileShader, UNIFORM_NUM_LIGHTS, rg.world->numLights + backend.refdef.numDLights );
 }
 
 void RE_ProcessEntities( void )
@@ -316,12 +328,12 @@ void RE_BeginScene( const renderSceneRef_t *fd )
 	backend.refdef.height = fd->height;
 	backend.refdef.flags = fd->flags;
 
-	backend.refdef.time = fd->time;
-	backend.refdef.floatTime = (double)backend.refdef.time * 0.001f; // -EC-: cast to double
+//	backend.refdef.time = fd->time;
+	backend.refdef.floatTime = backend.refdef.time * 0.001f; // -EC-: cast to double
 
 	backend.refdef.numDLights = r_numDLights - r_firstSceneDLight;
 	backend.refdef.dlights = &backendData[ rg.smpFrame ]->dlights[ r_firstSceneDLight ];
-	
+
 	backend.refdef.numEntities = r_numEntities - r_firstSceneEntity;
 	backend.refdef.entities = &backendData[ rg.smpFrame ]->entities[ r_firstSceneEntity ];
 

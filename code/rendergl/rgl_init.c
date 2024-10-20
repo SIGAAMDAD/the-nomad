@@ -1581,8 +1581,6 @@ void R_Init( void )
 	
 	//R_InitWorldBuffer();
 
-	VBO_Bind( backend.drawBuffer );
-
 	ri.Cmd_AddCommand( "unloadworld", R_UnloadWorld_f );
 
 	// print info

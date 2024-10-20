@@ -57,30 +57,15 @@ void R_InitExtensions( void )
 	// ARB_bindless_texture
 	//
 	ext = "GL_ARB_bindless_texture";
-	if ( ( NGL_VERSION_ATLEAST( 4, 0 ) || R_HasExtension( ext ) ) && r_loadTexturesOnDemand->i ) {
+	glContext.bindlessTextures = qfalse;
+	if ( ( NGL_VERSION_ATLEAST( 4, 0 ) || R_HasExtension( ext ) ) ) {
 		NGL_ARB_bindless_texture
+
+		glContext.bindlessTextures = qtrue;
 
 		if ( !nglMakeTextureHandleNonResidentARB || !nglIsTextureHandleResidentARB || !nglGetTextureHandleARB ) {
 			ri.Printf( PRINT_INFO, result[EXT_FAILED], ext );
-			ri.Cvar_Set( "r_loadTexturesOnDemand", "0" );
-		} else {
-			ri.Printf( PRINT_INFO, result[EXT_USING], ext );
-			ri.Cvar_Set( "r_loadTexturesOnDemand", "1" );
-		}
-	} else {
-		ri.Printf( PRINT_INFO, result[EXT_NOTFOUND], ext );
-		ri.Cvar_Set( "r_loadTexturesOnDemand", "0" );
-	}
-
-	//
-	// NV_shader_buffer_load
-	//
-	ext = "GL_NV_shader_buffer_load";
-	if ( R_HasExtension( ext ) && strstr( glConfig.renderer_string, "NVIDIA" ) ) {
-		NGL_NV_shader_buffer_load
-
-		if ( !nglMakeBufferNonResidentNV || !nglMakeBufferNonResidentNV ) {
-			ri.Printf( PRINT_INFO, result[EXT_FAILED], ext );
+			glContext.bindlessTextures = qfalse;
 		} else {
 			ri.Printf( PRINT_INFO, result[EXT_USING], ext );
 		}

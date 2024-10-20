@@ -142,7 +142,7 @@ qboolean R_ClearTextureCache( void )
 {
 	uint64_t i;
 	
-	if ( !r_loadTexturesOnDemand->i ) {
+	if ( !r_loadTexturesOnDemand->i && glContext.bindlessTextures ) {
 		return qfalse;
 	}
 	
@@ -162,7 +162,7 @@ void R_TouchTexture( texture_t *image )
 {
 	image->frameUsed = rg.frameCount;
 	
-	if ( !r_loadTexturesOnDemand->i || !image->evicted ) {
+	if ( ( !r_loadTexturesOnDemand->i && glContext.bindlessTextures ) || !image->evicted ) {
 		return;
 	}
 	
@@ -179,7 +179,7 @@ void R_EvictUnusedTextures( void )
 	texture_t *image;
 	static uint64_t lastEvictionTime = 0;
 	
-	if ( !r_loadTexturesOnDemand->i || *ri.Cvar_VariableString( "mapname" ) ) {
+	if ( ( !r_loadTexturesOnDemand->i && glContext.bindlessTextures ) || *ri.Cvar_VariableString( "mapname" ) ) {
 		return;
 	}
 
@@ -231,7 +231,7 @@ void R_UpdateTextures( void )
     for ( i = 0; i < rg.numTextures; i++ ) {
         t = rg.textures[i];
         
-		if ( !r_loadTexturesOnDemand->i ) {
+		if ( !( r_loadTexturesOnDemand->i && glContext.bindlessTextures ) ) {
 	    	GL_BindTexture( TB_COLORMAP, t );
 			
 	    	nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min );
@@ -243,9 +243,8 @@ void R_UpdateTextures( void )
 			} else {
 				nglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 0 );
 			}
+			GL_BindTexture( TB_COLORMAP, 0 );
 		}
-
-	    GL_BindTexture( TB_COLORMAP, 0 );
     }
 }
 
@@ -2526,7 +2525,7 @@ static void R_AllocateTextureStorage( texture_t *image )
 	glState.memstats.estTextureMemUsed += estSize;
 	glState.memstats.numTextures++;
 
-	if ( r_loadTexturesOnDemand->i ) {
+	if ( r_loadTexturesOnDemand->i && glContext.bindlessTextures ) {
 		image->handle = nglGetTextureHandleARB( image->id );
 	}
 
@@ -2590,7 +2589,7 @@ static texture_t *R_CreateImage2( const char *name, byte *pic, int width, int he
 
 	image->data = pic;
 
-	if ( !r_loadTexturesOnDemand->i ) {
+	if ( !r_loadTexturesOnDemand->i && glContext.bindlessTextures ) {
 		R_AllocateTextureStorage( image );
 	} else {
 		if ( pic ) {
@@ -3273,7 +3272,7 @@ void R_DeleteTextures( void )
 			continue;
 		}
 		nglDeleteTextures( 1, &rg.textures[i]->id );
-		if ( r_loadTexturesOnDemand->i ) {
+		if ( r_loadTexturesOnDemand->i && glContext.bindlessTextures ) {
 			nglDeleteSamplers( 1, &rg.textures[ i ]->samplerID );
 		}
 	}
@@ -3292,7 +3291,7 @@ void R_UnloadLevelTextures( void )
 		for ( j = 0; j < rg.world->levelTextures; j++ ) {
 			if ( hashTable[i] == rg.textures[ j + rg.world->firstLevelTexture ] && hashTable[i] ) {
 				nglDeleteTextures( 1, &rg.textures[ j + rg.world->firstLevelTexture ]->id );
-				if ( r_loadTexturesOnDemand->i ) {
+				if ( r_loadTexturesOnDemand->i && glContext.bindlessTextures ) {
 					nglDeleteSamplers( 1, &rg.textures[ i ]->samplerID );
 				}
 				hashTable[i]->next = NULL;

@@ -863,7 +863,6 @@ void Snd_Init( void )
 	Cmd_AddCommand( "snd.clear_tracks", Snd_ClearTracks_f );
 	Cmd_AddCommand( "snd.play_sfx", Snd_PlaySfx_f );
 	Cmd_AddCommand( "snd.queue_track", Snd_QueueTrack_f );
-//    Cmd_AddCommand( "snd.audio_info", Snd_AudioInfo_f );
 	Cmd_AddCommand( "snd.startup_level", Snd_StartupLevel_f );
 	Cmd_AddCommand( "snd.unload_level", Snd_UnloadLevel_f );
 	Cmd_AddCommand( "snd.play_track", Snd_PlayTrack_f );

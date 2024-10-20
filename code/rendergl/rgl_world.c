@@ -94,7 +94,7 @@ static void R_GenerateTexCoords( tile2d_info_t *info )
 	spriteCoord_t *sprites;
 	vec3_t *xyz;
 	vec2_t *uv;
-	color_t *color;
+	color4ub_t *color;
 	worldPos_t *worldPos;
 
 	COM_StripExtension( info->texture, texture, sizeof( texture ) );
@@ -157,11 +157,16 @@ static void R_GenerateTexCoords( tile2d_info_t *info )
 			VectorSet2( worldPos[2], x, y );
 			VectorSet2( worldPos[3], x, y );
 
-			R_VaoPackColor( color[0], colorWhite );
-			R_VaoPackColor( color[1], colorWhite );
-			R_VaoPackColor( color[2], colorWhite );
-			R_VaoPackColor( color[3], colorWhite );
+			VectorCopy4( color[0].rgba, colorWhite );
+			VectorCopy4( color[1].rgba, colorWhite );
+			VectorCopy4( color[2].rgba, colorWhite );
+			VectorCopy4( color[3].rgba, colorWhite );
 
+//			R_VaoPackColor( color[0], colorWhite );
+//			R_VaoPackColor( color[1], colorWhite );
+//			R_VaoPackColor( color[2], colorWhite );
+//			R_VaoPackColor( color[3], colorWhite );
+			
 			xyz += 4;
 			uv += 4;
 			worldPos += 4;
@@ -412,18 +417,45 @@ static void R_ProcessLights( void )
 	const maplight_t *data;
 	uint32_t i, x, y;
 	dirtype_t dir;
+	char extradefines[1024];
+	uint32_t attribs;
 
-	if ( !r_worldData.numLights ) {
-		return;
-	}
+	extern const char *fallbackShader_tile_vp;
+	extern const char *fallbackShader_tile_fp;
 
 	ri.Printf( PRINT_DEVELOPER, "Processing %u lights\n", r_worldData.numLights );
 
+	rg.lightData = GLSL_InitUniformBuffer( "u_LightBuffer", NULL, sizeof( shaderLight_t ) * ( MAX_MAP_LIGHTS + r_maxDLights->i ), qfalse );
 
-	rg.lightData = GLSL_InitUniformBuffer( "u_LightBuffer", NULL, sizeof( shaderLight_t ) * MAX_MAP_LIGHTS, qfalse );
-	rg.dlightData = GLSL_InitUniformBuffer( "u_DLightBuffer", NULL, sizeof( shaderLight_t ) * r_maxDLights->i, qtrue );
+	attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_WORLDPOS;
 
-//	GLSL_LinkUniformToShader( &rg.computeShader, UNIFORM_LIGHTDATA, rg.lightData, qfalse );
+	extradefines[0] = '\0';
+	N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_LIGHT\n" );
+	N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define MAX_TEXTURES %i\n", MAX_TEXTURES ) );
+	N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define MAX_MAP_LIGHTS %i\n", MAX_MAP_LIGHTS ) );
+	N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define MAX_DLIGHTS %i\n", r_maxDLights->i ) );
+	N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define MAX_LIGHTS %i\n", MAX_MAP_LIGHTS + r_maxDLights->i ) );
+	N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define POINT_LIGHT %i\n", LIGHT_POINT ) );
+	N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define DIRECTION_LIGHT %i\n", LIGHT_DIRECTIONAL ) );
+	if ( r_normalMapping->i ) {
+		N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_NORMALMAP\n" );
+	}
+	if ( r_specularMapping->i ) {
+		N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_SPECULARMAP\n" );
+	}
+	if ( r_parallaxMapping->i ) {
+		N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_PARALLAXMAP\n" );
+	}
+	if ( !GLSL_InitGPUShader( &rg.tileShader, "tile", attribs, qtrue, extradefines, qtrue, fallbackShader_tile_vp, fallbackShader_tile_fp ) ) {
+		ri.Error( ERR_FATAL, "Could not load tile shader!" );
+	}
+
+	GLSL_InitUniforms( &rg.tileShader );
+	GLSL_FinishGPUShader( &rg.tileShader );
+
+	GLSL_LinkUniformToShader( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, qfalse );
+
+	GLSL_UseProgram( &rg.tileShader );
 
 	lights = (shaderLight_t *)rg.lightData->data;
 	data = r_worldData.lights;
@@ -439,19 +471,9 @@ static void R_ProcessLights( void )
 		lights[i].type = data[i].type;
 	}
 
-	for ( i = 0; i < GENERICDEF_COUNT; i++ ) {
-		GLSL_UseProgram( &rg.genericShader[i] );
-		GLSL_SetUniformVec3( &rg.genericShader[i], UNIFORM_AMBIENTLIGHT, rg.world->ambientLightColor );
-		GLSL_SetUniformInt( &rg.genericShader[i], UNIFORM_NUM_LIGHTS, rg.world->numLights );
-		GLSL_LinkUniformToShader( &rg.genericShader[i], UNIFORM_LIGHTDATA, rg.lightData, qfalse );
-		GLSL_ShaderBufferData( &rg.genericShader[i], UNIFORM_LIGHTDATA, rg.lightData, sizeof( shaderLight_t ) * rg.world->numLights, qfalse );
-	}
-
-	GLSL_UseProgram( &rg.tileShader );
 	GLSL_SetUniformVec3( &rg.tileShader, UNIFORM_AMBIENTLIGHT, rg.world->ambientLightColor );
 	GLSL_SetUniformInt( &rg.tileShader, UNIFORM_NUM_LIGHTS, rg.world->numLights );
-	GLSL_LinkUniformToShader( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, qfalse );
-	GLSL_ShaderBufferData( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, sizeof( shaderLight_t ) * rg.world->numLights, qfalse );
+	GLSL_ShaderBufferData( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, sizeof( shaderLight_t ) * rg.world->numLights, 0, qfalse );
 }
 
 static void R_InitWorldBuffer( tile2d_header_t *theader )
@@ -463,14 +485,7 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 	vertexAttrib_t *attribs;
 	vec3_t pos;
 	uint64_t dataSize;
-	bitangent_t *bitangent, bitangent2;
-	tangent_t *tangent, tangent2;
-	normal_t *normal;
 	vec2_t *uv;
-	vec4_t n;
-	vec4_t tangent1, bitangent1;
-	vec2_t deltaUV1, deltaUV2;
-	vec3_t edge1, edge2;
 	float f;
 
 	r_worldData.numIndices = r_worldData.width * r_worldData.height * 6;
@@ -510,7 +525,7 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 
 	attribs[ATTRIB_INDEX_POSITION].type			= GL_FLOAT;
 	attribs[ATTRIB_INDEX_TEXCOORD].type			= GL_FLOAT;
-	attribs[ATTRIB_INDEX_COLOR].type			= GL_UNSIGNED_SHORT;
+	attribs[ATTRIB_INDEX_COLOR].type			= GL_UNSIGNED_BYTE;
 	attribs[ATTRIB_INDEX_WORLDPOS].type			= GL_UNSIGNED_SHORT;
 
 	attribs[ATTRIB_INDEX_POSITION].index		= ATTRIB_INDEX_POSITION;
@@ -530,7 +545,7 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 
 	attribs[ATTRIB_INDEX_POSITION].stride		= sizeof( vec3_t );
 	attribs[ATTRIB_INDEX_TEXCOORD].stride		= sizeof( vec2_t );
-	attribs[ATTRIB_INDEX_COLOR].stride			= sizeof( color_t );
+	attribs[ATTRIB_INDEX_COLOR].stride			= sizeof( color4ub_t );
 	attribs[ATTRIB_INDEX_WORLDPOS].stride		= sizeof( worldPos_t );
 
 	VBO_Bind( r_worldData.buffer );
@@ -589,7 +604,7 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 	r_worldData.worldPos = (worldPos_t *)r_worldData.vertices;
 	r_worldData.xyz = (vec3_t *)( r_worldData.worldPos + r_worldData.numVertices );
 	r_worldData.uv = (vec2_t *)( r_worldData.xyz + r_worldData.numVertices );
-	r_worldData.color = (color_t *)( r_worldData.uv + r_worldData.numVertices );
+	r_worldData.color = (color4ub_t *)( r_worldData.uv + r_worldData.numVertices );
 
 	R_GenerateTexCoords( &theader->info );
 	R_ProcessLights();
@@ -598,9 +613,9 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 	ri.Printf( PRINT_DEVELOPER, "Flushing mapped world buffer regions...\n" );
 
 	VBO_Bind( r_worldData.buffer );
-	nglFlushMappedBufferRange( GL_ARRAY_BUFFER, 0, sizeof( worldPos_t ) * r_worldData.numVertices );
+	nglFlushMappedBufferRange( GL_ARRAY_BUFFER, attribs[ ATTRIB_INDEX_WORLDPOS ].offset, sizeof( worldPos_t ) * r_worldData.numVertices );
 	nglFlushMappedBufferRange( GL_ARRAY_BUFFER, attribs[ ATTRIB_INDEX_TEXCOORD ].offset, sizeof( vec2_t ) * r_worldData.numVertices );
-	nglFlushMappedBufferRange( GL_ARRAY_BUFFER, attribs[ ATTRIB_INDEX_COLOR ].offset, sizeof( color_t ) * r_worldData.numVertices );
+	nglFlushMappedBufferRange( GL_ARRAY_BUFFER, attribs[ ATTRIB_INDEX_COLOR ].offset, sizeof( color4ub_t ) * r_worldData.numVertices );
 
 	nglFlushMappedBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, sizeof( glIndex_t ) * r_worldData.numIndices );
 	VBO_BindNull();

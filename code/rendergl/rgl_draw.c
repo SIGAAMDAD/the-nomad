@@ -47,8 +47,6 @@ static void R_BindAnimatedImageToTMU( const textureBundle_t *bundle, int tmu ) {
 
 	// it is necessary to do this messy calc to make sure animations line up
 	// exactly with waveforms of the same frequency
-	//index = myftol(tess.shaderTime * bundle->imageAnimationSpeed * FUNCTABLE_SIZE);
-	//index >>= FUNCTABLE_SIZE2;
 	index = (int64_t)( backend.drawBatch.shaderTime * bundle->imageAnimationSpeed ) * FUNCTABLE_SIZE; // fix for frameloss bug -EC-
 	index >>= FUNCTABLE_SIZE2;
 
@@ -86,9 +84,8 @@ static void DrawTris( void ) {
 		VectorSet4( color, 1, 1, 1, 1 );
 		GLSL_SetUniformVec4( sp, UNIFORM_COLOR, color );
 		GLSL_SetUniformInt( sp, UNIFORM_ALPHATEST, 0 );
-		GLSL_SetUniformInt( sp, UNIFORM_TEXTURE_MAP, TB_DIFFUSEMAP );
 
-		R_DrawElements( backend.drawBatch.idxOffset, 0 );
+		nglDrawElements( GL_LINE_STRIP, backend.drawBatch.idxOffset, GLN_INDEX_TYPE, NULL );
 	}
 
 	nglDepthRange( 0, 1 );
@@ -707,6 +704,7 @@ void RB_IterateShaderStages( shader_t *shader )
 		nglUniform1i( nglGetUniformLocation( sp->programId, "u_InLevel" ), rg.world != NULL );
 
 		if ( rg.world && !( backend.refdef.flags & RSF_NOWORLDMODEL ) ) {
+			RE_ProcessDLights();
 		} else {
 			vec3_t ambient;
 			VectorSet( ambient, 1, 1, 1 );
@@ -721,9 +719,6 @@ void RB_IterateShaderStages( shader_t *shader )
 
 	if ( r_showTris->i ) {
 		DrawTris();
-	}
-
-	if ( rg.world && rg.world->drawing ) {
 	}
 }
 

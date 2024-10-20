@@ -1808,7 +1808,7 @@ static void InitShader(const char *name, int32_t lightmapIndex)
 }
 
 
-static int CollapseStagesToGLSL(void)
+static int CollapseStagesToGLSL( void )
 {
 	int i, j, numStages;
 	qboolean skip = qfalse;
@@ -2070,7 +2070,8 @@ static int CollapseStagesToGLSL(void)
 			//	continue;
 
 			if ( pStage->bundle[TB_DIFFUSEMAP].tcGen == TCGEN_LIGHTMAP ) {
-				pStage->glslShaderGroup = rg.lightallShader;
+				ri.Error( ERR_FATAL, "CollapseStagesToGLSL: TCGEN_LIGHTMAP not supported" );
+//				pStage->glslShaderGroup = rg.tileShader;
 				pStage->glslShaderIndex = LIGHTDEF_USE_LIGHTMAP;
 				pStage->bundle[TB_LIGHTMAP] = pStage->bundle[TB_DIFFUSEMAP];
 				pStage->bundle[TB_DIFFUSEMAP].image[0] = rg.whiteImage;
@@ -2092,13 +2093,14 @@ static int CollapseStagesToGLSL(void)
 			//if (pStage->adjustColorsForFog)
 			//	continue;
 
-			if (pStage->rgbGen == CGEN_LIGHTING_DIFFUSE)
-			{
-				pStage->glslShaderGroup = rg.lightallShader;
+			if ( pStage->rgbGen == CGEN_LIGHTING_DIFFUSE ) {
+				ri.Error( ERR_FATAL, "CollapseStagesToGLSL: CGEN_LIGHTING_DIFFUSE not supported" );
+//				pStage->glslShaderGroup = rg.lightallShader;
 				pStage->glslShaderIndex = LIGHTDEF_USE_LIGHT_VECTOR;
 
-				if (pStage->bundle[0].tcGen != TCGEN_TEXTURE || pStage->bundle[0].numTexMods != 0)
+				if ( pStage->bundle[0].tcGen != TCGEN_TEXTURE || pStage->bundle[0].numTexMods != 0 ) {
 					pStage->glslShaderIndex |= LIGHTDEF_USE_TCGEN_AND_TCMOD;
+				}
 			}
 		}
 	}
@@ -2118,7 +2120,7 @@ static shader_t *FinishShader( void )
     //
     // set polygon offset
     //
-    if (shader.polygonOffset && shader.sort == SS_BAD) {
+    if ( shader.polygonOffset && shader.sort == SS_BAD ) {
         shader.sort = SS_DECAL;
     }
 

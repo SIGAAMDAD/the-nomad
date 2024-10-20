@@ -245,291 +245,292 @@ int PrepareSystemFunctionGeneric(asCScriptFunction *func, asSSystemFunctionInter
 // This function should prepare system functions so that it will be faster to call them
 int PrepareSystemFunction(asCScriptFunction *func, asSSystemFunctionInterface *internal, asCScriptEngine *engine)
 {
-#ifdef AS_MAX_PORTABILITY
-	UNUSED_VAR(func);
-	UNUSED_VAR(internal);
-	UNUSED_VAR(engine);
+	extern cvar_t *ml_allowJIT;
 
-	// This should never happen, as when AS_MAX_PORTABILITY is on, all functions
-	// are asCALL_GENERIC, which are prepared by PrepareSystemFunctionGeneric
-	asASSERT(false);
-#else
-	// References are always returned as primitive data
-	if( func->returnType.IsReference() || func->returnType.IsObjectHandle() )
-	{
-		internal->hostReturnInMemory = false;
-		internal->hostReturnSize     = sizeof(void*)/4;
-		internal->hostReturnFloat    = false;
+	if ( !ml_allowJIT->i ) {
+		UNUSED_VAR(func);
+		UNUSED_VAR(internal);
+		UNUSED_VAR(engine);
+
+		// This should never happen, as when AS_MAX_PORTABILITY is on, all functions
+		// are asCALL_GENERIC, which are prepared by PrepareSystemFunctionGeneric
+		asASSERT(false);
 	}
-	// Registered types have special flags that determine how they are returned
-	else if( func->returnType.IsObject() )
-	{
-		asDWORD objType = func->returnType.GetTypeInfo()->flags;
-
-		// Only value types can be returned by value
-		asASSERT( objType & asOBJ_VALUE );
-
-		if( !(objType & (asOBJ_APP_CLASS | asOBJ_APP_PRIMITIVE | asOBJ_APP_FLOAT | asOBJ_APP_ARRAY)) )
+	else {
+		// References are always returned as primitive data
+		if( func->returnType.IsReference() || func->returnType.IsObjectHandle() )
 		{
-			// If the return is by value then we need to know the true type
-			engine->WriteMessage("", 0, 0, asMSGTYPE_INFORMATION, func->GetDeclarationStr().AddressOf());
-
-			asCString str;
-			str.Format(TXT_CANNOT_RET_TYPE_s_BY_VAL, func->returnType.GetTypeInfo()->name.AddressOf());
-			engine->WriteMessage("", 0, 0, asMSGTYPE_ERROR, str.AddressOf());
-			engine->ConfigError(asINVALID_CONFIGURATION, 0, 0, 0);
-		}
-		else if( objType & asOBJ_APP_ARRAY )
-		{
-			// Array types are always returned in memory
-			internal->hostReturnInMemory = true;
+			internal->hostReturnInMemory = false;
 			internal->hostReturnSize     = sizeof(void*)/4;
-			internal->hostReturnFloat = false;
+			internal->hostReturnFloat    = false;
 		}
-		else if( objType & asOBJ_APP_CLASS )
+		// Registered types have special flags that determine how they are returned
+		else if( func->returnType.IsObject() )
 		{
-			internal->hostReturnFloat = false;
-			if( objType & COMPLEX_RETURN_MASK )
+			asDWORD objType = func->returnType.GetTypeInfo()->flags;
+
+			// Only value types can be returned by value
+			asASSERT( objType & asOBJ_VALUE );
+
+			if( !(objType & (asOBJ_APP_CLASS | asOBJ_APP_PRIMITIVE | asOBJ_APP_FLOAT | asOBJ_APP_ARRAY)) )
 			{
+				// If the return is by value then we need to know the true type
+				engine->WriteMessage("", 0, 0, asMSGTYPE_INFORMATION, func->GetDeclarationStr().AddressOf());
+
+				asCString str;
+				str.Format(TXT_CANNOT_RET_TYPE_s_BY_VAL, func->returnType.GetTypeInfo()->name.AddressOf());
+				engine->WriteMessage("", 0, 0, asMSGTYPE_ERROR, str.AddressOf());
+				engine->ConfigError(asINVALID_CONFIGURATION, 0, 0, 0);
+			}
+			else if( objType & asOBJ_APP_ARRAY )
+			{
+				// Array types are always returned in memory
 				internal->hostReturnInMemory = true;
 				internal->hostReturnSize     = sizeof(void*)/4;
+				internal->hostReturnFloat = false;
 			}
-			else
+			else if( objType & asOBJ_APP_CLASS )
 			{
-#ifdef HAS_128_BIT_PRIMITIVES
-				if( func->returnType.GetSizeInMemoryDWords() > 4 )
-#else
-				if( func->returnType.GetSizeInMemoryDWords() > 2 )
-#endif
+				internal->hostReturnFloat = false;
+				if( objType & COMPLEX_RETURN_MASK )
 				{
 					internal->hostReturnInMemory = true;
-					internal->hostReturnSize = sizeof(void*)/4;
+					internal->hostReturnSize     = sizeof(void*)/4;
 				}
 				else
 				{
-					internal->hostReturnInMemory = false;
-					internal->hostReturnSize     = func->returnType.GetSizeInMemoryDWords();
-#ifdef SPLIT_OBJS_BY_MEMBER_TYPES
-					if( func->returnType.GetTypeInfo()->flags & asOBJ_APP_CLASS_ALLFLOATS )
-						internal->hostReturnFloat = true;
-#endif
+	#ifdef HAS_128_BIT_PRIMITIVES
+					if( func->returnType.GetSizeInMemoryDWords() > 4 )
+	#else
+					if( func->returnType.GetSizeInMemoryDWords() > 2 )
+	#endif
+					{
+						internal->hostReturnInMemory = true;
+						internal->hostReturnSize = sizeof(void*)/4;
+					}
+					else
+					{
+						internal->hostReturnInMemory = false;
+						internal->hostReturnSize     = func->returnType.GetSizeInMemoryDWords();
+	#ifdef SPLIT_OBJS_BY_MEMBER_TYPES
+						if( func->returnType.GetTypeInfo()->flags & asOBJ_APP_CLASS_ALLFLOATS )
+							internal->hostReturnFloat = true;
+	#endif
+					}
+
+	#ifdef THISCALL_RETURN_SIMPLE_IN_MEMORY
+					if((internal->callConv == ICC_THISCALL ||
+	#ifdef AS_NO_THISCALL_FUNCTOR_METHOD
+						internal->callConv == ICC_VIRTUAL_THISCALL) &&
+	#else
+						internal->callConv == ICC_VIRTUAL_THISCALL ||
+						internal->callConv == ICC_THISCALL_OBJFIRST ||
+						internal->callConv == ICC_THISCALL_OBJLAST) &&
+	#endif
+						func->returnType.GetSizeInMemoryDWords() >= THISCALL_RETURN_SIMPLE_IN_MEMORY_MIN_SIZE)
+					{
+						internal->hostReturnInMemory = true;
+						internal->hostReturnSize     = sizeof(void*)/4;
+					}
+	#endif
+	#ifdef CDECL_RETURN_SIMPLE_IN_MEMORY
+					if((internal->callConv == ICC_CDECL         ||
+						internal->callConv == ICC_CDECL_OBJLAST ||
+						internal->callConv == ICC_CDECL_OBJFIRST) &&
+						func->returnType.GetSizeInMemoryDWords() >= CDECL_RETURN_SIMPLE_IN_MEMORY_MIN_SIZE)
+					{
+						internal->hostReturnInMemory = true;
+						internal->hostReturnSize     = sizeof(void*)/4;
+					}
+	#endif
+	#ifdef STDCALL_RETURN_SIMPLE_IN_MEMORY
+					if( internal->callConv == ICC_STDCALL &&
+						func->returnType.GetSizeInMemoryDWords() >= STDCALL_RETURN_SIMPLE_IN_MEMORY_MIN_SIZE)
+					{
+						internal->hostReturnInMemory = true;
+						internal->hostReturnSize     = sizeof(void*)/4;
+					}
+	#endif
 				}
 
-#ifdef THISCALL_RETURN_SIMPLE_IN_MEMORY
-				if((internal->callConv == ICC_THISCALL ||
-#ifdef AS_NO_THISCALL_FUNCTOR_METHOD
-					internal->callConv == ICC_VIRTUAL_THISCALL) &&
-#else
-					internal->callConv == ICC_VIRTUAL_THISCALL ||
-					internal->callConv == ICC_THISCALL_OBJFIRST ||
-					internal->callConv == ICC_THISCALL_OBJLAST) &&
-#endif
-					func->returnType.GetSizeInMemoryDWords() >= THISCALL_RETURN_SIMPLE_IN_MEMORY_MIN_SIZE)
+	#ifdef SPLIT_OBJS_BY_MEMBER_TYPES
+				// It's not safe to return objects by value because different registers
+				// will be used depending on the memory layout of the object.
+				// Ref: http://www.x86-64.org/documentation/abi.pdf
+				// Ref: http://www.agner.org/optimize/calling_conventions.pdf
+				// If the application informs that the class should be treated as all integers, then we allow it
+				if( !internal->hostReturnInMemory &&
+				    !(func->returnType.GetTypeInfo()->flags & (asOBJ_APP_CLASS_ALLINTS | asOBJ_APP_CLASS_ALLFLOATS)) )
 				{
-					internal->hostReturnInMemory = true;
-					internal->hostReturnSize     = sizeof(void*)/4;
+					engine->WriteMessage("", 0, 0, asMSGTYPE_INFORMATION, func->GetDeclarationStr().AddressOf());
+
+					asCString str;
+					str.Format(TXT_DONT_SUPPORT_RET_TYPE_s_BY_VAL, func->returnType.Format(func->nameSpace).AddressOf());
+					engine->WriteMessage("", 0, 0, asMSGTYPE_ERROR, str.AddressOf());
+					engine->ConfigError(asINVALID_CONFIGURATION, 0, 0, 0);
 				}
-#endif
-#ifdef CDECL_RETURN_SIMPLE_IN_MEMORY
-				if((internal->callConv == ICC_CDECL         ||
-					internal->callConv == ICC_CDECL_OBJLAST ||
-					internal->callConv == ICC_CDECL_OBJFIRST) &&
-					func->returnType.GetSizeInMemoryDWords() >= CDECL_RETURN_SIMPLE_IN_MEMORY_MIN_SIZE)
-				{
-					internal->hostReturnInMemory = true;
-					internal->hostReturnSize     = sizeof(void*)/4;
-				}
-#endif
-#ifdef STDCALL_RETURN_SIMPLE_IN_MEMORY
-				if( internal->callConv == ICC_STDCALL &&
-					func->returnType.GetSizeInMemoryDWords() >= STDCALL_RETURN_SIMPLE_IN_MEMORY_MIN_SIZE)
-				{
-					internal->hostReturnInMemory = true;
-					internal->hostReturnSize     = sizeof(void*)/4;
-				}
-#endif
+	#endif
 			}
-
-#ifdef SPLIT_OBJS_BY_MEMBER_TYPES
-			// It's not safe to return objects by value because different registers
-			// will be used depending on the memory layout of the object.
-			// Ref: http://www.x86-64.org/documentation/abi.pdf
-			// Ref: http://www.agner.org/optimize/calling_conventions.pdf
-			// If the application informs that the class should be treated as all integers, then we allow it
-			if( !internal->hostReturnInMemory &&
-			    !(func->returnType.GetTypeInfo()->flags & (asOBJ_APP_CLASS_ALLINTS | asOBJ_APP_CLASS_ALLFLOATS)) )
+			else if( objType & asOBJ_APP_PRIMITIVE )
 			{
-				engine->WriteMessage("", 0, 0, asMSGTYPE_INFORMATION, func->GetDeclarationStr().AddressOf());
-
-				asCString str;
-				str.Format(TXT_DONT_SUPPORT_RET_TYPE_s_BY_VAL, func->returnType.Format(func->nameSpace).AddressOf());
-				engine->WriteMessage("", 0, 0, asMSGTYPE_ERROR, str.AddressOf());
-				engine->ConfigError(asINVALID_CONFIGURATION, 0, 0, 0);
+				internal->hostReturnInMemory = false;
+				internal->hostReturnSize     = func->returnType.GetSizeInMemoryDWords();
+				internal->hostReturnFloat    = false;
 			}
-#endif
+			else if( objType & asOBJ_APP_FLOAT )
+			{
+				internal->hostReturnInMemory = false;
+				internal->hostReturnSize     = func->returnType.GetSizeInMemoryDWords();
+				internal->hostReturnFloat    = true;
+			}
 		}
-		else if( objType & asOBJ_APP_PRIMITIVE )
+		// Primitive types can easily be determined
+	#ifdef HAS_128_BIT_PRIMITIVES
+		else if( func->returnType.GetSizeInMemoryDWords() > 4 )
+		{
+			// Shouldn't be possible to get here
+			asASSERT(false);
+		}
+		else if( func->returnType.GetSizeInMemoryDWords() == 4 )
 		{
 			internal->hostReturnInMemory = false;
-			internal->hostReturnSize     = func->returnType.GetSizeInMemoryDWords();
+			internal->hostReturnSize     = 4;
 			internal->hostReturnFloat    = false;
 		}
-		else if( objType & asOBJ_APP_FLOAT )
+	#else
+		else if( func->returnType.GetSizeInMemoryDWords() > 2 )
+		{
+			// Shouldn't be possible to get here
+			asASSERT(false);
+		}
+	#endif
+		else if( func->returnType.GetSizeInMemoryDWords() == 2 )
 		{
 			internal->hostReturnInMemory = false;
-			internal->hostReturnSize     = func->returnType.GetSizeInMemoryDWords();
-			internal->hostReturnFloat    = true;
+			internal->hostReturnSize     = 2;
+			internal->hostReturnFloat    = func->returnType.IsEqualExceptConst(asCDataType::CreatePrimitive(ttDouble, true));
 		}
-	}
-	// Primitive types can easily be determined
-#ifdef HAS_128_BIT_PRIMITIVES
-	else if( func->returnType.GetSizeInMemoryDWords() > 4 )
-	{
-		// Shouldn't be possible to get here
-		asASSERT(false);
-	}
-	else if( func->returnType.GetSizeInMemoryDWords() == 4 )
-	{
-		internal->hostReturnInMemory = false;
-		internal->hostReturnSize     = 4;
-		internal->hostReturnFloat    = false;
-	}
-#else
-	else if( func->returnType.GetSizeInMemoryDWords() > 2 )
-	{
-		// Shouldn't be possible to get here
-		asASSERT(false);
-	}
-#endif
-	else if( func->returnType.GetSizeInMemoryDWords() == 2 )
-	{
-		internal->hostReturnInMemory = false;
-		internal->hostReturnSize     = 2;
-		internal->hostReturnFloat    = func->returnType.IsEqualExceptConst(asCDataType::CreatePrimitive(ttDouble, true));
-	}
-	else if( func->returnType.GetSizeInMemoryDWords() == 1 )
-	{
-		internal->hostReturnInMemory = false;
-		internal->hostReturnSize     = 1;
-		internal->hostReturnFloat    = func->returnType.IsEqualExceptConst(asCDataType::CreatePrimitive(ttFloat, true));
-	}
-	else
-	{
-		internal->hostReturnInMemory = false;
-		internal->hostReturnSize     = 0;
-		internal->hostReturnFloat    = false;
-	}
-
-	// Calculate the size needed for the parameters
-	internal->paramSize = func->GetSpaceNeededForArguments();
-
-	// Verify if the function takes any objects by value
-	asUINT n;
-	internal->takesObjByVal = false;
-	for( n = 0; n < func->parameterTypes.GetLength(); n++ )
-	{
-		if( func->parameterTypes[n].IsObject() && !func->parameterTypes[n].IsObjectHandle() && !func->parameterTypes[n].IsReference() )
+		else if( func->returnType.GetSizeInMemoryDWords() == 1 )
 		{
-			internal->takesObjByVal = true;
-
-			// Can't pass objects by value unless the application type is informed
-			if( !(func->parameterTypes[n].GetTypeInfo()->flags & (asOBJ_APP_CLASS | asOBJ_APP_PRIMITIVE | asOBJ_APP_FLOAT | asOBJ_APP_ARRAY)) )
-			{
-				engine->WriteMessage("", 0, 0, asMSGTYPE_INFORMATION, func->GetDeclarationStr().AddressOf());
-
-				asCString str;
-				str.Format(TXT_CANNOT_PASS_TYPE_s_BY_VAL, func->parameterTypes[n].GetTypeInfo()->name.AddressOf());
-				engine->WriteMessage("", 0, 0, asMSGTYPE_ERROR, str.AddressOf());
-				engine->ConfigError(asINVALID_CONFIGURATION, 0, 0, 0);
-			}
-
-
-#ifdef SPLIT_OBJS_BY_MEMBER_TYPES
-			// It's not safe to pass objects by value because different registers
-			// will be used depending on the memory layout of the object
-			// Ref: http://www.x86-64.org/documentation/abi.pdf
-			// Ref: http://www.agner.org/optimize/calling_conventions.pdf
-			if(
-#ifdef COMPLEX_OBJS_PASSED_BY_REF
-			    !(func->parameterTypes[n].GetTypeInfo()->flags & COMPLEX_MASK) &&
-#endif
-#ifdef LARGE_OBJS_PASS_BY_REF
-			    func->parameterTypes[n].GetSizeInMemoryDWords() < AS_LARGE_OBJ_MIN_SIZE &&
-#endif
-			    !(func->parameterTypes[n].GetTypeInfo()->flags & (asOBJ_APP_PRIMITIVE | asOBJ_APP_FLOAT | asOBJ_APP_CLASS_ALLINTS | asOBJ_APP_CLASS_ALLFLOATS)) )
-			{
-				engine->WriteMessage("", 0, 0, asMSGTYPE_INFORMATION, func->GetDeclarationStr().AddressOf());
-
-				asCString str;
-				str.Format(TXT_DONT_SUPPORT_TYPE_s_BY_VAL, func->parameterTypes[n].GetTypeInfo()->name.AddressOf());
-				engine->WriteMessage("", 0, 0, asMSGTYPE_ERROR, str.AddressOf());
-				engine->ConfigError(asINVALID_CONFIGURATION, 0, 0, 0);
-			}
-#endif
-			break;
+			internal->hostReturnInMemory = false;
+			internal->hostReturnSize     = 1;
+			internal->hostReturnFloat    = func->returnType.IsEqualExceptConst(asCDataType::CreatePrimitive(ttFloat, true));
 		}
-	}
-
-	// Prepare the clean up instructions for the function arguments
-	internal->cleanArgs.SetLength(0);
-	int offset = 0;
-	for( n = 0; n < func->parameterTypes.GetLength(); n++ )
-	{
-		asCDataType &dt = func->parameterTypes[n];
-
-#if defined(COMPLEX_OBJS_PASSED_BY_REF) || defined(AS_LARGE_OBJS_PASSED_BY_REF)
-		bool needFree = false;
-#ifdef COMPLEX_OBJS_PASSED_BY_REF
-		if( dt.GetTypeInfo() && dt.GetTypeInfo()->flags & COMPLEX_MASK ) needFree = true;
-#endif
-#ifdef AS_LARGE_OBJS_PASSED_BY_REF
-		if( dt.GetSizeInMemoryDWords() >= AS_LARGE_OBJ_MIN_SIZE ) needFree = true;
-#endif
-		if( needFree &&
-			dt.IsObject() &&
-			!dt.IsObjectHandle() &&
-			!dt.IsReference() )
-		{
-			asSSystemFunctionInterface::SClean clean;
-			clean.op  = 1; // call free
-			clean.ot  = CastToObjectType(dt.GetTypeInfo());
-			clean.off = short(offset);
-
-#ifndef AS_CALLEE_DESTROY_OBJ_BY_VAL
-			// If the called function doesn't destroy objects passed by value we must do so here
-			asSTypeBehaviour *beh = &CastToObjectType(dt.GetTypeInfo())->beh;
-			if( beh->destruct )
-				clean.op = 2; // call destruct, then free
-#endif
-
-			internal->cleanArgs.PushLast(clean);
-		}
-#endif
-
-		if( n < internal->paramAutoHandles.GetLength() && internal->paramAutoHandles[n] )
-		{
-			asSSystemFunctionInterface::SClean clean;
-			clean.op  = 0; // call release
-			if (dt.IsFuncdef())
-				clean.ot = &engine->functionBehaviours;
-			else
-				clean.ot  = CastToObjectType(dt.GetTypeInfo());
-			clean.off = short(offset);
-			internal->cleanArgs.PushLast(clean);
-		}
-
-		if( dt.IsObject() && !dt.IsObjectHandle() && !dt.IsReference() )
-			offset += AS_PTR_SIZE;
 		else
-			offset += dt.GetSizeOnStackDWords();
+		{
+			internal->hostReturnInMemory = false;
+			internal->hostReturnSize     = 0;
+			internal->hostReturnFloat    = false;
+		}
+
+		// Calculate the size needed for the parameters
+		internal->paramSize = func->GetSpaceNeededForArguments();
+
+		// Verify if the function takes any objects by value
+		asUINT n;
+		internal->takesObjByVal = false;
+		for( n = 0; n < func->parameterTypes.GetLength(); n++ )
+		{
+			if( func->parameterTypes[n].IsObject() && !func->parameterTypes[n].IsObjectHandle() && !func->parameterTypes[n].IsReference() )
+			{
+				internal->takesObjByVal = true;
+
+				// Can't pass objects by value unless the application type is informed
+				if( !(func->parameterTypes[n].GetTypeInfo()->flags & (asOBJ_APP_CLASS | asOBJ_APP_PRIMITIVE | asOBJ_APP_FLOAT | asOBJ_APP_ARRAY)) )
+				{
+					engine->WriteMessage("", 0, 0, asMSGTYPE_INFORMATION, func->GetDeclarationStr().AddressOf());
+
+					asCString str;
+					str.Format(TXT_CANNOT_PASS_TYPE_s_BY_VAL, func->parameterTypes[n].GetTypeInfo()->name.AddressOf());
+					engine->WriteMessage("", 0, 0, asMSGTYPE_ERROR, str.AddressOf());
+					engine->ConfigError(asINVALID_CONFIGURATION, 0, 0, 0);
+				}
+
+
+	#ifdef SPLIT_OBJS_BY_MEMBER_TYPES
+				// It's not safe to pass objects by value because different registers
+				// will be used depending on the memory layout of the object
+				// Ref: http://www.x86-64.org/documentation/abi.pdf
+				// Ref: http://www.agner.org/optimize/calling_conventions.pdf
+				if(
+	#ifdef COMPLEX_OBJS_PASSED_BY_REF
+				    !(func->parameterTypes[n].GetTypeInfo()->flags & COMPLEX_MASK) &&
+	#endif
+	#ifdef LARGE_OBJS_PASS_BY_REF
+				    func->parameterTypes[n].GetSizeInMemoryDWords() < AS_LARGE_OBJ_MIN_SIZE &&
+	#endif
+				    !(func->parameterTypes[n].GetTypeInfo()->flags & (asOBJ_APP_PRIMITIVE | asOBJ_APP_FLOAT | asOBJ_APP_CLASS_ALLINTS | asOBJ_APP_CLASS_ALLFLOATS)) )
+				{
+					engine->WriteMessage("", 0, 0, asMSGTYPE_INFORMATION, func->GetDeclarationStr().AddressOf());
+
+					asCString str;
+					str.Format(TXT_DONT_SUPPORT_TYPE_s_BY_VAL, func->parameterTypes[n].GetTypeInfo()->name.AddressOf());
+					engine->WriteMessage("", 0, 0, asMSGTYPE_ERROR, str.AddressOf());
+					engine->ConfigError(asINVALID_CONFIGURATION, 0, 0, 0);
+				}
+	#endif
+				break;
+			}
+		}
+
+		// Prepare the clean up instructions for the function arguments
+		internal->cleanArgs.SetLength(0);
+		int offset = 0;
+		for( n = 0; n < func->parameterTypes.GetLength(); n++ )
+		{
+			asCDataType &dt = func->parameterTypes[n];
+
+	#if defined(COMPLEX_OBJS_PASSED_BY_REF) || defined(AS_LARGE_OBJS_PASSED_BY_REF)
+			bool needFree = false;
+	#ifdef COMPLEX_OBJS_PASSED_BY_REF
+			if( dt.GetTypeInfo() && dt.GetTypeInfo()->flags & COMPLEX_MASK ) needFree = true;
+	#endif
+	#ifdef AS_LARGE_OBJS_PASSED_BY_REF
+			if( dt.GetSizeInMemoryDWords() >= AS_LARGE_OBJ_MIN_SIZE ) needFree = true;
+	#endif
+			if( needFree &&
+				dt.IsObject() &&
+				!dt.IsObjectHandle() &&
+				!dt.IsReference() )
+			{
+				asSSystemFunctionInterface::SClean clean;
+				clean.op  = 1; // call free
+				clean.ot  = CastToObjectType(dt.GetTypeInfo());
+				clean.off = short(offset);
+
+	#ifndef AS_CALLEE_DESTROY_OBJ_BY_VAL
+				// If the called function doesn't destroy objects passed by value we must do so here
+				asSTypeBehaviour *beh = &CastToObjectType(dt.GetTypeInfo())->beh;
+				if( beh->destruct )
+					clean.op = 2; // call destruct, then free
+	#endif
+
+				internal->cleanArgs.PushLast(clean);
+			}
+	#endif
+
+			if( n < internal->paramAutoHandles.GetLength() && internal->paramAutoHandles[n] )
+			{
+				asSSystemFunctionInterface::SClean clean;
+				clean.op  = 0; // call release
+				if (dt.IsFuncdef())
+					clean.ot = &engine->functionBehaviours;
+				else
+					clean.ot  = CastToObjectType(dt.GetTypeInfo());
+				clean.off = short(offset);
+				internal->cleanArgs.PushLast(clean);
+			}
+
+			if( dt.IsObject() && !dt.IsObjectHandle() && !dt.IsReference() )
+				offset += AS_PTR_SIZE;
+			else
+				offset += dt.GetSizeOnStackDWords();
+		}
 	}
-#endif // !defined(AS_MAX_PORTABILITY)
 	return 0;
 }
 
-#ifdef AS_MAX_PORTABILITY
-
-int CallSystemFunction(int id, asCContext *context)
+int CallSystemFunction_Generic(int id, asCContext *context)
 {
 	asCScriptEngine *engine = context->m_engine;
 	asCScriptFunction *func = engine->scriptFunctions[id];
@@ -542,8 +543,6 @@ int CallSystemFunction(int id, asCContext *context)
 
 	return 0;
 }
-
-#else
 
 //
 // CallSystemFunctionNative
@@ -565,10 +564,14 @@ int CallSystemFunction(int id, asCContext *context)
 // Return value:
 //
 // The function should return the value that is returned in registers.
+#ifndef AS_MAX_PORTABILITY
 asQWORD CallSystemFunctionNative(asCContext *context, asCScriptFunction *descr, void *obj, asDWORD *args, void *retPointer, asQWORD &retQW2, void *secondObj);
+#else
+asQWORD CallSystemFunctionNative(asCContext *context, asCScriptFunction *descr, void *obj, asDWORD *args, void *retPointer, asQWORD &retQW2, void *secondObj)
+{ assert( false ); return 0; }
+#endif
 
-
-int CallSystemFunction(int id, asCContext *context)
+int CallSystemFunction_Native(int id, asCContext *context)
 {
 	asCScriptEngine            *engine  = context->m_engine;
 	asCScriptFunction          *descr   = engine->scriptFunctions[id];
@@ -913,8 +916,6 @@ int CallSystemFunction(int id, asCContext *context)
 
 	return popSize;
 }
-
-#endif // AS_MAX_PORTABILITY
 
 END_AS_NAMESPACE
 

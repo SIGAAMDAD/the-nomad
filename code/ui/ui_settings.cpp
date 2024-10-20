@@ -93,6 +93,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define TEXFILTER_ANISOTROPY4	1
 #define TEXFILTER_ANISOTROPY2	0
 
+#define MAXFPS_30				0
+#define MAXFPS_35				1
+#define MAXFPS_60				2
+#define MAXFPS_72				3
+#define MAXFPS_125				4
+#define MAXFPS_225				5
+#define MAXFPS_333				6
+#define MAXFPS_UNLIMITED		7
+#define MAXFPS_CUSTOM			8 // only triggered if we have someone who sets it via commands
+
 typedef int quality_t;
 typedef int toggle_t;
 typedef int select_t;
@@ -112,10 +122,12 @@ typedef struct {
 	const char **windowSizes;
 	const char **vsyncList;
 	const char **windowModes;
+	const char **frameRates;
 
 	int numWindowSizes;
 	int numVSync;
 	int numWindowModes;
+	int numFrameRates;
 
 	int vsync;
 	int windowMode;
@@ -685,7 +697,6 @@ static void SettingsMenu_MultiSliderInt( const char *name, const char *label, co
 		ImGui::PushStyleColor( ImGuiCol_FrameBgHovered, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
 	}
 
-	ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
 	ImGui::TableNextColumn();
 	SettingsMenu_Text( name, hint );
 	ImGui::TableNextColumn();
@@ -719,7 +730,6 @@ static void SettingsMenu_MultiSliderInt( const char *name, const char *label, co
 	if ( !enabled ) {
 		ImGui::PopStyleColor( 4 );
 	}
-	ImGui::PopStyleColor();
 }
 
 static void SettingsMenu_RadioButton( const char *name, const char *label, const char *hint, int *curvalue, bool enabled )
@@ -1107,6 +1117,12 @@ static void PerformanceMenu_DrawBasic( void )
 
 	ImGui::TableNextRow();
 
+	SettingsMenu_RadioButton( "LOAD TEXTURES ON DEMAND", "LoadTexturesOnDemand",
+		"Forces the engine to only load textures when they are being rendered, this will cause minor hitches but consume less memory.",
+		&s_settingsMenu->performance.loadTexturesOnDemand, true );
+
+	ImGui::TableNextRow();
+
 	SettingsMenu_RadioButton( "DYNAMIC LIGHTING", "DynamicLighting",
 		"Enables per-pixel dynamic lighting", &s_settingsMenu->performance.dynamicLighting, true );
 	
@@ -1237,9 +1253,9 @@ static void VideoMenu_Draw( void )
 		
 		ImGui::TableNextRow();
 
-		SettingsMenu_MultiSliderInt( "FRAME LIMITER", "FrameLimiter",
+		SettingsMenu_MultiAdjustable( "FRAME LIMITER", "FrameLimiter",
 			"Sets the maximum amount of frames the game can render per second.",
-			&s_settingsMenu->video.maxFPS, 0, 1000, 1, true );
+			s_settingsMenu->video.frameRates, s_settingsMenu->video.numFrameRates, &s_settingsMenu->video.maxFPS, true );
 		
 		/*
 		ImGui::TableNextRow();
@@ -1346,6 +1362,33 @@ static void VideoMenu_Save( void )
 	Cvar_SetFloatValue( "r_autoExposure", s_settingsMenu->video.exposure );
 	Cvar_SetFloatValue( "r_gammaAmount", s_settingsMenu->video.gamma );
 
+	switch ( s_settingsMenu->video.maxFPS ) {
+	case MAXFPS_30:
+		Cvar_SetIntegerValue( "com_maxfps", 30 );
+		break;
+	case MAXFPS_35:
+		Cvar_SetIntegerValue( "com_maxfps", 35 );
+		break;
+	case MAXFPS_60:
+		Cvar_SetIntegerValue( "com_maxfps", 60 );
+		break;
+	case MAXFPS_72:
+		Cvar_SetIntegerValue( "com_maxfps", 72 );
+		break;
+	case MAXFPS_125:
+		Cvar_SetIntegerValue( "com_maxfps", 125 );
+		break;
+	case MAXFPS_225:
+		Cvar_SetIntegerValue( "com_maxfps", 225 );
+		break;
+	case MAXFPS_333:
+		Cvar_SetIntegerValue( "com_maxfps", 333 );
+		break;
+	case MAXFPS_UNLIMITED:
+		Cvar_SetIntegerValue( "com_maxfps", 0 );
+		break;
+	};
+
 	if ( !N_stricmp( g_renderer->s, "opengl" ) ) {
 		SDL_GL_SetSwapInterval( s_settingsMenu->video.vsync - 1 );
 	}
@@ -1410,6 +1453,10 @@ static void SettingsMenu_PerformanceRestartConfirm( qboolean action )
 {
 	if ( action ) {
 		Cvar_SetIntegerValue( "r_multisampleType", s_settingsMenu->performance.multisampleType );
+
+		Cvar_SetIntegerValue( "r_fixedRendering", s_settingsMenu->performance.fixedRendering );
+		Cvar_SetFloatValue( "r_fixedResolutionScaling", s_settingsMenu->performance.fixedResolutionScaling );
+		Cvar_SetIntegerValue( "r_loadTexturesOnDemand", s_settingsMenu->performance.loadTexturesOnDemand );
 		Cbuf_ExecuteText( EXEC_APPEND, "vid_restart fast\n" );
 	}
 }
@@ -1427,14 +1474,15 @@ static void PerformanceMenu_Save( void )
 	if ( s_settingsMenu->performance.fixedResolutionScaling != s_initial->performance.fixedResolutionScaling ) {
 		needRestart = true;
 	}
+	if ( s_settingsMenu->performance.loadTexturesOnDemand != s_initial->performance.loadTexturesOnDemand ) {
+		needRestart = true;
+	}
 
 	Cvar_Set( "r_textureMode", s_settingsMenu->performance.textureFilters[ s_settingsMenu->performance.textureFilter ] );
 	Cvar_SetIntegerValue( "r_dynamiclight", s_settingsMenu->performance.dynamicLighting );
 	Cvar_SetIntegerValue( "r_textureDetail", s_settingsMenu->performance.textureDetail );
 	Cvar_SetIntegerValue( "r_dynamiclight", s_settingsMenu->performance.dynamicLighting );
 	Cvar_SetIntegerValue( "r_lightingQuality", s_settingsMenu->performance.lightingQuality );
-	Cvar_SetIntegerValue( "r_fixedRendering", s_settingsMenu->performance.fixedRendering );
-	Cvar_SetFloatValue( "r_fixedResolutionScaling", s_settingsMenu->performance.fixedResolutionScaling );
 
 	if ( needRestart || PerformanceMenu_FBO_Save() ) {
 		UI_ConfirmMenu( "Some settings that you have changed require a restart to take effect, apply them?",
@@ -1479,6 +1527,7 @@ static void GameplayMenu_Save( void )
 	Cvar_SetIntegerValue( "sgame_CursorType", s_settingsMenu->gameplay.mouseCursor );
 	Cvar_SetIntegerValue( "sgame_DebugMode", s_settingsMenu->gameplay.debugPrint );
 	Cvar_SetIntegerValue( "sgame_ToggleHUD", s_settingsMenu->gameplay.toggleHUD );
+//	Cvar_SetIntegerValue( "sgame_BossHealthbar", s_sett );
 }
 
 static void ModuleMenu_Save( void )
@@ -1500,7 +1549,9 @@ static void PerformanceMenu_SetDefault( void )
 	s_settingsMenu->performance.multisampleQuality = Cvar_VariableInteger( "r_antialiasQuality" );
 	s_settingsMenu->performance.fixedRendering = Cvar_VariableInteger( "r_fixedRendering" );
 	s_settingsMenu->performance.fixedResolutionScaling = Cvar_VariableFloat( "r_fixedResolutionScaling" );
-	
+	s_settingsMenu->performance.loadTexturesOnDemand = Cvar_VariableInteger( "r_loadTexturesOnDemand" );
+	s_settingsMenu->performance.particles = Cvar_VariableInteger( "sgame_EnableParticles" );
+
 	textureMode = Cvar_VariableString( "r_textureMode" );
 	for ( i = 0; i < s_settingsMenu->performance.numTextureDetails; i++ ) {
 		if ( !N_stricmp( textureMode, s_settingsMenu->performance.textureDetails[i] ) ) {
@@ -1526,7 +1577,35 @@ static void VideoMenu_SetDefault( void )
 	s_settingsMenu->video.windowMode = Cvar_VariableInteger( "r_fullscreen" ) + Cvar_VariableInteger( "r_noborder" );
 	s_settingsMenu->video.sharpening = Cvar_VariableFloat( "r_imageSharpenAmount" );
 	s_settingsMenu->video.exposure = Cvar_VariableFloat( "r_autoExposure" );
-	s_settingsMenu->video.maxFPS = Cvar_VariableInteger( "com_maxfps" );
+	switch ( Cvar_VariableInteger( "com_maxfps" ) ) {
+	case 0:
+		s_settingsMenu->video.maxFPS = MAXFPS_UNLIMITED;
+		break;
+	case 30:
+		s_settingsMenu->video.maxFPS = MAXFPS_30;
+		break;
+	case 35:
+		s_settingsMenu->video.maxFPS = MAXFPS_35;
+		break;
+	case 60:
+		s_settingsMenu->video.maxFPS = MAXFPS_60;
+		break;
+	case 72:
+		s_settingsMenu->video.maxFPS = MAXFPS_72;
+		break;
+	case 125:
+		s_settingsMenu->video.maxFPS = MAXFPS_125;
+		break;
+	case 225:
+		s_settingsMenu->video.maxFPS = MAXFPS_225;
+		break;
+	case 333:
+		s_settingsMenu->video.maxFPS = MAXFPS_333;
+		break;
+	default:
+		s_settingsMenu->video.maxFPS = MAXFPS_CUSTOM;
+		break;
+	};
 }
 
 static void AudioMenu_SetDefault( void )
@@ -1855,12 +1934,22 @@ void SettingsMenu_Cache( void )
 	char *p;
 
 	static const char *s_multisampleTypes[ NUM_ANTIALIAS_TYPES ];
-	static const char *s_anisotropyTypes[ NUM_ANISOTROPY_TYPES ];
+//	static const char *s_anisotropyTypes[ NUM_ANISOTROPY_TYPES ];
 	static const char *s_textureDetail[ NUM_TEXTURE_DETAILS ];
 	static const char *s_textureFilters[ NUM_TEXTURE_FILTERS ];
 	static const char *s_windowSizes[ NUM_WINDOW_SIZES ];
 	static const char *s_vsync[ NUM_VSYNC_TYPES ];
 	static const char *difficulties[ NUMDIFS - 1 ];
+	static const char *s_frameRates[] = {
+		"30",
+		"35",
+		"60",
+		"72",
+		"125",
+		"225",
+		"333",
+		"UNLIMITED"
+	};
 	static const char *s_presetLabels[] = {
 		"Low",
 		"Normal",
@@ -1899,11 +1988,11 @@ void SettingsMenu_Cache( void )
 	s_multisampleTypes[2] = strManager->ValueForKey( "GAMEUI_SSAA" )->value;
 	s_multisampleTypes[3] = strManager->ValueForKey( "GAMEUI_FXAA" )->value;
 
-	s_anisotropyTypes[0] = strManager->ValueForKey( "GAMEUI_ANISOTROPIC2X" )->value;
-	s_anisotropyTypes[1] = strManager->ValueForKey( "GAMEUI_ANISOTROPIC4X" )->value;
-	s_anisotropyTypes[2] = strManager->ValueForKey( "GAMEUI_ANISOTROPIC8X" )->value;
-	s_anisotropyTypes[3] = strManager->ValueForKey( "GAMEUI_ANISOTROPIC16X" )->value;
-	s_anisotropyTypes[4] = strManager->ValueForKey( "GAMEUI_ANISOTROPIC32X" )->value;
+//	s_anisotropyTypes[0] = strManager->ValueForKey( "GAMEUI_ANISOTROPIC2X" )->value;
+//	s_anisotropyTypes[1] = strManager->ValueForKey( "GAMEUI_ANISOTROPIC4X" )->value;
+//	s_anisotropyTypes[2] = strManager->ValueForKey( "GAMEUI_ANISOTROPIC8X" )->value;
+//	s_anisotropyTypes[3] = strManager->ValueForKey( "GAMEUI_ANISOTROPIC16X" )->value;
+//	s_anisotropyTypes[4] = strManager->ValueForKey( "GAMEUI_ANISOTROPIC32X" )->value;
 
 	s_vsync[0] = strManager->ValueForKey( "GAMEUI_VSYNC_ADAPTIVE" )->value;
 	s_vsync[1] = strManager->ValueForKey( "GAMEUI_DISABLED" )->value;
@@ -1974,10 +2063,12 @@ void SettingsMenu_Cache( void )
 	s_settingsMenu->video.vsyncList = s_vsync;
 	s_settingsMenu->video.windowSizes = s_windowSizes;
 	s_settingsMenu->video.windowModes = s_windowModes;
+	s_settingsMenu->video.frameRates = s_frameRates;
 
 	s_settingsMenu->video.numVSync = arraylen( s_vsync );
 	s_settingsMenu->video.numWindowSizes = arraylen( s_windowSizes );
 	s_settingsMenu->video.numWindowModes = arraylen( s_windowModes );
+	s_settingsMenu->video.numFrameRates = arraylen( s_frameRates );
 
 	s_settingsMenu->audio.numSpeakermodeTypes = arraylen( s_speakerModes );
 

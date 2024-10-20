@@ -132,6 +132,7 @@ typedef struct
 	qboolean intelGraphics;
 	qboolean swizzleNormalmap;
 	qboolean smpActive;
+	qboolean bindlessTextures;
 
 	int maxTextureUnits;
 	int maxTextureSize;
@@ -337,9 +338,7 @@ typedef enum {
 	UNIFORM_BLUR_HORIZONTAL,
 
 	UNIFORM_LIGHTDATA,
-	UNIFORM_DLIGHTDATA,
 	UNIFORM_VERTEXDATA,
-	UNIFORM_TEXTUREDATA,
 
 	UNIFORM_GAMMA,
 	UNIFORM_EXPOSURE,
@@ -439,7 +438,7 @@ typedef struct {
 	uint16_t		worldPos[2];
 	vec3_t			xyz;
 	vec2_t			uv;
-	uint16_t		color[4];
+	color4ub_t		color;
 } drawVert_t;
 
 // when sgame directly specifies a polygon, it becomes a srfPoly_t
@@ -454,7 +453,7 @@ typedef struct {
 	uint16_t		worldPos[2];
 	vec3_t			xyz;
 	vec2_t			st;
-	uint16_t		color[4];
+	color4ub_t		color;
 } srfVert_t;
 
 typedef struct {
@@ -984,7 +983,10 @@ typedef struct {
 	worldPos_t *worldPos;
 	vec3_t *xyz;
 	vec2_t *uv;
-	color_t *color;
+//	tangent_t *tangent;
+//	bitangent_t *bitangent;
+//	normal_t *normal;
+	color4ub_t *color;
 	drawVert_t *vertices;
 	uint64_t numVertices;
 
@@ -1245,6 +1247,10 @@ typedef struct
 	float sawToothTable[FUNCTABLE_SIZE];
 	float inverseSawToothTable[FUNCTABLE_SIZE];
 	qboolean vertexLightingAllowed;
+
+	GLuint pixelPackBuffer[2];
+	int pixelPackBufferIndex;
+	int pixelPackBufferNextIndex;
 } renderGlobals_t;
 
 extern renderGlobals_t rg;
@@ -1554,7 +1560,7 @@ void GL_State(unsigned stateBits);
 void GL_ClientState( int unit, unsigned stateBits );
 void RE_BeginFrame(stereoFrame_t stereoFrame);
 void RE_EndFrame(uint64_t *frontEndMsec, uint64_t *backEndMsec, backendCounters_t *pc);
-void RB_ExecuteRenderCommands(const void *data);
+void RB_ExecuteRenderCommands( const void *data );
 const char *GL_ErrorString( GLenum error );
 
 void R_AddPostProcessCmd( void );
@@ -1567,6 +1573,11 @@ void R_InitExtensions( void );
 //
 // rgl_program.c
 //
+int GLSL_InitGPUShader( shaderProgram_t *program, const char *name, uint32_t attribs, qboolean fragmentShader,
+	const GLchar *extra, qboolean addHeader, const char *fallback_vs, const char *fallback_fs );
+void GLSL_InitUniforms( shaderProgram_t *program );
+void GLSL_FinishGPUShader( shaderProgram_t *program );
+void GLSL_DeleteGPUShader( shaderProgram_t *program );
 void GLSL_UseProgram( shaderProgram_t *program );
 void GLSL_InitGPUShaders( void );
 void GLSL_ShutdownGPUShaders( void );
@@ -1584,7 +1595,7 @@ void GLSL_SetUniformUVec3( shaderProgram_t *program, uint32_t uniformNum, const 
 void GLSL_SetUniformUVec4( shaderProgram_t *program, uint32_t uniformNum, const uvec4_t v );
 void GLSL_SetUniformMatrix4( shaderProgram_t *program, uint32_t uniformNum, const mat4_t m );
 shaderProgram_t *GLSL_GetGenericShaderProgram( int stage );
-void GLSL_ShaderBufferData( shaderProgram_t *shader, uint32_t uniformNum, uniformBuffer_t *buffer, uint64_t nSize, qboolean dynamicStorage );
+void GLSL_ShaderBufferData( shaderProgram_t *shader, uint32_t uniformNum, uniformBuffer_t *buffer, uint64_t nSize, uint64_t nOffset, qboolean dynamicStorage );
 uniformBuffer_t *GLSL_InitUniformBuffer( const char *name, byte *buffer, uint64_t bufSize, qboolean dynamicStorage );
 void GLSL_LinkUniformToShader( shaderProgram_t *program, uint32_t uniformNum, uniformBuffer_t *buffer, qboolean dynamicStorage );
 
@@ -1671,6 +1682,7 @@ void RE_EndScene( void );
 void RE_ClearScene( void );
 void R_InitNextFrame( void );
 void RE_ProcessEntities( void );
+void RE_ProcessDLights( void );
 
 //
 // rgl_shader.c

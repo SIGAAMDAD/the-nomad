@@ -656,16 +656,14 @@ extern "C" void UI_DrawMenuBackground( void )
 	refdef.y = 0;
 	refdef.width = ui->gpuConfig.vidWidth;
 	refdef.height = ui->gpuConfig.vidHeight;
-	refdef.time = Sys_Milliseconds();
+	refdef.time = ui->realtime;
 	refdef.flags = RSF_NOWORLDMODEL | RSF_ORTHO_TYPE_SCREENSPACE;
 
 	//
 	// draw the background
 	//
-	re.ClearScene();
-	re.SetColor( colorWhite );
-	re.DrawImage( 0, 0, refdef.width, refdef.height, 0, 0, 1, 1, ui->menubackShader );
-	re.RenderScene( &refdef );
+	re.SetColor( NULL );
+	re.DrawImage( 0, 0, ui->gpuConfig.vidWidth, ui->gpuConfig.vidHeight, 0, 0, 1, 1, ui->menubackShader );
 }
 
 extern "C" void UI_AddJoystickKeyEvents( void )
@@ -691,7 +689,6 @@ extern "C" void UI_Refresh( int32_t realtime )
 {
 	extern cvar_t *in_joystick;
 	static qboolean windowFocus = qfalse;
-	static qboolean setMusic = qfalse;
 
 	ui->realtime = realtime;
 	ui->frametime = ui->frametime - realtime;
@@ -699,15 +696,8 @@ extern "C" void UI_Refresh( int32_t realtime )
 	UI_DrawFPS();
 
 	{
-		refdef_t refdef;
-
-		memset( &refdef, 0, sizeof( refdef ) );
-		refdef.x = 0;
-		refdef.y = 0;
-		refdef.width = ui->gpuConfig.vidWidth;
-		refdef.height = ui->gpuConfig.vidHeight;
-		refdef.time = 0;
-		refdef.flags = RSF_ORTHO_TYPE_SCREENSPACE | RSF_NOWORLDMODEL;
+		re.SetColor( colorWhite );
+		re.DrawImage( 0, 0, ui->gpuConfig.vidWidth, ui->gpuConfig.vidHeight, 0, 0, 1, 1, ui->backdrop );
 	}
 
 	if ( !( Key_GetCatcher() & KEYCATCH_UI ) ) {
@@ -739,6 +729,18 @@ extern "C" void UI_Refresh( int32_t realtime )
 			Menu_Draw( ui->activemenu );
 		}
 	}
+
+	refdef_t refdef;
+
+	memset( &refdef, 0, sizeof( refdef ) );
+	refdef.x = 0;
+	refdef.y = 0;
+	refdef.width = ui->gpuConfig.vidWidth;
+	refdef.height = ui->gpuConfig.vidHeight;
+	refdef.time = 0;
+	refdef.flags = RSF_ORTHO_TYPE_SCREENSPACE | RSF_NOWORLDMODEL;
+
+	re.RenderScene( &refdef );
 /*
 	// draw cursor
 //	ui->SetColor( NULL );

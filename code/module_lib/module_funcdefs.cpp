@@ -909,6 +909,14 @@ static void AddEntityToScene( asIScriptGeneric *pGeneric ) {
 	re.AddEntityToScene( &refEntity );
 }
 
+static void AddDLightToScene( asIScriptGeneric *pGeneric ) {
+	const vec3& origin = *(const vec3 *)pGeneric->GetArgObject( 0 );
+	float range = pGeneric->GetArgFloat( 1 );
+	const vec3& color = *(const vec3 *)pGeneric->GetArgObject( 2 );
+
+	re.AddDynamicLightToScene( (const vec_t *)glm::value_ptr( origin ), range, (const vec_t *)glm::value_ptr( color ) );
+}
+
 static void AddLineToScene( asIScriptGeneric *pGeneric ) {
 	nhandle_t hShader = (nhandle_t)pGeneric->GetArgDWord( 0 );
 	const CModulePolyQuad *quad = (const CModulePolyQuad *)pGeneric->GetArgObject( 1 );
@@ -970,7 +978,6 @@ static void AddPolyToScene( nhandle_t hShader, const CScriptArray *pPolyList ) {
 }
 
 static void AddSpriteToScene( asIScriptGeneric *pGeneric ) {
-
 	const vec3& origin = *(const vec3 *)pGeneric->GetArgObject( 0 );
 	const nhandle_t hShader = (nhandle_t)pGeneric->GetArgDWord( 1 );
 
@@ -2750,6 +2757,8 @@ void ModuleLib_Register_Engine( void )
 			g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::Renderer::AddEntityToScene( int, int, int, const vec3& in, const vec3& in, uint64,"
 				" uint32, uint32, const vec2& in, float, float, float, float )",
 				asFUNCTION( AddEntityToScene ), asCALL_GENERIC );
+			g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::Renderer::AddDLightToScene( const vec3& in, float, const vec3& in )",
+				asFUNCTION( AddDLightToScene ), asCALL_GENERIC );
 			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddQuadToScene( int, const TheNomad::Engine::Renderer::PolyQuad& in )", asFUNCTION( AddQuadToScene ) );
 			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddLineToScene( int, const TheNomad::Engine::Renderer::PolyQuad& in )", asFUNCTION( AddLineToScene ) );
 			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddPolyToScene( int, const TheNomad::Engine::Renderer::PolyVert[]& in )", WRAP_FN_PR( AddPolyToScene, ( nhandle_t, const CScriptArray * ), void ) );

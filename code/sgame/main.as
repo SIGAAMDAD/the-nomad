@@ -85,62 +85,21 @@ void InitResources() {
 	TheNomad::SGame::InfoSystem::InfoManager.LoadAmmoInfos();
 	TheNomad::SGame::InfoSystem::InfoManager.LoadWeaponInfos();
 
-	TheNomad::Engine::ResourceCache.GetShader( "gfx/env/smokePuff" );
-//	TheNomad::Engine::ResourceCache.GetShader( "gfx/effects/flame" );
+	TheNomad::Engine::ResourceCache.GetShader( "gfx/hud/blood_screen" );
 
-	str = TheNomad::Engine::CvarVariableString( "skin" );
-	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_torso" );
-	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_legs_0" );
-	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_legs_1" );
-	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_arms_0" );
-	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_arms_1" );
+	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "raio_torso" );
 
-//	const string str = TheNomad::Engine::CvarVariableString( "skin" );
+	for ( int i = 0; i < TheNomad::SGame::NUMFACING; i++ ) {
+		TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "raio_arms_" + i );
+		TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "raio_legs_" + i );
+	}
 
-	// NOTE: always load the sprite sheets after the info sprites
-	// doing it there causes a weird bug where the sprite's texture doesn't
-	// render correctly
-	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_torso", 512, 512, 32, 32 );
-	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_legs_0", 512, 512, 32, 32 );
-	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_legs_1", 512, 512, 32, 32 );
-	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_arms_0", 512, 512, 32, 32 );
-	TheNomad::Engine::Renderer::RegisterSpriteSheet( "sprites/players/" + str + "_arms_1", 512, 512, 32, 32 );
-
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/misc/getitem.ogg" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/misc/getpw.wav" );
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/level/complete_checkpoint" );
-
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/mobs/spot_player" );
-
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/death1" );
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/death2" );
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/death3" );
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/pain_scream_0" );
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/pain_scream_1" );
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/pain_scream_2" );
-
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/dash" );
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/melee" );
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/weapon_change_mode" );
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/weapon_change_hand" );
-
-//	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/clothRuffle0.ogg" );
-//	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/clothRuffle1.ogg" );
-//	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/clothRuffle2.ogg" );
-
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/slide0.ogg" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/slide1.ogg" );
-
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/move_gravel_0" );
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/move_gravel_1" );
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/move_gravel_2" );
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/move_gravel_3" );
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/move_water_0" );
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/move_water_0" );
-//	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/moveMetal0.ogg" );
-//	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/moveMetal1.ogg" );
-//	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/moveMetal2.ogg" );
-//	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/players/moveMetal3.ogg" );
+	TheNomad::Engine::ResourceCache.GetShader( "gfx/effects/flame1" );
+	TheNomad::Engine::ResourceCache.GetShader( "gfx/effects/flame2" );
+	TheNomad::Engine::ResourceCache.GetShader( "gfx/effects/flame3" );
+	TheNomad::Engine::ResourceCache.GetShader( "gfx/effects/flame4" );
+	TheNomad::Engine::ResourceCache.GetShader( "gfx/effects/flame5" );
+	TheNomad::Engine::ResourceCache.GetShader( "gfx/effects/flame6" );
 
 	//
 	// register strings

@@ -51,8 +51,6 @@ static qboolean playedSplashScreen = qfalse;
 typedef struct {
 	menuframework_t menu;
 
-//    menutable_t table;
-
 	menutext_t singleplayer;
 	menutext_t mods;
 	menutext_t settings;
@@ -63,8 +61,6 @@ typedef struct {
 	ImFont *font;
 
 	nhandle_t background;
-	sfxHandle_t ambience;
-
 	qboolean noSaves;
 	qboolean noMenu; // do we just want the scenery?
 } mainmenu_t;
@@ -78,7 +74,6 @@ typedef struct {
 	nhandle_t companyLogoShader;
 	nhandle_t engineLogoShader;
 	nhandle_t fmodLogoShader;
-	nhandle_t warningShader;
 	int splashPhase; // company logo -> engine logo -> epilepsy warning
 
 	uint64_t timeStart;
@@ -125,38 +120,17 @@ static void MainMenu_EventCallback( void *item, int event )
 	};
 }
 
-static void MainMenu_ToggleMenu( void ) {
-	s_main->noMenu = !s_main->noMenu;
+static void TextCenterAlign( const char *text )
+{
+	float fontSize = ImGui::GetFontSize() * strlen( text ) / 2;
+	ImGui::SameLine( ImGui::GetWindowSize().x / 2 - fontSize + ( fontSize / 2 ) );
+	ImGui::TextUnformatted( text );
+	ImGui::NewLine();
 }
-
-extern void Menu_DrawItemList( void **items, int numitems );
 
 static void DrawMenu_Text( void )
 {
-	menuframework_t *menu;
-
-	menu = &s_main->menu;
-
-	ImGui::Begin( va( "%s##%sMainMenu", menu->name, menu->name ), NULL, menu->flags );
-	if ( !( Key_GetCatcher() & KEYCATCH_CONSOLE ) ) {
-		ImGui::SetWindowFocus();
-	}
-	ImGui::SetWindowPos( ImVec2( menu->x, menu->y ) );
-	ImGui::SetWindowSize( ImVec2( menu->width, menu->height ) );
-
-	UI_EscapeMenuToggle();
-	if ( UI_MenuTitle( menu->name, menu->titleFontScale ) ) {
-		UI_PopMenu();
-		Snd_PlaySfx( ui->sfx_back );
-
-		ImGui::End();
-		return;
-	}
-	ImGui::SetCursorScreenPos( ImVec2( 8, 420 * ui->scale ) );
-
-	Menu_DrawItemList( menu->items, menu->nitems );
-
-	ImGui::End();
+	Menu_Draw( &s_main->menu );
 
 	//
 	// draw the version
@@ -165,7 +139,7 @@ static void DrawMenu_Text( void )
 
 	ImGui::Begin( "MainMenuVersion", NULL, MENU_DEFAULT_FLAGS | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_AlwaysAutoResize );
 	ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * 1.5f );
-	ImGui::SetWindowPos( ImVec2( 500 * ui->scale + ui->bias, 700 * ui->scale ) );
+	ImGui::SetWindowPos( ImVec2( 600 * ui->scale + ui->bias, 700 * ui->scale ) );
 	if ( ui->demoVersion ) {
 		ImGui::TextUnformatted( "(DEMO) FOR MATURE AUDIENCES" );
 	} else {
@@ -267,16 +241,10 @@ void MainMenu_Draw( void )
 	}
 }
 
-static void TextCenterAlign( const char *text )
-{
-	float fontSize = ImGui::GetFontSize() * strlen( text ) / 2;
-	ImGui::SameLine( ImGui::GetWindowSize().x / 2 - fontSize + ( fontSize / 2 ) );
-	ImGui::TextUnformatted( text );
-	ImGui::NewLine();
-}
-
 static void SplashScreen_Draw( void )
 {
+	refdef_t refdef;
+
 	const uint64_t timeCurrent = Sys_Milliseconds();
 	static const char *epilespyWarning[] = {
 		"A very small percentage of individuals may experience epileptic",
@@ -302,31 +270,24 @@ static void SplashScreen_Draw( void )
 		}
 	}
 
-	ImGui::Begin( "##SplashScreen", NULL, MENU_DEFAULT_FLAGS );
-	ImGui::SetWindowPos( ImVec2( s_splashScreen->menu.x, s_splashScreen->menu.y ) );
-	ImGui::SetWindowSize( ImVec2( s_splashScreen->menu.width, s_splashScreen->menu.height ) );
-
-	ImGui::PushStyleColor( ImGuiCol_Text, colorWhite );
+	re.SetColor( NULL );
 
 	switch ( s_splashScreen->splashPhase ) {
 	case SPLASH_SCREEN_LOGO: { // get attribution to 3rd party stuff done with
 		int cursorX = 100;
 
-		ImGui::SetCursorScreenPos( ImVec2( cursorX * ui->scale + ui->bias, 100 * ui->scale ) );
-		ImGui::Image( (ImTextureID)(uintptr_t)s_splashScreen->companyLogoShader, ImVec2( 330 * ui->scale + ui->bias, 180 * ui->scale ) );
+		re.DrawImage( cursorX * ui->scale + ui->bias, 100 * ui->scale, 330 * ui->scale + ui->bias, 180 * ui->scale, 0, 0, 1, 1, s_splashScreen->companyLogoShader );
 		cursorX += 300 * ui->scale + ui->bias;
 
-		ImGui::SetCursorScreenPos( ImVec2( cursorX * ui->scale + ui->bias, 100 * ui->scale ) );
-		ImGui::Image( (ImTextureID)(uintptr_t)s_splashScreen->engineLogoShader, ImVec2( 340 * ui->scale + ui->bias, 220 * ui->scale ) );
+		re.DrawImage( cursorX * ui->scale + ui->bias, 100 * ui->scale, 340 * ui->scale + ui->bias, 220 * ui->scale, 0, 0, 1, 1, s_splashScreen->engineLogoShader );
 		cursorX = 200 * ui->scale + ui->bias;
 
-		ImGui::SetCursorScreenPos( ImVec2( cursorX * ui->scale + ui->bias, 300 * ui->scale ) );
-		ImGui::Image( (ImTextureID)(uintptr_t)s_splashScreen->fmodLogoShader, ImVec2( 356 * ui->scale + ui->bias, 126 * ui->scale ) );
+		re.DrawImage( cursorX * ui->scale + ui->bias, 300 * ui->scale, 356 * ui->scale + ui->bias, 126 * ui->scale, 0, 0, 1, 1, s_splashScreen->fmodLogoShader );
 
-		ImGui::NewLine();
-		ImGui::NewLine();
-		ImGui::NewLine();
-		ImGui::NewLine();
+		ImGui::Begin( "##SplashScreen", NULL, MENU_DEFAULT_FLAGS );
+		ImGui::SetWindowPos( ImVec2( s_splashScreen->menu.x,  472 * ui->scale ) );
+		ImGui::SetWindowSize( ImVec2( s_splashScreen->menu.width, s_splashScreen->menu.height ) );
+		ImGui::PushStyleColor( ImGuiCol_Text, colorWhite );
 		
 		ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * 1.75f );
 		TextCenterAlign( "Powered by the SIR Engine" );
@@ -334,31 +295,30 @@ static void SplashScreen_Draw( void )
 		TextCenterAlign( "GDR Games, all rights reserved. All other trademarks," );
 		TextCenterAlign( "logos, and copyrights are property of their respective owners." );
 		TextCenterAlign( "Made using FMOD Studio by Firelight Technologies Pty Ltd." );
+
+		ImGui::PopStyleColor();
+		ImGui::End();
 		break; }
 	case SPLASH_SCREEN_WARNING:
-		ImGui::SetCursorScreenPos( ImVec2( 156 * ui->scale + ui->bias, 200 * ui->scale ) );
+		ImGui::Begin( "##SplashScreen", NULL, MENU_DEFAULT_FLAGS );
+		ImGui::SetWindowPos( ImVec2( 80 * ui->scale + ui->bias, 200 * ui->scale ) );
+		ImGui::SetWindowSize( ImVec2( 860 * ui->scale + ui->bias, s_splashScreen->menu.height ) );
 		ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * 2.5f );
 
-		ImGui::Image( (ImTextureID)(uintptr_t)s_splashScreen->warningShader, ImVec2( 64 * ui->scale + ui->bias, 64 * ui->scale ) );
 		ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
 		TextCenterAlign( EPILEPSY_WARNING_TITLE );
 		ImGui::PopStyleColor();
 
-
-		ImGui::NewLine();
-		ImGui::NewLine();
 		ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * 1.75f );
 		for ( const auto& it : epilespyWarning ) {
 			TextCenterAlign( it );
 		}
+		ImGui::PopStyleColor();
+		ImGui::End();
 		break;
 	default:
 		break;
 	};
-
-	ImGui::PopStyleColor();
-
-	ImGui::End();
 }
 
 void MainMenu_Cache( void )
@@ -395,7 +355,6 @@ void MainMenu_Cache( void )
 	s_splashScreen->fmodLogoShader = re.RegisterShader( "menu/fmodLogo" );
 	s_splashScreen->companyLogoShader = re.RegisterShader( "menu/companyLogo" );
 	s_splashScreen->engineLogoShader = re.RegisterShader( "menu/engineLogo" );
-	s_splashScreen->warningShader = re.RegisterShader( "menusplashwarn" );
 
 	s_splashScreen->menu.draw = SplashScreen_Draw;
 	s_splashScreen->menu.x = 0;
@@ -478,9 +437,6 @@ void MainMenu_Cache( void )
 	Menu_AddItem( &s_main->menu, &s_main->credits );
 	Menu_AddItem( &s_main->menu, &s_main->mods );
 	Menu_AddItem( &s_main->menu, &s_main->exitGame );
-
-	// add in background ambience
-//    Snd_AddLoopingTrack( Snd_RegisterTrack( "music/world/icy_gusts.wav" ) );
 
 	Key_SetCatcher( KEYCATCH_UI );
 	ui->menusp = 0;

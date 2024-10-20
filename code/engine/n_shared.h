@@ -409,20 +409,6 @@ Compiler Macro Abstraction
 #define LOG_DIR "Config"
 #define LOGFILE LOG_DIR "/debug.log"
 
-// dunno WHY microsoft does this, but they do
-#ifdef _WIN32
-//#define strcpy _strcpy
-//#define strncpy _strncpy
-#define open _open
-#define fileno _fileno
-#define read _read
-#define write _write
-//#define sprintf _sprintf
-//#define snprintf _snprintf
-//#define vsprintf _vsprintf
-//#define vsnprintf _vsnprintf
-#endif
-
 #if !defined(_NOMAD_VERSION_MAJOR) || !defined(_NOMAD_VERSION_UPDATE) || !defined(_NOMAD_VERSION_PATCH)
 #   error a version must be supplied when compiling the engine or a mod
 #endif
@@ -458,12 +444,18 @@ Compiler Macro Abstraction
 #define VSTR(x) VSTR_HELPER(x)
 #define NOMAD_VERSION_STRING "v" VSTR( _NOMAD_VERSION_MAJOR ) "." VSTR( _NOMAD_VERSION_UPDATE ) "." VSTR( _NOMAD_VERSION_PATCH )
 
-#if _NOMAD_VERSION_MAJOR == 1
-#define GLN_VERSION "The Nomad " NOMAD_VERSION_STRING " Alpha"
-#elif _NOMAD_VERSION_MAJOR == 2
-#define GLN_VERSION "The Nomad " NOMAD_VERSION_STRING " Beta"
+#ifdef _NOMAD_DEBUG
+#define BUILD_TYPE "[Debug " __DATE__ "|" __TIME__ "]"
 #else
-#define GLN_VERSION "The Nomad " NOMAD_VERSION_STRING ""
+#define BUILD_TYPE "[Release " __DATE__ "|" __TIME__ "]"
+#endif
+
+#if _NOMAD_VERSION_MAJOR == 1
+#define GLN_VERSION "The Nomad " NOMAD_VERSION_STRING " Alpha " BUILD_TYPE ""
+#elif _NOMAD_VERSION_MAJOR == 2
+#define GLN_VERSION "The Nomad " NOMAD_VERSION_STRING " Beta " BUILD_TYPE ""
+#else
+#define GLN_VERSION "The Nomad " NOMAD_VERSION_STRING " " BUILD_TYPE ""
 #endif
 
 #define WINDOW_TITLE GLN_VERSION
@@ -1030,8 +1022,7 @@ typedef struct {
 #define COLOR_WHITE		"^7"
 #define COLOR_RESET		"^8"
 
-/*#if defined(_NOMAD_DEBUG) && defined(__cplusplus) && !defined(_WIN32)*/
-#if 0
+#if defined(_NOMAD_DEBUG) && defined(__cplusplus) && !defined(_WIN32)
 	#define USING_EASY_PROFILER
 	#include <easy/profiler.h>
 

@@ -4,6 +4,7 @@ layout( location = 1 ) out vec4 a_BrightColor;
 #endif
 
 in vec2 v_TexCoords;
+in vec3 v_FragPos;
 in vec4 v_Color;
 in vec3 v_WorldPos;
 in vec3 v_Position;
@@ -57,11 +58,7 @@ struct Light {
 };
 
 layout( std140, binding = 0 ) uniform u_LightBuffer {
-	Light u_LightData[ MAX_MAP_LIGHTS ];
-};
-
-layout( std140, binding = 0 ) buffer u_DLightBuffer {
-	Light u_DLightData[];
+	Light u_LightData[ MAX_LIGHTS ];
 };
 
 uniform int u_NumLights;
@@ -166,9 +163,26 @@ vec3 CalcSpecular(vec3 specular, float NH, float EH, float roughness)
 	return specular * (rrrr / (4.0 * d * d * v));
 }
 
+/*
+vec3 CalcTangent() {
+	vec3 Q1 = dFdx( v_WorldPos );
+	vec3 Q2 = dFdy( v_WorldPos );
+	vec3 st1 = dFdx( v_TexCoords );
+	vec3 st2 = dFdy( v_TexCoords );
+
+	vec3 N = normalize( 0.0 );
+	vec3 T = normalize( Q1 * st2.t - Q2 * st1.t );
+	vec3 B = -normalize( cross( N, T ) );
+
+	mat3 TBN = mat3( T, B, N );
+
+	return normalize( TBN * 0.0 );
+}
+*/
+
 vec3 CalcPointLight( Light light ) {
 	vec3 diffuse = a_Color.rgb;
-	float dist = distance( v_WorldPos, vec3( light.origin, v_WorldPos.z ) );
+	float dist = distance( v_WorldPos, vec3( light.origin, v_FragPos.z ) );
 	float diff = 0.0;
 	float range = light.range;
 	vec3 specular = vec3( 0.0 );
@@ -185,7 +199,7 @@ vec3 CalcPointLight( Light light ) {
 	attenuation = ( light.constant + light.linear * light.range
 		+ light.quadratic * ( light.range * light.range ) );
 	if ( u_LightingQuality == 2 ) {
-		vec3 lightDir = vec3( light.origin.xy, 0.0 ) - v_WorldPos;
+		vec3 lightDir = vec3( light.origin.xy, 0.0 ) - v_FragPos;
 		vec3 viewDir = normalize( u_ViewOrigin - v_WorldPos );
 		vec3 halfwayDir = normalize( lightDir + viewDir );
 
@@ -203,13 +217,13 @@ vec3 CalcPointLight( Light light ) {
 	#if defined(USE_NORMALMAP)
 		vec3 normal = CalcNormal();
 	#else
-		vec3 normal = CalcScreenSpaceNormal( v_Position );
+		vec3 normal = CalcScreenSpaceNormal( v_FragPos );
 	#endif
 		if ( normal == vec3( 1.0 ) ) {
 			normal = vec3( 0.0 );
 		}
 		const float energyConservation = ( 8.0 + shininess ) / ( 8.0 * M_PI );
-		float spec = energyConservation * pow( max( dot( CalcScreenSpaceNormal( v_Position ), halfwayDir ), 0.0 ), shininess );
+		float spec = energyConservation * pow( max( dot( CalcScreenSpaceNormal( v_FragPos ), halfwayDir ), 0.0 ), shininess );
 		specular = light.color.rgb * vec3( spec );
 		specular *= attenuation;
 	}

@@ -9,8 +9,6 @@ extern const char *fallbackShader_imgui_vp;
 extern const char *fallbackShader_imgui_fp;
 extern const char *fallbackShader_ssao_vp;
 extern const char *fallbackShader_ssao_fp;
-extern const char *fallbackShader_tile_vp;
-extern const char *fallbackShader_tile_fp;
 extern const char *fallbackShader_down4x_vp;
 extern const char *fallbackShader_down4x_fp;
 extern const char *fallbackShader_bokeh_vp;
@@ -31,6 +29,8 @@ extern const char *fallbackShader_SMAAWeights_vp;
 extern const char *fallbackShader_SMAAWeights_fp;
 extern const char *fallbackShader_SMAABlend_vp;
 extern const char *fallbackShader_SMAABlend_fp;
+extern const char *fallbackShader_tile_vp;
+extern const char *fallbackShader_tile_fp;
 
 #define GLSL_VERSION_ATLEAST(major,minor) (glContext.glslVersionMajor > (major) || (glContext.versionMajor == (major) && glContext.glslVersionMinor >= minor))
 
@@ -92,9 +92,7 @@ static uniformInfo_t uniformsInfo[UNIFORM_COUNT] = {
 	{ "u_BlurHorizontal",       GLSL_INT },
 
 	{ "u_LightBuffer",          GLSL_BUFFER },
-	{ "u_DLightData",			GLSL_BUFFER },
 	{ "u_VertexData",			GLSL_BUFFER },
-	{ "u_TextureData",			GLSL_BUFFER },
 
 	{ "u_GammaAmount",          GLSL_FLOAT },
 	{ "u_CameraExposure",		GLSL_FLOAT },
@@ -117,6 +115,7 @@ static uniformInfo_t uniformsInfo[UNIFORM_COUNT] = {
 
 //static shaderProgram_t *hashTable[MAX_RENDER_SHADERS];
 
+/*
 #define SHADER_CACHE_FILE_NAME CACHE_DIR "/glshadercache.dat"
 
 typedef struct {
@@ -374,6 +373,7 @@ static void R_SaveShaderCache( void )
 
 	ri.FS_FClose( cacheFile );
 }
+*/
 
 typedef enum {
 	GLSL_PRINTLOG_PROGRAM_INFO,
@@ -599,7 +599,7 @@ static void GLSL_ShowProgramUniforms(GLuint program)
 	for ( i = 0; i < count; i++ ) {
 		nglGetActiveUniform( program, i, sizeof( uniformName ), NULL, &size, &type, uniformName );
 		
-		if ( N_stristr( uniformName, "u_LightData" ) ) {
+		if ( N_stristr( uniformName, "u_LightData" ) || N_stristr( uniformName, "u_DLightData" ) ) {
 			continue;
 		}
 
@@ -635,7 +635,7 @@ static void GLSL_PrepareHeader(GLenum shaderType, const GLchar *extra, char *des
 	//
 	// add any extensions
 	//
-	if ( r_loadTexturesOnDemand->i ) {
+	if ( r_loadTexturesOnDemand->i && glContext.bindlessTextures ) {
 		N_strcat( dest, size, "#extension GL_ARB_bindless_texture : enable\n" );
 		N_strcat( dest, size, "#define USE_BINDLESS_TEXTURE\n" );
 		N_strcat( dest, size, "#define TEXTURE2D layout( bindless_sampler ) uniform sampler2D\n" );
@@ -860,7 +860,7 @@ static int GLSL_InitComputeShader( shaderProgram_t *program, const char *name, c
 	rg.numPrograms++;
 
 	N_strncpyz( program->name, name, sizeof( program->name ) - 1 );
-	fromCache = R_GetShaderFromCache( program );
+	fromCache = -1;
 	if ( fromCache != -1 ) {
 		ri.Printf( PRINT_INFO, "GLSL Program '%s' loaded from shader cache.\n", name );
 	}
@@ -884,7 +884,7 @@ static int GLSL_InitComputeShader( shaderProgram_t *program, const char *name, c
 	return GLSL_InitComputeShader2( program, name, csCode );
 }
 
-static int GLSL_InitGPUShader( shaderProgram_t *program, const char *name, uint32_t attribs, qboolean fragmentShader,
+int GLSL_InitGPUShader( shaderProgram_t *program, const char *name, uint32_t attribs, qboolean fragmentShader,
 	const GLchar *extra, qboolean addHeader, const char *fallback_vs, const char *fallback_fs )
 {
 	char vsCode[32000];
@@ -897,15 +897,15 @@ static int GLSL_InitGPUShader( shaderProgram_t *program, const char *name, uint3
 	rg.numPrograms++;
 
 	N_strncpyz( program->name, name, sizeof( program->name ) - 1 );
-	fromCache = R_GetShaderFromCache( program );
+	fromCache = -1;
 	if ( fromCache != -1 ) {
 		ri.Printf( PRINT_INFO, "GLSL Program '%s' loaded from shader cache.\n", name );
 	}
 
 	// even if we are loading it from the cache, we can still use the text as a fallback
-	size = sizeof(vsCode);
+	size = sizeof( vsCode );
 
-	if (addHeader) {
+	if ( addHeader ) {
 		GLSL_PrepareHeader(GL_VERTEX_SHADER, extra, vsCode, size);
 		postHeader = &vsCode[strlen(vsCode)];
 		size -= strlen(vsCode);
@@ -938,7 +938,7 @@ static int GLSL_InitGPUShader( shaderProgram_t *program, const char *name, uint3
 	return GLSL_InitGPUShader2( program, name, attribs, vsCode, fsCode, fromCache );
 }
 
-static void GLSL_InitUniforms( shaderProgram_t *program )
+void GLSL_InitUniforms( shaderProgram_t *program )
 {
 	uint32_t i, uniformBufferSize;
 
@@ -994,7 +994,7 @@ static void GLSL_InitUniforms( shaderProgram_t *program )
 		};
 	}
 
-	program->uniformBuffer = (char *)ri.Malloc( uniformBufferSize );
+	program->uniformBuffer = (char *)ri.Hunk_Alloc( uniformBufferSize, h_low );
 
 	for ( i = 0; i < UNIFORM_COUNT; i++ ) {
 		if ( uniformsInfo[i].type == GLSL_BUFFER ) {
@@ -1004,13 +1004,13 @@ static void GLSL_InitUniforms( shaderProgram_t *program )
 	}
 }
 
-static void GLSL_FinishGPUShader( shaderProgram_t *program )
+void GLSL_FinishGPUShader( shaderProgram_t *program )
 {
 	GLSL_ShowProgramUniforms( program->programId );
 	GL_CheckErrors();
 }
 
-static void GLSL_DeleteGPUShader( shaderProgram_t *program)
+void GLSL_DeleteGPUShader( shaderProgram_t *program )
 {
 	if ( program->programId ) {
 		if ( program->vertexId ) {
@@ -1020,9 +1020,6 @@ static void GLSL_DeleteGPUShader( shaderProgram_t *program)
 		if ( program->fragmentId ) {
 		//	nglDetachShader( program->programId, program->fragmentId );
 			nglDeleteShader( program->fragmentId );
-		}
-		if ( program->uniformBuffer ) {
-			ri.Free( program->uniformBuffer );
 		}
 
 		nglDeleteProgram( program->programId );
@@ -1311,7 +1308,7 @@ void GLSL_SetUniformMatrix4(shaderProgram_t *program, uint32_t uniformNum, const
 	nglUniformMatrix4fv(uniforms[uniformNum], 1, GL_FALSE, &m[0][0]);
 }
 
-void GLSL_ShaderBufferData( shaderProgram_t *shader, uint32_t uniformNum, uniformBuffer_t *buffer, uint64_t nSize, qboolean dynamicStorage )
+void GLSL_ShaderBufferData( shaderProgram_t *shader, uint32_t uniformNum, uniformBuffer_t *buffer, uint64_t nSize, uint64_t nOffset, qboolean dynamicStorage )
 {
 	GLint *uniforms;
 	GLuint bufferObject;
@@ -1336,13 +1333,18 @@ void GLSL_ShaderBufferData( shaderProgram_t *shader, uint32_t uniformNum, unifor
 
 	nglBindBuffer( target, buffer->id );
 
-	if ( dynamicStorage && nSize > buffer->size ) {
-		nglBufferData( GL_SHADER_STORAGE_BUFFER, nSize, NULL, GL_STREAM_DRAW );
-		buffer->size = nSize;
-	}
-	void *data = nglMapBufferRange( target, 0, nSize, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_FLUSH_EXPLICIT_BIT );
-	memcpy( data, buffer->data, nSize );
-	nglFlushMappedBufferRange( target, 0, nSize );
+//	nglBufferData( target, buffer->size, NULL, GL_STREAM_DRAW );
+	nglBufferSubData( target, nOffset, nSize, buffer->data + nOffset );
+
+//	if ( dynamicStorage && nSize > buffer->size ) {
+//		nglBufferData( GL_SHADER_STORAGE_BUFFER, nSize, NULL, GL_STREAM_DRAW );
+//		buffer->size = nSize;
+//	}
+//	void *data = nglMapBufferRange( target, nOffset, nSize, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_FLUSH_EXPLICIT_BIT );
+//	memcpy( data, buffer->data + nOffset, nSize );
+//	nglFlushMappedBufferRange( target, nOffset, nSize );
+//	nglUnmapBuffer( target );
+//	GL_CheckErrors();
 
 	nglBindBuffer( target, 0 );
 }
@@ -1362,7 +1364,7 @@ void GLSL_LinkUniformToShader( shaderProgram_t *program, uint32_t uniformNum, un
 			return;
 		}
 //	}
-//    nglUniformBlockBinding( program->programId, buffer->binding, program->numBuffers );
+	nglUniformBlockBinding( program->programId, buffer->binding, program->numBuffers );
 
 	target = r_arb_shader_storage_buffer_object->i && dynamicStorage ? GL_SHADER_STORAGE_BUFFER : GL_UNIFORM_BUFFER;
 
@@ -1402,12 +1404,12 @@ uniformBuffer_t *GLSL_InitUniformBuffer( const char *name, byte *buffer, uint64_
 	size += PAD( nameLen + 1, sizeof( uintptr_t ) );
 	size += PAD( sizeof( *buf ), sizeof( uintptr_t ) );
 
-	buf = rg.uniformBuffers[ rg.numUniformBuffers ] = (uniformBuffer_t *)ri.Malloc( size );
+	buf = rg.uniformBuffers[ rg.numUniformBuffers ] = (uniformBuffer_t *)ri.Hunk_Alloc( size, h_low );
 	memset( buf, 0, size );
 
 	buf->name = (char *)( buf + 1 );
 	if ( !buffer ) {
-		buf->data = (byte *)ri.Malloc( bufSize );
+		buf->data = (byte *)ri.Hunk_Alloc( bufSize, h_low );
 	} else {
 		buf->data = buffer;
 	}
@@ -1423,8 +1425,6 @@ uniformBuffer_t *GLSL_InitUniformBuffer( const char *name, byte *buffer, uint64_
 	nglBindBuffer( target, buf->id );
 	nglBufferData( target, bufSize, buffer, GL_STREAM_DRAW );
 	nglBindBuffer( target, 0 );
-
-	GLSL_UseProgram( NULL );
 
 	rg.numUniformBuffers++;
 
@@ -1443,8 +1443,6 @@ void GLSL_InitGPUShaders_f( void )
 
 	ri.Printf( PRINT_INFO, "---- GLSL_InitGPUShaders ----\n" );
 
-//	rg.textureData = GLSL_InitUniformBuffer( "u_TextureData", NULL, sizeof( GLuint64 ) * MAX_TEXTURES, qfalse );
-
 	R_IssuePendingRenderCommands();
 
 	start = ri.Milliseconds();
@@ -1456,6 +1454,7 @@ void GLSL_InitGPUShaders_f( void )
 
 		extradefines[0] = '\0';
 
+		N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define MAX_TEXTURES %i\n", MAX_TEXTURES ) );
 		N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define MAX_MAP_LIGHTS %i\n", MAX_MAP_LIGHTS ) );
 		N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define POINT_LIGHT %i\n", LIGHT_POINT ) );
 		N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define DIRECTION_LIGHT %i\n", LIGHT_DIRECTIONAL ) );
@@ -1476,9 +1475,6 @@ void GLSL_InitGPUShaders_f( void )
 //        if ( i & GENERICDEF_USE_RGBAGEN ) {
 			N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_RGBAGEN\n" );
 //        }
-		if ( r_multisampleType->i == AntiAlias_SMAA ) {
-			N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_LUMA_SMAA_EDGE\n" );
-		}
 
 		if ( !GLSL_InitGPUShader( &rg.genericShader[i], "generic", attribs, qtrue, extradefines, qtrue, fallbackShader_generic_vp,
 			fallbackShader_generic_fp ) )
@@ -1486,10 +1482,7 @@ void GLSL_InitGPUShaders_f( void )
 			ri.Error( ERR_FATAL, "Could not load generic shader!" );
 		}
 
-//		GLSL_LinkUniformToShader( &rg.genericShader[i], UNIFORM_TEXTUREDATA, rg.textureData, qfalse );
-
 		GLSL_InitUniforms( &rg.genericShader[i] );
-
 		GLSL_FinishGPUShader( &rg.genericShader[i] );
 
 		numGenShaders++;
@@ -1505,13 +1498,6 @@ void GLSL_InitGPUShaders_f( void )
 	GLSL_InitUniforms( &rg.textureColorShader );
 	GLSL_FinishGPUShader( &rg.textureColorShader );
 
-	numGenShaders++;
-
-	extradefines[ 0 ] = '\0';
-	attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD;
-	if ( !GLSL_InitGPUShader( &rg.msaaShader, "msaa", attribs, qtrue, extradefines, qtrue, NULL, NULL ) ) {
-		ri.Error( ERR_FATAL, "Could not load msaa shader!" );
-	}
 	numGenShaders++;
 
 /*
@@ -1676,31 +1662,6 @@ void GLSL_InitGPUShaders_f( void )
 	}
 	GLSL_InitUniforms( &rg.imguiShader );
 	GLSL_FinishGPUShader( &rg.imguiShader );
-	numGenShaders++;
-
-	attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_WORLDPOS;
-
-	extradefines[0] = '\0';
-	N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_LIGHT\n" );
-	N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define MAX_MAP_LIGHTS %i\n", MAX_MAP_LIGHTS ) );
-	N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define POINT_LIGHT %i\n", LIGHT_POINT ) );
-	N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define DIRECTION_LIGHT %i\n", LIGHT_DIRECTIONAL ) );
-	if ( r_normalMapping->i ) {
-		N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_NORMALMAP\n" );
-	}
-	if ( r_specularMapping->i ) {
-		N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_SPECULARMAP\n" );
-	}
-	if ( r_parallaxMapping->i ) {
-		N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_PARALLAXMAP\n" );
-	}
-	if ( !GLSL_InitGPUShader( &rg.tileShader, "tile", attribs, qtrue, extradefines, qtrue, fallbackShader_tile_vp, fallbackShader_tile_fp ) ) {
-		ri.Error( ERR_FATAL, "Could not load tile shader!" );
-	}
-//	GLSL_LinkUniformToShader( &rg.tileShader, UNIFORM_TEXTUREDATA, rg.textureData, qfalse );
-	GLSL_InitUniforms( &rg.tileShader );
-	GLSL_FinishGPUShader( &rg.tileShader );
-
 	numGenShaders++;
 
 	extradefines[ 0 ] = '\0';
@@ -1871,9 +1832,6 @@ void GLSL_ShutdownGPUShaders( void )
 
 	for ( i = 0; i < rg.numUniformBuffers; i++ ) {
 		nglDeleteBuffersARB( 1, &rg.uniformBuffers[i]->id );
-		if ( !rg.uniformBuffers[i]->externalBuffer ) {
-			ri.Free( rg.uniformBuffers[ i ]->data );
-		}
 	}
 	for ( i = 0; i < GENERICDEF_COUNT; i++ ) {
 		GLSL_DeleteGPUShader( &rg.genericShader[i] );

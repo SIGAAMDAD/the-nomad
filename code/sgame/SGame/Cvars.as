@@ -9,7 +9,6 @@ namespace TheNomad::SGame {
 	ConVar sgame_GfxDetail;
 	ConVar sgame_Difficulty;
 	ConVar sgame_DebugMode;
-	ConVar sgame_Blood;
 
 	//
 	// sound system
@@ -50,12 +49,20 @@ namespace TheNomad::SGame {
 	ConVar sgame_WaterFriction;
 	ConVar sgame_AirFriction;
 	ConVar sgame_MaxSpeed;
-	ConVar sgame_ToggleHUD;
 	ConVar sgame_Friction;
 	ConVar sgame_PlayerHeight;
 	ConVar sgame_PlayerWidth;
 	ConVar sgame_Gravity;
 	ConVar sgame_SwimSpeed;
 	ConVar sgame_AirSpeed;
+
+	// settings
+	ConVar sgame_ToggleHUD;
 	ConVar sgame_SaveLastUsedWeaponModes;
+	ConVar sgame_UpdateNotifications;
+	ConVar sgame_BossHealthBar;
+	ConVar sgame_Tutorials;
+	ConVar sgame_Blood;
+	ConVar sgame_InteractionPrompts;
+	ConVar sgame_QuestMarkers;
 };

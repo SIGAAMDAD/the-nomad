@@ -4,6 +4,7 @@ in uvec2 a_WorldPos;
 in vec4 a_Color;
 
 out vec2 v_TexCoords;
+out vec3 v_FragPos;
 out vec4 v_Color;
 out vec3 v_WorldPos;
 out vec3 v_Position;
@@ -120,6 +121,20 @@ void main() {
 	}
 	v_WorldPos = vec3( a_WorldPos.xy, 0.0 );
 	v_Position = position;
+
+	/*
+	mat3 normalMatrix = transpose( inverse( mat3( 1.0 ) ) );
+	vec3 T = normalize( normalMatrix * a_Tangent.xyz );
+	vec3 N = normalize( normalMatrix * a_Normal.xyz );
+	T = normalize( T - dot( T, N ) * N );
+	vec3 B = cross( N, T );
+
+	v_TBN = transpose( mat3( T, B, N ) );
+	v_TangentViewPos = v_TBN * u_ViewOrigin;
+	v_TangentFragPos = v_TBN * v_FragPos;
+	*/
+
+//	v_FragPos = vec3( u_ModelViewProjection * vec4( a_Position.xy, 0.0, 1.0 ) );
 
     gl_Position = u_ModelViewProjection * vec4( a_Position, 1.0 );
 }

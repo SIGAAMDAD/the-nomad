@@ -684,6 +684,9 @@ namespace TheNomad::SGame {
 			}
 			m_ArmsFacing = FACING_RIGHT;
 
+//			@m_FireSpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/effects/fire", 480, 384, 94, 94 );
+			@m_FireState = @StateManager.GetStateForNum( StateNum::ST_FIRE_FLICKER );
+
 			m_AfterImage.Create( @this );
 			m_iFlags |= PF_AFTER_IMAGE;
 
@@ -774,6 +777,8 @@ namespace TheNomad::SGame {
 		
 		// custom draw because of adaptive weapons and leg sprites
 		void Draw() override {
+			TheNomad::Engine::ProfileBlock block( "PlayrObject::Draw" );
+
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 
 			@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE );
@@ -791,6 +796,17 @@ namespace TheNomad::SGame {
 				// draw the common silhouette after image for the player's last known position to the enemies
 				m_AfterImage.Draw();
 			}
+			@m_FireState = @m_FireState.Run();
+
+			refEntity.origin = vec3( m_Link.m_Origin.x + 2.0f, m_Link.m_Origin.y, m_Link.m_Origin.z );
+			refEntity.sheetNum = -1;
+			uint sprite = ( TheNomad::GameSystem::GameManager.GetGameTic() & 5 ) + 1;
+			refEntity.spriteId = TheNomad::Engine::ResourceCache.GetShader( "gfx/effects/flame" + sprite );
+			refEntity.scale = 2.0f;
+			refEntity.rotation = 90.0f;
+			refEntity.Draw();
+
+			TheNomad::Engine::Renderer::AddDLightToScene( m_Link.m_Origin, 5.0f, vec3( 1.0f ) );
 
 			m_HudData.Draw();
 		}
@@ -879,6 +895,9 @@ namespace TheNomad::SGame {
 		private SpriteSheet@[] m_LegSpriteSheet( NUMFACING );
 		private EntityState@ m_LegState = null;
 		private int m_LegsFacing = 0;
+
+		private SpriteSheet@ m_FireSpriteSheet = null;
+		private EntityState@ m_FireState = null;
 
 		private AfterImage m_AfterImage;
 

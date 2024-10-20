@@ -53,7 +53,7 @@ console
 	{
 		texFilter bilinear
 		map gfx/console02.jpg
-		//map gfx/effects/firegorre3.tga
+		//map gfx/effects/flamegotga3.tga
 		blendFunc add
 		tcMod turb 0 .1 0 .1
 		tcMod scale 2 1
@@ -71,41 +71,41 @@ gfx/hud/blood_screen
 	nomipmaps
 	{
 		texFilter bilinear
-		map textures/hud/PAIN1.tga
+		map textures/hud/PAIN1.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		rgbGen vertex
 		tcGen vertex
 	}
 	{
 		texFilter bilinear
-		map textures/hud/ARBLS1.tga
+		map textures/hud/ARBLS1.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		rgbGen vertex
 		tcMod scroll 0.0 -0.9
 	}
 	{
 		texFilter bilinear
-		map textures/hud/ARBLS2.tga
+		map textures/hud/ARBLS2.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		rgbGen vertex
 		tcMod scroll 0.0 -0.4
 	}
 	{
 		texFilter bilinear
-		map textures/hud/ARBLS3.tga
+		map textures/hud/ARBLS3.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		rgbGen vertex
 		tcMod scroll 0.0 -0.25
 	}
 	{
 		texFilter bilinear
-		map textures/hud/ARBLS4.tga
+		map textures/hud/ARBLS4.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		rgbGen vertex
 	}
 	{
 		texFilter bilinear
-		map textures/hud/ARBLS5.tga
+		map textures/hud/ARBLS5.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		rgbGen vertex
 	}
@@ -291,35 +291,10 @@ gfx/effects/flame
 	nomipmaps
 	nopicmip
 	{
-		animMap 10 gfx/effects/flame1.tga gfx/effects/flame2.tga gfx/effects/flame3.tga gfx/effects/flame4.tga gfx/effects/flame5.tga gfx/effects/flame6.tga gfx/effects/flame7.tga gfx/effects/flame8.tga
-		blendFunc GL_ONE GL_ONE
+		map gfx/effects/flame.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
 //		rgbGen wave inverseSawtooth 0 1 0 10
-	}
-	{
-		animMap 10 gfx/effects/flame2.tga gfx/effects/flame3.tga gfx/effects/flame4.tga gfx/effects/flame5.tga gfx/effects/flame6.tga gfx/effects/flame7.tga gfx/effects/flame8.tga gfx/effects/flame1.tga
-		blendFunc GL_ONE GL_ONE
-//		rgbGen wave sawtooth 0 1 0 10
-	}
-	{
-		map gfx/effects/flameball.jpg
-		blendFunc GL_ONE GL_ONE
-//		rgbGen wave sin .6 .2 0 .6	
-	}
-}
-
-gfx/effects/flame0
-{
-	nomipmaps
-	nopicmip
-	{
-		map gfx/effects/flame1.tga
-		blendFunc GL_ONE GL_ONE
-		rgbGen wave inverseSawtooth 0 1 0 10
-	}
-	{
-		map gfx/effects/flame2.tga
-		blendFunc GL_ONE GL_ONE
-		rgbGen wave sawtooth 0 1 0 10
 	}
 }
 
@@ -328,14 +303,10 @@ gfx/effects/flame1
 	nomipmaps
 	nopicmip
 	{
-		map gfx/effects/flame2.tga
-		blendFunc GL_ONE GL_ONE
-		rgbGen wave inverseSawtooth 0 1 0 10
-	}
-	{
-		map gfx/effects/flame3.tga
-		blendFunc GL_ONE GL_ONE
-		rgbGen wave sawtooth 0 1 0 10
+		map gfx/effects/flame1.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+//		rgbGen wave inverseSawtooth 0 1 0 10
 	}
 }
 
@@ -344,14 +315,10 @@ gfx/effects/flame2
 	nomipmaps
 	nopicmip
 	{
-		map gfx/effects/flame3.tga
-		blendFunc GL_ONE GL_ONE
-		rgbGen wave inverseSawtooth 0 1 0 10
-	}
-	{
-		map gfx/effects/flame4.tga
-		blendFunc GL_ONE GL_ONE
-		rgbGen wave sawtooth 0 1 0 10
+		map gfx/effects/flame2.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+//		rgbGen wave inverseSawtooth 0 1 0 10
 	}
 }
 
@@ -360,14 +327,10 @@ gfx/effects/flame3
 	nomipmaps
 	nopicmip
 	{
-		map gfx/effects/flame4.tga
-		blendFunc GL_ONE GL_ONE
-		rgbGen wave inverseSawtooth 0 1 0 10
-	}
-	{
-		map gfx/effects/flame5.tga
-		blendFunc GL_ONE GL_ONE
-		rgbGen wave sawtooth 0 1 0 10
+		map gfx/effects/flame3.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+//		rgbGen wave inverseSawtooth 0 1 0 10
 	}
 }
 
@@ -376,14 +339,10 @@ gfx/effects/flame4
 	nomipmaps
 	nopicmip
 	{
-		map gfx/effects/flame5.tga
-		blendFunc GL_ONE GL_ONE
-		rgbGen wave inverseSawtooth 0 1 0 10
-	}
-	{
-		map gfx/effects/flame6.tga
-		blendFunc GL_ONE GL_ONE
-		rgbGen wave sawtooth 0 1 0 10
+		map gfx/effects/flame4.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+//		rgbGen wave inverseSawtooth 0 1 0 10
 	}
 }
 
@@ -392,14 +351,10 @@ gfx/effects/flame5
 	nomipmaps
 	nopicmip
 	{
-		map gfx/effects/flame6.tga
-		blendFunc GL_ONE GL_ONE
-		rgbGen wave inverseSawtooth 0 1 0 10
-	}
-	{
-		map gfx/effects/flame7.tga
-		blendFunc GL_ONE GL_ONE
-		rgbGen wave sawtooth 0 1 0 10
+		map gfx/effects/flame5.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+//		rgbGen wave inverseSawtooth 0 1 0 10
 	}
 }
 
@@ -408,33 +363,35 @@ gfx/effects/flame6
 	nomipmaps
 	nopicmip
 	{
-		map gfx/effects/flame7.tga
-		blendFunc GL_ONE GL_ONE
-		rgbGen wave inverseSawtooth 0 1 0 10
-	}
-	{
-		map gfx/effects/flame8.tga
-		blendFunc GL_ONE GL_ONE
-		rgbGen wave sawtooth 0 1 0 10
+		map gfx/effects/flame6.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+//		rgbGen wave inverseSawtooth 0 1 0 10
 	}
 }
 
-gfx/effects/flame7
+/*
+gfx/effects/flame
 {
 	nomipmaps
 	nopicmip
 	{
-		map gfx/effects/flame8.tga
+		animMap 10 gfx/effects/flame1.jpg gfx/effects/flame2.jpg gfx/effects/flame3.jpg gfx/effects/flame4.jpg gfx/effects/flame5.jpg gfx/effects/flame6.jpg gfx/effects/flame7.jpg gfx/effects/flame8.jpg
 		blendFunc GL_ONE GL_ONE
 		rgbGen wave inverseSawtooth 0 1 0 10
 	}
 	{
-		map gfx/effects/flame1.tga
+		animMap 10 gfx/effects/flame2.jpg gfx/effects/flame3.jpg gfx/effects/flame4.jpg gfx/effects/flame5.jpg gfx/effects/flame6.jpg gfx/effects/flame7.jpg gfx/effects/flame8.jpg gfx/effects/flame1.jpg
 		blendFunc GL_ONE GL_ONE
 		rgbGen wave sawtooth 0 1 0 10
 	}
+	{
+		map gfx/effects/flameball.jpg
+		blendFunc GL_ONE GL_ONE
+		rgbGen wave sin .6 .2 0 .6	
+	}
 }
-
+*/
 
 //
 // hud elements
@@ -644,14 +601,13 @@ lightningBolt
 	}
 }
 
-gfx/effects/fireBlast
+gfx/effects/flameBltga
 {
 	nopicmip
 	nomipmaps
 	{
 		texFilter nearest
-		map gfx/effects/fire.tga
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		map gfx/effects/flame.ttga		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		rgbGen vertex
 	}
 }

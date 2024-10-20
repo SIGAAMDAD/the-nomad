@@ -966,7 +966,6 @@ static const void *RB_DrawImage( const void *data ) {
 
 	cmd = (const drawImageCmd_t *)data;
 
-#if 1
 	shader = cmd->shader;
 	if ( backend.drawBatch.shader != shader ) {
 		if ( backend.drawBatch.idxOffset ) {
@@ -977,127 +976,64 @@ static const void *RB_DrawImage( const void *data ) {
 	}
 	backend.drawBatch.shader = shader;
 
-	verts = &backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ];
-	indices = &backendData[ rg.smpFrame ]->indices[ backend.drawBatch.idxOffset ];
-
-	{
-		uint16_t color[4];
-
-		VectorScale4( backend.color2D, 257, color );
-
-		VectorCopy4( verts[0].color, color );
-		VectorCopy4( verts[1].color, color );
-		VectorCopy4( verts[2].color, color );
-		VectorCopy4( verts[3].color, color );
-
-//		VectorCopy4( verts[0].color.rgba, backend.color2D );
-//		VectorCopy4( verts[1].color.rgba, backend.color2D );
-//		VectorCopy4( verts[2].color.rgba, backend.color2D );
-//		VectorCopy4( verts[3].color.rgba, backend.color2D );
-	}
-
-	verts[ 0 ].xyz[0] = cmd->x;
-	verts[ 0 ].xyz[1] = cmd->y;
-	verts[ 0 ].xyz[2] = 0;
-
-	verts[ 0 ].st[0] = cmd->u1;
-	verts[ 0 ].st[1] = cmd->v1;
-
-	verts[ 1 ].xyz[0] = cmd->x + cmd->w;
-	verts[ 1 ].xyz[1] = cmd->y;
-	verts[ 1 ].xyz[2] = 0;
-
-	verts[ 1 ].st[0] = cmd->u2;
-	verts[ 1 ].st[1] = cmd->v1;
-
-	verts[ 2 ].xyz[0] = cmd->x + cmd->w;
-	verts[ 2 ].xyz[1] = cmd->y + cmd->h;
-	verts[ 2 ].xyz[2] = 0;
-
-	verts[ 2 ].st[0] = cmd->u2;
-	verts[ 2 ].st[1] = cmd->v2;
-
-	verts[ 3 ].xyz[0] = cmd->x;
-	verts[ 3 ].xyz[1] = cmd->y + cmd->h;
-	verts[ 3 ].xyz[2] = 0;
-
-	verts[ 3 ].st[0] = cmd->u1;
-	verts[ 3 ].st[1] = cmd->v2;
-
-	backendData[ rg.smpFrame ]->indices[ backend.drawBatch.idxOffset + 0 ] = 0;
-	backendData[ rg.smpFrame ]->indices[ backend.drawBatch.idxOffset + 1 ] = 1;
-	backendData[ rg.smpFrame ]->indices[ backend.drawBatch.idxOffset + 2 ] = 2;
-	backendData[ rg.smpFrame ]->indices[ backend.drawBatch.idxOffset + 3 ] = 0;
-	backendData[ rg.smpFrame ]->indices[ backend.drawBatch.idxOffset + 4 ] = 2;
-	backendData[ rg.smpFrame ]->indices[ backend.drawBatch.idxOffset + 5 ] = 3;
+	verts = backendData[ rg.smpFrame ]->verts;
+	indices = backendData[ rg.smpFrame ]->indices;
+	numVerts = backend.drawBatch.vtxOffset;
+	numIndices = backend.drawBatch.idxOffset;
 
 	backend.drawBatch.vtxOffset += 4;
 	backend.drawBatch.idxOffset += 6;
-	
-//	RB_CommitDrawData( verts, 4, indices, 6 );
-#else
-	shader = cmd->shader;
-	if ( shader != tess.shader ) {
-		if ( tess.numIndexes ) {
-			RB_EndSurface();
-		}
-//		backend.currentEntity = &backend.entity2D;
-		RB_BeginSurface( shader );
-	}
-
-	RB_CHECKOVERFLOW( 4, 6 );
-	numVerts = tess.numVertexes;
-	numIndices = tess.numIndexes;
-
-	tess.numVertexes += 4;
-	tess.numIndexes += 6;
-
-	tess.indexes[ numIndices ] = numVerts + 3;
-	tess.indexes[ numIndices + 1 ] = numVerts + 0;
-	tess.indexes[ numIndices + 2 ] = numVerts + 2;
-	tess.indexes[ numIndices + 3 ] = numVerts + 2;
-	tess.indexes[ numIndices + 4 ] = numVerts + 0;
-	tess.indexes[ numIndices + 5 ] = numVerts + 1;
 
 	{
 		uint16_t color[4];
 
-		VectorScale4( backend.color2D, 257, color );
+//		VectorScale4( backend.color2D, 257, color );
 
-		VectorCopy4( color, tess.color[ numVerts ] );
-		VectorCopy4( color, tess.color[ numVerts + 1 ] );
-		VectorCopy4( color, tess.color[ numVerts + 2 ] );
-		VectorCopy4( color, tess.color[ numVerts + 3 ] );
+		VectorCopy4( backendData[ rg.smpFrame ]->verts[ numVerts + 0 ].color.rgba, backend.color2D );
+		VectorCopy4( backendData[ rg.smpFrame ]->verts[ numVerts + 1 ].color.rgba, backend.color2D );
+		VectorCopy4( backendData[ rg.smpFrame ]->verts[ numVerts + 2 ].color.rgba, backend.color2D );
+		VectorCopy4( backendData[ rg.smpFrame ]->verts[ numVerts + 3 ].color.rgba, backend.color2D );
+
+//		R_VaoPackColor( backendData[ rg.smpFrame ]->verts[ numVerts + 0 ].color.rgba, backend.color2D );
+//		R_VaoPackColor( backendData[ rg.smpFrame ]->verts[ numVerts + 1 ].color.rgba, backend.color2D );
+//		R_VaoPackColor( backendData[ rg.smpFrame ]->verts[ numVerts + 2 ].color.rgba, backend.color2D );
+//		R_VaoPackColor( backendData[ rg.smpFrame ]->verts[ numVerts + 3 ].color.rgba, backend.color2D );
 	}
 
-	tess.xyz[ numVerts ][0] = cmd->x;
-	tess.xyz[ numVerts ][1] = cmd->y;
-	tess.xyz[ numVerts ][2] = 0;
+	backendData[ rg.smpFrame ]->verts[ numVerts + 0 ].xyz[0] = cmd->x;
+	backendData[ rg.smpFrame ]->verts[ numVerts + 0 ].xyz[1] = cmd->y;
+	backendData[ rg.smpFrame ]->verts[ numVerts + 0 ].xyz[2] = 0;
 
-	tess.texCoords[ numVerts ][0] = cmd->u1;
-	tess.texCoords[ numVerts ][1] = cmd->v1;
+	backendData[ rg.smpFrame ]->verts[ numVerts + 0 ].st[0] = cmd->u1;
+	backendData[ rg.smpFrame ]->verts[ numVerts + 0 ].st[1] = cmd->v1;
 
-	tess.xyz[ numVerts + 1 ][0] = cmd->x + cmd->w;
-	tess.xyz[ numVerts + 1 ][1] = cmd->y;
-	tess.xyz[ numVerts + 1 ][2] = 0;
+	backendData[ rg.smpFrame ]->verts[ numVerts + 1 ].xyz[0] = cmd->x + cmd->w;
+	backendData[ rg.smpFrame ]->verts[ numVerts + 1 ].xyz[1] = cmd->y;
+	backendData[ rg.smpFrame ]->verts[ numVerts + 1 ].xyz[2] = 0;
 
-	tess.texCoords[ numVerts + 1 ][0] = cmd->u2;
-	tess.texCoords[ numVerts + 1 ][1] = cmd->v1;
+	backendData[ rg.smpFrame ]->verts[ numVerts + 1 ].st[0] = cmd->u2;
+	backendData[ rg.smpFrame ]->verts[ numVerts + 1 ].st[1] = cmd->v1;
 
-	tess.xyz[ numVerts + 2 ][0] = cmd->x + cmd->w;
-	tess.xyz[ numVerts + 2 ][1] = cmd->y + cmd->h;
-	tess.xyz[ numVerts + 2 ][2] = 0;
+	backendData[ rg.smpFrame ]->verts[ numVerts + 2 ].xyz[0] = cmd->x + cmd->w;
+	backendData[ rg.smpFrame ]->verts[ numVerts + 2 ].xyz[1] = cmd->y + cmd->h;
+	backendData[ rg.smpFrame ]->verts[ numVerts + 2 ].xyz[2] = 0;
 
-	tess.texCoords[ numVerts + 2 ][0] = cmd->u2;
-	tess.texCoords[ numVerts + 2 ][1] = cmd->v2;
+	backendData[ rg.smpFrame ]->verts[ numVerts + 2 ].st[0] = cmd->u2;
+	backendData[ rg.smpFrame ]->verts[ numVerts + 2 ].st[1] = cmd->v2;
 
-	tess.xyz[ numVerts + 3 ][0] = cmd->x;
-	tess.xyz[ numVerts + 3 ][1] = cmd->y + cmd->h;
-	tess.xyz[ numVerts + 3 ][2] = 0;
+	backendData[ rg.smpFrame ]->verts[ numVerts + 3 ].xyz[0] = cmd->x;
+	backendData[ rg.smpFrame ]->verts[ numVerts + 3 ].xyz[1] = cmd->y + cmd->h;
+	backendData[ rg.smpFrame ]->verts[ numVerts + 3 ].xyz[2] = 0;
 
-	tess.texCoords[ numVerts + 3 ][0] = cmd->u1;
-	tess.texCoords[ numVerts + 3 ][1] = cmd->v2;
-#endif
+	backendData[ rg.smpFrame ]->verts[ numVerts + 3 ].st[0] = cmd->u1;
+	backendData[ rg.smpFrame ]->verts[ numVerts + 3 ].st[1] = cmd->v2;
+
+	backendData[ rg.smpFrame ]->indices[ numIndices + 0 ] = 0;
+	backendData[ rg.smpFrame ]->indices[ numIndices + 1 ] = 1;
+	backendData[ rg.smpFrame ]->indices[ numIndices + 2 ] = 2;
+	backendData[ rg.smpFrame ]->indices[ numIndices + 3 ] = 0;
+	backendData[ rg.smpFrame ]->indices[ numIndices + 4 ] = 2;
+	backendData[ rg.smpFrame ]->indices[ numIndices + 5 ] = 3;
 
 	return (const void *)( cmd + 1 );
 }

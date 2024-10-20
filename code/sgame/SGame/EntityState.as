@@ -19,7 +19,7 @@ namespace TheNomad::SGame {
 		void Log() const {
 			ConsolePrint( "Name: " + m_Name + "\n" );
 			ConsolePrint( "Tics: " + m_nTics + "\n" );
-			ConsolePrint( "Id: " + m_nStateNum + m_nStateOffset + "\n" );
+			ConsolePrint( "Id: " + formatUInt( uint( m_nStateNum + m_nStateOffset ) ) + "\n" );
 			ConsolePrint( "Sprite Offset: [" + m_SpriteOffset.x + ", " + m_SpriteOffset.y + "]\n" );
 			ConsolePrint( "[Animation]\n" );
 			m_Animation.Log();
@@ -57,6 +57,8 @@ namespace TheNomad::SGame {
 			} else {
 				if ( Util::StrICmp( base, "player" ) == 0 ) {
 					m_nStateOffset = 0;
+				} else if ( Util::StrICmp( base, "gfx" ) == 0 ) {
+					m_nStateOffset = StateNum::ST_GFX_BASE;
 				} else if ( InfoSystem::InfoManager.GetMobTypes().TryGetValue( base, m_nStateOffset ) ) {
 				} else if ( InfoSystem::InfoManager.GetItemTypes().TryGetValue( base, m_nStateOffset ) ) {
 				} else {

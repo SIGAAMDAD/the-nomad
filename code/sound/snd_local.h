@@ -129,7 +129,7 @@ private:
 	listener_t m_szListeners[ 4 ];
 	uint32_t m_nListenerCount;
 
-	FMOD::Geometry *m_pGeomtryBuffer;
+	FMOD::Geometry *m_pGeometryBuffer;
 
 	channel_t *m_pszChannels;
 };

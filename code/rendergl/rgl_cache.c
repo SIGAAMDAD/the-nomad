@@ -172,6 +172,7 @@ void R_BufferList_f( void )
 	ri.Printf( PRINT_INFO, " size          name\n" );
 	ri.Printf( PRINT_INFO, "----------------------------------------------------------\n" );
 
+	ri.Printf( PRINT_INFO, "[VERTEX MEMORY]\n" );
 	for ( i = 0; i < rg.numBuffers; i++ ) {
 		vao = rg.buffers[i];
 
@@ -180,6 +181,7 @@ void R_BufferList_f( void )
 		vertexesSize += vao->vertex.size;
 	}
 
+	ri.Printf( PRINT_INFO, "\n[INDEX MEMORY]\n" );
 	for ( i = 0; i < rg.numBuffers; i++ ) {
 		vao = rg.buffers[i];
 
@@ -266,7 +268,7 @@ void R_InitGPUBuffers( void )
 
 	backend.drawBuffer->attribs[ATTRIB_INDEX_POSITION].type			= GL_FLOAT;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_TEXCOORD].type			= GL_FLOAT;
-	backend.drawBuffer->attribs[ATTRIB_INDEX_COLOR].type			= GL_UNSIGNED_SHORT;
+	backend.drawBuffer->attribs[ATTRIB_INDEX_COLOR].type			= GL_UNSIGNED_BYTE;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_WORLDPOS].type			= GL_UNSIGNED_SHORT;
 
 	backend.drawBuffer->attribs[ATTRIB_INDEX_POSITION].index		= ATTRIB_INDEX_POSITION;
@@ -558,6 +560,7 @@ void VBO_Bind( vertexBuffer_t *vbo )
 		glState.vboId = vbo->vertex.id;
 		glState.iboId = vbo->index.id;
 		backend.pc.c_bufferBinds++;
+
 		nglBindVertexArray( vbo->vaoId );
 		nglBindBuffer( GL_ARRAY_BUFFER, vbo->vertex.id );
 		if ( vbo->index.id != 0 ) {
@@ -582,13 +585,13 @@ void VBO_BindNull( void )
 	if ( glState.currentVao ) {
 		glState.currentVao = NULL;
 		glState.vaoId = glState.vboId = glState.iboId = 0;
-		
+
 		nglBindVertexArray( 0 );
 		nglBindBuffer( GL_ARRAY_BUFFER, 0 );
 		nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
 
 	    // why you no save GL_ELEMENT_ARRAY_BUFFER binding, Intel?
-//		if ( glContext.intelGraphics ) {
+//	       if ( glContext.intelGraphics ) {
 //			nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
 //		}
 	}
@@ -687,9 +690,6 @@ void RB_SetBatchBuffer( vertexBuffer_t *buffer, void *vertexBuffer, uintptr_t vt
 	if ( buffer->attribs[ ATTRIB_INDEX_WORLDPOS ].enabled ) {
 		attribBits |= ATTRIB_WORLDPOS;
 	}
-	if ( buffer->attribs[ ATTRIB_INDEX_TILEID ].enabled ) {
-		attribBits |= ATTRIB_TILEID;
-	}
 
 	if ( ( glState.vertexAttribsEnabled & attribBits ) != 0 ) {
 		R_ClearVertexPointers();
@@ -735,24 +735,20 @@ void RB_FlushBatchBuffer( void )
 		void *data;
 
 		data = nglMapBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, backend.drawBatch.idxDataSize * backend.drawBatch.idxOffset,
-			GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT );
+			GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_INVALIDATE_RANGE_BIT );
 		if ( data ) {
 			memcpy( data, backend.drawBatch.indices,
 				backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize );
 		}
 		nglUnmapBuffer( GL_ELEMENT_ARRAY_BUFFER );
 		
-		if ( glContext.intelGraphics ) {
-			data = nglMapBufferRange( GL_ARRAY_BUFFER, 0, backend.drawBatch.vtxDataSize * backend.drawBatch.vtxOffset,
-				GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT );
-			if ( data ) {
-				memcpy( data, backend.drawBatch.vertices,
-					backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize );
-			}
-			nglUnmapBuffer( GL_ARRAY_BUFFER );
-		} else {
-			nglBufferSubData( GL_ARRAY_BUFFER, 0, backend.drawBatch.vtxDataSize * backend.drawBatch.vtxOffset, backend.drawBatch.vertices );
+		data = nglMapBufferRange( GL_ARRAY_BUFFER, 0, backend.drawBatch.vtxDataSize * backend.drawBatch.vtxOffset,
+			GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_INVALIDATE_BUFFER_BIT );
+		if ( data ) {
+			memcpy( data, backend.drawBatch.vertices,
+				backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize );
 		}
+		nglUnmapBuffer( GL_ARRAY_BUFFER );
 	}
 	if ( 1 ) {
 	}

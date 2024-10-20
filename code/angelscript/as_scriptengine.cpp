@@ -79,12 +79,23 @@ AS_API const char * asGetLibraryVersion()
 
 AS_API const char * asGetLibraryOptions()
 {
+	extern cvar_t *ml_allowJIT;
+
+	static char str[1024];
+
+#ifndef AS_MAX_PORTABILITY
+	// we're on a platform that can support native calling conventions, check for JIT
+	if ( !ml_allowJIT->i ) {
+		N_strncpyz( str, "AS_MAX_PORTABILITY ", sizeof( str ) );
+	}
+#else
+	// force usage of virtual bytecode interpreter and generic calling convention
+	N_strncpyz( str, "AS_MAX_PORTABILITY ", sizeof( str ) );
+#endif
+
 	const char *string = " "
 
 	// Options
-#ifdef AS_MAX_PORTABILITY
-		"AS_MAX_PORTABILITY "
-#endif
 #ifdef AS_DEBUG
 		"AS_DEBUG "
 #endif
@@ -224,7 +235,9 @@ AS_API const char * asGetLibraryOptions()
 #endif
 	;
 
-	return string;
+	N_strcat( str, sizeof( str ), string );
+
+	return str;
 }
 
 AS_API asIScriptEngine *asCreateScriptEngine(asDWORD version)
@@ -2006,10 +2019,12 @@ int asCScriptEngine::RegisterObjectBehaviour(const char *datatype, asEBehaviours
 // internal
 int asCScriptEngine::RegisterBehaviourToObjectType(asCObjectType *objectType, asEBehaviours behaviour, const char *decl, const asSFuncPtr &funcPointer, asDWORD callConv, void *auxiliary, int compositeOffset, bool isCompositeIndirect)
 {
-#ifdef AS_MAX_PORTABILITY
-	if( callConv != asCALL_GENERIC )
-		return ConfigError(asNOT_SUPPORTED, "RegisterObjectBehaviour", objectType->name.AddressOf(), decl);
-#endif
+	extern cvar_t *ml_allowJIT;
+	if ( !ml_allowJIT->i ) {
+		if ( callConv != asCALL_GENERIC ) {
+			return ConfigError(asNOT_SUPPORTED, "RegisterObjectBehaviour", objectType->name.AddressOf(), decl);
+		}
+	}
 
 	asSSystemFunctionInterface internal;
 	bool isMethod = !(behaviour == asBEHAVE_FACTORY ||
@@ -2789,10 +2804,13 @@ int asCScriptEngine::RegisterObjectMethod(const char *obj, const char *declarati
 // internal
 int asCScriptEngine::RegisterMethodToObjectType(asCObjectType *objectType, const char *declaration, const asSFuncPtr &funcPointer, asDWORD callConv, void *auxiliary, int compositeOffset, bool isCompositeIndirect)
 {
-#ifdef AS_MAX_PORTABILITY
-	if( callConv != asCALL_GENERIC )
-		return ConfigError(asNOT_SUPPORTED, "RegisterObjectMethod", objectType->name.AddressOf(), declaration);
-#endif
+	extern cvar_t *ml_allowJIT;
+
+	if ( !ml_allowJIT->i ) {
+		if ( callConv != asCALL_GENERIC ) {
+			return ConfigError(asNOT_SUPPORTED, "RegisterObjectMethod", objectType->name.AddressOf(), declaration);
+		}
+	}
 
 	asSSystemFunctionInterface internal;
 	int r = DetectCallingConvention(true, funcPointer, callConv, auxiliary, &internal);
@@ -2938,10 +2956,13 @@ int asCScriptEngine::RegisterMethodToObjectType(asCObjectType *objectType, const
 // interface
 int asCScriptEngine::RegisterGlobalFunction(const char *declaration, const asSFuncPtr &funcPointer, asDWORD callConv, void *auxiliary)
 {
-#ifdef AS_MAX_PORTABILITY
-	if( callConv != asCALL_GENERIC )
-		return ConfigError(asNOT_SUPPORTED, "RegisterGlobalFunction", declaration, 0);
-#endif
+	extern cvar_t *ml_allowJIT;
+
+	if ( !ml_allowJIT->i ) {
+		if ( callConv != asCALL_GENERIC ) {
+			return ConfigError(asNOT_SUPPORTED, "RegisterGlobalFunction", declaration, 0);
+		}
+	}
 
 	asSSystemFunctionInterface internal;
 	int r = DetectCallingConvention(false, funcPointer, callConv, auxiliary, &internal);

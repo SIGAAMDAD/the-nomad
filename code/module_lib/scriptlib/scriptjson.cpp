@@ -196,7 +196,6 @@ bool CScriptJson::Get( const jsonKey_t& key, asDWORD *value ) const
 {
 	if ( js_info.contains( key ) ) {
 		*value = js_info.at( key );
-		Con_Printf( "Got value %u for json.\n", *value );
 		return true;
 	}
 	return false;

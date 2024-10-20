@@ -233,6 +233,8 @@ namespace TheNomad::SGame {
 		*/
 		
 		void SetMovementDir() {
+			TheNomad::Engine::ProfileBlock block( "PMoveData::SetMovementDir" );
+			
 			// set legs direction
 			if ( side > 0 ) {
 				m_EntityData.SetFacing( FACING_RIGHT );

@@ -51,7 +51,7 @@ bool CSoundBank::Load( const char *npath )
 	FS_FreeFile( pBuffer );
 
 	ERRCHECK( m_pBank->getEventCount( &m_nEventCount ) );
-	m_pEventList = (FMOD::Studio::EventDescription **)Z_Malloc( sizeof( *m_pEventList ) * m_nEventCount, TAG_SFX );
+	m_pEventList = (FMOD::Studio::EventDescription **)Hunk_Alloc( sizeof( *m_pEventList ) * m_nEventCount, h_low );
 
 	ERRCHECK( m_pBank->getEventList( m_pEventList, m_nEventCount, &m_nEventCount ) );
 	ERRCHECK( m_pBank->loadSampleData() );
@@ -67,16 +67,8 @@ bool CSoundBank::Load( const char *npath )
 
 void CSoundBank::Shutdown( void )
 {
-	int i;
-
-	if ( m_pEventList ) {
-		for ( i = 0; i < m_nEventCount; i++ ) {
-//			ERRCHECK( m_pEventList[ i ]->releaseAllInstances() );
-		}
-		Z_Free( m_pEventList );
-		m_pEventList = NULL;
-		m_nEventCount = 0;
-	}
+	m_pEventList = NULL;
+	m_nEventCount = 0;
 
 	if ( m_pBank ) {
 		m_pBank->unloadSampleData();

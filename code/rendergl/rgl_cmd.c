@@ -294,7 +294,7 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 		}
 	}
 
-	clearBits = GL_COLOR_BUFFER_BIT;
+	clearBits = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
 
 	if ( r_glDiagnostics->i ) {
 		if ( !rg.beganQuery ) {
@@ -453,6 +453,11 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 	*/
 
 	backend.refdef.stereoFrame = stereoFrame;
+	backend.refdef.time = ri.Milliseconds();
+	backend.refdef.floatTime = backend.refdef.time * 0.001f;
+
+	RB_SetBatchBuffer( backend.drawBuffer, backendData[ rg.smpFrame ]->verts, sizeof( srfVert_t ),
+		backendData[ rg.smpFrame ]->indices, sizeof( glIndex_t ) );
 
 	ri.ProfileFunctionEnd();
 }

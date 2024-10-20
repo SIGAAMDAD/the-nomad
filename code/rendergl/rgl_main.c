@@ -203,7 +203,6 @@ void R_DrawPolys( void )
 	uint64_t numVerts;
 	vec3_t normal, edge1, edge2;
 	vec3_t xyz[4];
-	uint16_t color[4];
 	
 	// no polygon submissions this frame
 	if ( !r_numPolys && !r_numPolyVerts ) {
@@ -250,15 +249,33 @@ void R_DrawPolys( void )
 			backendData[ rg.smpFrame ]->indices[ backend.drawBatch.idxOffset + 1 ] = backend.drawBatch.vtxOffset + j + 1;
 			backendData[ rg.smpFrame ]->indices[ backend.drawBatch.idxOffset + 2 ] = backend.drawBatch.vtxOffset + j + 2;
 			backend.drawBatch.idxOffset += 3;
+			
+			// generate normals
+			/*
+			VectorSubtract( backend.refdef.polys[i].verts[ j ].xyz, backend.refdef.polys[i].verts[ j + 1 ].xyz, edge1 );
+			VectorSubtract( backend.refdef.polys[i].verts[ j ].xyz, backend.refdef.polys[i].verts[ j + 2 ].xyz, edge2 );
+			CrossProduct( edge1, edge2, normal );
+			R_VaoPackNormal( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset + j ].normal, normal );
+			VectorCopy( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset + j + 1 ].normal,
+				backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset + j + 0 ].normal );
+			VectorCopy( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset + j + 2 ].normal,
+				backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset + j + 0 ].normal );
+			*/
 		}
 		
 		for ( j = 0; j < backend.refdef.polys[i].numVerts; j++ ) {
 			VectorCopy( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].xyz, backend.refdef.polys[i].verts[j].xyz );
 			VectorCopy2( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].st, backend.refdef.polys[i].verts[j].uv );
+//			VectorCopy2( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].lightmap, backend.refdef.polys[i].verts[j].uv );
 			VectorCopy( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].worldPos, backend.refdef.polys[i].verts[j].worldPos );
+//            VectorCopy4( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].color, backend.refdef.polys[i].verts[j].modulate );
+//			R_CalcTangentVectors( (drawVert_t *)&vtx[j] );
 
-			VectorScale4( backend.refdef.polys[i].verts[j].modulate.rgba, 257, color );
-			VectorCopy4( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].color, color );
+			backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].color.u32 = backend.refdef.polys[i].verts[j].modulate.u32;
+//			backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].color[0] = (int)backend.refdef.polys[i].verts[j].modulate.rgba[0] * 257;
+//			backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].color[1] = (int)backend.refdef.polys[i].verts[j].modulate.rgba[1] * 257;
+//			backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].color[2] = (int)backend.refdef.polys[i].verts[j].modulate.rgba[2] * 257;
+//			backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].color[3] = (int)backend.refdef.polys[i].verts[j].modulate.rgba[3] * 257;
 
 			backend.drawBatch.vtxOffset++;
 		}
@@ -282,6 +299,10 @@ void R_DrawWorld( void )
 	drawVert_t *vtx;
 	drawVert_t verts[4];
 	vec3_t *xyz;
+	ivec2_t begin, end;
+	vec4_t normal;
+	vec4_t color;
+	uint16_t color16[4];
 	const renderEntityDef_t *refEntity;
 
 	if ( ( backend.refdef.flags & RSF_NOWORLDMODEL ) ) {
@@ -304,6 +325,20 @@ void R_DrawWorld( void )
 	backend.drawBatch.instanceCount = 1;
 	backend.drawBatch.instanced = qtrue;
 
+	if ( ri.Cvar_VariableInteger( "g_paused" ) ) {
+		RB_CommitDrawData( rg.world->vertices, rg.world->numVertices, rg.world->indices, rg.world->numIndices );
+
+		// flush it we have anything left in there
+		RB_FlushBatchBuffer();
+		rg.world->drawing = qfalse;
+
+		backend.drawBatch.instanced = qfalse;
+
+		ri.ProfileFunctionEnd();
+		return;
+	}
+
+	vtx = rg.world->vertices;
 	xyz = rg.world->xyz;
 
 	for ( y = 0; y < rg.world->height; y++ ) {
@@ -314,6 +349,20 @@ void R_DrawWorld( void )
 
 			// convert the local world coordinates to OpenGL screen coordinates
 			R_WorldToGL( verts, pos );
+			
+			// generate normals
+			// FIXME: this is hideous
+			/*
+			if ( &vtx[3] != &rg.world->vertices[rg.world->numVertices] ) {
+				VectorSubtract( vtx->xyz, vtx[1].xyz, edge1 );
+				VectorSubtract( vtx->xyz, vtx[3].xyz, edge2 );
+				CrossProduct( edge1, edge2, normal );
+			} else {
+				VectorSubtract( vtx->xyz, vtx[1].xyz, edge1 );
+				VectorSubtract( vtx->xyz, vtx[2].xyz, edge2 );
+				CrossProduct( edge1, edge2, normal );
+			}
+			*/
 
 			VectorCopy( xyz[ 0 ], verts[0].xyz );
 			VectorCopy( xyz[ 1 ], verts[1].xyz );
@@ -321,7 +370,7 @@ void R_DrawWorld( void )
 			VectorCopy( xyz[ 3 ], verts[3].xyz );
 
 			// check if there's any entities in the way
-//			VectorSet4( color, 1.0f, 1.0f, 1.0f, 1.0f );
+			VectorSet4( color, 1.0f, 1.0f, 1.0f, 1.0f );
 			for ( j = 0; j < backend.refdef.numEntities; j++ ) {
 				refEntity = &backend.refdef.entities[j];
 
@@ -334,10 +383,11 @@ void R_DrawWorld( void )
 				}
 
 				if ( rg.world->tiles[ origin[1] * rg.world->width + origin[0] ].flags & TILESIDE_SOUTH ) {
-//					color[3] = 0.10f;
+					color[3] = 0.10f;
 					break;
 				}
 			}
+//			vtx += 4;
 			xyz += 4;
 		}
 	}
