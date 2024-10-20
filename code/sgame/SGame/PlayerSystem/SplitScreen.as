@@ -338,6 +338,7 @@ namespace TheNomad::SGame {
 			// if we're in photomode, ignore
 			Game_CameraWorldPos.x = ( origin.x - log( 6.5f ) ) * 10.0f;
 			Game_CameraWorldPos.y = ( LevelManager.GetMapData().GetHeight() - ( origin.y + log( 6.5f ) ) ) * 10;
+			Game_PlayerPos = origin;
 			// technically no z coordinate because it's 2D
 			Game_CameraZoom = 0.07f;
 			

@@ -422,18 +422,19 @@ typedef enum {
 typedef struct dlight_s {
 	vec3_t color;
 	vec3_t origin;
-
 	float brightness;
 	float range;
-	float diffuse;
-	float specular;
-	float ambient;
-
 	dlightType_t ltype;
-
-	struct dlight_s *next;
-	struct dlight_s *prev;
 } dlight_t;
+
+typedef struct {
+	vec4_t color;
+	vec4_t origin;
+	float brightness;
+	float range;
+	int ltype;
+	int padding;
+} gpuDLight_t;
 
 typedef struct {
 	uint16_t		worldPos[2];
@@ -1652,6 +1653,7 @@ void R_ApplyLighting( const dlight_t *dl, shaderLight_t *gpuLight );
 //
 // rgl_main.c
 //
+qboolean R_ClipTile( const vec3_t origin );
 void RB_MakeViewMatrix( void );
 void R_RenderView( const viewData_t *parms );
 void GL_CameraResize(void);

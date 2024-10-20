@@ -3098,8 +3098,8 @@ void ModuleLib_Register_Engine( void )
 		REGISTER_GLOBAL_VAR( "float Game_CameraZoom", &gi.cameraZoom );
 		REGISTER_GLOBAL_VAR( "vec3 Game_CameraWorldPos", &gi.cameraWorldPos );
 		REGISTER_GLOBAL_VAR( "vec3 Game_CameraPos", &gi.cameraPos );
+		REGISTER_GLOBAL_VAR( "vec3 Game_PlayerPos", &gi.playerPos );
 		REGISTER_GLOBAL_VAR( "const int Game_FrameTime", &com_frameTime );
-		REGISTER_GLOBAL_VAR( "const uint64 Game_FrameNumber", &com_frameNumber );
 
 		REGISTER_GLOBAL_VAR( "const TheNomad::GameSystem::DirType[] InverseDirs", inversedirs );
 

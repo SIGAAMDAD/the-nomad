@@ -244,6 +244,7 @@ typedef struct {
 #ifdef __cplusplus
 	glm::vec3 cameraPos;
 	glm::vec3 cameraWorldPos;
+	glm::vec3 playerPos;
 	glm::mat4 viewMatrix;
 	glm::mat4 viewProjectionMatrix;
 	glm::mat4 projectionMatrix;

@@ -798,7 +798,7 @@ namespace TheNomad::SGame {
 			}
 			@m_FireState = @m_FireState.Run();
 
-			refEntity.origin = vec3( m_Link.m_Origin.x + 2.0f, m_Link.m_Origin.y, m_Link.m_Origin.z );
+			refEntity.origin = vec3( m_Link.m_Origin.x + 2, m_Link.m_Origin.y, 0 );
 			refEntity.sheetNum = -1;
 			uint sprite = ( TheNomad::GameSystem::GameManager.GetGameTic() & 5 ) + 1;
 			refEntity.spriteId = TheNomad::Engine::ResourceCache.GetShader( "gfx/effects/flame" + sprite );
@@ -806,7 +806,7 @@ namespace TheNomad::SGame {
 			refEntity.rotation = 90.0f;
 			refEntity.Draw();
 
-			TheNomad::Engine::Renderer::AddDLightToScene( m_Link.m_Origin, 5.0f, vec3( 1.0f ) );
+			TheNomad::Engine::Renderer::AddDLightToScene( refEntity.origin, 6.0f, vec3( 1.0f ) );
 
 			m_HudData.Draw();
 		}

@@ -135,6 +135,7 @@ void R_InitExtensions( void )
 	//
 	// ARB_shader_storage_buffer_object
 	//
+	/*
 	ext = "GL_ARB_shader_storage_buffer_object";
 	glContext.ARB_shader_storage_buffer_object = qfalse;
 	if ( NGL_VERSION_ATLEAST( 4, 4 ) || R_HasExtension( ext ) ) {
@@ -150,6 +151,7 @@ void R_InitExtensions( void )
 	}
 
 	ri.Cvar_Set( "r_arb_shader_storage_buffer_object", va( "%i", glContext.ARB_shader_storage_buffer_object ) );
+	*/
 
 	//
 	// ARB_map_buffer_range

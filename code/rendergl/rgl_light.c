@@ -129,6 +129,18 @@ void R_LightEntity( renderEntityDef_t *refEntity )
 		( (byte *)&refEntity->ambientLightInt )[ 2 ] = (int)( refEntity->ambientColor[ 2 ] );
 		( (byte *)&refEntity->ambientLightInt )[ 3 ] = 0xff;
 	}
+	for ( i = 0; i < backend.refdef.numDLights; i++ ) {
+		VectorCopy2( origin, backend.refdef.dlights[i].origin );
+		origin[2] = 0.0f;
+		if ( disBetweenOBJ( origin, refEntity->e.origin ) > backend.refdef.dlights[i].range ) {
+			continue; // don't waste cycles on something that isn't in the light's range
+		}
+		R_DlightForPoint( refEntity->e.origin, &backend.refdef.dlights[i], refEntity->ambientColor );
+		( (byte *)&refEntity->ambientLightInt )[ 0 ] = (int)( refEntity->ambientColor[ 0 ] );
+		( (byte *)&refEntity->ambientLightInt )[ 1 ] = (int)( refEntity->ambientColor[ 1 ] );
+		( (byte *)&refEntity->ambientLightInt )[ 2 ] = (int)( refEntity->ambientColor[ 2 ] );
+		( (byte *)&refEntity->ambientLightInt )[ 3 ] = 0xff;
+	}
 }
 
 void R_ApplyLighting( const dlight_t *dl, shaderLight_t *gpuLight )

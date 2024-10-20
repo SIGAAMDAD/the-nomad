@@ -59,8 +59,8 @@ struct Light {
 	int type;
 };
 
-layout( std140, binding = 0 ) uniform u_LightBuffer {
-	Light u_LightData[ MAX_LIGHTS ];
+layout( std140, binding = 0 ) buffer u_LightBuffer {
+	Light u_LightData[];
 };
 
 uniform int u_NumLights;
@@ -182,7 +182,7 @@ vec3 CalcTangent() {
 }
 */
 
-vec3 CalcPointLight( Light light ) {
+vec3 CalcPointLight( Light light, bool isDLight ) {
 	vec3 diffuse = a_Color.rgb;
 	float dist = distance( v_WorldPos, vec3( light.origin, v_FragPos.z ) );
 	float diff = 0.0;
@@ -191,13 +191,13 @@ vec3 CalcPointLight( Light light ) {
 	float attenuation = 0.0;
 
 	if ( dist <= light.range ) {
-		diff = 1.0 - abs( dist / range );
+		diff = 1.0 - abs( dist / ( isDLight ? light.brightness : light.range ) );
 	}
 	diff += light.brightness;
 	diffuse = min( diff * ( diffuse + vec3( light.color ) ), diffuse );
 
 	range = light.range + light.brightness;
-//	attenuation = ( light.constant + light.linear + light.quadratic * ( range * range ) );
+
 	attenuation = ( light.constant + light.linear * light.range
 		+ light.quadratic * ( light.range * light.range ) );
 	if ( u_LightingQuality == 2 ) {
@@ -244,7 +244,7 @@ void ApplyLighting() {
 	for ( int i = 0; i < u_NumLights; i++ ) {
 		switch ( u_LightData[i].type ) {
 		case POINT_LIGHT:
-			a_Color.rgb += CalcPointLight( u_LightData[i] );
+			a_Color.rgb += CalcPointLight( u_LightData[i], i > MAX_MAP_LIGHTS );
 			break;
 		case DIRECTION_LIGHT:
 			break;
@@ -254,6 +254,10 @@ void ApplyLighting() {
 }
 
 void main() {
+	if ( distance( u_ViewOrigin, v_WorldPos ) > 12.0 ) {
+		discard;
+	}
+
 	// calculate a slight x offset, otherwise we get some black line bleeding
 	// going on
 	ivec2 texSize = textureSize( u_DiffuseMap, 0 );

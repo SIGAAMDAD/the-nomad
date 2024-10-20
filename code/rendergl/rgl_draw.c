@@ -700,11 +700,9 @@ void RB_IterateShaderStages( shader_t *shader )
 
 		R_BindAnimatedImageToTMU( &stageP->bundle[TB_DIFFUSEMAP], TB_DIFFUSEMAP );
 		GLSL_SetUniformTexture( sp, UNIFORM_DIFFUSE_MAP, stageP->bundle[ TB_DIFFUSEMAP ].image[ 0 ] );
-//		GLSL_SetUniformTexture( sp, TB_DIFFUSEMAP, 0 );
 		nglUniform1i( nglGetUniformLocation( sp->programId, "u_InLevel" ), rg.world != NULL );
 
 		if ( rg.world && !( backend.refdef.flags & RSF_NOWORLDMODEL ) ) {
-			RE_ProcessDLights();
 		} else {
 			vec3_t ambient;
 			VectorSet( ambient, 1, 1, 1 );
@@ -714,7 +712,7 @@ void RB_IterateShaderStages( shader_t *shader )
 		//
 		// draw
 		//
-		R_DrawElements( backend.drawBatch.idxOffset, backend.drawBuffer->index.offset );
+		R_DrawElements( backend.drawBatch.idxOffset, backend.drawBatch.buffer->index.offset );
 	}
 
 	if ( r_showTris->i ) {

@@ -191,6 +191,22 @@ void R_ScreenToGL( polyVert_t *verts )
 	}
 }
 
+qboolean R_ClipTile( const vec3_t origin )
+{
+	const bbox_t cameraBounds = {
+		.mins = {
+			ceil( glState.viewData.camera.origin[0] ) - 7.0f,
+			ceil( glState.viewData.camera.origin[1] ) - 7.0f
+		},
+		.maxs = {
+			ceil( glState.viewData.camera.origin[0] ) + 7.0f,
+			ceil( glState.viewData.camera.origin[1] ) + 7.0f
+		}
+	};
+
+	return BoundsIntersectPoint( &cameraBounds, origin );
+}
+
 /*
 * R_DrawPolys: draws all sprites and polygons submitted into the current scene
 */
@@ -214,6 +230,7 @@ void R_DrawPolys( void )
 
 	RB_SetBatchBuffer( backend.drawBuffer, backendData[ 0 ]->verts, sizeof( srfVert_t ),
 		backendData[ 0 ]->indices, sizeof( glIndex_t ) );
+	RE_ProcessDLights();
 
 	// sort the polys to be more efficient with our shaders
 	R_RadixSort( backend.refdef.polys, backend.refdef.numPolys );
@@ -249,33 +266,13 @@ void R_DrawPolys( void )
 			backendData[ rg.smpFrame ]->indices[ backend.drawBatch.idxOffset + 1 ] = backend.drawBatch.vtxOffset + j + 1;
 			backendData[ rg.smpFrame ]->indices[ backend.drawBatch.idxOffset + 2 ] = backend.drawBatch.vtxOffset + j + 2;
 			backend.drawBatch.idxOffset += 3;
-			
-			// generate normals
-			/*
-			VectorSubtract( backend.refdef.polys[i].verts[ j ].xyz, backend.refdef.polys[i].verts[ j + 1 ].xyz, edge1 );
-			VectorSubtract( backend.refdef.polys[i].verts[ j ].xyz, backend.refdef.polys[i].verts[ j + 2 ].xyz, edge2 );
-			CrossProduct( edge1, edge2, normal );
-			R_VaoPackNormal( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset + j ].normal, normal );
-			VectorCopy( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset + j + 1 ].normal,
-				backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset + j + 0 ].normal );
-			VectorCopy( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset + j + 2 ].normal,
-				backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset + j + 0 ].normal );
-			*/
 		}
 		
 		for ( j = 0; j < backend.refdef.polys[i].numVerts; j++ ) {
 			VectorCopy( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].xyz, backend.refdef.polys[i].verts[j].xyz );
 			VectorCopy2( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].st, backend.refdef.polys[i].verts[j].uv );
-//			VectorCopy2( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].lightmap, backend.refdef.polys[i].verts[j].uv );
 			VectorCopy( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].worldPos, backend.refdef.polys[i].verts[j].worldPos );
-//            VectorCopy4( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].color, backend.refdef.polys[i].verts[j].modulate );
-//			R_CalcTangentVectors( (drawVert_t *)&vtx[j] );
-
 			backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].color.u32 = backend.refdef.polys[i].verts[j].modulate.u32;
-//			backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].color[0] = (int)backend.refdef.polys[i].verts[j].modulate.rgba[0] * 257;
-//			backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].color[1] = (int)backend.refdef.polys[i].verts[j].modulate.rgba[1] * 257;
-//			backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].color[2] = (int)backend.refdef.polys[i].verts[j].modulate.rgba[2] * 257;
-//			backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].color[3] = (int)backend.refdef.polys[i].verts[j].modulate.rgba[3] * 257;
 
 			backend.drawBatch.vtxOffset++;
 		}
@@ -299,6 +296,7 @@ void R_DrawWorld( void )
 	drawVert_t *vtx;
 	drawVert_t verts[4];
 	vec3_t *xyz;
+	static vec3_t cameraPos;
 	const renderEntityDef_t *refEntity;
 
 	if ( ( backend.refdef.flags & RSF_NOWORLDMODEL ) ) {
@@ -321,60 +319,54 @@ void R_DrawWorld( void )
 	backend.drawBatch.instanceCount = 1;
 	backend.drawBatch.instanced = qtrue;
 
-	if ( ri.Cvar_VariableInteger( "g_paused" ) ) {
-		RB_CommitDrawData( rg.world->vertices, rg.world->numVertices, rg.world->indices, rg.world->numIndices );
-
-		// flush it we have anything left in there
-		RB_FlushBatchBuffer();
-		rg.world->drawing = qfalse;
-
-		backend.drawBatch.instanced = qfalse;
-
-		ri.ProfileFunctionEnd();
-		return;
-	}
-
 	vtx = rg.world->vertices;
 	xyz = rg.world->xyz;
+	
+	// if we haven't moved at all, we don't need to do any redundant calculations
+	if ( !( ri.Cvar_VariableInteger( "g_paused" ) || VectorCompare( cameraPos, glState.viewData.camera.origin ) ) ) {
+		for ( y = 0; y < rg.world->height; y++ ) {
+			for ( x = 0; x < rg.world->width; x++ ) {
+				pos[0] = x;
+				pos[1] = rg.world->height - y;
+				pos[2] = 0.0f;
 
-	for ( y = 0; y < rg.world->height; y++ ) {
-		for ( x = 0; x < rg.world->width; x++ ) {
-			pos[0] = x;
-			pos[1] = rg.world->height - y;
-			pos[2] = 0.0f;
+				// convert the local world coordinates to OpenGL screen coordinates
+				R_WorldToGL( verts, pos );
 
-			// convert the local world coordinates to OpenGL screen coordinates
-			R_WorldToGL( verts, pos );
+				VectorCopy( xyz[ 0 ], verts[0].xyz );
+				VectorCopy( xyz[ 1 ], verts[1].xyz );
+				VectorCopy( xyz[ 2 ], verts[2].xyz );
+				VectorCopy( xyz[ 3 ], verts[3].xyz );
 
-			VectorCopy( xyz[ 0 ], verts[0].xyz );
-			VectorCopy( xyz[ 1 ], verts[1].xyz );
-			VectorCopy( xyz[ 2 ], verts[2].xyz );
-			VectorCopy( xyz[ 3 ], verts[3].xyz );
+				// check if there's any entities in the way
+	//			VectorSet4( color, 1.0f, 1.0f, 1.0f, 1.0f );
 
-			// check if there's any entities in the way
-//			VectorSet4( color, 1.0f, 1.0f, 1.0f, 1.0f );
-			for ( j = 0; j < backend.refdef.numEntities; j++ ) {
-				refEntity = &backend.refdef.entities[j];
+				/*
+				for ( j = 0; j < backend.refdef.numEntities; j++ ) {
+					refEntity = &backend.refdef.entities[j];
 
-				origin[0] = refEntity->e.origin[0];
-				origin[1] = (int)( refEntity->e.origin[1] + 1 );
-				origin[2] = refEntity->e.origin[2];
+					origin[0] = refEntity->e.origin[0];
+					origin[1] = (int)( refEntity->e.origin[1] + 1 );
+					origin[2] = refEntity->e.origin[2];
 
-				if ( origin[0] < 0.0f || origin[1] < 0.0f || origin[0] >= rg.world->width || origin[1] >= rg.world->height ) {
-					continue; // not in clipping range
+					if ( origin[0] < 0.0f || origin[1] < 0.0f || origin[0] >= rg.world->width || origin[1] >= rg.world->height ) {
+						continue; // not in clipping range
+					}
+
+					if ( rg.world->tiles[ origin[1] * rg.world->width + origin[0] ].flags & TILESIDE_SOUTH ) {
+	//					color[3] = 0.10f;
+						break;
+					}
 				}
-
-				if ( rg.world->tiles[ origin[1] * rg.world->width + origin[0] ].flags & TILESIDE_SOUTH ) {
-//					color[3] = 0.10f;
-					break;
-				}
+				*/
+				xyz += 4;
 			}
-//			vtx += 4;
-			xyz += 4;
 		}
 	}
+	VectorCopy( cameraPos, glState.viewData.camera.origin );
 
-	RB_CommitDrawData( rg.world->vertices, rg.world->numVertices, rg.world->indices, rg.world->numIndices );
+	backend.drawBatch.idxOffset = rg.world->numIndices;
+	backend.drawBatch.vtxOffset = rg.world->numVertices;
 
 	// flush it we have anything left in there
 	RB_FlushBatchBuffer();

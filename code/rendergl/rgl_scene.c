@@ -137,9 +137,6 @@ void RE_AddDynamicLightToScene( const vec3_t origin, float brightness, const vec
 	VectorCopy( dl->color, color );
 	dl->brightness = brightness;
 	dl->range = brightness;
-	dl->specular = 10.0f;
-	dl->ambient = 10.0f;
-	dl->diffuse = 10.0f;
 	dl->ltype = LIGHT_POINT;
 
 	r_numDLights++;
@@ -204,36 +201,31 @@ void RE_ProcessDLights( void )
 		return;
 	}
 
-	dlight = backend.refdef.dlights;
 	gpuLight = (shaderLight_t *)rg.lightData->data + rg.world->numLights;
+	dlight = backend.refdef.dlights;
 
 	for ( i = 0; i < backend.refdef.numDLights; i++ ) {
 		if ( r_numDLights >= r_maxDLights->i ) {
 			ri.Printf( PRINT_DEVELOPER, "R_ProcessDLights: too many lights, dropping %lu lights\n", backend.refdef.numDLights - i );
 		}
 
-		memset( gpuLight, 0, sizeof( *gpuLight ) );
-		VectorSet2( gpuLight->origin, dlight->origin[0], dlight->origin[1] );
-		VectorCopy( gpuLight->color, dlight->color );
+		VectorSet2( gpuLight[i].origin, dlight->origin[0], dlight->origin[1] );
+		VectorCopy( gpuLight[i].color, dlight->color );
 
-//		gpuLight->color[0] *= dlight->ambient;
-//		gpuLight->color[1] *= dlight->ambient;
-//		gpuLight->color[2] *= dlight->ambient;
-		gpuLight->color[3] = 1.0f;
+		gpuLight[i].color[3] = 1.0f;
 		
-		gpuLight->brightness = 0.1f;
-		gpuLight->range = dlight->range;
-		gpuLight->type = dlight->ltype;
-		gpuLight->quadratic = 0.0f;
-		gpuLight->linear = 1.0f;
-		gpuLight->constant = 6.0f;
+		gpuLight[i].brightness = 0.3f;
+		gpuLight[i].range = dlight->range;
+		gpuLight[i].type = dlight->ltype;
+		gpuLight[i].constant = 0.9f;
+		gpuLight[i].quadratic = 0.05f;
+		gpuLight[i].linear = 0.05f;
 
-		gpuLight++;
 		dlight++;
 	}
-	GLSL_ShaderBufferData( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, sizeof( *gpuLight ) * backend.refdef.numDLights,
-		sizeof( *gpuLight ) * MAX_MAP_LIGHTS, qfalse );
+	GLSL_UseProgram( &rg.tileShader );
 	GLSL_SetUniformInt( &rg.tileShader, UNIFORM_NUM_LIGHTS, rg.world->numLights + backend.refdef.numDLights );
+	GLSL_ShaderBufferData( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, sizeof( *gpuLight ) * ( rg.world->numLights + backend.refdef.numDLights ), 0, qfalse );
 }
 
 void RE_ProcessEntities( void )
@@ -262,7 +254,7 @@ void RE_ProcessEntities( void )
 			ri.Printf( PRINT_DEVELOPER, "R_ProcessEntities: too many entities, dropping %lu entities\n", backend.refdef.numEntities - i );
 			break;
 		}
-
+		
 		origin[0] = refEntity->e.origin[0];
 		origin[1] = rg.world->height - refEntity->e.origin[1];
 		origin[2] = refEntity->e.origin[2];
@@ -275,7 +267,7 @@ void RE_ProcessEntities( void )
 		}
 		poly->numVerts = 4;
 
-		R_LightEntity( refEntity );
+//		R_LightEntity( refEntity );
 
 		ri.GLM_TransformToGL( origin, xyz, refEntity->e.scale, refEntity->e.rotation, glState.viewData.camera.viewProjectionMatrix );
 

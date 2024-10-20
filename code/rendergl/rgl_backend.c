@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "rgl_local.h"
 #include "rgl_fbo.h"
+#include <pthread.h>
 
 qboolean screenshotFrame;
 
@@ -120,68 +121,68 @@ void GL_BindNullTextures( void )
 	textureStackP = 0;
 
 #if 0
-    for (uint32_t i = 0; i < NUM_TEXTURE_BINDINGS; i++) {
-        if (glState.currenttextures[i] != 0) {
-            nglActiveTexture(GL_TEXTURE0 + i);
-            nglBindTexture(GL_TEXTURE_2D, 0);
-        }
-    }
+	for (uint32_t i = 0; i < NUM_TEXTURE_BINDINGS; i++) {
+		if (glState.currenttextures[i] != 0) {
+			nglActiveTexture(GL_TEXTURE0 + i);
+			nglBindTexture(GL_TEXTURE_2D, 0);
+		}
+	}
 #endif
-    nglActiveTexture(GL_TEXTURE0);
-    glState.currenttmu = GL_TEXTURE0;
+	nglActiveTexture(GL_TEXTURE0);
+	glState.currenttmu = GL_TEXTURE0;
 	glState.currentTexture = NULL;
 }
 
 int GL_UseProgram( GLuint program ) 
 {
-    if ( glState.shaderId == program ) {
-        return 0;
+	if ( glState.shaderId == program ) {
+		return 0;
 	}
-    
-    nglUseProgram( program );
-    glState.shaderId = program;
+	
+	nglUseProgram( program );
+	glState.shaderId = program;
 	return 1;
 }
 
 void GL_BindNullProgram( void )
 {
-    nglUseProgram( (unsigned)0 );
-    glState.shaderId = 0;
+	nglUseProgram( (unsigned)0 );
+	glState.shaderId = 0;
 }
 
 void GL_BindFramebuffer( GLenum target, GLuint fbo )
 {
-    switch ( target ) {
-    case GL_FRAMEBUFFER:
-        if (glState.defFboId == fbo)
-            return;
-        
-        glState.defFboId = fbo;
-        break;
-    case GL_READ_FRAMEBUFFER:
-        if (glState.readFboId == fbo)
-            return;
-        
-        glState.readFboId = fbo;
-        break;
-    case GL_DRAW_FRAMEBUFFER:
-        if (glState.writeFboId == fbo)
-            return;
-        
-        glState.writeFboId = fbo;
-        break;
-    default: // should never happen, if it does, then skill issue from the dev
-        ri.Error(ERR_FATAL, "GL_BindFramebuffer: Invalid fbo target: %i", target);
-    };
+	switch ( target ) {
+	case GL_FRAMEBUFFER:
+		if (glState.defFboId == fbo)
+			return;
+		
+		glState.defFboId = fbo;
+		break;
+	case GL_READ_FRAMEBUFFER:
+		if (glState.readFboId == fbo)
+			return;
+		
+		glState.readFboId = fbo;
+		break;
+	case GL_DRAW_FRAMEBUFFER:
+		if (glState.writeFboId == fbo)
+			return;
+		
+		glState.writeFboId = fbo;
+		break;
+	default: // should never happen, if it does, then skill issue from the dev
+		ri.Error(ERR_FATAL, "GL_BindFramebuffer: Invalid fbo target: %i", target);
+	};
 
-    nglBindFramebuffer( target, fbo );
+	nglBindFramebuffer( target, fbo );
 }
 
 void GL_BindNullFramebuffers( void )
 {
-    nglBindFramebuffer( GL_FRAMEBUFFER, 0 );
-    nglBindFramebuffer( GL_READ_FRAMEBUFFER, 0 );
-    nglBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
+	nglBindFramebuffer( GL_FRAMEBUFFER, 0 );
+	nglBindFramebuffer( GL_READ_FRAMEBUFFER, 0 );
+	nglBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
 	glState.currentFbo = NULL;
 }
 
@@ -353,36 +354,36 @@ void GL_State( uint32_t stateBits )
 
 const char *GL_ErrorString( GLenum error )
 {
-    switch ( error ) {
-    case GL_INVALID_ENUM:
-        return "GL_INVALID_ENUM";
-    case GL_INVALID_FRAMEBUFFER_OPERATION:
-        return "GL_INVALID_FRAMEBUFFER_OPERATION";
-    case GL_INVALID_OPERATION:
-        return "GL_INVALID_OPERATION";
-    case GL_INVALID_INDEX:
-        return "GL_INVALID_INDEX";
-    case GL_INVALID_VALUE:
-        return "GL_INVALID_VALUE";
-    case GL_OUT_OF_MEMORY:
-        return "GL_OUT_OF_MEMORY";
-    default:
-        break;
-    };
-    return "Unknown Error Code";
+	switch ( error ) {
+	case GL_INVALID_ENUM:
+		return "GL_INVALID_ENUM";
+	case GL_INVALID_FRAMEBUFFER_OPERATION:
+		return "GL_INVALID_FRAMEBUFFER_OPERATION";
+	case GL_INVALID_OPERATION:
+		return "GL_INVALID_OPERATION";
+	case GL_INVALID_INDEX:
+		return "GL_INVALID_INDEX";
+	case GL_INVALID_VALUE:
+		return "GL_INVALID_VALUE";
+	case GL_OUT_OF_MEMORY:
+		return "GL_OUT_OF_MEMORY";
+	default:
+		break;
+	};
+	return "Unknown Error Code";
 }
 
 void GL_CheckErrors( void )
 {
-    GLenum error = nglGetError();
+	GLenum error = nglGetError();
 
-    if (error == GL_NO_ERROR)
-        return;
-    
-    if (!r_ignoreGLErrors->i) {
+	if (error == GL_NO_ERROR)
+		return;
+	
+	if (!r_ignoreGLErrors->i) {
 		ri.Printf(PRINT_INFO, COLOR_RED "GL_CheckErrors: 0x%04x -- %s\n", error, GL_ErrorString(error));
-        ri.Error(ERR_FATAL, "GL_CheckErrors: OpenGL error occured (0x%x): %s", error, GL_ErrorString(error));
-    }
+		ri.Error(ERR_FATAL, "GL_CheckErrors: OpenGL error occured (0x%x): %s", error, GL_ErrorString(error));
+	}
 }
 
 void GDR_ATTRIBUTE((format(printf, 1, 2))) GL_LogComment(const char *fmt, ...)
@@ -450,7 +451,7 @@ void RB_ShowImages( void ) {
 		{
 			vec4_t quadVerts[4];
 
-            GL_BindTexture(TB_COLORMAP, image);
+			GL_BindTexture(TB_COLORMAP, image);
 
 			VectorSet4(quadVerts[0], x, y, 0, 1);
 			VectorSet4(quadVerts[1], x + w, y, 0, 1);
@@ -469,37 +470,36 @@ void RB_ShowImages( void ) {
 
 static const void *RB_SwapBuffers( const void *data )
 {
-    const swapBuffersCmd_t *cmd;
+	const swapBuffersCmd_t *cmd;
 	uint64_t start, end;
-    
-    // texture swapping test
-    if (r_showImages->i)
-        RB_ShowImages();
+	
+	// texture swapping test
+	if ( r_showImages->i ) {
+		RB_ShowImages();
+	}
 	
 	// only draw imgui data after everything else has finished
-	// [the-nomad] this has to be here with a multithreaded renderer in
-	// order for the imgui context to not get fucked up
-	if ( !backend.framePostProcessed ) {
+//	if ( !backend.framePostProcessed ) {
 		ri.ImGui_Draw();
-	}
-    
-    cmd = (const swapBuffersCmd_t *)data;
+//	}
+	
+	cmd = (const swapBuffersCmd_t *)data;
 
 	if ( r_glDiagnostics->i ) {
 		if ( rg.beganQuery ) {
 			nglEndQuery( GL_TIME_ELAPSED );
-	    	nglEndQuery( GL_SAMPLES_PASSED );
-	    	nglEndQuery( GL_PRIMITIVES_GENERATED );
+			nglEndQuery( GL_SAMPLES_PASSED );
+			nglEndQuery( GL_PRIMITIVES_GENERATED );
 
-	    	nglGetQueryObjectiv( rg.queries[TIME_QUERY], GL_QUERY_RESULT, &rg.queryCounts[TIME_QUERY] );
-	    	nglGetQueryObjectiv( rg.queries[SAMPLES_QUERY], GL_QUERY_RESULT, &rg.queryCounts[SAMPLES_QUERY] );
-	    	nglGetQueryObjectiv( rg.queries[PRIMTIVES_QUERY], GL_QUERY_RESULT, &rg.queryCounts[PRIMTIVES_QUERY] );
+			nglGetQueryObjectiv( rg.queries[TIME_QUERY], GL_QUERY_RESULT, &rg.queryCounts[TIME_QUERY] );
+			nglGetQueryObjectiv( rg.queries[SAMPLES_QUERY], GL_QUERY_RESULT, &rg.queryCounts[SAMPLES_QUERY] );
+			nglGetQueryObjectiv( rg.queries[PRIMTIVES_QUERY], GL_QUERY_RESULT, &rg.queryCounts[PRIMTIVES_QUERY] );
 
 			rg.beganQuery = qfalse;
 		}
 	}
 
-    // we measure overdraw by reading back the stencil buffer and
+	// we measure overdraw by reading back the stencil buffer and
 	// counting up the number of increments that have happened
 	if ( r_measureOverdraw->i ) {
 		uint32_t i;
@@ -577,20 +577,20 @@ static const void *RB_SwapBuffers( const void *data )
 		}
 	}
 
-    if ( !glState.finishCalled ) {
-        nglFinish();
-    }
+	if ( !glState.finishCalled ) {
+		nglFinish();
+	}
 
 	if ( screenshotFrame ) {
 		RB_TakeScreenshotCmd();
 		screenshotFrame = qfalse;
 	}
 
-    ri.GLimp_EndFrame();
+	ri.GLimp_EndFrame();
 
 	backend.framePostProcessed = qfalse;
 
-    return (const void *)( cmd + 1 );
+	return (const void *)( cmd + 1 );
 }
 
 /*
@@ -612,15 +612,15 @@ static const void *RB_PostProcess( const void *data )
 	backend.refdef.blurFactor = 0.0f;
 	backend.drawBatch.shader = rg.defaultShader;
 
-	// only draw imgui data after everything else has finished
-	if ( !backend.framePostProcessed ) {
-		ri.ImGui_Draw();
-	}
-
 	// finish any drawing if needed
 	if ( backend.drawBatch.idxOffset ) {
 		RB_FlushBatchBuffer();
 	}
+
+	// only draw imgui data after everything else has finished
+//	if ( !backend.framePostProcessed ) {
+		ri.ImGui_Draw();
+//	}
 
 	if ( !glContext.ARB_framebuffer_object || !r_postProcess->i ) {
 		// do nothing
@@ -879,7 +879,7 @@ static const void	*RB_DrawBuffer( const void *data ) {
 		nglClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	}
 
-	return (const void *)(cmd + 1);
+	return (const void *)( cmd + 1 );
 }
 
 static const void *RB_SetColor(const void *data) {
@@ -1041,16 +1041,16 @@ static const void *RB_DrawImage( const void *data ) {
 static const void *RB_DrawWorldView( const void *data )
 {
 	const drawWorldView_t *cmd;
-
+	
 	cmd = (const drawWorldView_t *)data;
 
 	RE_ProcessEntities();
-    
-    // draw the tilemap
-    R_DrawWorld();
+	
+	// draw the tilemap
+	R_DrawWorld();
 
-    // render all submitted sgame polygons
-    R_DrawPolys();
+	// render all submitted sgame polygons
+	R_DrawPolys();
 
 	return (const void *)( cmd + 1 );
 }

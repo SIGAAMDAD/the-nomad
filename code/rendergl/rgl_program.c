@@ -1329,24 +1329,17 @@ void GLSL_ShaderBufferData( shaderProgram_t *shader, uint32_t uniformNum, unifor
 		return;
 	}
 
-	target = r_arb_shader_storage_buffer_object->i && dynamicStorage ? GL_SHADER_STORAGE_BUFFER : GL_UNIFORM_BUFFER;
+	nglBindBuffer( GL_SHADER_STORAGE_BUFFER, buffer->id );
+	nglBufferSubData( GL_SHADER_STORAGE_BUFFER, nOffset, nSize, buffer->data );
 
-	nglBindBuffer( target, buffer->id );
-
-//	nglBufferData( target, buffer->size, NULL, GL_STREAM_DRAW );
-	nglBufferSubData( target, nOffset, nSize, buffer->data + nOffset );
-
-//	if ( dynamicStorage && nSize > buffer->size ) {
-//		nglBufferData( GL_SHADER_STORAGE_BUFFER, nSize, NULL, GL_STREAM_DRAW );
-//		buffer->size = nSize;
+//	void *data = nglMapBufferRange( GL_SHADER_STORAGE_BUFFER, nOffset, nSize, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT );
+//	if ( data ) {
+//		memcpy( data, buffer->data, nSize );
 //	}
-//	void *data = nglMapBufferRange( target, nOffset, nSize, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_FLUSH_EXPLICIT_BIT );
-//	memcpy( data, buffer->data + nOffset, nSize );
-//	nglFlushMappedBufferRange( target, nOffset, nSize );
-//	nglUnmapBuffer( target );
-//	GL_CheckErrors();
+//	nglUnmapBuffer( GL_SHADER_STORAGE_BUFFER );
+	GL_CheckErrors();
 
-	nglBindBuffer( target, 0 );
+	nglBindBuffer( GL_SHADER_STORAGE_BUFFER, 0 );
 }
 
 void GLSL_LinkUniformToShader( shaderProgram_t *program, uint32_t uniformNum, uniformBuffer_t *buffer, qboolean dynamicStorage )
@@ -1357,21 +1350,19 @@ void GLSL_LinkUniformToShader( shaderProgram_t *program, uint32_t uniformNum, un
 
 	GLSL_UseProgram( program );
 
-//	if ( !r_arb_shader_storage_buffer_object->i ) {
-		buffer->binding = nglGetUniformBlockIndex( program->programId, uniformsInfo[ uniformNum ].name );
-		if ( buffer->binding == -1 ) {
-			ri.Printf( PRINT_WARNING, "GLSL_LinkUniformToShader: uniformBuffer %s not in program '%s'\n", buffer->name, program->name );
-			return;
-		}
+//	buffer->binding = nglGetUniformBlockIndex( program->programId, uniformsInfo[ uniformNum ].name );
+//	if ( buffer->binding == -1 ) {
+//		ri.Printf( PRINT_WARNING, "GLSL_LinkUniformToShader: uniformBuffer %s not in program '%s'\n", buffer->name, program->name );
+//		return;
 //	}
-	nglUniformBlockBinding( program->programId, buffer->binding, program->numBuffers );
+//	nglUniformBlockBinding( program->programId, buffer->binding, program->numBuffers );
 
-	target = r_arb_shader_storage_buffer_object->i && dynamicStorage ? GL_SHADER_STORAGE_BUFFER : GL_UNIFORM_BUFFER;
+	target = GL_SHADER_STORAGE_BUFFER;
 
-	nglBindBuffer( target, buffer->id );
-	nglBindBufferRange( target, 0, buffer->id, 0, buffer->size );
-	nglBindBufferBase( target, 0, buffer->id );
-	nglBindBuffer( target, 0 );
+	nglBindBuffer( GL_SHADER_STORAGE_BUFFER, buffer->id );
+	nglBindBufferRange( GL_SHADER_STORAGE_BUFFER, 0, buffer->id, 0, buffer->size );
+	nglBindBufferBase( GL_SHADER_STORAGE_BUFFER, 0, buffer->id );
+	nglBindBuffer( GL_SHADER_STORAGE_BUFFER, 0 );
 
 	GL_CheckErrors();
 	
@@ -1408,23 +1399,19 @@ uniformBuffer_t *GLSL_InitUniformBuffer( const char *name, byte *buffer, uint64_
 	memset( buf, 0, size );
 
 	buf->name = (char *)( buf + 1 );
-	if ( !buffer ) {
-		buf->data = (byte *)ri.Hunk_Alloc( bufSize, h_low );
-	} else {
-		buf->data = buffer;
-	}
 	buf->size = bufSize;
 	strcpy( buf->name, name );
 
-	target = r_arb_shader_storage_buffer_object->i && dynamicStorage ? GL_SHADER_STORAGE_BUFFER : GL_UNIFORM_BUFFER;
-
-	buf->externalBuffer = buffer != NULL;
+	target = GL_SHADER_STORAGE_BUFFER;
 
 	// generate buffer
 	nglGenBuffers( 1, &buf->id );
-	nglBindBuffer( target, buf->id );
-	nglBufferData( target, bufSize, buffer, GL_STREAM_DRAW );
-	nglBindBuffer( target, 0 );
+	nglBindBuffer( GL_SHADER_STORAGE_BUFFER, buf->id );
+
+	// good 'ol fashioned buffers
+	buf->data = ri.Hunk_Alloc( bufSize, h_low );
+	nglBufferData( GL_SHADER_STORAGE_BUFFER, bufSize, buffer, GL_STREAM_DRAW );
+	nglBindBuffer( GL_SHADER_STORAGE_BUFFER, 0 );
 
 	rg.numUniformBuffers++;
 
@@ -1820,10 +1807,6 @@ void GLSL_ShutdownGPUShaders( void )
 	
 	GL_BindNullProgram();
 
-//	if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
-//		GLSL_DeleteGPUShader( &rg.computeShader );
-//	}
-
 	GLSL_DeleteGPUShader( &rg.imguiShader );
 	GLSL_DeleteGPUShader( &rg.tileShader );
 	GLSL_DeleteGPUShader( &rg.textureColorShader );
@@ -1836,9 +1819,6 @@ void GLSL_ShutdownGPUShaders( void )
 	for ( i = 0; i < GENERICDEF_COUNT; i++ ) {
 		GLSL_DeleteGPUShader( &rg.genericShader[i] );
 	}
-//	for ( i = 0; i < LIGHTDEF_COUNT; i++ ) {
-//		GLSL_DeleteGPUShader( &rg.lightallShader[i] );
-//	}
 }
 
 void GLSL_UseProgram( shaderProgram_t *program )

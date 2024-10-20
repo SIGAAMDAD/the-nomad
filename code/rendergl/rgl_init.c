@@ -1479,6 +1479,22 @@ static void R_UnloadWorld_f( void ) {
 	}
 
 	R_ShutdownBuffer( rg.world->buffer );
+	GLSL_DeleteGPUShader( &rg.tileShader );
+	
+	if ( r_dynamiclight->i ) {
+		if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
+			nglBindBuffer( GL_SHADER_STORAGE_BUFFER, rg.dlightData->id );
+			nglUnmapBuffer( GL_SHADER_STORAGE_BUFFER );
+			nglBindBuffer( GL_SHADER_STORAGE_BUFFER, 0 );
+		}
+		nglDeleteBuffers( 1, &rg.dlightData->id );
+	}
+	if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
+		nglBindBuffer( GL_UNIFORM_BUFFER, rg.lightData->id );
+		nglUnmapBuffer( GL_UNIFORM_BUFFER );
+		nglBindBuffer( GL_UNIFORM_BUFFER, 0 );
+	}
+	nglDeleteBuffers( 1, &rg.lightData->id );
 
 	R_UnloadLevelShaders();
 	R_UnloadLevelTextures();

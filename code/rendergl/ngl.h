@@ -207,7 +207,8 @@ typedef void*(*NGLloadproc)(const char *name);
 	NGL( void, glUniformBlockBinding, GLuint program, GLuint uniformBlockIndex, GLuint uniformBlockBinding ) \
 	NGL( void, glGetShaderSource, GLuint shader, GLsizei bufSize, GLsizei *length, GLchar *source ) \
 	NGL( void, glGetActiveUniform, GLuint program, GLuint index, GLsizei bufSize, GLsizei *length, GLint *size, GLenum *type, GLchar *name ) \
-	NGL( void, glMinSampleShadingARB, GLclampf value )
+	NGL( void, glMinSampleShadingARB, GLclampf value ) \
+	NGL( void, glShaderStorageBlockBinding, GLuint program, GLuint storageBlockIndex, GLuint storageBlockBinding ) \
 
 #define NGL_Texture_Procs \
 	NGL( void, glTexImage2DMultisample, GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations ) \

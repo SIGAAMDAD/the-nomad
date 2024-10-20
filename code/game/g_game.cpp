@@ -352,7 +352,7 @@ static void GLM_MakeVPM( const vec4_t ortho, float *zoom, float zNear, float zFa
 		gi.viewProjectionMatrix = gi.projectionMatrix;
 	}
 
-	VectorCopy( origin, gi.cameraWorldPos );
+	VectorCopy( origin, gi.playerPos );
 	*zoom = gi.cameraZoom;
 
 	memcpy( &projection[0][0], &gi.projectionMatrix[0][0], sizeof( mat4_t ) );

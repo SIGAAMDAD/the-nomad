@@ -425,16 +425,23 @@ static void R_ProcessLights( void )
 
 	ri.Printf( PRINT_DEVELOPER, "Processing %u lights\n", r_worldData.numLights );
 
-	rg.lightData = GLSL_InitUniformBuffer( "u_LightBuffer", NULL, sizeof( shaderLight_t ) * ( MAX_MAP_LIGHTS + r_maxDLights->i ), qfalse );
+	if ( r_dynamiclight->i ) {
+		rg.lightData = GLSL_InitUniformBuffer( "u_LightBuffer", NULL, sizeof( shaderLight_t ) * ( rg.world->numLights + r_maxDLights->i ), qfalse );
+	} else {
+		rg.lightData = GLSL_InitUniformBuffer( "u_LightBuffer", NULL, sizeof( shaderLight_t ) * rg.world->numLights, qfalse );
+	}
 
 	attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_WORLDPOS;
 
 	extradefines[0] = '\0';
 	N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_LIGHT\n" );
 	N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define MAX_TEXTURES %i\n", MAX_TEXTURES ) );
-	N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define MAX_MAP_LIGHTS %i\n", MAX_MAP_LIGHTS ) );
-	N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define MAX_DLIGHTS %i\n", r_maxDLights->i ) );
-	N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define MAX_LIGHTS %i\n", MAX_MAP_LIGHTS + r_maxDLights->i ) );
+	N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define MAX_MAP_LIGHTS %i\n", rg.world->numLights ) );
+	if ( r_dynamiclight->i ) {
+		N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define MAX_LIGHTS %i\n", rg.world->numLights + r_maxDLights->i ) );
+	} else {
+		N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define MAX_LIGHTS %i\n", rg.world->numLights ) );
+	}
 	N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define POINT_LIGHT %i\n", LIGHT_POINT ) );
 	N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define DIRECTION_LIGHT %i\n", LIGHT_DIRECTIONAL ) );
 	if ( r_normalMapping->i ) {
@@ -450,10 +457,10 @@ static void R_ProcessLights( void )
 		ri.Error( ERR_FATAL, "Could not load tile shader!" );
 	}
 
+	GLSL_LinkUniformToShader( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, qfalse );
+
 	GLSL_InitUniforms( &rg.tileShader );
 	GLSL_FinishGPUShader( &rg.tileShader );
-
-	GLSL_LinkUniformToShader( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, qfalse );
 
 	GLSL_UseProgram( &rg.tileShader );
 
@@ -472,8 +479,10 @@ static void R_ProcessLights( void )
 	}
 
 	GLSL_SetUniformVec3( &rg.tileShader, UNIFORM_AMBIENTLIGHT, rg.world->ambientLightColor );
-	GLSL_SetUniformInt( &rg.tileShader, UNIFORM_NUM_LIGHTS, rg.world->numLights );
-	GLSL_ShaderBufferData( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, sizeof( shaderLight_t ) * rg.world->numLights, 0, qfalse );
+	if ( !r_dynamiclight->i ) {
+		GLSL_SetUniformInt( &rg.tileShader, UNIFORM_NUM_LIGHTS, rg.world->numLights + backend.refdef.numDLights );
+		GLSL_ShaderBufferData( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, sizeof( shaderLight_t ) * rg.world->numLights, 0, qfalse );
+	}
 }
 
 static void R_InitWorldBuffer( tile2d_header_t *theader )
