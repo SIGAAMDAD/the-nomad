@@ -257,8 +257,8 @@ namespace TheNomad::SGame {
 				const int screenHeight = TheNomad::GameSystem::GameManager.GetGPUConfig().screenHeight;
 				
 				float angle = Util::DEG2RAD( atan2( ( screenHeight / 2 ) - float( mousePos.y ),
-					float( mousePos.x ) - ( screenWidth / 2 ) ) );
-				m_nJoystickAngle = angle;
+					( screenWidth / 2 ) - float( mousePos.x ) ) );
+				m_nJoystickAngle = Util::DEG2RAD( -atan2( float( mousePos.x ) - ( screenWidth / 2 ), float( mousePos.y ) - ( screenHeight / 2 ) ) );
 				
 				if ( mousePos.x < screenWidth / 2 ) {
 					m_EntityData.SetFacing( FACING_LEFT );

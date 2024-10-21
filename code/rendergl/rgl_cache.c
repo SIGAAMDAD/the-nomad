@@ -737,16 +737,14 @@ void RB_FlushBatchBuffer( void )
 		data = nglMapBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, backend.drawBatch.idxDataSize * backend.drawBatch.idxOffset,
 			GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_INVALIDATE_RANGE_BIT );
 		if ( data ) {
-			memcpy( data, backend.drawBatch.indices,
-				backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize );
+			memcpy( data, backend.drawBatch.indices, backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize );
 		}
 		nglUnmapBuffer( GL_ELEMENT_ARRAY_BUFFER );
 		
 		data = nglMapBufferRange( GL_ARRAY_BUFFER, 0, backend.drawBatch.vtxDataSize * backend.drawBatch.vtxOffset,
 			GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_INVALIDATE_BUFFER_BIT );
 		if ( data ) {
-			memcpy( data, backend.drawBatch.vertices,
-				backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize );
+			memcpy( data, backend.drawBatch.vertices, backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize );
 		}
 		nglUnmapBuffer( GL_ARRAY_BUFFER );
 	}

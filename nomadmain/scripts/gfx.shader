@@ -442,7 +442,7 @@ gfx/bulletMarks
 	nopicmip
 	polygonOffset
 	{
-		map gfx/bullet_mrk.jpg
+		map gfx/bullet_mrk.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 	}
 }

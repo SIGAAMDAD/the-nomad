@@ -481,8 +481,8 @@ static void R_ProcessLights( void )
 	GLSL_SetUniformVec3( &rg.tileShader, UNIFORM_AMBIENTLIGHT, rg.world->ambientLightColor );
 	if ( !r_dynamiclight->i ) {
 		GLSL_SetUniformInt( &rg.tileShader, UNIFORM_NUM_LIGHTS, rg.world->numLights + backend.refdef.numDLights );
-		GLSL_ShaderBufferData( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, sizeof( shaderLight_t ) * rg.world->numLights, 0, qfalse );
 	}
+//	GLSL_ShaderBufferData( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, sizeof( shaderLight_t ) * rg.world->numLights, 0, qfalse );
 }
 
 static void R_InitWorldBuffer( tile2d_header_t *theader )

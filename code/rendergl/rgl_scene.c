@@ -197,35 +197,33 @@ void RE_ProcessDLights( void )
 	shaderLight_t *gpuLight;
 	uint64_t i;
 
-	if ( !r_dynamiclight->i || !r_numDLights || !backend.refdef.numDLights || ( backend.refdef.flags & RSF_ORTHO_BITS ) != RSF_ORTHO_TYPE_WORLD ) {
-		return;
-	}
+	if ( r_dynamiclight->i && backend.refdef.numDLights && ( backend.refdef.flags & RSF_ORTHO_BITS ) == RSF_ORTHO_TYPE_WORLD ) {
+		gpuLight = (shaderLight_t *)rg.lightData->data + rg.world->numLights;
+		dlight = backend.refdef.dlights;
 
-	gpuLight = (shaderLight_t *)rg.lightData->data + rg.world->numLights;
-	dlight = backend.refdef.dlights;
+		for ( i = 0; i < backend.refdef.numDLights; i++ ) {
+			if ( r_numDLights >= r_maxDLights->i ) {
+				ri.Printf( PRINT_DEVELOPER, "R_ProcessDLights: too many lights, dropping %lu lights\n", backend.refdef.numDLights - i );
+			}
 
-	for ( i = 0; i < backend.refdef.numDLights; i++ ) {
-		if ( r_numDLights >= r_maxDLights->i ) {
-			ri.Printf( PRINT_DEVELOPER, "R_ProcessDLights: too many lights, dropping %lu lights\n", backend.refdef.numDLights - i );
+			VectorSet2( gpuLight[i].origin, dlight->origin[0], dlight->origin[1] );
+			VectorCopy( gpuLight[i].color, dlight->color );
+
+			gpuLight[i].color[3] = 1.0f;
+
+			gpuLight[i].brightness = 0.3f;
+			gpuLight[i].range = dlight->range;
+			gpuLight[i].type = dlight->ltype;
+			gpuLight[i].constant = 0.9f;
+			gpuLight[i].quadratic = 0.05f;
+			gpuLight[i].linear = 0.05f;
+
+			dlight++;
 		}
-
-		VectorSet2( gpuLight[i].origin, dlight->origin[0], dlight->origin[1] );
-		VectorCopy( gpuLight[i].color, dlight->color );
-
-		gpuLight[i].color[3] = 1.0f;
-		
-		gpuLight[i].brightness = 0.3f;
-		gpuLight[i].range = dlight->range;
-		gpuLight[i].type = dlight->ltype;
-		gpuLight[i].constant = 0.9f;
-		gpuLight[i].quadratic = 0.05f;
-		gpuLight[i].linear = 0.05f;
-
-		dlight++;
 	}
 	GLSL_UseProgram( &rg.tileShader );
 	GLSL_SetUniformInt( &rg.tileShader, UNIFORM_NUM_LIGHTS, rg.world->numLights + backend.refdef.numDLights );
-	GLSL_ShaderBufferData( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, sizeof( *gpuLight ) * ( rg.world->numLights + backend.refdef.numDLights ), 0, qfalse );
+	GLSL_ShaderBufferData( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, sizeof( *gpuLight ) * ( backend.refdef.numDLights + rg.world->numLights ), 0, qfalse );
 }
 
 void RE_ProcessEntities( void )
