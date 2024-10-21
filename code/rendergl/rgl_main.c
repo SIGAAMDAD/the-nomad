@@ -296,6 +296,12 @@ void R_DrawWorld( void )
 	drawVert_t *vtx;
 	drawVert_t verts[4];
 	vec3_t *xyz;
+	vec3_t edge1, edge2;
+	vec2_t deltaUV1, deltaUV2;
+	vec2_t *uv;
+	vec3_t *tangent, *bitangent;
+	vec3_t *normal;
+	float f;
 	static vec3_t cameraPos;
 	const renderEntityDef_t *refEntity;
 
@@ -321,6 +327,11 @@ void R_DrawWorld( void )
 
 	vtx = rg.world->vertices;
 	xyz = rg.world->xyz;
+
+	normal = rg.world->normal;
+	tangent = rg.world->tangent;
+	bitangent = rg.world->bitangent;
+	uv = rg.world->uv;
 	
 	// if we haven't moved at all, we don't need to do any redundant calculations
 	if ( !( ri.Cvar_VariableInteger( "g_paused" ) || VectorCompare( cameraPos, glState.viewData.camera.origin ) ) ) {
@@ -337,6 +348,22 @@ void R_DrawWorld( void )
 				VectorCopy( xyz[ 1 ], verts[1].xyz );
 				VectorCopy( xyz[ 2 ], verts[2].xyz );
 				VectorCopy( xyz[ 3 ], verts[3].xyz );
+
+				VectorSubtract( edge1, xyz[ 1 ], xyz[ 0 ] );
+				VectorSubtract( edge2, xyz[ 2 ], xyz[ 0 ] );
+
+				VectorSubtract( deltaUV1, uv[ 1 ], uv[ 0 ] );
+				VectorSubtract( deltaUV2, uv[ 2 ], uv[ 0 ] );
+
+				f = 1.0 / ( deltaUV1[0] * deltaUV2[1] - deltaUV2[0] * deltaUV1[1] );
+
+				(*tangent)[0] = f * ( deltaUV2[1] * edge1[0] - deltaUV1[1] * edge2[0] );
+				(*tangent)[1] = f * ( deltaUV2[1] * edge1[1] - deltaUV1[1] * edge2[1] );
+				(*tangent)[2] = f * ( deltaUV2[1] * edge1[2] - deltaUV1[1] * edge2[2] );
+
+				(*bitangent)[0] = f * ( -deltaUV2[0] * edge1[0] + deltaUV1[0] * edge2[0] );
+				(*bitangent)[1] = f * ( -deltaUV2[0] * edge1[1] + deltaUV1[0] * edge2[1] );
+				(*bitangent)[2] = f * ( -deltaUV2[0] * edge1[2] + deltaUV1[0] * edge2[2] );
 
 				// check if there's any entities in the way
 	//			VectorSet4( color, 1.0f, 1.0f, 1.0f, 1.0f );
@@ -360,6 +387,9 @@ void R_DrawWorld( void )
 				}
 				*/
 				xyz += 4;
+				uv += 4;
+				tangent += 4;
+				bitangent += 4;
 			}
 		}
 	}

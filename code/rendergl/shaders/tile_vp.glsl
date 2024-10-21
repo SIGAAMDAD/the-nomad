@@ -2,14 +2,16 @@ in vec3 a_Position;
 in vec2 a_TexCoords;
 in uvec2 a_WorldPos;
 in vec4 a_Color;
+in vec3 a_Normal;
+in vec3 a_Tangent;
+in vec3 a_Bitangent;
 
-layout( xfb_buffer = 0 ) out VertexData {
-	out vec2 v_TexCoords;
-	out vec3 v_FragPos;
-	out vec4 v_Color;
-	out vec3 v_WorldPos;
-	out vec3 v_Position;
-};
+out vec2 v_TexCoords;
+out vec3 v_FragPos;
+out vec4 v_Color;
+out vec3 v_WorldPos;
+out vec3 v_Position;
+out mat3 v_TBN;
 
 uniform bool u_WorldDrawing;
 uniform mat4 u_ModelViewProjection;
@@ -103,6 +105,12 @@ vec2 GenTexCoords( int TCGen, vec3 position, vec3 normal, vec3 TCGenVector0, vec
 }
 #endif
 
+vec3 CalcScreenSpaceNormal( vec3 position ) {
+	vec3 dx = dFdx( position );
+	vec3 dy = dFdy( position );
+	return normalize( cross( dx, dy ) );
+}
+
 void main() {
 	vec3 position = vec3( a_Position.xy, 0.0 );
 #if defined(USE_TCGEN)
@@ -124,19 +132,7 @@ void main() {
 	v_WorldPos = vec3( a_WorldPos.xy, 0.0 );
 	v_Position = position;
 
-	/*
-	mat3 normalMatrix = transpose( inverse( mat3( 1.0 ) ) );
-	vec3 T = normalize( normalMatrix * a_Tangent.xyz );
-	vec3 N = normalize( normalMatrix * a_Normal.xyz );
-	T = normalize( T - dot( T, N ) * N );
-	vec3 B = cross( N, T );
-
-	v_TBN = transpose( mat3( T, B, N ) );
-	v_TangentViewPos = v_TBN * u_ViewOrigin;
-	v_TangentFragPos = v_TBN * v_FragPos;
-	*/
-
-//	v_FragPos = vec3( u_ModelViewProjection * vec4( a_Position.xy, 0.0, 1.0 ) );
+//	vec3 T = normalize( vec3( u_ModelViewProjection ) )
 
     gl_Position = u_ModelViewProjection * vec4( a_Position, 1.0 );
 }

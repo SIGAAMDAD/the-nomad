@@ -986,6 +986,9 @@ typedef struct {
 	vec3_t *xyz;
 	vec2_t *uv;
 	color4ub_t *color;
+	vec3_t *tangent;
+	vec3_t *bitangent;
+	vec3_t *normal;
 	drawVert_t *vertices;
 	uint64_t numVertices;
 

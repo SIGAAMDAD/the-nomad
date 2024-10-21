@@ -482,7 +482,6 @@ static void R_ProcessLights( void )
 	if ( !r_dynamiclight->i ) {
 		GLSL_SetUniformInt( &rg.tileShader, UNIFORM_NUM_LIGHTS, rg.world->numLights + backend.refdef.numDLights );
 	}
-//	GLSL_ShaderBufferData( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, sizeof( shaderLight_t ) * rg.world->numLights, 0, qfalse );
 }
 
 static void R_InitWorldBuffer( tile2d_header_t *theader )
@@ -493,7 +492,11 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 	uint32_t offset;
 	vertexAttrib_t *attribs;
 	vec3_t pos;
+	vec3_t edge1, edge2;
+	vec2_t deltaUV1, deltaUV2;
 	vec2_t *uv;
+	vec3_t *tangent, *bitangent;
+	vec3_t *normal;
 	float f;
 
 	r_worldData.numIndices = r_worldData.width * r_worldData.height * 6;
@@ -524,43 +527,67 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 	attribs[ATTRIB_INDEX_TEXCOORD].enabled		= qtrue;
 	attribs[ATTRIB_INDEX_COLOR].enabled			= qtrue;
 	attribs[ATTRIB_INDEX_WORLDPOS].enabled		= qtrue;
+	attribs[ATTRIB_INDEX_TANGENT].enabled		= qfalse;
+	attribs[ATTRIB_INDEX_BITANGENT].enabled		= qfalse;
+	attribs[ATTRIB_INDEX_NORMAL].enabled		= qfalse;
 
 	attribs[ATTRIB_INDEX_POSITION].count		= 3;
 	attribs[ATTRIB_INDEX_TEXCOORD].count		= 2;
 	attribs[ATTRIB_INDEX_COLOR].count			= 4;
 	attribs[ATTRIB_INDEX_WORLDPOS].count		= 2;
+	attribs[ATTRIB_INDEX_TANGENT].count			= 3;
+	attribs[ATTRIB_INDEX_BITANGENT].count		= 3;
+	attribs[ATTRIB_INDEX_NORMAL].count			= 3;
 
 	attribs[ATTRIB_INDEX_POSITION].type			= GL_FLOAT;
 	attribs[ATTRIB_INDEX_TEXCOORD].type			= GL_FLOAT;
 	attribs[ATTRIB_INDEX_COLOR].type			= GL_UNSIGNED_BYTE;
 	attribs[ATTRIB_INDEX_WORLDPOS].type			= GL_UNSIGNED_SHORT;
+	attribs[ATTRIB_INDEX_TANGENT].type			= GL_FLOAT;
+	attribs[ATTRIB_INDEX_BITANGENT].type		= GL_FLOAT;
+	attribs[ATTRIB_INDEX_NORMAL].type			= GL_FLOAT;
 
 	attribs[ATTRIB_INDEX_POSITION].index		= ATTRIB_INDEX_POSITION;
 	attribs[ATTRIB_INDEX_TEXCOORD].index		= ATTRIB_INDEX_TEXCOORD;
 	attribs[ATTRIB_INDEX_COLOR].index			= ATTRIB_INDEX_COLOR;
 	attribs[ATTRIB_INDEX_WORLDPOS].index		= ATTRIB_INDEX_WORLDPOS;
+	attribs[ATTRIB_INDEX_TANGENT].index			= ATTRIB_INDEX_TANGENT;
+	attribs[ATTRIB_INDEX_BITANGENT].index		= ATTRIB_INDEX_BITANGENT;
+	attribs[ATTRIB_INDEX_NORMAL].index			= ATTRIB_INDEX_NORMAL;
 
 	attribs[ATTRIB_INDEX_POSITION].normalized	= GL_FALSE;
 	attribs[ATTRIB_INDEX_TEXCOORD].normalized	= GL_FALSE;
 	attribs[ATTRIB_INDEX_COLOR].normalized		= GL_TRUE;
 	attribs[ATTRIB_INDEX_WORLDPOS].normalized	= GL_FALSE;
+	attribs[ATTRIB_INDEX_TANGENT].normalized	= GL_FALSE;
+	attribs[ATTRIB_INDEX_BITANGENT].normalized	= GL_FALSE;
+	attribs[ATTRIB_INDEX_NORMAL].normalized		= GL_FALSE;
 
 	attribs[ATTRIB_INDEX_WORLDPOS].offset		= 0;
 	attribs[ATTRIB_INDEX_POSITION].offset		= attribs[ ATTRIB_INDEX_WORLDPOS ].offset + ( sizeof( worldPos_t ) * r_worldData.numVertices );
 	attribs[ATTRIB_INDEX_TEXCOORD].offset		= attribs[ ATTRIB_INDEX_POSITION ].offset + ( sizeof( vec3_t ) * r_worldData.numVertices );
 	attribs[ATTRIB_INDEX_COLOR].offset			= attribs[ ATTRIB_INDEX_TEXCOORD ].offset + ( sizeof( vec2_t ) * r_worldData.numVertices );
+	attribs[ATTRIB_INDEX_TANGENT].offset		= attribs[ ATTRIB_INDEX_COLOR ].offset + ( sizeof( color4ub_t ) * r_worldData.numVertices );
+	attribs[ATTRIB_INDEX_BITANGENT].offset		= attribs[ ATTRIB_INDEX_TANGENT ].offset + ( sizeof( vec3_t ) * r_worldData.numVertices );
+	attribs[ATTRIB_INDEX_NORMAL].offset			= attribs[ ATTRIB_INDEX_BITANGENT ].offset + ( sizeof( vec3_t ) * r_worldData.numVertices );
 
 	attribs[ATTRIB_INDEX_POSITION].stride		= sizeof( vec3_t );
 	attribs[ATTRIB_INDEX_TEXCOORD].stride		= sizeof( vec2_t );
 	attribs[ATTRIB_INDEX_COLOR].stride			= sizeof( color4ub_t );
 	attribs[ATTRIB_INDEX_WORLDPOS].stride		= sizeof( worldPos_t );
+	attribs[ATTRIB_INDEX_TANGENT].stride		= sizeof( vec3_t );
+	attribs[ATTRIB_INDEX_BITANGENT].stride		= sizeof( vec3_t );
+	attribs[ATTRIB_INDEX_NORMAL].stride			= sizeof( vec3_t );
 
 	VBO_Bind( r_worldData.buffer );
-	VBO_SetVertexPointers( r_worldData.buffer, ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_WORLDPOS | ATTRIB_COLOR );
+	VBO_SetVertexPointers( r_worldData.buffer, ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_WORLDPOS | ATTRIB_COLOR | ATTRIB_NORMAL | ATTRIB_TANGENT | ATTRIB_BITANGENT );
 	nglVertexAttribDivisor( ATTRIB_INDEX_POSITION, 0 );
 	nglVertexAttribDivisor( ATTRIB_INDEX_TEXCOORD, 0 );
 	nglVertexAttribDivisor( ATTRIB_INDEX_COLOR, 0 );
 	nglVertexAttribDivisor( ATTRIB_INDEX_WORLDPOS, 0 );
+	nglVertexAttribDivisor( ATTRIB_INDEX_NORMAL, 0 );
+	nglVertexAttribDivisor( ATTRIB_INDEX_TANGENT, 0 );
+	nglVertexAttribDivisor( ATTRIB_INDEX_BITANGENT, 0 );
 	VBO_BindNull();
 
 	r_worldData.worldPos = (worldPos_t *)r_worldData.vertices;

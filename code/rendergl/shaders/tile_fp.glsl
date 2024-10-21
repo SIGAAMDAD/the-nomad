@@ -3,13 +3,11 @@ layout( location = 0 ) out vec4 a_Color;
 layout( location = 1 ) out vec4 a_BrightColor;
 #endif
 
-in VertexData {
-	in vec2 v_TexCoords;
-	in vec3 v_FragPos;
-	in vec4 v_Color;
-	in vec3 v_WorldPos;
-	in vec3 v_Position;
-};
+in vec2 v_TexCoords;
+in vec3 v_FragPos;
+in vec4 v_Color;
+in vec3 v_WorldPos;
+in vec3 v_Position;
 
 uniform float u_GammaAmount;
 uniform bool u_GamePaused;
@@ -101,8 +99,8 @@ vec3 CalcDiffuse( vec3 diffuseAlbedo, float NH, float EH, float roughness )
 vec3 CalcNormal() {
 #if defined(USE_NORMALMAP)
 	vec3 normal = texture2D( u_NormalMap, v_TexCoords ).rgb;
-	normal = normalize( normal * 2.0 - 1.0 );
-	return normal;
+	normal = normal * 2.0 - 1.0;
+	return normalize( normal );
 #else
 	return vec3( 0.0 );
 #endif
@@ -118,9 +116,7 @@ vec3 fresnelSchlick( float cosTheta, vec3 F0 ) {
 	return F0 + ( 1.0 - F0 ) * pow( clamp( 1.0 - cosTheta, 0.0, 1.0 ), 5.0 );
 }
 
-
-float DistributionGGX(vec3 N, vec3 H, float roughness)
-{
+float DistributionGGX( vec3 N, vec3 H, float roughness ) {
     float a      = roughness*roughness;
     float a2     = a*a;
     float NdotH  = max(dot(N, H), 0.0);
@@ -155,8 +151,7 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
 
 #define EPSILON 0.00000001
 
-vec3 CalcSpecular(vec3 specular, float NH, float EH, float roughness)
-{
+vec3 CalcSpecular( vec3 specular, float NH, float EH, float roughness ) {
 	// from http://community.arm.com/servlet/JiveServlet/download/96891546-19496/siggraph2015-mmg-renaldas-slides.pdf
 	float rr = roughness*roughness;
 	float rrrr = rr*rr;
