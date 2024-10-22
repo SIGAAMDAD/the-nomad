@@ -664,7 +664,7 @@ void RE_LoadWorldMap( const char *filename )
 
 	// swap all the lumps
 	for ( i = 0; i < ( sizeof( bmf_t ) / 4 ); i++ ) {
-		((int32_t *)header)[i] = LittleInt( ((int32_t *)header)[i] );
+		( (int32_t *)header )[i] = LittleInt( ( (int32_t *)header )[i] );
 	}
 
 	VectorCopy( r_worldData.ambientLightColor, mheader->ambientLightColor );
