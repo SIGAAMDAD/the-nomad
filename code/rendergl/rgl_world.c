@@ -205,7 +205,7 @@ static void R_OptimizeVertexCache( void )
 	triangle_t *triangles;
 	uint32_t *vertToTri;
 
-	const uint64_t numTriangles = r_worldData.numIndices / 3;
+	const uint32_t numTriangles = r_worldData.numIndices / 3;
 
 	pIndices = r_worldData.indices;
 	pVerts = r_worldData.vertices;
@@ -379,12 +379,12 @@ float R_CalcCacheEfficiency( void )
 	uint32_t numCacheMisses;
 	glIndex_t index;
 	int cache[ LRU_CACHE_SIZE ];
-	int i;
+	int i, c;
 	qboolean foundInCache;
 
 	numCacheMisses = 0;
 
-    for ( i = 0; i < 64; ++i ) {
+    for ( i = 0; i < LRU_CACHE_SIZE; ++i ) {
 		cache[i] = -1;
 	}
     
@@ -393,7 +393,7 @@ float R_CalcCacheEfficiency( void )
 
         // check if vertex in cache
         foundInCache = qfalse;
-        for ( int c = 0; c < 64 && cache[c] >= 0 && !foundInCache; ++c) {
+        for ( c = 0; c < LRU_CACHE_SIZE && cache[c] >= 0 && !foundInCache; ++c) {
             if ( cache[ c ] == index ) {
 				foundInCache = qtrue;
 			}
@@ -401,7 +401,7 @@ float R_CalcCacheEfficiency( void )
         
         if ( !foundInCache ) {
             ++numCacheMisses;
-            for ( int c = 64 - 1; c  >= 1; --c ) {
+            for ( c = LRU_CACHE_SIZE - 1; c  >= 1; --c ) {
                 cache[c] = cache[ c-1 ];
             }
             cache[0] = index;

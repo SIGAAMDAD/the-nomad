@@ -1483,11 +1483,11 @@ static void R_UnloadWorld_f( void ) {
 	
 	if ( r_dynamiclight->i ) {
 		if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
-			nglBindBuffer( GL_SHADER_STORAGE_BUFFER, rg.dlightData->id );
+			nglBindBuffer( GL_SHADER_STORAGE_BUFFER, rg.lightData->id );
 			nglUnmapBuffer( GL_SHADER_STORAGE_BUFFER );
 			nglBindBuffer( GL_SHADER_STORAGE_BUFFER, 0 );
 		}
-		nglDeleteBuffers( 1, &rg.dlightData->id );
+		nglDeleteBuffers( 1, &rg.lightData->id );
 	}
 	if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
 		nglBindBuffer( GL_UNIFORM_BUFFER, rg.lightData->id );

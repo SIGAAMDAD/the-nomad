@@ -214,9 +214,12 @@ void RE_ProcessDLights( void )
 			gpuLight[i].brightness = 0.3f;
 			gpuLight[i].range = dlight->range;
 			gpuLight[i].type = dlight->ltype;
-			gpuLight[i].constant = 0.9f;
+			gpuLight[i].constant = 0.4f;
 			gpuLight[i].quadratic = 0.05f;
 			gpuLight[i].linear = 0.05f;
+//			gpuLight[i].constant = 0.05f;
+//			gpuLight[i].quadratic = 0.6f;
+//			gpuLight[i].linear = 0.05f;
 
 			dlight++;
 		}

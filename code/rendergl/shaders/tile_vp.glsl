@@ -7,11 +7,9 @@ in vec3 a_Tangent;
 in vec3 a_Bitangent;
 
 out vec2 v_TexCoords;
-out vec3 v_FragPos;
 out vec4 v_Color;
 out vec3 v_WorldPos;
 out vec3 v_Position;
-out mat3 v_TBN;
 
 uniform bool u_WorldDrawing;
 uniform mat4 u_ModelViewProjection;
@@ -105,12 +103,6 @@ vec2 GenTexCoords( int TCGen, vec3 position, vec3 normal, vec3 TCGenVector0, vec
 }
 #endif
 
-vec3 CalcScreenSpaceNormal( vec3 position ) {
-	vec3 dx = dFdx( position );
-	vec3 dy = dFdy( position );
-	return normalize( cross( dx, dy ) );
-}
-
 void main() {
 	vec3 position = vec3( a_Position.xy, 0.0 );
 #if defined(USE_TCGEN)
@@ -131,8 +123,6 @@ void main() {
 	}
 	v_WorldPos = vec3( a_WorldPos.xy, 0.0 );
 	v_Position = position;
-
-//	vec3 T = normalize( vec3( u_ModelViewProjection ) )
 
     gl_Position = u_ModelViewProjection * vec4( a_Position, 1.0 );
 }

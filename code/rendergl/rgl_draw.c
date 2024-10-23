@@ -373,6 +373,27 @@ static void ComputeDeformValues(int *deformGen, float deformParams[5])
 	}
 }
 
+static void ForwardDlight( void )
+{
+	uint32_t l;
+	float radius;
+
+	float eyeT;
+
+	batch_t *input = &backend.drawBatch;
+	shaderStage_t *pStage = input->shader->stages[0];
+	
+	if ( !backend.refdef.numDLights ) {
+		return;
+	}
+
+	for ( l = 0; l < backend.refdef.numDLights; l++ ) {
+		dlight_t *dl;
+		shaderProgram_t *sp;
+		vec4_t vector;
+
+	}
+}
 
 /*
 * RB_DrawShaderStages: RB_IterateShaderStages but for imgui textures
@@ -502,7 +523,7 @@ void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, con
 	}
 }
 
-void RB_IterateShaderStages( shader_t *shader )
+static void RB_StageIteratorGeneric( shader_t *shader )
 {
 	uint32_t i, j;
 	int deformGen;
@@ -718,6 +739,27 @@ void RB_IterateShaderStages( shader_t *shader )
 	if ( r_showTris->i ) {
 		DrawTris();
 	}
+}
+
+void RB_IterateShaderStages( shader_t *shader )
+{
+	batch_t *input;
+
+	input = &backend.drawBatch;
+
+	// set polygon offset if necessary
+	if ( input->shader->polygonOffset ) {
+		nglEnable( GL_POLYGON_OFFSET_FILL );
+	}
+
+	RB_StageIteratorGeneric( shader );
+
+	//
+	// do any dynamic lighting if needed
+	//
+//	if ( input->shader->sort <= SS_OPAQUE && r_lightmap->i == 0 && !( input->shader->surfaceFlags & ( SURFACEPARM_NODLIGHT ) ) && r_dlightMode->i ) {
+//		ForwardDlight();
+//	}
 }
 
 /*

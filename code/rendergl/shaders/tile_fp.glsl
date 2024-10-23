@@ -4,7 +4,6 @@ layout( location = 1 ) out vec4 a_BrightColor;
 #endif
 
 in vec2 v_TexCoords;
-in vec3 v_FragPos;
 in vec4 v_Color;
 in vec3 v_WorldPos;
 in vec3 v_Position;
@@ -24,7 +23,7 @@ uniform bool u_Bloom;
 uniform bool u_PostProcess;
 
 #if defined(USE_SHADOWMAP)
-uniform sampler2D u_ShadowMap;
+TEXTURE2D u_ShadowMap;
 #endif
 
 uniform int u_AlphaTest;
@@ -112,91 +111,25 @@ vec3 CalcScreenSpaceNormal( vec3 position ) {
 	return normalize( cross( dx, dy ) );
 }
 
-vec3 fresnelSchlick( float cosTheta, vec3 F0 ) {
-	return F0 + ( 1.0 - F0 ) * pow( clamp( 1.0 - cosTheta, 0.0, 1.0 ), 5.0 );
-}
-
-float DistributionGGX( vec3 N, vec3 H, float roughness ) {
-    float a      = roughness*roughness;
-    float a2     = a*a;
-    float NdotH  = max(dot(N, H), 0.0);
-    float NdotH2 = NdotH*NdotH;
-	
-    float num   = a2;
-    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
-    denom = M_PI * denom * denom;
-	
-    return num / denom;
-}
-
-float GeometrySchlickGGX(float NdotV, float roughness)
-{
-    float r = (roughness + 1.0);
-    float k = (r*r) / 8.0;
-
-    float num   = NdotV;
-    float denom = NdotV * (1.0 - k) + k;
-	
-    return num / denom;
-}
-float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
-{
-    float NdotV = max(dot(N, V), 0.0);
-    float NdotL = max(dot(N, L), 0.0);
-    float ggx2  = GeometrySchlickGGX(NdotV, roughness);
-    float ggx1  = GeometrySchlickGGX(NdotL, roughness);
-	
-    return ggx1 * ggx2;
-}
-
-#define EPSILON 0.00000001
-
-vec3 CalcSpecular( vec3 specular, float NH, float EH, float roughness ) {
-	// from http://community.arm.com/servlet/JiveServlet/download/96891546-19496/siggraph2015-mmg-renaldas-slides.pdf
-	float rr = roughness*roughness;
-	float rrrr = rr*rr;
-	float d = (NH * NH) * (rrrr - 1.0) + 1.0;
-	float v = (EH * EH) * (roughness + 0.5) + EPSILON;
-	return specular * (rrrr / (4.0 * d * d * v));
-}
-
-/*
-vec3 CalcTangent() {
-	vec3 Q1 = dFdx( v_WorldPos );
-	vec3 Q2 = dFdy( v_WorldPos );
-	vec3 st1 = dFdx( v_TexCoords );
-	vec3 st2 = dFdy( v_TexCoords );
-
-	vec3 N = normalize( 0.0 );
-	vec3 T = normalize( Q1 * st2.t - Q2 * st1.t );
-	vec3 B = -normalize( cross( N, T ) );
-
-	mat3 TBN = mat3( T, B, N );
-
-	return normalize( TBN * 0.0 );
-}
-*/
-
 vec3 CalcPointLight( Light light, bool isDLight ) {
 	vec3 diffuse = a_Color.rgb;
-	float dist = distance( v_WorldPos, vec3( light.origin, v_FragPos.z ) );
+	float dist = distance( v_WorldPos, vec3( light.origin, gl_FragCoord.z ) );
 	float diff = 0.0;
 	float range = light.range;
 	vec3 specular = vec3( 0.0 );
-	float attenuation = 0.0;
+	float attenuation = 1.0;
 
 	if ( dist <= light.range ) {
-		diff = 1.0 - abs( dist / ( isDLight ? light.brightness : light.range ) );
+		diff = 1.0 - abs( dist / light.range );
 	}
 	diff += light.brightness;
 	diffuse = min( diff * ( diffuse + vec3( light.color ) ), diffuse );
 
-	range = light.range + light.brightness;
+	range = light.range * light.brightness;
 
-	attenuation = ( light.constant + light.linear * light.range
-		+ light.quadratic * ( light.range * light.range ) );
+	attenuation = ( light.constant + light.linear + light.quadratic * ( light.range * light.range ) );
 	if ( u_LightingQuality == 2 ) {
-		vec3 lightDir = vec3( light.origin.xy, 0.0 ) - v_FragPos;
+		vec3 lightDir = vec3( light.origin.xy, 0.0 ) - gl_FragCoord.xyz;
 		vec3 viewDir = normalize( u_ViewOrigin - v_WorldPos );
 		vec3 halfwayDir = normalize( lightDir + viewDir );
 
@@ -211,20 +144,18 @@ vec3 CalcPointLight( Light light, bool isDLight ) {
 			shininess = 16.0;
 		}
 
-	#if defined(USE_NORMALMAP)
 		vec3 normal = CalcNormal();
-	#else
-		vec3 normal = CalcScreenSpaceNormal( v_FragPos );
-	#endif
 		if ( normal == vec3( 1.0 ) ) {
 			normal = vec3( 0.0 );
 		}
 		const float energyConservation = ( 8.0 + shininess ) / ( 8.0 * M_PI );
-		float spec = energyConservation * pow( max( dot( CalcScreenSpaceNormal( v_FragPos ), halfwayDir ), 0.0 ), shininess );
+		float spec = energyConservation * pow( max( dot( normal, halfwayDir ), 0.0 ), shininess );
 		specular = light.color.rgb * vec3( spec );
 		specular *= attenuation;
+
+		diffuse = mix( diffuse, normal, 0.025 );
 	}
-	else {
+	else if ( u_LightingQuality == 1 ) {
 		const vec3 normal = CalcNormal();
 		const vec3 lightDir = normalize( v_WorldPos ) - normalize( vec3( light.origin.xy, 0.0 ) );
 		diffuse = mix( diffuse, normal, 0.025 );

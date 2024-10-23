@@ -348,6 +348,7 @@ void R_DrawWorld( void )
 				VectorCopy( xyz[ 1 ], verts[1].xyz );
 				VectorCopy( xyz[ 2 ], verts[2].xyz );
 				VectorCopy( xyz[ 3 ], verts[3].xyz );
+				/*
 
 				VectorSubtract( edge1, xyz[ 1 ], xyz[ 0 ] );
 				VectorSubtract( edge2, xyz[ 2 ], xyz[ 0 ] );
@@ -364,6 +365,7 @@ void R_DrawWorld( void )
 				(*bitangent)[0] = f * ( -deltaUV2[0] * edge1[0] + deltaUV1[0] * edge2[0] );
 				(*bitangent)[1] = f * ( -deltaUV2[0] * edge1[1] + deltaUV1[0] * edge2[1] );
 				(*bitangent)[2] = f * ( -deltaUV2[0] * edge1[2] + deltaUV1[0] * edge2[2] );
+				*/
 
 				// check if there's any entities in the way
 	//			VectorSet4( color, 1.0f, 1.0f, 1.0f, 1.0f );

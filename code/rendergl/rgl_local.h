@@ -940,7 +940,6 @@ typedef struct {
 	float fovY;
 
 	stereoFrame_t stereoFrame;
-	cplane_t frustum[5];
 
 	uint32_t flags;
 
@@ -962,13 +961,13 @@ typedef struct {
 
 	qboolean drawing;
 
-	uint32_t levelTextures;
-	uint32_t levelShaders;
-	uint32_t levelSpriteSheets;
+	uint16_t levelTextures;
+	uint16_t levelShaders;
+	uint16_t levelSpriteSheets;
 
-	uint32_t firstLevelTexture;
-	uint32_t firstLevelShader;
-	uint32_t firstLevelSpriteSheet;
+	uint16_t firstLevelTexture;
+	uint16_t firstLevelShader;
+	uint16_t firstLevelSpriteSheet;
 
 	uint32_t width;
 	uint32_t height;
@@ -980,7 +979,7 @@ typedef struct {
 	uint32_t numTiles;
 
 	glIndex_t *indices;
-	uint64_t numIndices;
+	uint32_t numIndices;
 
 	worldPos_t *worldPos;
 	vec3_t *xyz;
@@ -990,7 +989,7 @@ typedef struct {
 	vec3_t *bitangent;
 	vec3_t *normal;
 	drawVert_t *vertices;
-	uint64_t numVertices;
+	uint32_t numVertices;
 
 	// frame based draw data
 	vertexBuffer_t *buffer;
@@ -1173,19 +1172,11 @@ typedef struct
 	texture_t				*renderDepthImage;
 	texture_t				*hdrDepthImage;
 	texture_t				*computeImage;
-	texture_t				*smaaEdgesImage;
-	texture_t				*smaaAreaImage;
-	texture_t				*smaaSearchImage;
-	texture_t				*smaaWeightsImage;
-	texture_t				*smaaBlendImage;
 
 	fbo_t					bloomPingPongFbo[ 2 ];
 	fbo_t					renderFbo;
 	fbo_t					msaaResolveFbo;
 	fbo_t                   ssaaResolveFbo;
-	fbo_t					smaaWeightsFbo;
-	fbo_t					smaaBlendFbo;
-	fbo_t					smaaEdgesFbo;
 	fbo_t					scaleFbo;
 
 	shader_t				*defaultShader;
@@ -1195,9 +1186,7 @@ typedef struct
 	texture_t				**lightmaps;
 	texture_t				**deluxemaps;
 
-	uniformBuffer_t			*dlightData;
 	uniformBuffer_t         *lightData;
-	uniformBuffer_t			*textureData;
 
 	uniformBuffer_t *uniformBuffers[MAX_UNIFORM_BUFFERS];
 	uint64_t numUniformBuffers;
@@ -1229,12 +1218,12 @@ typedef struct
 
 	shaderProgram_t genericShader[GENERICDEF_COUNT];
 	shaderProgram_t lightallShader[LIGHTDEF_COUNT];
+	shaderProgram_t spriteShader;
 	shaderProgram_t imguiShader;
 	shaderProgram_t tileShader;
 	shaderProgram_t textureColorShader;
 	shaderProgram_t blurShader;
 	shaderProgram_t bloomResolveShader;
-	shaderProgram_t msaaShader;
 
 	qboolean beganQuery;
 
