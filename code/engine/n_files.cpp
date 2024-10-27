@@ -1908,7 +1908,6 @@ static qboolean FS_SaveBFFToFile( const bffFile_t *bff, FILE *f )
 static qboolean FS_LoadBffFromFile( FILE *f )
 {
 	fileStats_t stats;
-	fileOffset_t fsize;
 	fileInBFF_t *curFile;
 	char bffName[ PAD( MAX_OSPATH*3+1, sizeof( int ) ) ];
 	char bffBase[ PAD( MAX_OSPATH, sizeof( int ) ) ], *basename;
@@ -1960,7 +1959,7 @@ static qboolean FS_LoadBffFromFile( FILE *f )
 		return qfalse;
 	}
 
-	if ( !Sys_GetFileStats( &stats, bffName ) || fsize != header.size || stats.mtime != header.mtime || stats.ctime != header.ctime ) {
+	if ( !Sys_GetFileStats( &stats, bffName ) || stats.size != header.size || stats.mtime != header.mtime || stats.ctime != header.ctime ) {
 		const int seek_len = header.namesLen + header.numFiles * sizeof( it ) + (header.numHeaderLongs-1) * sizeof( bff->headerLongs[0] ) + header.contentLen;
 //		const int seek_len = header.namesLen + header.numFiles * sizeof( it ) + header.contentLen;
 		if ( fseek( f, seek_len, SEEK_CUR ) != 0 ) {
@@ -2607,7 +2606,7 @@ static void FS_FreeBFF( bffFile_t *bff )
 	#endif
 		bff->handle = NULL;
 
-		for ( file = bff->buildBuffer; i < bff->numfiles; file = bff->buildBuffer->next, i++ ) {
+		for ( file = bff->buildBuffer, i = 0; i < bff->numfiles; file = bff->buildBuffer->next, i++ ) {
 			if ( file->buf ) {
 				Z_Free( file->buf );
 			}

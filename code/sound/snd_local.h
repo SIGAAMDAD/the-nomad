@@ -11,7 +11,7 @@ void FMOD_Error( const char *call, FMOD_RESULT result );
 
 #define MAX_SOUND_CHANNELS 1024
 #define DISTANCEFACTOR 1.0f
-#define MAX_SOUND_SOURCES 1024
+#define MAX_SOUND_SOURCES 2048
 #define MAX_MUSIC_QUEUE 12
 #define MAX_SOUND_BANKS 528
 
@@ -60,6 +60,8 @@ public:
 
 	FMOD::Studio::EventDescription *GetEvent( const char *pName );
 private:
+	char m_szName[ MAX_NPATH ];
+
 	FMOD::Studio::Bank *m_pBank;
 	FMOD::Studio::Bank *m_pStrings;
 
@@ -175,18 +177,14 @@ public:
 	{ return sndManager->m_pStudioSystem; }
 	inline static FMOD::System *GetCoreSystem( void )
 	{ return sndManager->m_pSystem; }
-	inline static FMOD::ChannelGroup *GetSFXGroup( void )
-	{ return sndManager->m_pUIGroup; }
 
 	void AddSourceToHash( CSoundSource *pSource );
 
-	eastl::fixed_vector<CSoundSource *, 10> m_szLoopingTracks;
-
-	uint32_t m_nFirstLevelSource;
-	uint32_t m_nLevelSources;
-private:
 	friend void *Sound_Thread( void *arg );
 
+	eastl::fixed_vector<CSoundSource *, 10> m_szLoopingTracks;
+
+private:
 	bool LoadBank( const char *pName );
 
 	FMOD::Studio::System *m_pStudioSystem;
@@ -197,8 +195,8 @@ private:
 
 	uint64_t m_nSources;
 
-	FMOD::ChannelGroup *m_pUIGroup;
-	FMOD::ChannelGroup *m_pSFXGroup;
+	FMOD::Studio::Bus *m_pSFXBus;
+	FMOD::Studio::Bus *m_pMusicBus;
 
 	soundInfo_t m_AudioInfo;
 };

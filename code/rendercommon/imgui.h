@@ -271,6 +271,7 @@ typedef void    (*ImGuiMemFreeFunc)(void* ptr, void* user_data);                
 // This is a frequently used type in the API. Consider using IM_VEC2_CLASS_EXTRA to create implicit cast from/to our preferred type.
 // Add '#define IMGUI_DEFINE_MATH_OPERATORS' in your imconfig.h file to benefit from courtesy maths operators for those types.
 IM_MSVC_RUNTIME_CHECKS_OFF
+#ifndef IMGUI_VEC2_DEFINED
 struct ImVec2
 {
 	float                                   x, y;
@@ -282,6 +283,7 @@ struct ImVec2
 	IM_VEC2_CLASS_EXTRA     // Define additional constructors and implicit cast operators in imconfig.h to convert back and forth between your math types and ImVec2.
 #endif
 };
+#endif
 
 // ImVec4: 4D vector used to store clipping rectangles, colors etc. [Compile-time configurable type]
 struct ImVec4
@@ -289,6 +291,7 @@ struct ImVec4
 	float                                                     x, y, z, w;
 	constexpr ImVec4()                                        : x(0.0f), y(0.0f), z(0.0f), w(0.0f) { }
 	constexpr ImVec4(float _x, float _y, float _z, float _w)  : x(_x), y(_y), z(_z), w(_w) { }
+	constexpr ImVec4( const vec_t *color ) : x( color[0] ), y( color[1] ), z( color[2] ), w( color[3] ) { }
 #ifdef IM_VEC4_CLASS_EXTRA
 	IM_VEC4_CLASS_EXTRA     // Define additional constructors and implicit cast operators in imconfig.h to convert back and forth between your math types and ImVec4.
 #endif

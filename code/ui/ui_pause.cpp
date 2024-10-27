@@ -53,8 +53,6 @@ typedef struct {
 
 	photomode_t photomode;
 
-	sfxHandle_t hPausedSnapshot;
-
 	char **dailyTips;
 	uint64_t numDailyTips;
 	qboolean popped;
@@ -101,7 +99,6 @@ static void PauseMenu_EventCallback( void *ptr, int event )
 		gi.state = GS_INACTIVE;
 		g_pModuleLib->ModuleCall( sgvm, ModuleOnLevelEnd, 0 );
 		g_pModuleLib->RunModules( ModuleOnLevelEnd, 0 );
-		Snd_StopSfx( s_pauseMenu->hPausedSnapshot );
 		Cvar_SetIntegerValue( "g_paused", 0 );
 		Cbuf_ExecuteText( EXEC_APPEND, "setmap\n" ); // setting an empty mapname will unload the level
 		break;
@@ -218,8 +215,6 @@ void PauseMenu_Cache( void )
 		PauseMenu_LoadDailyTips();
 	}
 
-	s_pauseMenu->hPausedSnapshot = Snd_RegisterSfx( "snapshot:/PauseMenu" );
-
 	s_pauseMenu->menu.width = ui->gpuConfig.vidWidth;
 	s_pauseMenu->menu.height = ui->gpuConfig.vidHeight;
 	s_pauseMenu->menu.fullscreen = qfalse;
@@ -312,10 +307,4 @@ void UI_PauseMenu( void )
 	Key_SetCatcher( Key_GetCatcher() | KEYCATCH_SGAME );
 	Snd_PlaySfx( ui->sfx_select );
 	Cvar_SetIntegerValue( "g_paused", !ui_active->i );
-
-	if ( !ui_active->i ) {
-		Snd_PlaySfx( s_pauseMenu->hPausedSnapshot );
-	} else {
-		Snd_StopSfx( s_pauseMenu->hPausedSnapshot );
-	}
 }

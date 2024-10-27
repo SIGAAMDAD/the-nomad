@@ -1470,45 +1470,6 @@ static void R_CameraInfo_f( void ) {
 	ri.Printf( PRINT_INFO, "Aspect: %f\n", glState.viewData.camera.aspect );
 }
 
-static void R_UnloadWorld_f( void ) {
-	ri.Printf( PRINT_INFO, "Unloading world...\n" );
-
-	if ( !rg.world ) {
-		ri.Printf( PRINT_WARNING, "No world loaded.\n" );
-		return;
-	}
-
-	R_ShutdownBuffer( rg.world->buffer );
-	GLSL_DeleteGPUShader( &rg.tileShader );
-	
-	if ( r_dynamiclight->i ) {
-		if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
-			nglBindBuffer( GL_SHADER_STORAGE_BUFFER, rg.lightData->id );
-			nglUnmapBuffer( GL_SHADER_STORAGE_BUFFER );
-			nglBindBuffer( GL_SHADER_STORAGE_BUFFER, 0 );
-		}
-		nglDeleteBuffers( 1, &rg.lightData->id );
-	}
-	if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
-		nglBindBuffer( GL_UNIFORM_BUFFER, rg.lightData->id );
-		nglUnmapBuffer( GL_UNIFORM_BUFFER );
-		nglBindBuffer( GL_UNIFORM_BUFFER, 0 );
-	}
-	nglDeleteBuffers( 1, &rg.lightData->id );
-
-	R_UnloadLevelShaders();
-	R_UnloadLevelTextures();
-
-	rg.numSpriteSheets = rg.world->firstLevelSpriteSheet;
-
-	ri.Cmd_ExecuteCommand( "snd.unload_level" );
-
-	memset( rg.world, 0, sizeof( *rg.world ) );
-
-	rg.world = NULL;
-	rg.worldMapLoaded = qfalse;
-}
-
 static void R_InitSamplers( void )
 {
 	nglGenSamplers( MAX_TEXTURE_UNITS, rg.samplers );
@@ -1595,10 +1556,6 @@ void R_Init( void )
 	if ( error != GL_NO_ERROR ) {
 		ri.Printf( PRINT_INFO, COLOR_RED "glGetError() = 0x%x\n", error );
 	}
-	
-	//R_InitWorldBuffer();
-
-	ri.Cmd_AddCommand( "unloadworld", R_UnloadWorld_f );
 
 	// print info
 	GpuInfo_f();

@@ -163,8 +163,8 @@ int ModuleOnInit() {
 	@TheNomad::GameSystem::GameManager = cast<TheNomad::GameSystem::CampaignManager@>( @TheNomad::GameSystem::AddSystem( TheNomad::GameSystem::CampaignManager() ) );
 	@TheNomad::SGame::LevelManager = cast<TheNomad::SGame::LevelSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::LevelSystem() ) );
 	@TheNomad::SGame::InfoSystem::InfoManager = TheNomad::SGame::InfoSystem::InfoDataManager();
-	@TheNomad::SGame::EntityManager = cast<TheNomad::SGame::EntitySystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::EntitySystem() ) );
 	@TheNomad::SGame::StateManager = cast<TheNomad::SGame::EntityStateSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::EntityStateSystem() ) );
+	@TheNomad::SGame::EntityManager = cast<TheNomad::SGame::EntitySystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::EntitySystem() ) );
 	@TheNomad::SGame::GfxManager = cast<TheNomad::SGame::GfxSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::GfxSystem() ) );
 
 	TheNomad::SGame::InitCheatCodes();

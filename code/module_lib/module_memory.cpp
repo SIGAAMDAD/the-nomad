@@ -1405,6 +1405,7 @@ void Mem_DumpCompressed( const char *fileName, memorySortType_t memSort, int num
 	// build list with memory allocations
 	totalSize = 0;
 	numBlocks = 0;
+	j = 0;
 	for ( b = mem_debugMemory.next; b != &mem_debugMemory; b = b->next ) {
 
 		if ( numFrames && b->frameNumber < com_frameNumber - numFrames ) {
@@ -1529,7 +1530,6 @@ void Mem_DumpCompressed_f( void ) {
 	memorySortType_t memSort = MEMSORT_LOCATION;
 	int numFrames = 0;
 
-	/*
 	if ( Cmd_Argc() < 2 ) {
 		Con_Printf( "memoryDumpCompressed [options] [filename]\n"
 					"options:\n"
@@ -1543,12 +1543,13 @@ void Mem_DumpCompressed_f( void ) {
 					"By default the memory allocations are sorted on location.\n"
 					"By default a 'memorydump.txt' is written if no file name is specified.\n" );
 		return;
-	} */
+	}
+	
 
 	// get cmd-line options
 	argNum = 1;
 	arg = Cmd_Argv( argNum );
-	while( arg[0] == '-' ) {
+	while ( arg[0] == '-' ) {
 		argNum++;
 		arg = Cmd_Argv( argNum );
 		if ( idStr::Icmp( arg, "s" ) == 0 ) {
@@ -1572,7 +1573,7 @@ void Mem_DumpCompressed_f( void ) {
 						"By default the memory allocations are sorted on location.\n"
 						"By default a 'memorydump.txt' is written if no file name is specified.\n" );
 			return;
-		};
+		}
 	}
 	if ( argNum >= Cmd_Argc() ) {
 		fileName = LOG_DIR "/memorydump.txt";

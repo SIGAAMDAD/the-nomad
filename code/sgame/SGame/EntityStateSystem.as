@@ -2,15 +2,6 @@
 
 namespace TheNomad::SGame {
 	enum StateNum {
-		ST_MOB_IDLE,
-		ST_MOB_SEARCH,
-		ST_MOB_CHASE,
-		ST_MOB_FIGHT,
-		ST_MOB_FIGHT_MELEE,
-		ST_MOB_FIGHT_MISSILE,
-		ST_MOB_FLEE,
-		ST_MOB_DEAD,
-		
 		ST_PLAYR_IDLE,
 		ST_PLAYR_DOUBLEJUMP,
 		ST_PLAYR_MELEE,
@@ -39,8 +30,14 @@ namespace TheNomad::SGame {
 		ST_PLAYR_LEGS_FALL_AIR,
 		ST_PLAYR_LEGS_STUN_AIR,
 
-		ST_GFX_BASE,
-		ST_FIRE_FLICKER,
+		ST_MOB_IDLE,
+		ST_MOB_SEARCH,
+		ST_MOB_CHASE,
+		ST_MOB_FIGHT,
+		ST_MOB_FIGHT_MELEE,
+		ST_MOB_FIGHT_MISSILE,
+		ST_MOB_FLEE,
+		ST_MOB_DEAD,
 
 		ST_NULL,
 		
@@ -72,7 +69,7 @@ namespace TheNomad::SGame {
 			return @values;
 		}
 
-		private void LoadStatesFromFile( const string& in modName ) {
+		private void LoadStatesFromFile( const string& in modName, array<json@>@ stateInfos ) {
 			array<json@>@ states;
 
 			@states = @LoadJSonFile( modName, "states", "StateInfo" );
@@ -82,19 +79,11 @@ namespace TheNomad::SGame {
 
 			ConsolePrint( "Got " + states.Count() + " state infos from \"" + modName + "\"\n" );
 			for ( uint i = 0; i < states.Count(); i++ ) {
-				m_StateInfos.Add( @states[i] );
+				stateInfos.Add( @states[i] );
 			}
 		}
 
 		private void InitBaseStateCache() {
-			m_BaseStateCache.Add( "ST_MOB_IDLE", StateNum::ST_MOB_IDLE );
-			m_BaseStateCache.Add( "ST_MOB_SEARCH", StateNum::ST_MOB_SEARCH );
-			m_BaseStateCache.Add( "ST_MOB_CHASE", StateNum::ST_MOB_CHASE );
-			m_BaseStateCache.Add( "ST_MOB_FIGHT", StateNum::ST_MOB_FIGHT );
-			m_BaseStateCache.Add( "ST_MOB_FIGHT_MELEE", StateNum::ST_MOB_FIGHT_MELEE );
-			m_BaseStateCache.Add( "ST_MOB_FIGHT_MISSILE", StateNum::ST_MOB_FIGHT_MISSILE );
-			m_BaseStateCache.Add( "ST_MOB_FLEE", StateNum::ST_MOB_FLEE );
-			m_BaseStateCache.Add( "ST_MOB_DEAD", StateNum::ST_MOB_DEAD );
 			m_BaseStateCache.Add( "ST_PLAYR_IDLE", StateNum::ST_PLAYR_IDLE );
 			m_BaseStateCache.Add( "ST_PLAYR_DOUBLEJUMP", StateNum::ST_PLAYR_DOUBLEJUMP );
 			m_BaseStateCache.Add( "ST_PLAYR_MELEE", StateNum::ST_PLAYR_MELEE );
@@ -117,15 +106,20 @@ namespace TheNomad::SGame {
 			m_BaseStateCache.Add( "ST_PLAYR_LEGS_MOVE_AIR", StateNum::ST_PLAYR_LEGS_MOVE_AIR );
 			m_BaseStateCache.Add( "ST_PLAYR_LEGS_FALL_AIR", StateNum::ST_PLAYR_LEGS_FALL_AIR );
 			m_BaseStateCache.Add( "ST_PLAYR_LEGS_STUN_AIR", StateNum::ST_PLAYR_LEGS_STUN_AIR );
-			m_BaseStateCache.Add( "ST_FIRE_FLICKER", StateNum::ST_FIRE_FLICKER );
+			m_BaseStateCache.Add( "ST_MOB_IDLE", StateNum::ST_MOB_IDLE );
+			m_BaseStateCache.Add( "ST_MOB_SEARCH", StateNum::ST_MOB_SEARCH );
+			m_BaseStateCache.Add( "ST_MOB_CHASE", StateNum::ST_MOB_CHASE );
+			m_BaseStateCache.Add( "ST_MOB_FIGHT", StateNum::ST_MOB_FIGHT );
+			m_BaseStateCache.Add( "ST_MOB_FIGHT_MELEE", StateNum::ST_MOB_FIGHT_MELEE );
+			m_BaseStateCache.Add( "ST_MOB_FIGHT_MISSILE", StateNum::ST_MOB_FIGHT_MISSILE );
+			m_BaseStateCache.Add( "ST_MOB_FLEE", StateNum::ST_MOB_FLEE );
+			m_BaseStateCache.Add( "ST_MOB_DEAD", StateNum::ST_MOB_DEAD );
 		}
 		
 		const string& GetName() const {
 			return "EntityStateSystem";
 		}
 		void OnInit() {
-			InitBaseStateCache();
-
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.ListStateCache_f ), "sgame.state_cache", false
 			);
@@ -134,17 +128,20 @@ namespace TheNomad::SGame {
 		}
 		void OnLevelStart() {
 			uint i;
-			
+			array<json@> stateInfos;
+
+			InitBaseStateCache();
+
 			ConsolePrint( "Loading state data...\n" );
 			
 			for ( i = 0; i < sgame_ModList.Count(); i++ ) {
-				LoadStatesFromFile( sgame_ModList[i] );
+				LoadStatesFromFile( sgame_ModList[i], @stateInfos );
 			}
 			
-			for ( i = 0; i < m_StateInfos.Count(); i++ ) {
+			for ( i = 0; i < stateInfos.Count(); i++ ) {
 				EntityState@ state = EntityState();
 
-				if ( !state.Load( @m_StateInfos[i] ) ) {
+				if ( !state.Load( @stateInfos[i] ) ) {
 					ConsoleWarning( "failed to load state info at " + i + "\n" );
 					continue;
 				}
@@ -152,13 +149,14 @@ namespace TheNomad::SGame {
 				m_States.Add( @state );
 				m_StateCache.Add( state.GetName(), @state );
 			}
-			m_StateInfos.Clear();
+			stateInfos.Clear();
 
 			TheNomad::Engine::CmdExecuteCommand( "sgame.state_cache\n" );
 		}
 		void OnLevelEnd() {
 			m_StateCache.Clear();
 			m_States.Clear();
+			m_BaseStateCache.Clear();
 		}
 		void OnSave() const {
 		}
@@ -202,7 +200,6 @@ namespace TheNomad::SGame {
 			return @m_BaseStateCache;
 		}
 		
-		private array<json@> m_StateInfos;
 		private dictionary m_StateCache;
 		private array<EntityState@> m_States;
 		private EntityState m_NullState;

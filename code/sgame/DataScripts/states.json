@@ -153,20 +153,6 @@
 				"Frames": 2,
 				"Reverse": false
 			}
-		},
-		{
-			"Id": "fire_flicker",
-			"Tics": 1000,
-			"BaseNum": "ST_FIRE_FLICKER",
-			"Entity": "gfx",
-			"NextState": "this",
-			"SpriteOffset": [ 0, 0 ],
-			"Animation": {
-				"TicRate": 1,
-				"FlipFlop": false,
-				"Frames": 7,
-				"Reverse": false
-			}
 		}
 	]
 }

@@ -684,9 +684,6 @@ namespace TheNomad::SGame {
 			}
 			m_ArmsFacing = FACING_RIGHT;
 
-//			@m_FireSpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/effects/fire", 480, 384, 94, 94 );
-			@m_FireState = @StateManager.GetStateForNum( StateNum::ST_FIRE_FLICKER );
-
 			m_AfterImage.Create( @this );
 			m_iFlags |= PF_AFTER_IMAGE;
 
@@ -796,8 +793,7 @@ namespace TheNomad::SGame {
 				// draw the common silhouette after image for the player's last known position to the enemies
 				m_AfterImage.Draw();
 			}
-			@m_FireState = @m_FireState.Run();
-
+			
 			refEntity.origin = vec3( m_Link.m_Origin.x + 2, m_Link.m_Origin.y, 0 );
 			refEntity.sheetNum = -1;
 			uint sprite = ( TheNomad::GameSystem::GameManager.GetGameTic() & 5 ) + 1;

@@ -309,11 +309,11 @@ void R_ShutdownGPUBuffers( void )
 
 	VBO_BindNull();
 
-	for ( i = 0; i < rg.numBuffers; i++ ) {
-		vbo = rg.buffers[i];
-
-		VBO_Bind( vbo );
-		R_ShutdownBuffer( vbo );
+	if ( rg.world && rg.world->buffer ) {
+		R_ShutdownBuffer( rg.world->buffer );
+	}
+	if ( backend.drawBuffer ) {
+		R_ShutdownBuffer( backend.drawBuffer );
 	}
 
 	memset( rg.buffers, 0, sizeof( rg.buffers ) );
@@ -602,16 +602,24 @@ void VBO_BindNull( void )
 void R_ShutdownBuffer( vertexBuffer_t *vbo )
 {
 	VBO_Bind( vbo );
+
+	ri.GLimp_LogComment( "R_ShutdownBuffer()\n" );
+
 	if ( vbo->vertex.id ) {
+		ri.Printf( PRINT_DEVELOPER, "Deleting vertex buffer object \"%s\"...\n", vbo->name );
 		nglDeleteBuffers( 1, &vbo->vertex.id );
+		GL_CheckErrors();
 	}
 	
 	if ( vbo->index.id ) {
+		ri.Printf( PRINT_DEVELOPER, "Deleting index buffer object \"%s\"...\n", vbo->name );
 		nglDeleteBuffers( 1, &vbo->index.id );
+		GL_CheckErrors();
 	}
 
 	if ( vbo->vaoId ) {
 		nglDeleteVertexArrays( 1, &vbo->vaoId );
+		GL_CheckErrors();
 	}
 
 	rg.numBuffers--;
@@ -620,7 +628,10 @@ void R_ShutdownBuffer( vertexBuffer_t *vbo )
 	glState.memstats.estBufferMemUsed -= ( vbo->vertex.size + vbo->index.size );
 	memset( vbo, 0, sizeof( *vbo ) );
 
-	VBO_BindNull();
+	nglBindBuffer( GL_ARRAY_BUFFER, 0 );
+	nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
+	nglBindVertexArray( 0 );
+	glState.currentVao = NULL;
 }
 
 void VBO_MapBuffers( vertexBuffer_t *vbo, void **vertexBuffer, void **indexBuffer )
@@ -650,6 +661,11 @@ void RB_SetBatchBuffer( vertexBuffer_t *buffer, void *vertexBuffer, uintptr_t vt
 {
 	uint32_t attribBits;
 
+    // clear anything currently queued
+	if ( backend.drawBatch.buffer && ( backend.drawBatch.vtxOffset || backend.drawBatch.idxOffset ) ) {
+		RB_FlushBatchBuffer();
+	}
+
 	// is it already bound?
     if ( backend.drawBatch.buffer != buffer ) {
 		VBO_BindNull();
@@ -657,11 +673,6 @@ void RB_SetBatchBuffer( vertexBuffer_t *buffer, void *vertexBuffer, uintptr_t vt
 		VBO_Bind( buffer );
 		return;
 	}
-
-    // clear anything currently queued
-//	if ( backend.drawBatch.buffer && ( backend.drawBatch.vtxOffset || backend.drawBatch.idxOffset ) ) {
-//		RB_FlushBatchBuffer();
-//	}
 
     backend.drawBatch.buffer = buffer;
 

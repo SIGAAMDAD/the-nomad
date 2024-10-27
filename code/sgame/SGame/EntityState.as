@@ -46,19 +46,12 @@ namespace TheNomad::SGame {
 			}
 
 			m_nTics = uint( data[ "Tics" ] );
-//			if ( !data.get( "Tics", base ) ) {
-//				ConsoleWarning( "invalid state info, missing variable 'Tics'\n" );
-//				return false;
-//			}
-//			m_nTics = Convert().ToInt( base );
 			if ( !data.get( "Entity", base ) ) {
 				ConsoleWarning( "invalid state info, missing variable 'Entity'\n" );
 				return false;
 			} else {
 				if ( Util::StrICmp( base, "player" ) == 0 ) {
 					m_nStateOffset = 0;
-				} else if ( Util::StrICmp( base, "gfx" ) == 0 ) {
-					m_nStateOffset = StateNum::ST_GFX_BASE;
 				} else if ( InfoSystem::InfoManager.GetMobTypes().TryGetValue( base, m_nStateOffset ) ) {
 				} else if ( InfoSystem::InfoManager.GetItemTypes().TryGetValue( base, m_nStateOffset ) ) {
 				} else {
@@ -123,13 +116,13 @@ namespace TheNomad::SGame {
 		bool Done() const {
 			return TheNomad::GameSystem::GameManager.GetGameTic() - m_nTicker >= m_nTics;
 		}
-		uint64 GetTics() const {
+		uint GetTics() const {
 			return m_nTicker;
 		}
 		EntityState@ Run() {
 			if ( TheNomad::GameSystem::GameManager.GetGameTic() - m_nTicker > m_nTics ) {
 				Reset();
-				return @m_NextState !is null ? @m_NextState : @StateManager.GetStateForNum( ( m_nStateNum + m_nStateOffset ) + 1 );
+				return @m_NextState;
 			}
 			m_Animation.Run();
 			return @this;

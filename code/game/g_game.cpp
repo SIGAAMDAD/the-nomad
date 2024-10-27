@@ -170,6 +170,10 @@ static void G_RefImGuiShutdown( void ) {
 	const char *iniData;
 	size_t iniDataSize;
 
+	if ( !ImGui::GetCurrentContext() ) {
+		return;
+	}
+
 	ImGuiIO& io = ImGui::GetIO();
 	io.BackendRendererName = NULL;
 	io.BackendRendererUserData = NULL;
@@ -1403,6 +1407,9 @@ static void G_LogGamestate_f( void ) {
 		break;
 	case GS_SETTINGS:
 		state = "GS_SETTINGS";
+		break;
+	default:
+		state = "";
 		break;
 	};
 

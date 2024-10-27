@@ -29,6 +29,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "gln_files.h"
 #include "n_threads.h"
 
+#ifdef NOMAD_STEAMAPP
+
 #include <steam/steam_api.h>
 
 // shared with MAX_MODULE_NAME
@@ -104,6 +106,8 @@ private:
 };
 
 extern CSteamManager *g_pSteamManager;
+
+#endif
 
 void SteamApp_Init( void );
 void SteamApp_CloudSave( void );

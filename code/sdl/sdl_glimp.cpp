@@ -509,6 +509,8 @@ void GLimp_Shutdown( qboolean unloadDLL )
 {
 	IN_Shutdown();
 
+	Con_Printf( "GLimp_Shutdown()\n" );
+
 	SDL_DestroyWindow( SDL_window );
 	SDL_window = NULL;
 

@@ -28,6 +28,8 @@ static sysEvent_t com_pushedEvents[MAX_PUSHED_EVENTS];
 qboolean gw_minimized = qfalse;
 qboolean gw_active = qtrue;
 
+static qboolean com_safeMode = qfalse;
+
 uint32_t com_fps;
 int CPU_flags;
 cvar_t *com_demo;
@@ -272,7 +274,7 @@ void Com_WriteCrashReport( void )
 
     fprintf( fp, "[CVAR INFO]\n" );
 	for ( var = cvar_vars; var; var = var->next ) {
-        if ( !var->name || ( match && !Com_Filter( match, var->name ) ) ) {
+        if ( !var->name ) {
 			continue;
 		}
 		else if ( var->name && !N_stricmp( var->name, "com_errorMessage" ) ) {
@@ -1465,9 +1467,7 @@ qboolean Com_SafeMode( void ) {
 
 	for ( i = 0 ; i < com_numConsoleLines ; i++ ) {
 		Cmd_TokenizeString( com_consoleLines[i] );
-		if ( !N_stricmp( Cmd_Argv( 0 ), "safe" )
-			|| !N_stricmp( Cmd_Argv( 0 ), "cvar_restart" ) ) {
-			com_consoleLines[i][0] = '\0';
+		if ( com_safeMode || !N_stricmp( Cmd_Argv( 0 ), "cvar_restart" ) ) {
 			return qtrue;
 		}
 	}
@@ -1498,10 +1498,11 @@ void Com_StartupVariable( const char *match )
 
 		name = Cmd_Argv( 1 );
 		if ( !match || N_stricmp( name, match ) == 0 ) {
-			if ( Cvar_Flags( name ) == CVAR_NONEXISTENT )
+			if ( Cvar_Flags( name ) == CVAR_NONEXISTENT ) {
 				Cvar_Get( name, Cmd_ArgsFrom( 2 ), CVAR_USER_CREATED );
-			else
+			} else {
 				Cvar_Set2( name, Cmd_ArgsFrom( 2 ), qfalse );
+			}
 		}
 	}
 }
@@ -1529,7 +1530,7 @@ void Com_ParseCommandLine( char *commandLine )
 	}
 
 	while ( *commandLine ) {
-		if (*commandLine == '"') {
+		if ( *commandLine == '"' ) {
 			inq = !inq;
 		}
 		// look for a + separating character
@@ -1566,7 +1567,7 @@ qboolean Com_EarlyParseCmdLine( char *commandLine, char *con_title, int title_si
 
 	for ( i = 0 ; i < com_numConsoleLines ; i++ ) {
 		Cmd_TokenizeString( com_consoleLines[i] );
-		if ( !N_stricmpn( Cmd_Argv(0), "set", 3 ) && !N_stricmp( Cmd_Argv(1), "cl_title" ) ) {
+		if ( !N_stricmpn( Cmd_Argv(0), "set", 3 ) && !N_stricmp( Cmd_Argv( 1 ), "cl_title" ) ) {
 			com_consoleLines[i][0] = '\0';
 			N_strncpyz( cl_title, Cmd_ArgsFrom( 2 ), sizeof(cl_title) );
 			continue;
@@ -1747,8 +1748,9 @@ static void Com_CheckCrash( void )
 			if ( Com_SafeMode() ) {
 				return; // already set
 			}
-			com_consoleLines[ com_numConsoleLines ] = CopyString( "safe" );
-			com_numConsoleLines++;
+			com_safeMode = qtrue;
+		} else {
+			com_safeMode = qfalse;
 		}
 	} else {
 		fp = Sys_FOpen( "nomad.pid", "w" );

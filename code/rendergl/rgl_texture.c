@@ -3292,7 +3292,7 @@ void R_UnloadLevelTextures( void )
 			if ( hashTable[i] == rg.textures[ j + rg.world->firstLevelTexture ] && hashTable[i] ) {
 				nglDeleteTextures( 1, &rg.textures[ j + rg.world->firstLevelTexture ]->id );
 				if ( r_loadTexturesOnDemand->i && glContext.bindlessTextures ) {
-					nglDeleteSamplers( 1, &rg.textures[ i ]->samplerID );
+					nglDeleteSamplers( 1, &rg.textures[ j + rg.world->firstLevelTexture ]->samplerID );
 				}
 				hashTable[i]->next = NULL;
 				hashTable[i] = NULL;

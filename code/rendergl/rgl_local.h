@@ -26,10 +26,10 @@
 
 #define SMP_FRAMES 2
 
-#define MAX_RENDER_BUFFERS 64
-#define MAX_RENDER_PROGRAMS 2048
-#define MAX_RENDER_TEXTURES 2048
-#define MAX_RENDER_SHADERS 2048
+#define MAX_RENDER_BUFFERS 4
+#define MAX_RENDER_PROGRAMS 1024
+#define MAX_RENDER_TEXTURES 1024
+#define MAX_RENDER_SHADERS 1024
 #define MAX_RENDER_FBOs 64
 
 #define	FOG_TABLE_SIZE		256
@@ -1238,10 +1238,6 @@ typedef struct
 	float sawToothTable[FUNCTABLE_SIZE];
 	float inverseSawToothTable[FUNCTABLE_SIZE];
 	qboolean vertexLightingAllowed;
-
-	GLuint pixelPackBuffer[2];
-	int pixelPackBufferIndex;
-	int pixelPackBufferNextIndex;
 } renderGlobals_t;
 
 extern renderGlobals_t rg;

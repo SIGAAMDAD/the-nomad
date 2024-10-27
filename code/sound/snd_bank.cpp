@@ -27,9 +27,12 @@ bool CSoundBank::Load( const char *npath )
 
 	Con_Printf( "Loading sound bank file \"%s\"...\n", npath );
 
-	nLength = FS_LoadFile( va( "soundbanks/%s.fsb", npath ), (void **)&pBuffer );
+	N_strncpyz( m_szName, npath, sizeof( m_szName ) );
+
+	Com_snprintf( szPath, sizeof( szPath ) - 1, "soundbanks/%s.fsb", npath );
+	nLength = FS_LoadFile( szPath, (void **)&pBuffer );
 	if ( !nLength || !pBuffer ) {
-		Con_Printf( "Error loading sound bank file \"soundbanks/%s.fsb\".", npath );
+		Con_Printf( COLOR_RED "Error loading sound bank file \"soundbanks/%s.fsb\".\n", npath );
 		return false;
 	}
 
@@ -38,8 +41,10 @@ bool CSoundBank::Load( const char *npath )
 	
 	FS_FreeFile( pBuffer );
 
-	nLength = FS_LoadFile( va( "soundbanks/%s.fsb.strings", npath ), (void **)&pBuffer );
+	Com_snprintf( szPath, sizeof( szPath ) - 1, "soundbanks/%s.fsb.strings", npath );
+	nLength = FS_LoadFile( szPath, (void **)&pBuffer );
 	if ( !nLength || !pBuffer ) {
+		Con_Printf( COLOR_RED "Error loading sound bank strings file \"soundbanks/%s.fsb.strings\".\n", npath );
 		m_pBank->unload();
 		m_pBank = NULL;
 		return false;
@@ -51,8 +56,8 @@ bool CSoundBank::Load( const char *npath )
 	FS_FreeFile( pBuffer );
 
 	ERRCHECK( m_pBank->getEventCount( &m_nEventCount ) );
-	m_pEventList = (FMOD::Studio::EventDescription **)Hunk_Alloc( sizeof( *m_pEventList ) * m_nEventCount, h_low );
 
+/*
 	ERRCHECK( m_pBank->getEventList( m_pEventList, m_nEventCount, &m_nEventCount ) );
 	ERRCHECK( m_pBank->loadSampleData() );
 
@@ -61,6 +66,7 @@ bool CSoundBank::Load( const char *npath )
 		m_pEventList[ i ]->getPath( szPath, sizeof( szPath ) - 1, &recieved );
 		Con_Printf( "- %s\n", szPath );
 	}
+*/
 
 	return true;
 }

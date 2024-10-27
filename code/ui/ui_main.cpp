@@ -490,7 +490,12 @@ void UI_EscapeMenuToggle( void )
 	if ( ( Key_IsDown( KEY_ESCAPE ) || ( Key_IsDown( KEY_PAD0_B ) && !ImGui::IsAnyItemActive() ) ) && ui->menusp > 1 ) {
 		if ( !ui->escapeToggle ) {
 			ui->escapeToggle = qtrue;
-			UI_SetActiveMenu( UI_MENU_NONE );
+			if ( !gi.mapLoaded ) {
+				Snd_PlaySfx( ui->sfx_select );
+				UI_PopMenu();
+			} else {
+				UI_SetActiveMenu( UI_MENU_NONE );
+			}
 		}
 	} else {
 		ui->escapeToggle = qfalse;
@@ -578,12 +583,12 @@ extern "C" void UI_Init( void )
 	Cmd_AddCommand( "togglepausemenu", UI_PauseMenu_f );
 	Cmd_AddCommand( "ui.reload_savefiles", UI_ReloadSaveFiles_f );
 
-//	ImGuiIO& io = ImGui::GetIO();
-//	ImFontConfig config;
-//
-//	memset( &config, 0, sizeof( config ) );
-//	config.FontDataOwnedByAtlas = false;
-//
+	ImGuiIO& io = ImGui::GetIO();
+	ImFontConfig config;
+
+	memset( &config, 0, sizeof( config ) );
+	config.FontDataOwnedByAtlas = false;
+
 //	ImFont *font = io.Fonts->AddFontFromMemoryTTF( (void *)g_RobotoMono_Bold, sizeof( g_RobotoMono_Bold ), 16.0f, &config );
 //	io.FontDefault = font;
 }

@@ -84,27 +84,62 @@
 // The only purpose of this define is if you want force compilation of the stb_truetype backend ALONG with the FreeType backend.
 //#define IMGUI_ENABLE_STB_TRUETYPE
 
+#define IMGUI_OVERRIDE_DRAWVERT_STRUCT_LAYOUT \
+	struct ImDrawVert { \
+		ImVec3			pos; \
+		ImVec2			uv; \
+		ImU32			col; \
+	};
+
 //---- Define constructor and implicit cast operators to convert back<>forth between your math types and ImVec2/ImVec4.
 // This will be inlined as part of ImVec2 and ImVec4 class declarations.
 /*
 #define IM_VEC2_CLASS_EXTRA                                                     \
-        constexpr ImVec2(const MyVec2& f) : x(f.x), y(f.y) {}                   \
-        operator MyVec2() const { return MyVec2(x,y); }
-*/
+	inline ImVec2& operator=( const ImVec3& other ) { x = other.x; y = other.y; return *this; }
 #define IM_VEC4_CLASS_EXTRA                                                     \
-        constexpr ImVec4(const vec_t *f) : x(f[0]), y(f[1]), z(f[2]), w(f[3]) {}
-
+		constexpr ImVec4(const vec_t *f) : x(f[0]), y(f[1]), z(f[2]), w(f[3]) {}
+.*/
 //---- ...Or use Dear ImGui's own very basic math operators.
 #define IMGUI_DEFINE_MATH_OPERATORS
 
+// ImVec2: 2D vector used to store positions, sizes etc. [Compile-time configurable type]
+// This is a frequently used type in the API. Consider using IM_VEC2_CLASS_EXTRA to create implicit cast from/to our preferred type.
+// Add '#define IMGUI_DEFINE_MATH_OPERATORS' in your imconfig.h file to benefit from courtesy maths operators for those types.
+#define IMGUI_VEC2_DEFINED
+struct ImVec3;
+struct ImVec2
+{
+	float                                   x, y;
+	constexpr ImVec2()                      : x(0.0f), y(0.0f) { }
+	constexpr ImVec2(float _x, float _y)    : x(_x), y(_y) { }
+	constexpr ImVec2(const ImVec3& other );
+	constexpr ImVec2& operator=( const ImVec3& other );
+	float& operator[] (size_t idx)          { IM_ASSERT(idx == 0 || idx == 1); return ((float*)(void*)(char*)this)[idx]; } // We very rarely use this [] operator, so the assert overhead is fine.
+	float  operator[] (size_t idx) const    { IM_ASSERT(idx == 0 || idx == 1); return ((const float*)(const void*)(const char*)this)[idx]; }
+#ifdef IM_VEC2_CLASS_EXTRA
+	IM_VEC2_CLASS_EXTRA     // Define additional constructors and implicit cast operators in imconfig.h to convert back and forth between your math types and ImVec2.
+#endif
+};
+
 struct ImVec3
 {
-    float                                   x, y, z;
-    constexpr ImVec3()                      : x(0.0f), y(0.0f), z(0.0f) { }
-    constexpr ImVec3(float _x, float _y, float _z) : x(_x), y(_y), z(_z) { }
-    float& operator[] (size_t idx)          { IM_ASSERT(idx == 0 || idx == 1 || idx == 2); return ((float*)(void*)(char*)this)[idx]; } // We very rarely use this [] operator, so the assert overhead is fine.
-    float  operator[] (size_t idx) const    { IM_ASSERT(idx == 0 || idx == 1 || idx == 2); return ((const float*)(const void*)(const char*)this)[idx]; }
+	float                                   x, y, z;
+	constexpr ImVec3()                      : x(0.0f), y(0.0f), z(0.0f) { }
+	constexpr ImVec3(float _x, float _y, float _z) : x(_x), y(_y), z(_z) { }
+	inline ImVec3& operator=( const ImVec2& other ) { x = other.x; y = other.y; z = 0; return *this; }
+	float& operator[] (size_t idx)          { IM_ASSERT(idx == 0 || idx == 1 || idx == 2); return ((float*)(void*)(char*)this)[idx]; } // We very rarely use this [] operator, so the assert overhead is fine.
+	float  operator[] (size_t idx) const    { IM_ASSERT(idx == 0 || idx == 1 || idx == 2); return ((const float*)(const void*)(const char*)this)[idx]; }
 };
+
+inline constexpr ImVec2::ImVec2( const ImVec3& other )
+	: x( other.x ), y( other.y )
+{ }
+
+inline constexpr ImVec2& ImVec2::operator=( const ImVec3& other )
+{ x = other.x; y = other.y; return *this; }
+
+inline ImVec2 operator-( const ImVec3& a, const ImVec2& b )
+{ return ImVec2( a.x - b.x, a.y - b.y ); }
 
 #if !defined(IMGUI_DISABLE_FILE_FUNCTIONS)
 typedef fileHandle_t ImFileHandle;
@@ -139,6 +174,6 @@ IMGUI_API uint64_t          ImFileWrite(const void* data, uint64_t size, uint64_
 /*
 namespace ImGui
 {
-    void MyFunction(const char* name, const MyMatrix44& v);
+	void MyFunction(const char* name, const MyMatrix44& v);
 }
 */

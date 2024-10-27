@@ -1808,14 +1808,10 @@ void GLSL_ShutdownGPUShaders( void )
 	GL_BindNullProgram();
 
 	GLSL_DeleteGPUShader( &rg.imguiShader );
-	GLSL_DeleteGPUShader( &rg.tileShader );
 	GLSL_DeleteGPUShader( &rg.textureColorShader );
 	GLSL_DeleteGPUShader( &rg.bloomResolveShader );
 	GLSL_DeleteGPUShader( &rg.blurShader );
 
-	for ( i = 0; i < rg.numUniformBuffers; i++ ) {
-		nglDeleteBuffersARB( 1, &rg.uniformBuffers[i]->id );
-	}
 	for ( i = 0; i < GENERICDEF_COUNT; i++ ) {
 		GLSL_DeleteGPUShader( &rg.genericShader[i] );
 	}

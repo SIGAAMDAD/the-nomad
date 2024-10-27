@@ -130,7 +130,7 @@ ifdef win32
 CFLAGS+=-Wno-unused-function -Wno-format -Wno-unused-variable
 endif
 ifndef release
-CFLAGS        +=-Wall
+CFLAGS        +=-Wall -Werror=maybe-uninitialized
 endif
 CC            =$(COMPILER)
 ifdef win32

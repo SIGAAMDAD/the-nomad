@@ -546,7 +546,7 @@ void Con_PrintHistory_f( void )
 		Con_LoadHistory();
 	}
 
-	for ( numFields = historyLine; numFields >= 0; numFields--, i++ ) {
+	for ( numFields = historyLine, i = 0; numFields >= 0; numFields--, i++ ) {
 		Con_Printf( "%-4li  %s\n", i, historyEditLines[ numFields ].buffer );
 	}
 }

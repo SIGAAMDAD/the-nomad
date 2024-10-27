@@ -542,8 +542,10 @@ void CDebugger::PrintValue( const char *pExpression, asIScriptContext *pContext 
 		void *ptr;
 		int typeId;
 		asIScriptFunction *func;
-		
+
+		ptr = NULL;
 		func = pContext->GetFunction();
+		
 		if ( !func ) {
 			return;
 		}

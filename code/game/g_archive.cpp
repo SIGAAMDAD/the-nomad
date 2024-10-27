@@ -461,8 +461,10 @@ void CGameArchive::EndSaveSection( void )
 	FS_Write( &m_pSection->numFields, sizeof( m_pSection->numFields ), m_pSection->hFile );
 	FS_FClose( m_pSection->hFile );
 
+#ifdef NOMAD_STEAMAPP
 	g_pSteamManager->Save( va( "SaveData/%s/%s/%s.prt", m_pSection->m_pModuleName, Cvar_VariableString( "sgame_SaveName" ),
 		m_pSection->name ) );
+#endif
 #endif
 
 	Con_DPrintf( "Finished save section '%s' with %i fields\n", m_pSection->name, m_pSection->numFields );
@@ -1153,7 +1155,9 @@ bool CGameArchive::Save( const char *filename )
 	//
 	// save to steam
 	//
+#ifdef NOMAD_STEAMAPP
 	g_pSteamManager->Save( va( "SaveData/%s", filename ) );
+#endif
 
 	//
 	// reload the cache

@@ -271,8 +271,8 @@ void CSoundSystem::AddSourceToHash( CSoundSource *pSource )
 
 	hash = Snd_HashFileName( pSource->GetName() );
 
-	pSource->m_pNext = m_szSources[hash];
-	m_szSources[hash] = pSource;
+	pSource->m_pNext = m_szSources[ hash ];
+	m_szSources[ hash ] = pSource;
 }
 
 void CSoundSystem::ForceStop( void )
@@ -344,7 +344,6 @@ void CSoundSystem::Init( void )
 	ERRCHECK( s_pStudioSystem->initialize( snd_maxChannels->i, FMOD_STUDIO_INIT_NORMAL,
 		flags, NULL ) );
 #endif
-	ERRCHECK( s_pCoreSystem->createChannelGroup( "SFX", &m_pSFXGroup ) );
 
 	m_pStudioSystem = s_pStudioSystem;
 	m_pSystem = s_pCoreSystem;
@@ -363,11 +362,17 @@ void CSoundSystem::Init( void )
 
 		FS_FreeFileList( fileList );
 	}
+
+	ERRCHECK( s_pStudioSystem->getBus( "bus:/SFX", &m_pSFXBus ) );
+	ERRCHECK( s_pStudioSystem->getBus( "bus:/Music", &m_pMusicBus ) );
 }
 
 void CSoundSystem::Shutdown( void )
 {
 	Snd_ClearLoopingTracks();
+
+	ERRCHECK( m_pSFXBus->stopAllEvents( FMOD_STUDIO_STOP_IMMEDIATE ) );
+	ERRCHECK( m_pMusicBus->stopAllEvents( FMOD_STUDIO_STOP_IMMEDIATE ) );
 
 	m_szLoopingTracks.clear();
 	for ( auto& it : m_szSources ) {
@@ -387,9 +392,6 @@ void CSoundSystem::Shutdown( void )
 
 	m_nSources = 0;
 
-	ERRCHECK( m_pSFXGroup->release() );
-
-//	ERRCHECK( s_pStudioSystem->unloadAll() );
 	ERRCHECK( s_pStudioSystem->release() );
 
 	gi.soundRegistered = qfalse;
@@ -411,18 +413,42 @@ void CSoundSystem::Shutdown( void )
 	Cmd_RemoveCommand( "snd.clear_tracks" );
 	Cmd_RemoveCommand( "snd.play_sfx" );
 	Cmd_RemoveCommand( "snd.queue_track" );
-//	Cmd_RemoveCommand( "snd.audio_info" );
  	Cmd_RemoveCommand( "snd.startup_level" );
 	Cmd_RemoveCommand( "snd.unload_level" );
 }
 
 void CSoundSystem::Update( void )
 {
+	if ( snd_muteUnfocused->i ) {
+		ERRCHECK( m_pSFXBus->setMute( !gw_active ) );
+		ERRCHECK( m_pMusicBus->setMute( !gw_active ) );
+	}
+	if ( snd_musicOn->modified ) {
+		ERRCHECK( m_pMusicBus->setMute( snd_musicOn->i ) );
+		snd_musicOn->modified = qfalse;
+	}
+	if ( snd_effectsOn->modified ) {
+		ERRCHECK( m_pSFXBus->setMute( snd_effectsOn->i ) );
+		snd_effectsOn->modified = qfalse;
+	}
+	if ( snd_musicVolume->modified ) {
+		ERRCHECK( m_pMusicBus->setVolume( snd_musicVolume->f / 100.0f ) );
+		snd_musicVolume->modified = qfalse;
+	}
+	if ( snd_effectsVolume->modified ) {
+		ERRCHECK( m_pSFXBus->setVolume( snd_effectsVolume->f / 100.0f ) );
+		snd_effectsVolume->modified = qfalse;
+	}
+	if ( gi.mapLoaded ) {
+		if ( g_paused->i ) {
+			Snd_PlaySfx( Snd_RegisterSfx( "snapshot:/PauseMenu" ) );
+		} else {
+			Snd_StopSfx( Snd_RegisterSfx( "snapshot:/PauseMenu" ) );
+		}
+	}
+
 	ERRCHECK( s_pStudioSystem->update() );
 	ERRCHECK( s_pCoreSystem->update() );
-
-	if ( snd_muteUnfocused->i && !gw_active ) {
-	}
 }
 
 CSoundSource *CSoundSystem::LoadSound( const char *npath, int64_t nTag )
@@ -448,25 +474,15 @@ CSoundSource *CSoundSystem::LoadSound( const char *npath, int64_t nTag )
 		N_Error( ERR_DROP, "CSoundManager::InitSource: MAX_SOUND_SOURCES hit" );
 	}
 
-//    m_hAllocLock.Lock();
-
 	pSound = (CSoundSource *)Hunk_Alloc( sizeof( *pSound ), h_low );
 	memset( pSound, 0, sizeof( *pSound ) );
 
 	if ( !pSound->Load( npath, nTag ) ) {
 		Con_Printf( COLOR_YELLOW "WARNING: failed to load sound file '%s'\n", npath );
-//        m_hAllocLock.Unlock();
 		return NULL;
 	}
 
-//    pSound->SetVolume();
-
 	m_nSources++;
-	if ( gi.mapLoaded ) {
-		sndManager->m_nLevelSources++;
-	}
-
-//    m_hAllocLock.Unlock();
 
 	return pSound;
 }
@@ -518,6 +534,7 @@ static void Snd_Toggle_f( void )
 
 	var = Cmd_Argv( 1 );
 	toggle = Cmd_Argv( 2 );
+	option = true;
 
 	if ( ( toggle[0] == '1' && toggle[1] == '\0' ) || !N_stricmp( toggle, "on" ) ) {
 		option = true;
@@ -678,22 +695,6 @@ static void Snd_PlaySfx_f( void ) {
 	Snd_PlaySfx( hSfx );
 }
 
-void Snd_UnloadLevel_f( void ) {
-	int i;
-	
-//	for ( i = 0; i < sndManager->m_nLevelSources; i++ ) {
-//		if ( !sndManager->GetSound( sndManager->m_nFirstLevelSource + i ) ) {
-//			continue;
-//		}
-//		sndManager->GetSound( sndManager->m_nFirstLevelSource + i )->Release();
-//	}
-}
-
-void Snd_StartupLevel_f( void ) {
-	sndManager->m_nFirstLevelSource = sndManager->NumSources();
-	sndManager->m_nLevelSources = 0;
-}
-
 void Snd_Restart( void )
 {
 	sndManager->Shutdown();
@@ -723,7 +724,7 @@ sfxHandle_t Snd_RegisterTrack( const char *npath )
 		return -1;
 	}
 
-	return Snd_HashFileName( pSource->GetName() );
+	return Snd_HashFileName( npath );
 }
 
 sfxHandle_t Snd_RegisterSfx( const char *npath )
@@ -735,7 +736,7 @@ sfxHandle_t Snd_RegisterSfx( const char *npath )
 		return -1;
 	}
 
-	return Snd_HashFileName( pSource->GetName() );
+	return Snd_HashFileName( npath );
 }
 
 void Snd_PlayWorldSfx( const vec3_t origin, sfxHandle_t hSfx )
@@ -767,7 +768,6 @@ void Snd_AddLoopingTrack( sfxHandle_t handle, uint64_t timeOffset )
 		return;
 	}
 
-//    CThreadAutoLock<CThreadMutex> lock( sndManager->m_hQueueLock );
 	track = sndManager->GetSound( handle );
 	if ( !track ) {
 		Con_Printf( COLOR_RED "Snd_AddLoopingTrack: sound didn't load properly (check log for more details), ignoring call.\n" );
@@ -782,13 +782,6 @@ void Snd_AddLoopingTrack( sfxHandle_t handle, uint64_t timeOffset )
 //    if ( Snd_IsFreebird( track ) ) {
 //        Con_Printf( "Your honor, freebird is playing\n" );
 //    }
-
-//	track->m_nTimeOffset = timeOffset;
-
-//	alSourcei( track->GetSource(), AL_LOOPING, AL_TRUE );
-//	alSourcef( track->GetSource(), AL_GAIN, snd_musicVolume->f / 100.0f );
-//	alSourcei( track->GetSource(), AL_SEC_OFFSET, timeOffset );
-//	alSourcePlay( track->GetSource() );
 
 	track->Play( true, timeOffset );
 	sndManager->m_szLoopingTracks.emplace_back( track );
@@ -818,12 +811,6 @@ void Snd_Init( void )
 	Cvar_CheckRange( snd_masterVolume, "0", "100", CVT_INT );
 	Cvar_SetDescription( snd_masterVolume, "Sets the cap for sfx and music volume." );
 
-/*
-	snd_debugPrint = Cvar_Get( "snd_debugPrint", "0", CVAR_CHEAT | CVAR_TEMP );
-	Cvar_CheckRange( snd_debugPrint, "0", "1", CVT_INT );
-	Cvar_SetDescription( snd_debugPrint, "Toggles OpenAL-soft debug messages." );
-*/
-
 	snd_maxChannels = Cvar_Get( "snd_maxChannels", "256", CVAR_SAVE );
 	Cvar_CheckRange( snd_maxChannels, "24", "512", CVT_INT );
 	Cvar_SetDescription( snd_maxChannels,
@@ -839,8 +826,6 @@ void Snd_Init( void )
 	snd_noSound = Cvar_Get( "s_noSound", "0", CVAR_LATCH );
 #endif
 
-//    snd_device = Cvar_Get( "snd_device", "default", CVAR_LATCH | CVAR_SAVE );
-  //  Cvar_SetDescription( snd_device, "the audio device to use ('default' for the default audio device)" );
 	snd_debug = Cvar_Get( "snd_debug", "0", CVAR_SAVE );
 	Cvar_SetDescription( snd_debug, "Enables fmod and sound system debug logging" );
 
@@ -863,8 +848,6 @@ void Snd_Init( void )
 	Cmd_AddCommand( "snd.clear_tracks", Snd_ClearTracks_f );
 	Cmd_AddCommand( "snd.play_sfx", Snd_PlaySfx_f );
 	Cmd_AddCommand( "snd.queue_track", Snd_QueueTrack_f );
-	Cmd_AddCommand( "snd.startup_level", Snd_StartupLevel_f );
-	Cmd_AddCommand( "snd.unload_level", Snd_UnloadLevel_f );
 	Cmd_AddCommand( "snd.play_track", Snd_PlayTrack_f );
 
 	Snd_RegisterTrack( "warcrimes_are_permitted.ogg" );

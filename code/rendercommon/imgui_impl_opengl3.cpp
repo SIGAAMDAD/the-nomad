@@ -696,22 +696,18 @@ static void ImGui_ImplOpenGL3_SetupRenderState(ImDrawData *draw_data, int fb_wid
 	if (bd->GlVersion >= 330 || bd->GlProfileIsES3)
 		renderImport.glBindSampler(0, 0); // We use combined texture/sampler state. Applications using GL 3.3 and GL ES 3.0 may set that otherwise.
 #endif
-
-	(void)vertex_array_object;
-#ifdef IMGUI_IMPL_OPENGL_USE_VERTEX_ARRAY
-	renderImport.glBindVertexArray(vertex_array_object);
-#endif
 	
+	renderImport.glBindVertexArray( bd->vaoId );
 	// Bind vertex/index buffers and setup attributes for ImDrawVert
 	renderImport.glBindBuffer(GL_ARRAY_BUFFER, bd->VboHandle);
 	renderImport.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bd->ElementsHandle);
 
-	renderImport.glEnableVertexAttribArray(bd->AttribLocationVtxPos);
-	renderImport.glEnableVertexAttribArray(bd->AttribLocationVtxUV);
-	renderImport.glEnableVertexAttribArray(bd->AttribLocationVtxColor);
-	renderImport.glVertexAttribPointer(bd->AttribLocationVtxPos, 3, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid *)IM_OFFSETOF(ImDrawVert, pos));
-	renderImport.glVertexAttribPointer(bd->AttribLocationVtxUV, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid *)IM_OFFSETOF(ImDrawVert, uv));
-	renderImport.glVertexAttribPointer(bd->AttribLocationVtxColor, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid *)IM_OFFSETOF(ImDrawVert, col));
+//	renderImport.glEnableVertexAttribArray(bd->AttribLocationVtxPos);
+//	renderImport.glEnableVertexAttribArray(bd->AttribLocationVtxUV);
+//	renderImport.glEnableVertexAttribArray(bd->AttribLocationVtxColor);
+//	renderImport.glVertexAttribPointer(bd->AttribLocationVtxPos, 3, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid *)IM_OFFSETOF(ImDrawVert, pos));
+//	renderImport.glVertexAttribPointer(bd->AttribLocationVtxUV, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid *)IM_OFFSETOF(ImDrawVert, uv));
+//	renderImport.glVertexAttribPointer(bd->AttribLocationVtxColor, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid *)IM_OFFSETOF(ImDrawVert, col));
 }
 
 // OpenGL3 Render function.
@@ -801,10 +797,6 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 	last_enable_primitive_restart = (bd->GlVersion >= 310) ? renderImport.glIsEnabled(GL_PRIMITIVE_RESTART) : GL_FALSE;
 #endif
 
-#ifdef IMGUI_IMPL_OPENGL_USE_VERTEX_ARRAY
-	renderImport.glGenVertexArrays(1, &vertex_array_object);
-#endif
-
 	ImGui_ImplOpenGL3_SetupRenderState(draw_data, fb_width, fb_height, vertex_array_object);
 	renderImport.glEnable(GL_ALPHA_TEST);
 	renderImport.glAlphaFunc( GL_ALWAYS, 0.5f );
@@ -843,8 +835,8 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 		}
 		else {
 		#if 1
-//			renderImport.glBufferData( GL_ARRAY_BUFFER, bd->VertexBufferSize, NULL, GL_STREAM_DRAW );
-//			renderImport.glBufferData( GL_ELEMENT_ARRAY_BUFFER, bd->IndexBufferSize, NULL, GL_STREAM_DRAW );
+			renderImport.glBufferData( GL_ARRAY_BUFFER, bd->VertexBufferSize, NULL, GL_STREAM_DRAW );
+			renderImport.glBufferData( GL_ELEMENT_ARRAY_BUFFER, bd->IndexBufferSize, NULL, GL_STREAM_DRAW );
 
 			renderImport.glBufferSubData( GL_ARRAY_BUFFER, 0, vtx_buffer_size, cmd_list->VtxBuffer.Data );
 			renderImport.glBufferSubData( GL_ELEMENT_ARRAY_BUFFER, 0, idx_buffer_size, cmd_list->IdxBuffer.Data );
@@ -911,9 +903,6 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 			}
 		}
 	}
-
-	renderImport.glDeleteVertexArrays( 1, &vertex_array_object );
-
 	renderImport.glBlendEquationSeparate(last_blend_equation_rgb, last_blend_equation_alpha);
 	renderImport.glBlendFuncSeparate(last_blend_src_rgb, last_blend_dst_rgb, last_blend_src_alpha, last_blend_dst_alpha);
 
@@ -1093,6 +1082,9 @@ int ImGui_ImplOpenGL3_CreateDeviceObjects( void )
 	bd->AttribLocationVtxUV = (GLuint)renderImport.glGetAttribLocation( imguiShader, "a_TexCoords" );
 	bd->AttribLocationVtxColor = (GLuint)renderImport.glGetAttribLocation( imguiShader, "a_Color" );
 
+	renderImport.glGenVertexArrays( 1, &bd->vaoId );
+	renderImport.glBindVertexArray( bd->vaoId );
+
 	// Create buffers
 	renderImport.glGenBuffers( 1, &bd->VboHandle );
 	renderImport.glGenBuffers( 1, &bd->ElementsHandle );
@@ -1104,6 +1096,13 @@ int ImGui_ImplOpenGL3_CreateDeviceObjects( void )
 	renderImport.glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, bd->ElementsHandle );
 	renderImport.glBufferData( GL_ELEMENT_ARRAY_BUFFER, DEFAULT_INDEX_BUFFER_SIZE, NULL, GL_STREAM_DRAW );
 	bd->IndexBufferSize = DEFAULT_INDEX_BUFFER_SIZE;
+
+	renderImport.glEnableVertexAttribArray( 0 );
+	renderImport.glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, sizeof( ImDrawVert ), (const void *)offsetof( ImDrawVert, pos ) );
+	renderImport.glEnableVertexAttribArray( 1 );
+	renderImport.glVertexAttribPointer( 1, 2, GL_FLOAT, GL_FALSE, sizeof( ImDrawVert ), (const void *)offsetof( ImDrawVert, uv ) );
+	renderImport.glEnableVertexAttribArray( 2 );
+	renderImport.glVertexAttribPointer( 2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof( ImDrawVert ), (const void *)offsetof( ImDrawVert, col ) );
 
 	ImGui_ImplOpenGL3_CreateFontsTexture();
 

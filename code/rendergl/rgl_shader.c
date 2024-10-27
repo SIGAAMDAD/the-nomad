@@ -1,4 +1,5 @@
 #include "rgl_local.h"
+#include <ctype.h>
 
 // rgl_shader.c -- this file deals with the parsing and defintion of shaders
 
@@ -10,10 +11,31 @@ static shader_t shader;
 static shaderStage_t stages[MAX_SHADER_STAGES];
 static	texModInfo_t texMods[MAX_SHADER_STAGES][TR_MAX_TEXMODS];
 
-static shader_t *hashTable[MAX_RENDER_SHADERS];
+#define FILE_HASH_SIZE 1024
+static shader_t *hashTable[FILE_HASH_SIZE];
 
 #define MAX_SHADERTEXT_HASH 2048
-static const char **shaderTextHashTable[MAX_SHADERTEXT_HASH];
+static char **shaderTextHashTable[MAX_SHADERTEXT_HASH];
+
+static long generateHashValue( const char *fname, const int size ) {
+	int		i;
+	long	hash;
+	char	letter;
+
+	hash = 0;
+	i = 0;
+	while (fname[i] != '\0') {
+		letter = tolower(fname[i]);
+		if (letter =='.') break;				// don't include extension
+		if (letter =='\\') letter = '/';		// damn path names
+		if (letter == PATH_SEP) letter = '/';		// damn path names
+		hash+=(long)(letter)*(i+119);
+		i++;
+	}
+	hash = (hash ^ (hash >> 10) ^ (hash >> 20));
+	hash &= (size-1);
+	return hash;
+}
 
 /*
 =================
@@ -1684,22 +1706,22 @@ static void CollapseStagesToLightall( shaderStage_t *diffuse, shaderStage_t *nor
 static void SortNewShader( void )
 {
     int32_t i;
-    uint32_t sort;
+    float sort;
     shader_t *newShader;
 
-    newShader = rg.shaders[rg.numShaders - 1];
+    newShader = rg.shaders[ rg.numShaders - 1 ];
     sort = newShader->sort;
 
-    for (i = rg.numShaders - 2; i >= 0; i--) {
-        if (rg.sortedShaders[i]->sort <= sort) {
+    for ( i = rg.numShaders - 2; i >= 0; i-- ) {
+        if ( rg.sortedShaders[i]->sort <= sort ) {
             break;
         }
-        rg.sortedShaders[i + 1] = rg.sortedShaders[i];
-        rg.sortedShaders[i + 1]->sortedIndex++;
+        rg.sortedShaders[ i + 1 ] = rg.sortedShaders[i];
+        rg.sortedShaders[ i + 1 ]->sortedIndex++;
     }
 
     newShader->sortedIndex = i + 1;
-    rg.sortedShaders[i + 1] = newShader;
+    rg.sortedShaders[ i + 1 ] = newShader;
 }
 
 static shader_t *GeneratePermanentShader( void )
@@ -1739,7 +1761,7 @@ static shader_t *GeneratePermanentShader( void )
 
     SortNewShader();
 
-    hash = Com_GenerateHashValue(newShader->name, MAX_RENDER_SHADERS);
+    hash = generateHashValue( newShader->name, FILE_HASH_SIZE );
     newShader->next = hashTable[hash];
     hashTable[hash] = newShader;
     
@@ -1765,14 +1787,15 @@ static const char *FindShaderInShaderText( const char *shadername )
 	const char *tok, *p;
 	uint64_t i, hash;
 
-	hash = Com_GenerateHashValue(shadername, MAX_SHADERTEXT_HASH);
+	hash = generateHashValue( shadername, MAX_SHADERTEXT_HASH );
 
-	if (shaderTextHashTable[hash]) {
-		for (i = 0; shaderTextHashTable[hash][i]; i++) {
+	if ( shaderTextHashTable[hash] ) {
+		for ( i = 0; shaderTextHashTable[hash][i]; i++ ) {
 			p = shaderTextHashTable[hash][i];
-			tok = COM_ParseExt(&p, qtrue);
-			if (!N_stricmp(tok, shadername))
+			tok = COM_ParseExt( &p, qtrue );
+			if ( !N_stricmp( tok, shadername ) ) {
 				return p;
+			}
 		}
 	}
 
@@ -1780,16 +1803,18 @@ static const char *FindShaderInShaderText( const char *shadername )
 }
 
 /*
-InitShader
+* InitShader
 */
-static void InitShader(const char *name, int32_t lightmapIndex)
+static void InitShader( const char *name, int32_t lightmapIndex )
 {
+	uint32_t i;
+
 	memset( &shader, 0, sizeof( shader ) );
 	N_strncpyz( shader.name, name, sizeof(shader.name) );
 
 	shader.lightmapIndex = lightmapIndex;
 
-	for ( uint32_t i = 0 ; i < MAX_SHADER_STAGES ; i++ ) {
+	for ( i = 0 ; i < MAX_SHADER_STAGES ; i++ ) {
 		stages[i].bundle[0].texMods = texMods[i];
 		stages[i].bundle[0].numTexMods = 0; // fixes two images one screen bug
 
@@ -2279,19 +2304,19 @@ shader_t *R_FindShaderByName( const char *name )
 		return rg.defaultShader;
 	}
 
-	COM_StripExtension(name, strippedName, sizeof(strippedName));
+	COM_StripExtension( name, strippedName, sizeof( strippedName ) );
 
-	hash = Com_GenerateHashValue(strippedName, MAX_RENDER_SHADERS);
+	hash = generateHashValue( strippedName, FILE_HASH_SIZE );
 
 	//
 	// see if the shader is already loaded
 	//
-	for (sh = hashTable[hash]; sh; sh = sh->next) {
+	for ( sh = hashTable[hash]; sh; sh = sh->next ) {
 		// NOTE: if there was no shader or image available with the name strippedName
 		// then a default shader is created with lightmapIndex == LIGHTMAP_NONE, so we
 		// have to check all default shaders otherwise for every call to R_FindShader
 		// with that same strippedName a new default shader is created.
-		if (N_stricmp(sh->name, strippedName) == 0) {
+		if ( N_stricmp( sh->name, strippedName ) == 0 ) {
 			// match found
 			return sh;
 		}
@@ -2341,7 +2366,7 @@ shader_t *R_FindShader( const char *name ) {
 
 	COM_StripExtension(name, strippedName, sizeof(strippedName));
 
-	hash = Com_GenerateHashValue(strippedName, MAX_RENDER_SHADERS);
+	hash = generateHashValue( strippedName, FILE_HASH_SIZE );
 
 	//
 	// see if the shader is already loaded
@@ -2513,7 +2538,7 @@ nhandle_t RE_RegisterShaderFromTexture( const char *name, int32_t lightmapIndex,
     uint64_t hash;
     shader_t *sh;
 
-    hash = Com_GenerateHashValue(name, MAX_RENDER_SHADERS);
+    hash = generateHashValue( name, FILE_HASH_SIZE );
 
 	// probably not necessary since this function
 	// only gets called from tr_font.c with lightmapIndex == LIGHTMAP_2D
@@ -2689,8 +2714,8 @@ shader_t *R_GetShaderByHandle( nhandle_t hShader ) {
 	return rg.shaders[hShader];
 }
 
+#define MAX_SHADER_FILES 4096
 
-#define	MAX_SHADER_FILES 16384
 
 static int loadShaderBuffers( char **shaderFiles, const uint64_t numShaderFiles, char **buffers )
 {
@@ -2803,7 +2828,7 @@ static void ScanAndLoadShaderFiles( void )
 	// scan for legacy shader files
 	shaderFiles = ri.FS_ListFiles( "scripts", ".shader", &numShaderFiles );
 
-	ri.Printf(PRINT_DEVELOPER, "Found %lu shader files.\n", numShaderFiles);
+	ri.Printf( PRINT_INFO, "Found %lu shader files.\n", numShaderFiles );
 
 	if (!shaderFiles || !numShaderFiles) {
 		ri.Printf( PRINT_WARNING, "no shader files found\n" );
@@ -2837,8 +2862,9 @@ static void ScanAndLoadShaderFiles( void )
 	r_extensionOffset = textEnd;
 
 	// free up memory
-	if ( shaderFiles )
+	if ( shaderFiles ) {
 		ri.FS_FreeFileList( shaderFiles );
+	}
 
 	COM_Compress( r_shaderText );
 	memset( shaderTextHashTableSizes, 0, sizeof( shaderTextHashTableSizes ) );
@@ -2851,7 +2877,7 @@ static void ScanAndLoadShaderFiles( void )
 		if ( tok[0] == 0 ) {
 			break;
 		}
-		hash = Com_GenerateHashValue(tok, MAX_SHADERTEXT_HASH);
+		hash = generateHashValue( tok, MAX_SHADERTEXT_HASH );
 		shaderTextHashTableSizes[hash]++;
 		size++;
 		SkipBracedSection(&p, 0);
@@ -2861,8 +2887,8 @@ static void ScanAndLoadShaderFiles( void )
 
 	hashMem = ri.Hunk_Alloc( size * sizeof(char *), h_low );
 
-	for (i = 0; i < MAX_SHADERTEXT_HASH; i++) {
-		shaderTextHashTable[i] = (const char **) hashMem;
+	for ( i = 0; i < MAX_SHADERTEXT_HASH; i++ ) {
+		shaderTextHashTable[i] = (char **) hashMem;
 		hashMem = ((char *) hashMem) + ((shaderTextHashTableSizes[i] + 1) * sizeof(char *));
 	}
 
@@ -2875,7 +2901,7 @@ static void ScanAndLoadShaderFiles( void )
 			break;
 		}
 
-		hash = Com_GenerateHashValue( tok, MAX_SHADERTEXT_HASH );
+		hash = generateHashValue( tok, MAX_SHADERTEXT_HASH );
 		shaderTextHashTable[hash][--shaderTextHashTableSizes[hash]] = (char*)oldp;
 
 		SkipBracedSection(&p, 0);
@@ -2909,7 +2935,8 @@ void R_InitShaders( void )
 {
 	ri.Printf( PRINT_INFO, "Initializing Shaders\n" );
 
-    memset( hashTable, 0, sizeof( hashTable ) );
+//	hashTable = ri.Hunk_Alloc( sizeof( *hashTable ) * FILE_HASH_SIZE, h_low );
+	memset( hashTable, 0, sizeof( hashTable ) );
 
 	CreateInternalShaders();
 

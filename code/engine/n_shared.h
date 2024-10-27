@@ -78,8 +78,22 @@ Platform Specific Preprocessors
 
 	#pragma intrinsic(memcpy)
 	#pragma intrinsic(memset)
+	#pragma intrinsic(memset)
 	#pragma intrinsic(fabs)
 	#pragma intrinsic(labs)
+
+	#pragma warning (disable: 4201) // nameless struct/union
+	#pragma warning (disable: 4214) // nonstandard extension used : bit field types other than int
+	#pragma warning (disable: 4514) // removed unused inlined function
+	#pragma warning (disable: 4032)
+	#pragma warning (disable: 4201)
+	#pragma warning (disable: 4214)
+	#pragma warning (disable: 4244)
+	#pragma warning (disable: 4146)
+	#pragma warning (disable: 4305)
+	#pragma warning (disable: 4101)
+	#pragma warning (disable: 4267)
+	#pragma warning (disable: 4312)
 
 	#ifdef WINVER
 		#undef WINVER
@@ -409,7 +423,7 @@ Compiler Macro Abstraction
 #define LOG_DIR "Config"
 #define LOGFILE LOG_DIR "/debug.log"
 
-#if !defined(_NOMAD_VERSION_MAJOR) || !defined(_NOMAD_VERSION_UPDATE) || !defined(_NOMAD_VERSION_PATCH)
+#ifndef _NOMAD_VERSION_MAJOR
 #   error a version must be supplied when compiling the engine or a mod
 #endif
 
@@ -420,9 +434,7 @@ Compiler Macro Abstraction
 #ifdef __GNUG__
 #pragma GCC diagnostic ignored "-Wold-style-cast" // c style stuff, its more readable without the syntax sugar
 #pragma GCC diagnostic ignored "-Wclass-memaccess" // non-trivial copy instead of memcpy
-#pragma GCC diagnostic ignored "-Wcast-function-type" // incompatible function pointer types
 #pragma GCC diagnostic ignored "-Wunused-macros"
-#pragma GCC diagnostic ignored "-Wsign-compare"
 #pragma GCC diagnostic ignored "-Wnoexcept"
 #elif defined(__clang__) && defined(__cplusplus)
 #pragma clang diagnostic ignored "-Wold-style-cast" // c style stuff, its more readable without the syntax sugar
@@ -444,18 +456,12 @@ Compiler Macro Abstraction
 #define VSTR(x) VSTR_HELPER(x)
 #define NOMAD_VERSION_STRING "v" VSTR( _NOMAD_VERSION_MAJOR ) "." VSTR( _NOMAD_VERSION_UPDATE ) "." VSTR( _NOMAD_VERSION_PATCH )
 
-#ifdef _NOMAD_DEBUG
-#define BUILD_TYPE "[Debug " __DATE__ "|" __TIME__ "]"
+#if _NOMAD_VERSION == 1
+#define GLN_VERSION "The Nomad " NOMAD_VERSION_STRING " Alpha"
+#elif _NOMAD_VERSION == 2
+#define GLN_VERSION "The Nomad " NOMAD_VERSION_STRING " Beta"
 #else
-#define BUILD_TYPE "[Release " __DATE__ "|" __TIME__ "]"
-#endif
-
-#if _NOMAD_VERSION_MAJOR == 1
-#define GLN_VERSION "The Nomad " NOMAD_VERSION_STRING " Alpha " BUILD_TYPE ""
-#elif _NOMAD_VERSION_MAJOR == 2
-#define GLN_VERSION "The Nomad " NOMAD_VERSION_STRING " Beta " BUILD_TYPE ""
-#else
-#define GLN_VERSION "The Nomad " NOMAD_VERSION_STRING " " BUILD_TYPE ""
+#define GLN_VERSION "The Nomad " NOMAD_VERSION_STRING ""
 #endif
 
 #define WINDOW_TITLE GLN_VERSION
@@ -845,7 +851,7 @@ typedef enum {
 	ERR_FATAL,		// exit the entire game with a popup window
 	ERR_DROP,		// print to console and go to title screen
 } errorCode_t;
-void GDR_ATTRIBUTE((format(printf, 2, 3))) N_Error(errorCode_t code, const char *fmt, ...);
+void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL N_Error(errorCode_t code, const char *fmt, ...);
 
 #define arraylen(arr) (sizeof((arr))/sizeof(*(arr)))
 #define zeroinit(x,size) memset((x),0,(size))
@@ -1022,7 +1028,8 @@ typedef struct {
 #define COLOR_WHITE		"^7"
 #define COLOR_RESET		"^8"
 
-#if defined(_NOMAD_DEBUG) && defined(__cplusplus) && !defined(_WIN32)
+/*#if defined(_NOMAD_DEBUG) && defined(__cplusplus) && !defined(_WIN32)*/
+#if 0
 	#define USING_EASY_PROFILER
 	#include <easy/profiler.h>
 

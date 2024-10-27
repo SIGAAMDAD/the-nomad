@@ -28,6 +28,26 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <EASTL/vector.h>
 #include <EASTL/map.h>
 
+#ifndef NOMAD_STEAMAPP
+
+void SteamApp_Init( void )
+{
+}
+
+void SteamApp_CloudSave( void )
+{
+}
+
+void SteamApp_Frame( void )
+{
+}
+
+void SteamApp_Shutdown( void )
+{
+}
+
+#else
+
 #define TESTING_APP_ID 480
 
 #define STAT_ID( id, type, name ) { id, type, name, { 0 } }
@@ -802,6 +822,8 @@ void SteamApp_Shutdown( void )
     Cmd_RemoveCommand( "steam.unlock_achievement" );
     Cmd_RemoveCommand( "steam.clear_achievement" );
 }
+
+#endif
 
 #define ACH_ID( id, name, desc ) { id, #id, name, desc, 0, 0 }
 
