@@ -125,9 +125,6 @@ typedef struct {
 	ngdsection_read_t *m_pSectionList;
 } ngd_file_t;
 
-typedef struct save_file_cache_s {
-} save_file_cache_t;
-
 class CGameArchive
 {
 public:

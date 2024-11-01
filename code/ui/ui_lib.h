@@ -218,6 +218,7 @@ extern void UI_PushMenu( menuframework_t *menu );
 extern void UI_PopMenu( void );
 extern int UI_TextInput( const char *label, char *pBuffer, size_t bufSize, ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue );
 extern int UI_VirtualKeyboard( const char *pName, char *pBuffer, size_t nBufSize );
+extern const char *Hunk_CopyString( const char *str, ha_pref pref );
 
 //
 // ui_confirm.cpp

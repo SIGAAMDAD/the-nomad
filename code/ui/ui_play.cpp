@@ -199,9 +199,11 @@ static void PlayMenu_MissionSelect( void )
 
 static void DeleteSlot_Draw( void )
 {
-	ImGui::TextUnformatted( "                   *** WARNING ***             " );
-	ImGui::TextUnformatted( "You are about to delete a save slot permanently" );
-	ImGui::TextUnformatted( "              Are you sure about this?         " );
+	ImGui::TextUnformatted(
+		"                   *** WARNING ***             \n"
+		"You are about to delete a save slot permanently\n"
+		"              Are you sure about this?         \n"
+	);
 }
 
 static void DeleteSlot_Event( qboolean action )

@@ -354,7 +354,7 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 	nglBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
 	if ( !sys_forceSingleThreading->i ) {
-		R_IssuePendingRenderCommands();
+//		R_IssuePendingRenderCommands();
 	}
 
 	ri.ImGui_NewFrame();

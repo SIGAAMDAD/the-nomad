@@ -11,6 +11,12 @@
 #include <dbghelp.h>
 #include <windows.h>
 #include <excpt.h>
+#include "../win32/win_local.h"
+#pragma comment( lib, "dbghelp" )
+#pragma comment( lib, "psapi" )
+#pragma pack( push, before_imagehlp, 8 )
+#include <imagehlp.h>
+#pragma pack( pop, before_imagehlp )
 #endif
 #include "../system/sys_thread.h"
 #include "../system/sys_thread.inl"
@@ -383,6 +389,74 @@ void Sys_DebugString( const char *str )
 #endif
 }
 
+#ifdef _WIN32
+#ifdef _M_X64
+STACKFRAME64 InitStackFrame( CONTEXT c )
+{
+    STACKFRAME64 s;
+    s.AddrPC.Offset = c.Rip;
+    s.AddrPC.Mode = AddrModeFlat;
+    s.AddrStack.Offset = c.Rsp;
+    s.AddrStack.Mode = AddrModeFlat;    
+    s.AddrFrame.Offset = c.Rbp;
+    s.AddrFrame.Mode = AddrModeFlat;
+    return s;
+}
+#else
+STACKFRAME64 InitStackFrame( CONTEXT c )
+{
+    STACKFRAME64 s;
+    s.AddrPC.Offset = c.Eip;
+    s.AddrPC.Mode = AddrModeFlat;
+    s.AddrStack.Offset = c.Esp;
+    s.AddrStack.Mode = AddrModeFlat;    
+    s.AddrFrame.Offset = c.Ebp;
+    s.AddrFrame.Mode = AddrModeFlat;
+    return s;
+}
+#endif
+
+typedef struct {
+	char szImageName[1024];
+	char szModuleName[1024];
+	void *pAddress;
+	DWORD dwLoadSize;
+} ModuleInfo_t;
+
+void *LoadModuleSymbols( HANDLE hProcess, DWORD pid )
+{
+	ModuleInfo_t *pModules;
+	uint32_t nModuleCount, i;
+	DWORD cbNeeded;
+
+	HMODULE hModule, *hModules;
+
+	EnumProcessModules( hProcess, &hModule, sizeof( HMODULE ), &cbNeeded );
+	hModules = (HMODULE *)alloca( cbNeeded );
+	EnumProcessModules( hProcess, hModules, cbNeeded, &cbNeeded );
+
+	pModules = (ModuleInfo_t *)alloca( sizeof( *pModules ) * ( cbNeeded / sizeof( HMODULE ) ) );
+	nModuleCount = cbNeeded / sizeof( HMODULE );
+	for ( i = 0; i < nModuleCount; i++ ) {
+		char szTemp[1024];
+		MODULEINFO moduleInfo;
+
+		GetModuleInformation( hProcess, hModules[i], &moduleInfo, sizeof( moduleInfo ) );
+		pModules[i].pAddress = moduleInfo.lpBaseOfDll;
+		pModules[i].dwLoadSize = moduleInfo.SizeOfImage;
+
+		GetModuleFileNameEx( hProcess, hModules[i], szTemp, sizeof( szTemp ) );
+		N_strncpyz( pModules[i].szImageName, szTemp, sizeof( pModules[i].szImageName ) );
+		GetModuleBaseName( hProcess, hModules[i], szTemp, sizeof( szTemp ) );
+		N_strncpyz( pModules[i].szModuleName, szTemp, sizeof( pModules[i].szModuleName ) );
+
+		SymLoadModule64( hProcess, 0, pModules[i].szImageName, pModules[i].szModuleName, (DWORD64)pModules[i].pAddress,
+			pModules[i].dwLoadSize );
+	}
+	return pModules[0].pAddress;
+}
+#endif
+
 void Sys_DebugStacktraceFile( uint32_t frames, FILE *fp )
 {
 #ifdef _WIN32
@@ -390,22 +464,30 @@ void Sys_DebugStacktraceFile( uint32_t frames, FILE *fp )
 	USHORT nFrames;
 	IMAGEHLP_LINE64 SymLine;
 	IMAGEHLP_MODULE64 ModuleInfo;
-//	PSYMBOL_INFO64 pSymbol;
-	PIMAGEHLP_SYMBOL64 pSymbol;
+	IMAGEHLP_SYMBOL64 *pSymbol;
 	HMODULE hModule;
 	HANDLE hProcess;
 	DWORD dwDisplacement;
 	DWORD64 dwDisplacement64;
 	DWORD64 dwAddr;
 	DWORD64 dwModuleBase;
+	DWORD dwOffset;
 	STACKFRAME64 stackFrame;
 	HANDLE hThread;
 	DWORD image;
+	IMAGE_NT_HEADERS *h;
+
+	DWORD symOptions = SymGetOptions();
+	symOptions |= SYMOPT_LOAD_LINES | SYMOPT_UNDNAME;
+	symOptions &= ~0;
+	SymSetOptions( symOptions );
 
 	hModule = GetModuleHandle( NULL );
 	hProcess = GetCurrentProcess();
 	hThread = GetCurrentThread();
+	frames = 0;
 
+/*
 	ZeroMemory( &stackFrame, sizeof( stackFrame ) );
 #ifdef _M_IX86
 	image = IMAGE_FILE_MACHINE_I386;
@@ -434,7 +516,43 @@ void Sys_DebugStacktraceFile( uint32_t frames, FILE *fp )
 	stackFrame.AddrStack.Offset = g_debugSession.m_Context.IntSp;
 	stackFrame.AddrStack.Mode = AddrModeFlat;
 #endif
+*/
 
+	void *pBase = LoadModuleSymbols( hProcess, GetCurrentProcessId() );
+
+	stackFrame = InitStackFrame( g_debugSession.m_Context );
+	h = ImageNtHeader( pBase );
+
+	do {
+		if ( !StackWalk64( h->FileHeader.Machine, hProcess, hThread, &stackFrame, &g_debugSession.m_Context, NULL,
+			SymFunctionTableAccess64, SymGetModuleBase64, NULL ) )
+		{
+			break;
+		}
+		Con_Printf( "\n%i:\t", frames );
+		if ( stackFrame.AddrPC.Offset ) {
+			pSymbol = (IMAGEHLP_SYMBOL64 *)alloca( sizeof( *pSymbol ) + 1024 );
+			pSymbol->SizeOfStruct = sizeof( *pSymbol );
+			pSymbol->MaxNameLength = 1024;
+			
+			if ( !SymGetSymFromAddr( hProcess, stackFrame.AddrPC.Offset, &dwDisplacement64, pSymbol ) ) {
+				break;
+			}
+
+			char szName[1024];
+			UnDecorateSymbolName( pSymbol->Name, szName, sizeof( szName ), UNDNAME_COMPLETE );
+			Con_Printf( "%s", szName );
+
+			if ( !SymGetLineFromAddr64( hProcess, stackFrame.AddrPC.Offset, &dwOffset, &SymLine ) ) {
+				break;
+			}
+			Con_Printf( "\t%s(%u)", SymLine.FileName, SymLine.LineNumber );
+		}
+
+		frames++;
+	} while ( stackFrame.AddrReturn.Offset != 0 );
+
+/*
 	for ( uint32_t i = 0; i < frames; i++ ) {
 		const BOOL result = StackWalk64( image, hProcess, hThread, &stackFrame, &g_debugSession.m_Context, NULL, SymFunctionTableAccess64,
 			SymGetModuleBase64, NULL );
@@ -467,6 +585,7 @@ void Sys_DebugStacktraceFile( uint32_t frames, FILE *fp )
 			fprintf( fp, "[Frame %i] (unknown symbol) ???\n", i );
 		}
 	}
+*/
 
 /*
 	memset( g_debugSession.m_pSymbolArray, 0, sizeof( void * ) * MAX_STACKTRACE_FRAMES );

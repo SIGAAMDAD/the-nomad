@@ -167,7 +167,6 @@ typedef struct {
 	toggle_t particles;
 	toggle_t autoExposure;
 	toggle_t dynamicLighting;
-	toggle_t bloom;
 	toggle_t fixedRendering;
 } performanceSettings_t;
 
@@ -185,8 +184,9 @@ typedef struct {
 	int masterVolume;
 
 	// size = uint16_t
-	int sfxOn;
-	int musicOn;
+	toggle_t sfxOn;
+	toggle_t musicOn;
+	toggle_t muteUnfocused;
 
 	int speakerMode;
 	int maxSoundChannels;
@@ -326,9 +326,6 @@ static float PerformanceMenu_CalcScore( void )
 
 	score = 100.0f;
 	
-	if ( s_settingsMenu->performance.bloom ) {
-		score -= 45.0f;
-	}
 	switch ( s_settingsMenu->performance.multisampleType ) {
 	case AntiAlias_None:
 		score += 50.0f;
@@ -361,24 +358,13 @@ static float PerformanceMenu_CalcScore( void )
 	return score;
 }
 
-const char *Hunk_CopyString( const char *str, ha_pref pref ) {
-    char *out;
-    uint64_t len;
-
-    len = strlen( str ) + 1;
-    out = (char *)Hunk_Alloc( len, pref );
-    N_strncpyz( out, str, len );
-
-    return out;
-}
-
 static void SettingsMenu_InitPresets( void ) {
 	/*
 	for reference:
 
 	bloom = frame killer
 	lighting quality = anything higher than 1 is a frame killer
-	multisampling = MSAA > 4 is a frame killer
+	multisampling = MSAA > 8 is a frame killer
 	*/
 
 	s_settingsMenu->presets = (preset_t *)Hunk_Alloc( sizeof( *s_settingsMenu->presets ) * NUM_PRESETS, h_high );
@@ -392,7 +378,6 @@ static void SettingsMenu_InitPresets( void ) {
 	s_settingsMenu->presets[ PRESET_LOW ].basic.textureDetail = TexDetail_IntegratedGPU;
 	s_settingsMenu->presets[ PRESET_LOW ].basic.textureFilter = TEXFILTER_ANISOTROPY2;
 	s_settingsMenu->presets[ PRESET_LOW ].basic.dynamicLighting = qtrue;
-	s_settingsMenu->presets[ PRESET_LOW ].basic.bloom = qfalse;
 	s_settingsMenu->presets[ PRESET_LOW ].basic.lightingQuality = 0;
 
 	s_settingsMenu->presets[ PRESET_NORMAL ].basic.multisampleType = AntiAlias_MSAA;
@@ -400,7 +385,6 @@ static void SettingsMenu_InitPresets( void ) {
 	s_settingsMenu->presets[ PRESET_NORMAL ].basic.textureDetail = TexDetail_Normie;
 	s_settingsMenu->presets[ PRESET_NORMAL ].basic.textureFilter = TEXFILTER_ANISOTROPY4;
 	s_settingsMenu->presets[ PRESET_NORMAL ].basic.dynamicLighting = qtrue;
-	s_settingsMenu->presets[ PRESET_NORMAL ].basic.bloom = qfalse;
 	s_settingsMenu->presets[ PRESET_NORMAL ].basic.lightingQuality = 1;
 
 	s_settingsMenu->presets[ PRESET_HIGH ].basic.multisampleType = AntiAlias_MSAA;
@@ -408,7 +392,6 @@ static void SettingsMenu_InitPresets( void ) {
 	s_settingsMenu->presets[ PRESET_HIGH ].basic.textureDetail = TexDetail_ExpensiveShitWeveGotHere;
 	s_settingsMenu->presets[ PRESET_HIGH ].basic.textureFilter = TEXFILTER_ANISOTROPY8;
 	s_settingsMenu->presets[ PRESET_HIGH ].basic.dynamicLighting = qtrue;
-	s_settingsMenu->presets[ PRESET_HIGH ].basic.bloom = qtrue;
 	s_settingsMenu->presets[ PRESET_HIGH ].basic.lightingQuality = 2;
 
 	// highest quality rendering, no care for performance
@@ -417,7 +400,6 @@ static void SettingsMenu_InitPresets( void ) {
 	s_settingsMenu->presets[ PRESET_QUALITY ].basic.textureDetail = TexDetail_GPUvsGod;
 	s_settingsMenu->presets[ PRESET_QUALITY ].basic.textureFilter = TEXFILTER_ANISOTROPY16;
 	s_settingsMenu->presets[ PRESET_QUALITY ].basic.dynamicLighting = qtrue;
-	s_settingsMenu->presets[ PRESET_QUALITY ].basic.bloom = qtrue;
 	s_settingsMenu->presets[ PRESET_QUALITY ].basic.lightingQuality = 2;
 	
 	// looks the worst but gets the best framerate and much less memory consumption
@@ -426,13 +408,11 @@ static void SettingsMenu_InitPresets( void ) {
 	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.textureDetail = TexDetail_MSDOS;
 	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.textureFilter = TEXFILTER_ANISOTROPY2;
 	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.dynamicLighting = qfalse;
-	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.bloom = qfalse;
 	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.lightingQuality = 0;
 }
 
 static void SettingsMenu_SetPreset( const preset_t *preset )
 {
-	s_settingsMenu->performance.bloom = preset->basic.bloom;
 	s_settingsMenu->performance.dynamicLighting = preset->basic.dynamicLighting;
 	s_settingsMenu->performance.multisampleType = preset->basic.multisampleType;
 	s_settingsMenu->performance.textureFilter = preset->basic.textureFilter;
@@ -1110,12 +1090,6 @@ static void PerformanceMenu_DrawBasic( void )
 		s_settingsMenu->performance.fixedRendering );
 
 	ImGui::TableNextRow();
-	
-	SettingsMenu_RadioButton( "BLOOM", "Bloom",
-		"Enables bloom to make light sources stand out more in an environment",
-		&s_settingsMenu->performance.bloom, true );
-
-	ImGui::TableNextRow();
 
 	SettingsMenu_RadioButton( "LOAD TEXTURES ON DEMAND", "LoadTexturesOnDemand",
 		"Forces the engine to only load textures when they are being rendered, this will cause minor hitches but consume less memory.",
@@ -1420,19 +1394,11 @@ static bool PerformanceMenu_FBO_Save( void )
 	bool restartFBO = false, restartVid = false;
 
 	Cvar_SetIntegerValue( "r_antialiasQuality", s_settingsMenu->performance.multisampleQuality );
-	Cvar_SetIntegerValue( "r_bloom", s_settingsMenu->performance.bloom );
-
-	if ( s_settingsMenu->performance.bloom ) {
-		Cvar_Set( "r_hdr", "1" );
-	}
 
 	if ( s_settingsMenu->performance.multisampleType != s_initial->performance.multisampleType ) {
 		restartFBO = true;
 	}
 	if ( s_settingsMenu->performance.multisampleQuality != s_initial->performance.multisampleQuality ) {
-		restartFBO = true;
-	}
-	if ( s_settingsMenu->performance.bloom != s_initial->performance.bloom ) {
 		restartFBO = true;
 	}
 	if ( ( s_settingsMenu->performance.multisampleType == AntiAlias_SSAA && s_initial->performance.multisampleType != AntiAlias_SSAA )
@@ -1544,7 +1510,6 @@ static void PerformanceMenu_SetDefault( void )
 	s_settingsMenu->performance.dynamicLighting = Cvar_VariableInteger( "r_dynamiclight" );
 	s_settingsMenu->performance.multisampleType = Cvar_VariableInteger( "r_multisampleType" );
 	s_settingsMenu->performance.textureDetail = Cvar_VariableInteger( "r_textureDetail" );
-	s_settingsMenu->performance.bloom = Cvar_VariableInteger( "r_bloom" );
 	s_settingsMenu->performance.lightingQuality = Cvar_VariableInteger( "r_lightingQuality" );
 	s_settingsMenu->performance.multisampleQuality = Cvar_VariableInteger( "r_antialiasQuality" );
 	s_settingsMenu->performance.fixedRendering = Cvar_VariableInteger( "r_fixedRendering" );
@@ -1677,9 +1642,6 @@ static qboolean SettingsMenu_PresetCustom( void )
 
 	p = &s_settingsMenu->presets[ s_settingsMenu->preset ];
 
-	if ( s_settingsMenu->performance.bloom != p->basic.bloom ) {
-		return qtrue;
-	}
 	if ( s_settingsMenu->performance.dynamicLighting != p->basic.dynamicLighting ) {
 		return qtrue;
 	}

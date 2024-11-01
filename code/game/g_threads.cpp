@@ -30,6 +30,8 @@ static void *GLimp_RenderThreadWrapper( void *arg )
 
 	Con_Printf( "Render thread terminating\n" );
 
+	glimpRenderThread = NULL;
+
 	return arg;
 }
 
@@ -37,6 +39,10 @@ qboolean GLimp_SpawnRenderThread( void (*function)( void ) )
 {
 	pthread_t renderThread;
 	int ret;
+
+	if ( glimpRenderThread ) {
+		return qtrue;
+	}
 
 	pthread_mutex_init( &smpMutex, NULL );
 

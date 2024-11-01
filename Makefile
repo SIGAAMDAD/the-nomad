@@ -177,7 +177,8 @@ LDLIBS= \
 		-Wl,-rpath='.' \
 		-ljpeg -lsteam_api \
 		-lfmodL -lfmodstudioL \
-		libbox2d.a
+		libbox2d.a \
+		-lcurl
 
 ifndef release
 LDLIBS+=-leasy_profiler

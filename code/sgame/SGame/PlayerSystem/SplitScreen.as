@@ -1,3 +1,5 @@
+#include "SGame/PlayerSystem/PMoveData.as"
+
 namespace TheNomad::SGame {
 	//
 	// SplitScreen
@@ -269,26 +271,26 @@ namespace TheNomad::SGame {
 			if ( !obj.IsCrouching() ) {
 				if ( obj.key_MoveNorth.active || obj.key_MoveSouth.active || obj.key_MoveEast.active || obj.key_MoveWest.active ) {
 					// wait at little bit before launching another slide
-					if ( obj.GetTimeSinceLastSlide() < 1000 ) {
+					if ( obj.GetTimeSinceLastSlide() < SLIDE_DURATION ) {
 						return;
 					}
 
-					if ( ( Util::PRandom() & 1 ) == 1 ) {
-						obj.slideSfx0.Play();
-					} else {
-						obj.slideSfx1.Play();
-					}
+//					if ( ( Util::PRandom() & 1 ) == 1 ) {
+//						obj.slideSfx0.Play();
+//					} else {
+//						obj.slideSfx1.Play();
+//					}
 
 					Util::HapticRumble( obj.GetPlayerIndex(), 0.40f, 500 );
 					obj.ResetSlide();
 					obj.SetSliding( true );
 				} else {
-					obj.crouchDownSfx.Play();
+//					obj.crouchDownSfx.Play();
 				}
 				obj.SetCrouching( true );
 			}
 			else {
-				obj.crouchUpSfx.Play();
+//				obj.crouchUpSfx.Play();
 				obj.SetCrouching( false );
 				obj.SetState( @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE ) );
 			}

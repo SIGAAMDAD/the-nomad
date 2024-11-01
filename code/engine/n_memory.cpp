@@ -55,6 +55,9 @@ meant for temp engine system allocations. Used by allocation callbacks. Blocks c
 #define HUNK_DEFSIZE 8192
 #define HUNK_MINSIZE 128
 
+#define LOCK_HUNK() if ( hunkbase != NULL ) { pthread_mutex_lock( &hunkLock ); }
+#define UNLOCK_HUNK() if ( hunkbase != NULL ) { pthread_mutex_unlock( &hunkLock ); }
+
 // tunables
 #define USE_MEMSTATIC
 #define USE_MULTI_SEGMENT
@@ -125,7 +128,6 @@ typedef struct memzone_s {
 } memzone_t;
 
 static pthread_mutex_t hunkLock;
-static pthread_mutex_t zoneLock;
 
 uint64_t hunksize;
 byte *hunkbase;
@@ -1539,12 +1541,11 @@ void *Hunk_AllocateTempMemory( uint64_t size )
 	void *buf;
 	hunkHeader_t *h;
 
-	pthread_mutex_lock( &hunkLock );
+	LOCK_HUNK();
 
 	// if the hunk hasn't been initialized yet, but there are filesystem calls
 	// being made, then just allocate with Z_Malloc
 	if ( hunkbase == NULL ) {
-		pthread_mutex_unlock( &hunkLock );
 		return Z_Malloc( size, TAG_HUNK );
 	}
 
@@ -1570,12 +1571,12 @@ void *Hunk_AllocateTempMemory( uint64_t size )
 	}
 
 	h = (hunkHeader_t *)buf;
-	buf = (void *)(h+1);
+	buf = (void *)( h + 1 );
 
 	h->id = HUNKID;
 	h->size = size;
 
-	pthread_mutex_unlock( &hunkLock );
+	UNLOCK_HUNK();
 
 	// don't bother clearing, because we are going to load a file over it
 	return buf;
@@ -1585,17 +1586,16 @@ void Hunk_FreeTempMemory( void *p )
 {
 	hunkHeader_t *h;
 
-	pthread_mutex_lock( &hunkLock );
+	LOCK_HUNK();
 
 	// if hunk hasn't been initialized yet, just Z_Free the data
-	if (hunkbase == NULL) {
-		pthread_mutex_unlock( &hunkLock );
-		Z_Free(p);
+	if ( hunkbase == NULL ) {
+		Z_Free( p );
 		return;
 	}
 
-	h = ((hunkHeader_t *)p) - 1;
-	if (h->id != HUNKID) {
+	h = ( (hunkHeader_t *)p ) - 1;
+	if ( h->id != HUNKID ) {
 		N_Error (ERR_FATAL, "Hunk_FreeTempMemory: hunk id isn't correct");
 	}
 
@@ -1616,7 +1616,7 @@ void Hunk_FreeTempMemory( void *p )
 			Con_Printf( "Hunk_FreeTempMemory: not the final block\n" );
 	}
 
-	pthread_mutex_unlock( &hunkLock );
+	UNLOCK_HUNK();
 }
 
 void Hunk_ClearTempMemory( void )
@@ -1633,8 +1633,9 @@ qboolean Hunk_TempIsClear(void)
 
 qboolean Hunk_CheckMark(void)
 {
-	if (hunk_low.mark || hunk_high.mark)
+	if (hunk_low.mark || hunk_high.mark) {
 		return qtrue;
+	}
 	
 	return qfalse;
 }
@@ -1650,7 +1651,7 @@ void *Hunk_Alloc (uint64_t size, ha_pref where)
 {
 	void *buf;
 
-	pthread_mutex_lock( &hunkLock );
+	LOCK_HUNK();
 
 	if ( !hunkbase ) {
 		N_Error( ERR_FATAL, "Hunk_Alloc: Hunk memory system not initialized" );
@@ -1723,7 +1724,7 @@ void *Hunk_Alloc (uint64_t size, ha_pref where)
 	}
 #endif
 
-	pthread_mutex_unlock( &hunkLock );
+	UNLOCK_HUNK();
 
 	return buf;
 }
@@ -1801,7 +1802,6 @@ void Hunk_InitMemory( void )
 	pthread_mutexattr_settype( &attrib, PTHREAD_MUTEX_RECURSIVE );
 
 	pthread_mutex_init( &hunkLock, &attrib );
-	pthread_mutex_init( &zoneLock, &attrib );
 
 	Cmd_AddCommand( "hunkfree", Hunk_Free_f );
 	Cmd_AddCommand( "meminfo", Com_Meminfo_f );

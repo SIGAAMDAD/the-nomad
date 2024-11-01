@@ -63,15 +63,11 @@ void G_InitSGame( void )
 */
 qboolean G_SGameCommand( void )
 {
-	qboolean bRes;
-
 	if ( !sgvm ) {
 		return qfalse;
 	}
 
-	bRes = g_pModuleLib->ModuleCall( sgvm, ModuleCommandLine, 0 );
-
-	return bRes;
+	return g_pModuleLib->ModuleCall( sgvm, ModuleCommandLine, 0 );
 }
 
 

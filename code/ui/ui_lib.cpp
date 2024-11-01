@@ -60,6 +60,17 @@ static qboolean GamepadUsed( void )
 	return qfalse;
 }
 
+const char *Hunk_CopyString( const char *str, ha_pref pref ) {
+    char *out;
+    uint64_t len;
+
+    len = strlen( str ) + 1;
+    out = (char *)Hunk_Alloc( len, pref );
+    N_strncpyz( out, str, len );
+
+    return out;
+}
+
 qboolean UI_MenuTitle( const char *label, float fontScale )
 {
 	ImVec2 cursorPos;

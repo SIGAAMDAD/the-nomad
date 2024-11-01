@@ -29,7 +29,7 @@
 
 #if EASTL_CPP11_MUTEX_ENABLED
 	EA_DISABLE_ALL_VC_WARNINGS()
-	#include <boost/thread/mutex.hpp>
+	#include <mutex>
 	EA_RESTORE_ALL_VC_WARNINGS()
 #endif
 
@@ -181,7 +181,7 @@ namespace eastl
 
 		// mutex
 		#if EASTL_CPP11_MUTEX_ENABLED
-			using boost::mutex;
+			using std::mutex;
 		#else
 			class EASTL_API mutex
 			{

@@ -457,8 +457,9 @@ void Key_KeynameCompletion( void(*callback)( const char *s ) )
 {
 	uint32_t i;
 
-	for( i = 0; keynames[ i ].name != NULL; i++ )
+	for ( i = 0; keynames[ i ].name != NULL; i++ ) {
 		callback( keynames[ i ].name );
+	}
 }
 
 
@@ -1027,6 +1028,10 @@ static void G_KeyDownEvent( uint32_t key, uint32_t time )
 	if ( Key_GetCatcher() & KEYCATCH_CONSOLE ) {
 	}
 	if ( Key_GetCatcher() & KEYCATCH_UI ) {
+		// send the bound action
+		if ( !( Key_GetCatcher() & KEYCATCH_CONSOLE ) ) {
+			Key_ParseBinding( key, qtrue, time );
+		}
 	}
 	if ( Key_GetCatcher() & KEYCATCH_SGAME ) {
 		if ( sgvm ) {

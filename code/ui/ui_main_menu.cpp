@@ -23,6 +23,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "ui_lib.h"
 #include "../game/g_archive.h"
 #include "../rendercommon/imgui_impl_opengl3.h"
+#include <curl/curl.h>
+#include <curl/easy.h>
 
 #define ID_SINGEPLAYER      1
 #define ID_MODS             2
@@ -33,6 +35,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define ID_TABLE            7
 
 //#define UI_FAST_EDIT
+
+#define NEWS_FILE "Cache/newsfeed.txt"
 
 #ifdef UI_FAST_EDIT
 #include "rendercommon/imgui_internal.h"
@@ -47,6 +51,15 @@ typedef struct {
 } errorMessage_t;
 
 static qboolean playedSplashScreen = qfalse;
+
+typedef struct newslabel_s {
+	const char *date;
+	const char *title;
+	const char *body;
+	const char *url;
+	const char *image;
+	struct newslabel_s *next;
+} newslabel_t;
 
 typedef struct {
 	menuframework_t menu;
@@ -80,6 +93,7 @@ typedef struct {
 	uint64_t lifeTime;
 } splashScreenMenu_t;
 
+static newslabel_t *s_newsLabelList;;
 static errorMessage_t *s_errorMenu;
 static mainmenu_t *s_main;
 static splashScreenMenu_t *s_splashScreen;
@@ -128,8 +142,51 @@ static void TextCenterAlign( const char *text )
 	ImGui::NewLine();
 }
 
+static void DrawNewsFeed( void )
+{
+	const newslabel_t *label;
+
+	ImGui::Begin( "##MainMenuNewsFeed", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysVerticalScrollbar );
+	ImGui::SetWindowPos( ImVec2( 728 * ui->scale + ui->bias, 16 * ui->scale ) );
+	ImGui::SetWindowSize( ImVec2( 290 * ui->scale + ui->bias, 680 * ui->scale ) );
+
+	ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 1.5f ) * ui->scale );
+	ImGui::SeparatorText( "NEWS" );
+	ImGui::SetWindowFontScale( ImGui::GetFont()->Scale );
+
+	FontCache()->SetActiveFont( RobotoMono );
+
+	ImGui::BeginTable( "##NewsFeedData", 1, ImGuiTableFlags_BordersOuterH | ImGuiTableFlags_BordersOuterV );
+	for ( label = s_newsLabelList; label != NULL; label = label->next ) {
+		ImGui::TableNextColumn();
+		ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 1.5f ) * ui->scale );
+		ImGui::SeparatorText( label->title );
+		ImGui::SetWindowFontScale( ImGui::GetFont()->Scale );
+		ImGui::NewLine();
+		ImGui::Image( (ImTextureID)(uintptr_t)re.RegisterShader( label->image ), ImVec2( 128 * ui->scale + ui->bias, 128 * ui->scale ) );
+		if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) && label->url ) {
+			if ( !SDL_OpenURL( label->url ) ) {
+				Con_Printf( COLOR_RED "Error SDL_OpenURL failed: %s\n", SDL_GetError() );
+			}
+		}
+		ImGui::NewLine();
+		UI_DrawText( label->body );
+		ImGui::NewLine();
+		ImGui::Text( "DATE: %s", label->date );
+
+		if ( label->next != NULL ) {
+			ImGui::TableNextRow();
+		}
+	}
+	ImGui::EndTable();
+
+	ImGui::End();
+}
+
 static void DrawMenu_Text( void )
 {
+	DrawNewsFeed();
+
 	Menu_Draw( &s_main->menu );
 
 	//
@@ -321,12 +378,182 @@ static void SplashScreen_Draw( void )
 	};
 }
 
+static size_t CURL_WriteData( void *pData, size_t nSize, size_t nMemb, void *pStream )
+{
+	return FS_Write( pData, nSize * nMemb, *(fileHandle_t *)pStream );
+}
+
+static const char *CopyNewsString( const char *str )
+{
+	uint32_t len;
+	char *out;
+
+	len = strlen( str ) + 1;
+	out = (char *)Z_Malloc( len, TAG_GAME );
+	N_strncpyz( out, str, len );
+
+	return out;
+}
+
+static void MainMenu_LoadNews( void )
+{
+	CURL *curl;
+	CURLcode code;
+	fileHandle_t fh;
+
+	fh = FS_FOpenWrite( NEWS_FILE );
+	if ( fh == FS_INVALID_HANDLE ) {
+		Con_Printf( COLOR_RED "ERROR: failed to create " NEWS_FILE "in write-only mode!\n" );
+		return;
+	}
+
+	Con_Printf( "Getting latest newsfeed...\n" );
+
+	code = CURLE_OK;
+
+	curl = curl_easy_init();
+	if ( curl ) {
+		curl_easy_setopt( curl, CURLOPT_FOLLOWLOCATION, 1L );
+		curl_easy_setopt( curl, CURLOPT_URL, "https://www.dropbox.com/scl/fi/er1v17m8jq0ugeay86cub/newsfeed.txt?rlkey=xym8gp7uqgjpphmee5516nh4i&st=p4afeaja&dl=1" );
+		curl_easy_setopt( curl, CURLOPT_SSL_VERIFYPEER, false );
+		curl_easy_setopt( curl, CURLOPT_WRITEFUNCTION, CURL_WriteData );
+		curl_easy_setopt( curl, CURLOPT_WRITEDATA, &fh );
+
+		code = curl_easy_perform( curl );
+
+		curl_easy_cleanup( curl );
+	} else {
+		Con_Printf( COLOR_YELLOW "WARNING: curl_easy_init failed!\n" );
+	}
+
+	FS_FClose( fh );
+
+	if ( code != CURLE_OK ) {
+		Con_Printf( COLOR_RED "CURL failed to download newsfeed file: %s\n", curl_easy_strerror( code ) );
+	} else {
+		Con_Printf( "...fetched latest newsfeed\n" );
+	}
+
+	newslabel_t *labelList, *tmp;
+	uint64_t i;
+	union {
+		char *b;
+		void *v;
+	} f;
+	const char *tok;
+	const char *text_p, **text;
+	uint64_t fileLength;
+
+	fileLength = FS_LoadFile( NEWS_FILE, &f.v );
+	if ( !fileLength || !f.v ) {
+		Con_Printf( COLOR_RED "Error opening " NEWS_FILE "\n" );
+		return;
+	}
+
+	text_p = f.b;
+	text = (const char **)&text_p;
+
+	tmp = labelList = NULL;
+
+	tok = COM_ParseComplex( text, qtrue );
+	if ( tok[0] != '{' ) {
+		COM_ParseError( "expected '{' at beginning of newsfeed file, instead got '%s'", tok );
+		FS_FreeFile( f.v );
+		s_newsLabelList = NULL;
+		return;
+	}
+	while ( 1 ) {
+		tok = COM_ParseExt( text, qtrue );
+		if ( !tok[0] ) {
+			COM_ParseError( "unexpected end of newsfeed file" );
+			FS_FreeFile( f.v );
+			s_newsLabelList = NULL;
+			return;
+		}
+		// end-of-file
+		if ( tok[0] == '}' ) {
+			break;
+		} else if ( tok[0] == '{' ) {
+			tmp = (newslabel_t *)Z_Malloc( sizeof( *tmp ), TAG_GAME );
+
+			while ( 1 ) {
+				tok = COM_ParseExt( text, qtrue );
+				if ( !tok[0] ) {
+					COM_ParseError( "unexpected end of newsfeed definition" );
+					FS_FreeFile( f.v );
+					s_newsLabelList = NULL;
+					return;
+				}
+				if ( tok[0] == '}' ) {
+					break;
+				}
+				if ( !N_stricmp( "Date", tok ) ) {
+					tok = COM_ParseExt( text, qfalse );
+					if ( !tok[0] ) {
+						COM_ParseError( "missing parameter in newsfeed definition for 'Date'" );
+						FS_FreeFile( f.v );
+						s_newsLabelList = NULL;
+						return;
+					}
+					tmp->date = CopyNewsString( tok );
+				} else if ( !N_stricmp( "Title", tok ) ) {
+					tok = COM_ParseExt( text, qfalse );
+					if ( !tok[0] ) {
+						COM_ParseError( "missing parameter in newsfeed definition for 'Title'" );
+						FS_FreeFile( f.v );
+						s_newsLabelList = NULL;
+						return;
+					}
+					tmp->title = CopyNewsString( tok );
+				} else if ( !N_stricmp( "Body", tok ) ) {
+					tok = COM_ParseExt( text, qfalse );
+					if ( !tok[0] ) {
+						COM_ParseError( "missing parameter in newsfeed definition for 'Body'" );
+						FS_FreeFile( f.v );
+						s_newsLabelList = NULL;
+						return;
+					}
+					tmp->body = CopyNewsString( tok );
+				} else if ( !N_stricmp( "Image", tok ) ) {
+					tok = COM_ParseExt( text, qfalse );
+					if ( !tok[0] ) {
+						COM_ParseError( "missing parameter in newsfeed definition for 'Image'" );
+						FS_FreeFile( f.v );
+						s_newsLabelList = NULL;
+						return;
+					}
+					tmp->image = CopyNewsString( tok );
+				} else if ( !N_stricmp( "URL", tok ) ) {
+					tok = COM_ParseExt( text, qfalse );
+					if ( !tok[0] ) {
+						COM_ParseError( "missing parameter in newsfeed definition for 'URL'" );
+						FS_FreeFile( f.v );
+						s_newsLabelList = NULL;
+						return;
+					}
+					tmp->url = CopyNewsString( tok );
+				} else {
+					COM_ParseWarning( "unrecognized token in newsfeed file '%s'", tok );
+				}
+			}
+
+			tmp->next = labelList;
+			labelList = tmp;
+		}
+	}
+	s_newsLabelList = tmp;
+
+	FS_FreeFile( f.v );
+}
+
 void MainMenu_Cache( void )
 {
 	if ( !ui->uiAllocated ) {
 		s_main = (mainmenu_t *)Hunk_Alloc( sizeof( *s_main ), h_high );
 		s_errorMenu = (errorMessage_t *)Hunk_Alloc( sizeof( *s_errorMenu ), h_high );
 		s_splashScreen = (splashScreenMenu_t *)Hunk_Alloc( sizeof( *s_splashScreen ), h_high );
+
+		MainMenu_LoadNews();
 	}
 	memset( s_main, 0, sizeof( *s_main ) );
 	memset( s_errorMenu, 0, sizeof( *s_errorMenu ) );

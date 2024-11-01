@@ -406,6 +406,7 @@ extern "C" void UI_Shutdown( void )
 	Cmd_RemoveCommand( "ui.fontinfo" );
 	Cmd_RemoveCommand( "togglepausemenu" );
 	Cmd_RemoveCommand( "ui.reload_savefiles" );
+	Cmd_RemoveCommand( "reportbug" );
 
 	if ( gi.soundStarted ) {
 		Snd_StopAll();
@@ -502,6 +503,13 @@ void UI_EscapeMenuToggle( void )
 	}
 }
 
+static void UI_BugReport_f( void ) {
+	if ( !SDL_OpenURL( "https://forms.gle/wecmc52ZL7Vq9XVe8" ) ) {
+		Con_Printf( COLOR_RED "WARNING: SDL_OpenURL() failed!\n" );
+	}
+	Con_Printf( "Opening bug reporting form...\n" );
+}
+
 extern "C" void UI_Init( void )
 {
 	Con_Printf( "UI_Init: initializing UI...\n" );
@@ -564,9 +572,10 @@ extern "C" void UI_Init( void )
 	ui->uiAllocated = qfalse;
 
 	UI_Cache_f();
-	UI_SetActiveMenu( UI_MENU_MAIN );
 
 	ui->uiAllocated = qtrue;
+	
+	UI_SetActiveMenu( UI_MENU_MAIN );
 
 	// are we running a demo?
 	if ( FS_FOpenFileRead( "demokey.txt", NULL ) > 0 ) {
@@ -582,6 +591,7 @@ extern "C" void UI_Init( void )
 	Cmd_AddCommand( "ui.fontinfo", CUIFontCache::ListFonts_f );
 	Cmd_AddCommand( "togglepausemenu", UI_PauseMenu_f );
 	Cmd_AddCommand( "ui.reload_savefiles", UI_ReloadSaveFiles_f );
+	Cmd_AddCommand( "reportbug", UI_BugReport_f );
 
 	ImGuiIO& io = ImGui::GetIO();
 	ImFontConfig config;
