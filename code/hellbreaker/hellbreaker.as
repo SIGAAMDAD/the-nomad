@@ -2,48 +2,48 @@
 #include "nomadmain/Engine/ConVar.as"
 
 namespace hellbreaker {
-    TheNomad::Engine::ConVar sgame_HellbreakerActive;
+	TheNomad::Engine::ConVar sgame_HellbreakerActive;
 
-    void InitCvars() {
-    }
+	void InitCvars() {
+	}
 
-    void InitResources() {
-    }
+	void InitResources() {
+	}
 
-    int ModuleOnInit() {
-    	//
-    	// register cvars
-    	//
+	int ModuleOnInit() {
+		//
+		// register cvars
+		//
 
-    	InitCvars();
+		InitCvars();
 
-        @HellBreaker = cast<HellBreakerSystem@>( @TheNomad::GameSystem::AddSystem( HellBreakerSystem() ) );
+		@HellBreaker = cast<HellBreakerSystem@>( @TheNomad::GameSystem::AddSystem( HellBreakerSystem() ) );
 
-    	//
-    	// load assets
-    	//
-    	InitResources();
+		//
+		// load assets
+		//
+		InitResources();
 
-    	return 1;
-    }
+		return 1;
+	}
 
-    int ModuleOnShutdown() {
-    	return 1;
-    }
+	int ModuleOnShutdown() {
+		return 1;
+	}
 
-    int ModuleOnLevelStart() {
-    	return 1;
-    }
+	int ModuleOnLevelStart() {
+		return 1;
+	}
 
-    int ModuleOnLevelEnd() {
-    	return 1;
-    }
+	int ModuleOnLevelEnd() {
+		return 1;
+	}
 
-    int ModuleOnKeyEvent( int key, int down ) {
-    	return 0;
-    }
-
-    int ModuleOnRunTic( int msec ) {
+	int ModuleOnKeyEvent( int key, int down ) {
 		return 0;
-    }
+	}
+
+	int ModuleOnRunTic( int msec ) {
+		return 0;
+	}
 };

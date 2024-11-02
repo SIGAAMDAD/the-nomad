@@ -177,6 +177,66 @@ static void ModToggleActive( module_t *mod, qboolean valid )
 	}
 }
 
+static void ModListResort( void )
+{
+	uint64_t i, j;
+	uint64_t nModuleCount;
+	CModuleInfo *pLoadList;
+	module_t *pModList;
+
+	nModuleCount = g_pModuleLib->GetModCount();
+	pLoadList = g_pModuleLib->GetLoadList();
+	pModList = g_pModuleLib->m_pModList;
+
+	for ( i = 0; i < nModuleCount; i++ ) {
+		pModList[i].valid = pLoadList[i].m_pHandle->IsValid();
+		pModList[i].isRequired = N_streq( pModList[i].info->m_szName, "nomadmain" ) || N_streq( pModList[i].info->m_szName, "gameui" );
+		pModList[i].numDependencies = pLoadList[i].m_nDependencies;
+
+		// check if we have any dependencies that either don't exist or aren't properly loaded
+		for ( j = 0; j < pLoadList[i].m_nDependencies; j++ ) {
+			const CModuleInfo *dep = g_pModuleLib->GetModule( pLoadList[i].m_pDependencies[j].c_str() );
+
+			if ( !dep || !dep->m_pHandle->IsValid() ) {
+				pModList[i].valid = qfalse;
+			}
+		}
+	}
+	
+	// reorder
+	for ( i = 0; i < nModuleCount; i++ ) {
+		module_t m = pModList[ pModList[i].bootIndex ];
+		pModList[ pModList[i].bootIndex ] = pModList[i];
+		pModList[i] = m;
+	}
+
+//	eastl::sort( m_pModList, m_pModList + m_nModuleCount );
+
+	// check for missing dependencies
+	for ( i = 0; i < nModuleCount; i++ ) {
+		bool done = false;
+		pModList[i].allDepsActive = qtrue;
+		for ( j = 0; j < pModList[i].info->m_nDependencies; j++ ) {
+			for ( j = 0; j < nModuleCount; j++ ) {
+				if ( N_strcmp( pModList[j].info->m_szName, pLoadList[i].m_pDependencies[j].c_str() ) == 0 ) {
+					if ( !pModList[j].info->m_pHandle->IsValid() ) {
+						pModList[i].allDepsActive = qfalse;
+						done = true;
+						Con_Printf( COLOR_YELLOW "WARNING: module \"%s\" missing dependency \"%s\"\n",
+							pLoadList[i].m_pDependencies[j].c_str(), pModList[i].info->m_szName );
+						break;
+					}
+				}
+			}
+			if ( done ) {
+				break;
+			}
+		}
+		pModList[i].info = &pLoadList[i];
+		pModList[i].valid = pModList[i].allDepsActive;
+	}
+}
+
 static void ModsMenu_DrawListing( module_t *mod, qboolean dimColor )
 {
 	uint32_t j;
@@ -200,6 +260,7 @@ static void ModsMenu_DrawListing( module_t *mod, qboolean dimColor )
 	{
 		Snd_PlaySfx( ui->sfx_select );
 		ModToggleActive( mod, !dimColor );
+		ModListResort();
 	}
 	if ( active ) {
 		ImGui::PopStyleColor( 2 );

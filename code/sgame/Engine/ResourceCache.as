@@ -1,3 +1,7 @@
+#include "Engine/SoundSystem/SoundEffect.as"
+#include "SGame/SpriteSheet.as"
+#include "Engine/Profiler.as"
+
 namespace TheNomad::Engine {
 	class ResourceManager {
 		ResourceManager() {

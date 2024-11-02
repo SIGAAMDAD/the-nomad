@@ -695,8 +695,25 @@ extern "C" void UI_AddJoystickKeyEvents( void )
 
 static void UI_DrawDebugOverlay( void )
 {
-	if ( ui_debugOverlay->i == 1 ) {
+	ImGui::Begin( "Debug Overlay", NULL, ImGuiWindowFlags_AlwaysAutoResize );
+	{
+		uint64_t i, count;
+		asIScriptModule *pModule;
+		asIScriptFunction *pFunction;
+
+		const uint64_t nModuleCount = g_pModuleLib->GetModCount();
+		const CModuleInfo *pModList = g_pModuleLib->GetLoadList();
+		pModule = g_pModuleLib->GetScriptModule();
+
+		if ( ImGui::CollapsingHeader( "FUNCTIONS" ) ) {
+			count = pModule->GetFunctionCount();
+			for ( i = 0; i < count; i++ ) {
+				pFunction = pModule->GetFunctionByIndex( i );
+				ImGui::Text( "%s::%s", pFunction->GetNamespace(), pFunction->GetName() );
+			}
+		}
 	}
+	ImGui::End();
 }
 
 extern "C" void UI_Refresh( int32_t realtime )
@@ -722,9 +739,9 @@ extern "C" void UI_Refresh( int32_t realtime )
 		UI_DrawMenuBackground();
 	}
 
-	if ( ui_debugOverlay->i && ui->menustate != UI_MENU_SPLASH ) {
+//	if ( ui_debugOverlay->i && ui->menustate != UI_MENU_SPLASH ) {
 		UI_DrawDebugOverlay();
-	}
+//	}
 
 	if ( in_joystick->i ) {
 		UI_AddJoystickKeyEvents();

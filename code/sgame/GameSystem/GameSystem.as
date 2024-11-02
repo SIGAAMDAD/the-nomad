@@ -5,6 +5,7 @@
 #include "Engine/ResourceCache.as"
 #include "Engine/Renderer/RenderEntity.as"
 #include "Engine/FileSystem/FileSystem.as"
+#include "SGame/Cvars.as"
 
 namespace TheNomad::GameSystem {
 	enum JoystickAxis {

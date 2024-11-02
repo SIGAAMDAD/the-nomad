@@ -588,7 +588,7 @@ void CModuleLib::LoadModList( void )
 
 	// check for required modules
 	for ( i = 0; i < m_nModuleCount; i++ ) {
-		if ( !N_stricmp( m_pModList[i].info->m_szName, "nomadmain" ) ) {
+		if ( !N_stricmp( m_pModList[i].info->m_szName, "nomadmain" ) || !N_stricmp( m_pModList[i].info->m_szName, "gameui" ) ) {
 			m_pModList[i].isRequired = qtrue;
 		}
 	}
@@ -648,7 +648,7 @@ void CModuleLib::LoadModList( void )
 
 	for ( i = 0; i < m_nModuleCount; i++ ) {
 		m_pModList[i].valid = m_pLoadList[i].m_pHandle->IsValid();
-		m_pModList[i].isRequired = N_streq( m_pModList[i].info->m_szName, "nomadmain" );
+		m_pModList[i].isRequired = N_streq( m_pModList[i].info->m_szName, "nomadmain" ) || N_streq( m_pModList[i].info->m_szName, "gameui" );
 		m_pModList[i].numDependencies = m_pLoadList[i].m_nDependencies;
 
 		// check if we have any dependencies that either don't exist or aren't properly loaded
@@ -656,7 +656,7 @@ void CModuleLib::LoadModList( void )
 			const CModuleInfo *dep = GetModule( m_pLoadList[i].m_pDependencies[j].c_str() );
 
 			if ( !dep || !dep->m_pHandle->IsValid() ) {
-				m_pModList[i].valid = m_pModList[i].active = qfalse;
+				m_pModList[i].valid = qfalse;
 			}
 		}
 	}
@@ -668,7 +668,7 @@ void CModuleLib::LoadModList( void )
 		m_pModList[i] = m;
 	}
 
-	eastl::sort( m_pModList, m_pModList + m_nModuleCount );
+//	eastl::sort( m_pModList, m_pModList + m_nModuleCount );
 
 	// check for missing dependencies
 	for ( i = 0; i < m_nModuleCount; i++ ) {

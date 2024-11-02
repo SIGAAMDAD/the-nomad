@@ -1,23 +1,25 @@
 {
-    "Name": "Hellbreaker",
-    "Id": "hellbreaker",
-    "Description": "A module for a wave-based mode of after-death",
-    "DependedModules": [
-        "nomadmain"
-    ],
-    "IsDynamic": false,
-    "IncludePaths": [
+	"Name": "Hellbreaker",
+	"Id": "hellbreaker",
+	"Description": "A module for a wave-based mode of after-death",
+	"DependedModules": [
+		"nomadmain"
+	],
+	"IsDynamic": false,
+	"IncludePaths": [
+		"gamedata/modules/hellbreaker/",
+        "gamedata/modules/nomadmain/",
         "gamedata/modules/"
-    ],
-    "SubModules": [
-        "hellbreaker.as"
-    ],
-    "Version": {
-        "GameVersionMajor": 1,
-        "GameVersionUpdate": 1,
-        "GameVersionPatch": 0,
-        "VersionMajor": 1,
-        "VersionUpdate": 0,
-        "VersionPatch": 0
-    }
+	],
+	"SubModules": [
+		"hellbreaker.as"
+	],
+	"Version": {
+		"GameVersionMajor": 1,
+		"GameVersionUpdate": 1,
+		"GameVersionPatch": 0,
+		"VersionMajor": 1,
+		"VersionUpdate": 0,
+		"VersionPatch": 0
+	}
 }

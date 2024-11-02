@@ -337,7 +337,7 @@ bool CModuleHandle::InitCalls( void )
 {
 //    asIScriptFunction *pFactory;
 	uint32_t i;
-	const char *funcName;
+	char szFuncName[1024];
 
 	Con_Printf( "Initializing function procs...\n" );
 
@@ -364,18 +364,18 @@ bool CModuleHandle::InitCalls( void )
 	memset( m_pFuncTable, 0, sizeof( m_pFuncTable ) );
 
 	for ( i = 0; i < NumFuncs; i++ ) {
-		funcName = va( "%s::%s", m_szName.c_str(), funcDefs[i].name );
+		Com_snprintf( szFuncName, sizeof( szFuncName ) - 1, "%s::%s", m_szName.c_str(), funcDefs[i].name );
 
-		Con_DPrintf( "Checking if module has function '%s'...\n", funcName );
-		m_pFuncTable[i] = g_pModuleLib->GetScriptModule()->GetFunctionByName( funcName );
+		Con_DPrintf( "Checking if module has function '%s'...\n", szFuncName );
+		m_pFuncTable[i] = g_pModuleLib->GetScriptModule()->GetFunctionByName( szFuncName );
 		if ( m_pFuncTable[i] ) {
-			Con_Printf( COLOR_GREEN "Module \"%s\" registered with proc '%s'.\n", m_szName.c_str(), funcName );
+			Con_Printf( COLOR_GREEN "Module \"%s\" registered with proc '%s'.\n", m_szName.c_str(), szFuncName );
 		} else {
 			if ( funcDefs[i].required ) {
-				Con_Printf( COLOR_RED "Module \"%s\" not registered with required proc '%s'.\n", m_szName.c_str(), funcName );
+				Con_Printf( COLOR_RED "Module \"%s\" not registered with required proc '%s'.\n", m_szName.c_str(), szFuncName );
 				return false;
 			}
-			Con_Printf( COLOR_MAGENTA "Module \"%s\" not registered with proc '%s'.\n", m_szName.c_str(), funcName );
+			Con_Printf( COLOR_MAGENTA "Module \"%s\" not registered with proc '%s'.\n", m_szName.c_str(), szFuncName );
 			continue;
 		}
 
@@ -385,11 +385,11 @@ bool CModuleHandle::InitCalls( void )
 			continue;
 		}
 		if ( m_pFuncTable[i]->GetReturnTypeId() != asTYPEID_INT32 ) {
-			Con_Printf( COLOR_RED "Module \"%s\" has proc '%s' but doesn't return an int.\n", m_szName.c_str(), funcName );
+			Con_Printf( COLOR_RED "Module \"%s\" has proc '%s' but doesn't return an int.\n", m_szName.c_str(), szFuncName );
 			return false;
 		}
 		if ( m_pFuncTable[i]->GetParamCount() != funcDefs[i].expectedArgs ) {
-			Con_Printf( COLOR_RED "Module \"%s\" has proc '%s' but not the correct args (%u).\n", m_szName.c_str(), funcName,
+			Con_Printf( COLOR_RED "Module \"%s\" has proc '%s' but not the correct args (%u).\n", m_szName.c_str(), szFuncName,
 				funcDefs[i].expectedArgs );
 			return false;
 		}

@@ -158,7 +158,7 @@ static void PauseMenu_Draw( void )
 		PauseMenu_DrawPhotoMode();
 	}
 	Menu_Draw( &s_pauseMenu->menu );
-	FontCache()->SetActiveFont( AlegreyaSC );
+	FontCache()->SetActiveFont( RobotoMono );
 }
 
 static void PauseMenu_LoadDailyTips( void )
