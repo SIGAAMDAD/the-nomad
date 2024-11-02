@@ -1127,6 +1127,10 @@ void ImGui_ImplOpenGL3_DestroyDeviceObjects(void)
 		renderImport.glDeleteBuffers( 1, &bd->ElementsHandle );
 		bd->ElementsHandle = 0;
 	}
+	if ( bd->vaoId ) {
+		renderImport.glDeleteVertexArrays( 1, &bd->vaoId );
+		bd->vaoId = 0;
+	}
 #ifdef _WIN32
 
 #else

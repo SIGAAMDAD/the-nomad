@@ -40,9 +40,9 @@ namespace TheNomad::SGame {
 	//
 	// game specific
 	//
-	ConVar sgame_QuickShotMaxTargets;
-	ConVar sgame_QuickShotTime;
-	ConVar sgame_QuickShotMaxRange;
+	ConVar sgame_LockShotMaxTargets;
+	ConVar sgame_LockShotTime;
+	ConVar sgame_LockShotMaxRange;
 	ConVar sgame_PlayerHealBase;
 	ConVar sgame_BaseSpeed;
 	ConVar sgame_GroundFriction;

@@ -194,9 +194,18 @@ static char *Decompress_BZIP2( void *buf, uint64_t buflen, uint64_t *outlen )
 	unsigned int len;
 	int ret, attempts;
 
-	len = *outlen * 2;
+	len = *outlen;
 	out = (char *)Hunk_AllocateTempMemory( len );
 
+	Con_Printf( "Decompressing %lu bytes with bzip2 to %u...\n", buflen, len );
+
+	ret = BZ2_bzBuffToBuffDecompress( out, &len, (char *)buf, buflen, 0, 1 );
+	if ( ret != BZ_OK ) {
+		CheckBZIP2( ret, buflen, "Decompression" );
+		return NULL;
+	}
+
+/*
 	attempts = 0;
 	do {
 		Con_Printf( "Decompressing %lu bytes with bzip2 to %u...\n", buflen, len );
@@ -212,11 +221,14 @@ static char *Decompress_BZIP2( void *buf, uint64_t buflen, uint64_t *outlen )
 		if ( ret == BZ_OUTBUFF_FULL ) {
 			// resize the temp buffer
 			Con_DPrintf( "BZ_OUTBUFF_FULL: retrying with a bigger buffer.\n" );
-			len *= 2;
-			Hunk_FreeTempMemory( out );
-			out = (char *)Hunk_AllocateTempMemory( len );
+			len *= 10;
+			out = (char *)realloc( out, len );
+			if ( !out ) {
+				N_Error( ERR_FATAL, "realloc() failure on %u", len );
+			}
 		}
 	} while ( 1 );
+*/
 
 	Con_Printf( "Successful decompression of %lu to %u bytes with bzip2 (inflate %0.02f%%).\n", buflen, len,
 		( (float)buflen / (float)len ) * 100.0f );

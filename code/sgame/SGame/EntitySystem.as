@@ -10,6 +10,7 @@
 
 namespace TheNomad::SGame {
 	funcdef void ForEachEntityIterator( EntityObject@ ent );
+	funcdef void ForEachEntityIteratorThis( ref@ this, EntityObject@ ent );
 	
     enum CauseOfDeath {
 		Cod_Unknown,
@@ -189,6 +190,13 @@ namespace TheNomad::SGame {
 
 			for ( @ent = @m_ActiveEnts.m_Next; @ent !is @m_ActiveEnts; @ent.m_Next ) {
 				fn( @ent );
+			}
+		}
+		void ForEachEntity( ForEachEntityIteratorThis@ fn, ref@ thisObject ) {
+			EntityObject@ ent;
+
+			for ( @ent = @m_ActiveEnts.m_Next; @ent !is @m_ActiveEnts; @ent.m_Next ) {
+				fn( @thisObject, @ent );
 			}
 		}
 		

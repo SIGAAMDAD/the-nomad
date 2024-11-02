@@ -839,7 +839,7 @@ namespace TheNomad::SGame {
 		// used for various things but mostly just haptic feedback
 		private uint m_nControllerIndex = 0;
 		
-		private QuickShot m_QuickShot;
+		private LockShot m_QuickShot;
 
 		int m_hDustTrailShader = FS_INVALID_HANDLE;
 		int m_hDashTrailShader = FS_INVALID_HANDLE;
