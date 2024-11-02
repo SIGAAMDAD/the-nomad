@@ -273,7 +273,9 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 	}
 
 	if ( glContext.ARB_framebuffer_object && r_arb_framebuffer_object->i && rg.renderFbo.frameBuffer ) {
+		ri.ProfileFunctionBegin( "BindFramebuffer" );
 		GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo.frameBuffer );
+		ri.ProfileFunctionEnd();
 	}
 
 	if ( glState.currentFbo ) {
@@ -294,7 +296,7 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 		}
 	}
 
-	clearBits = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
+	clearBits = GL_COLOR_BUFFER_BIT;
 
 	if ( r_glDiagnostics->i ) {
 		if ( !rg.beganQuery ) {
@@ -323,6 +325,7 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 					glState.clearColor[ i ] = 0.0f;
 				}
 			}
+			nglClearColor( glState.clearColor[0], glState.clearColor[1], glState.clearColor[2], glState.clearColor[3] );
 		}
 	}
 
@@ -336,22 +339,25 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 	*/
 
 	// set 2D virtual screen size
-	nglViewport( 0, 0, width, height );
-	nglScissor( 0, 0, width, height );
+	{
+		ri.ProfileFunctionBegin( "Set GL State" );
 
-	// clear relevant buffers
-	nglClear( clearBits );
-	nglActiveTexture( GL_TEXTURE0 );
-	nglClearColor( glState.clearColor[0], glState.clearColor[1], glState.clearColor[2], glState.clearColor[3] );
+		nglViewport( 0, 0, width, height );
+		nglScissor( 0, 0, width, height );
 
-	// setup basic state
-	nglEnable( GL_BLEND );
-	nglEnable( GL_SCISSOR_TEST );
-	nglDisable( GL_STENCIL_TEST );
-	nglDisable( GL_CULL_FACE );
-	nglDisable( GL_DEPTH_TEST );
+		// clear relevant buffers
+		nglClear( clearBits );
+		nglActiveTexture( GL_TEXTURE0 );
 
-	nglBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+		// setup basic state
+		nglEnable( GL_BLEND );
+		nglEnable( GL_SCISSOR_TEST );
+		nglDisable( GL_STENCIL_TEST );
+//		nglDisable( GL_CULL_FACE );
+		nglDisable( GL_DEPTH_TEST );
+
+		ri.ProfileFunctionEnd();
+	}
 
 	if ( !sys_forceSingleThreading->i ) {
 //		R_IssuePendingRenderCommands();
@@ -456,8 +462,10 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 	backend.refdef.time = ri.Milliseconds();
 	backend.refdef.floatTime = backend.refdef.time * 0.001f;
 
-	RB_SetBatchBuffer( backend.drawBuffer, backendData[ rg.smpFrame ]->verts, sizeof( srfVert_t ),
-		backendData[ rg.smpFrame ]->indices, sizeof( glIndex_t ) );
+	if ( !rg.world ) {
+		RB_SetBatchBuffer( backend.drawBuffer, backendData[ rg.smpFrame ]->verts, sizeof( srfVert_t ),
+			backendData[ rg.smpFrame ]->indices, sizeof( glIndex_t ) );
+	}
 
 	ri.ProfileFunctionEnd();
 }

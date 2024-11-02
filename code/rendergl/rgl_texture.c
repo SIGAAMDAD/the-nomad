@@ -188,6 +188,8 @@ void R_EvictUnusedTextures( void )
 	}
 	lastEvictionTime = ri.Milliseconds();
 	
+	ri.ProfileFunctionBegin( "EvictUnusedTextures" );
+
 	maxFPS = ri.Cvar_VariableInteger( "com_maxfps" );
 	if ( maxFPS == 0 ) {
 		maxFPS = 1;
@@ -204,6 +206,8 @@ void R_EvictUnusedTextures( void )
 			ri.Printf( PRINT_DEVELOPER, "Evicted texture handle %s\n", image->imgName );
 		}
 	}
+
+	ri.ProfileFunctionEnd();
 }
 
 void R_UpdateTextures( void )

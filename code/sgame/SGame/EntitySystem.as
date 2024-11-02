@@ -9,6 +9,8 @@
 #include "SGame/PlayrObject.as"
 
 namespace TheNomad::SGame {
+	funcdef void ForEachEntityIterator( EntityObject@ ent );
+	
     enum CauseOfDeath {
 		Cod_Unknown,
 		Cod_Bullet,
@@ -93,9 +95,7 @@ namespace TheNomad::SGame {
 		void OnRenderScene() {
 			EntityObject@ ent;
 
-			for ( uint i = 0; i < m_EntityList.Count(); i++ ) {
-				@ent = @m_EntityList[i];
-
+			for ( @ent = @m_ActiveEnts.m_Next; @ent !is @m_ActiveEnts; @ent = @ent.m_Next ) {
 				// draw
 				ent.Draw();
 			}
@@ -103,9 +103,7 @@ namespace TheNomad::SGame {
 		void OnRunTic() {
 			EntityObject@ ent;
 			
-			for ( uint i = 0; i < m_EntityList.Count(); i++ ) {
-				@ent = @m_EntityList[i];
-
+			for ( @ent = @m_ActiveEnts.m_Next; @ent !is @m_ActiveEnts; @ent = @ent.m_Next ) {
 				if ( ent.CheckFlags( EntityFlags::Dead ) ) {
 					if ( ( sgame_Difficulty.GetInt() > TheNomad::GameSystem::GameDifficulty::Hard
 						&& ent.GetType() == TheNomad::GameSystem::EntityType::Mob )
@@ -115,11 +113,7 @@ namespace TheNomad::SGame {
 					}
 					else {
 						// remove it
-						if ( ent.GetType() == TheNomad::GameSystem::EntityType::Item ) {
-							// unlink the item
-							RemoveItem( cast<ItemObject@>( @ent ) );
-						}
-						m_EntityList.RemoveAt( i );
+						RemoveEntity( @ent );
 					}
 					continue;
 				}
@@ -147,7 +141,6 @@ namespace TheNomad::SGame {
 					cast<WeaponObject@>( @ent ).Think();
 					break;
 				case TheNomad::GameSystem::EntityType::Wall:
-					GameError( "WALLS DON'T THINK, THEY ACT" );
 					break;
 				default:
 					GameError( "EntityManager::OnRunTic: invalid entity type " + formatUInt( uint( ent.GetType() ) ) );
@@ -169,6 +162,10 @@ namespace TheNomad::SGame {
 
 			DebugPrint( "Initializing entities...\n" );
 
+			@m_ActiveEnts.m_Next =
+			@m_ActiveEnts.m_Prev =
+				@m_ActiveEnts;
+
 			for ( uint i = 0; i < spawns.Count(); i++ ) {
 				EntityManager.Spawn( spawns[i].m_nEntityType, spawns[i].m_nEntityId,
 					vec3( float( spawns[i].m_Origin.x ), float( spawns[i].m_Origin.y ), float( spawns[i].m_Origin.z ) ),
@@ -186,7 +183,22 @@ namespace TheNomad::SGame {
 		}
 		void OnCheckpointPassed( uint ) {
 		}
+
+		void ForEachEntity( ForEachEntityIterator@ fn ) {
+			EntityObject@ ent;
+
+			for ( @ent = @m_ActiveEnts.m_Next; @ent !is @m_ActiveEnts; @ent.m_Next ) {
+				fn( @ent );
+			}
+		}
 		
+		private void RemoveEntity( EntityObject@ ent ) {
+			@ent.m_Prev.m_Next = @ent.m_Next;
+			@ent.m_Next.m_Prev = @ent.m_Prev;
+
+			@ent.m_Next = @m_FreeEnts;
+			@m_FreeEnts = @ent;
+		}
 		private EntityObject@ AllocEntity( TheNomad::GameSystem::EntityType type, uint id, const vec3& in origin, const vec2& in size ) {
 			EntityObject@ ent;
 
@@ -211,7 +223,7 @@ namespace TheNomad::SGame {
 				cast<WeaponObject@>( @ent ).Spawn( id, origin );
 				break;
 			case TheNomad::GameSystem::EntityType::Wall:
-				GameError( "WALLS DON'T THINK, THEY ACT" );
+				// static geometry
 				break;
 			default:
 				GameError( "EntityManager::Spawn: invalid entity type " + id );
@@ -223,6 +235,11 @@ namespace TheNomad::SGame {
 
 			DebugPrint( "Spawned entity " + m_EntityList.Count() + "\n" );
 			m_EntityList.Add( @ent );
+
+			@m_ActiveEnts.m_Prev.m_Next = @ent;
+			@ent.m_Next = @m_ActiveEnts;
+			@ent.m_Prev = @m_ActiveEnts.m_Prev;
+			@m_ActiveEnts.m_Prev = @ent;
 			
 			return @ent;
 		}
@@ -381,8 +398,7 @@ namespace TheNomad::SGame {
 					target.SetState( StateNum::ST_MOB_DEAD );
 				}
 				else {
-					@target.prev.next = @target.next;
-					@target.next.prev = @target.prev;
+					RemoveEntity( @target );
 				}
 			}
 			else if ( target.GetType() == TheNomad::GameSystem::EntityType::Playr ) {
@@ -435,32 +451,25 @@ namespace TheNomad::SGame {
 			return @m_ActivePlayer;
 		}
 
+		/*
 		void RemoveItem( ItemObject@ item ) {
-			@item.prev.next = @item.next;
-			@item.next.prev = @item.prev;
+			@item.m_Prev.m_Next = @item.m_Next;
+			@item.m_Next.m_Prev = @item.m_Prev;
 		}
 		ItemObject@ FindItemInBounds( const TheNomad::GameSystem::BBox& in bounds ) {
 			ItemObject@ item;
-			for ( @item = cast<ItemObject@>( @m_ActiveItems.next ); @item !is @m_ActiveItems; @item = cast<ItemObject>( @item.next ) ) {
+			for ( @item = cast<ItemObject@>( @m_ActiveItems.m_Next ); @item !is @m_ActiveItems; @item = cast<ItemObject>( @item.m_Next ) ) {
 				if ( Util::BoundsIntersect( bounds, item.GetBounds() ) ) {
 					return @item;
 				}
 			}
 			return null;
 		}
-		ItemObject@ AddItem( uint type, const vec3& in origin ) {
-			ItemObject@ item;
-
-			@item = cast<ItemObject@>( @Spawn( TheNomad::GameSystem::EntityType::Item, type, origin, vec2( 1.0f ) ) );
-			@m_ActiveItems.prev.next = @item;
-			@item.prev = @m_ActiveItems.prev;
-			@item.next = @m_ActiveItems;
-
-			return item;
-		}
+		*/
 		
 		private array<EntityObject@> m_EntityList;
-		private ItemObject m_ActiveItems;
+		private EntityObject m_ActiveEnts;
+		private EntityObject@ m_FreeEnts = null;
 		private PlayrObject@ m_ActivePlayer = null;
 
 		//==============================================================================

@@ -531,6 +531,8 @@ static void RB_StageIteratorGeneric( shader_t *shader )
 	uint32_t numLights;
 	qboolean horizontalBlur = qtrue;
 
+	ri.ProfileFunctionBegin( "StageIteratorGeneric" );
+
 	numLights = backend.refdef.numDLights;
 	if ( !( backend.refdef.flags & RSF_NOWORLDMODEL ) && rg.world ) {
 		numLights += rg.world->numLights;
@@ -739,6 +741,8 @@ static void RB_StageIteratorGeneric( shader_t *shader )
 	if ( r_showTris->i ) {
 		DrawTris();
 	}
+
+	ri.ProfileFunctionEnd();
 }
 
 void RB_IterateShaderStages( shader_t *shader )

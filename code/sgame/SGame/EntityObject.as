@@ -233,8 +233,8 @@ namespace TheNomad::SGame {
 		protected SpriteSheet@ m_SpriteSheet = null;
 		
 		// linked list stuff
-		EntityObject@ next = null;
-		EntityObject@ prev = null;
+		EntityObject@ m_Next = null;
+		EntityObject@ m_Prev = null;
 
 		TheNomad::Engine::SoundSystem::SoundEmitter m_Emitter;
 	};
