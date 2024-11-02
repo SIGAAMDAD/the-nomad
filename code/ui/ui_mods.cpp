@@ -255,11 +255,10 @@ static void ModsMenu_DrawListing( module_t *mod, qboolean dimColor )
 		ImGui::PushStyleColor( ImGuiCol_FrameBgHovered, ImVec4( 0.71f, 0.65f, 0.26f, 1.0f ) );
 		ImGui::PushStyleColor( ImGuiCol_FrameBgActive, ImVec4( 0.71f, 0.65f, 0.26f, 1.0f ) );
 	}
-	if ( ImGui::RadioButton( mod->active ? va( "##ModLoad%iON", index ) : va( "##ModLoad%iOFF", index ),
-		mod->active ) )
+	if ( ImGui::RadioButton( mod->valid ? va( "##ModLoad%iON", index ) : va( "##ModLoad%iOFF", index ),
+		mod->valid ) )
 	{
 		Snd_PlaySfx( ui->sfx_select );
-		ModToggleActive( mod, !dimColor );
 		ModListResort();
 	}
 	if ( active ) {
@@ -303,7 +302,7 @@ static void ModsMenu_DrawListing( module_t *mod, qboolean dimColor )
 		if ( ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayShort ) ) {
 			ImGui::BeginTooltip();
 			ImGui::TextUnformatted( "this module has been built with an outdated/unsupported game version" );
-			// not really my fault if the modder hasn't update their shit
+			// not really my fault if the modder hasn't updated their shit
 			ImGui::TextUnformatted( "NOTE: GDR Games is not responsible for any unstable experiences when using this mod" );
 			ImGui::EndTooltip();
 		}
@@ -322,7 +321,6 @@ void ModsMenu_Draw( void )
 	float itemSpacing;
     const float fontScale = ImGui::GetFont()->Scale;
     extern ImFont *RobotoMono;
-	module_t *swap;
     
 	ui->menubackShader = mods->backgroundShader;
 
@@ -361,7 +359,6 @@ void ModsMenu_Draw( void )
 
 	ImGui::TableNextRow();
    	
-	swap = NULL;
    	for ( i = 0; i < mods->numMods; i++ ) {
    		Com_snprintf( loadId, sizeof( loadId ) - 1, "%s##ModLoad%i", mods->modList[i].info->m_szName, i );
    		ImGui::PushID( i );
@@ -370,48 +367,8 @@ void ModsMenu_Draw( void )
 	   		dimColor = qtrue;
 	   	} else {
 	   		dimColor = qfalse;
-	   	}
-   		
-   		if ( Key_IsDown( KEY_UPARROW ) ) {
-			Snd_PlaySfx( ui->sfx_select );
-   			if ( mods->selectedMod == 0 ) {
-   				mods->selectedMod = mods->numMods - 1;
-   			} else {
-	   			mods->selectedMod--;
-	   		}
 		}
-   		if ( Key_IsDown( KEY_DOWNARROW ) ) {
-			Snd_PlaySfx( ui->sfx_select );
-   			mods->selectedMod++;
-   			if ( mods->selectedMod >= mods->numMods ) {
-   				mods->selectedMod = 0;
-   			}
-   		}
-   		if ( Key_IsDown( KEY_ENTER ) ) {
-			Snd_PlaySfx( ui->sfx_select );
-   			ModToggleActive( &mods->modList[ mods->selectedMod ], !dimColor );
-   		}
 		ModsMenu_DrawListing( &mods->modList[i], dimColor );
-		if ( ImGui::BeginDragDropSource( ImGuiDragDropFlags_SourceNoDisableHover ) ) {
-			ImGui::SetDragDropPayload( "##ModuleReorderDragDrop", &mods->modList[i], sizeof( module_t ), ImGuiCond_Once );
-			ImGui::EndDragDropSource();
-		}
-		if ( ImGui::BeginDragDropTarget() ) {
-			const ImGuiPayload *pData = ImGui::AcceptDragDropPayload( "##ModuleReorderDragDrop" );
-			if ( pData != NULL ) {
-				if ( pData->DataSize != sizeof( *swap ) ) {
-					N_Error( ERR_DROP, "ImGuiPayload dataSize != sizeof( module_t )!" );
-				}
-				swap = (module_t *)const_cast<ImGuiPayload *>( pData )->Data;
-
-				if ( !IsDependentOn( swap, &mods->modList[i] )
-					&& !IsDependentOn( &mods->modList[i], swap ) )
-				{
-					eastl::swap( *swap, mods->modList[i] );
-				}
-			}
-			ImGui::EndDragDropTarget();
-		}
 
 		ImGui::TextUnformatted( mods->modList[i].info->m_szName );
 		ImGui::TableNextColumn();
@@ -427,36 +384,15 @@ void ModsMenu_Draw( void )
 
 		ImGui::TableNextColumn();
 		
-		if ( ImGui::ArrowButton( "##ModsMenuConfigUp", ImGuiDir_Up ) ) {
-			Snd_PlaySfx( ui->sfx_select );
-			if ( i == 0 ) {
-				swap = &mods->modList[ mods->numMods - 1 ];
-			} else {
-				swap = &mods->modList[ i - 1 ];
-			}
-		}
-		ImGui::SameLine();
-		if ( ImGui::ArrowButton( "##ModsMenuConfigDown", ImGuiDir_Down ) ) {
-			Snd_PlaySfx( ui->sfx_select );
-			if ( i == mods->numMods - 1 ) {
-				swap = &mods->modList[ 0 ];
-			} else {
-				swap = &mods->modList[ i + 1 ];
-			}
-		}
-		if ( swap ) {
-			if ( !IsDependentOn( swap, &mods->modList[i] )
-				&& !IsDependentOn( &mods->modList[i], swap ) )
-			{
-				eastl::swap( *swap, mods->modList[i] );
-			}
-		}
-		
 		if ( i < mods->numMods - 1 ) {
             ImGui::TableNextRow();
         }
 
 		ImGui::PopID();
+
+		if ( ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone ) && ( !mods->modList[i].valid ) ) {
+			ImGui::SetItemTooltip( "This game module couldn't be loaded properly, check the engine's log for more details" );
+		}
    	}
    	
     ImGui::EndTable();
