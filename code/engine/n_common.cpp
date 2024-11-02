@@ -382,8 +382,7 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL N_Error( errorC
 	Cbuf_Init();
 
 	if ( code == ERR_DROP ) {
-		Con_Printf( "********************\nERROR: %s\n********************\n",
-			com_errorMessage );
+		Con_Printf( "********************\nERROR: %s\n********************\n", com_errorMessage );
 //		VM_Forced_Unload_Start();
 		Com_WriteCrashReport();
 		Com_EndRedirect();
@@ -392,7 +391,7 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL N_Error( errorC
 
 		com_errorEntered = qfalse;
 
-		Q_longjmp( abortframe, 1 );
+		Q_longjmp( abortframe, -1 );
 	} else { // ERR_FATAL
 //		VM_Forced_Unload_Start();
 		if ( com_fullyInitialized ) {

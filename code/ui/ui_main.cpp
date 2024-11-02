@@ -29,7 +29,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../rendercommon/imgui_impl_opengl3.h"
 #include "../rendercommon/imgui_internal.h"
 #include "../game/imgui_memory_editor.h"
-//#include "RobotoMono-Bold.h"
+#include "RobotoMono-Bold.h"
 #define FPS_FRAMES 60
 
 uiGlobals_t *ui;
@@ -154,6 +154,8 @@ CUIFontCache::CUIFontCache( void ) {
 		}
 	}
 
+	m_pCurrentFont = NULL;
+
 	FS_FreeFile( f.v );
 }
 
@@ -163,7 +165,7 @@ void CUIFontCache::SetActiveFont( ImFont *font )
 		Finalize();
 	}
 
-	if ( !ImGui::GetFont()->ContainerAtlas ) {
+	if ( !ImGui::GetFont() || !ImGui::GetFont()->ContainerAtlas ) {
 		return;
 	}
 	if ( m_pCurrentFont ) {
@@ -214,6 +216,8 @@ void CUIFontCache::ClearCache( void ) {
 void CUIFontCache::Finalize( void ) {
 	ImGui::GetIO().Fonts->Build();
 	ImGui_ImplOpenGL3_CreateFontsTexture();
+
+	FontCache()->SetActiveFont( FontCache()->AddFontToCache( "RobotoMono-Bold" ) );
 }
 
 nhandle_t CUIFontCache::RegisterFont( const char *filename, const char *variant, float scale ) {
@@ -592,15 +596,6 @@ extern "C" void UI_Init( void )
 	Cmd_AddCommand( "togglepausemenu", UI_PauseMenu_f );
 	Cmd_AddCommand( "ui.reload_savefiles", UI_ReloadSaveFiles_f );
 	Cmd_AddCommand( "reportbug", UI_BugReport_f );
-
-	ImGuiIO& io = ImGui::GetIO();
-	ImFontConfig config;
-
-	memset( &config, 0, sizeof( config ) );
-	config.FontDataOwnedByAtlas = false;
-
-//	ImFont *font = io.Fonts->AddFontFromMemoryTTF( (void *)g_RobotoMono_Bold, sizeof( g_RobotoMono_Bold ), 16.0f, &config );
-//	io.FontDefault = font;
 }
 
 void Menu_Cache( void )
@@ -739,9 +734,9 @@ extern "C" void UI_Refresh( int32_t realtime )
 		UI_DrawMenuBackground();
 	}
 
-//	if ( ui_debugOverlay->i && ui->menustate != UI_MENU_SPLASH ) {
+	if ( ui_debugOverlay->i && ui->menustate != UI_MENU_SPLASH ) {
 		UI_DrawDebugOverlay();
-//	}
+	}
 
 	if ( in_joystick->i ) {
 		UI_AddJoystickKeyEvents();

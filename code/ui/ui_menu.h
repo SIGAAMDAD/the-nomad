@@ -69,115 +69,115 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define EVENT_ACTIVATED			    3
 
 #define MENU_DEFAULT_FLAGS ( ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar \
-                        | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus )
+						| ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus )
 
 typedef struct {
-    void (*draw)( void );
-    sfxHandle_t (*key)( unsigned );
+	void (*draw)( void );
+	sfxHandle_t (*key)( unsigned );
 
-    const char *name;
+	const char *name;
 
-    float titleFontScale;
-    float textFontScale;
-    sfxHandle_t track;
+	float titleFontScale;
+	float textFontScale;
+	sfxHandle_t track;
 
-    int flags;
-    int x;
-    int y;
-    int width;
-    int height;
+	int flags;
+	int x;
+	int y;
+	int width;
+	int height;
 
-    int nitems;
-    void *items[MAX_MENU_ITEMS];
+	int nitems;
+	void *items[MAX_MENU_ITEMS];
 
-    qboolean fullscreen;
+	qboolean fullscreen;
 } menuframework_t;
 
 typedef struct {
-    const char *name;
-    menuframework_t *parent;
+	const char *name;
+	menuframework_t *parent;
 	
-    int type;
-    int id;
-    unsigned flags;
-    qboolean focused;
-    ImFont *font;
-    
-    void (*eventcallback)( void *self, int id );
-    void (*ownerdraw)( void *self );
+	int type;
+	int id;
+	unsigned flags;
+	qboolean focused;
+	ImFont *font;
+	
+	void (*eventcallback)( void *self, int id );
+	void (*ownerdraw)( void *self );
 } menucommon_t;
 
 typedef struct {
-    menucommon_t generic;
+	menucommon_t generic;
 
-    char buffer[MAX_EDIT_LINE];
+	char buffer[MAX_EDIT_LINE];
 
-    float *color;
-    int widthInChars;
-    int cursor;
-    int scroll;
-    int maxchars;
+	float *color;
+	int widthInChars;
+	int cursor;
+	int scroll;
+	int maxchars;
 } menufield_t;
 
 typedef struct {
-    menucommon_t generic;
-    
-    menucommon_t *data;
-    float *color;
-    int direction;
+	menucommon_t generic;
+	
+	menucommon_t *data;
+	float *color;
+	int direction;
 } menuarrow_t;
 
 typedef struct {
-    menucommon_t generic;
-    
-    float *color;
-    nhandle_t shader;
-    nhandle_t focusshader;
+	menucommon_t generic;
+	
+	float *color;
+	nhandle_t shader;
+	nhandle_t focusshader;
 } menubutton_t;
 
 typedef struct {
-    menucommon_t generic;
+	menucommon_t generic;
 
-    float *color;
+	float *color;
 
-    float minvalue;
-    float maxvalue;
-    float curvalue;
+	float minvalue;
+	float maxvalue;
+	float curvalue;
 
-    float range;
+	float range;
 
-    qboolean isIntegral;
+	qboolean isIntegral;
 } menuslider_t;
 
 typedef struct {
-    menucommon_t generic;
+	menucommon_t generic;
 	
 	float *color;
-    const char *text;
+	const char *text;
 } menutext_t;
 
 typedef struct {
-    menucommon_t generic;
-    menucommon_t *items[MAX_TABLE_ITEMS];
+	menucommon_t generic;
+	menucommon_t *items[MAX_TABLE_ITEMS];
 
-    int columns;
-    int rows;
-    int numitems;
+	int columns;
+	int rows;
+	int numitems;
 } menutable_t;
 
 typedef struct {
-    menucommon_t generic;
-    
-    float *color;
-    qboolean curvalue;
+	menucommon_t generic;
+	
+	float *color;
+	qboolean curvalue;
 } menuswitch_t;
 
 typedef struct {
-    menucommon_t generic;
-    
-    int curitem;
-    int numitems;
-    const char **itemnames;
+	menucommon_t generic;
+	
+	int curitem;
+	int numitems;
+	const char **itemnames;
 } menulist_t;
 
 typedef struct {

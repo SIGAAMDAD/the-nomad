@@ -59,6 +59,7 @@ typedef struct newslabel_s {
 	const char *url;
 	const char *image;
 	struct newslabel_s *next;
+	struct newslabel_s *prev;
 } newslabel_t;
 
 typedef struct {
@@ -93,7 +94,8 @@ typedef struct {
 	uint64_t lifeTime;
 } splashScreenMenu_t;
 
-static newslabel_t *s_newsLabelList;;
+static newslabel_t s_newsLabelList;
+static const newslabel_t *s_currentLabel;
 static errorMessage_t *s_errorMenu;
 static mainmenu_t *s_main;
 static splashScreenMenu_t *s_splashScreen;
@@ -144,9 +146,10 @@ static void TextCenterAlign( const char *text )
 
 static void DrawNewsFeed( void )
 {
+	uint32_t numIndexes;
 	const newslabel_t *label;
 
-	ImGui::Begin( "##MainMenuNewsFeed", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysVerticalScrollbar );
+	ImGui::Begin( "##MainMenuNewsFeed", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove );
 	ImGui::SetWindowPos( ImVec2( 728 * ui->scale + ui->bias, 16 * ui->scale ) );
 	ImGui::SetWindowSize( ImVec2( 290 * ui->scale + ui->bias, 680 * ui->scale ) );
 
@@ -156,38 +159,105 @@ static void DrawNewsFeed( void )
 
 	FontCache()->SetActiveFont( RobotoMono );
 
-	ImGui::BeginTable( "##NewsFeedData", 1, ImGuiTableFlags_BordersOuterH | ImGuiTableFlags_BordersOuterV );
-	for ( label = s_newsLabelList; label != NULL; label = label->next ) {
-		ImGui::TableNextColumn();
-		ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 1.5f ) * ui->scale );
-		ImGui::SeparatorText( label->title );
-		ImGui::SetWindowFontScale( ImGui::GetFont()->Scale );
+	ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 1.5f ) * ui->scale );
+	{
+		ImGui::SeparatorText( s_currentLabel->title );
 		ImGui::NewLine();
-		ImGui::Image( (ImTextureID)(uintptr_t)re.RegisterShader( label->image ), ImVec2( 128 * ui->scale + ui->bias, 128 * ui->scale ) );
-		if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) && label->url ) {
-			if ( !SDL_OpenURL( label->url ) ) {
+		ImGui::SetWindowFontScale( ImGui::GetFont()->Scale );
+		ImGui::Image( (ImTextureID)(uintptr_t)re.RegisterShader( s_currentLabel->image ), ImVec2( 128 * ui->scale + ui->bias, 128 * ui->scale ) );
+		if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) && s_currentLabel->url ) {
+			if ( !SDL_OpenURL( s_currentLabel->url ) ) {
 				Con_Printf( COLOR_RED "Error SDL_OpenURL failed: %s\n", SDL_GetError() );
 			}
 		}
 		ImGui::NewLine();
-		UI_DrawText( label->body );
+		UI_DrawText( s_currentLabel->body );
 		ImGui::NewLine();
-		ImGui::Text( "DATE: %s", label->date );
-
-		if ( label->next != NULL ) {
-			ImGui::TableNextRow();
-		}
+		ImGui::Text( "DATE: %s", s_currentLabel->date );
 	}
-	ImGui::EndTable();
+
+	ImGui::Separator();
+	{
+		ImGui::BeginTable( "##NewsFeedSelectorTable", 3 );
+		
+		ImGui::TableNextColumn();
+		ImGui::ArrowButton( "##MainMenuNewsFeedLeftArrow", ImGuiDir_Left );
+		if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
+			s_currentLabel = s_currentLabel->prev;
+			if ( s_currentLabel == &s_newsLabelList ) {
+				s_currentLabel = s_newsLabelList.prev;
+			}
+			Snd_PlaySfx( ui->sfx_select );
+		}
+		ImGui::TableNextColumn();
+
+		numIndexes = 0;
+		// just 2, special draw
+		if ( s_newsLabelList.next->next->next == &s_newsLabelList ) {
+			ImGui::RadioButton( va( "##NewsLabelIndex%s", s_newsLabelList.prev->title ), s_currentLabel == s_newsLabelList.prev );
+			if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
+				s_currentLabel = s_newsLabelList.prev;
+				Snd_PlaySfx( ui->sfx_select );
+			}
+			ImGui::SameLine();
+			ImGui::RadioButton( va( "##NewsLabelIndex%s", s_newsLabelList.next->title ), s_currentLabel == s_newsLabelList.next );
+			if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
+				s_currentLabel = s_newsLabelList.next;
+				Snd_PlaySfx( ui->sfx_select );
+			}
+		}
+		else {
+			if ( s_currentLabel == s_newsLabelList.prev ) {
+				for ( label = s_currentLabel; label != &s_newsLabelList; label = label->prev ) {
+					if ( numIndexes > 5 ) {
+						break;
+					} else {
+						ImGui::SameLine();
+					}
+					ImGui::RadioButton( va( "##NewsLabelIndex%s", label->title ), s_currentLabel == label );
+					if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
+						s_currentLabel = label;
+						Snd_PlaySfx( ui->sfx_select );
+					}
+					numIndexes++;
+				}
+			}
+			else if ( s_currentLabel == s_newsLabelList.next ) {
+				for ( label = s_currentLabel; label != &s_newsLabelList; label = label->next ) {
+					if ( numIndexes > 5 ) {
+						break;
+					} else {
+						ImGui::SameLine();
+					}
+					ImGui::RadioButton( va( "##NewsLabelIndex%s", label->title ), s_currentLabel == label );
+					if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
+						s_currentLabel = label;
+						Snd_PlaySfx( ui->sfx_select );
+					}
+					numIndexes++;
+				}
+			}
+		}
+		ImGui::TableNextColumn();
+		ImGui::ArrowButton( "##NewsFeedRightArrow", ImGuiDir_Right );
+		if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
+			s_currentLabel = s_currentLabel->next;
+			if ( s_currentLabel == &s_newsLabelList ) {
+				s_currentLabel = s_newsLabelList.next;
+			}
+			Snd_PlaySfx( ui->sfx_select );
+		}
+		ImGui::EndTable();
+	}
 
 	ImGui::End();
 }
 
 static void DrawMenu_Text( void )
 {
-	DrawNewsFeed();
-
 	Menu_Draw( &s_main->menu );
+
+	DrawNewsFeed();
 
 	//
 	// draw the version
@@ -265,10 +335,10 @@ void MainMenu_Draw( void )
 
 	// show the user WTF just happened
 	if ( s_errorMenu->message[0] || ui->activemenu == &s_errorMenu->menu ) {
+		FontCache()->SetActiveFont( FontCache()->AddFontToCache( "RobotoMono-Bold" ) );
 		ImGui::Begin( "Game Error", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize
 			| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoMove );
 		ImGui::SetWindowPos( ImVec2( s_errorMenu->menu.x * ui->scale, s_errorMenu->menu.y * ui->scale ) );
-		FontCache()->SetActiveFont( RobotoMono );
 		ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * 1.5f );
 		ui->menubackShader = re.RegisterShader( "menu/mainbackground" );
 		ImGui::TextUnformatted( s_errorMenu->message );
@@ -434,7 +504,7 @@ static void MainMenu_LoadNews( void )
 		Con_Printf( "...fetched latest newsfeed\n" );
 	}
 
-	newslabel_t *labelList, *tmp;
+	newslabel_t *tmp;
 	uint64_t i;
 	union {
 		char *b;
@@ -453,13 +523,15 @@ static void MainMenu_LoadNews( void )
 	text_p = f.b;
 	text = (const char **)&text_p;
 
-	tmp = labelList = NULL;
+	tmp = NULL;
+	s_newsLabelList.next =
+	s_newsLabelList.prev =
+		&s_newsLabelList;
 
 	tok = COM_ParseComplex( text, qtrue );
 	if ( tok[0] != '{' ) {
 		COM_ParseError( "expected '{' at beginning of newsfeed file, instead got '%s'", tok );
 		FS_FreeFile( f.v );
-		s_newsLabelList = NULL;
 		return;
 	}
 	while ( 1 ) {
@@ -467,7 +539,6 @@ static void MainMenu_LoadNews( void )
 		if ( !tok[0] ) {
 			COM_ParseError( "unexpected end of newsfeed file" );
 			FS_FreeFile( f.v );
-			s_newsLabelList = NULL;
 			return;
 		}
 		// end-of-file
@@ -481,7 +552,6 @@ static void MainMenu_LoadNews( void )
 				if ( !tok[0] ) {
 					COM_ParseError( "unexpected end of newsfeed definition" );
 					FS_FreeFile( f.v );
-					s_newsLabelList = NULL;
 					return;
 				}
 				if ( tok[0] == '}' ) {
@@ -492,7 +562,6 @@ static void MainMenu_LoadNews( void )
 					if ( !tok[0] ) {
 						COM_ParseError( "missing parameter in newsfeed definition for 'Date'" );
 						FS_FreeFile( f.v );
-						s_newsLabelList = NULL;
 						return;
 					}
 					tmp->date = CopyNewsString( tok );
@@ -501,7 +570,6 @@ static void MainMenu_LoadNews( void )
 					if ( !tok[0] ) {
 						COM_ParseError( "missing parameter in newsfeed definition for 'Title'" );
 						FS_FreeFile( f.v );
-						s_newsLabelList = NULL;
 						return;
 					}
 					tmp->title = CopyNewsString( tok );
@@ -510,7 +578,6 @@ static void MainMenu_LoadNews( void )
 					if ( !tok[0] ) {
 						COM_ParseError( "missing parameter in newsfeed definition for 'Body'" );
 						FS_FreeFile( f.v );
-						s_newsLabelList = NULL;
 						return;
 					}
 					tmp->body = CopyNewsString( tok );
@@ -519,7 +586,6 @@ static void MainMenu_LoadNews( void )
 					if ( !tok[0] ) {
 						COM_ParseError( "missing parameter in newsfeed definition for 'Image'" );
 						FS_FreeFile( f.v );
-						s_newsLabelList = NULL;
 						return;
 					}
 					tmp->image = CopyNewsString( tok );
@@ -528,7 +594,6 @@ static void MainMenu_LoadNews( void )
 					if ( !tok[0] ) {
 						COM_ParseError( "missing parameter in newsfeed definition for 'URL'" );
 						FS_FreeFile( f.v );
-						s_newsLabelList = NULL;
 						return;
 					}
 					tmp->url = CopyNewsString( tok );
@@ -537,11 +602,13 @@ static void MainMenu_LoadNews( void )
 				}
 			}
 
-			tmp->next = labelList;
-			labelList = tmp;
+			s_newsLabelList.prev->next = tmp;
+			tmp->next = &s_newsLabelList;
+			tmp->prev = s_newsLabelList.prev;
+			s_newsLabelList.prev = tmp;
 		}
 	}
-	s_newsLabelList = tmp;
+	s_currentLabel = s_newsLabelList.next;
 
 	FS_FreeFile( f.v );
 }

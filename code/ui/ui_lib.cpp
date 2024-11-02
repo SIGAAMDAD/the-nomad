@@ -243,7 +243,7 @@ void UI_ForceMenuOff( void )
 {
     ui->menusp = 0;
     ui->activemenu = NULL;
-
+	
     Key_SetCatcher( Key_GetCatcher() & ~KEYCATCH_UI );
     Key_ClearStates();
 }

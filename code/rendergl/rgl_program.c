@@ -1811,6 +1811,10 @@ void GLSL_ShutdownGPUShaders( void )
 	GLSL_DeleteGPUShader( &rg.textureColorShader );
 	GLSL_DeleteGPUShader( &rg.bloomResolveShader );
 	GLSL_DeleteGPUShader( &rg.blurShader );
+	if ( rg.world ) {
+		GLSL_DeleteGPUShader( &rg.tileShader );
+		nglDeleteBuffers( 1, &rg.lightData->id );
+	}
 
 	for ( i = 0; i < GENERICDEF_COUNT; i++ ) {
 		GLSL_DeleteGPUShader( &rg.genericShader[i] );

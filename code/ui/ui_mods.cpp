@@ -255,12 +255,7 @@ static void ModsMenu_DrawListing( module_t *mod, qboolean dimColor )
 		ImGui::PushStyleColor( ImGuiCol_FrameBgHovered, ImVec4( 0.71f, 0.65f, 0.26f, 1.0f ) );
 		ImGui::PushStyleColor( ImGuiCol_FrameBgActive, ImVec4( 0.71f, 0.65f, 0.26f, 1.0f ) );
 	}
-	if ( ImGui::RadioButton( mod->valid ? va( "##ModLoad%iON", index ) : va( "##ModLoad%iOFF", index ),
-		mod->valid ) )
-	{
-		Snd_PlaySfx( ui->sfx_select );
-		ModListResort();
-	}
+	ImGui::RadioButton( mod->valid ? va( "##ModLoad%iON", index ) : va( "##ModLoad%iOFF", index ), mod->valid );
 	if ( active ) {
 		ImGui::PopStyleColor( 2 );
 	}
