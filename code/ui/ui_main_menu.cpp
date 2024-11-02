@@ -58,8 +58,6 @@ typedef struct newslabel_s {
 	const char *body;
 	const char *url;
 	const char *image;
-	struct newslabel_s *next;
-	struct newslabel_s *prev;
 } newslabel_t;
 
 typedef struct {
@@ -94,8 +92,8 @@ typedef struct {
 	uint64_t lifeTime;
 } splashScreenMenu_t;
 
-static newslabel_t s_newsLabelList;
-static const newslabel_t *s_currentLabel;
+static eastl::fixed_vector<newslabel_t, 5> s_newsLabelList;
+static uint64_t s_nCurrentNewsLabel;
 static errorMessage_t *s_errorMenu;
 static mainmenu_t *s_main;
 static splashScreenMenu_t *s_splashScreen;
@@ -146,12 +144,12 @@ static void TextCenterAlign( const char *text )
 
 static void DrawNewsFeed( void )
 {
-	uint32_t numIndexes;
+	int i;
 	const newslabel_t *label;
 
-	ImGui::Begin( "##MainMenuNewsFeed", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove );
-	ImGui::SetWindowPos( ImVec2( 728 * ui->scale + ui->bias, 16 * ui->scale ) );
-	ImGui::SetWindowSize( ImVec2( 290 * ui->scale + ui->bias, 680 * ui->scale ) );
+	ImGui::Begin( "##MainMenuNewsFeed", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse );
+	ImGui::SetWindowPos( ImVec2( 728 * ui->scale + ui->bias, 72 * ui->scale ) );
+	ImGui::SetWindowSize( ImVec2( 290 * ui->scale + ui->bias, 460 * ui->scale ) );
 
 	ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 1.5f ) * ui->scale );
 	ImGui::SeparatorText( "NEWS" );
@@ -159,23 +157,22 @@ static void DrawNewsFeed( void )
 
 	FontCache()->SetActiveFont( RobotoMono );
 
-	ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 1.5f ) * ui->scale );
+	ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 1.90f ) * ui->scale );
 	{
-		ImGui::SeparatorText( s_currentLabel->title );
+		ImGui::SeparatorText( s_newsLabelList[ s_nCurrentNewsLabel ].title );
 		ImGui::NewLine();
 		ImGui::SetWindowFontScale( ImGui::GetFont()->Scale );
-		ImGui::Image( (ImTextureID)(uintptr_t)re.RegisterShader( s_currentLabel->image ), ImVec2( 128 * ui->scale + ui->bias, 128 * ui->scale ) );
-		if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) && s_currentLabel->url ) {
-			if ( !SDL_OpenURL( s_currentLabel->url ) ) {
+		ImGui::Image( (ImTextureID)(uintptr_t)re.RegisterShader( s_newsLabelList[ s_nCurrentNewsLabel ].image ),
+			ImVec2( 128 * ui->scale + ui->bias, 128 * ui->scale ) );
+		if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) && s_newsLabelList[ s_nCurrentNewsLabel ].url ) {
+			if ( !SDL_OpenURL( s_newsLabelList[ s_nCurrentNewsLabel ].url ) ) {
 				Con_Printf( COLOR_RED "Error SDL_OpenURL failed: %s\n", SDL_GetError() );
 			}
 		}
-		ImGui::NewLine();
-		UI_DrawText( s_currentLabel->body );
-		ImGui::NewLine();
-		ImGui::Text( "DATE: %s", s_currentLabel->date );
+		UI_DrawText( s_newsLabelList[ s_nCurrentNewsLabel ].body );
 	}
 
+	ImGui::NewLine();
 	ImGui::Separator();
 	{
 		ImGui::BeginTable( "##NewsFeedSelectorTable", 3 );
@@ -183,67 +180,30 @@ static void DrawNewsFeed( void )
 		ImGui::TableNextColumn();
 		ImGui::ArrowButton( "##MainMenuNewsFeedLeftArrow", ImGuiDir_Left );
 		if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
-			s_currentLabel = s_currentLabel->prev;
-			if ( s_currentLabel == &s_newsLabelList ) {
-				s_currentLabel = s_newsLabelList.prev;
+			if ( s_nCurrentNewsLabel == 0 ) {
+				s_nCurrentNewsLabel = s_newsLabelList.size() - 1;
+			} else {
+				s_nCurrentNewsLabel--;
 			}
 			Snd_PlaySfx( ui->sfx_select );
 		}
 		ImGui::TableNextColumn();
 
-		numIndexes = 0;
-		// just 2, special draw
-		if ( s_newsLabelList.next->next->next == &s_newsLabelList ) {
-			ImGui::RadioButton( va( "##NewsLabelIndex%s", s_newsLabelList.prev->title ), s_currentLabel == s_newsLabelList.prev );
-			if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
-				s_currentLabel = s_newsLabelList.prev;
-				Snd_PlaySfx( ui->sfx_select );
-			}
+		for ( i = 0; i < s_newsLabelList.size(); i++ ) {
 			ImGui::SameLine();
-			ImGui::RadioButton( va( "##NewsLabelIndex%s", s_newsLabelList.next->title ), s_currentLabel == s_newsLabelList.next );
+			ImGui::RadioButton( va( "##NewsLabelIndex%s", s_newsLabelList[ s_nCurrentNewsLabel ].title ), i == s_nCurrentNewsLabel );
 			if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
-				s_currentLabel = s_newsLabelList.next;
+				s_nCurrentNewsLabel = i;
 				Snd_PlaySfx( ui->sfx_select );
-			}
-		}
-		else {
-			if ( s_currentLabel == s_newsLabelList.prev ) {
-				for ( label = s_currentLabel; label != &s_newsLabelList; label = label->prev ) {
-					if ( numIndexes > 5 ) {
-						break;
-					} else {
-						ImGui::SameLine();
-					}
-					ImGui::RadioButton( va( "##NewsLabelIndex%s", label->title ), s_currentLabel == label );
-					if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
-						s_currentLabel = label;
-						Snd_PlaySfx( ui->sfx_select );
-					}
-					numIndexes++;
-				}
-			}
-			else if ( s_currentLabel == s_newsLabelList.next ) {
-				for ( label = s_currentLabel; label != &s_newsLabelList; label = label->next ) {
-					if ( numIndexes > 5 ) {
-						break;
-					} else {
-						ImGui::SameLine();
-					}
-					ImGui::RadioButton( va( "##NewsLabelIndex%s", label->title ), s_currentLabel == label );
-					if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
-						s_currentLabel = label;
-						Snd_PlaySfx( ui->sfx_select );
-					}
-					numIndexes++;
-				}
 			}
 		}
 		ImGui::TableNextColumn();
 		ImGui::ArrowButton( "##NewsFeedRightArrow", ImGuiDir_Right );
 		if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
-			s_currentLabel = s_currentLabel->next;
-			if ( s_currentLabel == &s_newsLabelList ) {
-				s_currentLabel = s_newsLabelList.next;
+			if ( s_nCurrentNewsLabel == s_newsLabelList.size() - 1 ) {
+				s_nCurrentNewsLabel = 0;
+			} else {
+				s_nCurrentNewsLabel++;
 			}
 			Snd_PlaySfx( ui->sfx_select );
 		}
@@ -504,7 +464,7 @@ static void MainMenu_LoadNews( void )
 		Con_Printf( "...fetched latest newsfeed\n" );
 	}
 
-	newslabel_t *tmp;
+	newslabel_t tmp;
 	uint64_t i;
 	union {
 		char *b;
@@ -523,10 +483,8 @@ static void MainMenu_LoadNews( void )
 	text_p = f.b;
 	text = (const char **)&text_p;
 
-	tmp = NULL;
-	s_newsLabelList.next =
-	s_newsLabelList.prev =
-		&s_newsLabelList;
+	s_newsLabelList.clear();
+	s_nCurrentNewsLabel = 0;
 
 	tok = COM_ParseComplex( text, qtrue );
 	if ( tok[0] != '{' ) {
@@ -545,8 +503,7 @@ static void MainMenu_LoadNews( void )
 		if ( tok[0] == '}' ) {
 			break;
 		} else if ( tok[0] == '{' ) {
-			tmp = (newslabel_t *)Z_Malloc( sizeof( *tmp ), TAG_GAME );
-
+			memset( &tmp, 0, sizeof( tmp ) );
 			while ( 1 ) {
 				tok = COM_ParseExt( text, qtrue );
 				if ( !tok[0] ) {
@@ -564,7 +521,7 @@ static void MainMenu_LoadNews( void )
 						FS_FreeFile( f.v );
 						return;
 					}
-					tmp->date = CopyNewsString( tok );
+					tmp.date = CopyNewsString( tok );
 				} else if ( !N_stricmp( "Title", tok ) ) {
 					tok = COM_ParseExt( text, qfalse );
 					if ( !tok[0] ) {
@@ -572,7 +529,7 @@ static void MainMenu_LoadNews( void )
 						FS_FreeFile( f.v );
 						return;
 					}
-					tmp->title = CopyNewsString( tok );
+					tmp.title = CopyNewsString( tok );
 				} else if ( !N_stricmp( "Body", tok ) ) {
 					tok = COM_ParseExt( text, qfalse );
 					if ( !tok[0] ) {
@@ -580,7 +537,7 @@ static void MainMenu_LoadNews( void )
 						FS_FreeFile( f.v );
 						return;
 					}
-					tmp->body = CopyNewsString( tok );
+					tmp.body = CopyNewsString( tok );
 				} else if ( !N_stricmp( "Image", tok ) ) {
 					tok = COM_ParseExt( text, qfalse );
 					if ( !tok[0] ) {
@@ -588,7 +545,7 @@ static void MainMenu_LoadNews( void )
 						FS_FreeFile( f.v );
 						return;
 					}
-					tmp->image = CopyNewsString( tok );
+					tmp.image = CopyNewsString( tok );
 				} else if ( !N_stricmp( "URL", tok ) ) {
 					tok = COM_ParseExt( text, qfalse );
 					if ( !tok[0] ) {
@@ -596,19 +553,14 @@ static void MainMenu_LoadNews( void )
 						FS_FreeFile( f.v );
 						return;
 					}
-					tmp->url = CopyNewsString( tok );
+					tmp.url = CopyNewsString( tok );
 				} else {
 					COM_ParseWarning( "unrecognized token in newsfeed file '%s'", tok );
 				}
 			}
-
-			s_newsLabelList.prev->next = tmp;
-			tmp->next = &s_newsLabelList;
-			tmp->prev = s_newsLabelList.prev;
-			s_newsLabelList.prev = tmp;
+			s_newsLabelList.emplace_back( tmp );
 		}
 	}
-	s_currentLabel = s_newsLabelList.next;
 
 	FS_FreeFile( f.v );
 }
