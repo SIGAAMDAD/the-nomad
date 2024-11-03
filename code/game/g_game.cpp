@@ -347,6 +347,9 @@ static void GLM_MakeVPM( const vec4_t ortho, float *zoom, float zNear, float zFa
 		( gi.cameraPos[0] * 10.0f ) + ( gi.cameraZoom * 100.0f ),
 			( gi.cameraPos[1] * 8.0f ) + ( gi.cameraZoom * 10.0f ),
 		*/
+
+		gi.cameraPos = position;
+
 		transpose = glm::translate( glm::mat4( 1.0f ), glm::vec3( position[0], position[1], 0.0f ) )
 					* glm::scale( glm::mat4( 1.0f ), glm::vec3( gi.cameraZoom ) );
 		gi.viewMatrix = glm::inverse( transpose );
@@ -401,25 +404,37 @@ void RotateAroundPoint( float cx, float cy, float angleInRads, vec3_t p )
 
 static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, float scale, float rotation, mat4_t vpm )
 {
-	glm::mat4 mvp, model;
+	glm::mat4 mvp;
+	glm::mat4 model = glm::identity<glm::mat4>();
 	glm::vec4 pos;
 
-	model = glm::translate( glm::mat4( 1.0f ), glm::vec3( world[0], world[1], world[2] ) )
-			* glm::scale( glm::mat4( 1.0f ), glm::vec3( scale, scale, 0.0f ) )
-			* glm::rotate( glm::mat4( 1.0f ), (float)DEG2RAD( rotation ), glm::vec3( 0, 0, 1 ) );
-	mvp = gi.viewProjectionMatrix * model;
+	model = glm::translate( glm::mat4( 1.0f ), glm::vec3( world[0], world[1] + world[2], 0.0f ) )
+			* glm::rotate( glm::mat4( 1.0f ), glm::radians( rotation ), glm::vec3( 0, 0, 1 ) )
+			* glm::scale( glm::mat4( 1.0f ), glm::vec3( scale, scale, 0.0f ) );
+	mvp = model;
 
 	const glm::vec4 positions[4] = {
-		{ 1.0f,  1.0f, 0.0f, 1.0f },
-		{ 1.0f,  0.0f, 0.0f, 1.0f },
-		{ 0.0f,  0.0f, 0.0f, 1.0f },
-		{ 0.0f,  1.0f, 0.0f, 1.0f },
+		{ 0.5f,  0.5f, 0.0f, 1.0f },
+		{ 0.5f, -0.5f, 0.0f, 1.0f },
+		{-0.5f, -0.5f, 0.0f, 1.0f },
+		{-0.5f,  0.5f, 0.0f, 1.0f },
 	};
 
-	for ( uint32_t i = 0; i < 4; i++ ) {
-		pos = mvp * positions[i];
-		VectorCopy( xyz[i], pos );
-	}
+	pos = mvp * positions[0];
+	pos = gi.viewProjectionMatrix * pos;
+	VectorCopy( xyz[0], pos );
+
+	pos = mvp * positions[1];
+	pos = gi.viewProjectionMatrix * pos;
+	VectorCopy( xyz[1], pos );
+
+	pos = mvp * positions[2];
+	pos = gi.viewProjectionMatrix * pos;
+	VectorCopy( xyz[2], pos );
+
+	pos = mvp * positions[3];
+	pos = gi.viewProjectionMatrix * pos;
+	VectorCopy( xyz[3], pos );
 }
 
 qboolean G_CheckWallHit( const vec3_t origin, dirtype_t dir ) {

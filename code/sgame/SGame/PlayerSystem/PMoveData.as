@@ -51,6 +51,14 @@ namespace TheNomad::SGame {
 			
 			KeyMove();
 
+			const bool isSliding = m_EntityData.IsSliding();
+			const bool isDashing = m_EntityData.IsDashing();
+
+			if ( ( isSliding || isDashing ) ) {
+				side *= 0.25f;
+				forward *= 0.25f;
+			}
+
 			accel.x += side;
 			accel.y += forward;
 
@@ -256,14 +264,15 @@ namespace TheNomad::SGame {
 				const int screenWidth = TheNomad::GameSystem::GameManager.GetGPUConfig().screenWidth;
 				const int screenHeight = TheNomad::GameSystem::GameManager.GetGPUConfig().screenHeight;
 				
-				float angle = Util::DEG2RAD( atan2( ( screenHeight / 2 ) - float( mousePos.y ),
-					( screenWidth / 2 ) - float( mousePos.x ) ) );
-				m_nJoystickAngle = Util::DEG2RAD( -atan2( float( mousePos.x ) - ( screenWidth / 2 ), float( mousePos.y ) - ( screenHeight / 2 ) ) );
-				
+				float angle = atan2( ( screenHeight / 2 ) - float( mousePos.y ), ( screenWidth / 2 ) - float( mousePos.x ) );
+//				m_nJoystickAngle = atan2( float( mousePos.x ) - ( screenWidth / 2 ), float( mousePos.y ) - ( screenHeight / 2 ) );
+				m_nJoystickAngle = angle;
+
 				if ( mousePos.x < screenWidth / 2 ) {
 					m_EntityData.SetFacing( FACING_LEFT );
 					m_EntityData.SetLegsFacing( FACING_LEFT );
 					m_EntityData.SetArmsFacing( FACING_LEFT );
+					m_nJoystickAngle = -m_nJoystickAngle;
 				} else if ( mousePos.x > screenWidth / 2 ) {
 					m_EntityData.SetFacing( FACING_RIGHT );
 					m_EntityData.SetLegsFacing( FACING_RIGHT );
@@ -376,6 +385,7 @@ namespace TheNomad::SGame {
 
 			TheNomad::Engine::UserInterface::SetActiveFont( TheNomad::Engine::UserInterface::Font_RobotoMono );
 
+/*
 			ImGui::Begin( "Debug Player Movement", null, ImGuiWindowFlags::AlwaysAutoResize );
 			ImGui::SetWindowPos( vec2( 16, 128 ) );
 			ImGui::Text( "Origin: [ " + m_EntityData.GetOrigin().x + ", " + m_EntityData.GetOrigin().y + " ]" );
@@ -421,6 +431,7 @@ namespace TheNomad::SGame {
 			ImGui::Separator();
 			ImGui::Text( "GameTic: " + gameTic );
 			ImGui::End();
+		*/
 
 			m_EntityData.key_MoveNorth.msec = 0;
 			m_EntityData.key_MoveSouth.msec = 0;

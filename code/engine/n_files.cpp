@@ -40,6 +40,7 @@ typedef struct {
 } bffheader_t;
 
 // tunables
+//#define USE_HANDLE_CACHE
 #define USE_BFF_CACHE
 #define USE_BFF_CACHE_FILE // cache the bff archives into a file for faster load times
 

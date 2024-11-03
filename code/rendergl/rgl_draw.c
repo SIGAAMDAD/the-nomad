@@ -723,7 +723,6 @@ static void RB_StageIteratorGeneric( shader_t *shader )
 
 		R_BindAnimatedImageToTMU( &stageP->bundle[TB_DIFFUSEMAP], TB_DIFFUSEMAP );
 		GLSL_SetUniformTexture( sp, UNIFORM_DIFFUSE_MAP, stageP->bundle[ TB_DIFFUSEMAP ].image[ 0 ] );
-		nglUniform1i( nglGetUniformLocation( sp->programId, "u_InLevel" ), rg.world != NULL );
 
 		if ( rg.world && !( backend.refdef.flags & RSF_NOWORLDMODEL ) ) {
 		} else {

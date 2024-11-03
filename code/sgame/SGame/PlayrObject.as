@@ -769,6 +769,7 @@ namespace TheNomad::SGame {
 			refEntity.sheetNum = m_ArmSpriteSheet[ m_ArmsFacing ].GetShader();
 			refEntity.spriteId = GetSpriteId( @m_ArmSpriteSheet[ m_ArmsFacing ], @m_ArmState );
 			refEntity.scale = 2.0f;
+			refEntity.rotation = Pmove.m_nJoystickAngle;
 			refEntity.Draw();
 		}
 		
@@ -794,18 +795,21 @@ namespace TheNomad::SGame {
 				m_AfterImage.Draw();
 			}
 			
-			refEntity.origin = vec3( m_Link.m_Origin.x + 2, m_Link.m_Origin.y, 0 );
+			refEntity.origin = vec3( 0.0f );
 			refEntity.sheetNum = -1;
 			uint sprite = ( TheNomad::GameSystem::GameManager.GetGameTic() & 5 ) + 1;
 			refEntity.spriteId = TheNomad::Engine::ResourceCache.GetShader( "gfx/effects/flame" + sprite );
 			refEntity.scale = 2.0f;
-			refEntity.rotation = 90.0f;
+			refEntity.rotation = m_Rotation;
 			refEntity.Draw();
+			m_Rotation += 0.1f;
 
 			TheNomad::Engine::Renderer::AddDLightToScene( refEntity.origin, 6.0f, vec3( 1.0f ) );
 
 			m_HudData.Draw();
 		}
+
+		float m_Rotation = -45.0f;
 
 		KeyBind key_MoveNorth;
 		KeyBind key_MoveSouth;

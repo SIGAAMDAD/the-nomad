@@ -1044,9 +1044,6 @@ int ImGui_ImplOpenGL3_CreateFontsTexture( void )
 	// Store our identifier
 	io.Fonts->SetTexID( (ImTextureID)(intptr_t)shader->index );
 
-	// Restore state
-	renderImport.glBindTexture(GL_TEXTURE_2D, last_texture);
-
 	return true;
 }
 

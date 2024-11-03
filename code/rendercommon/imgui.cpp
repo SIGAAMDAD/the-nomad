@@ -13686,7 +13686,9 @@ void ImGui::LogToFile(int auto_open_depth, const char* filename)
     ImFileHandle f = ImFileOpen(filename, "w");
     if (!f)
     {
+#ifdef _NOMAD_ENGINE
         Con_Printf( COLOR_YELLOW "Error opening imgui logfile '%s'\n", filename );
+#endif
         return;
     }
 

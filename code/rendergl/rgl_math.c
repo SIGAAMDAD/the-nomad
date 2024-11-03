@@ -1,19 +1,36 @@
 #include "rgl_local.h"
 
+/*
+key:
+
+0: [0][0]
+1: [0][1]
+2: [0][2]
+3: [0][3]
+
+4: [1][0]
+5: [1][1]
+6: [1][2]
+7: [1][3]
+
+8: [2][0]
+9: [2][1]
+10: [2][2]
+11: [2][3]
+
+12: [3][0]
+13: [3][1]
+14: [3][2]
+15: [3][3]
+
+*/
 
 // Some matrix helper functions
 // FIXME: do these already exist in ioq3 and I don't know about them?
 
 void Mat4Zero( mat4_t out )
 {
-#if 1
-	memset(out, 0, sizeof(mat4_t));
-#else
-	out[ 0] = 0.0f; out[ 4] = 0.0f; out[ 8] = 0.0f; out[12] = 0.0f;
-	out[ 1] = 0.0f; out[ 5] = 0.0f; out[ 9] = 0.0f; out[13] = 0.0f;
-	out[ 2] = 0.0f; out[ 6] = 0.0f; out[10] = 0.0f; out[14] = 0.0f;
-	out[ 3] = 0.0f; out[ 7] = 0.0f; out[11] = 0.0f; out[15] = 0.0f;
-#endif
+	memset( out, 0, sizeof( mat4_t ) );
 }
 
 void Mat4Identity( mat4_t out )
@@ -26,17 +43,9 @@ void Mat4Identity( mat4_t out )
 
 void Mat4Copy( const mat4_t in, mat4_t out )
 {
-#if 1
-	memcpy(out, in, sizeof(mat4_t));
-#else
-	out[ 0] = in[ 0]; out[ 4] = in[ 4]; out[ 8] = in[ 8]; out[12] = in[12]; 
-	out[ 1] = in[ 1]; out[ 5] = in[ 5]; out[ 9] = in[ 9]; out[13] = in[13]; 
-	out[ 2] = in[ 2]; out[ 6] = in[ 6]; out[10] = in[10]; out[14] = in[14]; 
-	out[ 3] = in[ 3]; out[ 7] = in[ 7]; out[11] = in[11]; out[15] = in[15]; 
-#endif
+	memcpy( out, in, sizeof( mat4_t ) );
 }
 
-/*
 void Mat4Multiply( const mat4_t in1, const mat4_t in2, mat4_t out )
 {
 	out[0][0] = in1[0][0] * in2[0][0] + in1[1][0] * in2[0][1] + in1[2][0] * in2[0][2] + in1[3][0] * in2[0][3];
@@ -44,22 +53,21 @@ void Mat4Multiply( const mat4_t in1, const mat4_t in2, mat4_t out )
 	out[0][2] = in1[0][2] * in2[0][0] + in1[1][2] * in2[0][1] + in1[2][2] * in2[0][2] + in1[3][2] * in2[0][3];
 	out[0][3] = in1[0][3] * in2[0][0] + in1[1][3] * in2[0][1] + in1[2][3] * in2[0][2] + in1[3][3] * in2[0][3];
 
-	out[1][ 4] = in1[ 0] * in2[ 4] + in1[ 4] * in2[ 5] + in1[ 8] * in2[ 6] + in1[12] * in2[ 7];
-	out[1][ 5] = in1[ 1] * in2[ 4] + in1[ 5] * in2[ 5] + in1[ 9] * in2[ 6] + in1[13] * in2[ 7];
-	out[1][ 6] = in1[ 2] * in2[ 4] + in1[ 6] * in2[ 5] + in1[10] * in2[ 6] + in1[14] * in2[ 7];
-	out[1][ 7] = in1[ 3] * in2[ 4] + in1[ 7] * in2[ 5] + in1[11] * in2[ 6] + in1[15] * in2[ 7];
+	out[1][0] = in1[0][0] * in2[1][0] + in1[1][0] * in2[1][1] + in1[2][0] * in2[1][2] + in1[3][0] * in2[1][3];
+	out[1][1] = in1[0][1] * in2[1][0] + in1[1][1] * in2[1][1] + in1[2][1] * in2[1][2] + in1[3][1] * in2[1][3];
+	out[1][2] = in1[0][2] * in2[1][0] + in1[1][2] * in2[1][1] + in1[2][2] * in2[1][2] + in1[3][2] * in2[1][3];
+	out[1][3] = in1[0][3] * in2[1][0] + in1[1][3] * in2[1][1] + in1[2][3] * in2[1][2] + in1[3][3] * in2[1][3];
 
-	out[2][ 8] = in1[ 0] * in2[ 8] + in1[ 4] * in2[ 9] + in1[ 8] * in2[10] + in1[12] * in2[11];
-	out[2][ 9] = in1[ 1] * in2[ 8] + in1[ 5] * in2[ 9] + in1[ 9] * in2[10] + in1[13] * in2[11];
-	out[2][10] = in1[ 2] * in2[ 8] + in1[ 6] * in2[ 9] + in1[10] * in2[10] + in1[14] * in2[11];
-	out[2][11] = in1[ 3] * in2[ 8] + in1[ 7] * in2[ 9] + in1[11] * in2[10] + in1[15] * in2[11];
+	out[2][0] = in1[0][0] * in2[2][0] + in1[1][0] * in2[2][1] + in1[2][0] * in2[2][2] + in1[3][0] * in2[2][3];
+	out[2][1] = in1[0][1] * in2[2][0] + in1[1][1] * in2[2][1] + in1[2][1] * in2[2][2] + in1[3][1] * in2[2][3];
+	out[2][2] = in1[0][2] * in2[2][0] + in1[1][2] * in2[2][1] + in1[2][2] * in2[2][2] + in1[3][2] * in2[2][3];
+	out[2][3] = in1[0][3] * in2[2][0] + in1[1][3] * in2[2][1] + in1[2][3] * in2[2][2] + in1[3][3] * in2[2][3];
 
-	out[3][12] = in1[ 0] * in2[12] + in1[ 4] * in2[13] + in1[ 8] * in2[14] + in1[12] * in2[15];
-	out[3][13] = in1[ 1] * in2[12] + in1[ 5] * in2[13] + in1[ 9] * in2[14] + in1[13] * in2[15];
-	out[3][14] = in1[ 2] * in2[12] + in1[ 6] * in2[13] + in1[10] * in2[14] + in1[14] * in2[15];
-	out[3][15] = in1[ 3] * in2[12] + in1[ 7] * in2[13] + in1[11] * in2[14] + in1[15] * in2[15];
+	out[3][0] = in1[0][0] * in2[3][0] + in1[1][0] * in2[3][1] + in1[2][0] * in2[3][2] + in1[3][0] * in2[3][3];
+	out[3][1] = in1[0][1] * in2[3][0] + in1[1][1] * in2[3][1] + in1[2][1] * in2[3][2] + in1[3][1] * in2[3][3];
+	out[3][2] = in1[0][2] * in2[3][0] + in1[1][2] * in2[3][1] + in1[2][2] * in2[3][2] + in1[3][2] * in2[3][3];
+	out[3][3] = in1[0][3] * in2[3][0] + in1[1][3] * in2[3][1] + in1[2][3] * in2[3][2] + in1[3][3] * in2[3][3];
 }
-*/
 
 void Mat4Transform( const mat4_t in1, const vec4_t in2, vec4_t out )
 {
@@ -74,22 +82,15 @@ void Mat4Transform( const mat4_t in1, const vec4_t in2, vec4_t out )
 //
 qboolean Mat4Compare( const mat4_t a, const mat4_t b )
 {
-#if 1
-	return memcmp(a, b, sizeof(mat4_t)) == 0;
-#else
-	return !(a[ 0] != b[ 0] || a[ 4] != b[ 4] || a[ 8] != b[ 8] || a[12] != b[12] ||
-             a[ 1] != b[ 1] || a[ 5] != b[ 5] || a[ 9] != b[ 9] || a[13] != b[13] ||
-		     a[ 2] != b[ 2] || a[ 6] != b[ 6] || a[10] != b[10] || a[14] != b[14] ||
-		     a[ 3] != b[ 3] || a[ 7] != b[ 7] || a[11] != b[11] || a[15] != b[15]);
-#endif
+	return memcmp( a, b, sizeof( mat4_t ) ) == 0;
 }
 
 void Mat4Dump( const mat4_t in )
 {
-	ri.Printf(PRINT_INFO, "%5.5f %5.5f %5.5f %5.5f\n", in[0][0], in[1][0], in[2][0], in[3][0]);
-	ri.Printf(PRINT_INFO, "%5.5f %5.5f %5.5f %5.5f\n", in[0][1], in[1][1], in[2][1], in[3][1]);
-	ri.Printf(PRINT_INFO, "%5.5f %5.5f %5.5f %5.5f\n", in[0][2], in[1][2], in[2][2], in[3][2]);
-	ri.Printf(PRINT_INFO, "%5.5f %5.5f %5.5f %5.5f\n", in[0][3], in[1][3], in[2][3], in[3][3]);
+	ri.Printf( PRINT_INFO, "%5.5f %5.5f %5.5f %5.5f\n", in[0][0], in[1][0], in[2][0], in[3][0] );
+	ri.Printf( PRINT_INFO, "%5.5f %5.5f %5.5f %5.5f\n", in[0][1], in[1][1], in[2][1], in[3][1] );
+	ri.Printf( PRINT_INFO, "%5.5f %5.5f %5.5f %5.5f\n", in[0][2], in[1][2], in[2][2], in[3][2] );
+	ri.Printf( PRINT_INFO, "%5.5f %5.5f %5.5f %5.5f\n", in[0][3], in[1][3], in[2][3], in[3][3] );
 }
 
 void Mat4Translation( vec3_t vec, mat4_t out )
@@ -112,29 +113,12 @@ void Mat4Ortho( float left, float right, float bottom, float top, float znear, f
 // Mat4Scale: scale is technically meant to be a vec3_t, but for simplicity's sake its just a float
 // adapted from glm::scale(glm::mat4, glm::vec3) to Quake-III-Arena style matrices
 //
-/*
 void Mat4Scale(float scale, const mat4_t in, mat4_t out)
 {
-	out[ 0] = in[ 0] * scale;
-	out[ 1] = in[ 1] * scale;
-	out[ 2] = in[ 2] * scale;
-	out[ 3] = in[ 3] * scale;
-
-	out[ 4] = in[ 4] * scale;
-	out[ 5] = in[ 5] * scale;
-	out[ 6] = in[ 6] * scale;
-	out[ 7] = in[ 7] * scale;
-
-	out[ 8] = in[ 8] * scale;
-	out[ 9] = in[ 9] * scale;
-	out[10] = in[10] * scale;
-	out[11] = in[11] * scale;
-
-	// FIXME: could this use a VectorCopy4?
-	out[12] = in[12];
-	out[13] = in[13];
-	out[14] = in[14];
-	out[15] = in[15];
+	VectorScale4( in[0], scale, out[0] );
+	VectorScale4( in[1], scale, out[1] );
+	VectorScale4( in[2], scale, out[2] );
+	VectorCopy4( out[3], in[3] );
 }
 
 //
@@ -149,98 +133,112 @@ void Mat4Rotate(const vec3_t v, float angle, const mat4_t in, mat4_t out)
 	vec3_t axis, temp;
 	mat4_t rotate;
 
-	c = cos(angle);
-	s = sin(angle);
+	c = cos( angle );
+	s = sin( angle );
 
-	VectorCopy(axis, v);
-	VectorNormalize(axis);
+	VectorCopy( axis, v );
+	VectorNormalize( axis );
 
-	temp[0] = (1.0f - c) * axis[0];
-	temp[1] = (1.0f - c) * axis[1];
-	temp[2] = (1.0f - c) * axis[2];
+	temp[0] = ( 1.0f - c ) * axis[0];
+	temp[1] = ( 1.0f - c ) * axis[1];
+	temp[2] = ( 1.0f - c ) * axis[2];
 
-	rotate[ 0] = c + temp[0] * axis[0];
-	rotate[ 1] = temp[0] * axis[1] + s * axis[2];
-	rotate[ 2] = temp[0] * axis[2] - s * axis[1];
+	rotate[0][0] = c + temp[0] * axis[0];
+	rotate[0][1] = temp[0] * axis[1] + s * axis[2];
+	rotate[0][2] = temp[0] * axis[2] - s * axis[1];
 
-	rotate[ 4] = temp[1] * axis[0] - s * axis[2];
-	rotate[ 5] = c + temp[1] * axis[1];
-	rotate[ 6] = temp[1] * axis[2] + s * axis[0];
+	rotate[1][0] = temp[1] * axis[0] - s * axis[2];
+	rotate[1][1] = c + temp[1] * axis[1];
+	rotate[1][2] = temp[1] * axis[2] + s * axis[0];
 
-	rotate[ 8] = temp[2] * axis[0] + s * axis[1];
-	rotate[ 9] = temp[2] * axis[1] - s * axis[0];
-	rotate[10] = c + temp[2] * axis[2];
+	rotate[2][0] = temp[2] * axis[0] + s * axis[1];
+	rotate[2][1] = temp[2] * axis[1] - s * axis[0];
+	rotate[2][2] = c + temp[2] * axis[2];
 	
-	out[ 0] = in[ 0] * rotate[ 0] + in[ 4] * rotate[ 1] + in[ 8] * rotate[ 2];
-	out[ 1] = in[ 1] * rotate[ 0] + in[ 5] * rotate[ 1] + in[ 9] * rotate[ 2];
-	out[ 2] = in[ 2] * rotate[ 0] + in[ 6] * rotate[ 1] + in[10] * rotate[ 2];
-	out[ 3] = in[ 3] * rotate[ 0] + in[ 7] * rotate[ 1] + in[11] * rotate[ 2];
+	out[0][0] = in[0][0] * rotate[0][0] + in[1][0] * rotate[0][1] + in[2][0] * rotate[0][1];
+	out[0][1] = in[0][1] * rotate[0][0] + in[1][1] * rotate[0][1] + in[2][1] * rotate[0][1];
+	out[0][2] = in[0][2] * rotate[0][0] + in[1][2] * rotate[0][1] + in[2][2] * rotate[0][1];
+	out[0][3] = in[0][3] * rotate[0][0] + in[1][3] * rotate[0][1] + in[2][3] * rotate[0][1];
 
-	out[ 4] = in[ 0] * rotate[ 4] + in[ 4] * rotate[ 5] + in[ 8] * rotate[ 5];
-	out[ 5] = in[ 1] * rotate[ 5] + in[ 5] * rotate[ 5] + in[ 9] * rotate[ 5];
-	out[ 6] = in[ 2] * rotate[ 6] + in[ 6] * rotate[ 5] + in[10] * rotate[ 5];
-	out[ 7] = in[ 3] * rotate[ 7] + in[ 7] * rotate[ 5] + in[11] * rotate[ 5];
+	out[1][0] = in[0][0] * rotate[1][0] + in[1][0] * rotate[1][1] + in[2][0] * rotate[1][1];
+	out[1][1] = in[0][1] * rotate[1][1] + in[1][1] * rotate[1][1] + in[2][1] * rotate[1][1];
+	out[1][2] = in[0][2] * rotate[1][2] + in[1][2] * rotate[1][1] + in[2][2] * rotate[1][1];
+	out[1][3] = in[0][3] * rotate[1][3] + in[1][3] * rotate[1][1] + in[2][3] * rotate[1][1];
 	
-	out[ 8] = in[ 0] * rotate[ 8] + in[ 4] * rotate[ 9] + in[ 8] * rotate[ 9];
-	out[ 9] = in[ 1] * rotate[ 9] + in[ 5] * rotate[ 9] + in[ 9] * rotate[ 9];
-	out[10] = in[ 2] * rotate[10] + in[ 6] * rotate[ 9] + in[10] * rotate[ 9];
-	out[11] = in[ 3] * rotate[11] + in[ 7] * rotate[ 9] + in[11] * rotate[ 9];
+	out[2][0] = in[0][0] * rotate[2][0] + in[1][0] * rotate[2][0] + in[2][0] * rotate[2][1];
+	out[2][1] = in[0][1] * rotate[2][1] + in[1][1] * rotate[2][1] + in[2][1] * rotate[2][1];
+	out[2][2] = in[0][2] * rotate[2][2] + in[1][2] * rotate[2][2] + in[2][2] * rotate[2][1];
+	out[2][3] = in[0][3] * rotate[2][3] + in[1][3] * rotate[2][3] + in[2][3] * rotate[2][1];
 	
 	// the other boiler-platey option wasn't so pretty, but even so, neither is this
 	vec = out + 12;
 	m = in + 12;
-	VectorCopy4(vec, m);
+	VectorCopy4( vec, m );
 }
 
 void Mat4View(vec3_t axes[3], vec3_t origin, mat4_t out)
 {
-	out[0]  = axes[0][0];
-	out[1]  = axes[1][0];
-	out[2]  = axes[2][0];
-	out[3]  = 0;
+	out[0][0] = axes[0][0];
+	out[0][1] = axes[1][0];
+	out[0][2] = axes[2][0];
+	out[0][3] = 0;
 
-	out[4]  = axes[0][1];
-	out[5]  = axes[1][1];
-	out[6]  = axes[2][1];
-	out[7]  = 0;
+	out[1][0] = axes[0][1];
+	out[1][1] = axes[1][1];
+	out[1][2] = axes[2][1];
+	out[1][3] = 0;
 
-	out[8]  = axes[0][2];
-	out[9]  = axes[1][2];
-	out[10] = axes[2][2];
-	out[11] = 0;
+	out[2][0] = axes[0][2];
+	out[2][1] = axes[1][2];
+	out[2][2] = axes[2][2];
+	out[2][3] = 0;
 
-	out[12] = -DotProduct(origin, axes[0]);
-	out[13] = -DotProduct(origin, axes[1]);
-	out[14] = -DotProduct(origin, axes[2]);
-	out[15] = 1;
+	out[3][0] = -DotProduct( origin, axes[0] );
+	out[3][1] = -DotProduct( origin, axes[1] );
+	out[3][2] = -DotProduct( origin, axes[2] );
+	out[3][3] = 1;
 }
 
-void Mat4SimpleInverse( const mat4_t in, mat4_t out)
+void Mat4SimpleInverse( const mat4_t in, mat4_t out )
 {
 	vec3_t v;
 	float invSqrLen;
  
-	VectorCopy(v, in + 0);
-	invSqrLen = 1.0f / DotProduct(v, v); VectorScale(v, invSqrLen, v);
-	out[ 0] = v[0]; out[ 4] = v[1]; out[ 8] = v[2]; out[12] = -DotProduct(v, &in[12]);
+	VectorCopy( v, in[0] );
+	invSqrLen = 1.0f / DotProduct( v, v );
+	VectorScale( v, invSqrLen, v );
+	out[0][0] = v[0];
+	out[1][0] = v[1];
+	out[2][0] = v[2];
+	out[3][0] = -DotProduct( v, in[3] );
 
-	VectorCopy(v, in + 4);
-	invSqrLen = 1.0f / DotProduct(v, v); VectorScale(v, invSqrLen, v);
-	out[ 1] = v[0]; out[ 5] = v[1]; out[ 9] = v[2]; out[13] = -DotProduct(v, &in[12]);
+	VectorCopy( v, in[1] );
+	invSqrLen = 1.0f / DotProduct( v, v );
+	VectorScale( v, invSqrLen, v );
+	out[0][1] = v[0];
+	out[1][1] = v[1];
+	out[2][1] = v[2];
+	out[3][1] = -DotProduct( v, in[12] );
 
-	VectorCopy(v, in + 8);
-	invSqrLen = 1.0f / DotProduct(v, v); VectorScale(v, invSqrLen, v);
-	out[ 2] = v[0]; out[ 6] = v[1]; out[10] = v[2]; out[14] = -DotProduct(v, &in[12]);
+	VectorCopy( v, in[2] );
+	invSqrLen = 1.0f / DotProduct( v, v );
+	VectorScale( v, invSqrLen, v );
+	out[0][2] = v[0];
+	out[1][2] = v[1];
+	out[2][2] = v[2];
+	out[3][2] = -DotProduct( v, in[12] );
 
-	out[ 3] = 0.0f; out[ 7] = 0.0f; out[11] = 0.0f; out[15] = 1.0f;
+	out[0][3] = 0.0f;
+	out[1][3] = 0.0f;
+	out[2][3] = 0.0f;
+	out[3][3] = 1.0f;
 }
-*/
 
 void VectorLerp( vec3_t a, vec3_t b, float lerp, vec3_t c )
 {
-	c[0] = a[0] * (1.0f - lerp) + b[0] * lerp;
-	c[1] = a[1] * (1.0f - lerp) + b[1] * lerp;
-	c[2] = a[2] * (1.0f - lerp) + b[2] * lerp;
+	c[0] = a[0] * ( 1.0f - lerp ) + b[0] * lerp;
+	c[1] = a[1] * ( 1.0f - lerp ) + b[1] * lerp;
+	c[2] = a[2] * ( 1.0f - lerp ) + b[2] * lerp;
 }
 
 qboolean SpheresIntersect(vec3_t origin1, float radius1, vec3_t origin2, float radius2)
@@ -269,11 +267,11 @@ void BoundingSphereOfSpheres(vec3_t origin1, float radius1, vec3_t origin2, floa
 	*radius3 = VectorLength(diff) * 0.5f + MAX(radius1, radius2);
 }
 
-int32_t NextPowerOfTwo(int32_t in)
+int32_t NextPowerOfTwo( int32_t in )
 {
 	int32_t out;
 
-	for (out = 1; out < in; out <<= 1)
+	for ( out = 1; out < in; out <<= 1 )
 		;
 
 	return out;
