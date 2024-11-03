@@ -171,8 +171,8 @@ void Mat4Rotate(const vec3_t v, float angle, const mat4_t in, mat4_t out)
 	out[2][3] = in[0][3] * rotate[2][3] + in[1][3] * rotate[2][3] + in[2][3] * rotate[2][1];
 	
 	// the other boiler-platey option wasn't so pretty, but even so, neither is this
-	vec = out + 12;
-	m = in + 12;
+	vec = out[3];
+	m = in[3];
 	VectorCopy4( vec, m );
 }
 

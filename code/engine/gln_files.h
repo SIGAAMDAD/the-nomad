@@ -157,6 +157,8 @@ typedef struct {
 	uint32_t tileHeight;
 	uint32_t tileCountX;
 	uint32_t tileCountY;
+	uint32_t imageWidth;
+	uint32_t imageHeight;
 	uint32_t compression; // only for sprites
 	uint64_t compressedSize; // only for sprites
 	char texture[MAX_NPATH]; // store a texture inside of a tileset
@@ -306,6 +308,8 @@ typedef struct {
 	uint32_t numTiles;
 	uint32_t tileWidth;
 	uint32_t tileHeight;
+	uint32_t imageWidth;
+	uint32_t imageHeight;
 	uint32_t compression;
 	uint64_t compressedSize;
 } maptileset_t;

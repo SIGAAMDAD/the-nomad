@@ -86,6 +86,7 @@ static void R_GenerateTexCoords( tile2d_info_t *info )
 {
 	uint32_t y, x;
 	uint32_t i;
+	float scaleWidth, scaleHeight;
 	uint32_t sheetWidth, sheetHeight;
 	const texture_t *image;
 	char texture[MAX_NPATH];
@@ -110,14 +111,21 @@ static void R_GenerateTexCoords( tile2d_info_t *info )
 
 	image = r_worldData.shader->stages[0]->bundle[0].image[0];
 
-	info->tileCountX = image->width / info->tileWidth;
-	info->tileCountY = image->height / info->tileHeight;
+	// we might be getting higher quality textures, so scale coordinates appropriately
+	scaleWidth = image->width / info->imageWidth;
+	scaleHeight = image->height / info->imageHeight;
+
+	info->tileCountX = info->imageWidth / info->tileWidth;
+	info->tileCountY = info->imageHeight / info->tileHeight;
+
+	info->tileWidth *= scaleWidth;
+	info->tileHeight *= scaleHeight;
 
 	sheetWidth = info->tileCountX * info->tileWidth;
 	sheetHeight = info->tileCountY * info->tileHeight;
 
-	ri.Printf( PRINT_DEVELOPER, "Generating worldData tileset %ux%u:%ux%u, %u sprites\n", sheetWidth, sheetHeight,
-		info->tileWidth, info->tileHeight, info->numTiles );
+	ri.Printf( PRINT_DEVELOPER, "Generating worldData tileset %ux%u:%ux%u, %u sprites, (%ux%u tiles, %0.02fx%0.02f scale)\n", info->imageWidth, info->imageHeight,
+		info->tileWidth, info->tileHeight, info->numTiles, info->tileCountX, info->tileCountY, scaleWidth, scaleHeight );
 
 	sprites = (spriteCoord_t *)ri.Hunk_AllocateTempMemory( sizeof( *sprites ) * info->tileCountX * info->tileCountY );
 

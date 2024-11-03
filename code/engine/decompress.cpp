@@ -231,7 +231,7 @@ static char *Decompress_BZIP2( void *buf, uint64_t buflen, uint64_t *outlen )
 */
 
 	Con_Printf( "Successful decompression of %lu to %u bytes with bzip2 (inflate %0.02f%%).\n", buflen, len,
-		( (float)buflen / (float)len ) * 100.0f );
+		( (float)len / (float)buflen ) * 10.0f );
 	
 	*outlen = len;
 	newbuf = (char *)Z_Malloc( len, TAG_BFF );

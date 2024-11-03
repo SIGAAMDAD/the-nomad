@@ -4,7 +4,8 @@
 	nopicmip
 	{
 		texFilter nearest
-		map textures/desert_tilesets/DesertTilemap16x16.jpg
+		map textures/desert_tilesets/high/DesertTilemap16x16.jpg
+//		map textures/desert_tilesets/DesertTilemap16x16.jpg
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		specularScale 0.5 2.5
 		rgbGen vertex
@@ -12,14 +13,16 @@
 	}
 	{
 		texFilter nearest
-		map textures/desert_tilesets/DesertTilemap16x16_n.dds
+		map textures/desert_tilesets/high/DesertTilemap16x16_n.jpg
+//		map textures/desert_tilesets/DesertTilemap16x16_n.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		rgbGen vertex
 		stage normalMap
 	}
 	{
 		texFilter nearest
-		map textures/desert_tilesets/DesertTilemap16x16_s.dds
+		map textures/desert_tilesets/high/DesertTilemap16x16_s.jpg
+//		map textures/desert_tilesets/DesertTilemap16x16_s.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		rgbGen vertex
 		stage specularMap
