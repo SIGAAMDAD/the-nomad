@@ -237,8 +237,40 @@ namespace TheNomad::Engine::Physics {
 				}
 			}
 
-			const vec3 tmp = origin + m_Velocity;
-			if ( TheNomad::GameSystem::CheckWallHit( tmp, CalcMoveDir() ) ) {
+			vec3 tmp = origin;
+			const TheNomad::GameSystem::DirType dir = CalcMoveDir();
+			switch ( dir ) {
+			case TheNomad::GameSystem::DirType::North:
+				tmp.y -= m_EntityData.GetBounds().m_nHeight;
+				break;
+			case TheNomad::GameSystem::DirType::NorthEast:
+				tmp.y -= m_EntityData.GetBounds().m_nHeight;
+				tmp.x += m_EntityData.GetBounds().m_nWidth;
+				break;
+			case TheNomad::GameSystem::DirType::East:
+				tmp.x += m_EntityData.GetBounds().m_nWidth;
+				break;
+			case TheNomad::GameSystem::DirType::SouthEast:
+				tmp.y += m_EntityData.GetBounds().m_nHeight;
+				tmp.x += m_EntityData.GetBounds().m_nWidth;
+				break;
+			case TheNomad::GameSystem::DirType::South:
+				tmp.y += m_EntityData.GetBounds().m_nHeight;
+				break;
+			case TheNomad::GameSystem::DirType::SouthWest:
+				tmp.y += m_EntityData.GetBounds().m_nHeight;
+				tmp.x -= m_EntityData.GetBounds().m_nWidth;
+				break;
+			case TheNomad::GameSystem::DirType::West:
+				tmp.x -= m_EntityData.GetBounds().m_nWidth;
+				break;
+			case TheNomad::GameSystem::DirType::NorthWest:
+				tmp.y -= m_EntityData.GetBounds().m_nHeight;
+				tmp.x -= m_EntityData.GetBounds().m_nWidth;
+				break;
+			};
+
+			if ( TheNomad::GameSystem::CheckWallHit( tmp, dir ) ) {
 				m_Acceleration = 0.0f;
 				m_Velocity = 0.0f;
 				return;

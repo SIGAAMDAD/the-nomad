@@ -433,6 +433,7 @@ qboolean CGameWorld::CheckWallHit( const vec3_t origin, dirtype_t dir )
 	ivec3_t tmp;
 	VectorCopy( p, origin );
 
+	/*
 	switch ( dir ) {
 	case DIR_NORTH:
 		p[1] -= 1.0f;
@@ -458,6 +459,7 @@ qboolean CGameWorld::CheckWallHit( const vec3_t origin, dirtype_t dir )
 		p[1] += 1.0f;
 		break;
 	};
+	*/
 
 	Sys_SnapVector( p );
 	VectorCopy( tmp, p );

@@ -2,7 +2,7 @@ namespace TheNomad::SGame {
 	const uint PMF_JUMP_HELD      = 0x01;
 	const uint PMF_BACKWARDS_JUMP = 0x02;
 
-	const uint DASH_DURATION = 300;
+	const uint DASH_DURATION = 100;
 	const uint SLIDE_DURATION = 500;
 	
 	const float JUMP_VELOCITY = 2.5f;
@@ -61,8 +61,8 @@ namespace TheNomad::SGame {
 			accel.y += forward;
 
 			if ( m_EntityData.IsDashing() ) {
-				accel.y += 1.05f * forward;
-				accel.x += 1.05f * side;
+				accel.y += 0.60f * forward;
+				accel.x += 0.60f * side;
 
 				if ( m_EntityData.GetTimeSinceLastDash() > DASH_DURATION ) {
 					m_EntityData.SetDashing( false );
