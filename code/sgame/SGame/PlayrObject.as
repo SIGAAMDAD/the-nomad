@@ -605,8 +605,8 @@ namespace TheNomad::SGame {
 			painSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/pain_scream_1" );
 			painSfx2 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/pain_scream_2" );
 
-//			slideSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/slide_0" );
-//			slideSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/slide_1" );
+			slideSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/slide_0" );
+			slideSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/slide_1" );
 
 			dashSfx = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/dash" );
 

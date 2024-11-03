@@ -275,17 +275,17 @@ namespace TheNomad::SGame {
 						return;
 					}
 
-//					if ( ( Util::PRandom() & 1 ) == 1 ) {
-//						obj.slideSfx0.Play();
-//					} else {
-//						obj.slideSfx1.Play();
-//					}
+					if ( ( Util::PRandom() & 1 ) == 1 ) {
+						obj.slideSfx0.Play();
+					} else {
+						obj.slideSfx1.Play();
+					}
 
 					Util::HapticRumble( obj.GetPlayerIndex(), 0.40f, 500 );
 					obj.ResetSlide();
 					obj.SetSliding( true );
 				} else {
-//					obj.crouchDownSfx.Play();
+					obj.crouchDownSfx.Play();
 				}
 				obj.SetCrouching( true );
 			}
