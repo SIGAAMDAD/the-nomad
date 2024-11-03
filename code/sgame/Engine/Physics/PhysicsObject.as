@@ -104,6 +104,7 @@ namespace TheNomad::Engine::Physics {
 			m_Velocity[1] = m_Velocity[1] * newspeed;
 			m_Velocity[2] = m_Velocity[2] * newspeed;
 			*/
+
 			if ( m_Velocity[0] < 0.0f ) {
 				m_Velocity[0] = TheNomad::Util::Clamp( m_Velocity[0] + TheNomad::SGame::sgame_Friction.GetFloat(), m_Velocity[0], 100.0f );
 			} else if ( m_Velocity[0] > 0.0f ) {

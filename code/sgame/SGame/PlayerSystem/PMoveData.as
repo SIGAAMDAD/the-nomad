@@ -48,12 +48,15 @@ namespace TheNomad::SGame {
 		private void WalkMove() {
 			const uint gameTic = TheNomad::GameSystem::GameManager.GetGameTic();
 			vec3 accel = m_EntityData.GetPhysicsObject().GetAcceleration();
-			
-			KeyMove();
 
 			const bool isSliding = m_EntityData.IsSliding();
 			const bool isDashing = m_EntityData.IsDashing();
 
+			if ( !( isSliding || isDashing ) ) {
+				// if we're dashing or sliding, we won't really have
+				// nearly as much control over where we're going
+				KeyMove();
+			}
 			accel.x += side;
 			accel.y += forward;
 
