@@ -537,6 +537,7 @@ static void G_InitRenderRef( void )
 	import.GL_GetProcAddress = GL_GetProcAddress;
 #endif
 
+	import.G_GetMapData = G_GetMapData;
 	import.G_SetScaling = G_SetScaling;
 	import.G_SaveJPGToBuffer = G_SaveJPGToBuffer;
 	import.G_SaveJPG = G_SaveJPG;

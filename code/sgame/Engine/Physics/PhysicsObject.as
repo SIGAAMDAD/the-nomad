@@ -6,6 +6,8 @@ namespace TheNomad::Engine::Physics {
 		Acid
 	};
 
+	const float MAX_JUMP_HEIGHT = 3.5f;
+
     class PhysicsObject {
         PhysicsObject() {
         }
@@ -115,6 +117,13 @@ namespace TheNomad::Engine::Physics {
 			} else if ( m_Velocity[1] > 0.0f ) {
 				m_Velocity[1] = TheNomad::Util::Clamp( m_Velocity[1] - TheNomad::SGame::sgame_Friction.GetFloat(), -100.0f, m_Velocity[1] );
 			}
+			if ( m_Velocity[2] < 0.0f && m_EntityData.GetOrigin().z <= 0.0f ) {
+				m_Velocity[2] = 0.0f;
+			} else if ( m_Velocity[2] > 0.0f && m_EntityData.GetOrigin().z == 0.0f ) {
+//				m_Velocity[2] += TheNomad::SGame::sgame_Gravity.GetFloat();
+			} else if ( m_Velocity[2] > 0.0f && m_EntityData.GetOrigin().z >= MAX_JUMP_HEIGHT ) {
+				m_Velocity[2] -= TheNomad::SGame::sgame_Gravity.GetFloat();
+			}
 		}
 		
 		void SetWaterLevel() {
@@ -215,7 +224,7 @@ namespace TheNomad::Engine::Physics {
 			// calculate velocity
 			m_Velocity.x = m_Acceleration.x;
 			m_Velocity.y = m_Acceleration.y;
-			m_Velocity.z = m_Acceleration.z;
+			m_Velocity.z += m_Acceleration.z;
 			
 			ApplyFriction();
 
@@ -267,7 +276,12 @@ namespace TheNomad::Engine::Physics {
 
 			if ( TheNomad::GameSystem::CheckWallHit( tmp, dir ) ) {
 				m_Acceleration = 0.0f;
+
+				const float z = m_Velocity.z;
 				m_Velocity = 0.0f;
+				if ( origin.z > 0.0f ) {
+					m_Velocity.z = z;
+				}
 				return;
 			}
 			
@@ -275,9 +289,6 @@ namespace TheNomad::Engine::Physics {
 			origin.y += m_Velocity.y;
 			origin.z += m_Velocity.z;
 			// apply gravity
-			if ( origin.z > 0.0f && m_Velocity.z == 0.0f ) {
-				origin.z -= TheNomad::SGame::sgame_Gravity.GetFloat();
-			}
 			if ( origin.z < 0.0f ) {
 				origin.z = 0.0f;
 			}

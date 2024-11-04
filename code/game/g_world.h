@@ -49,6 +49,7 @@ void G_GetTileData( uint32_t *pTiles, uint32_t nLevel );
 void G_GetCheckpointData( uvec3_t xyz, uvec2_t areaLock, uint32_t nIndex );
 void G_GetSpawnData( uvec3_t xyz, uint32_t *type, uint32_t *id, uint32_t nIndex, uint32_t *pCheckpointIndex );
 void G_GetSecretData( uint32_t *pCheckpointIndex, uint32_t nIndex );
+void G_GetMapData( maptile_t **tiles, uint32_t *numTiles );
 
 extern const dirtype_t inversedirs[NUMDIRS];
 extern CGameWorld *g_world;

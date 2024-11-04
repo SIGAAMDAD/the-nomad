@@ -117,7 +117,7 @@ static qboolean G_LoadLevelFile( const char *filename, mapinfo_t *info )
 	}
 
 	header = (bmf_t *)f.b;
-	if ( size < sizeof(*header) ) {
+	if ( size < sizeof( *header ) ) {
 		Con_Printf( COLOR_YELLOW "WARNING: map file '%s' isn't big enough to be a map file\n", filename );
 		return qfalse;
 	}
@@ -357,6 +357,12 @@ void G_GetTileData( uint32_t *pTiles, uint32_t nLevel ) {
 	for ( uint64_t i = 0; i < info->numTiles; i++ ) {
 		pTiles[i] = info->tiles[i].flags;
 	}
+}
+
+void G_GetMapData( maptile_t **tiles, uint32_t *numTiles )
+{
+	*tiles = gi.mapCache.info.tiles;
+	*numTiles = gi.mapCache.info.numTiles;
 }
 
 void G_SetActiveMap( nhandle_t hMap, uint32_t *nCheckpoints, uint32_t *nSpawns, uint32_t *nTiles, int32_t *pWidth, int32_t *pHeight )

@@ -755,7 +755,7 @@ namespace TheNomad::SGame {
 			}
 			*/
 
-			if ( m_PhysicsObject.GetVelocity() == Vec3Origin ) {
+			if ( m_PhysicsObject.GetVelocity().x == 0.0f && m_PhysicsObject.GetVelocity().y == 0.0f ) {
 				@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_GROUND );
 			} else if ( IsSliding() ) {
 				@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_SLIDE );
@@ -774,7 +774,7 @@ namespace TheNomad::SGame {
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 
 			if ( m_ArmState.Done() && @m_ArmState !is @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_MOVE )
-				&& m_PhysicsObject.GetVelocity() != Vec3Origin && !IsSliding() )
+				&& ( m_PhysicsObject.GetVelocity().x != 0.0f || m_PhysicsObject.GetVelocity().y != 0.0f ) && !IsSliding() )
 			{
 				@m_ArmState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_MOVE );
 			}

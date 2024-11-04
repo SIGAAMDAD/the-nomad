@@ -52,8 +52,8 @@ meant for temp engine system allocations. Used by allocation callbacks. Blocks c
 
 #define GB(x) (1024*1024*1024*((x)*0.5))
 
-#define HUNK_DEFSIZE 8192
-#define HUNK_MINSIZE 128
+#define HUNK_DEFSIZE 128
+#define HUNK_MINSIZE 56
 
 #define LOCK_HUNK() if ( hunkbase != NULL ) { pthread_mutex_lock( &hunkLock ); }
 #define UNLOCK_HUNK() if ( hunkbase != NULL ) { pthread_mutex_unlock( &hunkLock ); }
@@ -1553,7 +1553,7 @@ void *Hunk_AllocateTempMemory( uint64_t size )
 	
 	size = PAD( size, sizeof( intptr_t ) ) + sizeof( hunkHeader_t );
 
-	if (hunk_temp->temp + hunk_permanent->permanent + size > hunksize) {
+	if ( hunk_temp->temp + hunk_permanent->permanent + size > hunksize ) {
 		N_Error(ERR_DROP, "Hunk_AllocateTempMemory: failed on %lu", size);
 	}
 
@@ -1786,7 +1786,7 @@ void Hunk_InitMemory( void )
 	Cvar_CheckRange( cv, VSTR( HUNK_MINSIZE ), NULL, CVT_INT );
 	Cvar_SetDescription( cv, "The size of the hunk memory segment." );
 
-	hunksize = PAD( cv->i * 1024 * 1024 + ( com_cacheLine - 1 ), Sys_GetPageSize() );
+	hunksize = PAD( cv->i * 1024 * 1024 + ( com_cacheLine - 1 ), sizeof( uintptr_t ) );
 	hunkptr = hunkbase = (byte *)calloc( hunksize, 1 );
 	if ( !hunkbase ) {
 		Sys_SetError( ERR_OUT_OF_MEMORY );

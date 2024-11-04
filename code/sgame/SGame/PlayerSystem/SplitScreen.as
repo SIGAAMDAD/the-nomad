@@ -424,6 +424,7 @@ namespace TheNomad::SGame {
 		
 		private PlayrObject@[] m_PlayerData( 4 );
 		private uint m_nPlayerCount = 0;
+		private uint m_nLastJumpTime = 0;
 	};
 	
 	SplitScreen ScreenData;

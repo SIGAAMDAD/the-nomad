@@ -5,7 +5,7 @@ namespace TheNomad::SGame {
 	const uint DASH_DURATION = 100;
 	const uint SLIDE_DURATION = 500;
 	
-	const float JUMP_VELOCITY = 0.5f;
+	const float JUMP_VELOCITY = 2.5f;
 	const float OVERCLIP = 1.5f;
 	
     //
@@ -59,11 +59,8 @@ namespace TheNomad::SGame {
 			}
 			accel.x += side;
 			accel.y += forward;
-			if ( m_EntityData.key_Jump.active ) {
-				if ( up > 0.0f ) {
-					up = 0.0f;
-					accel.z += JUMP_VELOCITY;
-				}
+			if ( ( flags & PMF_JUMP_HELD ) != 0 ) {
+				accel.z += up;
 			}
 
 			if ( m_EntityData.IsDashing() ) {
@@ -372,9 +369,8 @@ namespace TheNomad::SGame {
 			if ( up < 1.0f ) {
 				// not holding jump
 				flags &= ~PMF_JUMP_HELD;
-			}
-			if ( up >= 1.0f ) {
-				up = 1.0f;
+			} else {
+				flags |= PMF_JUMP_HELD;
 			}
 			
 			groundPlane = m_EntityData.GetWaterLevel() < 1;
@@ -397,10 +393,6 @@ namespace TheNomad::SGame {
 			ImGui::Text( "CameraPos: [ " + Game_CameraWorldPos.x + ", " + Game_CameraWorldPos.y + " ]" );
 			ImGui::Text( "Forward: " + forward );
 			ImGui::Text( "Side: " + side );
-			ImGui::Text( "ForwardVec: " + forwardvec.x + " "  + forwardvec.y + " " + forwardvec.z );
-			ImGui::Text( "SideVec: " + sidevec.x + " "  + sidevec.y + " " + sidevec.z );
-			const vec3 dirvec = forwardvec - sidevec;
-			ImGui::Text( "Direction: " + dirvec.x + " " + dirvec.y + " " + dirvec.z );
 			ImGui::Separator();
 			ImGui::Text( "North MSec: " + m_EntityData.key_MoveNorth.msec );
 			ImGui::Text( "South MSec: " + m_EntityData.key_MoveSouth.msec );
@@ -440,6 +432,7 @@ namespace TheNomad::SGame {
 			m_EntityData.key_MoveSouth.msec = 0;
 			m_EntityData.key_MoveEast.msec = 0;
 			m_EntityData.key_MoveWest.msec = 0;
+			m_EntityData.key_Jump.msec = 0;
 
 			m_EntityData.m_Emitter.SetPosition( m_EntityData.GetOrigin(), forward, 0.0f,
 				m_EntityData.GetPhysicsObject().GetAcceleration().x + m_EntityData.GetPhysicsObject().GetAcceleration().y );
@@ -474,12 +467,14 @@ namespace TheNomad::SGame {
 
 			forward = 0.0f;
 			side = 0.0f;
+			up = 0.0f;
 			
 			side += base * KeyState( m_EntityData.key_MoveEast );
 			side -= base * KeyState( m_EntityData.key_MoveWest );
 
-			if ( up < 1.0f ) {
-				up = KeyState( m_EntityData.key_Jump );
+			const float jump = KeyState( m_EntityData.key_Jump );
+			if ( m_EntityData.GetOrigin().z == 0.0f ) {
+				up += base * jump;
 			}
 			
 			forward -= base * KeyState( m_EntityData.key_MoveNorth );
@@ -506,8 +501,6 @@ namespace TheNomad::SGame {
 
 		float m_nJoystickAngle = 0.0f;
 		
-		vec3 forwardvec = vec3( 0.0f );
-		vec3 sidevec = vec3( 0.0f );
 		float forward = 0.0f;
 		float side = 0.0f;
 		float up = 0.0f;

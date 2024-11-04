@@ -692,7 +692,8 @@ void RE_LoadWorldMap( const char *filename )
 
 	// load into heap
 //	sprites = R_LoadTileset( &mheader->lumps[LUMP_SPRITES], theader );
-	R_LoadTiles( &mheader->lumps[LUMP_TILES] );
+//	R_LoadTiles( &mheader->lumps[LUMP_TILES] );
+	ri.G_GetMapData( &r_worldData.tiles, &r_worldData.numTiles );
 	R_LoadLights( &mheader->lumps[LUMP_LIGHTS] );
 
 	rg.world = &r_worldData;

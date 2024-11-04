@@ -150,6 +150,8 @@ typedef struct {
 	void (*ProfileFunctionEnd)( void );
 
 	void (*GLimp_AcquireContext)( void );
+
+	void (*G_GetMapData)( maptile_t **tiles, uint32_t *numTiles );
 } refimport_t;
 
 typedef struct {
