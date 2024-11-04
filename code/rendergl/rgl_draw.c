@@ -686,6 +686,10 @@ static void RB_StageIteratorGeneric( shader_t *shader )
 
 		GLSL_SetUniformFloat( sp, UNIFORM_EXPOSURE, r_autoExposure->f );
 
+		if ( !stageP->bundle[TB_DIFFUSEMAP].image[0] ) {
+			ri.Error( ERR_DROP, "RB_IterateShaderStages: shader has missing diffuseMap stage texture" );
+		}
+		
 		{
 			qboolean light = qtrue;
 			qboolean fastLight = !( r_normalMapping->i || r_specularMapping->i );
@@ -715,14 +719,10 @@ static void RB_StageIteratorGeneric( shader_t *shader )
 					GLSL_SetUniformTexture( sp, UNIFORM_LEVELS_MAP, rg.whiteImage );
 				}
 			}
-		}
 
-		if ( !stageP->bundle[TB_DIFFUSEMAP].image[0] ) {
-			ri.Error( ERR_DROP, "RB_IterateShaderStages: shader has missing diffuseMap stage texture" );
+			R_BindAnimatedImageToTMU( &stageP->bundle[TB_DIFFUSEMAP], TB_DIFFUSEMAP );
+			GLSL_SetUniformTexture( sp, UNIFORM_DIFFUSE_MAP, stageP->bundle[ TB_DIFFUSEMAP ].image[ 0 ] );
 		}
-
-		R_BindAnimatedImageToTMU( &stageP->bundle[TB_DIFFUSEMAP], TB_DIFFUSEMAP );
-		GLSL_SetUniformTexture( sp, UNIFORM_DIFFUSE_MAP, stageP->bundle[ TB_DIFFUSEMAP ].image[ 0 ] );
 
 		if ( rg.world && !( backend.refdef.flags & RSF_NOWORLDMODEL ) ) {
 		} else {

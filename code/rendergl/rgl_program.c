@@ -92,7 +92,6 @@ static uniformInfo_t uniformsInfo[UNIFORM_COUNT] = {
 	{ "u_BlurHorizontal",       GLSL_INT },
 
 	{ "u_LightBuffer",          GLSL_BUFFER },
-	{ "u_VertexData",			GLSL_BUFFER },
 
 	{ "u_GammaAmount",          GLSL_FLOAT },
 	{ "u_CameraExposure",		GLSL_FLOAT },
@@ -1330,13 +1329,15 @@ void GLSL_ShaderBufferData( shaderProgram_t *shader, uint32_t uniformNum, unifor
 	}
 
 	nglBindBuffer( GL_SHADER_STORAGE_BUFFER, buffer->id );
-	nglBufferSubData( GL_SHADER_STORAGE_BUFFER, nOffset, nSize, buffer->data );
+	nglBindBufferRange( GL_SHADER_STORAGE_BUFFER, buffer->binding, buffer->id, 0, buffer->size );
+	nglBindBufferBase( GL_SHADER_STORAGE_BUFFER, buffer->binding, buffer->id );
 
-//	void *data = nglMapBufferRange( GL_SHADER_STORAGE_BUFFER, nOffset, nSize, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT );
-//	if ( data ) {
-//		memcpy( data, buffer->data, nSize );
-//	}
-//	nglUnmapBuffer( GL_SHADER_STORAGE_BUFFER );
+	if ( NGL_VERSION_ATLEAST( 4, 4 ) || ( glContext.ARB_buffer_storage && glContext.ARB_map_buffer_range ) ) {
+		nglFlushMappedBufferRange( GL_SHADER_STORAGE_BUFFER, nOffset, nSize );
+	} else {
+		nglBufferSubData( GL_SHADER_STORAGE_BUFFER, nOffset, nSize, buffer->data );
+	}
+
 	GL_CheckErrors();
 
 	nglBindBuffer( GL_SHADER_STORAGE_BUFFER, 0 );
@@ -1356,6 +1357,7 @@ void GLSL_LinkUniformToShader( shaderProgram_t *program, uint32_t uniformNum, un
 //		return;
 //	}
 //	nglUniformBlockBinding( program->programId, buffer->binding, program->numBuffers );
+	buffer->binding = program->numBuffers;
 
 	target = GL_SHADER_STORAGE_BUFFER;
 
@@ -1409,8 +1411,16 @@ uniformBuffer_t *GLSL_InitUniformBuffer( const char *name, byte *buffer, uint64_
 	nglBindBuffer( GL_SHADER_STORAGE_BUFFER, buf->id );
 
 	// good 'ol fashioned buffers
-	buf->data = ri.Hunk_Alloc( bufSize, h_low );
-	nglBufferData( GL_SHADER_STORAGE_BUFFER, bufSize, buffer, GL_STREAM_DRAW );
+	if ( NGL_VERSION_ATLEAST( 4, 4 ) || ( glContext.ARB_buffer_storage && glContext.ARB_map_buffer_range ) ) {
+		nglBufferStorage( GL_SHADER_STORAGE_BUFFER, bufSize, NULL, ( dynamicStorage ? GL_DYNAMIC_STORAGE_BIT : 0 )
+			| GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
+		buf->data = nglMapBufferRange( GL_SHADER_STORAGE_BUFFER, 0, bufSize, GL_MAP_WRITE_BIT |
+			GL_MAP_PERSISTENT_BIT | GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_UNSYNCHRONIZED_BIT );
+	}
+	else {
+		buf->data = ri.Hunk_Alloc( bufSize, h_low );
+		nglBufferData( GL_SHADER_STORAGE_BUFFER, bufSize, buffer, GL_STREAM_DRAW );
+	}
 	nglBindBuffer( GL_SHADER_STORAGE_BUFFER, 0 );
 
 	rg.numUniformBuffers++;
@@ -1811,9 +1821,17 @@ void GLSL_ShutdownGPUShaders( void )
 	GLSL_DeleteGPUShader( &rg.textureColorShader );
 	GLSL_DeleteGPUShader( &rg.bloomResolveShader );
 	GLSL_DeleteGPUShader( &rg.blurShader );
+	
+	for ( i = 0; i < rg.numUniformBuffers; i++ ) {
+		nglBindBuffer( GL_SHADER_STORAGE_BUFFER, rg.uniformBuffers[i]->id );
+		if ( NGL_VERSION_ATLEAST( 4, 4 ) || ( glContext.ARB_buffer_storage && glContext.ARB_map_buffer_range ) ) {
+			nglUnmapBuffer( GL_SHADER_STORAGE_BUFFER );
+		}
+		nglBindBuffer( GL_SHADER_STORAGE_BUFFER, 0 );
+		nglDeleteBuffers( 1, &rg.uniformBuffers[i]->id );
+	}
 	if ( rg.world ) {
 		GLSL_DeleteGPUShader( &rg.tileShader );
-		nglDeleteBuffers( 1, &rg.lightData->id );
 	}
 
 	for ( i = 0; i < GENERICDEF_COUNT; i++ ) {

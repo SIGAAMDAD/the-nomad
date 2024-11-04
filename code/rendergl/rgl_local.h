@@ -339,7 +339,6 @@ typedef enum {
 	UNIFORM_BLUR_HORIZONTAL,
 
 	UNIFORM_LIGHTDATA,
-	UNIFORM_VERTEXDATA,
 
 	UNIFORM_GAMMA,
 	UNIFORM_EXPOSURE,
@@ -440,7 +439,7 @@ typedef struct {
 	uint16_t		worldPos[2];
 	vec3_t			xyz;
 	vec2_t			uv;
-	color4ub_t		color;
+//	color4ub_t		color;
 } drawVert_t;
 
 // when sgame directly specifies a polygon, it becomes a srfPoly_t
@@ -1598,6 +1597,7 @@ void BoundingSphereOfSpheres(vec3_t origin1, float radius1, vec3_t origin2, floa
 int32_t NextPowerOfTwo(int32_t in);
 uint16_t FloatToHalf( float in );
 float HalfToFloat( uint16_t in );
+void Mat4Identity( mat4_t out );
 
 //
 // rgl_texture.c

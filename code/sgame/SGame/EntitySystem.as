@@ -590,8 +590,9 @@ namespace TheNomad::SGame {
 		void SetPlayerPosition_f() {
 			const float x = Convert().ToFloat( TheNomad::Engine::CmdArgv( 1 ) );
 			const float y = Convert().ToFloat( TheNomad::Engine::CmdArgv( 2 ) );
+			const float z = Convert().ToFloat( TheNomad::Engine::CmdArgv( 3 ) );
 
-			m_ActivePlayer.GetLink().m_Origin = vec3( x, y, 0.0f );
+			m_ActivePlayer.GetLink().m_Origin = vec3( x, y, z );
 		}
 		void DamagePlayer_f() {
 			const float damage = Convert().ToFloat( TheNomad::Engine::CmdArgv( 1 ) );

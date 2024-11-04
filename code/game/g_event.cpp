@@ -1027,13 +1027,13 @@ static void G_KeyDownEvent( uint32_t key, uint32_t time )
 
 	if ( Key_GetCatcher() & KEYCATCH_CONSOLE ) {
 	}
-	if ( Key_GetCatcher() & KEYCATCH_UI ) {
+	else if ( Key_GetCatcher() & KEYCATCH_UI ) {
 		// send the bound action
 		if ( !( Key_GetCatcher() & KEYCATCH_CONSOLE ) ) {
 			Key_ParseBinding( key, qtrue, time );
 		}
 	}
-	if ( Key_GetCatcher() & KEYCATCH_SGAME ) {
+	else if ( Key_GetCatcher() & KEYCATCH_SGAME ) {
 		if ( sgvm ) {
 			g_pModuleLib->ModuleCall( sgvm, ModuleOnKeyEvent, 2, key, qtrue );
 		}

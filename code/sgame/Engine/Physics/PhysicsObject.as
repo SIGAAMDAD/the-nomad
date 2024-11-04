@@ -218,11 +218,6 @@ namespace TheNomad::Engine::Physics {
 			m_Velocity.z = m_Acceleration.z;
 			
 			ApplyFriction();
-			
-			// apply gravity
-			if ( m_Velocity.z > 0.0f ) {
-				m_Velocity.z -= TheNomad::SGame::sgame_Gravity.GetFloat();
-			}
 
 			TheNomad::GameSystem::BBox bounds;
 			bounds.m_nWidth = m_EntityData.GetBounds().m_nWidth;
@@ -279,6 +274,13 @@ namespace TheNomad::Engine::Physics {
 			origin.x += m_Velocity.x;
 			origin.y += m_Velocity.y;
 			origin.z += m_Velocity.z;
+			// apply gravity
+			if ( origin.z > 0.0f && m_Velocity.z == 0.0f ) {
+				origin.z -= TheNomad::SGame::sgame_Gravity.GetFloat();
+			}
+			if ( origin.z < 0.0f ) {
+				origin.z = 0.0f;
+			}
 			
 			m_EntityData.SetOrigin( origin );
 			

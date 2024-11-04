@@ -835,11 +835,21 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 		}
 		else {
 		#if 1
+			if ( vtx_buffer_size > bd->VertexBufferSize ) {
+				bd->VertexBufferSize = vtx_buffer_size;
+			}
+			if ( idx_buffer_size > bd->IndexBufferSize ) {
+				bd->IndexBufferSize = idx_buffer_size;
+			}
 			renderImport.glBufferData( GL_ARRAY_BUFFER, bd->VertexBufferSize, NULL, GL_STREAM_DRAW );
 			renderImport.glBufferData( GL_ELEMENT_ARRAY_BUFFER, bd->IndexBufferSize, NULL, GL_STREAM_DRAW );
 
-			renderImport.glBufferSubData( GL_ARRAY_BUFFER, 0, vtx_buffer_size, cmd_list->VtxBuffer.Data );
-			renderImport.glBufferSubData( GL_ELEMENT_ARRAY_BUFFER, 0, idx_buffer_size, cmd_list->IdxBuffer.Data );
+			if ( vtx_buffer_size > 0 ) {
+				renderImport.glBufferSubData( GL_ARRAY_BUFFER, 0, vtx_buffer_size, cmd_list->VtxBuffer.Data );
+			}
+			if ( idx_buffer_size > 0 ) {
+				renderImport.glBufferSubData( GL_ELEMENT_ARRAY_BUFFER, 0, idx_buffer_size, cmd_list->IdxBuffer.Data );
+			}
 		#else
 			void *vtx = renderImport.glMapBufferRange( GL_ARRAY_BUFFER, 0, vtx_buffer_size, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT );
 			if ( vtx ) {

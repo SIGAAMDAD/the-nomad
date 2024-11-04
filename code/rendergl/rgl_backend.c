@@ -481,6 +481,7 @@ static const void *RB_SwapBuffers( const void *data )
 	// only draw imgui data after everything else has finished
 //	if ( !backend.framePostProcessed ) {
 		ri.ImGui_Draw();
+		GL_CheckErrors();
 //	}
 	
 	cmd = (const swapBuffersCmd_t *)data;
@@ -620,6 +621,7 @@ static const void *RB_PostProcess( const void *data )
 	// only draw imgui data after everything else has finished
 //	if ( !backend.framePostProcessed ) {
 		ri.ImGui_Draw();
+		GL_CheckErrors();
 //	}
 
 	if ( !glContext.ARB_framebuffer_object || !r_postProcess->i ) {

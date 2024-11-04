@@ -16,6 +16,7 @@ uniform bool u_HardwareGamma;
 uniform int u_AntiAliasing;
 uniform int u_AntiAliasingQuality;
 
+uniform bool u_WorldDrawing;
 uniform float u_CameraExposure;
 uniform bool u_HDR;
 uniform bool u_PBR;

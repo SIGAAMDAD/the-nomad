@@ -235,8 +235,6 @@ void R_DrawPolys( void )
 	// sort the polys to be more efficient with our shaders
 	R_RadixSort( backend.refdef.polys, backend.refdef.numPolys );
 
-	GLSL_UseProgram( &rg.tileShader );
-
 	poly = backend.refdef.polys;
 	oldShader = poly->hShader;
 	backend.drawBatch.shader = R_GetShaderByHandle( oldShader );
@@ -411,6 +409,7 @@ void R_DrawWorld( void )
 
 void R_RenderView( const viewData_t *parms )
 {
+	uint32_t i;
 	rg.viewCount++;
 
 	memcpy( &glState.viewData, parms, sizeof( *parms ) );

@@ -2,7 +2,6 @@
 
 static void R_LightForPoint( const vec3_t origin, const maplight_t *light, vec3_t color )
 {
-	/*
 	vec3_t lightPos;
 	vec3_t diffuse;
 	float distance, diff;
@@ -11,12 +10,15 @@ static void R_LightForPoint( const vec3_t origin, const maplight_t *light, vec3_
 	VectorClear( diffuse );
 	attenuation = 0.0f;
 
-	distance = disBetweenOBJ( origin, light->origin );
+	VectorSet( lightPos, light->origin[0], light->origin[1], 0.0f );
+	distance = disBetweenOBJ( origin, lightPos );
 	if ( distance <= light->range ) {
 		diff = 1.0 - abs( distance / range );
 	}
 	diff = light->brightness;
-	diffuse[0] = MIN( diff * ( diff + light->color[0] ), diffuse );
+	diffuse[0] = MIN( diff * ( diff + light->color[0] ), diffuse[0] );
+	diffuse[1] = MIN( diff * ( diff + light->color[1] ), diffuse[1] );
+	diffuse[2] = MIN( diff * ( diff + light->color[2] ), diffuse[2] );
 
 	attenuation = ( light->constant + light->linear * light->range + light->quadratic * ( light->range * light->range ) );
 
@@ -24,24 +26,27 @@ static void R_LightForPoint( const vec3_t origin, const maplight_t *light, vec3_
 	VectorCopy2( lightPos, light->origin );
 	
 	distance = DotProduct( origin, lightPos );
-	diffuse = 0.0f;
+	VectorClear( diffuse );
 	
 	if ( distance <= light->range ) {
-		diffuse = 1.0 - fabs( distance / light->range );
+		diffuse[0] = 1.0 - fabs( distance / light->range );
+		diffuse[1] = 1.0 - fabs( distance / light->range );
+		diffuse[2] = 1.0 - fabs( distance / light->range );
 	}
 	
-	diffuse += light->brightness;
+	diffuse[0] += light->brightness;
+	diffuse[1] += light->brightness;
+	diffuse[2] += light->brightness;
 	
-	color[0] = MIN( diffuse * ( color[0] + light->color[0] ), color[0] );
-	color[1] = MIN( diffuse * ( color[1] + light->color[1] ), color[1] );
-	color[2] = MIN( diffuse * ( color[2] + light->color[2] ), color[2] );
+	color[0] = MIN( diffuse[0] * ( color[0] + light->color[0] ), color[0] );
+	color[1] = MIN( diffuse[1] * ( color[1] + light->color[1] ), color[1] );
+	color[2] = MIN( diffuse[2] * ( color[2] + light->color[2] ), color[2] );
 	
 	range = light->range + light->brightness;
 	
 	attenuation = ( light->constant + light->linear * range + light->quadratic * ( range * range ) );
 	
 	VectorScale( color, attenuation, color );
-	*/
 }
 
 static void R_DlightForPoint( const vec3_t origin, const dlight_t *dl, vec3_t color )
@@ -82,9 +87,9 @@ void R_SetupTileLighting( void )
 	float attenuation;
 	vec3_t worldPos;
 	
-//	if ( r_lightingQuality->i > 0 ) {
-//		return; // only ever do software baked lighting if we have the lowest lighting quality
-//	}
+	if ( r_lightingQuality->i > 0 ) {
+		return; // only ever do software baked lighting if we have the lowest lighting quality
+	}
 	
 	light = rg.world->lights;
 	color[3] = 0.0f; // we're never gonna mess with the alpha

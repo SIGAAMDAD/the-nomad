@@ -2,16 +2,12 @@ in vec3 a_Position;
 in vec2 a_TexCoords;
 in uvec2 a_WorldPos;
 in vec4 a_Color;
-in vec3 a_Normal;
-in vec3 a_Tangent;
-in vec3 a_Bitangent;
 
 out vec2 v_TexCoords;
 out vec4 v_Color;
 out vec3 v_WorldPos;
 out vec3 v_Position;
 
-uniform bool u_WorldDrawing;
 uniform mat4 u_ModelViewProjection;
 uniform mat4 u_ModelMatrix;
 uniform vec4 u_BaseColor;
@@ -123,6 +119,6 @@ void main() {
 	}
 	v_WorldPos = vec3( a_WorldPos.xy, 0.0 );
 	v_Position = position;
-
+	
     gl_Position = u_ModelViewProjection * vec4( a_Position, 1.0 );
 }

@@ -229,6 +229,8 @@ typedef void*(*NGLloadproc)(const char *name);
 	NGL( void, glSamplerParameterf, GLuint sampler, GLenum pname, GLfloat param ) \
 	NGL( void, glGenerateMipmap, GLenum target ) \
 	NGL( void, glBindImageTexture, GLuint unit, GLuint texture, GLint level, GLboolean layered, GLint layer, GLenum access, GLenum format ) \
+	NGL( void, glCopyTexSubImage2D, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height ) \
+	NGL( void, glGetTexImage, GLenum target, GLint level, GLenum format, GLenum type, void *pixels ) \
 
 #define NGL_FBO_Procs \
 	NGL( void, glGenFramebuffers, GLsizei n, GLuint *buffers ) \

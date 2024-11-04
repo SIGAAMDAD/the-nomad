@@ -2,7 +2,7 @@ sprites/players/raio_torso
 {
 	nopicmip
 	nomipmaps
-	if ( $r_arb_texture_compression > 0 ) {
+	{
 		texFilter nearest
 		map textures/sprites/players/raio_torso.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
@@ -22,7 +22,7 @@ sprites/players/raio_legs_0
 {
 	nopicmip
 	nomipmaps
-	if ( $r_arb_texture_compression > 0 ) {
+	{
 		texFilter nearest
 		map textures/sprites/players/raio_legs_0.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
@@ -42,7 +42,7 @@ sprites/players/raio_legs_1
 {
 	nopicmip
 	nomipmaps
-	if ( $r_arb_texture_compression > 0 ) {
+	{
 		texFilter nearest
 		map textures/sprites/players/raio_legs_1.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
@@ -62,7 +62,7 @@ sprites/players/raio_arms_0
 {
 	nopicmip
 	nomipmaps
-	if ( $r_arb_texture_compression > 0 ) {
+	{
 		texFilter nearest
 		map textures/sprites/players/raio_arms_0.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
@@ -82,7 +82,7 @@ sprites/players/raio_arms_1
 {
 	nopicmip
 	nomipmaps
-	if ( $r_arb_texture_compression > 0 ) {
+	{
 		texFilter nearest
 		map textures/sprites/players/raio_arms_1.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
@@ -102,7 +102,7 @@ sprites/mobs/grunt
 {
 	nopicmip
 	nomipmaps
-	if ( $r_arb_texture_compression > 0 ) {
+	{
 		texFilter nearest
 		map textures/sprites/mobs/grunt.tga
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
@@ -114,7 +114,7 @@ sprites/mobs/mercenary
 {
 	nopicmip
 	nomipmaps
-	if ( $r_arb_texture_compression > 0 ) {
+	{
 		texFilter nearest
 		map textures/sprites/mobs/mercenary.tga
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA

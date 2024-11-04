@@ -142,7 +142,7 @@ qboolean R_ClearTextureCache( void )
 {
 	uint64_t i;
 	
-	if ( !r_loadTexturesOnDemand->i && glContext.bindlessTextures ) {
+	if ( !r_loadTexturesOnDemand->i || !glContext.bindlessTextures ) {
 		return qfalse;
 	}
 	
@@ -179,7 +179,7 @@ void R_EvictUnusedTextures( void )
 	texture_t *image;
 	static uint64_t lastEvictionTime = 0;
 	
-	if ( ( !r_loadTexturesOnDemand->i && glContext.bindlessTextures ) || *ri.Cvar_VariableString( "mapname" ) ) {
+	if ( ( !r_loadTexturesOnDemand->i || !glContext.bindlessTextures ) || *ri.Cvar_VariableString( "mapname" ) ) {
 		return;
 	}
 

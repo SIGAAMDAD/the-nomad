@@ -12,6 +12,7 @@ uniform float u_GammaAmount;
 uniform bool u_GamePaused;
 uniform float u_CameraExposure;
 
+uniform bool u_WorldDrawing;
 uniform mat4 u_ModelViewProjection;
 uniform bool u_HardwareGamma;
 uniform bool u_HDR;
@@ -56,7 +57,7 @@ struct Light {
 	int type;
 };
 
-layout( std140, binding = 0 ) buffer u_LightBuffer {
+layout( std140, binding = 0 ) readonly buffer u_LightBuffer {
 	Light u_LightData[];
 };
 
@@ -97,7 +98,7 @@ vec3 CalcDiffuse( vec3 diffuseAlbedo, float NH, float EH, float roughness )
 
 vec3 CalcNormal() {
 #if defined(USE_NORMALMAP)
-	vec3 normal = texture2D( u_NormalMap, v_TexCoords ).rgb;
+	vec3 normal = texture( u_NormalMap, v_TexCoords ).rgb;
 	normal = normal * 2.0 - 1.0;
 	return normalize( normal );
 #else
@@ -111,12 +112,11 @@ vec3 CalcScreenSpaceNormal( vec3 position ) {
 	return normalize( cross( dx, dy ) );
 }
 
-vec3 CalcPointLight( Light light, bool isDLight ) {
+vec3 CalcPointLight( Light light ) {
 	vec3 diffuse = a_Color.rgb;
 	float dist = distance( v_WorldPos, vec3( light.origin, gl_FragCoord.z ) );
 	float diff = 0.0;
 	float range = light.range;
-	vec3 specular = vec3( 0.0 );
 	float attenuation = 1.0;
 
 	if ( dist <= light.range ) {
@@ -129,48 +129,32 @@ vec3 CalcPointLight( Light light, bool isDLight ) {
 
 	attenuation = ( light.constant + light.linear + light.quadratic * ( light.range * light.range ) );
 	if ( u_LightingQuality == 2 ) {
-		vec3 lightDir = vec3( light.origin.xy, 0.0 ) - gl_FragCoord.xyz;
-		vec3 viewDir = normalize( u_ViewOrigin - v_WorldPos );
-		vec3 halfwayDir = normalize( lightDir + viewDir );
+		const vec3 normal = CalcNormal();
+		const vec3 lightDir = v_Position - vec3( light.origin, 0.0 );
+		const vec3 viewDir = normalize( normalize( u_ViewOrigin ) - v_Position );
+		const vec3 reflectDir = reflect( -lightDir, CalcScreenSpaceNormal( v_Position ) );
 
-		vec3 reflectDir = reflect( -lightDir, v_WorldPos );
-	#if defined(USE_SPECULARMAP)
-		float shininess = texture2D( u_SpecularMap, v_TexCoords ).r;
-	#else
-		float shininess = 16.0;
-	#endif
-		if ( shininess < 16.0 ) {
-			// anything lower than this is barely visible
-			shininess = 16.0;
-		}
+		float spec = pow( max( dot( viewDir, reflectDir ), 0.0 ), 32 );
+		vec3 specular = texture( u_SpecularMap, v_TexCoords ).r * spec * light.color.rgb;
 
-		vec3 normal = CalcNormal();
-		if ( normal == vec3( 1.0 ) ) {
-			normal = vec3( 0.0 );
-		}
-		const float energyConservation = ( 8.0 + shininess ) / ( 8.0 * M_PI );
-		float spec = energyConservation * pow( max( dot( normal, halfwayDir ), 0.0 ), shininess );
-		specular = light.color.rgb * vec3( spec );
-		specular *= attenuation;
-
+		diffuse = mix( diffuse, specular, 0.025 );
 		diffuse = mix( diffuse, normal, 0.025 );
 	}
 	else if ( u_LightingQuality == 1 ) {
 		const vec3 normal = CalcNormal();
-		const vec3 lightDir = normalize( v_WorldPos ) - normalize( vec3( light.origin.xy, 0.0 ) );
 		diffuse = mix( diffuse, normal, 0.025 );
 	}
 
 	diffuse *= attenuation;
 
-	return diffuse + specular;
+	return diffuse;
 }
 
 void ApplyLighting() {
 	for ( int i = 0; i < u_NumLights; i++ ) {
 		switch ( u_LightData[i].type ) {
 		case POINT_LIGHT:
-			a_Color.rgb += CalcPointLight( u_LightData[i], i > MAX_MAP_LIGHTS );
+			a_Color.rgb += CalcPointLight( u_LightData[i] );
 			break;
 		case DIRECTION_LIGHT:
 			break;
@@ -199,7 +183,7 @@ void main() {
 			a_Color = sharpenImage( u_DiffuseMap, texCoord );
 		}
 	} else {
-		a_Color = texture2D( u_DiffuseMap, texCoord );
+		a_Color = texture( u_DiffuseMap, texCoord );
 	}
 
 	const float alpha = a_Color.a * v_Color.a;

@@ -237,9 +237,11 @@ void RE_ProcessEntities( void )
 	polyVert_t *verts;
 	srfPoly_t *poly;
 	uint64_t i, j;
+	uint32_t stage, bundle;
 	uint64_t maxVerts;
-	float angle;
-	float s, c;
+	float texIndex;
+	qboolean done;
+	const shader_t *shader;
 
 	if ( !r_numEntities || !backend.refdef.numEntities || ( backend.refdef.flags & RSF_ORTHO_BITS ) != RSF_ORTHO_TYPE_WORLD ) {
 		return;
@@ -249,16 +251,21 @@ void RE_ProcessEntities( void )
 	maxVerts = r_maxPolys->i * 4;
 	poly = &backend.refdef.polys[ backend.refdef.numPolys ];
 	verts = &backendData[ rg.smpFrame ]->polyVerts[ r_numPolyVerts ];
+	texIndex = 0.0f;
 
 	for ( i = 0; i < backend.refdef.numEntities; i++ ) {
 		if ( r_numPolys >= r_maxPolys->i || r_numPolyVerts >= maxVerts ) {
 			ri.Printf( PRINT_DEVELOPER, "R_ProcessEntities: too many entities, dropping %lu entities\n", backend.refdef.numEntities - i );
 			break;
 		}
+
+		if ( disBetweenOBJ( refEntity->e.origin, glState.viewData.camera.origin ) > 12.0f ) {
+			continue;
+		}
 		
 		origin[0] = refEntity->e.origin[0];
-		origin[1] = rg.world->height - refEntity->e.origin[1];
-		origin[2] = refEntity->e.origin[2];
+		origin[1] = rg.world->height - ( refEntity->e.origin[1] - refEntity->e.origin[2] );
+		origin[2] = 0.0f;
 
 		poly->verts = verts;
 		if ( refEntity->e.sheetNum == -1 || !rg.sheets[ refEntity->e.sheetNum ] ) {
@@ -277,11 +284,15 @@ void RE_ProcessEntities( void )
 			VectorSet2( verts[1].uv, 1, 0 );
 			VectorSet2( verts[2].uv, 1, 1 );
 			VectorSet2( verts[3].uv, 0, 1 );
+
+			shader = R_GetShaderByHandle( refEntity->e.spriteId );
 		} else {
 			VectorCopy2( verts[ 0 ].uv, rg.sheets[ refEntity->e.sheetNum ]->sprites[ refEntity->e.spriteId ].texCoords[0] );
 			VectorCopy2( verts[ 1 ].uv, rg.sheets[ refEntity->e.sheetNum ]->sprites[ refEntity->e.spriteId ].texCoords[1] );
 			VectorCopy2( verts[ 2 ].uv, rg.sheets[ refEntity->e.sheetNum ]->sprites[ refEntity->e.spriteId ].texCoords[2] );
 			VectorCopy2( verts[ 3 ].uv, rg.sheets[ refEntity->e.sheetNum ]->sprites[ refEntity->e.spriteId ].texCoords[3] );
+
+			shader = R_GetShaderByHandle( rg.sheets[ refEntity->e.sheetNum ]->hShader );
 		}
 
 		VectorSet2( verts[0].worldPos, refEntity->e.origin[0], refEntity->e.origin[1] + refEntity->e.origin[2] );
@@ -321,7 +332,7 @@ void RE_BeginScene( const renderSceneRef_t *fd )
 	backend.refdef.height = fd->height;
 	backend.refdef.flags = fd->flags;
 
-//	backend.refdef.time = fd->time;
+	backend.refdef.time = fd->time;
 	backend.refdef.floatTime = backend.refdef.time * 0.001f; // -EC-: cast to double
 
 	backend.refdef.numDLights = r_numDLights - r_firstSceneDLight;

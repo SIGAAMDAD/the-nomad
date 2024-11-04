@@ -5,7 +5,7 @@ namespace TheNomad::SGame {
 	const uint DASH_DURATION = 100;
 	const uint SLIDE_DURATION = 500;
 	
-	const float JUMP_VELOCITY = 2.5f;
+	const float JUMP_VELOCITY = 0.5f;
 	const float OVERCLIP = 1.5f;
 	
     //
@@ -39,7 +39,7 @@ namespace TheNomad::SGame {
 			float velocity;
 			float wishspeed;
 			float accelerate;
-			
+
 			if ( !groundPlane ) {
 				return;
 			}
@@ -59,6 +59,12 @@ namespace TheNomad::SGame {
 			}
 			accel.x += side;
 			accel.y += forward;
+			if ( m_EntityData.key_Jump.active ) {
+				if ( up > 0.0f ) {
+					up = 0.0f;
+					accel.z += JUMP_VELOCITY;
+				}
+			}
 
 			if ( m_EntityData.IsDashing() ) {
 				accel.y += 0.60f * forward;
@@ -163,7 +169,7 @@ namespace TheNomad::SGame {
 		private bool CheckJump() {
 			vec3 accel = m_EntityData.GetPhysicsObject().GetAcceleration();
 			
-			if ( upmove == 0.0f ) {
+			if ( m_EntityData.key_Jump.msec == 0 ) {
 				// no holding jump
 				accel.z = 0;
 				flags &= ~PMF_JUMP_HELD;
@@ -171,10 +177,10 @@ namespace TheNomad::SGame {
 				return false;
 			}
 			
-			if ( ( flags & PMF_JUMP_HELD ) != 0 ) {
-				// double jump
-				m_EntityData.SetState( @StateManager.GetStateForNum( StateNum::ST_PLAYR_DOUBLEJUMP ) );
-			}
+//			if ( ( flags & PMF_JUMP_HELD ) != 0 ) {
+//				// double jump
+//				m_EntityData.SetState( @StateManager.GetStateForNum( StateNum::ST_PLAYR_DOUBLEJUMP ) );
+//			}
 			
 			flags |= PMF_JUMP_HELD;
 			accel.z += JUMP_VELOCITY;
@@ -367,7 +373,9 @@ namespace TheNomad::SGame {
 				// not holding jump
 				flags &= ~PMF_JUMP_HELD;
 			}
-			CheckJump();
+			if ( up >= 1.0f ) {
+				up = 1.0f;
+			}
 			
 			groundPlane = m_EntityData.GetWaterLevel() < 1;
 
@@ -375,19 +383,17 @@ namespace TheNomad::SGame {
 				WaterMove();
 			} else if ( groundPlane ) {
 				WalkMove();
-			} else {
-				AirMove();
 			}
+			AirMove();
 
 			SetMovementDir();
 
 			TheNomad::Engine::UserInterface::SetActiveFont( TheNomad::Engine::UserInterface::Font_RobotoMono );
 
-/*
 			ImGui::Begin( "Debug Player Movement", null, ImGuiWindowFlags::AlwaysAutoResize );
 			ImGui::SetWindowPos( vec2( 16, 128 ) );
-			ImGui::Text( "Origin: [ " + m_EntityData.GetOrigin().x + ", " + m_EntityData.GetOrigin().y + " ]" );
-			ImGui::Text( "Velocity: [ " + m_EntityData.GetVelocity().x + ", " + m_EntityData.GetVelocity().y + " ]" );
+			ImGui::Text( "Origin: [ " + m_EntityData.GetOrigin().x + ", " + m_EntityData.GetOrigin().y + ", " + m_EntityData.GetOrigin().z + " ]" );
+			ImGui::Text( "Velocity: [ " + m_EntityData.GetVelocity().x + ", " + m_EntityData.GetVelocity().y + ", " + m_EntityData.GetVelocity().z + " ]" );
 			ImGui::Text( "CameraPos: [ " + Game_CameraWorldPos.x + ", " + Game_CameraWorldPos.y + " ]" );
 			ImGui::Text( "Forward: " + forward );
 			ImGui::Text( "Side: " + side );
@@ -429,7 +435,6 @@ namespace TheNomad::SGame {
 			ImGui::Separator();
 			ImGui::Text( "GameTic: " + gameTic );
 			ImGui::End();
-		*/
 
 			m_EntityData.key_MoveNorth.msec = 0;
 			m_EntityData.key_MoveSouth.msec = 0;
@@ -469,12 +474,13 @@ namespace TheNomad::SGame {
 
 			forward = 0.0f;
 			side = 0.0f;
-			up = 0.0f;
 			
 			side += base * KeyState( m_EntityData.key_MoveEast );
 			side -= base * KeyState( m_EntityData.key_MoveWest );
 
-			up += 1.25f * KeyState( m_EntityData.key_Jump );
+			if ( up < 1.0f ) {
+				up = KeyState( m_EntityData.key_Jump );
+			}
 			
 			forward -= base * KeyState( m_EntityData.key_MoveNorth );
 			forward += base * KeyState( m_EntityData.key_MoveSouth );

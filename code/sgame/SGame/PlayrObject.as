@@ -199,6 +199,11 @@ namespace TheNomad::SGame {
 			m_nTimeSinceDash = TheNomad::GameSystem::GameManager.GetGameTic();
 		}
 
+		void Jump() {
+			key_Jump.Down();
+			key_Jump.Up();
+		}
+
 		void SetUsingWeapon( bool bUseWeapon ) {
 			m_iFlags |= bUseWeapon ? PF_USING_WEAPON : 0;
 		}
@@ -259,6 +264,19 @@ namespace TheNomad::SGame {
 		}
 		int GetCurrentWeaponIndex() const {
 			return m_CurrentWeapon;
+		}
+
+		SpriteSheet@ GetArmSpriteSheet() {
+			return @m_ArmSpriteSheet[ m_ArmsFacing ];
+		}
+		SpriteSheet@ GetLegsSpriteSheet() {
+			return @m_LegSpriteSheet[ m_LegsFacing ];
+		}
+		const SpriteSheet@ GetArmSpriteSheet() const {
+			return @m_ArmSpriteSheet[ m_ArmsFacing ];
+		}
+		const SpriteSheet@ GetLegsSpriteSheet() const {
+			return @m_LegSpriteSheet[ m_LegsFacing ];
 		}
 
 		void SetLegsFacing( int facing ) {
