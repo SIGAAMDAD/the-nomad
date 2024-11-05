@@ -582,7 +582,7 @@ namespace TheNomad::SGame {
 		}
 
 		void GivePlayerItem_f() {
-			
+			PlayrObject@ obj = @m_ActivePlayer;
 		}
 		void GivePlayerWeapon_f() {
 			

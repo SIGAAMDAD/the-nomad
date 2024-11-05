@@ -213,9 +213,37 @@ static void DrawNewsFeed( void )
 	ImGui::End();
 }
 
+extern void Menu_DrawItemGeneric( menucommon_t *generic );
+
 static void DrawMenu_Text( void )
 {
-	Menu_Draw( &s_main->menu );
+	int i;
+	menuframework_t *menu;
+
+	menu = &s_main->menu;
+
+	ImGui::Begin( va( "%s##%sMainMenu", menu->name, menu->name ), NULL, menu->flags );
+	if ( !( Key_GetCatcher() & KEYCATCH_CONSOLE ) ) {
+		ImGui::SetWindowFocus();
+	}
+	ImGui::SetWindowPos( ImVec2( menu->x, menu->y ) );
+	ImGui::SetWindowSize( ImVec2( menu->width, menu->height ) );
+
+	UI_EscapeMenuToggle();
+	if ( UI_MenuTitle( menu->name, menu->titleFontScale ) ) {
+		UI_PopMenu();
+		Snd_PlaySfx( ui->sfx_back );
+
+		ImGui::End();
+		return;
+	}
+
+	ImGui::SetCursorScreenPos( ImVec2( 16 * ui->scale, 400 * ui->scale ) );
+	for ( i = 0; i < menu->nitems; i++ ) {
+		Menu_DrawItemGeneric( (menucommon_t *)menu->items[i] );
+	}
+
+	ImGui::End();
 
 	DrawNewsFeed();
 

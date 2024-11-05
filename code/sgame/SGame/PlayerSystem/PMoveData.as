@@ -517,6 +517,7 @@ namespace TheNomad::SGame {
 		int old_frame_msec = 0;
 
 		uint move_toggle = 0;
+		uint jump_toggle = 0;
 		
 		TheNomad::Engine::SoundSystem::SoundEffect moveGravel0;
 		TheNomad::Engine::SoundSystem::SoundEffect moveGravel1;

@@ -93,10 +93,6 @@ CModuleHandle::CModuleHandle( const char *pName, const char *pDescription, const
 	N_strncpyz( name, m_szName.c_str(), sizeof( name ) - 1 );
 	g_pModuleLib->GetScriptBuilder()->DefineWord( va( "MODULE_%s", N_strupr( name ) ) );
 
-	if ( !g_pModuleLib->IsModuleInCache( pName ) ) {
-		Build( sourceFiles );
-	}
-
 //    m_pScriptModule->SetUserData( this );
 
 	m_nLastCallId = NumFuncs;
@@ -105,6 +101,13 @@ CModuleHandle::CModuleHandle( const char *pName, const char *pDescription, const
 
 CModuleHandle::~CModuleHandle() {
 	ClearMemory();
+}
+
+void CModuleHandle::Compile( void )
+{
+	if ( !g_pModuleLib->IsModuleInCache( m_szName.c_str() ) ) {
+		Build( m_SourceFiles );
+	}
 }
 
 void CModuleHandle::LoadFunction( const string_t& moduleName, const string_t& funcName, asIScriptFunction **pFunction )

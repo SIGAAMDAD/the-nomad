@@ -445,6 +445,54 @@ bool CModuleLib::AddDefaultProcs( void ) const {
 
 #define AS_CACHE_CODE_IDENT (('C'<<24)+('B'<<16)+('S'<<8)+'A')
 
+static fileTime_t ModuleLib_GetDirectoryChecksum( const char *dir )
+{
+	char **fileList, **dirList;
+	uint64_t numFiles, numDirs;
+	uint64_t i;
+	fileStats_t stats;
+	fileTime_t total;
+	char szDirectory[ MAX_OSPATH*2+1 ];
+	char szPath[ MAX_OSPATH*2+1 ];
+
+	total = 0;
+
+	memset( szDirectory, 0, sizeof( szDirectory ) );
+
+	if ( !N_stristr( dir, "gamedata" ) ) {
+		snprintf( szDirectory, sizeof( szDirectory ) - 1, "gamedata/%s", dir );
+	} else {
+		N_strncpyz( szDirectory, dir, sizeof( szDirectory ) );
+	}
+
+	dirList = FS_ListFiles( szDirectory, "/", &numDirs );
+	for ( i = 0; i < numDirs; i++ ) {
+		if ( *dirList[i] == '.' || ( *dirList[i] == '.' && *( dirList[i]+1 ) == '.' ) ) {
+			continue;
+		}
+		if ( dirList[i][ strlen( dirList[i] ) - 1 ] != '/' ) {
+			snprintf( szPath, sizeof( szPath ) - 1, "%s%s/", szDirectory, dirList[i] );
+		} else {
+			snprintf( szPath, sizeof( szPath ) - 1, "%s%s", szDirectory, dirList[i] );
+		}
+		total += ModuleLib_GetDirectoryChecksum( szPath );
+		Con_Printf( "..fetched checksum of directory '%s'\n", szPath );
+	}
+	FS_FreeFileList( dirList );
+
+	fileList = FS_ListFiles( szDirectory, ".as", &numFiles );
+	for ( i = 0; i < numFiles; i++ ) {
+		snprintf( szPath, sizeof( szPath ) - 1, "%s/%s", szDirectory, fileList[i] );
+		if ( !Sys_GetFileStats( &stats, szPath ) ) {
+			N_Error( ERR_DROP, "ModuleLib_GetDirectoryChecksum: couldn't get filestats for '%s'", szPath );
+		}
+		total += stats.mtime;
+	}
+	FS_FreeFileList( fileList );
+
+	return total;
+}
+
 void CModuleLib::SaveByteCodeCache( void )
 {
 	int ret;
@@ -468,6 +516,11 @@ void CModuleLib::SaveByteCodeCache( void )
 	header->moduleVersionUpdate = pModule->m_nModVersionUpdate;
 	header->moduleVersionPatch = pModule->m_nModVersionPatch;
 	header->modCount = m_nModuleCount;
+	header->checksum = 0;
+	for ( i = 0; i < m_nModuleCount; i++ ) {
+		header->checksum += ModuleLib_GetDirectoryChecksum( m_pModList[i].info->m_pHandle->GetModulePath() );
+	}
+	Con_Printf( "Total module checksum is %lu\n", header->checksum );
 	
 	ptr = header->modList;
 	for ( i = 0; i < m_nModuleCount; i++ ) {
@@ -484,6 +537,31 @@ void CModuleLib::SaveByteCodeCache( void )
 	Hunk_FreeTempMemory( header );
 
 	FS_WriteFile( va( CACHE_DIR "/asmetadata.bin" ), header, sizeof( *header ) + ( MAX_NPATH * m_nModuleCount ) );
+}
+
+qboolean CModuleLib::RecompileNeeded( void )
+{
+	fileTime_t total, added;
+	char **fileList, **dirList;
+	uint64_t numFiles, numDirs;
+	uint64_t i;
+
+	if ( ml_alwaysCompile->i ) {
+		Con_Printf( COLOR_MAGENTA "forced recompilation is enabled.\n" );
+		return qtrue;
+	}
+
+	total = 0;
+	for ( i = 0; i < m_nModuleCount; i++ ) {
+		Con_DPrintf( "fetching checksum of '%s'...\n", m_pModList[i].info->m_szId );
+		added = ModuleLib_GetDirectoryChecksum( m_pModList[i].info->m_pHandle->GetModulePath() );
+		Con_DPrintf( "...got %lu\n", added );
+		total += added;
+	}
+
+	Con_Printf( COLOR_MAGENTA "...Got total checksum of %lu\n", total );
+
+	return m_pCacheData->checksum != total;
 }
 
 bool CModuleLib::LoadByteCodeCache( void )
@@ -512,8 +590,15 @@ bool CModuleLib::LoadByteCodeCache( void )
 		return false;
 	}
 
-	if ( header->gameVersion.m_nVersionMajor != _NOMAD_VERSION_MAJOR || header->gameVersion.m_nVersionUpdate != _NOMAD_VERSION_UPDATE
-		|| header->gameVersion.m_nVersionPatch != _NOMAD_VERSION_PATCH )
+	m_pCacheData = (asCodeCacheHeader_t *)Hunk_Alloc( sizeof( *header ) + ( MAX_NPATH * header->modCount ), h_high );
+	memcpy( m_pCacheData, header, sizeof( *header ) + ( MAX_NPATH * header->modCount ) );
+
+	FS_FreeFile( header );
+
+	Con_Printf( "...Got checksum %lu\n", m_pCacheData->checksum );
+
+	if ( m_pCacheData->gameVersion.m_nVersionMajor != _NOMAD_VERSION_MAJOR || m_pCacheData->gameVersion.m_nVersionUpdate != _NOMAD_VERSION_UPDATE
+		|| m_pCacheData->gameVersion.m_nVersionPatch != _NOMAD_VERSION_PATCH )
 	{
 		// recompile, different version
 		return false;
@@ -523,7 +608,7 @@ bool CModuleLib::LoadByteCodeCache( void )
 		CModuleCacheHandle dataStream( va( CACHE_DIR "/ascodecache.dat" ), FS_OPEN_READ );
 		int ret;
 		
-		ret = m_pModule->LoadByteCode( &dataStream, (bool *)&header->hasDebugSymbols );
+		ret = m_pModule->LoadByteCode( &dataStream, (bool *)&m_pCacheData->hasDebugSymbols );
 		/*
 		if ( ret != asSUCCESS ) {
 			// clean cache to get rid of any old and/or corrupt code
@@ -541,11 +626,6 @@ bool CModuleLib::LoadByteCodeCache( void )
 		}
 	}
 
-	m_pCacheData = (asCodeCacheHeader_t *)Hunk_Alloc( sizeof( *header ) + ( MAX_NPATH * header->modCount ), h_high );
-	memcpy( m_pCacheData, header, sizeof( *header ) + ( MAX_NPATH * header->modCount ) );
-
-	FS_FreeFile( header );
-
 	return true;
 }
 
@@ -554,7 +634,7 @@ qboolean CModuleLib::IsModuleInCache( const char *name ) const
 	uint64_t i;
 	char *ptr;
 
-	if ( !m_pCacheData ) {
+	if ( !m_pCacheData || m_bModulesOutdated ) {
 		// failed to load
 		return qfalse;
 	}
@@ -703,7 +783,7 @@ CModuleLib::CModuleLib( void )
 	char **fileList;
 	uint64_t nFiles, i;
 	int error;
-	bool loaded;
+	bool loaded, recompiled;
 
 	if ( s_pModuleInstance && s_pModuleInstance->m_pEngine ) {
 		return;
@@ -765,9 +845,6 @@ CModuleLib::CModuleLib( void )
 
 	// add standard definitions
 	g_pModuleLib->AddDefaultProcs();
-	loaded = LoadByteCodeCache();
-
-	CheckASCall( m_pEngine->SetEngineProperty( asEP_INIT_GLOBAL_VARS_AFTER_BUILD, !loaded ) );
 
 	for ( i = 0; i < nFiles; i++ ) {
 		if ( N_streq( fileList[i], "." ) || N_streq( fileList[i], ".." ) ) {
@@ -777,6 +854,18 @@ CModuleLib::CModuleLib( void )
 		LoadModule( fileList[i] );
 	}
 	LoadModList();
+
+	Con_Printf( "Checking if recompilation is needed...\n" );
+	loaded = LoadByteCodeCache();
+	if ( ( recompiled = RecompileNeeded() ) ) {
+		m_bModulesOutdated = qtrue;
+		Con_Printf( COLOR_MAGENTA "...module code has been changed.\n" );
+	} else {
+		m_bModulesOutdated = qfalse;
+		Con_Printf( COLOR_GREEN "...module code is up to date.\n" );
+	}
+
+	CheckASCall( m_pEngine->SetEngineProperty( asEP_INIT_GLOBAL_VARS_AFTER_BUILD, !loaded ) );
 
 	for ( i = 0; i < m_nModuleCount; i++ ) {
 		m_pModList[i].info = &m_pLoadList[i];
@@ -810,7 +899,10 @@ CModuleLib::CModuleLib( void )
 		}
 	}
 
-	SaveByteCodeCache();
+	if ( recompiled ) {
+		// only save if we've got new stuff
+		SaveByteCodeCache();
+	}
 	for ( i = 0; i < m_nModuleCount; i++ ) {
 		if ( !m_pLoadList[i].m_pHandle->InitCalls() ) {
 			Con_Printf( COLOR_YELLOW "WARNING: failed to initialize calling procs for module '%s'\n", m_pLoadList[i].m_szName );

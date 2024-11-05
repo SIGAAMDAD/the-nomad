@@ -20,3 +20,4 @@
 #include "SGame/PlayerSystem/PlayerHud.as"
 #include "SGame/PlayerSystem/StyleTracker.as"
 #include "SGame/PlayerSystem/SplitScreen.as"
+#include "SGame/PlayerSystem/WeaponSlot.as"

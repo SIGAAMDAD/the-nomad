@@ -79,6 +79,7 @@ public:
 	const char *GetModulePath( void ) const;
 
     int CallFunc( EModuleFuncId nCallId, uint32_t nArgs, int *pArgList );
+	void Compile( void );
 
 	inline void GetVersion( int32_t *major, int32_t *update, int32_t *patch ) const {
 		*major = m_nVersionMajor;

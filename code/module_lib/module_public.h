@@ -474,10 +474,10 @@ inline bool module_s::operator!=( const string_t& other ) const {
 typedef struct {
 	int64_t ident;
 	version_t gameVersion;
-	int32_t moduleVersionMajor;
-	int32_t moduleVersionUpdate;
+	int16_t moduleVersionMajor;
+	int16_t moduleVersionUpdate;
 	int32_t moduleVersionPatch;
-	uint32_t checksum;
+	fileTime_t checksum;
 	qboolean hasDebugSymbols;
 	uint64_t modCount;
 	char modList[0];
@@ -531,6 +531,7 @@ private:
 	bool LoadByteCodeCache( void );
 	void LoadModList( void );
 	void LoadModule( const char *pModuleName );
+	qboolean RecompileNeeded( void );
 
 	CModuleInfo *m_pLoadList;
 	uint64_t m_nModuleCount;
@@ -549,6 +550,8 @@ private:
 	asIScriptContext *m_pContext;
 
 	asCodeCacheHeader_t *m_pCacheData;
+
+	qboolean m_bModulesOutdated;
 };
 
 extern moduleImport_t moduleImport;
