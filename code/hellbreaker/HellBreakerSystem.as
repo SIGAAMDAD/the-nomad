@@ -34,6 +34,7 @@ namespace hellbreaker {
 		}
 		void OnInit() {
 			json@ data;
+			
 			@data = json();
 			if ( !data.ParseFile( "Config/nomadmain/hellbreaker.json" ) ) {
 				ConsoleWarning( "Couldn't load hellbreaker config, using default values.\n" );

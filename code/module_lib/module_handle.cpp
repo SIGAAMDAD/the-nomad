@@ -105,9 +105,7 @@ CModuleHandle::~CModuleHandle() {
 
 void CModuleHandle::Compile( void )
 {
-	if ( !g_pModuleLib->IsModuleInCache( m_szName.c_str() ) ) {
-		Build( m_SourceFiles );
-	}
+	Build( m_SourceFiles );
 }
 
 void CModuleHandle::LoadFunction( const string_t& moduleName, const string_t& funcName, asIScriptFunction **pFunction )

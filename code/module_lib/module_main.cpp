@@ -549,6 +549,9 @@ qboolean CModuleLib::RecompileNeeded( void )
 	if ( ml_alwaysCompile->i ) {
 		Con_Printf( COLOR_MAGENTA "forced recompilation is enabled.\n" );
 		return qtrue;
+	} else if ( !m_pCacheData ) {
+		Con_Printf( COLOR_MAGENTA "module code cache not loaded.\n" );
+		return qtrue;
 	}
 
 	total = 0;
@@ -571,6 +574,7 @@ bool CModuleLib::LoadByteCodeCache( void )
 	uint64_t i;
 	asCodeCacheHeader_t *header;
 	fileStats_t cacheStats, dataStats;
+	bool recompiled;
 
 	if ( ml_alwaysCompile->i ) {
 		Con_Printf( "Forced recompilation is on.\n" );
@@ -596,6 +600,19 @@ bool CModuleLib::LoadByteCodeCache( void )
 	FS_FreeFile( header );
 
 	Con_Printf( "...Got checksum %lu\n", m_pCacheData->checksum );
+
+	if ( ( recompiled = RecompileNeeded() ) ) {
+		m_bModulesOutdated = qtrue;
+		Con_Printf( COLOR_MAGENTA "...module code has been changed.\n" );
+
+		for ( i = 0; i < m_nModuleCount; i++ ) {
+			m_pModList[i].info->m_pHandle->Compile();
+		}
+		return false;
+	} else {
+		m_bModulesOutdated = qfalse;
+		Con_Printf( COLOR_GREEN "...module code is up to date.\n" );
+	}
 
 	if ( m_pCacheData->gameVersion.m_nVersionMajor != _NOMAD_VERSION_MAJOR || m_pCacheData->gameVersion.m_nVersionUpdate != _NOMAD_VERSION_UPDATE
 		|| m_pCacheData->gameVersion.m_nVersionPatch != _NOMAD_VERSION_PATCH )
@@ -857,13 +874,6 @@ CModuleLib::CModuleLib( void )
 
 	Con_Printf( "Checking if recompilation is needed...\n" );
 	loaded = LoadByteCodeCache();
-	if ( ( recompiled = RecompileNeeded() ) ) {
-		m_bModulesOutdated = qtrue;
-		Con_Printf( COLOR_MAGENTA "...module code has been changed.\n" );
-	} else {
-		m_bModulesOutdated = qfalse;
-		Con_Printf( COLOR_GREEN "...module code is up to date.\n" );
-	}
 
 	CheckASCall( m_pEngine->SetEngineProperty( asEP_INIT_GLOBAL_VARS_AFTER_BUILD, !loaded ) );
 
@@ -899,7 +909,7 @@ CModuleLib::CModuleLib( void )
 		}
 	}
 
-	if ( recompiled ) {
+	if ( !loaded ) {
 		// only save if we've got new stuff
 		SaveByteCodeCache();
 	}

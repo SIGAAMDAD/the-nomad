@@ -17,7 +17,7 @@ namespace TheNomad::SGame {
 		}
 
 		void AddMode( InfoSystem::WeaponProperty nMode ) {
-			m_nMode |= uint( nMode );
+			m_nMode = InfoSystem::WeaponProperty( uint( m_nMode ) | uint( nMode ) );
 		}
 		InfoSystem::WeaponProperty GetMode() const {
 			return m_nMode;
