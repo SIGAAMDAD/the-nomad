@@ -1524,18 +1524,59 @@ static void G_UpdateGUID( const char *prefix, int prefix_len )
 #endif
 }
 
-#define MAX_DESCRIPTION_LENGTH 1024
-#define MAX_DISPLAY_NAME_LENGTH 128
-#define MAX_ID_LENGTH 24
-
 typedef struct skin_s {
 	char *description;
 	char *displayText;
 	char *name;
+
+	uvec2_t torsoSheetSize;
+	uvec2_t torsoSpriteSize;
+
+	uvec2_t armsSheetSize;
+	uvec2_t armsSpriteSize;
+
+	uvec2_t legsSheetSize;
+	uvec2_t legsSpriteSize;
+
 	struct skin_s *next;
 } skin_t;
 
 static skin_t *s_pSkinList;
+
+void G_GetSkinData(
+	const char *pSkinName,
+	char *pszDescription,
+	char *pszDisplayText,
+	uvec2_t torsoSheetSize, uvec2_t torsoSpriteSize,
+	uvec2_t armsSheetSize, uvec2_t armsSpriteSize,
+	uvec2_t legsSheetSize, uvec2_t legsSpriteSize )
+{
+	const skin_t *skin;
+
+	for ( skin = s_pSkinList; skin; skin = skin->next ) {
+		if ( !N_stricmp( skin->name, pSkinName ) ) {
+			break;
+		}
+	}
+	if ( !skin ) {
+		N_Error( ERR_DROP, "G_GetSkinData(): invalid skin id '%s'", pSkinName );
+	}
+
+	VectorCopy2( torsoSheetSize, skin->torsoSheetSize );
+	VectorCopy2( torsoSpriteSize, skin->torsoSpriteSize );
+
+	VectorCopy2( armsSheetSize, skin->armsSheetSize );
+	VectorCopy2( armsSpriteSize, skin->armsSpriteSize );
+
+	VectorCopy2( legsSheetSize, skin->legsSheetSize );
+	VectorCopy2( legsSpriteSize, skin->legsSpriteSize );
+
+	memset( pszDescription, 0, MAX_DESCRIPTION_LENGTH );
+	N_strncpyz( pszDescription, skin->description, MAX_DESCRIPTION_LENGTH );
+
+	memset( pszDisplayText, 0, MAX_DISPLAY_NAME_LENGTH );
+	N_strncpyz( pszDisplayText, skin->displayText, MAX_DISPLAY_NAME_LENGTH );
+}
 
 static void G_LoadSkins( void )
 {
@@ -1546,6 +1587,9 @@ static void G_LoadSkins( void )
 	char name[MAX_ID_LENGTH];
 	char display[MAX_DISPLAY_NAME_LENGTH];
 	char description[MAX_DESCRIPTION_LENGTH];
+	uvec2_t torsoSheetSize, torsoSpriteSize;
+	uvec2_t armsSheetSize, armsSpriteSize;
+	uvec2_t legsSheetSize, legsSpriteSize;
 	uint32_t numSkins, size;
 	skin_t *skin;
 
@@ -1585,6 +1629,15 @@ static void G_LoadSkins( void )
 		}
 		N_strncpyz( description, tok, sizeof( description ) - 1 );
 
+		Parse1DMatrix( text, 2, (float *)torsoSheetSize );
+		Parse1DMatrix( text, 2, (float *)torsoSpriteSize );
+
+		Parse1DMatrix( text, 2, (float *)armsSheetSize );
+		Parse1DMatrix( text, 2, (float *)armsSpriteSize );
+
+		Parse1DMatrix( text, 2, (float *)legsSheetSize );
+		Parse1DMatrix( text, 2, (float *)legsSpriteSize );
+
 		size = sizeof( *skin );
 		size += PAD( strlen( name ) + 1, sizeof( uintptr_t ) );
 		size += PAD( strlen( display ) + 1, sizeof( uintptr_t ) );
@@ -1594,7 +1647,16 @@ static void G_LoadSkins( void )
 		skin->name = (char *)( skin + 1 );
 		skin->displayText = (char *)( skin->name + strlen( name ) + 1 );
 		skin->description = (char *)( skin->displayText + strlen( display ) + 1 );
-		
+
+		VectorCopy2( skin->torsoSheetSize, torsoSheetSize );
+		VectorCopy2( skin->torsoSpriteSize, torsoSpriteSize );
+
+		VectorCopy2( skin->armsSheetSize, armsSheetSize );
+		VectorCopy2( skin->armsSpriteSize, armsSpriteSize );
+
+		VectorCopy2( skin->legsSheetSize, legsSheetSize );
+		VectorCopy2( skin->legsSpriteSize, legsSpriteSize );
+
 		strcpy( skin->name, name );
 		strcpy( skin->displayText, display );
 		strcpy( skin->description, description );

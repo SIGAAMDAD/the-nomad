@@ -21,3 +21,4 @@
 #include "SGame/PlayerSystem/StyleTracker.as"
 #include "SGame/PlayerSystem/SplitScreen.as"
 #include "SGame/PlayerSystem/WeaponSlot.as"
+#include "SGame/PlayerSystem/ArmData.as"

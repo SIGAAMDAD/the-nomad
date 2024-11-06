@@ -269,6 +269,11 @@ extern gameInfo_t gi;
 #define PRINT_WARNING 2
 #define PRINT_ERROR 3
 
+// skin string limits
+#define MAX_DESCRIPTION_LENGTH 1024
+#define MAX_DISPLAY_NAME_LENGTH 128
+#define MAX_ID_LENGTH 24
+
 extern uint32_t g_console_field_width;
 extern uint32_t bigchar_width;
 extern uint32_t bigchar_height;
@@ -370,6 +375,13 @@ qboolean G_CheckPaused( void );
 qboolean G_CheckWallHit( const vec3_t origin, dirtype_t dir );
 void G_SetCameraData( const vec2_t origin, float zoom, float rotation );
 void G_RecordEvent( const sysEvent_t *ev );
+void G_GetSkinData(
+	const char *pSkinName,
+	char *pszDescription,
+	char *pszDisplayText,
+	uvec2_t torsoSheetSize, uvec2_t torsoSpriteSize,
+	uvec2_t armsSheetSize, uvec2_t armsSpritesize,
+	uvec2_t legsSheetSize, uvec2_t legsSpriteSize );
 
 //
 // g_threads.cpp

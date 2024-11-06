@@ -1978,6 +1978,7 @@ bool asCContext::ReserveStackSpace(asUINT size)
 		m_stackIndex++;
 		if( m_stackBlocks.GetLength() == m_stackIndex )
 		{
+			Con_Printf( COLOR_RED "Creating new stack block, %lu reserved bytes\n", (uint64_t)(m_stackBlockSize << m_stackIndex) );
 			// Allocate the new stack block, with twice the size of the previous
 #ifndef WIP_16BYTE_ALIGN
 			asDWORD *stack = asNEWARRAY(asDWORD, (m_stackBlockSize << m_stackIndex));

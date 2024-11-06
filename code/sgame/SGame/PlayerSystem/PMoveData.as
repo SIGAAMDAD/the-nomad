@@ -93,41 +93,41 @@ namespace TheNomad::SGame {
 						if ( ( tile & SURFACEPARM_WATER ) != 0 ) {
 							switch ( TheNomad::Util::PRandom() & 2 ) {
 							case 0:
-								m_EntityData.m_Emitter.PlaySound( moveWater0, 1.0f, 0xff );
+								m_EntityData.EmitSound( moveWater0, 1.0f, 0xff );
 								break;
 							case 1:
-								m_EntityData.m_Emitter.PlaySound( moveWater1, 1.0f, 0xff );
+								m_EntityData.EmitSound( moveWater1, 1.0f, 0xff );
 								break;
 							};
 						}
 						if ( ( tile & SURFACEPARM_METAL ) != 0 ) {
 							switch ( TheNomad::Util::PRandom() & 3 ) {
 							case 0:
-								m_EntityData.m_Emitter.PlaySound( moveMetal0, 1.0f, 0xff );
+								m_EntityData.EmitSound( moveMetal0, 1.0f, 0xff );
 								break;
 							case 1:
-								m_EntityData.m_Emitter.PlaySound( moveMetal1, 1.0f, 0xff );
+								m_EntityData.EmitSound( moveMetal1, 1.0f, 0xff );
 								break;
 							case 2:
-								m_EntityData.m_Emitter.PlaySound( moveMetal2, 1.0f, 0xff );
+								m_EntityData.EmitSound( moveMetal2, 1.0f, 0xff );
 								break;
 							case 3:
-								m_EntityData.m_Emitter.PlaySound( moveMetal3, 1.0f, 0xff );
+								m_EntityData.EmitSound( moveMetal3, 1.0f, 0xff );
 								break;
 							};
 						}
 						switch ( TheNomad::Util::PRandom() & 3 ) {
 						case 0:
-							m_EntityData.m_Emitter.PlaySound( moveGravel0, 1.0f, 0xff );
+							m_EntityData.EmitSound( moveGravel0, 1.0f, 0xff );
 							break;
 						case 2:
-							m_EntityData.m_Emitter.PlaySound( moveGravel1, 1.0f, 0xff );
+							m_EntityData.EmitSound( moveGravel1, 1.0f, 0xff );
 							break;
 						case 1:
-							m_EntityData.m_Emitter.PlaySound( moveGravel2, 1.0f, 0xff );
+							m_EntityData.EmitSound( moveGravel2, 1.0f, 0xff );
 							break;
 						case 3:
-							m_EntityData.m_Emitter.PlaySound( moveGravel3, 1.0f, 0xff );
+							m_EntityData.EmitSound( moveGravel3, 1.0f, 0xff );
 							break;
 						};
 						move_toggle = gameTic;
@@ -212,39 +212,11 @@ namespace TheNomad::SGame {
 			}
 			m_EntityData.GetPhysicsObject().SetAcceleration( vel );
 		}
-		
-		//
-		// CmdScale: returns the scale factor to appply to cmd movements
-		// this allows the user to use axial -127 to 127 values for all directions
-		// without getting a sqrt(2) distortion in speed.
-		//
-		/*
-		void CmdScale( int& out forward, int& out side, int& out upmove ) {
-			int max;
-			float total;
-			float scale;
-			
-			max = abs( forward );
-			if ( abs( side ) > max ) {
-				max = abs( side );
-			}
-			if ( abs( upmove ) > max ) {
-				max = abs( upmove );
-			}
-			if ( max < 0.0f ) {
-				reutrn 0;
-			}
-			total = sqrt( forward * forward + side * side + upmove * upmove );
-			scale = float( m_Speed ) * float( max ) / ( 127.0f * total );
-			
-			return scale;
-		}
-		*/
-		
+
 		void SetMovementDir() {
 			TheNomad::Engine::ProfileBlock block( "PMoveData::SetMovementDir" );
 			
-			// set legs direction
+			// set movement direction
 			if ( side > 0 ) {
 				m_EntityData.SetFacing( FACING_RIGHT );
 				m_EntityData.SetLegsFacing( FACING_RIGHT );
@@ -265,46 +237,24 @@ namespace TheNomad::SGame {
 				const int screenWidth = TheNomad::GameSystem::GameManager.GetGPUConfig().screenWidth;
 				const int screenHeight = TheNomad::GameSystem::GameManager.GetGPUConfig().screenHeight;
 				
-				float angle = atan2( ( screenHeight / 2 ) - float( mousePos.y ), ( screenWidth / 2 ) - float( mousePos.x ) );
-//				m_nJoystickAngle = atan2( float( mousePos.x ) - ( screenWidth / 2 ), float( mousePos.y ) - ( screenHeight / 2 ) );
-				m_nJoystickAngle = angle;
+				m_nJoystickAngle = atan2( ( screenHeight / 2 ) - float( mousePos.y ), ( screenWidth / 2 ) - float( mousePos.x ) );
 
 				if ( mousePos.x < screenWidth / 2 ) {
-					m_EntityData.SetFacing( FACING_LEFT );
-					m_EntityData.SetLegsFacing( FACING_LEFT );
-					m_EntityData.SetArmsFacing( FACING_LEFT );
+					if ( @m_EntityData.GetLeftHandWeapon() !is null ) {
+						m_EntityData.SetLeftArmFacing( FACING_LEFT );
+					}
+					if ( @m_EntityData.GetRightHandWeapon() !is null ) {
+						m_EntityData.SetRightArmFacing( FACING_LEFT );
+					}
 					m_nJoystickAngle = -m_nJoystickAngle;
 				} else if ( mousePos.x > screenWidth / 2 ) {
-					m_EntityData.SetFacing( FACING_RIGHT );
-					m_EntityData.SetLegsFacing( FACING_RIGHT );
-					m_EntityData.SetArmsFacing( FACING_RIGHT );
+					if ( @m_EntityData.GetLeftHandWeapon() !is null ) {
+						m_EntityData.SetLeftArmFacing( FACING_RIGHT );
+					}
+					if ( @m_EntityData.GetRightHandWeapon() !is null ) {
+						m_EntityData.SetRightArmFacing( FACING_RIGHT );
+					}
 				}
-				
-				/*
-				switch ( dir ) {
-				case TheNomad::GameSystem::DirType::North:
-//					m_EntityData.SetFacing( FACING_UP );
-					m_EntityData.SetFacing( FACING_RIGHT );
-					break;
-				case TheNomad::GameSystem::DirType::South:
-//					m_EntityData.SetFacing( FACING_DOWN );
-					m_EntityData.SetFacing( FACING_RIGHT );
-					break;
-				case TheNomad::GameSystem::DirType::NorthEast:
-				case TheNomad::GameSystem::DirType::SouthEast:
-				case TheNomad::GameSystem::DirType::East:
-					m_EntityData.SetFacing( FACING_RIGHT );
-					break;
-				case TheNomad::GameSystem::DirType::NorthWest:
-				case TheNomad::GameSystem::DirType::SouthWest:
-				case TheNomad::GameSystem::DirType::West:
-					m_EntityData.SetFacing( FACING_LEFT );
-					break;
-				default:
-					GameError( "PMoveData::RunTic: Invalid DirType " + uint( m_EntityData.GetDirection() ) );
-					break;
-				};
-				*/
 			}
 			else {
 				TheNomad::Engine::GetJoystickAngle( m_EntityData.GetPlayerIndex(), m_nJoystickAngle, m_JoystickPosition );

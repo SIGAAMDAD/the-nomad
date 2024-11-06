@@ -1,0 +1,24 @@
+{
+    "Name": "gameui",
+    "Id": "gameui",
+    "Description": "Game UI's module",
+    "DependedModules": [],
+    "IsDynamic": false,
+    "IncludePaths": [
+        "gamedata/modules/hellbreaker/",
+        "gamedata/modules/nomadmain/",
+        "gamedata/modules/gameui/",
+        "gamedata/modules/"
+    ],
+    "SubModules": [
+        "gameui.as"
+    ],
+    "Version": {
+        "GameVersionMajor": 1,
+        "GameVersionUpdate": 1,
+        "GameVersionPatch": 0,
+        "VersionMajor": 1,
+        "VersionUpdate": 0,
+        "VersionPatch": 0
+    }
+}

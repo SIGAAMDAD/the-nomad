@@ -79,9 +79,9 @@ namespace TheNomad::SGame {
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.Crouch_f ), "-crouch", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Crouch_f ), "+slide", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Slide_f ), "+slide", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Crouch_f ), "-slide", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Slide_f ), "-slide", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.Dash_f ), "+dash", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
@@ -271,32 +271,39 @@ namespace TheNomad::SGame {
 				obj.SetDashing( false );
 			}
 		}
+		void Slide_f() {
+			PlayrObject@ obj = GetPlayerIndex();
+
+			if ( obj.IsCrouching() ) {
+				return;
+			} else if ( obj.GetTimeSinceLastSlide() < SLIDE_DURATION ) {
+				return;
+			}
+
+			// we need a little bit of momentum to engage in a slide
+			if ( ( obj.key_MoveNorth.active || obj.key_MoveSouth.active || obj.key_MoveEast.active || obj.key_MoveWest.active )
+				obj.IsDashing() )
+			{
+				if ( ( Util::PRandom() & 1 ) == 1 ) {
+					obj.slideSfx0.Play();
+				} else {
+					obj.slideSfx1.Play();
+				}
+				
+				Util::HapticRumble( obj.GetPlayerIndex(), 0.40f, 500 );
+				obj.ResetSlide();
+				obj.SetSliding( true );
+			}
+		}
 		void Crouch_f() {
 			PlayrObject@ obj = GetPlayerIndex();
 
 			if ( !obj.IsCrouching() ) {
-				if ( obj.key_MoveNorth.active || obj.key_MoveSouth.active || obj.key_MoveEast.active || obj.key_MoveWest.active ) {
-					// wait at little bit before launching another slide
-					if ( obj.GetTimeSinceLastSlide() < SLIDE_DURATION ) {
-						return;
-					}
-
-					if ( ( Util::PRandom() & 1 ) == 1 ) {
-						obj.slideSfx0.Play();
-					} else {
-						obj.slideSfx1.Play();
-					}
-
-					Util::HapticRumble( obj.GetPlayerIndex(), 0.40f, 500 );
-					obj.ResetSlide();
-					obj.SetSliding( true );
-				} else {
-					obj.crouchDownSfx.Play();
-				}
+				obj.crouchDownSfx.Play();
 				obj.SetCrouching( true );
 			}
 			else {
-//				obj.crouchUpSfx.Play();
+				obj.crouchUpSfx.Play();
 				obj.SetCrouching( false );
 				obj.SetState( @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE ) );
 			}

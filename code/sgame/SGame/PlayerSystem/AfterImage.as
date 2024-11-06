@@ -12,12 +12,17 @@ namespace TheNomad::SGame {
 			m_nLegsStateFrame = target.GetLegState().GetSpriteOffset().y * target.GetLegsSpriteSheet().GetSpriteCountX()
 				+ target.GetLegState().GetSpriteOffset().x;
 
-			m_nArmsStateFrame = target.GetArmState().GetSpriteOffset().y * target.GetArmSpriteSheet().GetSpriteCountX()
-				+ target.GetArmState().GetSpriteOffset().x;
+			m_nLeftArmStateFrame = target.GetLeftArmState().GetSpriteOffset().y * target.GetLeftArmSpriteSheet().GetSpriteCountX()
+				+ target.GetLeftArmSpriteSheet().GetSpriteOffset().x;
+			m_nRightArmStateFrame = target.GetRightArmState().GetSpriteOffset().y * target.GetRightArmSpriteSheet().GetSpriteCountX()
+				+ target.GetRightArmSpriteSheet().GetSpriteOffset().x;
 
 			m_nTorsoShader = target.GetSpriteSheet().GetShader();
 			m_nLegsShader = target.GetLegsSpriteSheet().GetShader();
-			m_nArmsShader = target.GetArmSpriteSheet().GetShader();
+			m_nLeftArmShader = target.GetLeftArmSpriteSheet().GetShader();
+			m_nRightArmShader = target.GetRightArmSpriteSheet().GetShader();
+
+			m_nFacing = target.GetFacing();
 
 			m_bActive = true;
 		}
@@ -43,19 +48,29 @@ namespace TheNomad::SGame {
 			refEntity.spriteId = m_nLegsStateFrame;
 			refEntity.Draw();
 
-			refEntity.sheetNum = m_nArmsShader;
-			refEntity.spriteId = m_nArmsStateFrame;
-			refEntity.Draw();
+			if ( m_nFacing == FACING_LEFT ) {
+				refEntity.sheetNum = m_nLeftArmShader;
+				refEntity.spriteId = m_nLeftArmStateFrame;
+				refEntity.Draw();
+			} else if ( m_nFacing == FACING_RIGHT ) {
+				refEntity.sheetNum = m_nRightArmShader;
+				refEntity.spriteId = m_nRightArmStateFrame;
+				refEntity.Draw();
+			}
 		}
 
 		private vec3 m_Origin = vec3( 0.0f );
 
-		private int m_nArmsShader = FS_INVALID_HANDLE;
+		private uint m_nFacing = FACING_RIGHT;
+
+		private int m_nLeftArmShader = FS_INVALID_HANDLE;
+		private int m_nRightArmShader = FS_INVALID_HANDLE;
 		private int m_nLegsShader = FS_INVALID_HANDLE;
 		private int m_nTorsoShader = FS_INVALID_HANDLE;
 
 		private uint m_nTorsoStateFrame = 0;
-		private uint m_nArmsStateFrame = 0;
+		private uint m_nLeftArmStateFrame = 0;
+		private uint m_nRightArmStateFrame = 0;
 		private uint m_nLegsStateFrame = 0;
 		
 		private bool m_bActive = false;

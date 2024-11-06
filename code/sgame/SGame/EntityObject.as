@@ -25,6 +25,9 @@ namespace TheNomad::SGame {
 			m_Link.Update();
 			m_Emitter.Register( @this );
 		}
+		void EmitSound( const TheNomad::Engine::SoundSystem::SoundEffect hSfx, float nVolume, uint nListenerMask ) {
+			m_Emitter.PlaySound( hSfx, nVolume, nListenerMask );
+		}
 		
 		//
 		// getters
@@ -236,6 +239,6 @@ namespace TheNomad::SGame {
 		EntityObject@ m_Next = null;
 		EntityObject@ m_Prev = null;
 
-		TheNomad::Engine::SoundSystem::SoundEmitter m_Emitter;
+		protected TheNomad::Engine::SoundSystem::SoundEmitter m_Emitter;
 	};
 };

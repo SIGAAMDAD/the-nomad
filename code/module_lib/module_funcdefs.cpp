@@ -1100,6 +1100,28 @@ DEFINE_CALLBACK( SetActiveMap ) {
 	G_SetActiveMap( hMap, nCheckpoints, nSpawns, nTiles, pWidth, pHeight );
 }
 
+static void GetSkinData( asIScriptGeneric *pGeneric ) {
+	const string_t *skinName = (const string_t *)pGeneric->GetArgObject( 0 );
+
+	string_t *description = (string_t *)pGeneric->GetArgObject( 1 );
+	string_t *displayText = (string_t *)pGeneric->GetArgObject( 2 );
+
+	description->resize( MAX_DESCRIPTION_LENGTH );
+	displayText->resize( MAX_DISPLAY_NAME_LENGTH );
+
+	uvec2 *torsoSheetSize = (uvec2 *)pGeneric->GetArgObject( 3 );
+	uvec2 *torsoSpriteSize = (uvec2 *)pGeneric->GetArgObject( 4 );
+
+	uvec2 *armsSheetSize = (uvec2 *)pGeneric->GetArgObject( 5 );
+	uvec2 *armsSpriteSize = (uvec2 *)pGeneric->GetArgObject( 6 );
+
+	uvec2 *legsSheetSize = (uvec2 *)pGeneric->GetArgObject( 7 );
+	uvec2 *legsSpriteSize = (uvec2 *)pGeneric->GetArgObject( 8 );
+
+	G_GetSkinData( skinName->c_str(), description->data(), displayText->data(), (uvec_t *)torsoSheetSize, (uvec_t *)torsoSpriteSize,
+		(uvec_t *)armsSheetSize, (uvec_t *)armsSpriteSize, (uvec_t *)legsSheetSize, (uvec_t *)legsSpriteSize );
+}
+
 static void GetCheckpointData( asIScriptGeneric *pGeneric ) {
 	uvec3 *xyz = (uvec3 *)pGeneric->GetArgObject( 0 );
 	uvec2 *areaLock = (uvec2 *)pGeneric->GetArgObject( 1 );
@@ -2941,7 +2963,8 @@ void ModuleLib_Register_Engine( void )
 		REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::CastRay( const vec3& in, vec3& out, vec3& out, uint32& out, float, float, uint32 )",
 			asFUNCTION( CastRay ) );
 		REGISTER_GLOBAL_FUNCTION( "bool TheNomad::GameSystem::CheckWallHit( const vec3& in, TheNomad::GameSystem::DirType )", asFUNCTION( CheckWallHit ) );
-		
+
+		REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetSkinData( const string& in, string& out, string& out, uvec2& out, uvec2& out, uvec2& out, uvec2& out, uvec2& out, uvec2& out )", asFUNCTION( GetSkinData ) );
 		REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetCheckpointData( uvec3& out, uvec2& out, uint )", asFUNCTION( GetCheckpointData ) );
 //        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::GameSystem::TransformCameraFromWorld( const vec3& in )",
 //            asFUNCTION( TransformCameraFromWorld ), asCALL_GENERIC );
