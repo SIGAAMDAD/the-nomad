@@ -226,7 +226,7 @@ void R_InitExtensions( void )
 		ri.Printf(PRINT_INFO, result[EXT_NOTFOUND], ext);
 	}
 
-	ri.Cvar_Set( "r_useShaderCache", va( "%i", glContext.ARB_gl_spirv ) );
+//	ri.Cvar_Set( "r_useShaderCache", va( "%i", glContext.ARB_gl_spirv ) );
 
 	//
 	// ARB_vertex_buffer_object

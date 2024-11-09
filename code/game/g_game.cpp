@@ -1882,7 +1882,7 @@ void G_Init( void )
 	
 	// userinfo
 	Cvar_Get( "name", "The Ultimate Lad", CVAR_USERINFO | CVAR_SAVE );
-	Cvar_Get( "skin", "", CVAR_USERINFO | CVAR_SAVE );
+	Cvar_Get( "skin", "default", CVAR_USERINFO | CVAR_SAVE );
 	Cvar_Get( "voice", "0", CVAR_USERINFO | CVAR_ARCHIVE_ND ); // for the future
 	
 	if ( !isValidRenderer( g_renderer->s ) ) {

@@ -90,7 +90,8 @@ extern "C" void UI_Init( void );
 extern "C" void UI_Shutdown( void );
 extern "C" void UI_Refresh( int32_t realtime );
 extern "C" void UI_DrawText( const char *txt );
-extern "C" void UI_SetLoadingStatus( uint64_t nCompiledShaders, uint64_t nTotalShaders, uint64_t nLoadedTextures, uint64_t nTotalTextures );
+extern "C" void UI_SetLoadingStatus( uint64_t nCompiledScripts, uint64_t nTotalScripts, uint64_t nCompiledShaders, uint64_t nTotalShaders,
+    uint64_t nLoadedTextures, uint64_t nTotalTextures );
 extern void UI_SetActiveMenu( uiMenu_t menu );
 
 // commonly used fonts in the UI system

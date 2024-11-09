@@ -23,10 +23,6 @@ uniform bool u_PBR;
 uniform bool u_Bloom;
 uniform int u_ToneMap;
 
-#if defined(USE_SHADOWMAP)
-TEXTURE2D uniform sampler2D u_ShadowMap;
-#endif
-
 uniform int u_AlphaTest;
 
 #include "image_sharpen.glsl"

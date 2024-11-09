@@ -156,7 +156,8 @@ typedef void*(*NGLloadproc)(const char *name);
 
 #define NGL_GLSL_SPIRV_Procs \
 	NGL( void, glShaderBinary, GLsizei count, const GLuint *shaders, GLenum binaryformat, const void *binary, GLsizei length ) \
-	NGL( void, glGetProgramBinary, GLuint program, GLsizei bufSize, GLsizei *length, GLenum *binaryFormat, void *binary )
+	NGL( void, glGetProgramBinary, GLuint program, GLsizei bufSize, GLsizei *length, GLenum *binaryFormat, void *binary ) \
+	NGL( void, glProgramBinary, GLuint program, GLenum binaryFormat, const void *binary, GLsizei length ) \
 
 #define NGL_Shader_Procs \
 	NGL( void, glBindAttribLocation, GLhandleARB programObj, GLuint index, const GLcharARB *name ) \
