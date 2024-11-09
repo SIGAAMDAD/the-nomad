@@ -489,20 +489,17 @@ bool CModuleHandle::LoadSourceFile( const string_t& filename )
 	int retn, errCount;
 	const char *path;
 	uint64_t length;
-//	Preprocessor preprocessor;
-//	Preprocessor::FileSource fileSource;
 	UtlString data;
-//	UtlVector<char> out;
 
 	path = va( "modules/%s/%s", m_szName.c_str(), filename.c_str() );
 	length = FS_LoadFile( path, &f.v );
 	if ( !f.v ) {
-		Con_Printf( "Couldn't load script file '%s'.\n", path );
+		Con_Printf( COLOR_RED "ERROR: Couldn't load script file '%s'.\n", path );
 		return false;
 	}
 
 	data.resize( length );
-	memcpy( data.data(), f.v, length );
+	memcpy( data.data(), f.b, length );
 
 	errCount = 0;
 

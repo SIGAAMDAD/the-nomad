@@ -13,9 +13,9 @@ namespace TheNomad::SGame {
 				+ target.GetLegState().GetSpriteOffset().x;
 
 			m_nLeftArmStateFrame = target.GetLeftArmState().GetSpriteOffset().y * target.GetLeftArmSpriteSheet().GetSpriteCountX()
-				+ target.GetLeftArmSpriteSheet().GetSpriteOffset().x;
+				+ target.GetLeftArmState().GetSpriteOffset().x;
 			m_nRightArmStateFrame = target.GetRightArmState().GetSpriteOffset().y * target.GetRightArmSpriteSheet().GetSpriteCountX()
-				+ target.GetRightArmSpriteSheet().GetSpriteOffset().x;
+				+ target.GetRightArmState().GetSpriteOffset().x;
 
 			m_nTorsoShader = target.GetSpriteSheet().GetShader();
 			m_nLegsShader = target.GetLegsSpriteSheet().GetShader();

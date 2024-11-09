@@ -205,12 +205,12 @@ namespace TheNomad::SGame {
 
 			switch ( obj.GetHandsUsed() ) {
 			case 0:
-				obj.SwitchWeaponWielding( obj.GetLeftHandMode(), obj.GetRightHandMode(),
+				obj.SwitchWeaponWielding( @obj.GetLeftArm(), @obj.GetRightArm(),
 					@obj.GetLeftHandWeapon(), @obj.GetRightHandWeapon() );
 				break;
 			case 1:
 			case 2:
-				obj.SwitchWeaponWielding( obj.GetRightHandMode(), obj.GetLeftHandMode(),
+				obj.SwitchWeaponWielding( @obj.GetRightArm(), @obj.GetLeftArm(),
 					@obj.GetRightHandWeapon(), @obj.GetLeftHandWeapon() );
 				break;
 			};
@@ -221,16 +221,16 @@ namespace TheNomad::SGame {
 			obj.weaponChangeModeSfx.Play();
 			switch ( obj.GetHandsUsed() ) {
 			case 0:
-				obj.SwitchWeaponMode( obj.GetLeftHandMode(), @obj.GetLeftHandWeapon() );
+				obj.SwitchWeaponMode( @obj.GetLeftArm(), @obj.GetLeftHandWeapon() );
 				break;
 			case 1:
-				obj.SwitchWeaponMode( obj.GetRightHandMode(), @obj.GetRightHandWeapon() );
+				obj.SwitchWeaponMode( @obj.GetRightArm(), @obj.GetRightHandWeapon() );
 				break;
 			case 2: {
 				const InfoSystem::WeaponProperty bits = obj.GetLeftHandMode();
-				obj.SwitchWeaponMode( obj.GetLeftHandMode(), @obj.GetLeftHandWeapon() );
+				obj.SwitchWeaponMode( @obj.GetLeftArm(), @obj.GetLeftHandWeapon() );
 				if ( bits == obj.GetLeftHandMode() ) {
-					obj.SwitchWeaponMode( obj.GetRightHandMode(), @obj.GetRightHandWeapon() );
+					obj.SwitchWeaponMode( @obj.GetRightArm(), @obj.GetRightHandWeapon() );
 				}
 				break; }
 			default:
@@ -281,7 +281,7 @@ namespace TheNomad::SGame {
 			}
 
 			// we need a little bit of momentum to engage in a slide
-			if ( ( obj.key_MoveNorth.active || obj.key_MoveSouth.active || obj.key_MoveEast.active || obj.key_MoveWest.active )
+			if ( ( obj.key_MoveNorth.active || obj.key_MoveSouth.active || obj.key_MoveEast.active || obj.key_MoveWest.active ) ||
 				obj.IsDashing() )
 			{
 				if ( ( Util::PRandom() & 1 ) == 1 ) {
@@ -313,14 +313,14 @@ namespace TheNomad::SGame {
 			PlayrObject@ obj = GetPlayerIndex();
 		
 			if ( TheNomad::Engine::CmdArgv( 0 )[0] == '+' ) {
-				if ( @obj.GetArmState() is @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_MELEE )
-					&& !obj.GetArmState().Done() )
+				if ( @obj.GetLeftArmState() is @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_MELEE )
+					&& !obj.GetLeftArmState().Done() )
 				{
 					return;
 				}
 				obj.meleeSfx.Play();
 				obj.SetParryBoxWidth( 0.0f );
-				obj.SetArmState( StateNum::ST_PLAYR_ARMS_MELEE );
+				obj.SetLeftArmState( StateNum::ST_PLAYR_ARMS_MELEE );
 			}
 		}
 		void NextWeapon_f() {
@@ -330,7 +330,11 @@ namespace TheNomad::SGame {
 			if ( obj.GetCurrentWeaponIndex() >= int( obj.m_WeaponSlots.Count() ) ) {
 				obj.SetCurrentWeapon( 0 );
 			}
-			cast<const InfoSystem::WeaponInfo@>( @obj.m_WeaponSlots[ obj.GetCurrentWeaponIndex() ].GetInfo() ).equipSfx.Play();
+			obj.EmitSound(
+				cast<const InfoSystem::WeaponInfo@>( @obj.m_WeaponSlots[ obj.GetCurrentWeaponIndex() ].GetData().GetInfo() ).equipSfx,
+				1.0f,
+				0xff
+			);
 		}
 		void PrevWeapon_f() {
 			PlayrObject@ obj = GetPlayerIndex();
@@ -339,7 +343,11 @@ namespace TheNomad::SGame {
 			if ( obj.GetCurrentWeaponIndex() < 0 ) {
 				obj.SetCurrentWeapon( obj.m_WeaponSlots.Count() - 1 );
 			}
-			cast<const InfoSystem::WeaponInfo@>( @obj.m_WeaponSlots[ obj.GetCurrentWeaponIndex() ].GetInfo() ).equipSfx.Play();
+			obj.EmitSound(
+				cast<const InfoSystem::WeaponInfo@>( @obj.m_WeaponSlots[ obj.GetCurrentWeaponIndex() ].GetData().GetInfo() ).equipSfx,
+				1.0f,
+				0xff
+			);
 		}
 		
 		private void RenderScene( const uvec2& in scenePos, const uvec2& in sceneSize, const vec3& in origin ) {

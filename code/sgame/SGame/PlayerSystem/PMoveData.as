@@ -349,10 +349,6 @@ namespace TheNomad::SGame {
 			ImGui::Text( "East MSec: " + m_EntityData.key_MoveEast.msec );
 			ImGui::Text( "West MSec: " + m_EntityData.key_MoveWest.msec );
 			ImGui::Separator();
-			ImGui::Text( "Torso Direction: " + m_EntityData.GetFacing() );
-			ImGui::Text( "Legs Direction: " + m_EntityData.GetLegsFacing() );
-			ImGui::Text( "Arms Direction: " + m_EntityData.GetArmsFacing() );
-			ImGui::Separator();
 			ImGui::Text( "Bounding Box" );
 			{
 				const vec3 mins = m_EntityData.GetBounds().m_Mins;
@@ -370,10 +366,6 @@ namespace TheNomad::SGame {
 			ImGui::Text( "LegAnimation:" );
 			ImGui::Text( "  Frame: " + m_EntityData.GetLegState().GetAnimation().GetFrame() );
 			ImGui::Text( "  NumFrames: " + m_EntityData.GetLegState().GetAnimation().NumFrames() );
-			ImGui::Text( "ArmState: " + m_EntityData.GetArmState().GetName() );
-			ImGui::Text( "ArmAnimation:" );
-			ImGui::Text( "  Frame: " + m_EntityData.GetArmState().GetAnimation().GetFrame() );
-			ImGui::Text( "  NumFrames: " + m_EntityData.GetArmState().GetAnimation().NumFrames() );
 			ImGui::Separator();
 			ImGui::Text( "GameTic: " + gameTic );
 			ImGui::End();
@@ -384,8 +376,7 @@ namespace TheNomad::SGame {
 			m_EntityData.key_MoveWest.msec = 0;
 			m_EntityData.key_Jump.msec = 0;
 
-			m_EntityData.m_Emitter.SetPosition( m_EntityData.GetOrigin(), forward, 0.0f,
-				m_EntityData.GetPhysicsObject().GetAcceleration().x + m_EntityData.GetPhysicsObject().GetAcceleration().y );
+			m_EntityData.SetSoundPosition( m_EntityData.GetOrigin() );
 
 			m_EntityData.GetPhysicsObject().OnRunTic();
 		}

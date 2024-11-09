@@ -28,6 +28,10 @@ namespace TheNomad::SGame {
 		void EmitSound( const TheNomad::Engine::SoundSystem::SoundEffect hSfx, float nVolume, uint nListenerMask ) {
 			m_Emitter.PlaySound( hSfx, nVolume, nListenerMask );
 		}
+		void SetSoundPosition( const vec3& in origin ) {
+			m_Emitter.SetPosition( m_Link.m_Origin, 0.5f, 0.0f,
+				m_PhysicsObject.GetAcceleration().x + m_PhysicsObject.GetAcceleration().y );
+		}
 		
 		//
 		// getters

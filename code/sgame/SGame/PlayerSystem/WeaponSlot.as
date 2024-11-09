@@ -9,6 +9,7 @@ namespace TheNomad::SGame {
 
 		WeaponSlot& opAssign( WeaponObject@ obj ) {
 			@m_Base = @obj;
+			return this;
 		}
 		WeaponObject@ opConv() {
 			return @m_Base;

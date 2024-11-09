@@ -593,11 +593,6 @@ namespace TheNomad::SGame {
 			@m_WeaponSlots[6] = @m_RightHand;
 			@m_WeaponSlots[7] = @m_LeftHand;
 			@m_WeaponSlots[8] = @m_Ordnance;
-
-			for ( uint i = 0; i < m_WeaponSlots.Count(); i++ ) {
-				m_WeaponSlots[i].SetOwner( cast<EntityObject@>( @this ) );
-				m_WeaponSlots[i].Spawn( m_EmptyInfo.type, m_Link.m_Origin );
-			}
 			
 			m_CurrentWeapon = 0;
 		}
@@ -696,11 +691,6 @@ namespace TheNomad::SGame {
 //			@GoreManager = cast<GoreSystem>( @TheNomad::GameSystem::AddSystem( GoreSystem() ) );
 		}
 
-		uint GetSpriteId( SpriteSheet@ sheet, EntityState@ state ) const {
-			const uint offset = state.GetSpriteOffset().y * sheet.GetSpriteCountX() + state.GetSpriteOffset().x;
-			return offset + state.GetAnimation().GetFrame();
-		}
-
 		private void DrawLegs() {
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 
@@ -753,7 +743,7 @@ namespace TheNomad::SGame {
 
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.sheetNum = m_LegSpriteSheet[ m_LegsFacing ].GetShader();
-			refEntity.spriteId = GetSpriteId( @m_LegSpriteSheet[ m_LegsFacing ], @m_LegState );
+			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( @m_LegSpriteSheet[ m_LegsFacing ], @m_LegState );
 			refEntity.scale = 2.0f;
 			refEntity.Draw();
 		}
@@ -773,7 +763,7 @@ namespace TheNomad::SGame {
 
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.sheetNum = m_SpriteSheet.GetShader();
-			refEntity.spriteId = GetSpriteId( @m_SpriteSheet, @m_State ) + m_Facing;
+			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( @m_SpriteSheet, @m_State ) + m_Facing;
 			refEntity.scale = 2.0f;
 			refEntity.Draw();
 
