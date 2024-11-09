@@ -452,7 +452,7 @@ static fileTime_t ModuleLib_GetDirectoryChecksum( const char *dir )
 	uint64_t i;
 	fileStats_t stats;
 	fileTime_t total;
-	char szDirectory[ MAX_OSPATH*2+1 ];
+	char szDirectory[ MAX_OSPATH ];
 	char szPath[ MAX_OSPATH*2+1 ];
 
 	total = 0;
@@ -482,7 +482,11 @@ static fileTime_t ModuleLib_GetDirectoryChecksum( const char *dir )
 
 	fileList = FS_ListFiles( szDirectory, ".as", &numFiles );
 	for ( i = 0; i < numFiles; i++ ) {
-		snprintf( szPath, sizeof( szPath ) - 1, "%s/%s", szDirectory, fileList[i] );
+		if ( szDirectory[ strlen( szDirectory ) - 1 ] != '/' ) {
+			snprintf( szPath, sizeof( szPath ) - 1, "%s/%s", szDirectory, fileList[i] );
+		} else {
+			snprintf( szPath, sizeof( szPath ) - 1, "%s%s", szDirectory, fileList[i] );
+		}
 		if ( !Sys_GetFileStats( &stats, szPath ) ) {
 			N_Error( ERR_DROP, "ModuleLib_GetDirectoryChecksum: couldn't get filestats for '%s'", szPath );
 		}
@@ -874,6 +878,17 @@ CModuleLib::CModuleLib( void )
 
 	Con_Printf( "Checking if recompilation is needed...\n" );
 	loaded = LoadByteCodeCache();
+	if ( ( recompiled = RecompileNeeded() ) ) {
+		Con_Printf( COLOR_MAGENTA "...module code changed.\n" );
+		m_bModulesOutdated = qtrue;
+
+		for ( i = 0; i < m_nModuleCount; i++ ) {
+			m_pLoadList[i].m_pHandle->Compile();
+		}
+	} else {
+		Con_Printf( COLOR_GREEN "...module code up to date.\n" );\
+		m_bModulesOutdated = qfalse;
+	}
 
 	CheckASCall( m_pEngine->SetEngineProperty( asEP_INIT_GLOBAL_VARS_AFTER_BUILD, !loaded ) );
 
