@@ -797,6 +797,8 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 	last_enable_primitive_restart = (bd->GlVersion >= 310) ? renderImport.glIsEnabled(GL_PRIMITIVE_RESTART) : GL_FALSE;
 #endif
 
+	PROFILE_FUNCTION();
+
 	ImGui_ImplOpenGL3_SetupRenderState(draw_data, fb_width, fb_height, vertex_array_object);
 	renderImport.glEnable(GL_ALPHA_TEST);
 	renderImport.glAlphaFunc( GL_ALWAYS, 0.5f );
@@ -837,18 +839,21 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 		#if 1
 			if ( vtx_buffer_size > bd->VertexBufferSize ) {
 				bd->VertexBufferSize = vtx_buffer_size;
+				renderImport.glBufferData( GL_ARRAY_BUFFER, bd->VertexBufferSize, NULL, GL_STREAM_DRAW );
 			}
 			if ( idx_buffer_size > bd->IndexBufferSize ) {
 				bd->IndexBufferSize = idx_buffer_size;
+				renderImport.glBufferData( GL_ELEMENT_ARRAY_BUFFER, bd->IndexBufferSize, NULL, GL_STREAM_DRAW );
 			}
-			renderImport.glBufferData( GL_ARRAY_BUFFER, bd->VertexBufferSize, NULL, GL_STREAM_DRAW );
-			renderImport.glBufferData( GL_ELEMENT_ARRAY_BUFFER, bd->IndexBufferSize, NULL, GL_STREAM_DRAW );
-
-			if ( vtx_buffer_size > 0 ) {
-				renderImport.glBufferSubData( GL_ARRAY_BUFFER, 0, vtx_buffer_size, cmd_list->VtxBuffer.Data );
-			}
-			if ( idx_buffer_size > 0 ) {
-				renderImport.glBufferSubData( GL_ELEMENT_ARRAY_BUFFER, 0, idx_buffer_size, cmd_list->IdxBuffer.Data );
+			{
+				PROFILE_BLOCK_BEGIN( "SwapBuffer GLBuffer" );
+				if ( vtx_buffer_size > 0 ) {
+					renderImport.glBufferSubData( GL_ARRAY_BUFFER, 0, vtx_buffer_size, cmd_list->VtxBuffer.Data );
+				}
+				if ( idx_buffer_size > 0 ) {
+					renderImport.glBufferSubData( GL_ELEMENT_ARRAY_BUFFER, 0, idx_buffer_size, cmd_list->IdxBuffer.Data );
+				}
+				PROFILE_BLOCK_END;
 			}
 		#else
 			void *vtx = renderImport.glMapBufferRange( GL_ARRAY_BUFFER, 0, vtx_buffer_size, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT );
