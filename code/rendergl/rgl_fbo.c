@@ -375,7 +375,7 @@ static void FBO_Init_f( void )
 		multisample = 0;
 	}
 	
-	if ( r_hdr->i && r_bloom->i ) {
+	if ( r_hdr->i ) {
 		for ( i = 0; i < 2; i++ ) {
 			FBO_Create( &rg.bloomPingPongFbo[ i ], va( "_bloomPingPong%i", i ), fboWidth, fboHeight );
 			FBO_AttachImage( &rg.bloomPingPongFbo[ i ], rg.bloomPingPongImage[ i ], GL_COLOR_ATTACHMENT0 );

@@ -7,30 +7,16 @@ extern const char *fallbackShader_generic_vp;
 extern const char *fallbackShader_generic_fp;
 extern const char *fallbackShader_imgui_vp;
 extern const char *fallbackShader_imgui_fp;
-extern const char *fallbackShader_ssao_vp;
-extern const char *fallbackShader_ssao_fp;
-extern const char *fallbackShader_down4x_vp;
-extern const char *fallbackShader_down4x_fp;
-extern const char *fallbackShader_bokeh_vp;
-extern const char *fallbackShader_bokeh_fp;
-extern const char *fallbackShader_depthblur_vp;
-extern const char *fallbackShader_depthblur_fp;
-extern const char *fallbackShader_calclevels4x_vp;
-extern const char *fallbackShader_calclevels4x_fp;
-extern const char *fallbackShader_tonemap_vp;
-extern const char *fallbackShader_tonemap_fp;
-extern const char *fallbackShader_lightall_vp;
-extern const char *fallbackShader_lightall_fp;
 extern const char *fallbackShader_texturecolor_vp;
 extern const char *fallbackShader_texturecolor_fp;
-extern const char *fallbackShader_SMAAEdges_vp;
-extern const char *fallbackShader_SMAAEdges_fp;
-extern const char *fallbackShader_SMAAWeights_vp;
-extern const char *fallbackShader_SMAAWeights_fp;
-extern const char *fallbackShader_SMAABlend_vp;
-extern const char *fallbackShader_SMAABlend_fp;
 extern const char *fallbackShader_tile_vp;
 extern const char *fallbackShader_tile_fp;
+extern const char *fallbackShader_blur_vp;
+extern const char *fallbackShader_blur_fp;
+extern const char *fallbackShader_bloom_vp;
+extern const char *fallbackShader_bloom_fp;
+extern const char *fallbackShader_gaussian_vp;
+extern const char *fallbackShader_gaussian_fp;
 
 #define GLSL_VERSION_ATLEAST(major,minor) (glContext.glslVersionMajor > (major) || (glContext.versionMajor == (major) && glContext.glslVersionMinor >= minor))
 
@@ -236,6 +222,9 @@ static uint32_t R_GetShaderFromCache( shaderProgram_t *program )
 {
 	uint32_t i;
 
+#ifdef _NOMAD_DEBUG
+	return cacheNumEntries; // for speed development
+#endif
 	if ( !glContext.ARB_gl_spirv || !cacheHashTable || !r_useShaderCache->i ) {
 		return cacheNumEntries;
 	}
@@ -1428,11 +1417,12 @@ void GLSL_InitGPUShaders_f( void )
 	}
 	GLSL_InitUniforms( &rg.imguiShader );
 	GLSL_FinishGPUShader( &rg.imguiShader );
+
 	numGenShaders++;
 
 	extradefines[ 0 ] = '\0';
 	attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD;
-	if ( !GLSL_InitGPUShader( &rg.blurShader, "blur", attribs, qtrue, extradefines, qtrue, NULL, NULL ) ) {
+	if ( !GLSL_InitGPUShader( &rg.blurShader, "blur", attribs, qtrue, extradefines, qtrue, fallbackShader_blur_vp, fallbackShader_blur_fp ) ) {
 		ri.Error( ERR_FATAL, "Could not load blur shader!" );
 	}
 	GLSL_InitUniforms( &rg.blurShader );
@@ -1442,7 +1432,17 @@ void GLSL_InitGPUShaders_f( void )
 
 	extradefines[ 0 ] = '\0';
 	attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD;
-	if ( !GLSL_InitGPUShader( &rg.bloomResolveShader, "bloom", attribs, qtrue, extradefines, qtrue, NULL, NULL ) ) {
+	if ( !GLSL_InitGPUShader( &rg.gaussianShader, "gaussian", attribs, qtrue, extradefines, qtrue, fallbackShader_gaussian_vp, fallbackShader_gaussian_fp ) ) {
+		ri.Error( ERR_FATAL, "Could not load gaussian shader!" );
+	}
+	GLSL_InitUniforms( &rg.gaussianShader );
+	GLSL_FinishGPUShader( &rg.gaussianShader );
+
+	numGenShaders++;
+
+	extradefines[ 0 ] = '\0';
+	attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD;
+	if ( !GLSL_InitGPUShader( &rg.bloomResolveShader, "bloom", attribs, qtrue, extradefines, qtrue, fallbackShader_bloom_vp, fallbackShader_bloom_fp ) ) {
 		ri.Error( ERR_FATAL, "Could not load bloom shader!" );
 	}
 	GLSL_InitUniforms( &rg.bloomResolveShader );

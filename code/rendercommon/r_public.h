@@ -222,6 +222,8 @@ typedef struct {
 	void    (*GetGPUMemStats)( gpuMemory_t *memstats );
 
 	void	(*WaitRegistered)( void );
+
+	void	(*BlurPass)( void );
 } renderExport_t;
 
 extern refimport_t ri;

@@ -565,11 +565,9 @@ static const void *RB_SwapBuffers( const void *data )
 				dstBox[3] = rg.renderFbo.height;
 
 				FBO_FastBlit( &rg.renderFbo, NULL, &rg.ssaaResolveFbo, dstBox, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
-//				FBO_FastBlit( &rg.ssaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
 				RB_FinishPostProcess( &rg.ssaaResolveFbo );
 			}
 			else {
-				RB_BloomPass( &rg.renderFbo, &rg.renderFbo );
 				RB_FinishPostProcess( &rg.renderFbo );
 //				FBO_FastBlit( &rg.renderFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 			}
@@ -1057,6 +1055,38 @@ static const void *RB_DrawWorldView( const void *data )
 	return (const void *)( cmd + 1 );
 }
 
+#define NUM_BLUR_PASSES 10
+static const void *RB_BlurPass( const void *data )
+{
+	const blurPassCmd_t *cmd;
+	vec2_t screenSize;
+	int horizontal, i;
+
+	cmd = (const blurPassCmd_t *)data;
+	
+	GLSL_UseProgram( &rg.gaussianShader );
+
+	horizontal = 0;
+
+	FBO_FastBlit( &rg.renderFbo, NULL, &rg.bloomPingPongFbo[ 0 ], NULL, GL_COLOR_BUFFER_BIT, GL_LINEAR );
+
+	for ( i = 0; i < NUM_BLUR_PASSES; i++ ) {
+		GL_BindFramebuffer( GL_FRAMEBUFFER, rg.bloomPingPongFbo[ horizontal ].frameBuffer );
+		
+		// the srcFbo's colorbuffers must be set up specifically for bloom for this to work
+		GLSL_UseProgram( &rg.blurShader );
+		GLSL_SetUniformInt( &rg.blurShader, UNIFORM_BLUR_HORIZONTAL, horizontal );
+		GLSL_SetUniformTexture( &rg.blurShader, UNIFORM_DIFFUSE_MAP, i == 0 ? rg.renderFbo.colorImage[ 0 ] : rg.bloomPingPongImage[ !horizontal ] );
+		RB_RenderPass();
+
+		horizontal = !horizontal;
+	}
+
+	FBO_Blit( &rg.bloomPingPongFbo[ 0 ], NULL, NULL, &rg.renderFbo, NULL, &rg.textureColorShader, colorWhite, GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA );
+
+	return (const void *)( cmd + 1 );
+}
+
 void RB_ExecuteRenderCommands( const void *data )
 {
 	uint64_t t1, t2;
@@ -1100,6 +1130,9 @@ void RB_ExecuteRenderCommands( const void *data )
 			break;
 		case RC_DRAW_WORLDVIEW:
 			data = RB_DrawWorldView( data );
+			break;
+		case RC_BLUR_PASS:
+			data = RB_BlurPass( data );
 			break;
 		case RC_END_OF_LIST:
 		default:

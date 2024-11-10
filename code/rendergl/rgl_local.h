@@ -1216,13 +1216,14 @@ typedef struct
 	uint64_t frontEndMsec;
 
 	shaderProgram_t genericShader[GENERICDEF_COUNT];
-	shaderProgram_t lightallShader[LIGHTDEF_COUNT];
+//	shaderProgram_t lightallShader[LIGHTDEF_COUNT];
 	shaderProgram_t spriteShader;
 	shaderProgram_t imguiShader;
 	shaderProgram_t tileShader;
 	shaderProgram_t textureColorShader;
 	shaderProgram_t blurShader;
 	shaderProgram_t bloomResolveShader;
+	shaderProgram_t gaussianShader;
 
 	qboolean beganQuery;
 
@@ -1817,11 +1818,13 @@ typedef enum
 
 	RC_DRAW_WORLDVIEW,
 
+	RC_BLUR_PASS,
+
 	RC_END_OF_LIST
 } renderCmdType_t;
 
 typedef struct {
-	renderCmdType_t commandID;
+	renderCmdType_t commandId;
 } drawWorldView_t;
 
 typedef struct {
@@ -1841,6 +1844,10 @@ typedef struct {
 typedef struct {
 	renderCmdType_t commandId;
 } swapBuffersCmd_t;
+
+typedef struct {
+	renderCmdType_t commandId;
+} blurPassCmd_t;
 
 typedef struct {
 	renderCmdType_t commandId;
@@ -1902,6 +1909,7 @@ void RB_RenderThread( void );
 void R_InitCommandBuffers( void );
 void R_ShutdownCommandBuffers( void );
 
+void RE_AddBlurPassCmd( void );
 void RE_DrawImage( float x, float y, float w, float h, float u1, float v1, float u2, float v2, nhandle_t hShader );
 void RE_LoadWorldMap( const char *filename );
 void RE_SetColor( const float *rgba );

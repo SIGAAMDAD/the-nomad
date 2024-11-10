@@ -3065,7 +3065,7 @@ void R_CreateBuiltinTextures( void )
 		}
 
 		rgbFormat = GL_RGBA8;
-
+		
 		rg.bloomImage = R_CreateImage( "_bloom", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE
 			| IMGFLAG_FBO, GL_RGBA16F );
 		

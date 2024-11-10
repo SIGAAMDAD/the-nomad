@@ -755,7 +755,6 @@ extern "C" void UI_Refresh( int32_t realtime )
 			Menu_Draw( ui->activemenu );
 		}
 	}
-
 	refdef_t refdef;
 
 	memset( &refdef, 0, sizeof( refdef ) );

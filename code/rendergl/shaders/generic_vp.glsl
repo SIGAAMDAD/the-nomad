@@ -88,6 +88,6 @@ void main() {
 	}
 	v_WorldPos = vec3( a_WorldPos.xy, 0.0 );
 	v_Position = position;
-	
-    gl_Position = u_ModelViewProjection * vec4( a_Position, 1.0 );
+
+	gl_Position = u_ModelViewProjection * vec4( a_Position, 1.0 );
 }

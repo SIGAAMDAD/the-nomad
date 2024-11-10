@@ -172,7 +172,21 @@ void RE_AddDrawWorldCmd( void )
 	if ( !cmd ) {
 		return;
 	}
-	cmd->commandID = RC_DRAW_WORLDVIEW;
+	cmd->commandId = RC_DRAW_WORLDVIEW;
+}
+
+void RE_AddBlurPassCmd( void )
+{
+	blurPassCmd_t *cmd;
+
+	if ( !rg.registered ) {
+		return;
+	}
+	cmd = R_GetCommandBuffer( sizeof( *cmd ) );
+	if ( !cmd ) {
+		return;
+	}
+	cmd->commandId = RC_BLUR_PASS;
 }
 
 /*
@@ -214,13 +228,13 @@ void RE_DrawImage( float x, float y, float w, float h, float u1, float v1, float
 	if (!rg.registered) {
 		return;
 	}
-	cmd = R_GetCommandBuffer(sizeof(*cmd));
-	if (!cmd) {
+	cmd = R_GetCommandBuffer( sizeof( *cmd ) );
+	if ( !cmd ) {
 		return;
 	}
 
 	cmd->commandId = RC_DRAW_IMAGE;
-	cmd->shader = R_GetShaderByHandle(hShader);
+	cmd->shader = R_GetShaderByHandle( hShader );
 	cmd->x = x;
 	cmd->y = y;
 	cmd->w = w;

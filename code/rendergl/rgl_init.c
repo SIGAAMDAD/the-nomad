@@ -1740,6 +1740,7 @@ GDR_EXPORT renderExport_t *GDR_DECL GetRenderAPI( uint32_t version, refimport_t 
 	re.AddEntityToScene = RE_AddEntityToScene;
 	re.SetColor = RE_SetColor;
 	re.DrawImage = RE_DrawImage;
+	re.BlurPass = RE_AddBlurPassCmd;
 
 	re.VertexLighting = R_VertexLighting;
 	re.CanMinimize = NULL;

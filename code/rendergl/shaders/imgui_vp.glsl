@@ -3,7 +3,6 @@ in vec2 a_TexCoords;
 in vec4 a_Color;
 
 uniform mat4 u_ModelViewProjection;
-uniform vec2 u_ScreenSize;
 
 out vec2 v_TexCoords;
 out vec4 v_Color;
@@ -17,7 +16,6 @@ uniform vec4 u_DiffuseTexOffTurb;
 uniform int u_TCGen0;
 uniform vec3 u_TCGen0Vector0;
 uniform vec3 u_TCGen0Vector1;
-uniform vec3 u_WorldPos;
 #endif
 
 #if defined(USE_TCMOD)
@@ -37,22 +35,6 @@ vec2 ModTexCoords( vec2 st, vec3 position, vec4 texMatrix, vec4 offTurb )
 	return st2 + texOffset * amplitude;	
 }
 #endif
-
-float CalcLightAttenuation( float point, float normDist )
-{
-	// zero light at 1.0, approximating q3 style
-	// also don't attenuate directional light
-	float attenuation = ( 0.5 * normDist - 1.5 ) * point + 1.0;
-
-	// clamp attenuation
-#if defined(NO_LIGHT_CLAMP)
-	attenuation = max( attenuation, 0.0 );
-#else
-	attenuation = clamp( attenuation, 0.0, 1.0 );
-#endif
-
-	return attenuation;
-}
 
 #if defined(USE_TCGEN)
 vec2 GenTexCoords( int TCGen, vec3 position, vec3 normal, vec3 TCGenVector0, vec3 TCGenVector1 )
@@ -89,5 +71,5 @@ void main() {
 #endif
     v_Color = a_Color;
 
-    gl_Position = u_ModelViewProjection * vec4( a_Position.xy, 0.0, 1.0 );
+	gl_Position = u_ModelViewProjection * vec4( a_Position.xy, 0.0, 1.0 );
 }
