@@ -218,12 +218,12 @@ static void R_LoadShaderCache( void )
 		}
 	}
 
-	ri.FS_FClose( f );
+	ri.FS_FClose( fh );
 	ri.Printf( PRINT_INFO, "Loaded %u cached SPIR-V shader objects.\n", cacheNumEntries );
 	return;
 
 error:
-	ri.FS_FClose( f );
+	ri.FS_FClose( fh );
 
 	cacheNumEntries = 0;
 	cacheHashTable = NULL;
@@ -801,8 +801,6 @@ static int GLSL_InitComputeShader( shaderProgram_t *program, const char *name, c
 		if ( !GLSL_LoadGPUShaderText( name, fallback_cp, GL_COMPUTE_SHADER, postHeader, size ) ) {
 			return qfalse;
 		}
-	} else {
-		nglProgramBinary( program->programId, cacheHashTable[ fromCache ].fmt, cacheHashTable[ fromCache ].data, cacheHashTable[ fromCache ].size );
 	}
 
 	return GLSL_InitComputeShader2( program, name, csCode );
@@ -858,8 +856,6 @@ int GLSL_InitGPUShader( shaderProgram_t *program, const char *name, uint32_t att
 				return qfalse;
 			}
 		}
-	} else {
-		nglProgramBinary( program->programId, cacheHashTable[ fromCache ].fmt, cacheHashTable[ fromCache ].data, cacheHashTable[ fromCache ].size );
 	}
 
 	return GLSL_InitGPUShader2( program, name, attribs, vsCode, fsCode, fromCache );
