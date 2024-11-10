@@ -618,6 +618,12 @@ void Sys_DebugStacktraceFile( uint32_t frames, FILE *fp )
 	char *buffer;
     int numframes;
     uint64_t fileLength;
+	static qboolean backtraced = qfalse;
+
+	if ( backtraced ) {
+		return;
+	}
+	backtraced = qtrue;
 
 	g_debugSession.m_hBackTraceOutput = fp;
 

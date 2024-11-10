@@ -183,6 +183,8 @@ cvar_t *r_antialiasQuality;
 
 cvar_t *r_arb_compute_shader;
 
+cvar_t *r_swapInterval;
+
 cvar_t *r_loadTexturesOnDemand;
 
 cvar_t *sys_forceSingleThreading;
@@ -1014,6 +1016,8 @@ static void R_Register( void )
 	//
 	// archived variables that can change any time
 	//
+	r_swapInterval = ri.Cvar_Get( "r_swapInterval", "1", CVAR_SAVE );
+
 	r_customWidth = ri.Cvar_Get( "r_customWidth", "1980", CVAR_SAVE );
 	r_customHeight = ri.Cvar_Get( "r_customHeight", "1080", CVAR_SAVE );
 

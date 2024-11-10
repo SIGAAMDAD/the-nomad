@@ -383,6 +383,23 @@ static void FBO_Init_f( void )
 		}
 	}
 
+	// triple buffering
+	/*
+	if ( r_swapInterval->i == 2 ) {
+		FBO_Create( &rg.thirdBufferFbo, "_thirdBuffer", fboWidth, fboHeight );
+		FBO_CreateBuffer( &rg.thirdBufferFbo, hdrFormat, 0, multisample );
+		if ( r_bloom->i && r_hdr->i ) {
+			GL_BindFramebuffer( GL_FRAMEBUFFER, rg.thirdBufferFbo.frameBuffer );
+			GLuint buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+			FBO_CreateBuffer( &rg.thirdBufferFbo, hdrFormat, 1, multisample );
+			nglDrawBuffers( 2, buffers );
+		}
+		FBO_CreateBuffer( &rg.thirdBufferFbo, GL_DEPTH24_STENCIL8, 0, multisample );
+		R_CheckFBO( &rg.thirdBufferFbo );
+		GL_CheckErrors();
+	}
+	*/
+
 	if ( multisample && r_multisampleType->i == AntiAlias_MSAA ) {
 		FBO_Create( &rg.renderFbo, "_render", fboWidth, fboHeight );
 		FBO_CreateBuffer( &rg.renderFbo, hdrFormat, 0, multisample );

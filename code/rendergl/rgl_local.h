@@ -1176,7 +1176,7 @@ typedef struct
 	fbo_t					renderFbo;
 	fbo_t					msaaResolveFbo;
 	fbo_t                   ssaaResolveFbo;
-	fbo_t					scaleFbo;
+//	fbo_t					thirdBufferFbo;
 
 	shader_t				*defaultShader;
 
@@ -1212,6 +1212,7 @@ typedef struct
 	float identityLight;
 	uint32_t identityLightByte;
 	uint32_t overbrightBits;
+//	uint32_t currentDrawBuffer;
 
 	uint64_t frontEndMsec;
 
@@ -1470,6 +1471,8 @@ extern cvar_t *r_lightingQuality;
 extern cvar_t *r_antialiasQuality;
 
 extern cvar_t *r_loadTexturesOnDemand;
+
+extern cvar_t *r_swapInterval;
 
 extern cvar_t *sys_forceSingleThreading;
 

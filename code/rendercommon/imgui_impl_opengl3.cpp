@@ -126,8 +126,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#define DEFAULT_VERTEX_BUFFER_SIZE sizeof( ImDrawVert ) * ( 8 * 1024 )
-#define DEFAULT_INDEX_BUFFER_SIZE sizeof( ImDrawIdx ) * ( 8 * 1024 )
+#define DEFAULT_VERTEX_BUFFER_SIZE sizeof( ImDrawVert ) * ( 16 * 1024 )
+#define DEFAULT_INDEX_BUFFER_SIZE sizeof( ImDrawIdx ) * ( 16 * 1024 )
 
 #include <GL/gl.h>
 
@@ -254,6 +254,8 @@ struct ImGui_ImplOpenGL3_Data
 	GLuint vaoId;
 	int HasClipOrigin;
 	int UseBufferSubData;
+	void *VertexBuffer;
+	void *IndexBuffer;
 
 	ImGui_ImplOpenGL3_Data() { memset((void *)this, 0, sizeof(*this)); }
 };
@@ -1102,12 +1104,18 @@ int ImGui_ImplOpenGL3_CreateDeviceObjects( void )
 	renderImport.glGenBuffers( 1, &bd->ElementsHandle );
 
 	renderImport.glBindBuffer( GL_ARRAY_BUFFER, bd->VboHandle );
-	renderImport.glBufferData( GL_ARRAY_BUFFER, DEFAULT_VERTEX_BUFFER_SIZE, NULL, GL_STREAM_DRAW );
+	renderImport.glBufferStorage( GL_ARRAY_BUFFER, DEFAULT_VERTEX_BUFFER_SIZE, NULL, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
+	//renderImport.glBufferData( GL_ARRAY_BUFFER, DEFAULT_VERTEX_BUFFER_SIZE, NULL, GL_STREAM_DRAW );
 	bd->VertexBufferSize = DEFAULT_VERTEX_BUFFER_SIZE;
+	bd->VertexBuffer = renderImport.glMapBufferRange( GL_ARRAY_BUFFER, 0, DEFAULT_VERTEX_BUFFER_SIZE, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT |
+		GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_UNSYNCHRONIZED_BIT );
 
 	renderImport.glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, bd->ElementsHandle );
-	renderImport.glBufferData( GL_ELEMENT_ARRAY_BUFFER, DEFAULT_INDEX_BUFFER_SIZE, NULL, GL_STREAM_DRAW );
+	renderImport.glBufferStorage( GL_ELEMENT_ARRAY_BUFFER, DEFAULT_INDEX_BUFFER_SIZE, NULL, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
+	//renderImport.glBufferData( GL_ELEMENT_ARRAY_BUFFER, DEFAULT_INDEX_BUFFER_SIZE, NULL, GL_STREAM_DRAW );
 	bd->IndexBufferSize = DEFAULT_INDEX_BUFFER_SIZE;
+	bd->IndexBuffer = renderImport.glMapBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, DEFAULT_INDEX_BUFFER_SIZE, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT |
+		GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_UNSYNCHRONIZED_BIT );
 
 	renderImport.glEnableVertexAttribArray( 0 );
 	renderImport.glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, sizeof( ImDrawVert ), (const void *)offsetof( ImDrawVert, pos ) );

@@ -408,21 +408,25 @@ static GLuint R_InitBufferStorage( GLenum target, GLsizei size, const GLvoid *da
 		ri.Error( ERR_DROP, "Error generating OpenGL hardware buffer: %s", GL_ErrorString( err ) );
 	}
 
-	nglBindBufferARB( target, bufferId );
-	if ( r_drawMode->i == DRAWMODE_MAPPED && NGL_VERSION_ATLEAST( 4, 5 ) ) {
+	nglBindBuffer( target, bufferId );
+	if ( NGL_VERSION_ATLEAST( 4, 5 ) || glContext.ARB_map_buffer_range ) {
 		if ( !newBuffer ) {
 			nglDeleteBuffers( 1, &bufferId );
 			nglCreateBuffers( 1, &bufferId );
 			nglBindBuffer( target, bufferId );
 		}
-		nglBufferStorage( target, size, data, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
+		if ( glContext.ARB_buffer_storage ) {
+			nglBufferStorage( target, size, data, ( usage != GL_STATIC_DRAW ? GL_DYNAMIC_STORAGE_BIT | GL_MAP_PERSISTENT_BIT : 0 ) | GL_MAP_WRITE_BIT );
+		} else {
+			nglBufferData( target, size, data, usage );
+		}
 	} else {
-		nglBufferDataARB( target, size, data, usage );
+		nglBufferData( target, size, data, usage );
 	}
 	if ( ( err = nglGetError() ) != GL_NO_ERROR ) {
 		ri.Error( ERR_DROP, "Error allocating data for OpenGL hardware buffer: %s", GL_ErrorString( err ) );
 	}
-	nglBindBufferARB( target, 0 );
+	nglBindBuffer( target, 0 );
 
 	return bufferId;
 }
@@ -636,7 +640,7 @@ void R_ShutdownBuffer( vertexBuffer_t *vbo )
 
 void VBO_MapBuffers( vertexBuffer_t *vbo, void **vertexBuffer, void **indexBuffer )
 {
-	if ( r_drawMode->i < DRAWMODE_MAPPED ) {
+	if ( !glContext.ARB_buffer_storage ) {
 		*vertexBuffer = ri.Hunk_Alloc( vbo->vertex.size, h_low );
 		*indexBuffer = ri.Hunk_Alloc( vbo->index.size, h_low );
 

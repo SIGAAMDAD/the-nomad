@@ -576,15 +576,13 @@ static const void *RB_SwapBuffers( const void *data )
 		}
 	}
 
-	if ( !glState.finishCalled ) {
-		nglFinish();
-	}
-
+//	if ( !glState.finishCalled ) {
+//		nglFinish();
+//	}
 	if ( screenshotFrame ) {
 		RB_TakeScreenshotCmd();
 		screenshotFrame = qfalse;
 	}
-
 	ri.GLimp_EndFrame();
 
 	backend.framePostProcessed = qfalse;
