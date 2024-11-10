@@ -116,23 +116,23 @@ bool isAligned(const void* const pointer, asUINT alignment)
 // MSVC let's us choose between a couple of different initialization orders.
 #pragma warning(disable: 4073)
 #pragma init_seg(lib)
-asALLOCFUNC_t _userAlloc = (asALLOCFUNC_t)malloc;
-asFREEFUNC_t  _userFree  = (asFREEFUNC_t)free;
+asALLOCFUNC_t userAlloc = malloc;
+asFREEFUNC_t  userFree  = free;
 #ifdef WIP_16BYTE_ALIGN
 #ifdef AS_DEBUG
-asALLOCALIGNEDFUNC_t _userAllocAligned = (asALLOCALIGNEDFUNC_t)debugAlignedMalloc;
+asALLOCALIGNEDFUNC_t userAllocAligned = (asALLOCALIGNEDFUNC_t)debugAlignedMalloc;
 #else
-asALLOCALIGNEDFUNC_t _userAllocAligned = alignedMalloc;
+asALLOCALIGNEDFUNC_t userAllocAligned = alignedMalloc;
 #endif
-asFREEALIGNEDFUNC_t  _userFreeAligned  = alignedFree;
+asFREEALIGNEDFUNC_t  userFreeAligned  = alignedFree;
 #endif
 #else
 // Other compilers will just have to rely on luck.
-asALLOCFUNC_t _userAlloc = (asALLOCFUNC_t)malloc;
-asFREEFUNC_t  _userFree  = (asFREEFUNC_t)free;
+asALLOCFUNC_t userAlloc = malloc;
+asFREEFUNC_t  userFree  = free;
 #ifdef WIP_16BYTE_ALIGN
-asALLOCALIGNEDFUNC_t _userAllocAligned = alignedMalloc;
-asFREEALIGNEDFUNC_t  _userFreeAligned  = alignedFree;
+asALLOCALIGNEDFUNC_t userAllocAligned = alignedMalloc;
+asFREEALIGNEDFUNC_t  userFreeAligned  = alignedFree;
 #endif
 #endif
 
@@ -145,10 +145,10 @@ int asSetGlobalMemoryFunctions(asALLOCFUNC_t allocFunc, asFREEFUNC_t freeFunc)
 	// Clean-up thread local memory before changing the allocation routines to avoid 
 	// potential problem with trying to free memory using a different allocation
 	// routine than used when allocating it.
-//	asThreadCleanup();
+	asThreadCleanup();
 
-	_userAlloc = allocFunc;
-	_userFree  = freeFunc;
+	userAlloc = allocFunc;
+	userFree  = freeFunc;
 
 	return 0;
 }
@@ -159,9 +159,10 @@ int asResetGlobalMemoryFunctions()
 	// Clean-up thread local memory before changing the allocation routines to avoid 
 	// potential problem with trying to free memory using a different allocation
 	// routine than used when allocating it.
+	asThreadCleanup();
 
-	_userAlloc = (asALLOCFUNC_t)malloc;
-	_userFree  = (asFREEFUNC_t)free;
+	userAlloc = malloc;
+	userFree  = free;
 
 	return 0;
 }
@@ -224,11 +225,11 @@ void *asCMemoryMgr::AllocScriptNode()
 
 	LEAVECRITICALSECTION(cs);
 
-//#if defined(AS_DEBUG) 
-//	return ((asALLOCFUNCDEBUG_t)(userAlloc))(sizeof(asCScriptNode), __FILE__, __LINE__);
-//#else
+#if defined(AS_DEBUG) 
+	return ((asALLOCFUNCDEBUG_t)(userAlloc))(sizeof(asCScriptNode), __FILE__, __LINE__);
+#else
 	return userAlloc(sizeof(asCScriptNode));
-//#endif
+#endif
 }
 
 void asCMemoryMgr::FreeScriptNode(void *ptr)
@@ -258,11 +259,11 @@ void *asCMemoryMgr::AllocByteInstruction()
 	if( byteInstructionPool.GetLength() )
 		return byteInstructionPool.PopLast();
 
-//#if defined(AS_DEBUG) 
-//	return ((asALLOCFUNCDEBUG_t)(userAlloc))(sizeof(asCByteInstruction), __FILE__, __LINE__);
-//#else
+#if defined(AS_DEBUG) 
+	return ((asALLOCFUNCDEBUG_t)(userAlloc))(sizeof(asCByteInstruction), __FILE__, __LINE__);
+#else
 	return userAlloc(sizeof(asCByteInstruction));
-//#endif
+#endif
 }
 
 void asCMemoryMgr::FreeByteInstruction(void *ptr)

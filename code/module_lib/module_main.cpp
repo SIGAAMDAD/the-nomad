@@ -262,12 +262,10 @@ void CModuleLib::RunModules( EModuleFuncId nCallId, uint32_t nArgs, ... )
 	va_end( argptr );
 
 	time.Start();
-	AS_Printf( "Garbage collection started...\n" );
 	g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_DETECT_GARBAGE | asGC_DESTROY_GARBAGE
 		| asGC_FULL_CYCLE, (uint32_t)ml_garbageCollectionIterations->i );
 	
 	time.Stop();
-	AS_Printf( "Garbage collection: %lims, %li iterations\n", time.Milliseconds(), ml_garbageCollectionIterations->i );
 
 	for ( j = 0; j < m_nModuleCount; j++ ) {
 		if ( sgvm == &m_pLoadList[j] ) {
@@ -305,11 +303,9 @@ int CModuleLib::ModuleCall( CModuleInfo *pModule, EModuleFuncId nCallId, uint32_
 	name = funcDefs[ nCallId ].name;
 
 	time.Start();
-	AS_Printf( "Garbage collection started (%s)...\n", name );
 	g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_DETECT_GARBAGE | asGC_DESTROY_GARBAGE
 		| asGC_FULL_CYCLE, (uint32_t)ml_garbageCollectionIterations->i );
 	time.Stop();
-	AS_Printf( "Garbage collection: %lims, %li iterations\n", time.Milliseconds(), ml_garbageCollectionIterations->i );
 
 	return pModule->m_pHandle->CallFunc( nCallId, nArgs, args );
 }
@@ -346,29 +342,14 @@ void Module_ASMessage_f( const asSMessageInfo *pMsg, void *param )
 	}
 }
 
-#ifdef _NOMAD_DEBUG
-void *AS_Alloc( size_t nSize, const char *pFilename, uint32_t lineNumber ) {
-//    return Hunk_Alloc( nSize, h_high );
-	return Mem_Alloc( nSize );
-}
-#else
 void *AS_Alloc( size_t nSize ) {
 //    return Hunk_Alloc( nSize, h_high );
 	return Mem_Alloc( nSize );
 }
-#endif
-
-#ifdef _NOMAD_DEBUG
-void AS_Free( void *ptr, const char *pFilename, uint32_t lineNumber ) {
-//    Z_Free( ptr );
-	Mem_Free( ptr );
-}
-#else
 void AS_Free( void *ptr ) {
 //    Z_Free( ptr );
 	Mem_Free( ptr );
 }
-#endif
 
 /*
 * AS_Printf: a debugging tool used for whenever the angelscript compiler decides
@@ -1041,8 +1022,6 @@ void CModuleLib::Shutdown( qboolean quit )
 		m_pScriptBuilder->~CScriptBuilder();
 		g_pDebugger->~CDebugger();
 	}
-
-	asSetThreadManager( NULL );
 
 	Mem_GetFrameStats( allocs, frees );
 	Con_Printf( "\n" );

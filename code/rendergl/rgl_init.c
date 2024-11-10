@@ -1420,7 +1420,7 @@ static void R_AllocBackend( void ) {
 	size += PAD( sizeof( renderEntityDef_t ) * r_maxEntities->i, sizeof( uintptr_t ) );
 	size += PAD( sizeof( dlight_t ) * r_maxDLights->i, sizeof( uintptr_t ) );
 
-	backendData[ 0 ] = (renderBackendData_t *)ri.Malloc( size );
+	backendData[ 0 ] = (renderBackendData_t *)ri.Hunk_Alloc( size, h_low );
 	backendData[ 0 ]->verts = (srfVert_t *)( backendData[ 0 ] + 1 );
 	backendData[ 0 ]->polyVerts = (polyVert_t *)( backendData[ 0 ]->verts + r_maxPolys->i * 4 );
 	backendData[ 0 ]->polys = (srfPoly_t *)( backendData[ 0 ]->polyVerts + r_maxPolys->i * 4 );

@@ -31,6 +31,9 @@ If you have questions concerning this license or the applicable additional terms
 #include "Str.cpp"
 #include "../game/imgui_memory_editor.h"
 
+#define Mem_Assert( x ) \
+	if ( !( x ) ) { Con_Printf( COLOR_RED "ERROR[MEMDEBUG]: " #x "\n" ); }
+
 #ifndef USE_LIBC_MALLOC
 //	#define USE_LIBC_MALLOC		0
 #endif
@@ -168,7 +171,7 @@ void idHeap::Init () {
 	memset( smallFirstFree, 0, sizeof(smallFirstFree) );	// init small heap manager
 	smallFirstUsedPage	= NULL;
 	smallCurPage		= AllocatePage( pageSize );
-	Assert( smallCurPage );
+	Mem_Assert( smallCurPage );
 	smallCurPageOffset	= SMALL_ALIGN( 0 );
 
 	defragBlock = NULL;
@@ -241,7 +244,7 @@ idHeap::~idHeap( void ) {
 	#endif
 	}
 
-	Assert( pagesAllocated == 0 );
+	Mem_Assert( pagesAllocated == 0 );
 }
 
 /*
@@ -426,7 +429,7 @@ idHeap::FreePageReal
 ================
 */
 void idHeap::FreePageReal( idHeap::page_s *p ) {
-	Assert( p );
+	Mem_Assert( p );
 #ifdef MEMHEAP_DEBUG
 	if ( p ) {
 		Con_DPrintf( "Releasing page 0x%08lx, %u bytes\n", (uintptr_t)(void *)p, p->dataSize );
@@ -512,7 +515,7 @@ idHeap::FreePage
 ================
 */
 void idHeap::FreePage( idHeap::page_s *p ) {
-	Assert( p );
+	Mem_Assert( p );
 
 	if ( p->dataSize == pageSize && !swapPage ) {			// add to swap list?
 		swapPage = p;
@@ -628,9 +631,9 @@ void *idHeap::MediumAllocateFromPage( idHeap::page_s *p, uint32_t sizeNeeded ) {
 
 	best = (mediumHeapEntry_s *)(p->firstFree);			// first block is largest
 
-	Assert( best );
-	Assert( best->size == p->largestFree );
-	Assert( best->size >= sizeNeeded );
+	Mem_Assert( best );
+	Mem_Assert( best->size == p->largestFree );
+	Mem_Assert( best->size >= sizeNeeded );
 
 	// if we can allocate another block from this page after allocating sizeNeeded bytes
 	if ( best->size >= (uint32_t)( sizeNeeded + MEDIUM_SMALLEST_SIZE ) ) {
@@ -765,9 +768,9 @@ void *idHeap::MediumAllocate( uint32_t bytes ) {
 	// matching block) -- this speeds up both the page walks and block walks
 
 	if ( p != mediumFirstFreePage ) {
-		Assert( mediumLastFreePage );
-		Assert( mediumFirstFreePage );
-		Assert( p->prev);
+		Mem_Assert( mediumLastFreePage );
+		Mem_Assert( mediumFirstFreePage );
+		Mem_Assert( p->prev);
 
 		mediumLastFreePage->next	= mediumFirstFreePage;
 		mediumFirstFreePage->prev	= mediumLastFreePage;
@@ -797,8 +800,8 @@ void idHeap::MediumFree( void *ptr ) {
 
 	isInFreeList = p->largestFree >= MEDIUM_SMALLEST_SIZE;
 
-	Assert( e->size );
-	Assert( e->freeBlock == 0 );
+	Mem_Assert( e->size );
+	Mem_Assert( e->freeBlock == 0 );
 
 	mediumHeapEntry_s *prev = e->prev;
 
@@ -815,7 +818,7 @@ void idHeap::MediumFree( void *ptr ) {
 		e->prevFree		= NULL;				// link to beginning of free list
 		e->nextFree		= (mediumHeapEntry_s *)p->firstFree;
 		if ( e->nextFree ) {
-			Assert( !(e->nextFree->prevFree) );
+			Mem_Assert( !(e->nextFree->prevFree) );
 			e->nextFree->prevFree = e;
 		}
 
@@ -839,7 +842,7 @@ void idHeap::MediumFree( void *ptr ) {
 			next->prevFree->nextFree = next->nextFree;
 		}
 		else {
-			Assert( next == p->firstFree );
+			Mem_Assert( next == p->firstFree );
 			p->firstFree = next->nextFree;
 		}
 
@@ -858,7 +861,7 @@ void idHeap::MediumFree( void *ptr ) {
 	// did e become the largest block of the page ?
 
 	if ( e->size > p->largestFree ) {
-		Assert( e != p->firstFree );
+		Mem_Assert( e != p->firstFree );
 		p->largestFree = e->size;
 
 		if ( e->prevFree ) {
@@ -921,7 +924,7 @@ idHeap::LargeAllocate
 void *idHeap::LargeAllocate( uint32_t bytes ) {
 	idHeap::page_s *p = AllocatePage( bytes + ALIGN_SIZE( LARGE_HEADER_SIZE ) );
 
-	Assert( p );
+	Mem_Assert( p );
 
 	if ( !p ) {
 		return NULL;
@@ -1157,7 +1160,7 @@ void *Mem_Alloc16( const uint32_t size ) {
 	}
 	void *mem = mem_heap->Allocate16( size );
 	// make sure the memory is 16 byte aligned
-	Assert( ( ( ( uintptr_t)mem ) & 16 ) == 0 );
+	Mem_Assert( ( ( ( uintptr_t)mem ) & 16 ) == 0 );
 	return mem;
 }
 
@@ -1178,7 +1181,7 @@ void Mem_Free16( void *ptr ) {
 		return;
 	}
 	// make sure the memory is 16 byte aligned
-	Assert( ( ( (uintptr_t)ptr ) & 16 ) == 0 );
+	Mem_Assert( ( ( (uintptr_t)ptr ) & 16 ) == 0 );
 	mem_heap->Free16( ptr );
 }
 
@@ -1601,7 +1604,7 @@ void *Mem_AllocDebugMemory( const uint32_t size, const char *fileName, const uin
 		*((int*)0x0) = 1;
 #endif
 		// NOTE: set a breakpoint here to find memory allocations before mem_heap is initialized
-		Assert( false );
+		Mem_Assert( false );
 		return malloc( size );
 	}
 
@@ -1707,7 +1710,7 @@ void *Mem_Alloc16Debug( const uint32_t size, const char *fileName, const uint32_
 	}
 	void *mem = Mem_AllocDebugMemory( size, fileName, lineNumber, true );
 	// make sure the memory is 16 byte aligned
-	Assert( ( ((uintptr_t)mem) & 16) == 0 );
+	Mem_Assert( ( ((uintptr_t)mem) & 16) == 0 );
 	return mem;
 }
 
@@ -1721,7 +1724,7 @@ void Mem_Free16Debug( void *ptr, const char *fileName, const uint32_t lineNumber
 		return;
 	}
 	// make sure the memory is 16 byte aligned
-	Assert( ( ((uintptr_t)ptr) & 16) == 0 );
+	Mem_Assert( ( ((uintptr_t)ptr) & 16) == 0 );
 	Mem_FreeDebugMemory( ptr, fileName, lineNumber, true );
 }
 
