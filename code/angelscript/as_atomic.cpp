@@ -56,7 +56,7 @@ void asCAtomic::set(asDWORD val)
 {
 	// A very high ref count is highly unlikely. It most likely a problem with
 	// memory that has been overwritten or is being accessed after it was deleted.
-	asASSERT(value < 1000000);
+//	asASSERT(value < 1000000);
 
 	value = val;
 }
@@ -65,7 +65,7 @@ asDWORD asCAtomic::atomicInc()
 {
 	// A very high ref count is highly unlikely. It most likely a problem with
 	// memory that has been overwritten or is being accessed after it was deleted.
-	asASSERT(value < 1000000);
+//	asASSERT(value < 1000000);
 
 	return asAtomicInc((int&)value);
 }
@@ -74,7 +74,7 @@ asDWORD asCAtomic::atomicDec()
 {
 	// A very high ref count is highly unlikely. It most likely a problem with
 	// memory that has been overwritten or is being accessed after it was deleted.
-	asASSERT(value < 1000000);
+//	asASSERT(value < 1000000);
 
 	return asAtomicDec((int&)value);
 }

@@ -1769,18 +1769,18 @@ void R_GLDebug_Callback_ARB( GLenum source, GLenum type, GLuint id, GLenum sever
 	const char *color;
 	uint64_t len, i;
 	char msg[1024];
+	uint64_t hash;
 
 	// save the messages so OpenGL can't spam us with useless shit
 	for ( i = 0; i < numCachedGLMessages; i++ ) {
-		if ( !N_stricmp( cachedGLMessages[i], message ) ) {
+		if ( !N_stricmp( cachedGLMessages[ i ], message ) ) {
 			return;
 		}
 	}
 
 	len = strlen( message ) + 1;
 	cachedGLMessages[ numCachedGLMessages ] = ri.Hunk_Alloc( len, h_low );
-	cachedGLMessages[ numCachedGLMessages ][ len - 1 ] = '\0';
-	strcpy( cachedGLMessages[ numCachedGLMessages ], message );
+	N_strncpyz( cachedGLMessages[ numCachedGLMessages ], message, len );
 	numCachedGLMessages++;
 
 	if ( severity == GL_DEBUG_SEVERITY_NOTIFICATION ) {
@@ -1822,6 +1822,9 @@ void R_GLDebug_Callback_ARB( GLenum source, GLenum type, GLuint id, GLenum sever
 	case GL_DEBUG_SOURCE_SHADER_COMPILER_ARB:
 		N_strcat( msg, sizeof( msg ) - 1, "\tSource: GL_DEBUG_SOURCE_SHADER_COMPILER_ARB\n" );
 		break;
+	default:
+		N_strcat( msg, sizeof( msg ) - 1, "\tSource: unknown\n" );
+		break;
 	};
 
 	switch ( type ) {
@@ -1843,6 +1846,9 @@ void R_GLDebug_Callback_ARB( GLenum source, GLenum type, GLuint id, GLenum sever
 	case GL_DEBUG_TYPE_OTHER_ARB:
 		N_strcat( msg, sizeof( msg ) - 1, "\tType: GL_DEBUG_TYPE_OTHER_ARB\n" );
 		break;
+	default:
+		N_strcat( msg, sizeof( msg ) - 1, "\tType: unknown\n" );
+		break;
 	};
 
 	switch ( severity ) {
@@ -1854,6 +1860,9 @@ void R_GLDebug_Callback_ARB( GLenum source, GLenum type, GLuint id, GLenum sever
 		break;
 	case GL_DEBUG_SEVERITY_LOW_ARB:
 		N_strcat( msg, sizeof( msg ) - 1, "\tSeverity: GL_DEBUG_SEVERITY_LOW_ARB\n" );
+		break;
+	default:
+		N_strcat( msg, sizeof( msg ) - 1, "\tSeverity: unknown\n" );
 		break;
 	};
 	N_strcat( msg, sizeof( msg ) - 1, "\n" );

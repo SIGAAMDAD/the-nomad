@@ -721,7 +721,7 @@ void CScriptArray::Clear( void )
 void CScriptArray::AllocBuffer( uint32_t nItems )
 {
 	if ( !buffer ) {
-		buffer = (SArrayBuffer *)Mem_Alloc( sizeof( *buffer ) - 1 + ( ( nItems * 4 ) * elementSize ) );
+		buffer = (SArrayBuffer *)Mem_Alloc( sizeof( *buffer ) + ( ( nItems * 4 ) * elementSize ) );
 		if ( !buffer ) {
 			asIScriptContext *pContext = asGetActiveContext();
 			if ( pContext ) {
@@ -1000,7 +1000,7 @@ const void *CScriptArray::GetBuffer( void ) const {
 void CScriptArray::CreateBuffer( SArrayBuffer **buffer, asUINT nItems )
 {
 //	*buffer = (SArrayBuffer *)arrayCacheAllocator.Alloc( sizeof( *buffer ) - 1 + ( nItems * elementSize ) );
-	*buffer = (SArrayBuffer *)Mem_ClearedAlloc( sizeof( *buffer ) - 1 + ( nItems * elementSize ) );
+	*buffer = (SArrayBuffer *)Mem_ClearedAlloc( sizeof( *buffer ) + ( nItems * elementSize ) );
 
 	if ( *buffer ) {
 		(*buffer)->size = nItems;
