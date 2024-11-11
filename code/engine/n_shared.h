@@ -1028,7 +1028,7 @@ typedef struct {
 #define COLOR_WHITE		"^7"
 #define COLOR_RESET		"^8"
 
-#if defined(_NOMAD_DEBUG) && defined(__cplusplus) && !defined(_WIN32)
+#if ( defined(_NOMAD_DEBUG) && defined(__cplusplus) && !defined(_WIN32) ) && defined(_NOMAD_PROFILE)
 	#define USING_EASY_PROFILER
 	#include <easy/profiler.h>
 

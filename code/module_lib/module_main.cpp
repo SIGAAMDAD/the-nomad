@@ -262,9 +262,10 @@ void CModuleLib::RunModules( EModuleFuncId nCallId, uint32_t nArgs, ... )
 	va_end( argptr );
 
 	time.Start();
-	g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_DETECT_GARBAGE | asGC_DESTROY_GARBAGE
-		| asGC_FULL_CYCLE, (uint32_t)ml_garbageCollectionIterations->i );
-	
+	if ( nCallId == ModuleOnLevelEnd || nCallId == ModuleOnLoadGame || nCallId == ModuleShutdown ) {
+		g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_DETECT_GARBAGE | asGC_DESTROY_GARBAGE
+			| asGC_FULL_CYCLE, (uint32_t)ml_garbageCollectionIterations->i );
+	}
 	time.Stop();
 
 	for ( j = 0; j < m_nModuleCount; j++ ) {
@@ -303,8 +304,10 @@ int CModuleLib::ModuleCall( CModuleInfo *pModule, EModuleFuncId nCallId, uint32_
 	name = funcDefs[ nCallId ].name;
 
 	time.Start();
-	g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_DETECT_GARBAGE | asGC_DESTROY_GARBAGE
-		| asGC_FULL_CYCLE, (uint32_t)ml_garbageCollectionIterations->i );
+	if ( nCallId == ModuleOnLevelEnd || nCallId == ModuleOnLoadGame || nCallId == ModuleShutdown ) {
+		g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_DETECT_GARBAGE | asGC_DESTROY_GARBAGE
+			| asGC_FULL_CYCLE, (uint32_t)ml_garbageCollectionIterations->i );
+	}
 	time.Stop();
 
 	return pModule->m_pHandle->CallFunc( nCallId, nArgs, args );
@@ -814,7 +817,7 @@ CModuleLib::CModuleLib( void )
 	CheckASCall( m_pEngine->SetEngineProperty( asEP_USE_CHARACTER_LITERALS, true ) );
 	CheckASCall( m_pEngine->SetEngineProperty( asEP_ALLOW_IMPLICIT_HANDLE_TYPES, true ) );
 	CheckASCall( m_pEngine->SetEngineProperty( asEP_COPY_SCRIPT_SECTIONS, true ) );
-	CheckASCall( m_pEngine->SetEngineProperty( asEP_AUTO_GARBAGE_COLLECT, true ) );
+	CheckASCall( m_pEngine->SetEngineProperty( asEP_AUTO_GARBAGE_COLLECT, false ) );
 	CheckASCall( m_pEngine->SetEngineProperty( asEP_HEREDOC_TRIM_MODE, 0 ) );
 
 	m_pScriptBuilder = new ( Hunk_Alloc( sizeof( *m_pScriptBuilder ), h_high ) ) CScriptBuilder();
