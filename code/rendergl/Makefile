@@ -30,7 +30,9 @@ VERSION_DEFINE=-D_NOMAD_VERSION_MAJOR=$(VERSION_MAJOR) -D_NOMAD_VERSION_UPDATE=$
 
 .PHONY: all clean
 
-DEFINES       =$(VERSION_DEFINE) $(DEBUGDEF) -DUSE_OPENGL_API -DGDR_DLLCOMPILE -Werror=implicit-function-declaration -Werror=incompatible-pointer-types -D_NOMAD_ENGINE -DHQ_BLUR
+DEFINES       =$(VERSION_DEFINE) $(DEBUGDEF) -DUSE_OPENGL_API -DGDR_DLLCOMPILE -D_NOMAD_ENGINE -DHQ_BLUR
+ERRORS        =\
+				-Werror=implicit-function-declaration -Werror=incompatible-pointer-types
 OPTIMIZERS    =\
 				-fexpensive-optimizations \
 				-funroll-loops \

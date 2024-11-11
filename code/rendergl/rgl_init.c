@@ -1771,6 +1771,8 @@ void R_GLDebug_Callback_ARB( GLenum source, GLenum type, GLuint id, GLenum sever
 	char msg[1024];
 	uint64_t hash;
 
+	color = COLOR_WHITE;
+
 	// save the messages so OpenGL can't spam us with useless shit
 	for ( i = 0; i < numCachedGLMessages; i++ ) {
 		if ( !N_stricmp( cachedGLMessages[ i ], message ) ) {
