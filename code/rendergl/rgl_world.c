@@ -470,7 +470,7 @@ static void R_ProcessLights( void )
 		ri.Error( ERR_FATAL, "Could not load tile shader!" );
 	}
 
-	GLSL_LinkUniformToShader( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, qfalse );
+	GLSL_LinkUniformToShader( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, qfalse, 0 );
 
 	GLSL_InitUniforms( &rg.tileShader );
 	GLSL_FinishGPUShader( &rg.tileShader );
@@ -592,22 +592,17 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 		r_worldData.buffer->vertex[ ATTRIB_INDEX_TEXCOORD ].target = GL_ARRAY_BUFFER;
 		r_worldData.buffer->vertex[ ATTRIB_INDEX_WORLDPOS ].target = GL_ARRAY_BUFFER;
 
-		nglNamedBufferStorage( r_worldData.buffer->vertex[ ATTRIB_INDEX_POSITION ].id, r_worldData.buffer->vertex[ ATTRIB_INDEX_POSITION ].size, NULL, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
-		nglNamedBufferStorage( r_worldData.buffer->vertex[ ATTRIB_INDEX_TEXCOORD ].id, r_worldData.buffer->vertex[ ATTRIB_INDEX_TEXCOORD ].size, NULL, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
-		nglNamedBufferStorage( r_worldData.buffer->vertex[ ATTRIB_INDEX_WORLDPOS ].id, r_worldData.buffer->vertex[ ATTRIB_INDEX_WORLDPOS ].size, NULL, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
-
 		r_worldData.buffer->index.target = GL_ELEMENT_ARRAY_BUFFER;
-
-		nglNamedBufferStorage( r_worldData.buffer->index.id, sizeof( glIndex_t ) * r_worldData.numIndices, NULL, GL_MAP_WRITE_BIT );
 
 		VBO_MapBuffers( &r_worldData.buffer->vertex[ ATTRIB_INDEX_POSITION ] );
 		VBO_MapBuffers( &r_worldData.buffer->vertex[ ATTRIB_INDEX_TEXCOORD ] );
 		VBO_MapBuffers( &r_worldData.buffer->vertex[ ATTRIB_INDEX_WORLDPOS ] );
-		VBO_MapBuffers( &r_worldData.buffer->index );
 	} else {
 		VBO_MapBuffers( &r_worldData.buffer->vertex[0] );
 	}
 	VBO_MapBuffers( &r_worldData.buffer->index );
+
+	r_worldData.indices = r_worldData.buffer->index.data;
 
 	// cache the indices so that we aren't calculating these every frame (there could be thousands)
 	for ( i = 0, offset = 0; i < r_worldData.numIndices; i += 6, offset += 4 ) {
@@ -623,15 +618,6 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 	ri.Printf( PRINT_INFO, "Optimizing vertex cache... (Current cache misses: %f)\n", R_CalcCacheEfficiency() );
 	R_OptimizeVertexCache();
 	ri.Printf( PRINT_INFO, "Optimized cache misses: %f\n", R_CalcCacheEfficiency() );
-
-	VBO_Bind( r_worldData.buffer );
-//	if ( NGL_VERSION_ATLEAST( 4, 5 ) || glContext.directStateAccess ) {
-//	} else {
-//		VBO_SetVertexPointers( r_worldData.buffer, ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_WORLDPOS );
-//		nglVertexAttribDivisor( ATTRIB_INDEX_POSITION, 0 );
-//		nglVertexAttribDivisor( ATTRIB_INDEX_TEXCOORD, 0 );
-//	}
-	VBO_BindNull();
 
 	if ( NGL_VERSION_ATLEAST( 4, 5 ) || glContext.directStateAccess ) {
 		r_worldData.worldPos = (worldPos_t *)r_worldData.buffer->vertex[ ATTRIB_INDEX_WORLDPOS ].data;

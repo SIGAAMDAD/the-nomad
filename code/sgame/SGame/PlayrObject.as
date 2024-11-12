@@ -461,9 +461,9 @@ namespace TheNomad::SGame {
 			}
 
 			if ( ( m_iFlags & PF_USING_WEAPON ) != 0 ) {
-				m_nFrameDamage += GetCurrentWeapon().Use( cast<EntityObject>( @this ), GetCurrentWeaponMode() );
+//				m_nFrameDamage += GetCurrentWeapon().Use( cast<EntityObject>( @this ), GetCurrentWeaponMode() );
 			} else if ( ( m_iFlags & PF_USING_WEAPON_ALT ) != 0 ) {
-				m_nFrameDamage += GetCurrentWeapon().UseAlt( cast<EntityObject>( @this ), GetCurrentWeaponMode() );
+//				m_nFrameDamage += GetCurrentWeapon().UseAlt( cast<EntityObject>( @this ), GetCurrentWeaponMode() );
 			}
 
 			m_Link.m_Bounds.m_nWidth = sgame_PlayerWidth.GetFloat();
@@ -755,6 +755,7 @@ namespace TheNomad::SGame {
 		
 		// custom draw because of adaptive weapons and leg sprites
 		void Draw() override {
+			return;
 			TheNomad::Engine::ProfileBlock block( "PlayrObject::Draw" );
 
 			TheNomad::Engine::Renderer::RenderEntity refEntity;

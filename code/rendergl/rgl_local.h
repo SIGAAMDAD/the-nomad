@@ -1592,7 +1592,7 @@ void GLSL_SetUniformMatrix4( shaderProgram_t *program, uint32_t uniformNum, cons
 shaderProgram_t *GLSL_GetGenericShaderProgram( int stage );
 void GLSL_ShaderBufferData( shaderProgram_t *shader, uint32_t uniformNum, uniformBuffer_t *buffer, uint64_t nSize, uint64_t nOffset, qboolean dynamicStorage );
 uniformBuffer_t *GLSL_InitUniformBuffer( const char *name, byte *buffer, uint64_t bufSize, qboolean dynamicStorage );
-void GLSL_LinkUniformToShader( shaderProgram_t *program, uint32_t uniformNum, uniformBuffer_t *buffer, qboolean dynamicStorage );
+void GLSL_LinkUniformToShader( shaderProgram_t *program, uint32_t uniformNum, uniformBuffer_t *buffer, qboolean dynamicStorage, uint32_t binding );
 
 //
 // rgl_math.c

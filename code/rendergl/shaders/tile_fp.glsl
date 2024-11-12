@@ -57,7 +57,7 @@ struct Light {
 	int type;
 };
 
-layout( std140, binding = 0 ) readonly buffer u_LightBuffer {
+layout( std140, binding = 0 ) buffer u_LightBuffer {
 	Light u_LightData[];
 };
 
@@ -66,22 +66,6 @@ uniform vec3 u_AmbientColor;
 
 #include "image_sharpen.glsl"
 #include "fxaa.glsl"
-
-float CalcLightAttenuation(float point, float normDist)
-{
-	// zero light at 1.0, approximating q3 style
-	// also don't attenuate directional light
-	float attenuation = (0.5 * normDist - 1.5) * point + 1.0;
-
-	// clamp attenuation
-	#if defined(NO_LIGHT_CLAMP)
-	attenuation = max(attenuation, 0.0);
-	#else
-	attenuation = clamp(attenuation, 0.0, 1.0);
-	#endif
-
-	return attenuation;
-}
 
 vec3 CalcDiffuse( vec3 diffuseAlbedo, float NH, float EH, float roughness )
 {
