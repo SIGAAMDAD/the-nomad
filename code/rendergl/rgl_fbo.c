@@ -7,7 +7,9 @@ R_CheckFBO
 */
 static qboolean R_CheckFBO( const fbo_t * fbo )
 {
-	GLenum code = nglCheckFramebufferStatus( GL_FRAMEBUFFER );
+	GLenum code;
+
+	code = nglCheckFramebufferStatus( GL_FRAMEBUFFER );
 
 	if ( code == GL_FRAMEBUFFER_COMPLETE ) {
 		return qtrue;
@@ -152,11 +154,7 @@ static void FBO_CreateBuffer( fbo_t *fbo, int format, int32_t index, int multisa
 	GL_BindFramebuffer( GL_FRAMEBUFFER, fbo->frameBuffer );
 	nglBindRenderbuffer( GL_RENDERBUFFER, *pRenderBuffer );
 	if ( multisample && glContext.ARB_framebuffer_multisample ) {
-//		if ( glContext.NV_framebuffer_multisample_coverage && r_multisampleType->i == AntiAlias_CSAA ) {
-//			nglRenderBufferStorageMultisampleCoverageNV( GL_RENDERBUFFER, multisample, 8, format, fbo->width, fbo->height );
-//		} else {
-			nglRenderbufferStorageMultisample( GL_RENDERBUFFER, multisample, format, fbo->width, fbo->height );
-//		}
+		nglRenderbufferStorageMultisample( GL_RENDERBUFFER, multisample, format, fbo->width, fbo->height );
 	} else {
 		nglRenderbufferStorage( GL_RENDERBUFFER, format, fbo->width, fbo->height );
 	}
@@ -174,11 +172,13 @@ static void FBO_CreateBuffer( fbo_t *fbo, int format, int32_t index, int multisa
 
 void FBO_AttachImage( fbo_t *fbo, texture_t *image, GLenum attachment )
 {
-	int32_t index;
+	int index;
 
 	GL_BindFramebuffer( GL_FRAMEBUFFER, fbo->frameBuffer );
 	GL_BindTexture( TB_DIFFUSEMAP, image );
+
 	nglFramebufferTexture2D( GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, image->id, 0 );
+
 	index = attachment - GL_COLOR_ATTACHMENT0;
 	if ( index >= 0 && index <= 15 ) {
 		fbo->colorImage[index] = image;
@@ -259,45 +259,6 @@ static void FBO_List_f( void )
 	ri.Printf( PRINT_INFO, " %0.02lf MB render buffer memory\n", (double)( renderBufferMemoryUsed / ( 1024 * 1024 ) ) );
 }
 
-static void FBO_CreateMultisampleTexture( fbo_t *fbo, texture_t *image, GLint index, GLenum hdrFormat )
-{
-	int sampleCount;
-
-	if ( image->id != 0 ) {
-		nglDeleteTextures( 1, &image->id );
-	}
-
-	sampleCount = 0;
-	if ( r_antialiasQuality->i == 0 ) {
-		sampleCount = 2;
-	} else if ( r_antialiasQuality->i == 1 ) {
-		sampleCount = 4;
-	} else if ( r_antialiasQuality->i == 2 ) {
-		sampleCount = 8;
-	}
-
-	nglGenTextures( 1, &image->id );
-
-	nglActiveTexture( GL_TEXTURE0 );
-	nglBindTexture( GL_TEXTURE_2D_MULTISAMPLE, image->id );
-//	nglTexParameteri( GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-//	nglTexParameteri( GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-//	nglTexParameteri( GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_BASE_LEVEL, 0 );
-	nglTexImage2DMultisample( GL_TEXTURE_2D_MULTISAMPLE, sampleCount, hdrFormat, fbo->width, fbo->height, GL_TRUE );
-	nglBindTexture( GL_TEXTURE_2D_MULTISAMPLE, 0 );
-
-	image->evicted = qtrue;
-
-	if ( r_loadTexturesOnDemand->i ) {
-		image->handle = nglGetTextureHandleARB( image->id );
-		nglMakeTextureHandleResidentARB( image->handle );
-	}
-
-	GL_BindFramebuffer( GL_FRAMEBUFFER, fbo->frameBuffer );
-	nglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D_MULTISAMPLE, image->id, 0 );
-	GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
-}
-
 static void FBO_Init_f( void )
 {
 	int hdrFormat, multisample;
@@ -317,6 +278,7 @@ static void FBO_Init_f( void )
 
 	rg.numFBOs = 0;
 	multisample = 0;
+	sampleCount = 0;
 
 	GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
 
@@ -342,7 +304,7 @@ static void FBO_Init_f( void )
 			fboHeight = SCREEN_HEIGHT;
 		} else {
 			fboWidth = glConfig.vidWidth * r_fixedResolutionScale->f;
-			fboWidth = glConfig.vidHeight * r_fixedResolutionScale->f;
+			fboHeight = glConfig.vidHeight * r_fixedResolutionScale->f;
 		}
 	} else {
 		fboWidth = glConfig.vidWidth;
@@ -432,7 +394,6 @@ static void FBO_Init_f( void )
 
 			FBO_AttachImage( &rg.renderFbo, rg.firstPassImage, GL_COLOR_ATTACHMENT0 );
 			FBO_AttachImage( &rg.renderFbo, rg.bloomImage, GL_COLOR_ATTACHMENT1 );
-
 			nglDrawBuffers( 2, buffers );
 		} else {
 			FBO_CreateBuffer( &rg.renderFbo, hdrFormat, 0, multisample );
@@ -615,7 +576,11 @@ void FBO_BlitFromTexture( fbo_t *srcFbo, struct texture_s *src, vec4_t inSrcTexC
 		shaderProgram = &rg.genericShader[0];
 	}
 
-	FBO_Bind( dst );
+	if ( dst ) {
+		nglBindFramebuffer( GL_FRAMEBUFFER, dst->frameBuffer );
+	} else {
+		nglBindFramebuffer( GL_FRAMEBUFFER, 0 );
+	}
 
 	nglViewport( 0, 0, width, height );
 	nglScissor( 0, 0, width, height );
@@ -692,12 +657,20 @@ void FBO_FastBlit( fbo_t *src, ivec4_t srcBox, fbo_t *dst, ivec4_t dstBox, int b
 		VectorSet4( dstBoxFinal, dstBox[0], dstBox[1], dstBox[0] + dstBox[2], dstBox[1] + dstBox[3] );
 	}
 
-	GL_BindFramebuffer( GL_READ_FRAMEBUFFER, srcFb );
-	GL_BindFramebuffer( GL_DRAW_FRAMEBUFFER, dstFb );
-	nglBlitFramebuffer( srcBoxFinal[0], srcBoxFinal[1], srcBoxFinal[2], srcBoxFinal[3],
-						  dstBoxFinal[0], dstBoxFinal[1], dstBoxFinal[2], dstBoxFinal[3],
-						  buffers, filter );
-	GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
+	if ( glContext.directStateAccess ) {
+		nglBlitNamedFramebuffer( src->frameBuffer, dst->frameBuffer,
+			srcBoxFinal[0], srcBoxFinal[1], srcBoxFinal[2], srcBoxFinal[3],
+			dstBoxFinal[0], dstBoxFinal[1], dstBoxFinal[2], dstBoxFinal[3],
+			buffers, filter );
+	} else {
+		GL_BindFramebuffer( GL_READ_FRAMEBUFFER, srcFb );
+		GL_BindFramebuffer( GL_DRAW_FRAMEBUFFER, dstFb );
+		nglBlitFramebuffer( srcBoxFinal[0], srcBoxFinal[1], srcBoxFinal[2], srcBoxFinal[3],
+							  dstBoxFinal[0], dstBoxFinal[1], dstBoxFinal[2], dstBoxFinal[3],
+							  buffers, filter );
+		GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
+	}
+
 	glState.currentFbo = NULL;
 }
 
@@ -716,11 +689,11 @@ void RB_BloomPass( fbo_t *srcFbo, fbo_t *dstFbo )
 
 	FBO_FastBlit( srcFbo, NULL, &rg.bloomPingPongFbo[ 0 ], NULL, GL_COLOR_BUFFER_BIT, GL_LINEAR );
 
+	GLSL_UseProgram( &rg.blurShader );
 	for ( i = 0; i < NUM_BLUR_PASSES; i++ ) {
-		GL_BindFramebuffer( GL_FRAMEBUFFER, rg.bloomPingPongFbo[ horizontal ].frameBuffer );
+		nglBindFramebuffer( GL_FRAMEBUFFER, rg.bloomPingPongFbo[ horizontal ].frameBuffer );
 		
 		// the srcFbo's colorbuffers must be set up specifically for bloom for this to work
-		GLSL_UseProgram( &rg.blurShader );
 		GLSL_SetUniformInt( &rg.blurShader, UNIFORM_BLUR_HORIZONTAL, horizontal );
 		GLSL_SetUniformTexture( &rg.blurShader, UNIFORM_DIFFUSE_MAP, i == 0 ? srcFbo->colorImage[ 1 ] : rg.bloomPingPongImage[ !horizontal ] );
 		RB_RenderPass();
@@ -730,8 +703,8 @@ void RB_BloomPass( fbo_t *srcFbo, fbo_t *dstFbo )
 
 	// combine hdr and bloom pass
 
-	GL_BindFramebuffer( GL_READ_FRAMEBUFFER, rg.bloomPingPongFbo[ 0 ].frameBuffer );
-	GL_BindFramebuffer( GL_DRAW_FRAMEBUFFER, dstFbo ? dstFbo->frameBuffer : 0 );
+	nglBindFramebuffer( GL_READ_FRAMEBUFFER, rg.bloomPingPongFbo[ 0 ].frameBuffer );
+	nglBindFramebuffer( GL_DRAW_FRAMEBUFFER, dstFbo ? dstFbo->frameBuffer : 0 );
 
 	GLSL_UseProgram( &rg.bloomResolveShader );
 	GLSL_SetUniformInt( &rg.bloomResolveShader, UNIFORM_USE_HDR, r_hdr->i );
@@ -745,7 +718,7 @@ void RB_BloomPass( fbo_t *srcFbo, fbo_t *dstFbo )
 
 	RB_RenderPass();
 
-	GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
+	nglBindFramebuffer( GL_FRAMEBUFFER, 0 );
 }
 
 void RB_FinishPostProcess( fbo_t *srcFbo )

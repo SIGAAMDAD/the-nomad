@@ -113,9 +113,9 @@ static void RB_CalcDeformVertexes( deformStage_t *ds )
 	vec3_t	offset;
 	float	scale;
     polyVert_t *vtx = (polyVert_t *)backend.drawBatch.vertices;
-//	float	*xyz = ( float * ) tess.xyz;
-//	int16_t	*normal = tess.normal[0];
 	float	*table;
+
+	VectorSet( offset, 1.0f, 1.0f, 1.0f );
 
 	if ( ds->deformationWave.frequency == 0 )
 	{
@@ -200,16 +200,13 @@ RB_CalcBulgeVertexes
 ========================
 */
 static void RB_CalcBulgeVertexes( deformStage_t *ds ) {
-	int i;
-	uint32_t st;
-	uint32_t xyz;
-	uint32_t normal;
+	uint32_t i;
 	float now;
-	polyVert_t *vtx = (polyVert_t *)backend.drawBuffer->vertex.data;
+	polyVert_t *vtx = (polyVert_t *)backend.drawBuffer->vertex->data;
 
 	now = backend.refdef.time * ds->bulgeSpeed * 0.001;
 
-	for ( i = 0; i < backend.drawBatch.vtxOffset; i++, xyz++, st++, normal++ ) {
+	for ( i = 0; i < backend.drawBatch.vtxOffset; i++ ) {
 		int64_t off;
 		float scale;
 		vec3_t fNormal;
@@ -220,13 +217,13 @@ static void RB_CalcBulgeVertexes( deformStage_t *ds ) {
 		VectorSet( fNormal, 1.0f, 1.0f, 1.0f );
 	#endif
 
-		off = (float)( FUNCTABLE_SIZE / (M_PI*2) ) * ( vtx[st].uv[0] * ds->bulgeWidth + now );
+		off = (float)( FUNCTABLE_SIZE / ( M_PI * 2 ) ) * ( vtx[i].uv[0] * ds->bulgeWidth + now );
 
 		scale = rg.sinTable[ off & FUNCTABLE_MASK ] * ds->bulgeHeight;
 			
-		vtx[xyz].xyz[0] += fNormal[0] * scale;
-		vtx[xyz].xyz[1] += fNormal[1] * scale;
-		vtx[xyz].xyz[2] += fNormal[2] * scale;
+		vtx[i].xyz[0] += fNormal[0] * scale;
+		vtx[i].xyz[1] += fNormal[1] * scale;
+		vtx[i].xyz[2] += fNormal[2] * scale;
 	}
 }
 
@@ -476,7 +473,7 @@ static void Autosprite2Deform( void ) {
 
 		// find the midpoint
 		ri.Error( ERR_FATAL, "%s: called", __func__ );
-		xyz = &( (polyVert_t *)backend.drawBuffer->vertex.data )[i];
+		xyz = &( (polyVert_t *)backend.drawBuffer->vertex->data )[i];
 
 		// identify the two shortest edges
 		nums[0] = nums[1] = 0;
@@ -558,8 +555,7 @@ void RB_DeformTessGeometry( void ) {
 	int		i;
 	deformStage_t	*ds;
 
-	if(!ShaderRequiresCPUDeforms(backend.drawBatch.shader))
-	{
+	if ( !ShaderRequiresCPUDeforms( backend.drawBatch.shader ) ) {
 		// we don't need the following CPU deforms
 		return;
 	}
@@ -570,9 +566,9 @@ void RB_DeformTessGeometry( void ) {
 		switch ( ds->deformation ) {
         case DEFORM_NONE:
             break;
-		case DEFORM_NORMALS:
+//		case DEFORM_NORMALS:
 //			RB_CalcDeformNormals( ds );
-			break;
+//			break;
 		case DEFORM_WAVE:
 			RB_CalcDeformVertexes( ds );
 			break;
@@ -581,12 +577,6 @@ void RB_DeformTessGeometry( void ) {
 			break;
 		case DEFORM_MOVE:
 			RB_CalcMoveVertexes( ds );
-			break;
-		case DEFORM_PROJECTION_SHADOW:
-//			RB_ProjectionShadowDeform();
-			break;
-		case DEFORM_AUTOSPRITE:
-//			AutospriteDeform();
 			break;
 		case DEFORM_AUTOSPRITE2:
 			Autosprite2Deform();

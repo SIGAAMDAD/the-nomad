@@ -117,6 +117,11 @@ VERSION_DEFINE=-D_NOMAD_VERSION_MAJOR=$(VERSION_MAJOR) -D_NOMAD_VERSION_UPDATE=$
 ERRORS        =-Werror=return-type
 
 DEFINES       =$(VERSION_DEFINE) $(DEBUGDEF) -D_NOMAD_ENGINE -DUSE_FMOD
+ERRORS        =\
+			-Wall \
+			-Werror=maybe-uninitialized \
+			-Werror=return-type \
+			-Werror=enum-compare
 OPTIMIZERS    =\
 			-ffast-math \
 			-mfma -msse3 -msse2 -msse -mavx2 -mavx \
@@ -125,12 +130,9 @@ OPTIMIZERS    =\
 			-finline-functions \
 			-finline-small-functions \
 
-CFLAGS        =$(FTYPE) -Wno-unused-result $(DEFINES) $(INCLUDE) $(OPTIMIZERS)
+CFLAGS        =$(FTYPE) -Wno-unused-result $(DEFINES) $(INCLUDE) $(OPTIMIZERS) $(ERRORS)
 ifdef win32
 CFLAGS+=-Wno-unused-function -Wno-format -Wno-unused-variable
-endif
-ifndef release
-CFLAGS        +=-Wall -Werror=maybe-uninitialized
 endif
 CC            =$(COMPILER)
 ifdef win32
@@ -160,13 +162,9 @@ endif
 
 ifndef win32
 LDLIBS= \
-		-lGL \
 		libbacktrace.a \
 		libEASTL.a \
-		libopenal.a \
 		TheNomad.ASLib.x64.a \
-		libfoonathan_memory-0.7.3.a \
-		/usr/local/lib/libcoredumper.a \
 		-L. \
 		-lSDL2 \
 		-lsndfile \
@@ -177,7 +175,6 @@ LDLIBS= \
 		-Wl,-rpath='.' \
 		-ljpeg -lsteam_api \
 		-lfmodL -lfmodstudioL \
-		libbox2d.a \
 		-lcurl
 
 ifndef release

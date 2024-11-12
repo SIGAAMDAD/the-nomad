@@ -613,6 +613,8 @@ static void RGBAtoNormal(const byte *in, byte *out, uint32_t width, uint32_t hei
 			uint32_t x2, y2, i;
 			vec3_t normal;
 
+			memset( s, 0, sizeof( s ) );
+
 			i = 0;
 			for (y2 = -1; y2 <= 1; y2++) {
 				uint32_t src_y = y + y2;
@@ -2185,10 +2187,10 @@ static void RawImage_UploadTexture( const char *ext, GLuint texture, byte *data,
 
 	miplevel = 0;
 	do {
-		lastMip = (width == 1 && height == 1) || !mipmap;
-		size = CalculateTextureSize(width, height, picFormat);
+		lastMip = ( width == 1 && height == 1 ) || !mipmap;
+		size = CalculateTextureSize( width, height, picFormat );
 
-		if ( !rgba && !(flags & IMGFLAG_NO_COMPRESSION) && PixelDataFormatIsValidCompressed( picFormat ) ) {
+		if ( !rgba && !( flags & IMGFLAG_NO_COMPRESSION ) && PixelDataFormatIsValidCompressed( picFormat ) ) {
 			GL_LogComment( "glCompressedTexSubImage2D(GL_TEXTURE_2D, %lu, %i, %i, %i, %i, 0x%04x, %lu, %p)", miplevel, x, y, width, height, picFormat, size, data );
 			nglCompressedTexSubImage2D( GL_TEXTURE_2D, miplevel, x, y, width, height, picFormat, size, data );
 			GL_CheckErrors();
@@ -2198,12 +2200,12 @@ static void RawImage_UploadTexture( const char *ext, GLuint texture, byte *data,
 				R_BlendOverTexture( (byte *)data, width * height, mipBlendColors[miplevel] );
 			}
 
-			if (rgba8 && rgtc) {
+			if ( rgba8 && rgtc ) {
 				RawImage_UploadToRgtc2Texture( miplevel, x, y, width, height, data, subtexture, internalFormat );
 			}
-			else if (subtexture) {
+			else if ( subtexture ) {
 				GL_LogComment("glTexSubImage2D(GL_TEXTURE_2D, %lu, %i, %i, %i, %i, 0x%04x, %i, %p)", miplevel, x, y, width, height, dataFormat, dataType, data);
-				nglTexSubImage2D(target, miplevel, x, y, width, height, dataFormat, dataType, data);
+				nglTexSubImage2D( target, miplevel, x, y, width, height, dataFormat, dataType, data );
 				GL_CheckErrors();
 			}
 			else {
@@ -2232,16 +2234,15 @@ static void RawImage_UploadTexture( const char *ext, GLuint texture, byte *data,
 
 		x >>= 1;
 		y >>= 1;
-		width = MAX(1, width >> 1);
-		height = MAX(1, height >> 1);
+		width = MAX( 1, width >> 1 );
+		height = MAX( 1, height >> 1 );
 		miplevel++;
 
-		if (numMips > 1)
-		{
+		if ( numMips > 1 ) {
 			data += size;
 			numMips--;
 		}
-	} while (!lastMip);
+	} while ( !lastMip );
 }
 
 /*
@@ -2319,7 +2320,7 @@ static void R_AllocateTextureStorage( texture_t *image )
 {
 	GLenum glWrapClampMode;
 	GLenum dataFormat;
-	GLenum dataType;
+	GLenum dataType = GL_UNSIGNED_BYTE;
 	byte *resampledBuffer = NULL;
 	uint32_t estSize = 0;
 	qboolean rgba8 = image->picFormat == GL_RGBA8 || image->picFormat == GL_SRGB8_ALPHA8;
@@ -2345,6 +2346,8 @@ static void R_AllocateTextureStorage( texture_t *image )
 
 	// Allocate texture storage so we don't have to worry about it later
 	dataFormat = PixelDataFormatFromInternalFormat( image->internalFormat );
+
+	glState.currentTexture = image;
 
 	// this is here so that we don't enter an infinite recursion
 	nglActiveTexture( GL_TEXTURE0 );
@@ -2538,6 +2541,8 @@ static void R_AllocateTextureStorage( texture_t *image )
 	if ( rg.world && rg.worldMapLoaded ) {
 		rg.world->levelTextures++;
 	}
+
+	glState.currentTexture = NULL;
 }
 
 /*

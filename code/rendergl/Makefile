@@ -14,7 +14,7 @@ endif
 
 ifndef release
 DEBUGDEF  =-D_NOMAD_DEBUG
-FTYPE     =-Og -g
+FTYPE     =-Og -g -O0
 else
 DEBUGDEF  =
 FTYPE     =-Ofast -s
@@ -32,9 +32,11 @@ VERSION_DEFINE=-D_NOMAD_VERSION_MAJOR=$(VERSION_MAJOR) -D_NOMAD_VERSION_UPDATE=$
 
 DEFINES       =$(VERSION_DEFINE) $(DEBUGDEF) -DUSE_OPENGL_API -DGDR_DLLCOMPILE -D_NOMAD_ENGINE -DHQ_BLUR
 ERRORS        =\
-				-Werror=implicit-function-declaration -Werror=incompatible-pointer-types
+				-Werror=implicit-function-declaration \
+				-Werror=incompatible-pointer-types \
+				-Werror=maybe-uninitialized \
+				-Werror=return-type
 OPTIMIZERS    =\
-				-fexpensive-optimizations \
 				-funroll-loops \
 				-ffast-math \
 				-mfma -msse3 -msse2 -mavx2 -mavx \
@@ -47,7 +49,7 @@ ifeq ($(build),debug)
 endif
 
 CC       =$(COMPILER) -std=c99
-CFLAGS   =$(FTYPE) $(DEFINES) $(INCLUDE) $(OPTIMIZERS)
+CFLAGS   =$(FTYPE) $(DEFINES) $(INCLUDE) $(OPTIMIZERS) $(ERRORS)
 SDIR     =code
 LIB      =TheNomad.RenderLib-opengl.x64.$(DLL_EXT)
 

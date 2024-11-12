@@ -31,20 +31,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../game/g_world.h"
 
 const moduleFunc_t funcDefs[NumFuncs] = {
-	/*
-	{ "int Init()", ModuleInit, 0, qtrue },
-	{ "int Shutdown()", ModuleShutdown, 0, qtrue },
-	{ "int OnConsoleCommand()", ModuleCommandLine, 0, qfalse },
-	{ "int DrawConfiguration()", ModuleDrawConfiguration, 0, qfalse },
-	{ "int SaveConfiguration()", ModuleSaveConfiguration, 0, qfalse },
-	{ "int OnKeyEvent( uint, uint )", ModuleOnKeyEvent, 2, qfalse },
-	{ "int OnMouseEvent( int, int )", ModuleOnMouseEvent, 2, qfalse },
-	{ "int OnLevelStart()", ModuleOnLevelStart, 0, qfalse },
-	{ "int OnLevelEnd()", ModuleOnLevelEnd, 0, qfalse },
-	{ "int OnRunTic( uint )", ModuleOnRunTic, 1, qtrue },
-	{ "int OnSaveGame()", ModuleOnSaveGame, 0, qfalse },
-	{ "int OnLoadGame()", ModuleOnLoadGame, 0, qfalse }
-	*/
 	{ "ModuleOnInit", ModuleInit, 0, qtrue, qfalse },
 	{ "ModuleOnShutdown", ModuleShutdown, 0, qtrue, qfalse },
 	{ "ModuleOnConsoleCommand", ModuleCommandLine, 0, qfalse, qfalse },
@@ -336,31 +322,10 @@ void CModuleHandle::RegisterGameObject( void )
 
 bool CModuleHandle::InitCalls( void )
 {
-//    asIScriptFunction *pFactory;
 	uint32_t i;
 	char szFuncName[1024];
 
 	Con_Printf( "Initializing function procs...\n" );
-
-/*
-	m_pModuleObject = m_pScriptModule->GetTypeInfoByDecl( "ModuleObject" );
-	if ( !m_pModuleObject ) {
-		Con_Printf( COLOR_RED "Module \"%s\" not registered with required AngelScript Object 'ModuleObject'\n", m_szName.c_str() );
-		return false;
-	}
-
-	pFactory = m_pModuleObject->GetFactoryByDecl( "ModuleObject@ ModuleObject()" );
-	if ( !pFactory ) {
-		Con_Printf( COLOR_RED "Module \"%s\" has ModuleObject class registered but no default factory\n", m_szName.c_str() );
-		return false;
-	}
-
-	CheckASCall( m_pScriptContext->Prepare( pFactory ) );
-	CheckASCall( m_pScriptContext->Execute() );
-
-	m_pEntryPoint = *(asIScriptObject **)m_pScriptContext->GetAddressOfReturnValue();
-	AssertMsg( m_pEntryPoint, "Failed to create a ModuleObject instance!" );
-*/
 
 	memset( m_pFuncTable, 0, sizeof( m_pFuncTable ) );
 
@@ -498,51 +463,23 @@ bool CModuleHandle::LoadSourceFile( const string_t& filename )
 		return false;
 	}
 
-	data.resize( length );
-	memcpy( data.data(), f.b, length );
-
 	errCount = 0;
 
 	if ( errCount > 0 ) {
-		retn = g_pModuleLib->GetScriptBuilder()->AddSectionFromMemory( filename.c_str(), data.data(), data.size() );
+		retn = g_pModuleLib->GetScriptBuilder()->AddSectionFromMemory( filename.c_str(), f.b, length );
 		if ( retn < 0 ) {
 			Con_Printf( COLOR_RED "ERROR: failed to compile source file '%s' -- %s, %i errors\n", filename.c_str(),
 				AS_PrintErrorString( retn ), errCount );
 			return false;
 		}
 	} else {
-		retn = g_pModuleLib->GetScriptBuilder()->AddSectionFromMemory( filename.c_str(), data.data(), data.size() );
+		retn = g_pModuleLib->GetScriptBuilder()->AddSectionFromMemory( filename.c_str(), f.b, length );
 		if ( retn < 0 ) {
 			Con_Printf( COLOR_RED "ERROR: failed to compile source file '%s' -- %s\n", filename.c_str(), AS_PrintErrorString( retn ) );
 			return false;
 		}
 	}
 	FS_FreeFile( f.v );
-	/*
-	int retn;
-	fileHandle_t f;
-	Preprocessor macroManager;
-	Preprocessor::FileSource source;
-	eastl::string data;
-	UtlVector<char> out;
-
-	f = FS_FOpenRead( va( "modules/%s/%s", m_szName.c_str(), filename.c_str() ) );
-	if ( f == FS_INVALID_HANDLE ) {
-		N_Error( ERR_DROP, "CModuleHandle::LoadSourceFile: failed to load source file '%s'", filename.c_str() );
-	}
-	data.resize( FS_FileLength( f ) );
-	if ( !FS_Read( data.data(), data.size(), f ) ) {
-		N_Error( ERR_DROP, "CModuleHandle::LoadSourceFile: failed to load source file '%s'", filename.c_str() );
-	}
-	FS_FClose( f );
-
-	macroManager.preprocess( eastl::move( filename.c_str() ), data, source, out );
-	
-	retn = g_pModuleLib->GetScriptBuilder()->AddSectionFromMemory( filename.c_str(), out.data(), out.size() );
-	if ( retn < 0 ) {
-		Con_Printf( COLOR_RED "ERROR: failed to add source file '%s' -- %s\n", filename.c_str(), AS_PrintErrorString( retn ) );
-	}
-	*/
 
 	return true;
 }
@@ -554,7 +491,7 @@ void CModuleHandle::ClearMemory( void )
 {
 	uint64_t i;
 
-	if ( g_pModuleLib->GetScriptContext()->GetState() == asCONTEXT_ACTIVE ) {
+	if ( g_pModuleLib->GetScriptContext()->GetState() == asEXECUTION_ACTIVE ) {
 		g_pModuleLib->GetScriptContext()->Abort();
 	}
 
@@ -565,9 +502,6 @@ void CModuleHandle::ClearMemory( void )
 			m_pFuncTable[i]->Release();
 		}
 	}
-
-//    m_pEntryPoint->Release();
-//    m_pModuleObject->Release();
 
 	CheckASCall( g_pModuleLib->GetScriptContext()->Unprepare() );
 }

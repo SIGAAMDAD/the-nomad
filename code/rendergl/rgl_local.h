@@ -134,6 +134,7 @@ typedef struct
 	qboolean smpActive;
 	qboolean bindlessTextures;
 	qboolean transformFeedback;
+	qboolean directStateAccess;
 
 	int maxTextureUnits;
 	int maxTextureSize;
@@ -513,6 +514,8 @@ typedef struct {
 typedef struct {
 	uint32_t index;
 	uint32_t count;
+	uint32_t binding; // only for GL_ARB_direct_state_access
+	uint32_t size; // only for GL_ARB_direct_state_access
 	uint32_t type;
 	uint32_t enabled;
 	uint32_t normalized;
@@ -524,9 +527,10 @@ typedef struct {
 	char name[MAX_NPATH];
 
 	uint32_t vaoId;
+	uint32_t numBuffers;
 	bufferType_t type;
 
-	buffer_t vertex;
+	buffer_t *vertex;
 	buffer_t index;
 
 	vertexAttrib_t attribs[ATTRIB_INDEX_COUNT];
@@ -1488,6 +1492,7 @@ extern cvar_t *r_arb_texture_float;
 extern cvar_t *r_arb_sync;
 extern cvar_t *r_arb_shader_storage_buffer_object;
 extern cvar_t *r_arb_map_buffer_range;
+extern cvar_t *r_arb_direct_state_access;
 
 
 //====================================================================
@@ -1708,15 +1713,14 @@ void R_VaoUnpackNormal( vec3_t v, int16_t *pack );
 void R_VaoUnpackTangent( vec4_t v, int16_t *pack );
 void R_VaoUnpackColor( vec4_t v, uint16_t *pack );
 vertexBuffer_t *R_AllocateBuffer( const char *name, void *vertices, uint32_t verticesSize, void *indices, uint32_t indicesSize,
-	bufferType_t type );
+	bufferType_t type, vertexAttrib_t szAttribs[ ATTRIB_INDEX_COUNT ] );
 void VBO_BindNull( void );
-void VBO_MapBuffers( vertexBuffer_t *vbo, void **vertexBuffer, void **indexBuffer );
+void VBO_MapBuffers( buffer_t *buf );
 void R_InitGPUBuffers( void );
 void R_ShutdownGPUBuffers( void );
 void VBO_Bind( vertexBuffer_t *vbo );
 void VBO_SetVertexPointers( vertexBuffer_t *vbo, uint32_t attribBits );
 void R_ShutdownBuffer( vertexBuffer_t *vbo );
-void RB_UpdateTessVao( unsigned int vertexAttribs );
 
 // for batch drawing
 void RB_SetBatchBuffer( vertexBuffer_t *buffer, void *vertexBuffer, uintptr_t vtxSize, void *indexBuffer, uintptr_t idxSize );

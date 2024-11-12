@@ -101,6 +101,11 @@ void GL_BindTexture( int tmu, texture_t *image )
 		return;
 	}
 
+	if ( glContext.directStateAccess ) {
+		nglBindTextureUnit( tmu, image->id );
+		return;
+	}
+
 	if ( glState.currenttmu != texunit ) {
 		nglActiveTexture( texunit );
 		glState.currenttmu = texunit;
@@ -112,23 +117,16 @@ void GL_BindTexture( int tmu, texture_t *image )
 void GL_BindNullTextures( void )
 {
 	uint32_t i;
+
 	for ( i = 0; i < MAX_TEXTURE_UNITS; i++ ) {
 		nglActiveTexture( GL_TEXTURE0 + i );
 		nglBindTexture( GL_TEXTURE_2D, 0 );
 	}
 
-	memset(textureStack, 0, sizeof(GLuint) * textureStackP);
+	memset( textureStack, 0, sizeof( GLuint ) * textureStackP );
 	textureStackP = 0;
 
-#if 0
-	for (uint32_t i = 0; i < NUM_TEXTURE_BINDINGS; i++) {
-		if (glState.currenttextures[i] != 0) {
-			nglActiveTexture(GL_TEXTURE0 + i);
-			nglBindTexture(GL_TEXTURE_2D, 0);
-		}
-	}
-#endif
-	nglActiveTexture(GL_TEXTURE0);
+	nglActiveTexture( GL_TEXTURE0 );
 	glState.currenttmu = GL_TEXTURE0;
 	glState.currentTexture = NULL;
 }
@@ -153,26 +151,26 @@ void GL_BindNullProgram( void )
 void GL_BindFramebuffer( GLenum target, GLuint fbo )
 {
 	switch ( target ) {
-	case GL_FRAMEBUFFER:
-		if (glState.defFboId == fbo)
+	case GL_FRAMEBUFFER: {
+		if ( glState.defFboId == fbo ) {
 			return;
-		
+		}
 		glState.defFboId = fbo;
-		break;
-	case GL_READ_FRAMEBUFFER:
-		if (glState.readFboId == fbo)
+		break; }
+	case GL_READ_FRAMEBUFFER: {
+		if ( glState.readFboId == fbo ) {
 			return;
-		
+		}
 		glState.readFboId = fbo;
-		break;
-	case GL_DRAW_FRAMEBUFFER:
-		if (glState.writeFboId == fbo)
+		break; }
+	case GL_DRAW_FRAMEBUFFER: {
+		if ( glState.writeFboId == fbo ) {
 			return;
-		
+		}
 		glState.writeFboId = fbo;
-		break;
+		break; }
 	default: // should never happen, if it does, then skill issue from the dev
-		ri.Error(ERR_FATAL, "GL_BindFramebuffer: Invalid fbo target: %i", target);
+		ri.Error( ERR_FATAL, "GL_BindFramebuffer: Invalid fbo target: %i", target );
 	};
 
 	nglBindFramebuffer( target, fbo );

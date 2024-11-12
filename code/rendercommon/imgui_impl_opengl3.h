@@ -111,7 +111,7 @@ typedef struct
     void (*DrawShaderStages)( nhandle_t hShader, uint32_t elementCount, uint32_t elementType, const void *offset, int32_t baseVertex );
     void *(*GetShaderByHandle)( nhandle_t hShader );
     vertexBuffer_t *(*AllocateBuffer)( const char *name, void *vertices, uint32_t verticesSize, void *indices, uint32_t indicesSize,
-    	bufferType_t type );
+    	bufferType_t type, void *szAttribs );
     void (*SetAttribPointers)( vertexBuffer_t *vbo, uint32_t attribBits );
 } imguiGL3Import_t;
 

@@ -503,7 +503,7 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 	uint32_t numSurfs, i;
 	uint32_t y, x;
 	uint32_t offset;
-	vertexAttrib_t *attribs;
+	vertexAttrib_t attribs[ATTRIB_INDEX_COUNT];
 	vec3_t pos;
 	vec3_t edge1, edge2;
 	vec2_t deltaUV1, deltaUV2;
@@ -515,26 +515,7 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 	r_worldData.numIndices = r_worldData.width * r_worldData.height * 6;
 	r_worldData.numVertices = r_worldData.width * r_worldData.height * 4;
 
-	r_worldData.buffer = R_AllocateBuffer( "worldDrawBuffer", NULL, sizeof( *r_worldData.vertices ) * r_worldData.numVertices, NULL,
-										sizeof( glIndex_t ) * r_worldData.numIndices, BUFFER_STREAM );
-	attribs = r_worldData.buffer->attribs;
-
-	VBO_MapBuffers( r_worldData.buffer, (void **)&r_worldData.vertices, (void **)&r_worldData.indices );
-
-	// cache the indices so that we aren't calculating these every frame (there could be thousands)
-	for ( i = 0, offset = 0; i < r_worldData.numIndices; i += 6, offset += 4 ) {
-		r_worldData.indices[ i + 0 ] = offset + 0;
-		r_worldData.indices[ i + 1 ] = offset + 1;
-		r_worldData.indices[ i + 2 ] = offset + 2;
-
-		r_worldData.indices[ i + 3 ] = offset + 3;
-		r_worldData.indices[ i + 4 ] = offset + 2;
-		r_worldData.indices[ i + 5 ] = offset + 0;
-	}
-
-	ri.Printf( PRINT_INFO, "Optimizing vertex cache... (Current cache misses: %f)\n", R_CalcCacheEfficiency() );
-	R_OptimizeVertexCache();
-	ri.Printf( PRINT_INFO, "Optimized cache misses: %f\n", R_CalcCacheEfficiency() );
+	memset( attribs, 0, sizeof( attribs ) );
 
 	attribs[ATTRIB_INDEX_POSITION].enabled		= qtrue;
 	attribs[ATTRIB_INDEX_TEXCOORD].enabled		= qtrue;
@@ -576,13 +557,20 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 	attribs[ATTRIB_INDEX_BITANGENT].normalized	= GL_FALSE;
 	attribs[ATTRIB_INDEX_NORMAL].normalized		= GL_FALSE;
 
-	attribs[ATTRIB_INDEX_WORLDPOS].offset		= 0;
-	attribs[ATTRIB_INDEX_POSITION].offset		= attribs[ ATTRIB_INDEX_WORLDPOS ].offset + ( sizeof( worldPos_t ) * r_worldData.numVertices );
-	attribs[ATTRIB_INDEX_TEXCOORD].offset		= attribs[ ATTRIB_INDEX_POSITION ].offset + ( sizeof( vec3_t ) * r_worldData.numVertices );
-	attribs[ATTRIB_INDEX_COLOR].offset			= attribs[ ATTRIB_INDEX_TEXCOORD ].offset + ( sizeof( vec2_t ) * r_worldData.numVertices );
-//	attribs[ATTRIB_INDEX_TANGENT].offset		= attribs[ ATTRIB_INDEX_COLOR ].offset + ( sizeof( color4ub_t ) * r_worldData.numVertices );
-//	attribs[ATTRIB_INDEX_BITANGENT].offset		= attribs[ ATTRIB_INDEX_TANGENT ].offset + ( sizeof( vec3_t ) * r_worldData.numVertices );
-//	attribs[ATTRIB_INDEX_NORMAL].offset			= attribs[ ATTRIB_INDEX_BITANGENT ].offset + ( sizeof( vec3_t ) * r_worldData.numVertices );
+	if ( glContext.directStateAccess ) {
+		attribs[ATTRIB_INDEX_WORLDPOS].size			= sizeof( worldPos_t ) * r_worldData.numVertices;
+		attribs[ATTRIB_INDEX_POSITION].size			= sizeof( vec3_t ) * r_worldData.numVertices;
+		attribs[ATTRIB_INDEX_TEXCOORD].size			= sizeof( vec2_t ) * r_worldData.numVertices;
+		attribs[ATTRIB_INDEX_COLOR].size			= sizeof( color4ub_t ) * r_worldData.numVertices;
+	} else {
+		attribs[ATTRIB_INDEX_WORLDPOS].offset		= 0;
+		attribs[ATTRIB_INDEX_POSITION].offset		= attribs[ ATTRIB_INDEX_WORLDPOS ].offset + ( sizeof( worldPos_t ) * r_worldData.numVertices );
+		attribs[ATTRIB_INDEX_TEXCOORD].offset		= attribs[ ATTRIB_INDEX_POSITION ].offset + ( sizeof( vec3_t ) * r_worldData.numVertices );
+		attribs[ATTRIB_INDEX_COLOR].offset			= attribs[ ATTRIB_INDEX_TEXCOORD ].offset + ( sizeof( vec2_t ) * r_worldData.numVertices );
+	}
+	//	attribs[ATTRIB_INDEX_TANGENT].offset		= attribs[ ATTRIB_INDEX_COLOR ].offset + ( sizeof( color4ub_t ) * r_worldData.numVertices );
+	//	attribs[ATTRIB_INDEX_BITANGENT].offset		= attribs[ ATTRIB_INDEX_TANGENT ].offset + ( sizeof( vec3_t ) * r_worldData.numVertices );
+	//	attribs[ATTRIB_INDEX_NORMAL].offset			= attribs[ ATTRIB_INDEX_BITANGENT ].offset + ( sizeof( vec3_t ) * r_worldData.numVertices );
 
 	attribs[ATTRIB_INDEX_POSITION].stride		= sizeof( vec3_t );
 	attribs[ATTRIB_INDEX_TEXCOORD].stride		= sizeof( vec2_t );
@@ -592,16 +580,68 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 	attribs[ATTRIB_INDEX_BITANGENT].stride		= sizeof( vec3_t );
 	attribs[ATTRIB_INDEX_NORMAL].stride			= sizeof( vec3_t );
 
+	r_worldData.buffer = R_AllocateBuffer( "worldDrawBuffer", NULL, sizeof( *r_worldData.vertices ) * r_worldData.numVertices, NULL,
+										sizeof( glIndex_t ) * r_worldData.numIndices, BUFFER_STREAM, attribs );
+
+	if ( glContext.directStateAccess ) {
+		r_worldData.buffer->vertex[ ATTRIB_INDEX_POSITION ].size = sizeof( vec3_t ) * r_worldData.numVertices;
+		r_worldData.buffer->vertex[ ATTRIB_INDEX_TEXCOORD ].size = sizeof( vec2_t ) * r_worldData.numVertices;
+		r_worldData.buffer->vertex[ ATTRIB_INDEX_WORLDPOS ].size = sizeof( worldPos_t ) * r_worldData.numVertices;
+
+		r_worldData.buffer->vertex[ ATTRIB_INDEX_POSITION ].target = GL_ARRAY_BUFFER;
+		r_worldData.buffer->vertex[ ATTRIB_INDEX_TEXCOORD ].target = GL_ARRAY_BUFFER;
+		r_worldData.buffer->vertex[ ATTRIB_INDEX_WORLDPOS ].target = GL_ARRAY_BUFFER;
+
+		nglNamedBufferStorage( r_worldData.buffer->vertex[ ATTRIB_INDEX_POSITION ].id, r_worldData.buffer->vertex[ ATTRIB_INDEX_POSITION ].size, NULL, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
+		nglNamedBufferStorage( r_worldData.buffer->vertex[ ATTRIB_INDEX_TEXCOORD ].id, r_worldData.buffer->vertex[ ATTRIB_INDEX_TEXCOORD ].size, NULL, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
+		nglNamedBufferStorage( r_worldData.buffer->vertex[ ATTRIB_INDEX_WORLDPOS ].id, r_worldData.buffer->vertex[ ATTRIB_INDEX_WORLDPOS ].size, NULL, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
+
+		r_worldData.buffer->index.target = GL_ELEMENT_ARRAY_BUFFER;
+
+		nglNamedBufferStorage( r_worldData.buffer->index.id, sizeof( glIndex_t ) * r_worldData.numIndices, NULL, GL_MAP_WRITE_BIT );
+
+		VBO_MapBuffers( &r_worldData.buffer->vertex[ ATTRIB_INDEX_POSITION ] );
+		VBO_MapBuffers( &r_worldData.buffer->vertex[ ATTRIB_INDEX_TEXCOORD ] );
+		VBO_MapBuffers( &r_worldData.buffer->vertex[ ATTRIB_INDEX_WORLDPOS ] );
+		VBO_MapBuffers( &r_worldData.buffer->index );
+	} else {
+		VBO_MapBuffers( &r_worldData.buffer->vertex[0] );
+	}
+	VBO_MapBuffers( &r_worldData.buffer->index );
+
+	// cache the indices so that we aren't calculating these every frame (there could be thousands)
+	for ( i = 0, offset = 0; i < r_worldData.numIndices; i += 6, offset += 4 ) {
+		r_worldData.indices[ i + 0 ] = offset + 0;
+		r_worldData.indices[ i + 1 ] = offset + 1;
+		r_worldData.indices[ i + 2 ] = offset + 2;
+
+		r_worldData.indices[ i + 3 ] = offset + 3;
+		r_worldData.indices[ i + 4 ] = offset + 2;
+		r_worldData.indices[ i + 5 ] = offset + 0;
+	}
+
+	ri.Printf( PRINT_INFO, "Optimizing vertex cache... (Current cache misses: %f)\n", R_CalcCacheEfficiency() );
+	R_OptimizeVertexCache();
+	ri.Printf( PRINT_INFO, "Optimized cache misses: %f\n", R_CalcCacheEfficiency() );
+
 	VBO_Bind( r_worldData.buffer );
-	VBO_SetVertexPointers( r_worldData.buffer, ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_WORLDPOS );
-	nglVertexAttribDivisor( ATTRIB_INDEX_POSITION, 0 );
-	nglVertexAttribDivisor( ATTRIB_INDEX_TEXCOORD, 0 );
+//	if ( NGL_VERSION_ATLEAST( 4, 5 ) || glContext.directStateAccess ) {
+//	} else {
+//		VBO_SetVertexPointers( r_worldData.buffer, ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_WORLDPOS );
+//		nglVertexAttribDivisor( ATTRIB_INDEX_POSITION, 0 );
+//		nglVertexAttribDivisor( ATTRIB_INDEX_TEXCOORD, 0 );
+//	}
 	VBO_BindNull();
 
-	r_worldData.worldPos = (worldPos_t *)r_worldData.vertices;
-	r_worldData.xyz = (vec3_t *)( r_worldData.worldPos + r_worldData.numVertices );
-	r_worldData.uv = (vec2_t *)( r_worldData.xyz + r_worldData.numVertices );
-//	r_worldData.color = (color4ub_t *)( r_worldData.uv + r_worldData.numVertices );
+	if ( NGL_VERSION_ATLEAST( 4, 5 ) || glContext.directStateAccess ) {
+		r_worldData.worldPos = (worldPos_t *)r_worldData.buffer->vertex[ ATTRIB_INDEX_WORLDPOS ].data;
+		r_worldData.xyz = (vec3_t *)( r_worldData.buffer->vertex[ ATTRIB_INDEX_POSITION ].data );
+		r_worldData.uv = (vec2_t *)( r_worldData.buffer->vertex[ ATTRIB_INDEX_TEXCOORD ].data );
+	} else {
+		r_worldData.worldPos = (worldPos_t *)r_worldData.vertices;
+		r_worldData.xyz = (vec3_t *)( r_worldData.worldPos + r_worldData.numVertices );
+		r_worldData.uv = (vec2_t *)( r_worldData.xyz + r_worldData.numVertices );
+	}
 
 	R_GenerateTexCoords( &theader->info );
 	R_ProcessLights();
@@ -610,11 +650,15 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 	ri.Printf( PRINT_DEVELOPER, "Flushing mapped world buffer regions...\n" );
 
 	VBO_Bind( r_worldData.buffer );
-	nglFlushMappedBufferRange( GL_ARRAY_BUFFER, attribs[ ATTRIB_INDEX_WORLDPOS ].offset, sizeof( worldPos_t ) * r_worldData.numVertices );
-	nglFlushMappedBufferRange( GL_ARRAY_BUFFER, attribs[ ATTRIB_INDEX_TEXCOORD ].offset, sizeof( vec2_t ) * r_worldData.numVertices );
-//	nglFlushMappedBufferRange( GL_ARRAY_BUFFER, attribs[ ATTRIB_INDEX_COLOR ].offset, sizeof( color4ub_t ) * r_worldData.numVertices );
-
-	nglFlushMappedBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, sizeof( glIndex_t ) * r_worldData.numIndices );
+	if ( NGL_VERSION_ATLEAST( 4, 5 ) || glContext.directStateAccess ) {
+		nglFlushMappedNamedBufferRange( r_worldData.buffer->vertex[ ATTRIB_INDEX_WORLDPOS ].id, 0, sizeof( worldPos_t ) * r_worldData.numVertices );
+		nglFlushMappedNamedBufferRange( r_worldData.buffer->vertex[ ATTRIB_INDEX_TEXCOORD ].id, 0, sizeof( vec2_t ) * r_worldData.numVertices );
+		nglFlushMappedNamedBufferRange( r_worldData.buffer->index.id, 0, sizeof( glIndex_t ) * r_worldData.numIndices );
+	} else {
+		nglFlushMappedBufferRange( GL_ARRAY_BUFFER, attribs[ ATTRIB_INDEX_WORLDPOS ].offset, sizeof( worldPos_t ) * r_worldData.numVertices );
+		nglFlushMappedBufferRange( GL_ARRAY_BUFFER, attribs[ ATTRIB_INDEX_TEXCOORD ].offset, sizeof( vec2_t ) * r_worldData.numVertices );
+		nglFlushMappedBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, sizeof( glIndex_t ) * r_worldData.numIndices );
+	}
 	VBO_BindNull();
 }
 

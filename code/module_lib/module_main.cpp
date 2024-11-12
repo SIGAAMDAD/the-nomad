@@ -745,15 +745,6 @@ void CModuleLib::LoadModList( void )
 			}
 		}
 	}
-	
-	// reorder
-//	for ( i = 0; i < m_nModuleCount; i++ ) {
-//		module_t m = m_pModList[i];
-//		m_pModList[i] = m_pModList[ m_pModList[i].bootIndex ];
-//		m_pModList[ m_pModList[i].bootIndex ] = m;
-//	}
-
-//	eastl::sort( m_pModList, m_pModList + m_nModuleCount );
 
 	// check for missing dependencies
 	for ( i = 0; i < m_nModuleCount; i++ ) {

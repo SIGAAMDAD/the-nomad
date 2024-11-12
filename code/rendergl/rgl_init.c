@@ -18,11 +18,11 @@ NGL_BufferARB_Procs
 NGL_VertexArrayARB_Procs
 NGL_VertexShaderARB_Procs
 
+NGL_ARB_direct_state_access
 NGL_ARB_buffer_storage
 NGL_ARB_map_buffer_range
 NGL_ARB_sync
 NGL_ARB_bindless_texture
-NGL_NV_shader_buffer_load
 NGL_ARB_transform_feedback
 #undef NGL
 
@@ -201,6 +201,7 @@ cvar_t *r_arb_sync;
 cvar_t *r_arb_shader_storage_buffer_object;
 cvar_t *r_arb_map_buffer_range;
 cvar_t *r_arb_pixel_buffer_object;
+cvar_t *r_arb_direct_state_access;
 
 cvar_t *r_screenshotJpegQuality;
 
@@ -836,6 +837,9 @@ static void R_Register( void )
 	r_useExtensions = ri.Cvar_Get( "r_useExtensions", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_useExtensions, "Use all of the OpenGL extensions your card is capable of." );
 
+	r_arb_direct_state_access = ri.Cvar_Get( "r_arb_direct_state_access", "1", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_SetDescription( r_arb_direct_state_access, "Enables direct state access, requires OpenGL driver version 4.5." );
+
 	r_arb_pixel_buffer_object = ri.Cvar_Get( "r_arb_pixel_buffer_object", "0", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_arb_pixel_buffer_object, "Enables pixel buffer objects." );
 
@@ -1388,7 +1392,7 @@ static void R_InitImGui( void )
 	import.DrawShaderStages = RB_DrawShaderStages;
 	import.GetTextureId = RE_GetTextureId;
 	import.GetShaderByHandle = (void *(*)( nhandle_t ))R_GetShaderByHandle;
-	import.AllocateBuffer = R_AllocateBuffer;
+	import.AllocateBuffer = (vertexBuffer_t *(*)( const char *, void *, uint32_t, void *, uint32_t, bufferType_t, void * ))R_AllocateBuffer;
 	import.SetAttribPointers = VBO_SetVertexPointers;
 
 	ri.ImGui_Init( (void *)(uintptr_t)rg.imguiShader.programId, &import );
