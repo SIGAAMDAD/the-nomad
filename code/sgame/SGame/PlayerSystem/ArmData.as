@@ -77,7 +77,7 @@ namespace TheNomad::SGame {
 			refEntity.origin = m_EntityData.GetOrigin();
 			refEntity.sheetNum = m_SpriteSheet[ m_nFacing ].GetShader();
 			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( @m_SpriteSheet[ m_nFacing ], @m_State );
-			refEntity.Draw();
+//			refEntity.Draw();
 		}
 		
 		SpriteSheet@ GetSpriteSheet() {

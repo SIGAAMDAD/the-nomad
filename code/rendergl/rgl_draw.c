@@ -675,7 +675,7 @@ static void RB_StageIteratorGeneric( shader_t *shader )
 
 		// custom texture filtering
 		if ( stageP->bundle[0].filter != -1 ) {
-			nglBindSampler( TB_DIFFUSEMAP, rg.samplers[stageP->bundle[0].filter] );
+			nglBindSampler( TB_DIFFUSEMAP, rg.samplers[ stageP->bundle[0].filter ] );
 		}
 
 		{

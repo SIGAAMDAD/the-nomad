@@ -1553,6 +1553,9 @@ void G_GetSkinData(
 {
 	const skin_t *skin;
 
+	if ( !*pSkinName ) {
+		pSkinName = "default";
+	}
 	for ( skin = s_pSkinList; skin; skin = skin->next ) {
 		if ( !N_stricmp( skin->name, pSkinName ) ) {
 			break;

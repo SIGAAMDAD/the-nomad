@@ -755,7 +755,6 @@ namespace TheNomad::SGame {
 		
 		// custom draw because of adaptive weapons and leg sprites
 		void Draw() override {
-			return;
 			TheNomad::Engine::ProfileBlock block( "PlayrObject::Draw" );
 
 			TheNomad::Engine::Renderer::RenderEntity refEntity;

@@ -67,19 +67,6 @@ uniform vec3 u_AmbientColor;
 #include "image_sharpen.glsl"
 #include "fxaa.glsl"
 
-vec3 CalcDiffuse( vec3 diffuseAlbedo, float NH, float EH, float roughness )
-{
-#if defined(USE_BURLEY)
-	// modified from https://disney-animation.s3.amazonaws.com/library/s2012_pbs_disney_brdf_notes_v2.pdf
-	float fd90 = -0.5 + EH * EH * roughness;
-	float burley = 1.0 + fd90 * 0.04 / NH;
-	burley *= burley;
-	return diffuseAlbedo * burley;
-#else
-	return diffuseAlbedo;
-#endif
-}
-
 vec3 CalcNormal() {
 #if defined(USE_NORMALMAP)
 	vec3 normal = texture( u_NormalMap, v_TexCoords ).rgb;
@@ -149,7 +136,7 @@ void ApplyLighting() {
 
 void main() {
 	if ( distance( u_ViewOrigin, v_WorldPos ) > 12.0 ) {
-		discard;
+//		discard;
 	}
 
 	// calculate a slight x offset, otherwise we get some black line bleeding

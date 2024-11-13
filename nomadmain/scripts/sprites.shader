@@ -58,17 +58,18 @@ sprites/players/raio_legs_1
 	}
 }
 
-sprites/players/raio_arms_0
+sprites/players/raio_arms_0_0
 {
 	nopicmip
 	nomipmaps
 	{
 		texFilter nearest
-		map textures/sprites/players/raio_arms_0.dds
+		map textures/sprites/players/raio_arms_0_0.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		rgbGen vertex
 		stage diffuseMap
 	}
+/*
 	{
 		texFilter nearest
 		map textures/sprites/players/raio_arms_0_n.dds
@@ -76,19 +77,43 @@ sprites/players/raio_arms_0
 		rgbGen vertex
 		stage normalMap
 	}
+*/
 }
 
-sprites/players/raio_arms_1
+sprites/players/raio_arms_0_1
 {
 	nopicmip
 	nomipmaps
 	{
 		texFilter nearest
-		map textures/sprites/players/raio_arms_1.dds
+		map textures/sprites/players/raio_arms_0_1.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		rgbGen vertex
 		stage diffuseMap
 	}
+/*
+	{
+		texFilter nearest
+		map textures/sprites/players/raio_arms_0_n.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+		stage normalMap
+	}
+*/
+}
+
+sprites/players/raio_arms_1_0
+{
+	nopicmip
+	nomipmaps
+	{
+		texFilter nearest
+		map textures/sprites/players/raio_arms_1_0.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+		stage diffuseMap
+	}
+/*
 	{
 		texFilter nearest
 		map textures/sprites/players/raio_arms_1_n.dds
@@ -96,6 +121,29 @@ sprites/players/raio_arms_1
 		rgbGen vertex
 		stage normalMap
 	}
+*/
+}
+
+sprites/players/raio_arms_1_1
+{
+	nopicmip
+	nomipmaps
+	{
+		texFilter nearest
+		map textures/sprites/players/raio_arms_1_1.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+		stage diffuseMap
+	}
+/*
+	{
+		texFilter nearest
+		map textures/sprites/players/raio_arms_1_n.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+		stage normalMap
+	}
+*/
 }
 
 sprites/mobs/grunt

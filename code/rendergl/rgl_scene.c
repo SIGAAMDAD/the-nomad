@@ -225,6 +225,7 @@ void RE_ProcessDLights( void )
 		}
 	}
 	GLSL_UseProgram( &rg.tileShader );
+	GLSL_SetUniformVec3( &rg.tileShader, UNIFORM_AMBIENTLIGHT, rg.world->ambientLightColor );
 	GLSL_SetUniformInt( &rg.tileShader, UNIFORM_NUM_LIGHTS, rg.world->numLights + backend.refdef.numDLights );
 	GLSL_ShaderBufferData( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, sizeof( *gpuLight ) * ( backend.refdef.numDLights + rg.world->numLights ), 0, qfalse );
 }

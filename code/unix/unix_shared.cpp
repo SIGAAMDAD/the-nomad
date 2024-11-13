@@ -261,7 +261,7 @@ class CTimeVal
 {
 public:
     CTimeVal( void ) = default;
-    CTimeVal& operator=( const CTimeVal& val ) { m_TimeVal = val.m_TimeVal; }
+    CTimeVal& operator=( const CTimeVal& val ) { m_TimeVal = val.m_TimeVal; return *this; }
     inline double operator-( const CTimeVal& left ) {
         uint64_t left_us = (uint64_t)left.m_TimeVal.tv_sec * 1000000 + left.m_TimeVal.tv_usec;
 	    uint64_t right_us = (uint64_t)m_TimeVal.tv_sec * 1000000 + m_TimeVal.tv_usec;
@@ -684,6 +684,7 @@ void Sys_UnmapFile( void *file )
 
 fileOffset_t Sys_TellMappedFile( void *file )
 {
+    return 0;
 }
 
 /*
@@ -691,6 +692,7 @@ fileOffset_t Sys_TellMappedFile( void *file )
 */
 fileOffset_t Sys_SeekMappedFile( fileOffset_t offset, uint32_t whence, void *file )
 {
+    return 0;
 }
 
 #if 0
