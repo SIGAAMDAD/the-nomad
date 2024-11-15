@@ -1574,6 +1574,11 @@ void G_GetSkinData(
 	VectorCopy2( legsSheetSize, skin->legsSheetSize );
 	VectorCopy2( legsSpriteSize, skin->legsSpriteSize );
 
+	Con_DPrintf( "SkinData: (torso)[ %u %u ][ %u %u ] (arms)[ %u %u ][ %u %u ] (legs)[ %u %u ]\n",
+		torsoSheetSize[0], torsoSheetSize[1], torsoSpriteSize[0], torsoSpriteSize[1],
+		armsSheetSize[0], armsSheetSize[1], armsSpriteSize[0], armsSpriteSize[1],
+		legsSheetSize[0], legsSheetSize[0], legsSpriteSize[0], legsSpriteSize[1] );
+
 	memset( pszDescription, 0, MAX_DESCRIPTION_LENGTH );
 	N_strncpyz( pszDescription, skin->description, MAX_DESCRIPTION_LENGTH );
 
@@ -1632,15 +1637,90 @@ static void G_LoadSkins( void )
 		}
 		N_strncpyz( description, tok, sizeof( description ) - 1 );
 
-		Parse1DMatrix( text, 2, (float *)torsoSheetSize );
-		Parse1DMatrix( text, 2, (float *)torsoSpriteSize );
+		tok = COM_ParseExt( text, qfalse );
+		if ( !tok[0] ) {
+			COM_ParseError( "missing parameter for 'torsoSheetSize.x' in skin definition" );
+			break;
+		}
+		torsoSheetSize[0] = atoi( tok );
 
-		Parse1DMatrix( text, 2, (float *)armsSheetSize );
-		Parse1DMatrix( text, 2, (float *)armsSpriteSize );
+		tok = COM_ParseExt( text, qfalse );
+		if ( !tok[0] ) {
+			COM_ParseError( "missing parameter for 'torsoSheetSize.y' in skin definition" );
+			break;
+		}
+		torsoSheetSize[1] = atoi( tok );
 
-		Parse1DMatrix( text, 2, (float *)legsSheetSize );
-		Parse1DMatrix( text, 2, (float *)legsSpriteSize );
+		tok = COM_ParseExt( text, qfalse );
+		if ( !tok[0] ) {
+			COM_ParseError( "missing parameter for 'torsoSpriteSize.x' in skin definition" );
+			break;
+		}
+		torsoSpriteSize[0] = atoi( tok );
 
+		tok = COM_ParseExt( text, qfalse );
+		if ( !tok[0] ) {
+			COM_ParseError( "missing parameter for 'torsoSpriteSize.y' in skin definition" );
+			break;
+		}
+		torsoSpriteSize[1] = atoi( tok );
+
+		tok = COM_ParseExt( text, qfalse );
+		if ( !tok[0] ) {
+			COM_ParseError( "missing parameter for 'armsSheetSize.x' in skin definition" );
+			break;
+		}
+		armsSheetSize[0] = atoi( tok );
+
+		tok = COM_ParseExt( text, qfalse );
+		if ( !tok[0] ) {
+			COM_ParseError( "missing parameter for 'armsSheetSize.y' in skin definition" );
+			break;
+		}
+		armsSheetSize[1] = atoi( tok );
+
+		tok = COM_ParseExt( text, qfalse );
+		if ( !tok[0] ) {
+			COM_ParseError( "missing parameter for 'armsSpriteSize.x' in skin definition" );
+			break;
+		}
+		armsSpriteSize[0] = atoi( tok );
+
+		tok = COM_ParseExt( text, qfalse );
+		if ( !tok[0] ) {
+			COM_ParseError( "missing parameter for 'armsSpriteSize.y' in skin definition" );
+			break;
+		}
+		armsSpriteSize[1] = atoi( tok );
+
+		tok = COM_ParseExt( text, qfalse );
+		if ( !tok[0] ) {
+			COM_ParseError( "missing parameter for 'legsSheetSize.x' in skin definition" );
+			break;
+		}
+		legsSheetSize[0] = atoi( tok );
+
+		tok = COM_ParseExt( text, qfalse );
+		if ( !tok[0] ) {
+			COM_ParseError( "missing parameter for 'legsSheetSize.y' in skin definition" );
+			break;
+		}
+		legsSheetSize[1] = atoi( tok );
+
+		tok = COM_ParseExt( text, qfalse );
+		if ( !tok[0] ) {
+			COM_ParseError( "missing parameter for 'legsSpriteSize.x' in skin definition" );
+			break;
+		}
+		legsSpriteSize[0] = atoi( tok );
+
+		tok = COM_ParseExt( text, qfalse );
+		if ( !tok[0] ) {
+			COM_ParseError( "missing parameter for 'legsSpriteSize.y' in skin definition" );
+			break;
+		}
+		legsSpriteSize[1] = atoi( tok );
+		
 		size = sizeof( *skin );
 		size += PAD( strlen( name ) + 1, sizeof( uintptr_t ) );
 		size += PAD( strlen( display ) + 1, sizeof( uintptr_t ) );

@@ -357,8 +357,6 @@ void R_InitGPUBuffers( void )
 	backend.drawBuffer = R_AllocateBuffer( "batchBuffer0", NULL, 4*1024*1024, NULL,
 		4*1024*1024, BUFFER_STREAM, attribs );
 
-	VBO_SetVertexAttribPointers( backend.drawBuffer );
-
 	VBO_BindNull();
 	
 	GL_CheckErrors();
@@ -612,6 +610,8 @@ vertexBuffer_t *R_AllocateBuffer( const char *name, void *vertices, uint32_t ver
 				}
 				GL_CheckErrors();
 			} else {
+				buf->vertex->target = GL_ARRAY_BUFFER;
+
 				nglGenBuffers( 1, &buf->vertex->id );
 				nglGenBuffers( 1, &buf->index.id );
 				
@@ -619,14 +619,14 @@ vertexBuffer_t *R_AllocateBuffer( const char *name, void *vertices, uint32_t ver
 				nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, buf->index.id );
 				
 				if ( HAVE_BUFFER_STORAGE && HAVE_MAP_BUFFER_RANGE ) {
-					nglBufferStorage( GL_ARRAY_BUFFER, verticesSize, vertices, vertexUsage == GL_STATIC_DRAW ? 0 :
-						GL_MAP_WRITE_BIT );
-					nglBufferStorage( GL_ELEMENT_ARRAY_BUFFER, indicesSize, indices, indexUsage == GL_STATIC_DRAW ? 0 :
-						GL_MAP_WRITE_BIT );
+					nglBufferStorage( GL_ARRAY_BUFFER, verticesSize, vertices, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
+					nglBufferStorage( GL_ELEMENT_ARRAY_BUFFER, indicesSize, indices, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
 				} else {
 					nglBufferData( GL_ARRAY_BUFFER, verticesSize, vertices, vertexUsage );
 					nglBufferData( GL_ELEMENT_ARRAY_BUFFER, indicesSize, indices, indexUsage );
 				}
+
+				VBO_SetVertexAttribPointers( buf );
 				
 				nglBindBuffer( GL_ARRAY_BUFFER, 0 );
 				nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
@@ -784,8 +784,16 @@ void VBO_MapBuffers( buffer_t *buf )
 
 	ri.GLimp_LogComment( "Mapping vertex and index buffer into CPU DMA...\n" );
 
-	buf->data = nglMapNamedBufferRange( buf->id, 0, buf->size, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT
-		| GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_PERSISTENT_BIT );
+	if ( HAVE_DIRECT_STATE_ACCESS ) {
+		buf->data = nglMapNamedBufferRange( buf->id, 0, buf->size, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT
+			| GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_PERSISTENT_BIT );
+	} else {
+		nglBindBuffer( buf->target, buf->id );
+		buf->data = nglMapBufferRange( buf->target, 0, buf->size, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT
+			| GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_PERSISTENT_BIT );
+		nglBindBuffer( buf->target, 0 );
+	}
+	
 	GL_CheckErrors();
 }
 
@@ -832,6 +840,11 @@ void RB_SetBatchBuffer( vertexBuffer_t *buffer, void *vertexBuffer, uintptr_t vt
 	}
 	if ( buffer->attribs[ ATTRIB_INDEX_WORLDPOS ].enabled ) {
 		attribBits |= ATTRIB_WORLDPOS;
+	}
+
+	if ( !( glState.vertexAttribsEnabled & attribBits ) ) {
+		R_ClearVertexPointers();
+		R_SetVertexPointers( buffer->attribs );
 	}
 }
 

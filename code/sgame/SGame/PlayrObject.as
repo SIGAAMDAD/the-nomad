@@ -743,7 +743,7 @@ namespace TheNomad::SGame {
 
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.sheetNum = m_LegSpriteSheet[ m_LegsFacing ].GetShader();
-			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( @m_LegSpriteSheet[ m_LegsFacing ], @m_LegState );
+			refEntity.spriteId = 0;
 			refEntity.scale = 2.0f;
 			refEntity.Draw();
 		}
@@ -763,7 +763,7 @@ namespace TheNomad::SGame {
 
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.sheetNum = m_SpriteSheet.GetShader();
-			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( @m_SpriteSheet, @m_State ) + m_Facing;
+			refEntity.spriteId = 0 + m_Facing;
 			refEntity.scale = 2.0f;
 			refEntity.Draw();
 

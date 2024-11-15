@@ -57,7 +57,7 @@ struct Light {
 	int type;
 };
 
-layout( std140, binding = 0 ) buffer u_LightBuffer {
+layout( std140, binding = 0 ) readonly buffer u_LightBuffer {
 	Light u_LightData[];
 };
 
@@ -135,9 +135,9 @@ void ApplyLighting() {
 }
 
 void main() {
-	if ( distance( u_ViewOrigin, v_WorldPos ) > 12.0 ) {
+//	if ( distance( u_ViewOrigin, v_WorldPos ) > 12.0 ) {
 //		discard;
-	}
+//	}
 
 	// calculate a slight x offset, otherwise we get some black line bleeding
 	// going on

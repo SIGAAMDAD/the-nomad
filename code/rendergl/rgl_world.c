@@ -583,6 +583,7 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 	r_worldData.buffer = R_AllocateBuffer( "worldDrawBuffer", NULL, sizeof( *r_worldData.vertices ) * r_worldData.numVertices, NULL,
 										sizeof( glIndex_t ) * r_worldData.numIndices, BUFFER_STREAM, attribs );
 
+	VBO_Bind( r_worldData.buffer );
 	if ( glContext.directStateAccess ) {
 		r_worldData.buffer->vertex[ ATTRIB_INDEX_POSITION ].size = sizeof( vec3_t ) * r_worldData.numVertices;
 		r_worldData.buffer->vertex[ ATTRIB_INDEX_TEXCOORD ].size = sizeof( vec2_t ) * r_worldData.numVertices;
@@ -598,9 +599,11 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 		VBO_MapBuffers( &r_worldData.buffer->vertex[ ATTRIB_INDEX_TEXCOORD ] );
 		VBO_MapBuffers( &r_worldData.buffer->vertex[ ATTRIB_INDEX_WORLDPOS ] );
 	} else {
+		r_worldData.buffer->vertex[0].size = sizeof( *r_worldData.vertices ) * r_worldData.numVertices;
 		VBO_MapBuffers( &r_worldData.buffer->vertex[0] );
 	}
 	VBO_MapBuffers( &r_worldData.buffer->index );
+	GL_CheckErrors();
 
 	r_worldData.indices = r_worldData.buffer->index.data;
 
@@ -619,11 +622,12 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 	R_OptimizeVertexCache();
 	ri.Printf( PRINT_INFO, "Optimized cache misses: %f\n", R_CalcCacheEfficiency() );
 
-	if ( NGL_VERSION_ATLEAST( 4, 5 ) || glContext.directStateAccess ) {
+	if ( glContext.directStateAccess ) {
 		r_worldData.worldPos = (worldPos_t *)r_worldData.buffer->vertex[ ATTRIB_INDEX_WORLDPOS ].data;
 		r_worldData.xyz = (vec3_t *)( r_worldData.buffer->vertex[ ATTRIB_INDEX_POSITION ].data );
 		r_worldData.uv = (vec2_t *)( r_worldData.buffer->vertex[ ATTRIB_INDEX_TEXCOORD ].data );
 	} else {
+		r_worldData.vertices = r_worldData.buffer->vertex[0].data;
 		r_worldData.worldPos = (worldPos_t *)r_worldData.vertices;
 		r_worldData.xyz = (vec3_t *)( r_worldData.worldPos + r_worldData.numVertices );
 		r_worldData.uv = (vec2_t *)( r_worldData.xyz + r_worldData.numVertices );
@@ -635,8 +639,11 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 	
 	ri.Printf( PRINT_DEVELOPER, "Flushing mapped world buffer regions...\n" );
 
+	VBO_BindNull();
+
 	VBO_Bind( r_worldData.buffer );
-	if ( NGL_VERSION_ATLEAST( 4, 5 ) || glContext.directStateAccess ) {
+
+	if ( glContext.directStateAccess ) {
 		nglFlushMappedNamedBufferRange( r_worldData.buffer->vertex[ ATTRIB_INDEX_WORLDPOS ].id, 0, sizeof( worldPos_t ) * r_worldData.numVertices );
 		nglFlushMappedNamedBufferRange( r_worldData.buffer->vertex[ ATTRIB_INDEX_TEXCOORD ].id, 0, sizeof( vec2_t ) * r_worldData.numVertices );
 		nglFlushMappedNamedBufferRange( r_worldData.buffer->index.id, 0, sizeof( glIndex_t ) * r_worldData.numIndices );
@@ -645,6 +652,7 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 		nglFlushMappedBufferRange( GL_ARRAY_BUFFER, attribs[ ATTRIB_INDEX_TEXCOORD ].offset, sizeof( vec2_t ) * r_worldData.numVertices );
 		nglFlushMappedBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, sizeof( glIndex_t ) * r_worldData.numIndices );
 	}
+	
 	VBO_BindNull();
 }
 
