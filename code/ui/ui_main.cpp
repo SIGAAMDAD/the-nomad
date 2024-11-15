@@ -30,7 +30,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../rendercommon/imgui_internal.h"
 #include "../game/imgui_memory_editor.h"
 #include "RobotoMono-Bold.h"
-#define FPS_FRAMES 60
+#define FPS_FRAMES 1000
 
 uiGlobals_t *ui;
 CUIFontCache *g_pFontCache;
@@ -440,8 +440,6 @@ static void UI_PauseMenu_f( void ) {
 	UI_SetActiveMenu( UI_MENU_PAUSE );
 }
 
-static int32_t previousTimes[FPS_FRAMES];
-
 extern "C" void UI_DrawFPS( void )
 {
 	if ( !com_drawFPS->i ) {
@@ -450,6 +448,7 @@ extern "C" void UI_DrawFPS( void )
 
 	static int32_t index;
 	static int32_t previous;
+	static int32_t previousTimes[ FPS_FRAMES ];
 	int32_t t, frameTime;
 	int32_t total, i;
 	int32_t fps;
@@ -465,7 +464,7 @@ extern "C" void UI_DrawFPS( void )
 	frameTime = t - previous;
 	previous = t;
 
-	previousTimes[index % FPS_FRAMES] = frameTime;
+	previousTimes[ index % FPS_FRAMES ] = frameTime;
 	index++;
 	if ( index > FPS_FRAMES ) {
 		// average multiple frames together to smooth changes out a bit
@@ -587,8 +586,6 @@ extern "C" void UI_Init( void )
 	} else {
 		ui->demoVersion = qfalse;
 	}
-
-	memset( previousTimes, 0, sizeof( previousTimes ) );
 
 	// add commands
 	Cmd_AddCommand( "ui.cache", UI_Cache_f );

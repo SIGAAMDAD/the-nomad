@@ -77,7 +77,6 @@ typedef void*(*NGLloadproc)(const char *name);
 	NGL( void, glPolygonMode, GLenum face, GLenum mode ) \
 	NGL( void, glPixelStorei, GLenum pname, GLint param ) \
 	NGL( GLboolean, glIsEnabled, GLenum cap ) \
-	NGL( GLboolean, glIsDisabled, GLenum cap ) \
 	NGL( GLboolean, glIsProgram, GLenum program ) \
 	NGL( GLboolean, glIsShader, GLenum shader ) \
 	NGL( void, glDrawBuffer, GLenum mode ) \
@@ -127,6 +126,7 @@ typedef void*(*NGLloadproc)(const char *name);
 	NGL( void, glMemoryBarrier, GLbitfield barriers ) \
 	NGL( void, glDrawElementsInstanced, GLenum mode, GLsizei count, GLenum type, const void *indices, GLsizei instancecount ) \
 	NGL( void, glDrawArraysInstanced, GLenum mode, GLint first, GLsizei count, GLsizei instancecount ) \
+	NGL( void, glDrawElementsInstancedBaseVertex, GLenum mode, GLsizei count, GLenum type, const void *indices, GLsizei instancecount, GLint basevertex ) \
 	NGL( void, glGetIntegeri_v, GLenum target, GLuint index, GLint *data ) \
 
 #define NGL_List_Procs \
@@ -360,11 +360,6 @@ typedef void*(*NGLloadproc)(const char *name);
 	NGL( void, glEndTransformFeedback, void ) \
 	NGL( void, glPauseTransformFeedback, void ) \
 	NGL( void, glTransformFeedbackVaryings, GLuint program, GLsizei count, const char **varyings, GLenum bufferMode ) \
-
-#define NGL_NV_shader_buffer_load \
-	NGL( void, glMakeBufferResidentNV, GLenum target, GLenum access ) \
-	NGL( void, glMakeBufferNonResidentNV, GLenum target ) \
-	NGL( void, glGetBufferParameterui64vNV, GLenum target, GLenum pname, GLuint64 *params )
 
 #define NGL_ARB_sync \
 	NGL( GLsync, glFenceSync, GLenum condition, GLbitfield flags ) \

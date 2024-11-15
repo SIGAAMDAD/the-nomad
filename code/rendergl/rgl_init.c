@@ -1353,7 +1353,6 @@ static void R_InitImGui( void )
 	import.glPolygonMode = nglPolygonMode;
 	import.glPixelStorei = nglPixelStorei;
 	import.glIsEnabled = nglIsEnabled;
-	import.glIsDisabled = nglIsDisabled;
 	import.glIsProgram = nglIsProgram;
 	import.glIsShader = nglIsShader;
 	import.glDrawElementsBaseVertex = nglDrawElementsBaseVertex;
@@ -1388,6 +1387,23 @@ static void R_InitImGui( void )
 	import.glGetTextureHandleARB = nglGetTextureHandleARB;
 	import.glMakeTextureHandleResidentARB = nglMakeTextureHandleResidentARB;
 	import.glFlushMappedBufferRangeARB = nglFlushMappedBufferRange;
+	import.glCreateVertexArrays = nglCreateVertexArrays;
+	import.glCreateBuffers = nglCreateBuffers;
+	import.glNamedBufferData = nglNamedBufferData;
+	import.glNamedBufferSubData = nglNamedBufferSubData;
+	import.glMapNamedBuffer = nglMapNamedBuffer;
+	import.glUnmapNamedBuffer = nglUnmapNamedBuffer;
+	import.glMapNamedBufferRange = nglMapNamedBufferRange;
+	import.glFlushMappedNamedBufferRange = nglFlushMappedNamedBufferRange;
+	import.glNamedBufferStorage = nglNamedBufferStorage;
+	import.glEnableVertexArrayAttrib = nglEnableVertexArrayAttrib;
+	import.glDisableVertexArrayAttrib = nglDisableVertexArrayAttrib;
+	import.glVertexArrayElementBuffer = nglVertexArrayElementBuffer;
+	import.glVertexArrayVertexBuffer = nglVertexArrayVertexBuffer;
+	import.glVertexArrayVertexBuffers = nglVertexArrayVertexBuffers;
+	import.glVertexArrayAttribBinding = nglVertexArrayAttribBinding;
+	import.glVertexArrayAttribFormat = nglVertexArrayAttribFormat;
+	import.glVertexArrayAttribIFormat = nglVertexArrayAttribIFormat;
 
 	import.DrawShaderStages = RB_DrawShaderStages;
 	import.GetTextureId = RE_GetTextureId;
