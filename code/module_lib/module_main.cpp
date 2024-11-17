@@ -874,6 +874,9 @@ CModuleLib::CModuleLib( void )
 
 	Con_Printf( "Checking if recompilation is needed...\n" );
 	loaded = LoadByteCodeCache();
+	for ( i = 0; i < m_nModuleCount; i++ ) {
+		m_pModList[i].info->m_pHandle->Compile();
+	}
 
 	CheckASCall( m_pEngine->SetEngineProperty( asEP_INIT_GLOBAL_VARS_AFTER_BUILD, !loaded ) );
 

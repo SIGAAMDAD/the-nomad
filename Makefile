@@ -256,9 +256,6 @@ SRC=\
 	$(O)/module_lib/module_main.o \
 	$(O)/module_lib/module_handle.o \
 	$(O)/module_lib/module_renderlib.o \
-	$(O)/module_lib/funcdefs/module_funcdef_glm.o \
-	$(O)/module_lib/funcdefs/module_funcdef_imgui.o \
-	$(O)/module_lib/funcdefs/module_funcdef_filesystem.o \
 	$(O)/module_lib/module_funcdefs.o \
 	$(O)/module_lib/module_jit.o \
 	$(O)/module_lib/module_virtual_asm_x64.o \
