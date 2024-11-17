@@ -878,7 +878,7 @@ CModuleLib::CModuleLib( void )
 		m_pModList[i].info->m_pHandle->Compile();
 	}
 
-	CheckASCall( m_pEngine->SetEngineProperty( asEP_INIT_GLOBAL_VARS_AFTER_BUILD, !loaded ) );
+	CheckASCall( m_pEngine->SetEngineProperty( asEP_INIT_GLOBAL_VARS_AFTER_BUILD, true ) );
 
 	for ( i = 0; i < m_nModuleCount; i++ ) {
 		m_pModList[i].info = &m_pLoadList[i];
@@ -899,7 +899,7 @@ CModuleLib::CModuleLib( void )
 	}
 	*/
 
-	if ( !loaded ) {
+//	if ( !loaded ) {
 		try {
 			if ( ( error = g_pModuleLib->GetScriptBuilder()->BuildModule() ) != asSUCCESS ) {
 				N_Error( ERR_DROP, "Error building GlobalModule" );
@@ -910,7 +910,7 @@ CModuleLib::CModuleLib( void )
 			Con_Printf( COLOR_RED "ERROR: std::exception thrown when compiling GlobalModule, %s\n", e.what() );
 			return;
 		}
-	}
+//	}
 
 	if ( !loaded ) {
 		// only save if we've got new stuff

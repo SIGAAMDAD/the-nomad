@@ -63,7 +63,7 @@ INTERNAL_OBJS=\
 	$(O)/angelscript/as_callfunc.o \
 	$(O)/angelscript/as_compiler.o \
 	$(O)/angelscript/as_configgroup.o \
-	$(O)/angelscript/as_context_gotos.o \
+	$(O)/angelscript/as_context.o \
 	$(O)/angelscript/as_datatype.o \
 	$(O)/angelscript/as_gc.o \
 	$(O)/angelscript/as_generic.o \
