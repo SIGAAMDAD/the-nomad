@@ -955,6 +955,7 @@ typedef uint16_t color_t[4];
 typedef int16_t tangent_t[4];
 typedef int16_t bitangent_t[4];
 typedef int16_t normal_t[4];
+typedef vec2_t texCoord_t;
 
 typedef struct {
 	char baseName[MAX_NPATH];
@@ -986,7 +987,7 @@ typedef struct {
 
 	worldPos_t *worldPos;
 	vec3_t *xyz;
-	vec2_t *uv;
+	texCoord_t *uv;
 	color4ub_t *color;
 	vec3_t *tangent;
 	vec3_t *bitangent;

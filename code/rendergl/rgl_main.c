@@ -290,13 +290,13 @@ void R_DrawWorld( void )
 	uint32_t i;
 	uint64_t j;
 	vec3_t pos;
-	ivec3_t origin;
+	vec3_t origin;
 	drawVert_t *vtx;
 	drawVert_t verts[4];
 	vec3_t *xyz;
 	vec3_t edge1, edge2;
 	vec2_t deltaUV1, deltaUV2;
-	vec2_t *uv;
+	texCoord_t *uv;
 	vec3_t *tangent, *bitangent;
 	vec3_t *normal;
 	float f;

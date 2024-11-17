@@ -196,6 +196,12 @@ void RE_ProcessDLights( void )
 	dlight_t *dlight;
 	shaderLight_t *gpuLight;
 	uint64_t i;
+	uint32_t numLights;
+
+	numLights = rg.world->numLights;
+	if ( r_dynamiclight->i ) {
+		numLights += backend.refdef.numDLights;
+	}
 
 	if ( r_dynamiclight->i && backend.refdef.numDLights && ( backend.refdef.flags & RSF_ORTHO_BITS ) == RSF_ORTHO_TYPE_WORLD ) {
 		gpuLight = (shaderLight_t *)rg.lightData->data + rg.world->numLights;
@@ -225,8 +231,8 @@ void RE_ProcessDLights( void )
 		}
 	}
 	GLSL_UseProgram( &rg.tileShader );
-	GLSL_SetUniformInt( &rg.tileShader, UNIFORM_NUM_LIGHTS, rg.world->numLights + backend.refdef.numDLights );
-	GLSL_ShaderBufferData( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, sizeof( *gpuLight ) * ( backend.refdef.numDLights + rg.world->numLights ), 0, qfalse );
+	GLSL_SetUniformInt( &rg.tileShader, UNIFORM_NUM_LIGHTS, numLights );
+	GLSL_ShaderBufferData( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, sizeof( *gpuLight ) * numLights, 0, qfalse );
 }
 
 void RE_ProcessEntities( void )

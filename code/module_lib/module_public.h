@@ -561,12 +561,12 @@ CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *
 
 extern CModuleLib *g_pModuleLib;
 
-#ifdef _NOMAD_DEBUG
+#ifdef MEMHEAP_DEBUG
 extern void *AS_Alloc( size_t nSize, const char *fileName, const uint32_t lineNumber );
 extern void AS_Free( void *pBuffer, const char *fileName, const uint32_t lineNumber );
 #else
-extern void *AS_Alloc( size_t nSize );
-extern void AS_Free( void *pBuffer );
+extern void *AS_Alloc( size_t nSize, const char *, unsigned int );
+extern void AS_Free( void *pBuffer, const char *, unsigned int );
 #endif
 
 extern cvar_t *ml_debugMode;

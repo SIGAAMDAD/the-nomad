@@ -14,6 +14,7 @@
 #include "scriptlib/scriptarray.h"
 #include "scriptlib/scriptdictionary.h"
 #include "scriptlib/scriptany.h"
+#include "angelscript/as_thread.h"
 
 moduleImport_t moduleImport;
 
@@ -262,12 +263,11 @@ void CModuleLib::RunModules( EModuleFuncId nCallId, uint32_t nArgs, ... )
 	va_end( argptr );
 
 	time.Start();
-	AS_Printf( "Garbage collection started...\n" );
-	g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_DETECT_GARBAGE | asGC_DESTROY_GARBAGE
-		| asGC_FULL_CYCLE, (uint32_t)ml_garbageCollectionIterations->i );
-	
+	if ( nCallId == ModuleOnLevelEnd || nCallId == ModuleOnLoadGame || nCallId == ModuleShutdown ) {
+		g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_DETECT_GARBAGE | asGC_DESTROY_GARBAGE
+			| asGC_FULL_CYCLE, (uint32_t)ml_garbageCollectionIterations->i );
+	}
 	time.Stop();
-	AS_Printf( "Garbage collection: %lims, %li iterations\n", time.Milliseconds(), ml_garbageCollectionIterations->i );
 
 	for ( j = 0; j < m_nModuleCount; j++ ) {
 		if ( sgvm == &m_pLoadList[j] ) {
@@ -305,11 +305,11 @@ int CModuleLib::ModuleCall( CModuleInfo *pModule, EModuleFuncId nCallId, uint32_
 	name = funcDefs[ nCallId ].name;
 
 	time.Start();
-	AS_Printf( "Garbage collection started (%s)...\n", name );
-	g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_DETECT_GARBAGE | asGC_DESTROY_GARBAGE
-		| asGC_FULL_CYCLE, (uint32_t)ml_garbageCollectionIterations->i );
+	if ( nCallId == ModuleOnLevelEnd || nCallId == ModuleOnLoadGame || nCallId == ModuleShutdown ) {
+		g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_DETECT_GARBAGE | asGC_DESTROY_GARBAGE
+			| asGC_FULL_CYCLE, (uint32_t)ml_garbageCollectionIterations->i );
+	}
 	time.Stop();
-	AS_Printf( "Garbage collection: %lims, %li iterations\n", time.Milliseconds(), ml_garbageCollectionIterations->i );
 
 	return pModule->m_pHandle->CallFunc( nCallId, nArgs, args );
 }
@@ -346,29 +346,12 @@ void Module_ASMessage_f( const asSMessageInfo *pMsg, void *param )
 	}
 }
 
-#ifdef _NOMAD_DEBUG
-void *AS_Alloc( size_t nSize, const char *pFilename, uint32_t lineNumber ) {
-//    return Hunk_Alloc( nSize, h_high );
+void *AS_Alloc( size_t nSize, const char *, unsigned int ) {
 	return Mem_Alloc( nSize );
 }
-#else
-void *AS_Alloc( size_t nSize ) {
-//    return Hunk_Alloc( nSize, h_high );
-	return Mem_Alloc( nSize );
-}
-#endif
-
-#ifdef _NOMAD_DEBUG
-void AS_Free( void *ptr, const char *pFilename, uint32_t lineNumber ) {
-//    Z_Free( ptr );
+void AS_Free( void *ptr, const char *, unsigned int ) {
 	Mem_Free( ptr );
 }
-#else
-void AS_Free( void *ptr ) {
-//    Z_Free( ptr );
-	Mem_Free( ptr );
-}
-#endif
 
 /*
 * AS_Printf: a debugging tool used for whenever the angelscript compiler decides
@@ -452,7 +435,7 @@ static fileTime_t ModuleLib_GetDirectoryChecksum( const char *dir )
 	uint64_t i;
 	fileStats_t stats;
 	fileTime_t total;
-	char szDirectory[ MAX_OSPATH*2+1 ];
+	char szDirectory[ MAX_OSPATH ];
 	char szPath[ MAX_OSPATH*2+1 ];
 
 	total = 0;
@@ -482,7 +465,11 @@ static fileTime_t ModuleLib_GetDirectoryChecksum( const char *dir )
 
 	fileList = FS_ListFiles( szDirectory, ".as", &numFiles );
 	for ( i = 0; i < numFiles; i++ ) {
-		snprintf( szPath, sizeof( szPath ) - 1, "%s/%s", szDirectory, fileList[i] );
+		if ( szDirectory[ strlen( szDirectory ) - 1 ] != '/' ) {
+			snprintf( szPath, sizeof( szPath ) - 1, "%s/%s", szDirectory, fileList[i] );
+		} else {
+			snprintf( szPath, sizeof( szPath ) - 1, "%s%s", szDirectory, fileList[i] );
+		}
 		if ( !Sys_GetFileStats( &stats, szPath ) ) {
 			N_Error( ERR_DROP, "ModuleLib_GetDirectoryChecksum: couldn't get filestats for '%s'", szPath );
 		}
@@ -757,15 +744,6 @@ void CModuleLib::LoadModList( void )
 			}
 		}
 	}
-	
-	// reorder
-//	for ( i = 0; i < m_nModuleCount; i++ ) {
-//		module_t m = m_pModList[i];
-//		m_pModList[i] = m_pModList[ m_pModList[i].bootIndex ];
-//		m_pModList[ m_pModList[i].bootIndex ] = m;
-//	}
-
-//	eastl::sort( m_pModList, m_pModList + m_nModuleCount );
 
 	// check for missing dependencies
 	for ( i = 0; i < m_nModuleCount; i++ ) {
@@ -829,7 +807,7 @@ CModuleLib::CModuleLib( void )
 	CheckASCall( m_pEngine->SetEngineProperty( asEP_USE_CHARACTER_LITERALS, true ) );
 	CheckASCall( m_pEngine->SetEngineProperty( asEP_ALLOW_IMPLICIT_HANDLE_TYPES, true ) );
 	CheckASCall( m_pEngine->SetEngineProperty( asEP_COPY_SCRIPT_SECTIONS, true ) );
-	CheckASCall( m_pEngine->SetEngineProperty( asEP_AUTO_GARBAGE_COLLECT, true ) );
+	CheckASCall( m_pEngine->SetEngineProperty( asEP_AUTO_GARBAGE_COLLECT, false ) );
 	CheckASCall( m_pEngine->SetEngineProperty( asEP_HEREDOC_TRIM_MODE, 0 ) );
 
 	m_pScriptBuilder = new ( Hunk_Alloc( sizeof( *m_pScriptBuilder ), h_high ) ) CScriptBuilder();
@@ -874,11 +852,19 @@ CModuleLib::CModuleLib( void )
 
 	Con_Printf( "Checking if recompilation is needed...\n" );
 	loaded = LoadByteCodeCache();
-	for ( i = 0; i < m_nModuleCount; i++ ) {
-		m_pModList[i].info->m_pHandle->Compile();
+	if ( ( recompiled = RecompileNeeded() ) ) {
+		Con_Printf( COLOR_MAGENTA "...module code changed.\n" );
+		m_bModulesOutdated = qtrue;
+
+		for ( i = 0; i < m_nModuleCount; i++ ) {
+			m_pLoadList[i].m_pHandle->Compile();
+		}
+	} else {
+		Con_Printf( COLOR_GREEN "...module code up to date.\n" );\
+		m_bModulesOutdated = qfalse;
 	}
 
-	CheckASCall( m_pEngine->SetEngineProperty( asEP_INIT_GLOBAL_VARS_AFTER_BUILD, true ) );
+	CheckASCall( m_pEngine->SetEngineProperty( asEP_INIT_GLOBAL_VARS_AFTER_BUILD, !loaded ) );
 
 	for ( i = 0; i < m_nModuleCount; i++ ) {
 		m_pModList[i].info = &m_pLoadList[i];
@@ -899,18 +885,17 @@ CModuleLib::CModuleLib( void )
 	}
 	*/
 
-//	if ( !loaded ) {
+	if ( !loaded ) {
 		try {
 			if ( ( error = g_pModuleLib->GetScriptBuilder()->BuildModule() ) != asSUCCESS ) {
+				// FIXME: maybe show compilation error here?
 				N_Error( ERR_DROP, "Error building GlobalModule" );
-				// clean cache to get rid of any old and/or corrupt code
-				Cbuf_ExecuteText( EXEC_APPEND, "ml.clean_script_cache\n" );
 			}
 		} catch ( const std::exception& e ) {
 			Con_Printf( COLOR_RED "ERROR: std::exception thrown when compiling GlobalModule, %s\n", e.what() );
 			return;
 		}
-//	}
+	}
 
 	if ( !loaded ) {
 		// only save if we've got new stuff
@@ -960,13 +945,12 @@ CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *
 	ml_garbageCollectionIterations = Cvar_Get( "ml_garbageCollectionIterations", "4", CVAR_TEMP | CVAR_PRIVATE );
 	Cvar_SetDescription( ml_garbageCollectionIterations, "Sets the number of iterations per garbage collection loop" );
 
-//	Cmd_AddCommand( "ml.clean_script_cache", ML_CleanCache_f );
 	Cmd_AddCommand( "ml.garbage_collection_stats", ML_GarbageCollectionStats_f );
 	Cmd_AddCommand( "ml_debug.print_string_cache", ML_PrintStringCache_f );
 
 	Mem_Init();
 
-	// FIXME: angelscript's thread manager is fucking broken on unix (stalls forever)
+	asPrepareMultithread( NULL );
 	asSetGlobalMemoryFunctions( AS_Alloc, AS_Free );
 
 	g_pModuleLib = new ( Hunk_Alloc( sizeof( *g_pModuleLib ), h_high ) ) CModuleLib();
@@ -978,7 +962,7 @@ CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *
 
 void CModuleLib::Shutdown( qboolean quit )
 {
-	uint64_t i, j;
+	uint64_t i;
 	memoryStats_t allocs, frees;
 
 	if ( m_bRecursiveShutdown ) {
@@ -998,7 +982,6 @@ void CModuleLib::Shutdown( qboolean quit )
 		// TODO: use the serializer to create a sort of coredump like file for the active script
 	}
 
-//	Cmd_RemoveCommand( "ml.clean_script_cache" );
 	Cmd_RemoveCommand( "ml.garbage_collection_stats" );
 	Cmd_RemoveCommand( "ml_debug.set_active" );
 	Cmd_RemoveCommand( "ml_debug.print_help" );
@@ -1013,12 +996,10 @@ void CModuleLib::Shutdown( qboolean quit )
 	Cmd_RemoveCommand( "ml_debug.print_array_memory_stats" );
 	Cmd_RemoveCommand( "ml_debug.print_string_cache" );
 
-	m_pEngine->GarbageCollect( asGC_FULL_CYCLE | asGC_DESTROY_GARBAGE | asGC_DETECT_GARBAGE, 100 );
 	for ( i = 0; i < m_nModuleCount; i++ ) {
 		if ( m_pLoadList[i].m_pHandle ) {
 			m_pLoadList[i].m_pHandle->CallFunc( ModuleShutdown, 0, NULL );
 			m_pLoadList[i].m_pHandle->ClearMemory();
-			m_pLoadList[i].m_pHandle->~CModuleHandle();
 		}
 	}
 	
@@ -1029,8 +1010,6 @@ void CModuleLib::Shutdown( qboolean quit )
 		m_pScriptBuilder->~CScriptBuilder();
 		g_pDebugger->~CDebugger();
 	}
-
-	asSetThreadManager( NULL );
 
 	Mem_GetFrameStats( allocs, frees );
 	Con_Printf( "\n" );
