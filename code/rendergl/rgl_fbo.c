@@ -337,7 +337,7 @@ static void FBO_Init_f( void )
 		multisample = 0;
 	}
 	
-	if ( r_hdr->i ) {
+	if ( r_hdr->i && r_bloom->i ) {
 		for ( i = 0; i < 2; i++ ) {
 			FBO_Create( &rg.bloomPingPongFbo[ i ], va( "_bloomPingPong%i", i ), fboWidth, fboHeight );
 			FBO_AttachImage( &rg.bloomPingPongFbo[ i ], rg.bloomPingPongImage[ i ], GL_COLOR_ATTACHMENT0 );
@@ -658,7 +658,7 @@ void FBO_FastBlit( fbo_t *src, ivec4_t srcBox, fbo_t *dst, ivec4_t dstBox, int b
 	}
 
 	if ( glContext.directStateAccess ) {
-		nglBlitNamedFramebuffer( src->frameBuffer, dst->frameBuffer,
+		nglBlitNamedFramebuffer( src ? src->frameBuffer : 0, dst ? dst->frameBuffer : 0,
 			srcBoxFinal[0], srcBoxFinal[1], srcBoxFinal[2], srcBoxFinal[3],
 			dstBoxFinal[0], dstBoxFinal[1], dstBoxFinal[2], dstBoxFinal[3],
 			buffers, filter );

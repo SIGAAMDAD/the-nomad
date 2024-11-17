@@ -196,6 +196,9 @@ void RE_ProcessDLights( void )
 	dlight_t *dlight;
 	shaderLight_t *gpuLight;
 	uint64_t i;
+	uint32_t numLights;
+
+	numLights = rg.world->numLights;
 
 	if ( r_dynamiclight->i && backend.refdef.numDLights && ( backend.refdef.flags & RSF_ORTHO_BITS ) == RSF_ORTHO_TYPE_WORLD ) {
 		gpuLight = (shaderLight_t *)rg.lightData->data + rg.world->numLights;
@@ -205,6 +208,8 @@ void RE_ProcessDLights( void )
 			if ( r_numDLights >= r_maxDLights->i ) {
 				ri.Printf( PRINT_DEVELOPER, "R_ProcessDLights: too many lights, dropping %lu lights\n", backend.refdef.numDLights - i );
 			}
+
+			numLights++;
 
 			VectorSet2( gpuLight[i].origin, dlight->origin[0], dlight->origin[1] );
 			VectorCopy( gpuLight[i].color, dlight->color );
@@ -226,8 +231,8 @@ void RE_ProcessDLights( void )
 	}
 	GLSL_UseProgram( &rg.tileShader );
 	GLSL_SetUniformVec3( &rg.tileShader, UNIFORM_AMBIENTLIGHT, rg.world->ambientLightColor );
-	GLSL_SetUniformInt( &rg.tileShader, UNIFORM_NUM_LIGHTS, rg.world->numLights + backend.refdef.numDLights );
-	GLSL_ShaderBufferData( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, sizeof( *gpuLight ) * ( backend.refdef.numDLights + rg.world->numLights ), 0, qfalse );
+	GLSL_SetUniformInt( &rg.tileShader, UNIFORM_NUM_LIGHTS, numLights );
+	GLSL_ShaderBufferData( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, sizeof( *gpuLight ) * numLights, 0, qfalse );
 }
 
 void RE_ProcessEntities( void )

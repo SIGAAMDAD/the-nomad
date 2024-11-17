@@ -373,28 +373,6 @@ static void ComputeDeformValues(int *deformGen, float deformParams[5])
 	}
 }
 
-static void ForwardDlight( void )
-{
-	uint32_t l;
-	float radius;
-
-	float eyeT;
-
-	batch_t *input = &backend.drawBatch;
-	shaderStage_t *pStage = input->shader->stages[0];
-	
-	if ( !backend.refdef.numDLights ) {
-		return;
-	}
-
-	for ( l = 0; l < backend.refdef.numDLights; l++ ) {
-		dlight_t *dl;
-		shaderProgram_t *sp;
-		vec4_t vector;
-
-	}
-}
-
 /*
 * RB_DrawShaderStages: RB_IterateShaderStages but for imgui textures
 */
@@ -648,6 +626,19 @@ static void RB_StageIteratorGeneric( shader_t *shader )
 				VectorCopy( stageP->bundle[0].tcGenVectors[1], vec );
 				GLSL_SetUniformVec3( sp, UNIFORM_TCGEN0VECTOR1, vec );
 			}
+		}
+
+		if ( rg.world && rg.world->drawing ) {
+			uint32_t numLights;
+
+			numLights = rg.world->numLights;
+			if ( r_dynamiclight->i ) {
+				numLights += backend.refdef.numDLights;
+			}
+
+			GLSL_SetUniformVec3( &rg.tileShader, UNIFORM_AMBIENTLIGHT, rg.world->ambientLightColor );
+			GLSL_SetUniformInt( &rg.tileShader, UNIFORM_NUM_LIGHTS, numLights );
+			GLSL_ShaderBufferData( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, sizeof( shaderLight_t ) * numLights, 0, qfalse );
 		}
 
 		GLSL_SetUniformVec3( sp, UNIFORM_VIEWORIGIN, glState.viewData.camera.origin );

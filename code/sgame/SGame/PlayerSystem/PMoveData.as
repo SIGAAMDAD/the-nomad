@@ -340,7 +340,7 @@ namespace TheNomad::SGame {
 			ImGui::SetWindowPos( vec2( 16, 128 ) );
 			ImGui::Text( "Origin: [ " + m_EntityData.GetOrigin().x + ", " + m_EntityData.GetOrigin().y + ", " + m_EntityData.GetOrigin().z + " ]" );
 			ImGui::Text( "Velocity: [ " + m_EntityData.GetVelocity().x + ", " + m_EntityData.GetVelocity().y + ", " + m_EntityData.GetVelocity().z + " ]" );
-			ImGui::Text( "CameraPos: [ " + Game_CameraWorldPos.x + ", " + Game_CameraWorldPos.y + " ]" );
+			ImGui::Text( "CameraPos: [ " + formatFloat( Game_CameraWorldPos.x, "%.3f" ) + ", " + formatFloat( Game_CameraWorldPos.y, "%.3f" ) + " ]" );
 			ImGui::Text( "Forward: " + forward );
 			ImGui::Text( "Side: " + side );
 			ImGui::Separator();

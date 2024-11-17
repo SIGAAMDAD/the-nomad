@@ -492,9 +492,6 @@ static void R_ProcessLights( void )
 	}
 
 	GLSL_SetUniformVec3( &rg.tileShader, UNIFORM_AMBIENTLIGHT, rg.world->ambientLightColor );
-	if ( !r_dynamiclight->i ) {
-		GLSL_SetUniformInt( &rg.tileShader, UNIFORM_NUM_LIGHTS, rg.world->numLights + backend.refdef.numDLights );
-	}
 }
 
 static void R_InitWorldBuffer( tile2d_header_t *theader )
@@ -519,7 +516,7 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 
 	attribs[ATTRIB_INDEX_POSITION].enabled		= qtrue;
 	attribs[ATTRIB_INDEX_TEXCOORD].enabled		= qtrue;
-	attribs[ATTRIB_INDEX_COLOR].enabled			= qfalse;
+	attribs[ATTRIB_INDEX_COLOR].enabled			= qtrue;
 	attribs[ATTRIB_INDEX_WORLDPOS].enabled		= qtrue;
 	attribs[ATTRIB_INDEX_TANGENT].enabled		= qfalse;
 	attribs[ATTRIB_INDEX_BITANGENT].enabled		= qfalse;
@@ -588,16 +585,19 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 		r_worldData.buffer->vertex[ ATTRIB_INDEX_POSITION ].size = sizeof( vec3_t ) * r_worldData.numVertices;
 		r_worldData.buffer->vertex[ ATTRIB_INDEX_TEXCOORD ].size = sizeof( vec2_t ) * r_worldData.numVertices;
 		r_worldData.buffer->vertex[ ATTRIB_INDEX_WORLDPOS ].size = sizeof( worldPos_t ) * r_worldData.numVertices;
+		r_worldData.buffer->vertex[ ATTRIB_INDEX_COLOR ].size = sizeof( color4ub_t ) * r_worldData.numVertices;
 
 		r_worldData.buffer->vertex[ ATTRIB_INDEX_POSITION ].target = GL_ARRAY_BUFFER;
 		r_worldData.buffer->vertex[ ATTRIB_INDEX_TEXCOORD ].target = GL_ARRAY_BUFFER;
 		r_worldData.buffer->vertex[ ATTRIB_INDEX_WORLDPOS ].target = GL_ARRAY_BUFFER;
+		r_worldData.buffer->vertex[ ATTRIB_INDEX_COLOR ].target = GL_ARRAY_BUFFER;
 
 		r_worldData.buffer->index.target = GL_ELEMENT_ARRAY_BUFFER;
 
 		VBO_MapBuffers( &r_worldData.buffer->vertex[ ATTRIB_INDEX_POSITION ] );
 		VBO_MapBuffers( &r_worldData.buffer->vertex[ ATTRIB_INDEX_TEXCOORD ] );
 		VBO_MapBuffers( &r_worldData.buffer->vertex[ ATTRIB_INDEX_WORLDPOS ] );
+		VBO_MapBuffers( &r_worldData.buffer->vertex[ ATTRIB_INDEX_COLOR ] );
 	} else {
 		r_worldData.buffer->vertex[0].size = sizeof( *r_worldData.vertices ) * r_worldData.numVertices;
 		VBO_MapBuffers( &r_worldData.buffer->vertex[0] );
@@ -626,11 +626,13 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 		r_worldData.worldPos = (worldPos_t *)r_worldData.buffer->vertex[ ATTRIB_INDEX_WORLDPOS ].data;
 		r_worldData.xyz = (vec3_t *)( r_worldData.buffer->vertex[ ATTRIB_INDEX_POSITION ].data );
 		r_worldData.uv = (vec2_t *)( r_worldData.buffer->vertex[ ATTRIB_INDEX_TEXCOORD ].data );
+		r_worldData.color = (color4ub_t *)( r_worldData.buffer->vertex[ ATTRIB_INDEX_COLOR ].data );
 	} else {
 		r_worldData.vertices = r_worldData.buffer->vertex[0].data;
 		r_worldData.worldPos = (worldPos_t *)r_worldData.vertices;
 		r_worldData.xyz = (vec3_t *)( r_worldData.worldPos + r_worldData.numVertices );
 		r_worldData.uv = (vec2_t *)( r_worldData.xyz + r_worldData.numVertices );
+		r_worldData.color = (color4ub_t *)( r_worldData.uv + r_worldData.numVertices );
 	}
 
 	R_GenerateTexCoords( &theader->info );
@@ -646,6 +648,7 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 	if ( glContext.directStateAccess ) {
 		nglFlushMappedNamedBufferRange( r_worldData.buffer->vertex[ ATTRIB_INDEX_WORLDPOS ].id, 0, sizeof( worldPos_t ) * r_worldData.numVertices );
 		nglFlushMappedNamedBufferRange( r_worldData.buffer->vertex[ ATTRIB_INDEX_TEXCOORD ].id, 0, sizeof( vec2_t ) * r_worldData.numVertices );
+		nglFlushMappedNamedBufferRange( r_worldData.buffer->vertex[ ATTRIB_INDEX_COLOR ].id, 0, sizeof( color4ub_t ) * r_worldData.numVertices );
 		nglFlushMappedNamedBufferRange( r_worldData.buffer->index.id, 0, sizeof( glIndex_t ) * r_worldData.numIndices );
 	} else {
 		nglFlushMappedBufferRange( GL_ARRAY_BUFFER, attribs[ ATTRIB_INDEX_WORLDPOS ].offset, sizeof( worldPos_t ) * r_worldData.numVertices );

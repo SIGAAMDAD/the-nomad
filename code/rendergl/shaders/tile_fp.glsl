@@ -48,17 +48,19 @@ TEXTURE2D u_LevelsMap;
 
 struct Light {
 	vec4 color;
+
 	uvec2 origin;
 	float brightness;
 	float range;
+	
 	float linear;
 	float quadratic;
 	float constant;
 	int type;
 };
 
-layout( std140, binding = 0 ) readonly buffer u_LightBuffer {
-	Light u_LightData[];
+layout( std140, binding = 0 ) uniform u_LightBuffer {
+	Light u_LightData[ MAX_LIGHTS ];
 };
 
 uniform int u_NumLights;
@@ -85,7 +87,7 @@ vec3 CalcScreenSpaceNormal( vec3 position ) {
 
 vec3 CalcPointLight( Light light ) {
 	vec3 diffuse = a_Color.rgb;
-	float dist = distance( v_WorldPos, vec3( light.origin, gl_FragCoord.z ) );
+	float dist = distance( vec3( v_WorldPos ), vec3( light.origin, gl_FragCoord.z ) );
 	float diff = 0.0;
 	float range = light.range;
 	float attenuation = 1.0;
@@ -98,15 +100,10 @@ vec3 CalcPointLight( Light light ) {
 
 	range = light.range * light.brightness;
 
-	attenuation = ( light.constant + light.linear + light.quadratic * ( light.range * light.range ) );
+	attenuation = ( light.constant + light.linear + light.quadratic * ( light.brightness * light.brightness ) );
 	if ( u_LightingQuality == 2 ) {
 		const vec3 normal = CalcNormal();
-		const vec3 lightDir = v_Position - vec3( light.origin, 0.0 );
-		const vec3 viewDir = normalize( normalize( u_ViewOrigin ) - v_Position );
-		const vec3 reflectDir = reflect( -lightDir, CalcScreenSpaceNormal( v_Position ) );
-
-		float spec = pow( max( dot( viewDir, reflectDir ), 0.0 ), 32 );
-		vec3 specular = texture( u_SpecularMap, v_TexCoords ).r * spec * light.color.rgb;
+		const vec3 specular = texture( u_SpecularMap, v_TexCoords ).r * light.color.rgb;
 
 		diffuse = mix( diffuse, specular, 0.025 );
 		diffuse = mix( diffuse, normal, 0.025 );
@@ -135,10 +132,6 @@ void ApplyLighting() {
 }
 
 void main() {
-//	if ( distance( u_ViewOrigin, v_WorldPos ) > 12.0 ) {
-//		discard;
-//	}
-
 	// calculate a slight x offset, otherwise we get some black line bleeding
 	// going on
 	ivec2 texSize = textureSize( u_DiffuseMap, 0 );

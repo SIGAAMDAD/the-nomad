@@ -393,9 +393,11 @@ typedef struct shaderProgram_s
 */
 typedef struct {
 	vec4_t color;
+	
 	uvec2_t origin;
 	float brightness;
 	float range;
+
 	float linear;
 	float quadratic;
 	float constant;

@@ -1,95 +1,134 @@
 #include "ui_lib.h"
+#include "../rendercommon/imgui_internal.h"
 
 typedef struct {
-	menuframework_t menu;
-
-	nhandle_t background;
-
-	menucustom_t progressbar;
-	uint64_t nTotalAssets;
-	uint64_t nCompletedAssets;
-
+	pthread_t uiThread;
 	pthread_mutex_t lock;
-} loadMenu_t;
+	std::atomic<qboolean> running;
 
-static loadMenu_t *s_loadMenu;
+	SDL_GLContext uiContext;
 
-static void LoadMenu_ProgressBar( void *self )
+	// previous state
+	qboolean prev_state_stored;
+	menuframework_t *prev_menu;
+	int prev_depth;
+	uiMenu_t prev_state;
+} loadscreen_t;
+
+static loadscreen_t s_loadScreen;
+
+extern SDL_Window *SDL_window;
+extern SDL_GLContext SDL_glContext;
+
+namespace ImGui {
+	bool Spinner(const char* label, float radius, int thickness, const ImU32& color) {
+        ImGuiWindow* window = GetCurrentWindow();
+        if (window->SkipItems)
+            return false;
+        
+        ImGuiContext& g = *GImGui;
+        const ImGuiStyle& style = g.Style;
+        const ImGuiID id = window->GetID(label);
+        
+        ImVec2 pos = window->DC.CursorPos;
+        ImVec2 size((radius )*2, (radius + style.FramePadding.y)*2);
+        
+        const ImRect bb(pos, ImVec2(pos.x + size.x, pos.y + size.y));
+        ItemSize(bb, style.FramePadding.y);
+        if (!ItemAdd(bb, id))
+            return false;
+        
+        // Render
+        window->DrawList->PathClear();
+        
+        int num_segments = 30;
+        int start = abs(ImSin(g.Time*1.8f)*(num_segments-5));
+        
+        const float a_min = IM_PI*2.0f * ((float)start) / (float)num_segments;
+        const float a_max = IM_PI*2.0f * ((float)num_segments-3) / (float)num_segments;
+
+        const ImVec2 centre = ImVec2(pos.x+radius, pos.y+radius+style.FramePadding.y);
+        
+        for (int i = 0; i < num_segments; i++) {
+            const float a = a_min + ((float)i / (float)num_segments) * (a_max - a_min);
+            window->DrawList->PathLineTo(ImVec2(centre.x + ImCos(a+g.Time*8) * radius,
+                                                centre.y + ImSin(a+g.Time*8) * radius));
+        }
+
+        window->DrawList->PathStroke(color, false, thickness);
+		return true;
+    }
+};
+
+static void *LoadScreen( void *unused )
 {
-	/*
-	const uint64_t nTotal = s_loadMenu->szLoadGroups[ LOAD_SCRIPTS ][1] + s_loadMenu->szLoadGroups[ LOAD_SHADERS ][1]
-		+ s_loadMenu->szLoadGroups[ LOAD_TEXTURES ][1];
-	const uint64_t nCompleted = s_loadMenu->szLoadGroups[ LOAD_SCRIPTS ][0] + s_loadMenu->szLoadGroups[ LOAD_SHADERS ][-]
-		+ s_loadMenu->szLoadGroups[ LOAD_TEXTURES ][0];
+	while ( s_loadScreen.running.load() ) {
+		pthread_mutex_lock( &s_loadScreen.lock );
 
-	ImGui::SetCursorScreenPos( ImVec2( 16 * ui->scale + ui->bias, 600 * ui->scale ) );
-	if ( !s_loadMenu->szLoadGroups[0] ) {
-		ImGui::Text( "Loading Scripts..." );
-	} else if ( s_loadMenu->szLoadGroups[1] ) {
-		ImGui::Text( "Loading Shaders..." );
-	} else if ( s_loadMenu->szLoadGroups[2] ) {
-		ImGui::Text( "Loading Textures..." );
+		re.BeginFrame( STEREO_CENTER );
+
+		ImGui::Begin( "##LoadingScreen", NULL, MENU_DEFAULT_FLAGS );
+		ImGui::SetWindowPos( ImVec2( 0, 0 ) );
+		ImGui::SetWindowSize( ImVec2( gi.gpuConfig.vidWidth, gi.gpuConfig.vidHeight ) );
+
+		ImGui::SetCursorScreenPos( ImVec2( 16 * gi.scale, 660 * gi.scale ) );
+		ImGui::Spinner( "##LoadingScreenSpinner", 16.0f, 10, ImGui::GetColorU32( colorRed ) );
+
+		ImGui::End();
+
+		re.EndFrame( NULL, NULL, NULL );
+
+		pthread_mutex_unlock( &s_loadScreen.lock );
 	}
-	*/
-	ImGui::TextUnformatted( "Loading Resources..." );
-	ImGui::ProgressBar( (float)( s_loadMenu->nCompletedAssets / s_loadMenu->nTotalAssets ) );
+	return NULL;
 }
 
-void UI_FinishResource( void )
+void LoadScreen_Begin( void )
 {
-	if ( !s_loadMenu || !ui->uiAllocated ) {
+	int ret;
+	return;
+
+	if ( s_loadScreen.running.load() ) {
 		return;
 	}
-	pthread_mutex_lock( &s_loadMenu->lock );
-	s_loadMenu->nCompletedAssets++;
-	pthread_mutex_unlock( &s_loadMenu->lock );
+
+	memset( &s_loadScreen, 0, sizeof( s_loadScreen ) );
+
+	// store state
+	if ( ui ) {
+		s_loadScreen.prev_menu = ui->activemenu;
+		s_loadScreen.prev_state = ui->menustate;
+		s_loadScreen.prev_depth = ui->menusp;
+		s_loadScreen.prev_state_stored = qtrue;
+	}
+	
+	pthread_mutex_init( &s_loadScreen.lock, NULL );
+
+	s_loadScreen.running = qtrue;
+
+	if ( ( ret = pthread_create( &s_loadScreen.uiThread, NULL, LoadScreen, NULL ) ) != 0 ) {
+		N_Error( ERR_FATAL, "Error creating uiThread for loading screen!" );
+	}
 }
 
-void UI_PushResource( void )
+void LoadScreen_End( void )
 {
-	if ( !s_loadMenu || !ui->uiAllocated ) {
+	if ( !s_loadScreen.running.load() ) {
 		return;
 	}
-	pthread_mutex_lock( &s_loadMenu->lock );
-	s_loadMenu->nTotalAssets++;
-	pthread_mutex_unlock( &s_loadMenu->lock );
-}
+	return;
 
-void LoadMenu_Cache( void )
-{
-	if ( !ui->uiAllocated ) {
-		s_loadMenu = (loadMenu_t *)Hunk_Alloc( sizeof( *s_loadMenu ), h_high );
+	s_loadScreen.running.store( qfalse );
+	pthread_join( s_loadScreen.uiThread, (void **)NULL );
+
+	SDL_GL_MakeCurrent( SDL_window, NULL );
+	SDL_GL_MakeCurrent( SDL_window, SDL_glContext );
+
+	pthread_mutex_destroy( &s_loadScreen.lock );
+
+	if ( s_loadScreen.prev_state_stored ) {
+		ui->activemenu = s_loadScreen.prev_menu;
+		ui->menusp = s_loadScreen.prev_depth;
+		ui->menustate = s_loadScreen.prev_state;
 	}
-	if ( s_loadMenu->menu.name ) {
-		pthread_mutex_destroy( &s_loadMenu->lock );	
-	}
-	memset( s_loadMenu, 0, sizeof( *s_loadMenu ) );
-
-	s_loadMenu->menu.flags = MENU_DEFAULT_FLAGS;
-	s_loadMenu->menu.fullscreen = qtrue;
-	s_loadMenu->menu.width = ui->gpuConfig.vidWidth;
-	s_loadMenu->menu.height = ui->gpuConfig.vidHeight;
-	s_loadMenu->menu.textFontScale = 2.5f;
-	s_loadMenu->menu.titleFontScale = 3.5f;
-	s_loadMenu->menu.name = strManager->ValueForKey( "MENU_LOGO_STRING" )->value;
-	s_loadMenu->menu.track = Snd_RegisterTrack( "event:/music/title" );
-	s_loadMenu->menu.x = 0;
-	s_loadMenu->menu.y = 0;
-
-	s_loadMenu->progressbar.generic.ownerdraw = LoadMenu_ProgressBar;
-	s_loadMenu->progressbar.generic.type = MTYPE_CUSTOM;
-	s_loadMenu->progressbar.generic.flags = QMF_OWNERDRAW;
-
-	s_loadMenu->background = re.RegisterShader( "menu/mainbackground" );
-	ui->menubackShader = s_loadMenu->background;
-
-	pthread_mutex_init( &s_loadMenu->lock, NULL );
-
-	Menu_AddItem( &s_loadMenu->menu, &s_loadMenu->progressbar );
-}
-
-void UI_LoadMenu( void )
-{
-	LoadMenu_Cache();
-	UI_PushMenu( &s_loadMenu->menu );
 }

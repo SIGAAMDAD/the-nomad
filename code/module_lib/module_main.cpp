@@ -14,6 +14,7 @@
 #include "scriptlib/scriptarray.h"
 #include "scriptlib/scriptdictionary.h"
 #include "scriptlib/scriptany.h"
+#include "angelscript/as_thread.h"
 
 moduleImport_t moduleImport;
 
@@ -953,7 +954,7 @@ CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *
 
 	Mem_Init();
 
-	// FIXME: angelscript's thread manager is fucking broken on unix (stalls forever)
+	asPrepareMultithread( NULL );
 	asSetGlobalMemoryFunctions( AS_Alloc, AS_Free );
 
 	g_pModuleLib = new ( Hunk_Alloc( sizeof( *g_pModuleLib ), h_high ) ) CModuleLib();

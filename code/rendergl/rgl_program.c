@@ -1235,8 +1235,14 @@ void GLSL_ShaderBufferData( shaderProgram_t *shader, uint32_t uniformNum, unifor
 		return;
 	}
 
-	nglBindBufferRange( GL_SHADER_STORAGE_BUFFER, buffer->binding, buffer->id, 0, buffer->size );
-	nglBindBufferBase( GL_SHADER_STORAGE_BUFFER, buffer->binding, buffer->id );
+	nglMemoryBarrier( GL_ALL_BARRIER_BITS );
+
+	nglBindBuffer( GL_UNIFORM_BUFFER, buffer->id );
+	nglBindBufferRange( GL_UNIFORM_BUFFER, 0, buffer->id, 0, buffer->size );
+	nglBindBufferBase( GL_UNIFORM_BUFFER, 0, buffer->id );
+	nglBindBuffer( GL_UNIFORM_BUFFER, 0 );
+
+	nglFlushMappedNamedBufferRange( buffer->id, 0, nSize );
 
 	GL_CheckErrors();
 }
@@ -1249,12 +1255,12 @@ void GLSL_LinkUniformToShader( shaderProgram_t *program, uint32_t uniformNum, un
 
 	GLSL_UseProgram( program );
 
-//	nglShaderStorageBlockBinding( program->programId, buffer->binding, rg.numBuffers );
-
 	buffer->binding = binding;
 
-	nglBindBufferRange( GL_SHADER_STORAGE_BUFFER, binding, buffer->id, 0, buffer->size );
-	nglBindBufferBase( GL_SHADER_STORAGE_BUFFER, binding, buffer->id );
+	nglBindBuffer( GL_UNIFORM_BUFFER, buffer->id );
+	nglBindBufferRange( GL_UNIFORM_BUFFER, 0, buffer->id, 0, buffer->size );
+	nglBindBufferBase( GL_UNIFORM_BUFFER, 0, buffer->id );
+	nglBindBuffer( GL_UNIFORM_BUFFER, 0 );
 
 	GL_CheckErrors();
 	
@@ -1291,19 +1297,16 @@ uniformBuffer_t *GLSL_InitUniformBuffer( const char *name, byte *buffer, uint64_
 	memset( buf, 0, size );
 
 	buf->name = (char *)( buf + 1 );
-	buf->size = bufSize;
+	buf->size = PAD( bufSize, 64 );
 	strcpy( buf->name, name );
 
 	target = GL_SHADER_STORAGE_BUFFER;
 
-	// generate buffer
 	nglCreateBuffers( 1, &buf->id );
 
-	// good 'ol fashioned buffers
-	nglNamedBufferStorage( buf->id, bufSize, NULL, ( dynamicStorage ? GL_DYNAMIC_STORAGE_BIT : 0 )
-		| GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
-	buf->data = nglMapNamedBufferRange( buf->id, 0, bufSize, GL_MAP_WRITE_BIT |
-		GL_MAP_PERSISTENT_BIT | GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_UNSYNCHRONIZED_BIT );
+	nglNamedBufferStorage( buf->id, PAD( bufSize, 64 ), buffer, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT );
+	buf->data = nglMapNamedBufferRange( buf->id, 0, PAD( bufSize, 64 ), GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT
+		| GL_MAP_FLUSH_EXPLICIT_BIT );
 
 	rg.numUniformBuffers++;
 
