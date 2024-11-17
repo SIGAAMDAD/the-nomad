@@ -439,13 +439,13 @@ void CSoundSystem::Update( void )
 		ERRCHECK( m_pSFXBus->setVolume( snd_effectsVolume->f / 100.0f ) );
 		snd_effectsVolume->modified = qfalse;
 	}
-	if ( gi.mapLoaded && g_paused->modified ) {
-		if ( g_paused->i ) {
-			Snd_PlaySfx( Snd_RegisterSfx( "snapshot:/PauseMenu" ) );
-		} else {
-			Snd_StopSfx( Snd_RegisterSfx( "snapshot:/PauseMenu" ) );
-		}
-	}
+//	if ( gi.mapLoaded && g_paused->modified ) {
+//		if ( g_paused->i ) {
+//			Snd_PlaySfx( Snd_RegisterSfx( "snapshot:/PauseMenu" ) );
+//		} else {
+//			Snd_StopSfx( Snd_RegisterSfx( "snapshot:/PauseMenu" ) );
+//		}
+//	}
 
 	ERRCHECK( s_pStudioSystem->update() );
 	ERRCHECK( s_pCoreSystem->update() );

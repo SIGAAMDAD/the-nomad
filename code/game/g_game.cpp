@@ -1574,7 +1574,7 @@ void G_GetSkinData(
 	VectorCopy2( legsSheetSize, skin->legsSheetSize );
 	VectorCopy2( legsSpriteSize, skin->legsSpriteSize );
 
-	Con_DPrintf( "SkinData: (torso)[ %u %u ][ %u %u ] (arms)[ %u %u ][ %u %u ] (legs)[ %u %u ]\n",
+	Con_DPrintf( "SkinData: (torso)[ %u %u ][ %u %u ] (arms)[ %u %u ][ %u %u ] (legs)[ %u %u ][ %u %u ]\n",
 		torsoSheetSize[0], torsoSheetSize[1], torsoSpriteSize[0], torsoSpriteSize[1],
 		armsSheetSize[0], armsSheetSize[1], armsSpriteSize[0], armsSpriteSize[1],
 		legsSheetSize[0], legsSheetSize[0], legsSpriteSize[0], legsSpriteSize[1] );
@@ -1600,6 +1600,10 @@ static void G_LoadSkins( void )
 	uvec2_t legsSheetSize, legsSpriteSize;
 	uint32_t numSkins, size;
 	skin_t *skin;
+
+	if ( s_pSkinList ) {
+		return;
+	}
 
 	Con_Printf( "Loading skins configuration...\n" );
 
@@ -1726,7 +1730,7 @@ static void G_LoadSkins( void )
 		size += PAD( strlen( display ) + 1, sizeof( uintptr_t ) );
 		size += PAD( strlen( description ) + 1, sizeof( uintptr_t ) );
 
-		skin = (skin_t *)Hunk_Alloc( size, h_low );
+		skin = (skin_t *)Z_Malloc( size, TAG_STATIC );
 		skin->name = (char *)( skin + 1 );
 		skin->displayText = (char *)( skin->name + strlen( name ) + 1 );
 		skin->description = (char *)( skin->displayText + strlen( display ) + 1 );

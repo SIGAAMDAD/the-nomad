@@ -46,6 +46,19 @@ TEXTURE2D u_SpecularMap;
 TEXTURE2D u_LevelsMap;
 #endif
 
+#define MAX_SHADERS 1024
+#define MAX_SHADER_STAGES 8
+
+struct Stage {
+	sampler2D diffuseMap;
+	sampler2D normalMap;
+	sampler2D specularMap;
+};
+
+struct Material {
+	Stage stages[ MAX_SHADER_STAGES ];
+};
+
 struct Light {
 	vec4 color;
 
@@ -59,8 +72,12 @@ struct Light {
 	int type;
 };
 
-layout( std140, binding = 0 ) uniform u_LightBuffer {
-	Light u_LightData[ MAX_LIGHTS ];
+layout( std430, binding = 0 ) readonly buffer u_LightBuffer {
+	Light u_LightData[];
+};
+
+layout( std430, binding = 1 ) readonly buffer u_ShaderSlots {
+	Material u_SceneMaterials[ MAX_SHADERS ];
 };
 
 uniform int u_NumLights;
@@ -92,6 +109,10 @@ vec3 CalcPointLight( Light light ) {
 	float range = light.range;
 	float attenuation = 1.0;
 
+	if ( v_WorldPos == vec3( 10, 12, 0 ) ) {
+		return a_Color.rgb + vec3( 12 );
+	}
+
 	if ( dist <= light.range ) {
 		diff = 1.0 - abs( dist / light.range );
 	}
@@ -119,6 +140,19 @@ vec3 CalcPointLight( Light light ) {
 }
 
 void ApplyLighting() {
+//	Light light;
+//
+//	light.origin = uvec2( 10, 12 );
+//	light.color = vec4( 1.0, 1.0, 1.0, 1.0 );
+//	light.brightness = 5.0;
+//	light.range = 10;
+//	light.linear = 3;
+//	light.quadratic = 1.0;
+//	light.constant = 6;
+//	light.type = 0;
+//
+//	a_Color.rgb += CalcPointLight( light );
+
 	for ( int i = 0; i < u_NumLights; i++ ) {
 		switch ( u_LightData[i].type ) {
 		case POINT_LIGHT:
@@ -149,7 +183,7 @@ void main() {
 	} else {
 		a_Color = texture( u_DiffuseMap, texCoord );
 	}
-
+	/*
 	const float alpha = a_Color.a * v_Color.a;
 	if ( u_AlphaTest == 1 ) {
 		if ( alpha == 0.0 ) {
@@ -167,6 +201,7 @@ void main() {
 		}
 	}
 	a_Color.a = alpha;
+	*/
 
 	ApplyLighting();
 

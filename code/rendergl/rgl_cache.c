@@ -883,6 +883,11 @@ void RB_FlushBatchBuffer( void )
 				rg.world->buffer->vertex[ ATTRIB_INDEX_POSITION ].offset,
 				backend.drawBatch.vtxDataSize * backend.drawBatch.vtxOffset
 			);
+			nglFlushMappedNamedBufferRange(
+				rg.world->buffer->vertex[ ATTRIB_INDEX_WORLDPOS ].id,
+				rg.world->buffer->vertex[ ATTRIB_INDEX_WORLDPOS ].offset,
+				sizeof( worldPos_t ) * backend.drawBatch.vtxOffset
+			);
 		} else {
 			nglFlushMappedBufferRange(
 				GL_ARRAY_BUFFER,

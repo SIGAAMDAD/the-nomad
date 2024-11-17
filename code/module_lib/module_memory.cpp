@@ -1101,7 +1101,7 @@ void Mem_UpdateFreeStats( uint32_t size ) {
 	mem_total_allocs.totalSize -= size;
 }
 
-#ifndef _NOMAD_DEBUG
+#ifndef MEMHEAP_DEBUG
 
 /*
 ==================
@@ -1805,4 +1805,4 @@ void Mem_EnableLeakTest( const char *name ) {
 	idStr::Copynz( mem_leakName, name, sizeof( mem_leakName ) );
 }
 
-#endif /* !_NOMAD_DEBUG */
+#endif /* !MEMHEAP_DEBUG */

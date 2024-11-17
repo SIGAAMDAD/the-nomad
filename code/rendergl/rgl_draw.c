@@ -628,19 +628,6 @@ static void RB_StageIteratorGeneric( shader_t *shader )
 			}
 		}
 
-		if ( rg.world && rg.world->drawing ) {
-			uint32_t numLights;
-
-			numLights = rg.world->numLights;
-			if ( r_dynamiclight->i ) {
-				numLights += backend.refdef.numDLights;
-			}
-
-			GLSL_SetUniformVec3( &rg.tileShader, UNIFORM_AMBIENTLIGHT, rg.world->ambientLightColor );
-			GLSL_SetUniformInt( &rg.tileShader, UNIFORM_NUM_LIGHTS, numLights );
-			GLSL_ShaderBufferData( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, sizeof( shaderLight_t ) * numLights, 0, qfalse );
-		}
-
 		GLSL_SetUniformVec3( sp, UNIFORM_VIEWORIGIN, glState.viewData.camera.origin );
 
 		{
