@@ -1233,10 +1233,17 @@ void GLSL_ShaderBufferData( shaderProgram_t *shader, uint32_t uniformNum, unifor
 		return;
 	}
 
+	GLSL_UseProgram( shader );
+
+	nglBindBuffer( GL_SHADER_STORAGE_BUFFER, buffer->id );
 	nglBindBufferBase( GL_SHADER_STORAGE_BUFFER, buffer->binding, buffer->id );
-	void *data = nglMapNamedBufferRange( buffer->id, nOffset, nSize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT );
+	nglBindBufferRange( GL_SHADER_STORAGE_BUFFER, buffer->binding, buffer->id, nOffset, nSize );
+
+	void *data = nglMapBufferRange( GL_SHADER_STORAGE_BUFFER, nOffset, nSize, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT );
 	memcpy( data, buffer->data + nOffset, nSize );
-	nglUnmapNamedBuffer( buffer->id );
+	nglUnmapBuffer( GL_SHADER_STORAGE_BUFFER );
+
+	nglBindBuffer( GL_SHADER_STORAGE_BUFFER, 0 );
 
 	GL_CheckErrors();
 }
@@ -1249,6 +1256,10 @@ void GLSL_LinkUniformToShader( shaderProgram_t *program, uint32_t uniformNum, un
 
 	buffer->binding = binding;
 	
+	nglBindBuffer( GL_SHADER_STORAGE_BUFFER, buffer->id );
+	nglBindBufferBase( GL_SHADER_STORAGE_BUFFER, buffer->binding, buffer->id );
+	nglBindBufferRange( GL_SHADER_STORAGE_BUFFER, buffer->binding, buffer->id, 0, buffer->size );
+	nglBindBuffer( GL_SHADER_STORAGE_BUFFER, 0 );
 	GL_CheckErrors();
 
 	program->numBuffers++;
@@ -1286,8 +1297,10 @@ uniformBuffer_t *GLSL_InitUniformBuffer( const char *name, byte *buffer, uint64_
 	strcpy( buf->name, name );
 
 	nglCreateBuffers( 1, &buf->id );
-	nglNamedBufferStorage( buf->id, buf->size, buf->data, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT );
+	nglBindBuffer( GL_SHADER_STORAGE_BUFFER, buf->id );
+	nglBufferData( GL_SHADER_STORAGE_BUFFER, buf->size, buf->data, GL_STREAM_DRAW );
 	buf->data = ri.Hunk_Alloc( buf->size, h_low );
+	nglBindBuffer( GL_SHADER_STORAGE_BUFFER, 0 );
 
 	GL_CheckErrors();
 

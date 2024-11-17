@@ -309,7 +309,7 @@ void R_DrawWorld( void )
 	}
 
 	// prepare the batch
-	RB_SetBatchBuffer( rg.world->buffer, rg.world->vertices, sizeof( vec3_t ), rg.world->indices, sizeof( glIndex_t ) );
+	RB_SetBatchBuffer( rg.world->buffer, rg.world->vertices, sizeof( drawVert_t ), rg.world->indices, sizeof( glIndex_t ) );
 	GL_CheckErrors();
 
 	backend.drawBatch.shader = rg.world->shader;
@@ -326,7 +326,7 @@ void R_DrawWorld( void )
 	uv = rg.world->uv;
 	
 	// if we haven't moved at all, we don't need to do any redundant calculations
-	if ( !( ri.Cvar_VariableInteger( "g_paused" ) || VectorCompare( cameraPos, glState.viewData.camera.origin ) ) ) {
+//	if ( !( ri.Cvar_VariableInteger( "g_paused" ) || VectorCompare( cameraPos, glState.viewData.camera.origin ) ) ) {
 		for ( y = 0; y < rg.world->height; y++ ) {
 			for ( x = 0; x < rg.world->width; x++ ) {
 				pos[0] = x;
@@ -336,10 +336,15 @@ void R_DrawWorld( void )
 				// convert the local world coordinates to OpenGL screen coordinates
 				R_WorldToGL( verts, pos );
 
-				VectorCopy( xyz[ 0 ], verts[0].xyz );
-				VectorCopy( xyz[ 1 ], verts[1].xyz );
-				VectorCopy( xyz[ 2 ], verts[2].xyz );
-				VectorCopy( xyz[ 3 ], verts[3].xyz );
+				VectorCopy( vtx[ 0 ].xyz, verts[0].xyz );
+				VectorCopy( vtx[ 1 ].xyz, verts[1].xyz );
+				VectorCopy( vtx[ 2 ].xyz, verts[2].xyz );
+				VectorCopy( vtx[ 3 ].xyz, verts[3].xyz );
+				
+				VectorSet2( vtx[0].worldPos, x, y );
+				VectorSet2( vtx[1].worldPos, x, y );
+				VectorSet2( vtx[2].worldPos, x, y );
+				VectorSet2( vtx[3].worldPos, x, y );
 				/*
 
 				VectorSubtract( edge1, xyz[ 1 ], xyz[ 0 ] );
@@ -384,9 +389,10 @@ void R_DrawWorld( void )
 				uv += 4;
 				tangent += 4;
 				bitangent += 4;
+				vtx += 4;
 			}
 		}
-	}
+//	}
 	VectorCopy( cameraPos, glState.viewData.camera.origin );
 
 	backend.drawBatch.idxOffset = rg.world->numIndices;

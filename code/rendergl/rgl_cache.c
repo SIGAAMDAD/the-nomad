@@ -583,9 +583,9 @@ vertexBuffer_t *R_AllocateBuffer( const char *name, void *vertices, uint32_t ver
 				
 				if ( HAVE_BUFFER_STORAGE && HAVE_MAP_BUFFER_RANGE ) {
 					nglNamedBufferStorage( buf->vertex->id, verticesSize, vertices, vertexUsage == GL_STATIC_DRAW ? 0 :
-						GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT );
+						GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
 					nglNamedBufferStorage( buf->index.id, indicesSize, indices, indexUsage == GL_STATIC_DRAW ? 0 :
-						GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT );
+						GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
 				}
 				else {
 					nglNamedBufferData( buf->vertex->id, verticesSize, vertices, vertexUsage );
@@ -878,16 +878,7 @@ void RB_FlushBatchBuffer( void )
 	
 	if ( rg.world && rg.world->buffer == buf ) {
 		if ( HAVE_DIRECT_STATE_ACCESS ) {
-			nglFlushMappedNamedBufferRange(
-				rg.world->buffer->vertex[ ATTRIB_INDEX_POSITION ].id,
-				rg.world->buffer->vertex[ ATTRIB_INDEX_POSITION ].offset,
-				backend.drawBatch.vtxDataSize * backend.drawBatch.vtxOffset
-			);
-			nglFlushMappedNamedBufferRange(
-				rg.world->buffer->vertex[ ATTRIB_INDEX_WORLDPOS ].id,
-				rg.world->buffer->vertex[ ATTRIB_INDEX_WORLDPOS ].offset,
-				sizeof( worldPos_t ) * backend.drawBatch.vtxOffset
-			);
+			nglFlushMappedNamedBufferRange( rg.world->buffer->vertex[0].id, 0, backend.drawBatch.vtxDataSize * backend.drawBatch.vtxOffset );
 		} else {
 			nglFlushMappedBufferRange(
 				GL_ARRAY_BUFFER,
