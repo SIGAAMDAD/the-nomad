@@ -55,11 +55,7 @@ int PrepareSystemFunctionGeneric(asCScriptFunction *func, asSSystemFunctionInter
 
 int PrepareSystemFunction(asCScriptFunction *func, asSSystemFunctionInterface *internal, asCScriptEngine *engine);
 
-extern cvar_t *ml_allowJIT;
-int CallSystemFunction_Generic(int id, asCContext *context);
-int CallSystemFunction_Native(int id, asCContext *context);
-GDR_INLINE int CallSystemFunction( int id, asCContext *context )
-{ return ml_allowJIT->i ? CallSystemFunction_Native( id, context ) : CallSystemFunction_Generic( id, context ); }
+int CallSystemFunction(int id, asCContext *context);
 
 inline asPWORD FuncPtrToUInt(asFUNCTION_t func)
 {

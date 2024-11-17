@@ -1,6 +1,6 @@
 /*
    AngelCode Scripting Library
-   Copyright (c) 2003-2023 Andreas Jonsson
+   Copyright (c) 2003-2024 Andreas Jonsson
 
    This software is provided 'as-is', without any express or implied
    warranty. In no event will the authors be held liable for any
@@ -52,107 +52,111 @@
 
 BEGIN_AS_NAMESPACE
 
+#if defined(AS_MAX_PORTABILITY) || defined(AS_NO_CLASS_METHODS)
+
 static void ScriptFunction_AddRef_Generic(asIScriptGeneric *gen)
 {
-	asCScriptFunction *self = (asCScriptFunction*)gen->GetObjectData();
+	asCScriptFunction *self = (asCScriptFunction*)gen->GetObject();
 	self->AddRef();
 }
 
 static void ScriptFunction_Release_Generic(asIScriptGeneric *gen)
 {
-	asCScriptFunction *self = (asCScriptFunction*)gen->GetObjectData();
+	asCScriptFunction *self = (asCScriptFunction*)gen->GetObject();
 	self->Release();
 }
 
 static void ScriptFunction_GetRefCount_Generic(asIScriptGeneric *gen)
 {
-	asCScriptFunction *self = (asCScriptFunction*)gen->GetObjectData();
+	asCScriptFunction *self = (asCScriptFunction*)gen->GetObject();
 	*(int*)gen->GetAddressOfReturnLocation() = self->GetRefCount();
 }
 
 static void ScriptFunction_SetFlag_Generic(asIScriptGeneric *gen)
 {
-	asCScriptFunction *self = (asCScriptFunction*)gen->GetObjectData();
+	asCScriptFunction *self = (asCScriptFunction*)gen->GetObject();
 	self->SetFlag();
 }
 
 static void ScriptFunction_GetFlag_Generic(asIScriptGeneric *gen)
 {
-	asCScriptFunction *self = (asCScriptFunction*)gen->GetObjectData();
+	asCScriptFunction *self = (asCScriptFunction*)gen->GetObject();
 	*(bool*)gen->GetAddressOfReturnLocation() = self->GetFlag();
 }
 
 static void ScriptFunction_EnumReferences_Generic(asIScriptGeneric *gen)
 {
-	asCScriptFunction *self = (asCScriptFunction*)gen->GetObjectData();
+	asCScriptFunction *self = (asCScriptFunction*)gen->GetObject();
 	asIScriptEngine *engine = *(asIScriptEngine**)gen->GetAddressOfArg(0);
 	self->EnumReferences(engine);
 }
 
 static void ScriptFunction_ReleaseAllHandles_Generic(asIScriptGeneric *gen)
 {
-	asCScriptFunction *self = (asCScriptFunction*)gen->GetObjectData();
+	asCScriptFunction *self = (asCScriptFunction*)gen->GetObject();
 	asIScriptEngine *engine = *(asIScriptEngine**)gen->GetAddressOfArg(0);
 	self->ReleaseAllHandles(engine);
 }
 
+#ifdef AS_MAX_PORTABILITY
 static void ScriptFunction_CreateDelegate_Generic(asIScriptGeneric *gen)
 {
 	asCScriptFunction *func = (asCScriptFunction*)gen->GetArgAddress(0);
 	void *obj = gen->GetArgAddress(1);
 	gen->SetReturnAddress(CreateDelegate(func, obj));
 }
+#endif
 
 // TODO: operator==
 /*static void ScriptFunction_opEquals_Generic(asIScriptGeneric *gen)
 {
-	asCScriptFunction *funcSelf = (asCScriptFunction*)gen->GetObjectData();
+	asCScriptFunction *funcSelf = (asCScriptFunction*)gen->GetObject();
 	asCScriptFunction *funcOther = (asCScriptFunction*)gen->GetArgAddress(0);
 	*(bool*)gen->GetAddressOfReturnLocation() = *funcSelf == *funcOther;
 }
 */
 
+#endif
+
+
 void RegisterScriptFunction(asCScriptEngine *engine)
 {
-	extern cvar_t *ml_allowJIT;
-
 	// Register the gc behaviours for the script functions
 	int r = 0;
 	UNUSED_VAR(r); // It is only used in debug mode
 	engine->functionBehaviours.engine = engine;
 	engine->functionBehaviours.flags = asOBJ_REF | asOBJ_GC;
 	engine->functionBehaviours.name = "$func";
-	if ( ml_allowJIT->i ) {
-		r = engine->RegisterBehaviourToObjectType(&engine->functionBehaviours, asBEHAVE_ADDREF, "void f()", asMETHOD(asCScriptFunction,AddRef), asCALL_THISCALL, 0); asASSERT( r >= 0 );
-		r = engine->RegisterBehaviourToObjectType(&engine->functionBehaviours, asBEHAVE_RELEASE, "void f()", asMETHOD(asCScriptFunction,Release), asCALL_THISCALL, 0); asASSERT( r >= 0 );
-		r = engine->RegisterBehaviourToObjectType(&engine->functionBehaviours, asBEHAVE_GETREFCOUNT, "int f()", asMETHOD(asCScriptFunction,GetRefCount), asCALL_THISCALL, 0); asASSERT( r >= 0 );
-		r = engine->RegisterBehaviourToObjectType(&engine->functionBehaviours, asBEHAVE_SETGCFLAG, "void f()", asMETHOD(asCScriptFunction,SetFlag), asCALL_THISCALL, 0); asASSERT( r >= 0 );
-		r = engine->RegisterBehaviourToObjectType(&engine->functionBehaviours, asBEHAVE_GETGCFLAG, "bool f()", asMETHOD(asCScriptFunction,GetFlag), asCALL_THISCALL, 0); asASSERT( r >= 0 );
-		r = engine->RegisterBehaviourToObjectType(&engine->functionBehaviours, asBEHAVE_ENUMREFS, "void f(int&in)", asMETHOD(asCScriptFunction,EnumReferences), asCALL_THISCALL, 0); asASSERT( r >= 0 );
-		r = engine->RegisterBehaviourToObjectType(&engine->functionBehaviours, asBEHAVE_RELEASEREFS, "void f(int&in)", asMETHOD(asCScriptFunction,ReleaseAllHandles), asCALL_THISCALL, 0); asASSERT( r >= 0 );
-		// TODO: Need some way to allow the arg type to adapt when the funcdefs are instantiated
-	//	r = engine->RegisterMethodToObjectType(&engine->functionBehaviours, "bool opEquals(const int &in)", asMETHOD(asCScriptFunction,operator==), asCALL_THISCALL); asASSERT( r >= 0 );
-	}
-	else {
-		r = engine->RegisterBehaviourToObjectType(&engine->functionBehaviours, asBEHAVE_ADDREF, "void f()", asFUNCTION(ScriptFunction_AddRef_Generic), asCALL_GENERIC, 0); asASSERT( r >= 0 );
-		r = engine->RegisterBehaviourToObjectType(&engine->functionBehaviours, asBEHAVE_RELEASE, "void f()", asFUNCTION(ScriptFunction_Release_Generic), asCALL_GENERIC, 0); asASSERT( r >= 0 );
-		r = engine->RegisterBehaviourToObjectType(&engine->functionBehaviours, asBEHAVE_GETREFCOUNT, "int f()", asFUNCTION(ScriptFunction_GetRefCount_Generic), asCALL_GENERIC, 0); asASSERT( r >= 0 );
-		r = engine->RegisterBehaviourToObjectType(&engine->functionBehaviours, asBEHAVE_SETGCFLAG, "void f()", asFUNCTION(ScriptFunction_SetFlag_Generic), asCALL_GENERIC, 0); asASSERT( r >= 0 );
-		r = engine->RegisterBehaviourToObjectType(&engine->functionBehaviours, asBEHAVE_GETGCFLAG, "bool f()", asFUNCTION(ScriptFunction_GetFlag_Generic), asCALL_GENERIC, 0); asASSERT( r >= 0 );
-		r = engine->RegisterBehaviourToObjectType(&engine->functionBehaviours, asBEHAVE_ENUMREFS, "void f(int&in)", asFUNCTION(ScriptFunction_EnumReferences_Generic), asCALL_GENERIC, 0); asASSERT( r >= 0 );
-		r = engine->RegisterBehaviourToObjectType(&engine->functionBehaviours, asBEHAVE_RELEASEREFS, "void f(int&in)", asFUNCTION(ScriptFunction_ReleaseAllHandles_Generic), asCALL_GENERIC, 0); asASSERT( r >= 0 );
-	//	r = engine->RegisterMethodToObjectType(&engine->functionBehaviours, "bool opEquals(const int &in)", asFUNCTION(ScriptFunction_opEquals_Generic), asCALL_GENERIC); asASSERT( r >= 0 );
-	}
+#if !defined(AS_MAX_PORTABILITY) && !defined(AS_NO_CLASS_METHODS)
+	r = engine->RegisterBehaviourToObjectType(&engine->functionBehaviours, asBEHAVE_ADDREF, "void f()", asMETHOD(asCScriptFunction,AddRef), asCALL_THISCALL, 0); asASSERT( r >= 0 );
+	r = engine->RegisterBehaviourToObjectType(&engine->functionBehaviours, asBEHAVE_RELEASE, "void f()", asMETHOD(asCScriptFunction,Release), asCALL_THISCALL, 0); asASSERT( r >= 0 );
+	r = engine->RegisterBehaviourToObjectType(&engine->functionBehaviours, asBEHAVE_GETREFCOUNT, "int f()", asMETHOD(asCScriptFunction,GetRefCount), asCALL_THISCALL, 0); asASSERT( r >= 0 );
+	r = engine->RegisterBehaviourToObjectType(&engine->functionBehaviours, asBEHAVE_SETGCFLAG, "void f()", asMETHOD(asCScriptFunction,SetFlag), asCALL_THISCALL, 0); asASSERT( r >= 0 );
+	r = engine->RegisterBehaviourToObjectType(&engine->functionBehaviours, asBEHAVE_GETGCFLAG, "bool f()", asMETHOD(asCScriptFunction,GetFlag), asCALL_THISCALL, 0); asASSERT( r >= 0 );
+	r = engine->RegisterBehaviourToObjectType(&engine->functionBehaviours, asBEHAVE_ENUMREFS, "void f(int&in)", asMETHOD(asCScriptFunction,EnumReferences), asCALL_THISCALL, 0); asASSERT( r >= 0 );
+	r = engine->RegisterBehaviourToObjectType(&engine->functionBehaviours, asBEHAVE_RELEASEREFS, "void f(int&in)", asMETHOD(asCScriptFunction,ReleaseAllHandles), asCALL_THISCALL, 0); asASSERT( r >= 0 );
+	// TODO: Need some way to allow the arg type to adapt when the funcdefs are instantiated
+//	r = engine->RegisterMethodToObjectType(&engine->functionBehaviours, "bool opEquals(const int &in)", asMETHOD(asCScriptFunction,operator==), asCALL_THISCALL); asASSERT( r >= 0 );
+#else
+	r = engine->RegisterBehaviourToObjectType(&engine->functionBehaviours, asBEHAVE_ADDREF, "void f()", asFUNCTION(ScriptFunction_AddRef_Generic), asCALL_GENERIC, 0); asASSERT( r >= 0 );
+	r = engine->RegisterBehaviourToObjectType(&engine->functionBehaviours, asBEHAVE_RELEASE, "void f()", asFUNCTION(ScriptFunction_Release_Generic), asCALL_GENERIC, 0); asASSERT( r >= 0 );
+	r = engine->RegisterBehaviourToObjectType(&engine->functionBehaviours, asBEHAVE_GETREFCOUNT, "int f()", asFUNCTION(ScriptFunction_GetRefCount_Generic), asCALL_GENERIC, 0); asASSERT( r >= 0 );
+	r = engine->RegisterBehaviourToObjectType(&engine->functionBehaviours, asBEHAVE_SETGCFLAG, "void f()", asFUNCTION(ScriptFunction_SetFlag_Generic), asCALL_GENERIC, 0); asASSERT( r >= 0 );
+	r = engine->RegisterBehaviourToObjectType(&engine->functionBehaviours, asBEHAVE_GETGCFLAG, "bool f()", asFUNCTION(ScriptFunction_GetFlag_Generic), asCALL_GENERIC, 0); asASSERT( r >= 0 );
+	r = engine->RegisterBehaviourToObjectType(&engine->functionBehaviours, asBEHAVE_ENUMREFS, "void f(int&in)", asFUNCTION(ScriptFunction_EnumReferences_Generic), asCALL_GENERIC, 0); asASSERT( r >= 0 );
+	r = engine->RegisterBehaviourToObjectType(&engine->functionBehaviours, asBEHAVE_RELEASEREFS, "void f(int&in)", asFUNCTION(ScriptFunction_ReleaseAllHandles_Generic), asCALL_GENERIC, 0); asASSERT( r >= 0 );
+//	r = engine->RegisterMethodToObjectType(&engine->functionBehaviours, "bool opEquals(const int &in)", asFUNCTION(ScriptFunction_opEquals_Generic), asCALL_GENERIC); asASSERT( r >= 0 );
+#endif
 
 	// Register the builtin function for creating delegates
 	// This function returns a handle to the delegate, but since the type is not known at this time it is
 	// registered to return a void then the return type is changed manually to the builtin function type
 	// The name of the function is an invalid identifier so it cannot be invoked accidentally from the script
-	if ( ml_allowJIT->i ) {
-		r = engine->RegisterGlobalFunction("void f(int &in, int &in)", asFUNCTION(CreateDelegate), asCALL_CDECL); asASSERT( r >= 0 );
-	} else {
+#ifndef AS_MAX_PORTABILITY
+	r = engine->RegisterGlobalFunction("void f(int &in, int &in)", asFUNCTION(CreateDelegate), asCALL_CDECL); asASSERT( r >= 0 );
+#else
 	r = engine->RegisterGlobalFunction("void f(int &in, int &in)", asFUNCTION(ScriptFunction_CreateDelegate_Generic), asCALL_GENERIC); asASSERT( r >= 0 );
-	}
+#endif
 
 	// Rename the function so that it cannot be called manually by the script
 	int idx = engine->registeredGlobalFuncs.GetIndex(engine->scriptFunctions[r]);
@@ -364,7 +368,6 @@ asCScriptFunction::asCScriptFunction(asCScriptEngine *engine, asCModule *mod, as
 	dontCleanUpOnException = false;
 	vfTableIdx             = -1;
 	gcFlag                 = false;
-	userData               = 0;
 	id                     = 0;
 	accessMask             = 0xFFFFFFFF;
 	nameSpace              = engine->nameSpaces[0];
@@ -862,6 +865,22 @@ int asCScriptFunction::FindNextLineWithCode(int line) const
 	}
 
 	return -1;
+}
+
+// interface
+int asCScriptFunction::GetDeclaredAt(const char** scriptSection, int* row, int* col) const
+{
+	if (!scriptData)
+	{
+		if (scriptSection) *scriptSection = 0;
+		if (row) *row = 0;
+		if (col) *col = 0;
+		return asNOT_SUPPORTED;
+	}
+	if (scriptSection) *scriptSection = engine->scriptSectionNames[scriptData->scriptSectionIdx]->AddressOf();
+	if (row) *row = scriptData->declaredAt & 0xFFFFF;
+	if (col) *col = scriptData->declaredAt >> 20;
+	return 0;
 }
 
 // internal
@@ -1390,8 +1409,13 @@ void asCScriptFunction::ReleaseReferences()
 		}
 
 		// Release the jit compiled function
-		if( scriptData->jitFunction )
-			engine->jitCompiler->ReleaseJITFunction(scriptData->jitFunction);
+		if (scriptData->jitFunction)
+		{
+			if (engine->ep.jitInterfaceVersion == 1)
+				static_cast<asIJITCompiler*>(engine->jitCompiler)->ReleaseJITFunction(scriptData->jitFunction);
+			else if (engine->ep.jitInterfaceVersion == 2)
+				static_cast<asIJITCompilerV2*>(engine->jitCompiler)->CleanFunction(this, scriptData->jitFunction);
+		}
 		scriptData->jitFunction = 0;
 	}
 
@@ -1507,6 +1531,36 @@ asDWORD asCScriptFunction::GetAccessMask() const
 	return accessMask;
 }
 
+// interface
+int asCScriptFunction::SetJITFunction(asJITFunction jitFunc)
+{
+	if (engine->ep.jitInterfaceVersion == 1)
+		return asNOT_SUPPORTED;
+
+	if (funcType != asFUNC_SCRIPT)
+		return asERROR;
+
+	if (scriptData->jitFunction && scriptData->jitFunction != jitFunc )
+	{
+		if (engine->ep.jitInterfaceVersion == 2)
+			static_cast<asIJITCompilerV2*>(engine->jitCompiler)->CleanFunction(this, scriptData->jitFunction);
+		scriptData->jitFunction = 0;
+	}
+
+	scriptData->jitFunction = jitFunc;
+
+	return asSUCCESS;
+}
+
+// interface
+asJITFunction asCScriptFunction::GetJITFunction() const
+{
+	if (scriptData)
+		return scriptData->jitFunction;
+
+	return 0;
+}
+
 // internal
 void asCScriptFunction::JITCompile()
 {
@@ -1515,8 +1569,7 @@ void asCScriptFunction::JITCompile()
 
 	asASSERT( scriptData );
 
-	asIJITCompiler *jit = engine->GetJITCompiler();
-	if( !jit )
+	if( !engine->jitCompiler )
 		return;
 
 	// Make sure the function has been compiled with JitEntry instructions
@@ -1549,14 +1602,27 @@ void asCScriptFunction::JITCompile()
 	// Release the previous function, if any
 	if( scriptData->jitFunction )
 	{
-		engine->jitCompiler->ReleaseJITFunction(scriptData->jitFunction);
+		if (engine->ep.jitInterfaceVersion == 1)
+			static_cast<asIJITCompiler*>(engine->jitCompiler)->ReleaseJITFunction(scriptData->jitFunction);
+		else if (engine->ep.jitInterfaceVersion == 2)
+			static_cast<asIJITCompilerV2*>(engine->jitCompiler)->CleanFunction(this, scriptData->jitFunction);
 		scriptData->jitFunction = 0;
 	}
 
-	// Compile for native system
-	int r = jit->CompileFunction(this, &scriptData->jitFunction);
-	if( r < 0 )
-		asASSERT( scriptData->jitFunction == 0 );
+	if (engine->ep.jitInterfaceVersion == 1)
+	{
+		// Compile for native system. If the JIT compiler decides to compile the function it 
+		// must do so now, as it is not allowed to do it later.
+		int r = static_cast<asIJITCompiler*>(engine->jitCompiler)->CompileFunction(this, &scriptData->jitFunction);
+		if (r < 0)
+			asASSERT(scriptData->jitFunction == 0);
+	}
+	else if (engine->ep.jitInterfaceVersion == 2)
+	{
+		// Notify the JIT compiler about the new function, it may do JIT compilation now, or later, or not at all.
+		// If it does the compilation now, it will use SetJITFunction to inform the compiled JIT function.
+		static_cast<asIJITCompilerV2*>(engine->jitCompiler)->NewFunction(this);
+	}
 }
 
 // interface

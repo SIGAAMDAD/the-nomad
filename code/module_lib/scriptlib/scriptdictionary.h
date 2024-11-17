@@ -7,6 +7,7 @@
 
 #include "../module_public.h"
 #include "scriptarray.h"
+#include "../../engine/n_threads.h"
 typedef string_t dictKey_t;
 
 class CScriptDictValue;

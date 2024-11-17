@@ -346,10 +346,10 @@ void Module_ASMessage_f( const asSMessageInfo *pMsg, void *param )
 	}
 }
 
-void *AS_Alloc( size_t nSize, const char *, unsigned int ) {
+void *AS_Alloc( size_t nSize ) {
 	return Mem_Alloc( nSize );
 }
-void AS_Free( void *ptr, const char *, unsigned int ) {
+void AS_Free( void *ptr ) {
 	Mem_Free( ptr );
 }
 

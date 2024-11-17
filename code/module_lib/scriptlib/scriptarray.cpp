@@ -258,8 +258,6 @@ static void RegisterScriptList_Native( asIScriptEngine *engine )
 
 	CheckASCall( engine->RegisterObjectType( "array<class T>", 0, asOBJ_REF | asOBJ_GC | asOBJ_TEMPLATE ) );
 
-	CScriptArray::SetMemoryFunctions( AS_Alloc, AS_Free );
-
 	CheckASCall( engine->RegisterObjectBehaviour( "array<T>", asBEHAVE_TEMPLATE_CALLBACK, "bool f(int&in, bool&out)", asFUNCTION( ScriptListTemplateCallback ), asCALL_CDECL ) );
 
 	CheckASCall( engine->RegisterObjectBehaviour( "array<T>", asBEHAVE_FACTORY, "array<T>@ f(int&in)", asFUNCTIONPR( CScriptArray::Create, ( asITypeInfo * ), CScriptArray * ), asCALL_CDECL ) );
@@ -2249,8 +2247,6 @@ static void RegisterScriptList_Generic( asIScriptEngine *engine )
 	engine->SetTypeInfoUserDataCleanupCallback( CleanupTypeInfoArrayCache, ARRAY_CACHE );
 
 	CheckASCall( engine->RegisterObjectType( "array<class T>", 0, asOBJ_REF | asOBJ_GC | asOBJ_TEMPLATE ) );
-
-	CScriptArray::SetMemoryFunctions( AS_Alloc, AS_Free );
 
 	CheckASCall( engine->RegisterObjectBehaviour( "array<T>", asBEHAVE_TEMPLATE_CALLBACK, "bool f(int&in, bool&out)", asFUNCTION( ScriptListTemplateCallback_Generic ), asCALL_GENERIC ) );
 

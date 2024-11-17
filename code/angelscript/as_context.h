@@ -204,7 +204,6 @@ public:
 
 	// Dynamically growing local stack
 	asCArray<asDWORD *> m_stackBlocks;
-//	asDWORD				*m_stackBlock;
 	asUINT              m_stackBlockSize;
 	asUINT              m_stackIndex;
 	asDWORD            *m_originalStackPointer;

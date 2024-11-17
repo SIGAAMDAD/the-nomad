@@ -45,18 +45,13 @@ BEGIN_AS_NAMESPACE
 //=======================================================================
 
 // Singleton
-asCThreadManager *threadManager = 0;
+static asCThreadManager *threadManager = 0;
 
 //======================================================================
 
 // Global API functions
 extern "C"
 {
-
-AS_API void asSetThreadManager( asIThreadManager *pThreadManager )
-{
-	threadManager = dynamic_cast<asCThreadManager *>( pThreadManager );
-}
 
 AS_API int asThreadCleanup()
 {
@@ -278,7 +273,6 @@ int asCThreadManager::CleanupLocalData()
 	}
 	return 0;
 #endif
-	threadManager = NULL;
 }
 
 asCThreadLocalData *asCThreadManager::GetLocalData()

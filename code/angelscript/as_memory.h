@@ -43,22 +43,10 @@
 
 #include "as_config.h"
 
-#ifdef MODULE_LIB
-#include "../module_lib/module_alloc.h"
-#endif
-
 BEGIN_AS_NAMESPACE
 
-extern asALLOCFUNC_t _userAlloc;
-extern asFREEFUNC_t  _userFree;
-
-#ifdef _NOMAD_DEBUG
-#define userAlloc( size ) _userAlloc( (size), __FILE__, __LINE__ )
-#define userFree( ptr ) _userFree( (ptr), __FILE__, __LINE__ )
-#else
-#define userAlloc( size ) _userAlloc( (size) )
-#define userFree( ptr ) _userFree( (ptr) )
-#endif
+extern asALLOCFUNC_t userAlloc;
+extern asFREEFUNC_t  userFree;
 
 #ifdef WIP_16BYTE_ALIGN
 
@@ -67,8 +55,8 @@ extern asFREEFUNC_t  _userFree;
 //       aligned memory routines
 typedef void *(*asALLOCALIGNEDFUNC_t)(size_t, size_t);
 typedef void (*asFREEALIGNEDFUNC_t)(void *);
-extern asALLOCALIGNEDFUNC_t _userAllocAligned;
-extern asFREEALIGNEDFUNC_t  _userFreeAligned;
+extern asALLOCALIGNEDFUNC_t userAllocAligned;
+extern asFREEALIGNEDFUNC_t  userFreeAligned;
 typedef void *(*asALLOCALIGNEDFUNCDEBUG_t)(size_t, size_t, const char *, unsigned int);
 
 // The maximum type alignment supported.
@@ -81,6 +69,8 @@ bool isAligned(const void* const pointer, asUINT alignment);
 
 // We don't overload the new operator as that would affect the application as well
 
+#ifndef AS_DEBUG
+
 	#define asNEW(x)        new(userAlloc(sizeof(x))) x
 	#define asDELETE(ptr,x) {void *tmp = ptr; (ptr)->~x(); userFree(tmp);}
 
@@ -90,6 +80,24 @@ bool isAligned(const void* const pointer, asUINT alignment);
 #ifdef WIP_16BYTE_ALIGN
 	#define asNEWARRAYALIGNED(x,cnt, alignment)  (x*)userAllocAligned(sizeof(x)*cnt, alignment)
 	#define asDELETEARRAYALIGNED(ptr) userFreeAligned(ptr)
+#endif
+
+#else
+
+	typedef void *(*asALLOCFUNCDEBUG_t)(size_t, const char *, unsigned int);
+
+	#define asNEW(x)        new(((asALLOCFUNCDEBUG_t)(userAlloc))(sizeof(x), __FILE__, __LINE__)) x
+	#define asDELETE(ptr,x) {void *tmp = ptr; (ptr)->~x(); userFree(tmp);}
+
+	#define asNEWARRAY(x,cnt)  (x*)((asALLOCFUNCDEBUG_t)(userAlloc))(sizeof(x)*cnt, __FILE__, __LINE__)
+	#define asDELETEARRAY(ptr) userFree(ptr)
+
+#ifdef WIP_16BYTE_ALIGN
+	//TODO: Equivalent of debug allocation function with alignment?
+	#define asNEWARRAYALIGNED(x,cnt, alignment)  (x*)userAllocAligned(sizeof(x)*cnt, alignment)
+	#define asDELETEARRAYALIGNED(ptr) userFreeAligned(ptr)
+#endif
+
 #endif
 
 END_AS_NAMESPACE
