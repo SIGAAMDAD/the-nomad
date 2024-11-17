@@ -1916,7 +1916,6 @@ void RB_RenderThread( void );
 void R_InitCommandBuffers( void );
 void R_ShutdownCommandBuffers( void );
 
-void RE_AddBlurPassCmd( void );
 void RE_DrawImage( float x, float y, float w, float h, float u1, float v1, float u2, float v2, nhandle_t hShader );
 void RE_LoadWorldMap( const char *filename );
 void RE_SetColor( const float *rgba );

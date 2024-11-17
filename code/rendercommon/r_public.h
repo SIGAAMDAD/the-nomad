@@ -152,7 +152,6 @@ typedef struct {
 	void (*GLimp_AcquireContext)( void );
 
 	void (*G_GetMapData)( maptile_t **tiles, uint32_t *numTiles );
-	void (*UI_SetLoadingStatus)( uint64_t nCompiledShaders, uint64_t nTotalShaders, uint64_t nLoadedTextures, uint64_t nTotalTextures );
 } refimport_t;
 
 typedef struct {

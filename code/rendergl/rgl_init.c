@@ -18,12 +18,12 @@ NGL_BufferARB_Procs
 NGL_VertexArrayARB_Procs
 NGL_VertexShaderARB_Procs
 
+NGL_ARB_direct_state_access
 NGL_ARB_buffer_storage
 NGL_ARB_map_buffer_range
 NGL_ARB_sync
 NGL_ARB_bindless_texture
 NGL_ARB_transform_feedback
-NGL_ARB_direct_state_access
 #undef NGL
 
 // because they're edgy...
@@ -182,6 +182,8 @@ cvar_t *r_lightingQuality;
 cvar_t *r_antialiasQuality;
 
 cvar_t *r_arb_compute_shader;
+
+cvar_t *r_swapInterval;
 
 cvar_t *r_loadTexturesOnDemand;
 
@@ -835,11 +837,11 @@ static void R_Register( void )
 	r_useExtensions = ri.Cvar_Get( "r_useExtensions", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_useExtensions, "Use all of the OpenGL extensions your card is capable of." );
 
+	r_arb_direct_state_access = ri.Cvar_Get( "r_arb_direct_state_access", "1", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_SetDescription( r_arb_direct_state_access, "Enables direct state access, requires OpenGL driver version 4.5." );
+
 	r_arb_pixel_buffer_object = ri.Cvar_Get( "r_arb_pixel_buffer_object", "0", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_arb_pixel_buffer_object, "Enables pixel buffer objects." );
-
-	r_arb_direct_state_access = ri.Cvar_Get( "r_arb_direct_state_access", "1", CVAR_SAVE | CVAR_LATCH );
-	ri.Cvar_SetDescription( r_arb_direct_state_access, "Enables direct state access." );
 
 	r_arb_texture_compression = ri.Cvar_Get( "r_arb_texture_compression", "3", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_arb_texture_compression, "Enables texture compression." );
@@ -1018,6 +1020,8 @@ static void R_Register( void )
 	//
 	// archived variables that can change any time
 	//
+	r_swapInterval = ri.Cvar_Get( "r_swapInterval", "1", CVAR_SAVE );
+
 	r_customWidth = ri.Cvar_Get( "r_customWidth", "1980", CVAR_SAVE );
 	r_customHeight = ri.Cvar_Get( "r_customHeight", "1080", CVAR_SAVE );
 
@@ -1349,7 +1353,6 @@ static void R_InitImGui( void )
 	import.glPolygonMode = nglPolygonMode;
 	import.glPixelStorei = nglPixelStorei;
 	import.glIsEnabled = nglIsEnabled;
-	import.glIsDisabled = nglIsDisabled;
 	import.glIsProgram = nglIsProgram;
 	import.glIsShader = nglIsShader;
 	import.glDrawElementsBaseVertex = nglDrawElementsBaseVertex;
@@ -1384,10 +1387,28 @@ static void R_InitImGui( void )
 	import.glGetTextureHandleARB = nglGetTextureHandleARB;
 	import.glMakeTextureHandleResidentARB = nglMakeTextureHandleResidentARB;
 	import.glFlushMappedBufferRangeARB = nglFlushMappedBufferRange;
+	import.glCreateVertexArrays = nglCreateVertexArrays;
+	import.glCreateBuffers = nglCreateBuffers;
+	import.glNamedBufferData = nglNamedBufferData;
+	import.glNamedBufferSubData = nglNamedBufferSubData;
+	import.glMapNamedBuffer = nglMapNamedBuffer;
+	import.glUnmapNamedBuffer = nglUnmapNamedBuffer;
+	import.glMapNamedBufferRange = nglMapNamedBufferRange;
+	import.glFlushMappedNamedBufferRange = nglFlushMappedNamedBufferRange;
+	import.glNamedBufferStorage = nglNamedBufferStorage;
+	import.glEnableVertexArrayAttrib = nglEnableVertexArrayAttrib;
+	import.glDisableVertexArrayAttrib = nglDisableVertexArrayAttrib;
+	import.glVertexArrayElementBuffer = nglVertexArrayElementBuffer;
+	import.glVertexArrayVertexBuffer = nglVertexArrayVertexBuffer;
+	import.glVertexArrayVertexBuffers = nglVertexArrayVertexBuffers;
+	import.glVertexArrayAttribBinding = nglVertexArrayAttribBinding;
+	import.glVertexArrayAttribFormat = nglVertexArrayAttribFormat;
+	import.glVertexArrayAttribIFormat = nglVertexArrayAttribIFormat;
 
 	import.DrawShaderStages = RB_DrawShaderStages;
 	import.GetTextureId = RE_GetTextureId;
 	import.GetShaderByHandle = (void *(*)( nhandle_t ))R_GetShaderByHandle;
+	import.AllocateBuffer = (vertexBuffer_t *(*)( const char *, void *, uint32_t, void *, uint32_t, bufferType_t, void * ))R_AllocateBuffer;
 	import.SetAttribPointers = VBO_SetVertexPointers;
 
 	ri.ImGui_Init( (void *)(uintptr_t)rg.imguiShader.programId, &import );
@@ -1419,7 +1440,7 @@ static void R_AllocBackend( void ) {
 	size += PAD( sizeof( renderEntityDef_t ) * r_maxEntities->i, sizeof( uintptr_t ) );
 	size += PAD( sizeof( dlight_t ) * r_maxDLights->i, sizeof( uintptr_t ) );
 
-	backendData[ 0 ] = (renderBackendData_t *)ri.Malloc( size );
+	backendData[ 0 ] = (renderBackendData_t *)ri.Hunk_Alloc( size, h_low );
 	backendData[ 0 ]->verts = (srfVert_t *)( backendData[ 0 ] + 1 );
 	backendData[ 0 ]->polyVerts = (polyVert_t *)( backendData[ 0 ]->verts + r_maxPolys->i * 4 );
 	backendData[ 0 ]->polys = (srfPoly_t *)( backendData[ 0 ]->polyVerts + r_maxPolys->i * 4 );
@@ -1767,18 +1788,20 @@ void R_GLDebug_Callback_ARB( GLenum source, GLenum type, GLuint id, GLenum sever
 	const char *color;
 	uint64_t len, i;
 	char msg[1024];
+	uint64_t hash;
+
+	color = COLOR_WHITE;
 
 	// save the messages so OpenGL can't spam us with useless shit
 	for ( i = 0; i < numCachedGLMessages; i++ ) {
-		if ( !N_stricmp( cachedGLMessages[i], message ) ) {
+		if ( !N_stricmp( cachedGLMessages[ i ], message ) ) {
 			return;
 		}
 	}
 
 	len = strlen( message ) + 1;
 	cachedGLMessages[ numCachedGLMessages ] = ri.Hunk_Alloc( len, h_low );
-	cachedGLMessages[ numCachedGLMessages ][ len - 1 ] = '\0';
-	strcpy( cachedGLMessages[ numCachedGLMessages ], message );
+	N_strncpyz( cachedGLMessages[ numCachedGLMessages ], message, len );
 	numCachedGLMessages++;
 
 	if ( severity == GL_DEBUG_SEVERITY_NOTIFICATION ) {
@@ -1820,6 +1843,9 @@ void R_GLDebug_Callback_ARB( GLenum source, GLenum type, GLuint id, GLenum sever
 	case GL_DEBUG_SOURCE_SHADER_COMPILER_ARB:
 		N_strcat( msg, sizeof( msg ) - 1, "\tSource: GL_DEBUG_SOURCE_SHADER_COMPILER_ARB\n" );
 		break;
+	default:
+		N_strcat( msg, sizeof( msg ) - 1, "\tSource: unknown\n" );
+		break;
 	};
 
 	switch ( type ) {
@@ -1841,6 +1867,9 @@ void R_GLDebug_Callback_ARB( GLenum source, GLenum type, GLuint id, GLenum sever
 	case GL_DEBUG_TYPE_OTHER_ARB:
 		N_strcat( msg, sizeof( msg ) - 1, "\tType: GL_DEBUG_TYPE_OTHER_ARB\n" );
 		break;
+	default:
+		N_strcat( msg, sizeof( msg ) - 1, "\tType: unknown\n" );
+		break;
 	};
 
 	switch ( severity ) {
@@ -1852,6 +1881,9 @@ void R_GLDebug_Callback_ARB( GLenum source, GLenum type, GLuint id, GLenum sever
 		break;
 	case GL_DEBUG_SEVERITY_LOW_ARB:
 		N_strcat( msg, sizeof( msg ) - 1, "\tSeverity: GL_DEBUG_SEVERITY_LOW_ARB\n" );
+		break;
+	default:
+		N_strcat( msg, sizeof( msg ) - 1, "\tSeverity: unknown\n" );
 		break;
 	};
 	N_strcat( msg, sizeof( msg ) - 1, "\n" );

@@ -126,8 +126,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#define DEFAULT_VERTEX_BUFFER_SIZE sizeof( ImDrawVert ) * ( 8 * 1024 )
-#define DEFAULT_INDEX_BUFFER_SIZE sizeof( ImDrawIdx ) * ( 8 * 1024 )
+#define DEFAULT_VERTEX_BUFFER_SIZE sizeof( ImDrawVert ) * ( 16 * 1024 )
+#define DEFAULT_INDEX_BUFFER_SIZE sizeof( ImDrawIdx ) * ( 16 * 1024 )
 
 #include <GL/gl.h>
 
@@ -235,6 +235,7 @@ struct ImGui_ImplOpenGL3_Data
 	int GlProfileIsES2;
 	int GlProfileIsES3;
 	int GlProfileIsCompat;
+	int GlDirectStateAccess;
 	GLint GlProfileMask;
 	GLuint FontTexture;
 	nhandle_t FontShader;
@@ -254,6 +255,8 @@ struct ImGui_ImplOpenGL3_Data
 	GLuint vaoId;
 	int HasClipOrigin;
 	int UseBufferSubData;
+	void *VertexBuffer;
+	void *IndexBuffer;
 
 	ImGui_ImplOpenGL3_Data() { memset((void *)this, 0, sizeof(*this)); }
 };
@@ -262,12 +265,6 @@ static GLuint imguiShader;
 static ImGui_ImplOpenGL3_Data *bd;
 imguiGL3Import_t renderImport;
 static cvar_t *r_gamma;
-
-#ifdef _WIN32
-static CRITICAL_SECTION imguiMutex;
-#else
-static pthread_mutex_t imguiMutex;
-#endif
 
 // Backend data stored in io.BackendRendererUserData to allow support for multiple Dear ImGui contexts
 // It is STRONGLY preferred that you use docking branch with multi-viewports (== single Dear ImGui context + multiple windows) instead of multiple Dear ImGui contexts.
@@ -321,12 +318,6 @@ void ImGui_ImplOpenGL3_Init(void *shaderData, const char *glsl_version, const im
 	renderImport = *import;
 	imguiShader = (GLuint)(uintptr_t)shaderData;
 
-#ifdef _WIN32
-	InitializeCriticalSection( &imguiMutex );
-#else
-	pthread_mutex_init( &imguiMutex, NULL );
-#endif
-
 	ImGuiIO &io = ImGui::GetIO();
 	IM_ASSERT(io.BackendRendererUserData == nullptr && "Already initialized a renderer backend!");
 
@@ -337,6 +328,8 @@ void ImGui_ImplOpenGL3_Init(void *shaderData, const char *glsl_version, const im
 	io.BackendRendererName = "imgui_impl_opengl3";
 
 	r_gamma = Cvar_Get( "r_gammaAmount", "1.0", CVAR_SAVE );
+
+	bd->GlDirectStateAccess = strstr( gi.gpuConfig.extensions_string, "ARB_direct_state_access" ) != NULL;
 
 	// Query for GL version (e.g. 320 for GL 3.2)
 #if defined(IMGUI_IMPL_OPENGL_ES2)
@@ -439,198 +432,6 @@ void ImGui_ImplOpenGL3_Shutdown(void)
 void ImGui_ImplOpenGL3_NewFrame(void) {
 }
 
-#define LRU_CACHE_SIZE 64
-
-float stsvco_valenceScore( const uint32_t numTris ) {
-    return 2 * powf( numTris, -0.5f );
-}
-
-static void R_OptimizeVertexCache( uint32_t nIndexCount, uint32_t nVertexCount, ImDrawVert *pVert, uint32_t *pIndices )
-{
-	uint64_t i, j, t, v;
-
-	typedef struct {
-		int numAdjecentTris;
-		int numTrisLeft;
-		int triListIndex;
-		int cacheIndex;
-	} vertex_t;
-
-	typedef struct {
-		int vertices[3];
-		qboolean drawn;
-	} triangle_t;
-
-	vertex_t *vertices;
-	triangle_t *triangles;
-	uint32_t *vertToTri;
-
-	const uint64_t numTriangles = nIndexCount / 3;
-
-	vertices = (vertex_t *)Hunk_AllocateTempMemory( nVertexCount * sizeof( *vertices ) );
-	triangles = (triangle_t *)Hunk_AllocateTempMemory( numTriangles * sizeof( *triangles ) );
-	
-	for ( i = 0; i < nVertexCount; ++i ) {
-		vertices[i].numAdjecentTris = 0;
-		vertices[i].numTrisLeft = 0;
-		vertices[i].triListIndex = 0;
-		vertices[i].cacheIndex = -1;
-	}
-	
-	for ( i = 0; i < numTriangles; ++i ) {
-		for ( j = 0; j < 3; ++j ) {
-			triangles[i].vertices[j] = pIndices[ i * 3 + j ];
-			++vertices[ triangles[i].vertices[j] ].numAdjecentTris;
-		}
-		triangles[i].drawn = false;
-	}
-	
-	// Loop through and find index for the tri list for vertex->tri
-	for ( i = 1; i < nVertexCount; ++i ) {
-		vertices[i].triListIndex = vertices[ i - 1 ].triListIndex+vertices[ i - 1 ].numAdjecentTris;
-	}
-	
-	const int numVertToTri = vertices[ nVertexCount - 1 ].triListIndex+vertices[ nVertexCount - 1 ].numAdjecentTris;
-	vertToTri = (uint32_t *)Hunk_AllocateTempMemory( numVertToTri * sizeof( *vertToTri ) );
-	
-	for ( i = 0; i < numTriangles; ++i ) {
-		for ( j = 0; j < 3; ++j ) {
-			const int index = triangles[ i ].vertices[ j ];
-			const int triListIndex = vertices[ index ].triListIndex + vertices[index].numTrisLeft;
-			vertToTri[ triListIndex ] = i;
-			++vertices[index].numTrisLeft;
-		}
-	}
-	
-	// Make LRU cache
-	const int LRUCacheSize = 64;
-	int *LRUCache = (int *)alloca( LRUCacheSize * sizeof( *LRUCache ) );
-	float *scoring = (float *)alloca( LRUCacheSize * sizeof( *scoring ) );
-
-	for ( i = 0; i < LRUCacheSize; ++i ) {
-		LRUCache[i] = -1;
-		scoring[i] = -1.0f;
-	}
-	
-	int numIndicesDone = 0;
-	while ( numIndicesDone != nIndexCount ) {
-		// update vertex scoring
-		for ( i = 0; i < LRUCacheSize && LRUCache[i] >= 0; ++i ) {
-			int vertexIndex = LRUCache[i];
-			if ( vertexIndex != -1 ) {
-				// Do scoring based on cache position
-				if ( i < 3 ) {
-					scoring[i] = 0.75f;
-				} else {
-					const float scaler = 1.0f / ( LRUCacheSize - 3 );
-					const float scoreBase = 1.0f - ( i - 3 ) * scaler;
-					scoring[i] = powf ( scoreBase, 1.5f );
-				}
-				// Add score based on tris left for vertex (valence score)
-				const int numTrisLeft = vertices[ vertexIndex ].numTrisLeft;
-				scoring[i] += stsvco_valenceScore(numTrisLeft);
-			}
-		}
-		// find triangle to draw based on score
-		// Update score for all triangles with vertexes in cache
-		int triangleToDraw = -1;
-		float bestTriScore = 0.0f;
-		for ( i = 0; i < LRUCacheSize && LRUCache[i] >= 0; ++i ) {
-			const int vIndex = LRUCache[i];
-			if ( vertices[vIndex].numTrisLeft > 0 ) {
-				for ( t = 0; t < vertices[vIndex].numAdjecentTris; ++t ) {
-					const int tIndex = vertToTri[ vertices[vIndex].triListIndex + t];
-					if ( !triangles[ tIndex ].drawn ) {
-						float triScore = .0f;
-						for ( v = 0; v < 3; ++v ) {
-							const int cacheIndex = vertices[ triangles[ tIndex ].vertices[v] ].cacheIndex;
-							if ( cacheIndex >= 0 ) {
-								triScore += scoring[ cacheIndex ];
-							}
-						}
-						if ( triScore > bestTriScore ) {
-							triangleToDraw = tIndex;
-							bestTriScore = triScore;
-						}
-					}
-				}
-			}
-		}
-		
-		if ( triangleToDraw < 0 ) {
-			// No triangle can be found by heuristic, simply choose first and best
-			for ( t = 0; t < numTriangles; ++t ) {
-				if ( !triangles[t].drawn ) {
-					//compute valence for each vertex
-					float triScore = .0f;
-					for ( v = 0; v < 3; ++v ) {
-						const uint32_t vertexIndex = triangles[t].vertices[v];
-						// Add score based on tris left for vertex (valence score)
-						const int numTrisLeft = vertices[ vertexIndex ].numTrisLeft;
-						triScore += stsvco_valenceScore( numTrisLeft );
-					}
-					if ( triScore >= bestTriScore ) {
-						triangleToDraw = t;
-						bestTriScore = triScore;
-					}
-				}
-			}
-		}
-		
-		// update cache
-		int cacheIndex = 3;
-		int numVerticesFound = 0;
-		while ( LRUCache[numVerticesFound] >= 0 && numVerticesFound < 3 && cacheIndex < LRUCacheSize ) {
-			qboolean topOfCacheInTri = qfalse;
-			// Check if index is in triangle
-			for ( i = 0; i < 3; ++i ) {
-				if( triangles[triangleToDraw].vertices[i] == LRUCache[numVerticesFound]) {
-					++numVerticesFound;
-					topOfCacheInTri = qtrue;
-					break;
-				}
-			}
-			
-			if ( !topOfCacheInTri ) {
-				int topIndex = LRUCache[ numVerticesFound ];
-				for ( int j = numVerticesFound; j < 2; ++j) {
-					LRUCache[j] = LRUCache[j+1];
-				}
-				LRUCache[2] = LRUCache[cacheIndex];
-				if ( LRUCache[2] >= 0 ) {
-					vertices[ LRUCache[2] ].cacheIndex = -1;
-				}
-				
-				LRUCache[cacheIndex] = topIndex;
-				if ( topIndex >= 0 ) {
-					vertices[ topIndex ].cacheIndex = cacheIndex;
-				}
-				++cacheIndex;
-			}
-		}
-		
-		// Set triangle as drawn
-		for ( v = 0; v < 3; ++v ) {
-			const int index = triangles[triangleToDraw].vertices[v];
-			
-			LRUCache[ v ] = index;
-			vertices[ index ].cacheIndex = v;
-			
-			--vertices[index].numTrisLeft;
-			
-			pIndices[ numIndicesDone ] = index;
-			++numIndicesDone;
-		}
-		
-		
-		triangles[ triangleToDraw ].drawn = qtrue;
-	}
-	// Memory cleanup
-	Hunk_FreeTempMemory( vertToTri );
-	Hunk_FreeTempMemory( triangles );
-	Hunk_FreeTempMemory( vertices );
-}
-
 static void ImGui_ImplOpenGL3_SetupRenderState(ImDrawData *draw_data, int fb_width, int fb_height, GLuint vertex_array_object)
 {
 	ImGui_ImplOpenGL3_Data *bd = ImGui_ImplOpenGL3_GetBackendData();
@@ -639,7 +440,6 @@ static void ImGui_ImplOpenGL3_SetupRenderState(ImDrawData *draw_data, int fb_wid
 	renderImport.glEnable(GL_BLEND);
 	renderImport.glBlendEquation(GL_FUNC_ADD);
 	renderImport.glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-	renderImport.glDisable(GL_CULL_FACE);
 	renderImport.glDisable(GL_DEPTH_TEST);
 	renderImport.glDisable(GL_STENCIL_TEST);
 	renderImport.glEnable(GL_SCISSOR_TEST);
@@ -667,7 +467,6 @@ static void ImGui_ImplOpenGL3_SetupRenderState(ImDrawData *draw_data, int fb_wid
 
 	// Setup viewport, orthographic projection matrix
 	// Our visible imgui space lies from draw_data->DisplayPos (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right). DisplayPos is (0,0) for single viewport apps.
-//	renderImport.glViewport(0, 0, (GLsizei)fb_width, (GLsizei)fb_height);
 	float L = 0;
 	float R = draw_data->DisplaySize.x;
 	float T = 0;
@@ -682,32 +481,24 @@ static void ImGui_ImplOpenGL3_SetupRenderState(ImDrawData *draw_data, int fb_wid
 	}
 #endif
 	glm::mat4 ortho = glm::ortho( L, R, B, T, -1.0f, 1.0f );
-//	const float ortho_projection[4][4] = {
-//		{2.0f / (R - L), 0.0f, 0.0f, 0.0f},
-//		{0.0f, 2.0f / (T - B), 0.0f, 0.0f},
-//		{0.0f, 0.0f, -1.0f, 0.0f},
-//		{(R + L) / (L - R), (T + B) / (B - T), 0.0f, 1.0f},
-//	};
 	renderImport.glUseProgram( imguiShader );
-	renderImport.glUniform1f( bd->AttribLocationGamma, r_gamma->f );
+	if ( r_gamma->modified ) {
+		renderImport.glUniform1f( bd->AttribLocationGamma, r_gamma->f );
+	}
 	renderImport.glUniformMatrix4fv( bd->AttribLocationProjMtx, 1, GL_FALSE, &ortho[0][0] );
 
 #ifdef IMGUI_IMPL_OPENGL_MAY_HAVE_BIND_SAMPLER
-	if (bd->GlVersion >= 330 || bd->GlProfileIsES3)
-		renderImport.glBindSampler(0, 0); // We use combined texture/sampler state. Applications using GL 3.3 and GL ES 3.0 may set that otherwise.
+	if ( bd->GlVersion >= 330 || bd->GlProfileIsES3 ) {
+		renderImport.glBindSampler( 0, 0 ); // We use combined texture/sampler state. Applications using GL 3.3 and GL ES 3.0 may set that otherwise.
+	}
 #endif
 	
 	renderImport.glBindVertexArray( bd->vaoId );
-	// Bind vertex/index buffers and setup attributes for ImDrawVert
-	renderImport.glBindBuffer(GL_ARRAY_BUFFER, bd->VboHandle);
-	renderImport.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bd->ElementsHandle);
-
-//	renderImport.glEnableVertexAttribArray(bd->AttribLocationVtxPos);
-//	renderImport.glEnableVertexAttribArray(bd->AttribLocationVtxUV);
-//	renderImport.glEnableVertexAttribArray(bd->AttribLocationVtxColor);
-//	renderImport.glVertexAttribPointer(bd->AttribLocationVtxPos, 3, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid *)IM_OFFSETOF(ImDrawVert, pos));
-//	renderImport.glVertexAttribPointer(bd->AttribLocationVtxUV, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid *)IM_OFFSETOF(ImDrawVert, uv));
-//	renderImport.glVertexAttribPointer(bd->AttribLocationVtxColor, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid *)IM_OFFSETOF(ImDrawVert, col));
+	if ( !bd->GlDirectStateAccess ) {
+		// Bind vertex/index buffers and setup attributes for ImDrawVert
+		renderImport.glBindBuffer( GL_ARRAY_BUFFER, bd->VboHandle );
+		renderImport.glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, bd->ElementsHandle );
+	}
 }
 
 // OpenGL3 Render function.
@@ -734,12 +525,6 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 	int fb_width, fb_height;
 	ImGui_ImplOpenGL3_Data *bd;
 
-#ifdef _WIN32
-	EnterCriticalSection( &imguiMutex );
-#else
-	pthread_mutex_lock( &imguiMutex );
-#endif
-
 	// Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
 	fb_width = (int)(draw_data->DisplaySize.x * draw_data->FramebufferScale.x);
 	fb_height = (int)(draw_data->DisplaySize.y * draw_data->FramebufferScale.y);
@@ -764,16 +549,18 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 	}
 #endif
 	renderImport.glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &last_array_buffer);
+	if ( !bd->GlDirectStateAccess ) {
 #ifndef IMGUI_IMPL_OPENGL_USE_VERTEX_ARRAY
-	// This is part of VAO on OpenGL 3.0+ and OpenGL ES 3.0+.
-	renderImport.glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &last_element_array_buffer);
-	ImGui_ImplOpenGL3_VtxAttribState last_vtx_attrib_state_pos;
-	last_vtx_attrib_state_pos.GetState(bd->AttribLocationVtxPos);
-	ImGui_ImplOpenGL3_VtxAttribState last_vtx_attrib_state_uv;
-	last_vtx_attrib_state_uv.GetState(bd->AttribLocationVtxUV);
-	ImGui_ImplOpenGL3_VtxAttribState last_vtx_attrib_state_color;
-	last_vtx_attrib_state_color.GetState(bd->AttribLocationVtxColor);
+		// This is part of VAO on OpenGL 3.0+ and OpenGL ES 3.0+.
+		renderImport.glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &last_element_array_buffer);
+		ImGui_ImplOpenGL3_VtxAttribState last_vtx_attrib_state_pos;
+		last_vtx_attrib_state_pos.GetState(bd->AttribLocationVtxPos);
+		ImGui_ImplOpenGL3_VtxAttribState last_vtx_attrib_state_uv;
+		last_vtx_attrib_state_uv.GetState(bd->AttribLocationVtxUV);
+		ImGui_ImplOpenGL3_VtxAttribState last_vtx_attrib_state_color;
+		last_vtx_attrib_state_color.GetState(bd->AttribLocationVtxColor);
 #endif
+	}
 #ifdef IMGUI_IMPL_OPENGL_USE_VERTEX_ARRAY
 	renderImport.glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &last_vertex_array_object);
 #endif
@@ -797,6 +584,8 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 	last_enable_primitive_restart = (bd->GlVersion >= 310) ? renderImport.glIsEnabled(GL_PRIMITIVE_RESTART) : GL_FALSE;
 #endif
 
+	PROFILE_FUNCTION();
+
 	ImGui_ImplOpenGL3_SetupRenderState(draw_data, fb_width, fb_height, vertex_array_object);
 	renderImport.glEnable(GL_ALPHA_TEST);
 	renderImport.glAlphaFunc( GL_ALWAYS, 0.5f );
@@ -817,56 +606,45 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 		// - We are now back to using exclusively glBufferData(). So bd->UseBufferSubData IS ALWAYS FALSE in this code.
 		//   We are keeping the old code path for a while in case people finding new issues may want to test the bd->UseBufferSubData path.
 		// - See https://github.com/ocornut/imgui/issues/4468 and please report any corruption issues.
-		const GLsizeiptr vtx_buffer_size = (GLsizeiptr)cmd_list->VtxBuffer.Size * (int)sizeof(ImDrawVert);
-		const GLsizeiptr idx_buffer_size = (GLsizeiptr)cmd_list->IdxBuffer.Size * (int)sizeof(ImDrawIdx);
-		if ( bd->UseBufferSubData ) {
-			if (bd->VertexBufferSize < vtx_buffer_size)
-			{
-				bd->VertexBufferSize = vtx_buffer_size;
-				renderImport.glBufferData(GL_ARRAY_BUFFER, bd->VertexBufferSize, nullptr, GL_STREAM_DRAW);
-			}
-			if (bd->IndexBufferSize < idx_buffer_size)
-			{
-				bd->IndexBufferSize = idx_buffer_size;
-				renderImport.glBufferData(GL_ELEMENT_ARRAY_BUFFER, bd->IndexBufferSize, nullptr, GL_STREAM_DRAW);
-			}
-			renderImport.glBufferSubData(GL_ARRAY_BUFFER, 0, vtx_buffer_size, (const GLvoid *)cmd_list->VtxBuffer.Data);
-			renderImport.glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, idx_buffer_size, (const GLvoid *)cmd_list->IdxBuffer.Data);
-		}
-		else {
-		#if 1
-			if ( vtx_buffer_size > bd->VertexBufferSize ) {
-				bd->VertexBufferSize = vtx_buffer_size;
-			}
-			if ( idx_buffer_size > bd->IndexBufferSize ) {
-				bd->IndexBufferSize = idx_buffer_size;
-			}
-			renderImport.glBufferData( GL_ARRAY_BUFFER, bd->VertexBufferSize, NULL, GL_STREAM_DRAW );
-			renderImport.glBufferData( GL_ELEMENT_ARRAY_BUFFER, bd->IndexBufferSize, NULL, GL_STREAM_DRAW );
+		const GLsizeiptr vtx_buffer_size = (GLsizeiptr)cmd_list->VtxBuffer.Size * sizeof( ImDrawVert );
+		const GLsizeiptr idx_buffer_size = (GLsizeiptr)cmd_list->IdxBuffer.Size * sizeof( ImDrawIdx );
 
+		if ( vtx_buffer_size > bd->VertexBufferSize ) {
+			bd->VertexBufferSize = vtx_buffer_size;
+			if ( bd->GlDirectStateAccess ) {
+				renderImport.glNamedBufferData( bd->VboHandle, bd->VertexBufferSize, NULL, GL_STREAM_DRAW );
+			} else {
+				renderImport.glBufferData( GL_ARRAY_BUFFER, bd->VertexBufferSize, NULL, GL_STREAM_DRAW );
+			}
+		}
+		if ( idx_buffer_size > bd->IndexBufferSize ) {
+			bd->IndexBufferSize = idx_buffer_size;
+			if ( bd->GlDirectStateAccess ) {
+				renderImport.glNamedBufferData( bd->ElementsHandle, bd->IndexBufferSize, NULL, GL_STREAM_DRAW );
+			} else {
+				renderImport.glBufferData( GL_ELEMENT_ARRAY_BUFFER, bd->IndexBufferSize, NULL, GL_STREAM_DRAW );
+			}
+		}
+		{
+			PROFILE_BLOCK_BEGIN( "SwapBuffer GLBuffer" );
 			if ( vtx_buffer_size > 0 ) {
-				renderImport.glBufferSubData( GL_ARRAY_BUFFER, 0, vtx_buffer_size, cmd_list->VtxBuffer.Data );
+				if ( bd->GlDirectStateAccess ) {
+					renderImport.glNamedBufferSubData( bd->VboHandle, 0, vtx_buffer_size, cmd_list->VtxBuffer.Data );
+				} else {
+					renderImport.glBufferSubData( GL_ARRAY_BUFFER, 0, vtx_buffer_size, cmd_list->VtxBuffer.Data );
+				}
 			}
 			if ( idx_buffer_size > 0 ) {
-				renderImport.glBufferSubData( GL_ELEMENT_ARRAY_BUFFER, 0, idx_buffer_size, cmd_list->IdxBuffer.Data );
+				if ( bd->GlDirectStateAccess ) {
+					renderImport.glNamedBufferSubData( bd->ElementsHandle, 0, vtx_buffer_size, cmd_list->IdxBuffer.Data );
+				} else {
+					renderImport.glBufferSubData( GL_ELEMENT_ARRAY_BUFFER, 0, idx_buffer_size, cmd_list->IdxBuffer.Data );
+				}
 			}
-		#else
-			void *vtx = renderImport.glMapBufferRange( GL_ARRAY_BUFFER, 0, vtx_buffer_size, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT );
-			if ( vtx ) {
-				memcpy( vtx, cmd_list->VtxBuffer.Data, vtx_buffer_size );
-			}
-			renderImport.glUnmapBuffer( GL_ARRAY_BUFFER );
-
-			void *idx = renderImport.glMapBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, idx_buffer_size, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT );
-			if ( idx ) {
-				memcpy( idx, cmd_list->IdxBuffer.Data, idx_buffer_size );
-			}
-			renderImport.glUnmapBuffer( GL_ELEMENT_ARRAY_BUFFER );
-		#endif
+			PROFILE_BLOCK_END;
 		}
 
-		for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
-		{
+		for ( int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++ ) {
 			const ImDrawCmd *pcmd = &cmd_list->CmdBuffer[cmd_i];
 			if (pcmd->UserCallback != nullptr)
 			{
@@ -882,8 +660,7 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 				// Project scissor/clipping rectangles into framebuffer space
 				const ImVec2 clip_min((pcmd->ClipRect.x - clip_off.x) * clip_scale.x, (pcmd->ClipRect.y - clip_off.y) * clip_scale.y);
 				const ImVec2 clip_max((pcmd->ClipRect.z - clip_off.x) * clip_scale.x, (pcmd->ClipRect.w - clip_off.y) * clip_scale.y);
-				if (clip_max.x <= clip_min.x || clip_max.y <= clip_min.y)
-				{
+				if ( clip_max.x <= clip_min.x || clip_max.y <= clip_min.y ) {
 					continue;
 				}
 
@@ -929,16 +706,20 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 	}
 #endif
 	renderImport.glActiveTexture(last_active_texture);
+
 #ifdef IMGUI_IMPL_OPENGL_USE_VERTEX_ARRAY
 	renderImport.glBindVertexArray(last_vertex_array_object);
 #endif
-	renderImport.glBindBuffer(GL_ARRAY_BUFFER, last_array_buffer);
+
+	if ( !bd->GlDirectStateAccess ) {
+		renderImport.glBindBuffer(GL_ARRAY_BUFFER, last_array_buffer);
 #ifndef IMGUI_IMPL_OPENGL_USE_VERTEX_ARRAY
-	renderImport.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, last_element_array_buffer);
-	last_vtx_attrib_state_pos.SetState(bd->AttribLocationVtxPos);
-	last_vtx_attrib_state_uv.SetState(bd->AttribLocationVtxUV);
-	last_vtx_attrib_state_color.SetState(bd->AttribLocationVtxColor);
+		renderImport.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, last_element_array_buffer);
+		last_vtx_attrib_state_pos.SetState(bd->AttribLocationVtxPos);
+		last_vtx_attrib_state_uv.SetState(bd->AttribLocationVtxUV);
+		last_vtx_attrib_state_color.SetState(bd->AttribLocationVtxColor);
 #endif
+	}
 	if (last_enable_blend) {
 		renderImport.glEnable(GL_BLEND);
 	} else {
@@ -994,12 +775,6 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 	renderImport.glViewport(last_viewport[0], last_viewport[1], (GLsizei)last_viewport[2], (GLsizei)last_viewport[3]);
 	renderImport.glScissor(last_scissor_box[0], last_scissor_box[1], (GLsizei)last_scissor_box[2], (GLsizei)last_scissor_box[3]);
 	(void)bd; // Not all compilation paths use this
-
-#ifdef _WIN32
-	LeaveCriticalSection( &imguiMutex );
-#else
-	pthread_mutex_unlock( &imguiMutex );
-#endif
 }
 
 int ImGui_ImplOpenGL3_CreateFontsTexture( void )
@@ -1089,36 +864,73 @@ int ImGui_ImplOpenGL3_CreateDeviceObjects( void )
 	bd->AttribLocationVtxUV = (GLuint)renderImport.glGetAttribLocation( imguiShader, "a_TexCoords" );
 	bd->AttribLocationVtxColor = (GLuint)renderImport.glGetAttribLocation( imguiShader, "a_Color" );
 
-	renderImport.glGenVertexArrays( 1, &bd->vaoId );
-	renderImport.glBindVertexArray( bd->vaoId );
+	if ( bd->GlDirectStateAccess ) {
+		renderImport.glCreateVertexArrays( 1, &bd->vaoId );
 
-	// Create buffers
-	renderImport.glGenBuffers( 1, &bd->VboHandle );
-	renderImport.glGenBuffers( 1, &bd->ElementsHandle );
+		renderImport.glCreateBuffers( 1, &bd->VboHandle );
+		renderImport.glCreateBuffers( 1, &bd->ElementsHandle );
 
-	renderImport.glBindBuffer( GL_ARRAY_BUFFER, bd->VboHandle );
-	renderImport.glBufferData( GL_ARRAY_BUFFER, DEFAULT_VERTEX_BUFFER_SIZE, NULL, GL_STREAM_DRAW );
-	bd->VertexBufferSize = DEFAULT_VERTEX_BUFFER_SIZE;
+		renderImport.glNamedBufferStorage( bd->VboHandle, DEFAULT_VERTEX_BUFFER_SIZE, NULL, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT );
+		bd->VertexBufferSize = DEFAULT_VERTEX_BUFFER_SIZE;
+		bd->VertexBufferOffset = 0;
 
-	renderImport.glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, bd->ElementsHandle );
-	renderImport.glBufferData( GL_ELEMENT_ARRAY_BUFFER, DEFAULT_INDEX_BUFFER_SIZE, NULL, GL_STREAM_DRAW );
-	bd->IndexBufferSize = DEFAULT_INDEX_BUFFER_SIZE;
+		renderImport.glNamedBufferStorage( bd->ElementsHandle, DEFAULT_INDEX_BUFFER_SIZE, NULL, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT );
+		bd->IndexBufferSize = DEFAULT_INDEX_BUFFER_SIZE;
+		bd->IndexBufferOffset = 0;
 
-	renderImport.glEnableVertexAttribArray( 0 );
-	renderImport.glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, sizeof( ImDrawVert ), (const void *)offsetof( ImDrawVert, pos ) );
-	renderImport.glEnableVertexAttribArray( 1 );
-	renderImport.glVertexAttribPointer( 1, 2, GL_FLOAT, GL_FALSE, sizeof( ImDrawVert ), (const void *)offsetof( ImDrawVert, uv ) );
-	renderImport.glEnableVertexAttribArray( 2 );
-	renderImport.glVertexAttribPointer( 2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof( ImDrawVert ), (const void *)offsetof( ImDrawVert, col ) );
+		renderImport.glEnableVertexArrayAttrib( bd->vaoId, 0 );
+		renderImport.glVertexArrayAttribFormat( bd->vaoId, 0, 3, GL_FLOAT, GL_FALSE, offsetof( ImDrawVert, pos ) );
+		renderImport.glVertexArrayAttribBinding( bd->vaoId, 0, 0 );
+
+		renderImport.glEnableVertexArrayAttrib( bd->vaoId, 1 );
+		renderImport.glVertexArrayAttribFormat( bd->vaoId, 1, 2, GL_FLOAT, GL_FALSE, offsetof( ImDrawVert, uv ) );
+		renderImport.glVertexArrayAttribBinding( bd->vaoId, 1, 0 );
+
+		renderImport.glEnableVertexArrayAttrib( bd->vaoId, 2 );
+		renderImport.glVertexArrayAttribFormat( bd->vaoId, 2, 4, GL_UNSIGNED_BYTE, GL_TRUE, offsetof( ImDrawVert, col ) );
+		renderImport.glVertexArrayAttribBinding( bd->vaoId, 2, 0 );
+
+		renderImport.glVertexArrayVertexBuffer( bd->vaoId, 0, bd->VboHandle, 0, sizeof( drawVert_t ) );
+		renderImport.glVertexArrayElementBuffer( bd->vaoId, bd->ElementsHandle );
+	}
+	else {
+		renderImport.glGenVertexArrays( 1, &bd->vaoId );
+		renderImport.glBindVertexArray( bd->vaoId );
+
+		// Create buffers
+		renderImport.glGenBuffers( 1, &bd->VboHandle );
+		renderImport.glGenBuffers( 1, &bd->ElementsHandle );
+
+		renderImport.glBindBuffer( GL_ARRAY_BUFFER, bd->VboHandle );
+		renderImport.glBufferStorage( GL_ARRAY_BUFFER, DEFAULT_VERTEX_BUFFER_SIZE, NULL, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
+		//renderImport.glBufferData( GL_ARRAY_BUFFER, DEFAULT_VERTEX_BUFFER_SIZE, NULL, GL_STREAM_DRAW );
+		bd->VertexBufferSize = DEFAULT_VERTEX_BUFFER_SIZE;
+		bd->VertexBuffer = renderImport.glMapBufferRange( GL_ARRAY_BUFFER, 0, DEFAULT_VERTEX_BUFFER_SIZE, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT |
+			GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_UNSYNCHRONIZED_BIT );
+
+		renderImport.glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, bd->ElementsHandle );
+		renderImport.glBufferStorage( GL_ELEMENT_ARRAY_BUFFER, DEFAULT_INDEX_BUFFER_SIZE, NULL, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
+		//renderImport.glBufferData( GL_ELEMENT_ARRAY_BUFFER, DEFAULT_INDEX_BUFFER_SIZE, NULL, GL_STREAM_DRAW );
+		bd->IndexBufferSize = DEFAULT_INDEX_BUFFER_SIZE;
+		bd->IndexBuffer = renderImport.glMapBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, DEFAULT_INDEX_BUFFER_SIZE, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT |
+			GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_UNSYNCHRONIZED_BIT );
+
+		renderImport.glEnableVertexAttribArray( 0 );
+		renderImport.glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, sizeof( ImDrawVert ), (const void *)offsetof( ImDrawVert, pos ) );
+		renderImport.glEnableVertexAttribArray( 1 );
+		renderImport.glVertexAttribPointer( 1, 2, GL_FLOAT, GL_FALSE, sizeof( ImDrawVert ), (const void *)offsetof( ImDrawVert, uv ) );
+		renderImport.glEnableVertexAttribArray( 2 );
+		renderImport.glVertexAttribPointer( 2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof( ImDrawVert ), (const void *)offsetof( ImDrawVert, col ) );
+	
+		// Restore modified GL state
+		renderImport.glBindTexture(GL_TEXTURE_2D, last_texture);
+		renderImport.glBindBuffer(GL_ARRAY_BUFFER, last_array_buffer);
+	#ifdef IMGUI_IMPL_OPENGL_USE_VERTEX_ARRAY
+		renderImport.glBindVertexArray(last_vertex_array);
+	#endif
+	}
 
 	ImGui_ImplOpenGL3_CreateFontsTexture();
-
-	// Restore modified GL state
-	renderImport.glBindTexture(GL_TEXTURE_2D, last_texture);
-	renderImport.glBindBuffer(GL_ARRAY_BUFFER, last_array_buffer);
-#ifdef IMGUI_IMPL_OPENGL_USE_VERTEX_ARRAY
-	renderImport.glBindVertexArray(last_vertex_array);
-#endif
 
 	return true;
 }
@@ -1138,11 +950,6 @@ void ImGui_ImplOpenGL3_DestroyDeviceObjects(void)
 		renderImport.glDeleteVertexArrays( 1, &bd->vaoId );
 		bd->vaoId = 0;
 	}
-#ifdef _WIN32
-
-#else
-	pthread_mutex_destroy( &imguiMutex );
-#endif
 	ImGui_ImplOpenGL3_DestroyFontsTexture();
 }
 
