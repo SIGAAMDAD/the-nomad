@@ -5,9 +5,15 @@
 R_CheckFBO
 =============
 */
-static qboolean R_CheckFBO( const fbo_t * fbo )
+static qboolean R_CheckFBO( const fbo_t *fbo )
 {
-	GLenum code = nglCheckFramebufferStatus( GL_FRAMEBUFFER );
+	GLenum code;
+
+	if ( glContext.directStateAccess ) {
+		code = nglCheckNamedFramebufferStatus( GL_FRAMEBUFFER, fbo->frameBuffer );
+	} else {
+		code = nglCheckFramebufferStatus( GL_FRAMEBUFFER );
+	}
 
 	if ( code == GL_FRAMEBUFFER_COMPLETE ) {
 		return qtrue;
@@ -67,7 +73,11 @@ static void FBO_Create( fbo_t *fbo, const char *name, int width, int height )
 	fbo->width = width;
 	fbo->height = height;
 
-	nglGenFramebuffers( 1, &fbo->frameBuffer );
+	if ( glContext.directStateAccess ) {
+		nglCreateFramebuffers( 1, &fbo->frameBuffer );
+	} else {
+		nglGenFramebuffers( 1, &fbo->frameBuffer );
+	}
 }
 
 static void FBO_CreateBuffer( fbo_t *fbo, int format, int32_t index, int multisample )
@@ -152,11 +162,7 @@ static void FBO_CreateBuffer( fbo_t *fbo, int format, int32_t index, int multisa
 	GL_BindFramebuffer( GL_FRAMEBUFFER, fbo->frameBuffer );
 	nglBindRenderbuffer( GL_RENDERBUFFER, *pRenderBuffer );
 	if ( multisample && glContext.ARB_framebuffer_multisample ) {
-//		if ( glContext.NV_framebuffer_multisample_coverage && r_multisampleType->i == AntiAlias_CSAA ) {
-//			nglRenderBufferStorageMultisampleCoverageNV( GL_RENDERBUFFER, multisample, 8, format, fbo->width, fbo->height );
-//		} else {
-			nglRenderbufferStorageMultisample( GL_RENDERBUFFER, multisample, format, fbo->width, fbo->height );
-//		}
+		nglRenderbufferStorageMultisample( GL_RENDERBUFFER, multisample, format, fbo->width, fbo->height );
 	} else {
 		nglRenderbufferStorage( GL_RENDERBUFFER, format, fbo->width, fbo->height );
 	}

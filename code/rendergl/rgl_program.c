@@ -1328,44 +1328,26 @@ void GLSL_ShaderBufferData( shaderProgram_t *shader, uint32_t uniformNum, unifor
 		return;
 	}
 
-	nglBindBuffer( GL_SHADER_STORAGE_BUFFER, buffer->id );
 	nglBindBufferRange( GL_SHADER_STORAGE_BUFFER, buffer->binding, buffer->id, 0, buffer->size );
 	nglBindBufferBase( GL_SHADER_STORAGE_BUFFER, buffer->binding, buffer->id );
-
-	if ( NGL_VERSION_ATLEAST( 4, 4 ) || ( glContext.ARB_buffer_storage && glContext.ARB_map_buffer_range ) ) {
-		nglFlushMappedBufferRange( GL_SHADER_STORAGE_BUFFER, nOffset, nSize );
+	if ( glContext.directStateAccess ) {
+		nglFlushMappedNamedBufferRange( buffer->id, nOffset, nSize );
 	} else {
-		nglBufferSubData( GL_SHADER_STORAGE_BUFFER, nOffset, nSize, buffer->data );
+		nglBindBuffer( GL_SHADER_STORAGE_BUFFER, buffer->id );
+		nglFlushMappedBufferRange( GL_SHADER_STORAGE_BUFFER, nOffset, nSize );
+		nglBindBuffer( GL_SHADER_STORAGE_BUFFER, 0 );
 	}
-
 	GL_CheckErrors();
-
-	nglBindBuffer( GL_SHADER_STORAGE_BUFFER, 0 );
 }
 
 void GLSL_LinkUniformToShader( shaderProgram_t *program, uint32_t uniformNum, uniformBuffer_t *buffer, qboolean dynamicStorage, uint32_t binding )
 {
-	GLint *uniforms = program->uniforms;
-	GLuint *compare = (GLuint *)( program->uniformBuffer + program->uniformBufferOffsets[ uniformNum ] );
-	GLenum target;
-
 	GLSL_UseProgram( program );
 
-//	buffer->binding = nglGetUniformBlockIndex( program->programId, uniformsInfo[ uniformNum ].name );
-//	if ( buffer->binding == -1 ) {
-//		ri.Printf( PRINT_WARNING, "GLSL_LinkUniformToShader: uniformBuffer %s not in program '%s'\n", buffer->name, program->name );
-//		return;
-//	}
-//	nglUniformBlockBinding( program->programId, buffer->binding, program->numBuffers );
-	buffer->binding = program->numBuffers;
+	buffer->binding = binding;
 
-	target = GL_SHADER_STORAGE_BUFFER;
-
-	nglBindBuffer( GL_SHADER_STORAGE_BUFFER, buffer->id );
 	nglBindBufferRange( GL_SHADER_STORAGE_BUFFER, 0, buffer->id, 0, buffer->size );
 	nglBindBufferBase( GL_SHADER_STORAGE_BUFFER, 0, buffer->id );
-	nglBindBuffer( GL_SHADER_STORAGE_BUFFER, 0 );
-
 	GL_CheckErrors();
 	
 	GLSL_UseProgram( NULL );
@@ -1401,27 +1383,30 @@ uniformBuffer_t *GLSL_InitUniformBuffer( const char *name, byte *buffer, uint64_
 	memset( buf, 0, size );
 
 	buf->name = (char *)( buf + 1 );
-	buf->size = bufSize;
+	buf->size = PAD( bufSize, 64 );
 	strcpy( buf->name, name );
 
 	target = GL_SHADER_STORAGE_BUFFER;
 
 	// generate buffer
-	nglGenBuffers( 1, &buf->id );
-	nglBindBuffer( GL_SHADER_STORAGE_BUFFER, buf->id );
+	if ( glContext.directStateAccess ) {
+		nglCreateBuffers( 1, &buf->id );
 
-	// good 'ol fashioned buffers
-	if ( NGL_VERSION_ATLEAST( 4, 4 ) || ( glContext.ARB_buffer_storage && glContext.ARB_map_buffer_range ) ) {
-		nglBufferStorage( GL_SHADER_STORAGE_BUFFER, bufSize, NULL, ( dynamicStorage ? GL_DYNAMIC_STORAGE_BIT : 0 )
+		nglNamedBufferStorage( buf->id, buf->size, buffer, ( dynamicStorage ? GL_DYNAMIC_STORAGE_BIT : 0 )
 			| GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
-		buf->data = nglMapBufferRange( GL_SHADER_STORAGE_BUFFER, 0, bufSize, GL_MAP_WRITE_BIT |
+		buf->data = nglMapNamedBufferRange( buf->id, 0, buf->size, GL_MAP_WRITE_BIT |
 			GL_MAP_PERSISTENT_BIT | GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_UNSYNCHRONIZED_BIT );
 	}
 	else {
-		buf->data = ri.Hunk_Alloc( bufSize, h_low );
-		nglBufferData( GL_SHADER_STORAGE_BUFFER, bufSize, buffer, GL_STREAM_DRAW );
+		nglGenBuffers( 1, &buf->id );
+		
+		nglBindBuffer( GL_SHADER_STORAGE_BUFFER, buf->id );
+		nglBufferStorage( GL_SHADER_STORAGE_BUFFER, buf->size, buffer, ( dynamicStorage ? GL_DYNAMIC_STORAGE_BIT : 0 )
+			| GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
+		buf->data = nglMapBufferRange( GL_SHADER_STORAGE_BUFFER, 0, buf->size, GL_MAP_WRITE_BIT |
+			GL_MAP_PERSISTENT_BIT | GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_UNSYNCHRONIZED_BIT );
+		nglBindBuffer( GL_SHADER_STORAGE_BUFFER, 0 );
 	}
-	nglBindBuffer( GL_SHADER_STORAGE_BUFFER, 0 );
 
 	rg.numUniformBuffers++;
 
