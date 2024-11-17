@@ -172,7 +172,7 @@ void RE_AddDrawWorldCmd( void )
 	if ( !cmd ) {
 		return;
 	}
-	cmd->commandID = RC_DRAW_WORLDVIEW;
+	cmd->commandId = RC_DRAW_WORLDVIEW;
 }
 
 /*

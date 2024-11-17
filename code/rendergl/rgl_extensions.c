@@ -1,18 +1,16 @@
 #include "rgl_local.h"
 
-extern void R_GLDebug_Callback_ARB(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const GLvoid *userParam);
+extern void R_GLDebug_Callback_ARB( GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const GLvoid *userParam );
 
 void R_InitExtensions( void )
 {
-#ifdef _NOMAD_DEBUG
-#define NGL( ret, name, ... ) n ## name = (PFN ## name) ri.GL_GetProcAddress(#name);
-#else
-#define NGL( ret, name, ... ) n ## name = (PFN ## name) ri.GL_GetProcAddress(#name);
-#endif
 	// win32 has IGNORE already defined
 	enum { EXT_IGNORE, EXT_USING, EXT_NOTFOUND, EXT_FAILED };
 	const char *ext;
 	const char *result[4] = { "...ignoring %s\n", "...using %s\n", "...%s not found\n", "...%s failed to load\n" };
+
+#define NGL( ret, name, ... ) n ## name = (PFN ## name) ri.GL_GetProcAddress( #name );
+
 
 	// set default
 	nglBufferSubDataARB = nglBufferSubData;
@@ -71,6 +69,31 @@ void R_InitExtensions( void )
 		}
 	} else {
 		ri.Printf( PRINT_INFO, result[EXT_NOTFOUND], ext );
+	}
+
+	//
+	// ARB_direct_state_access
+	//
+	ext = "GL_ARB_direct_state_access";
+	glContext.directStateAccess = qfalse;
+	if ( ( NGL_VERSION_ATLEAST( 4, 5 ) ) || R_HasExtension( ext ) ) {
+		NGL_ARB_direct_state_access
+
+		glContext.directStateAccess = qtrue;
+		if ( !r_arb_direct_state_access->i ) {
+			ri.Printf( PRINT_INFO, result[ EXT_IGNORE ], ext );
+			glContext.directStateAccess = qfalse;
+		}
+		else if ( !nglNamedBufferData || !nglNamedBufferSubData || !nglNamedBufferData || !nglMapNamedBufferRange || !nglUnmapNamedBuffer
+			|| !nglFlushMappedNamedBufferRange )
+		{
+			ri.Printf( PRINT_INFO, result[ EXT_FAILED ], ext );
+			glContext.directStateAccess = qfalse;
+		} else {
+			ri.Printf( PRINT_INFO, result[ EXT_USING ], ext );
+		}
+	} else {
+		ri.Printf( PRINT_INFO, result[ EXT_NOTFOUND ], ext );
 	}
 
 	//
@@ -135,11 +158,10 @@ void R_InitExtensions( void )
 	//
 	// ARB_shader_storage_buffer_object
 	//
-	/*
 	ext = "GL_ARB_shader_storage_buffer_object";
 	glContext.ARB_shader_storage_buffer_object = qfalse;
 	if ( NGL_VERSION_ATLEAST( 4, 4 ) || R_HasExtension( ext ) ) {
-		glContext.ARB_shader_storage_buffer_object = r_arb_shader_storage_buffer_object->i;
+		glContext.ARB_shader_storage_buffer_object = qtrue;
 
 		if ( !r_arb_shader_storage_buffer_object->i ) {
 			ri.Printf( PRINT_INFO, result[ EXT_IGNORE ], ext );
@@ -148,10 +170,9 @@ void R_InitExtensions( void )
 		}
 	} else {
 		ri.Printf( PRINT_INFO, result[ EXT_NOTFOUND ], ext );
+		ri.Cvar_Set( "r_arb_shader_storage_buffer_object", "0" );
 	}
 
-	ri.Cvar_Set( "r_arb_shader_storage_buffer_object", va( "%i", glContext.ARB_shader_storage_buffer_object ) );
-	*/
 
 	//
 	// ARB_map_buffer_range
@@ -164,13 +185,13 @@ void R_InitExtensions( void )
 		NGL_ARB_map_buffer_range
 		
 		if ( !nglMapBufferRange || !nglFlushMappedBufferRange || !nglInvalidateBufferData ) {
-			ri.Printf(PRINT_INFO, result[EXT_FAILED], ext);
+			ri.Printf( PRINT_INFO, result[EXT_FAILED], ext );
 			glContext.ARB_map_buffer_range = qfalse;
 		} else {
-			ri.Printf(PRINT_INFO, result[EXT_USING], ext);
+			ri.Printf( PRINT_INFO, result[EXT_USING], ext );
 		}
 	} else {
-		ri.Printf(PRINT_INFO, result[EXT_NOTFOUND], ext);
+		ri.Printf( PRINT_INFO, result[EXT_NOTFOUND], ext );
 	}
 
 	ri.Cvar_Set( "r_arb_map_buffer_range", va( "%i", glContext.ARB_map_buffer_range ) );
@@ -180,8 +201,8 @@ void R_InitExtensions( void )
 	//
 	ext = "GL_ARB_vertex_array_object";
 	glContext.ARB_vertex_array_object = qfalse;
-	if (NGL_VERSION_ATLEAST(3, 0) || R_HasExtension(ext)) {
-		if (NGL_VERSION_ATLEAST(3, 0)) {
+	if ( NGL_VERSION_ATLEAST( 3, 0 ) || R_HasExtension( ext ) ) {
+		if ( NGL_VERSION_ATLEAST( 3, 0 ) ) {
 			// force vao, core context requires it
 			glContext.ARB_vertex_array_object = qtrue;
 		}
@@ -193,7 +214,7 @@ void R_InitExtensions( void )
 		if ( !nglVertexAttribPointerARB || !nglEnableVertexArrayAttribARB || !nglDisableVertexArrayAttribARB
 			|| !nglEnableVertexAttribArrayARB || !nglDisableVertexAttribArrayARB )
 		{
-			ri.Printf(PRINT_INFO, result[EXT_FAILED], ext);
+			ri.Printf( PRINT_INFO, result[EXT_FAILED], ext);
 			glContext.ARB_vertex_array_object = qfalse;
 		}
 		else {
@@ -213,6 +234,7 @@ void R_InitExtensions( void )
 	glContext.ARB_gl_spirv = qfalse;
 	if ( NGL_VERSION_ATLEAST( 4, 0 ) || R_HasExtension( ext ) && r_useShaderCache->i ) {
 		glContext.ARB_gl_spirv = qtrue;
+
 		NGL_GLSL_SPIRV_Procs
 
 		if ( !nglShaderBinary || !nglGetProgramBinary ) {
@@ -225,8 +247,6 @@ void R_InitExtensions( void )
 	else {
 		ri.Printf(PRINT_INFO, result[EXT_NOTFOUND], ext);
 	}
-
-	ri.Cvar_Set( "r_useShaderCache", va( "%i", glContext.ARB_gl_spirv ) );
 
 	//
 	// ARB_vertex_buffer_object
@@ -284,7 +304,7 @@ void R_InitExtensions( void )
 	//
 	ext = "GL_ARB_texture_float";
 	glContext.ARB_texture_float = qfalse;
-	if (R_HasExtension(ext)) {
+	if ( R_HasExtension( ext ) ) {
 		glContext.ARB_texture_float = r_arb_texture_float->i;
 		ri.Printf(PRINT_INFO, result[glContext.ARB_texture_float], ext);
 	}
@@ -310,23 +330,6 @@ void R_InitExtensions( void )
 	}
 
 	//
-	// NV_framebuffer_multisample_coverage
-	//
-	ext = "GL_NV_framebuffer_multisample_coverage";
-	glContext.NV_framebuffer_multisample_coverage = qfalse;
-	if ( R_HasExtension( ext ) ) {
-		glContext.NV_framebuffer_multisample_coverage = qtrue;
-		if ( !nglRenderBufferStorageMultisampleCoverageNV ) {
-			ri.Printf( PRINT_INFO, result[ EXT_FAILED ], ext );
-			glContext.NV_framebuffer_multisample_coverage = qfalse;
-		} else {
-			ri.Printf( PRINT_INFO, result[ EXT_USING ], ext );
-		}
-	} else {
-		ri.Printf( PRINT_INFO, result[ EXT_NOTFOUND ], ext );
-	}
-
-	//
 	// gpu memory info diangostics extensions
 	//
 
@@ -336,7 +339,7 @@ void R_InitExtensions( void )
 	// NVX_gpu_memory_info
 	//
 	ext = "GL_NVX_gpu_memory_info";
-	if (R_HasExtension(ext)) {
+	if ( R_HasExtension( ext ) ) {
 		glContext.memInfo = MI_NVX;
 		ri.Printf(PRINT_INFO, result[EXT_USING], ext);
 	}
@@ -348,7 +351,7 @@ void R_InitExtensions( void )
 	// ATI_meminfo
 	//
 	ext = "GL_ATI_meminfo";
-	if (R_HasExtension(ext)) {
+	if ( R_HasExtension( ext ) ) {
 		if (glContext.memInfo == MI_NONE) {
 			glContext.memInfo = MI_ATI;
 			ri.Printf(PRINT_INFO, result[EXT_USING], ext);
@@ -367,10 +370,11 @@ void R_InitExtensions( void )
 	// ARB_texture_compression_rgtc
 	//
 	ext = "GL_ARB_texture_compression_rgtc";
-	if (R_HasExtension(ext)) {
+	if ( R_HasExtension( ext ) ) {
 		qboolean useRgtc = r_arb_texture_compression->i >= 2;
-		if (useRgtc)
+		if ( useRgtc ) {
 			glContext.textureCompressionRef |= TCR_RGTC;
+		}
 		
 		ri.Printf(PRINT_INFO, result[useRgtc], ext);
 	}
@@ -384,16 +388,16 @@ void R_InitExtensions( void )
 	// ARB_texture_compression_bptc
 	//
 	ext = "GL_ARB_texture_compression_bptc";
-	if (R_HasExtension(ext)) {
+	if ( R_HasExtension( ext ) ) {
 		qboolean useBptc = r_arb_texture_compression->i >= 3;
 		if ( useBptc ) {
 			glContext.textureCompressionRef |= TCR_BPTC;
 		}
 		
-		ri.Printf(PRINT_INFO, result[useBptc], ext);
+		ri.Printf( PRINT_INFO, result[useBptc], ext );
 	}
 	else {
-		ri.Printf(PRINT_INFO, result[EXT_NOTFOUND], ext);
+		ri.Printf( PRINT_INFO, result[EXT_NOTFOUND], ext );
 	}
 
 	//
@@ -404,7 +408,7 @@ void R_InitExtensions( void )
 	glContext.ARB_framebuffer_sRGB = qfalse;
 	glContext.ARB_framebuffer_multisample = qfalse;
 	glContext.ARB_framebuffer_blit = qfalse;
-	if (NGL_VERSION_ATLEAST(3, 0) || R_HasExtension(ext)) {
+	if ( NGL_VERSION_ATLEAST( 3, 0 ) || R_HasExtension( ext ) ) {
 		glContext.ARB_framebuffer_object = r_arb_framebuffer_object->i;
 		glContext.ARB_framebuffer_blit = qtrue;
 		glContext.ARB_framebuffer_multisample = qtrue;
@@ -420,10 +424,10 @@ void R_InitExtensions( void )
 
 		NGL_FBO_Procs
 
-		ri.Printf(PRINT_INFO, result[glContext.ARB_framebuffer_object], ext);
+		ri.Printf( PRINT_INFO, result[glContext.ARB_framebuffer_object], ext );
 	}
 	else {
-		ri.Printf(PRINT_INFO, result[EXT_NOTFOUND], ext);
+		ri.Printf( PRINT_INFO, result[EXT_NOTFOUND], ext );
 
 		ri.Cvar_Set( "r_arb_framebuffer_blit", "0" );
 		ri.Cvar_Set( "r_arb_framebuffer_object", "0" );
@@ -435,15 +439,16 @@ void R_InitExtensions( void )
 	// ARB_debug_output
 	//
 	ext = "GL_ARB_debug_output";
-	if (R_HasExtension(ext)) {
+	if ( R_HasExtension( ext ) ) {
 		glContext.debugType = GL_DBG_ARB;
+
 		NGL_Debug_Procs
 
-		if (!nglDebugMessageControlARB || !nglDebugMessageInsertARB || !nglDebugMessageCallbackARB) {
-			ri.Printf(PRINT_INFO, result[EXT_FAILED], ext);
+		if ( !nglDebugMessageControlARB || !nglDebugMessageInsertARB || !nglDebugMessageCallbackARB ) {
+			ri.Printf( PRINT_INFO, result[EXT_FAILED], ext );
 		}
 		else {
-			ri.Printf(PRINT_INFO, result[EXT_USING], ext);
+			ri.Printf( PRINT_INFO, result[EXT_USING], ext );
 
 			nglEnable( GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB );
 			nglEnable( GL_DEBUG_OUTPUT_SYNCHRONOUS );

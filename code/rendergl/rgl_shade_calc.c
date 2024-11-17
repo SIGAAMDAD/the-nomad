@@ -205,7 +205,7 @@ static void RB_CalcBulgeVertexes( deformStage_t *ds ) {
 	uint32_t xyz;
 	uint32_t normal;
 	float now;
-	polyVert_t *vtx = (polyVert_t *)backend.drawBuffer->vertex.data;
+	srfVert_t *vtx = (srfVert_t *)backend.drawBuffer->vertex[0].data;
 
 	now = backend.refdef.time * ds->bulgeSpeed * 0.001;
 
@@ -220,7 +220,7 @@ static void RB_CalcBulgeVertexes( deformStage_t *ds ) {
 		VectorSet( fNormal, 1.0f, 1.0f, 1.0f );
 	#endif
 
-		off = (float)( FUNCTABLE_SIZE / (M_PI*2) ) * ( vtx[st].uv[0] * ds->bulgeWidth + now );
+		off = (float)( FUNCTABLE_SIZE / (M_PI*2) ) * ( vtx[st].st[0] * ds->bulgeWidth + now );
 
 		scale = rg.sinTable[ off & FUNCTABLE_MASK ] * ds->bulgeHeight;
 			
@@ -448,7 +448,7 @@ static const unsigned int edgeVerts[6][2] = {
 static void Autosprite2Deform( void ) {
 	int		i, j, k;
 	int		indexes;
-	polyVert_t	*xyz;
+	srfVert_t	*xyz;
 	vec3_t	forward;
 
 	if ( backend.drawBatch.vtxOffset & 3 ) {
@@ -472,11 +472,11 @@ static void Autosprite2Deform( void ) {
 		int		nums[2];
 		vec3_t	mid[2];
 		vec3_t	major, minor;
-		polyVert_t	*v1, *v2;
+		srfVert_t	*v1, *v2;
 
 		// find the midpoint
 		ri.Error( ERR_FATAL, "%s: called", __func__ );
-		xyz = &( (polyVert_t *)backend.drawBuffer->vertex.data )[i];
+		xyz = &( (srfVert_t *)backend.drawBuffer->vertex[0].data )[i];
 
 		// identify the two shortest edges
 		nums[0] = nums[1] = 0;

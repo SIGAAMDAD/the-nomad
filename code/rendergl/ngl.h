@@ -37,9 +37,9 @@ glBufferPageCommitmentARB (GLenum target, GLintptr offset, GLsizeiptr size, GLbo
 #pragma once
 
 typedef void (APIENTRY *GLDEBUGPROC)(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam);
-typedef void (APIENTRY *GLDEBUGPROCAMD)(GLuint id, GLenum category, GLenum severity, GLsizei length, const GLchar *message, GLvoid *userParam);
-typedef void (APIENTRY *GLDEBUGPROCKHR)(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const GLvoid *userParam);
-typedef void (APIENTRY *GLDEBUGPROCARB)(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const GLvoid *userParam);
+typedef void (APIENTRY *GLDEBUGPROCAMD)(GLuint id, GLenum category, GLenum severity, GLsizei length, const GLchar *message, void *userParam);
+typedef void (APIENTRY *GLDEBUGPROCKHR)(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam);
+typedef void (APIENTRY *GLDEBUGPROCARB)(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam);
 
 typedef void*(*NGLloadproc)(const char *name);
 
@@ -57,7 +57,7 @@ typedef void*(*NGLloadproc)(const char *name);
 	NGL( const GLubyte*, glGetStringi, GLenum name, GLuint index ) \
 	NGL( void, glDepthMask, GLboolean flag ) \
 	NGL( void, glDepthFunc, GLenum func ) \
-	NGL( void, glReadPixels, GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid *pixels ) \
+	NGL( void, glReadPixels, GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, void *pixels ) \
 	NGL( void, glScissor, GLint x, GLint y, GLsizei width, GLsizei height ) \
 	NGL( void, glShadeModel, GLenum mode ) \
 	NGL( void, glStencilFunc, GLenum func, GLint ref, GLuint mask ) \
@@ -67,7 +67,7 @@ typedef void*(*NGLloadproc)(const char *name);
 	NGL( void, glViewport, GLint x, GLint y, GLsizei width, GLsizei height ) \
 	NGL( void, glClear, GLbitfield mask ) \
 	NGL( void, glDrawArrays, GLenum mode, GLint first, GLsizei count ) \
-	NGL( void, glDrawElements, GLenum mode, GLsizei count, GLenum type, const GLvoid *indices ) \
+	NGL( void, glDrawElements, GLenum mode, GLsizei count, GLenum type, const void *indices ) \
 	NGL( void, glLineWidth, GLfloat width ) \
 	NGL( void, glCullFace, GLenum mode ) \
 	NGL( void, glGetBooleanv, GLenum pname, GLboolean *params ) \
@@ -109,10 +109,10 @@ typedef void*(*NGLloadproc)(const char *name);
 	NGL( void, glLoadMatrixd, const GLdouble *m ) \
 	NGL( void, glEnableClientState, GLenum cap ) \
 	NGL( void, glDisableClientState, GLenum cap ) \
-	NGL( void, glTexCoordPointer, GLint size, GLenum type, GLsizei stride, const GLvoid *pointer ) \
-	NGL( void, glVertexPointer, GLint size, GLenum type, GLsizei stride, const GLvoid *pointer ) \
-	NGL( void, glColorPointer, GLint size, GLenum type, GLsizei stride, const GLvoid *pointer ) \
-	NGL( void, glIndexPointer, GLenum type, GLsizei stride, const GLvoid *pointer ) \
+	NGL( void, glTexCoordPointer, GLint size, GLenum type, GLsizei stride, const void *pointer ) \
+	NGL( void, glVertexPointer, GLint size, GLenum type, GLsizei stride, const void *pointer ) \
+	NGL( void, glColorPointer, GLint size, GLenum type, GLsizei stride, const void *pointer ) \
+	NGL( void, glIndexPointer, GLenum type, GLsizei stride, const void *pointer ) \
 	NGL( void, glScalef, GLfloat x, GLfloat y, GLfloat z ) \
 	NGL( void, glRotatef, GLfloat angle, GLfloat x, GLfloat y, GLfloat z ) \
 	NGL( void, glTranslatef, GLfloat x, GLfloat y, GLfloat z ) \
@@ -133,14 +133,14 @@ typedef void*(*NGLloadproc)(const char *name);
 	NGL( void, glListBase, GLuint base ) \
 	NGL( void, glNewList, GLuint list, GLenum mode ) \
 	NGL( void, glCallList, GLuint list ) \
-	NGL( void, glCallLists, GLsizei n, GLenum type, const GLvoid *lists ) \
+	NGL( void, glCallLists, GLsizei n, GLenum type, const void *lists ) \
 	NGL( void, glGenLists, GLsizei range ) \
 	NGL( void, glDeleteLists, GLuint list, GLsizei range ) \
 	NGL( void, glEndList, void )
 
 #define NGL_Debug_Procs \
 	NGL( void, glDebugMessageControlARB, GLenum source, GLenum type, GLenum severity, GLsizei count, const GLuint *ids, GLboolean enabled ) \
-	NGL( void, glDebugMessageCallbackARB, GLDEBUGPROCARB callback, const GLvoid *userParam ) \
+	NGL( void, glDebugMessageCallbackARB, GLDEBUGPROCARB callback, const void *userParam ) \
 	NGL( void, glDebugMessageInsertARB, GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *buf ) \
 	NGL( void, glDebugMessageEnableAMD, GLenum category, GLenum severity, GLsizei count, const GLuint *ids, GLboolean enabled ) \
 	NGL( void, glDebugMessageCallbackAMD, GLDEBUGPROCAMD callback, void *userParam ) \
@@ -156,7 +156,8 @@ typedef void*(*NGLloadproc)(const char *name);
 
 #define NGL_GLSL_SPIRV_Procs \
 	NGL( void, glShaderBinary, GLsizei count, const GLuint *shaders, GLenum binaryformat, const void *binary, GLsizei length ) \
-	NGL( void, glGetProgramBinary, GLuint program, GLsizei bufSize, GLsizei *length, GLenum *binaryFormat, void *binary )
+	NGL( void, glGetProgramBinary, GLuint program, GLsizei bufSize, GLsizei *length, GLenum *binaryFormat, void *binary ) \
+	NGL( void, glProgramBinary, GLuint program, GLenum binaryFormat, const void *binary, GLsizei length ) \
 
 #define NGL_Shader_Procs \
 	NGL( void, glBindAttribLocation, GLhandleARB programObj, GLuint index, const GLcharARB *name ) \
@@ -216,12 +217,12 @@ typedef void*(*NGLloadproc)(const char *name);
 	NGL( void, glGenTextures, GLsizei n, GLuint *textures ) \
 	NGL( void, glDeleteTextures, GLsizei n, const GLuint *textures ) \
 	NGL( void, glBindTexture, GLenum target, GLuint texture ) \
-	NGL( void, glTexImage2D, GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels ) \
+	NGL( void, glTexImage2D, GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void *pixels ) \
 	NGL( void, glTexParameteri, GLenum target, GLenum pname, GLint param ) \
 	NGL( void, glTexParameterf, GLenum target, GLenum pname, GLfloat param ) \
-	NGL( void, glCompressedTexImage2D,GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const GLvoid *data ) \
-	NGL( void, glCompressedTexSubImage2D, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, const GLvoid *data ) \
-	NGL( void, glTexSubImage2D, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid * data ) \
+	NGL( void, glCompressedTexImage2D,GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const void *data ) \
+	NGL( void, glCompressedTexSubImage2D, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, const void *data ) \
+	NGL( void, glTexSubImage2D, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void * data ) \
 	NGL( void, glGenSamplers, GLsizei n, GLuint *samplers ) \
 	NGL( void, glBindSampler, GLuint unit, GLuint sampler ) \
 	NGL( void, glDeleteSamplers, GLsizei n, const GLuint *samplers ) \
@@ -253,7 +254,7 @@ typedef void*(*NGLloadproc)(const char *name);
 	NGL( void, glDisableVertexArrayAttribARB, GLuint vao, GLuint index ) \
 	NGL( void, glEnableVertexAttribArrayARB, GLuint index ) \
 	NGL( void, glDisableVertexAttribArrayARB, GLuint index ) \
-	NGL( void, glVertexAttribPointerARB, GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer ) \
+	NGL( void, glVertexAttribPointerARB, GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer ) \
 	NGL( void, glGetVertexAttribivARB, GLuint index, GLenum pname, GLint *params ) \
 	NGL( void, glGetVertexAttribPointervARB, GLuint index, GLenum pname, void **pointer )
 
@@ -262,10 +263,9 @@ typedef void*(*NGLloadproc)(const char *name);
 	NGL( void, glDeleteVertexArrays, GLsizei n, const GLuint *arrays ) \
 	NGL( void, glBindVertexArray, GLuint array ) \
 	NGL( void, glEnableVertexAttribArray, GLuint index ) \
-	NGL( void, glEnableVertexArrayAttrib, GLuint vao, GLuint index ) \
 	NGL( void, glDisableVertexAttribArray, GLuint index ) \
-	NGL( void, glVertexAttribPointer, GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer ) \
-	NGL( void, glVertexAttribIPointer, GLuint index, GLint size, GLenum type, GLsizei stride, const GLvoid *pointer ) \
+	NGL( void, glVertexAttribPointer, GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer ) \
+	NGL( void, glVertexAttribIPointer, GLuint index, GLint size, GLenum type, GLsizei stride, const void *pointer ) \
 	NGL( void, glGetVertexAttribiv, GLuint index, GLenum pname, GLint *params ) \
 	NGL( void, glGetVertexAttribPointerv, GLuint index, GLenum pname, void **pointer ) \
 	NGL( void, glVertexAttribDivisor, GLuint index, GLuint divisor ) \
@@ -274,8 +274,8 @@ typedef void*(*NGLloadproc)(const char *name);
 	NGL( void, glGenBuffersARB, GLsizei n, GLuint *buffers ) \
 	NGL( void, glDeleteBuffersARB, GLsizei n, const GLuint *buffers ) \
 	NGL( void, glBindBufferARB, GLenum target, GLuint buffer ) \
-	NGL( void, glBufferDataARB, GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usage ) \
-	NGL( void, glBufferSubDataARB, GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid *data ) \
+	NGL( void, glBufferDataARB, GLenum target, GLsizeiptr size, const void *data, GLenum usage ) \
+	NGL( void, glBufferSubDataARB, GLenum target, GLintptr offset, GLsizeiptr size, const void *data ) \
 	NGL( void, glUnmapBufferARB, GLenum target ) \
 	NGL( void*, glMapBufferARB, GLenum target, GLbitfield access ) \
 	NGL( void, glBindBufferRangeARB, GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size ) \
@@ -285,13 +285,12 @@ typedef void*(*NGLloadproc)(const char *name);
 	NGL( void, glGenBuffers, GLsizei n, GLuint *buffers ) \
 	NGL( void, glDeleteBuffers, GLsizei n, const GLuint *buffers ) \
 	NGL( void, glBindBuffer, GLenum target, GLuint buffer ) \
-	NGL( void, glBufferData, GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usage ) \
-	NGL( void, glBufferSubData, GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid *data ) \
+	NGL( void, glBufferData, GLenum target, GLsizeiptr size, const void *data, GLenum usage ) \
+	NGL( void, glBufferSubData, GLenum target, GLintptr offset, GLsizeiptr size, const void *data ) \
 	NGL( void*, glMapBuffer, GLenum target, GLbitfield access ) \
 	NGL( void, glUnmapBuffer, GLenum target ) \
 	NGL( void, glBindBufferRange, GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size ) \
 	NGL( void, glBindBufferBase, GLenum target, GLuint index, GLuint buffer ) \
-	NGL( void, glCreateBuffers, GLsizei n, GLuint *buffers ) \
 	NGL( void, glGetBufferParameteriv, GLenum target, GLenum value, GLint *data ) \
 
 #define NGL_VertexShaderARB_Procs \
@@ -302,6 +301,47 @@ typedef void*(*NGLloadproc)(const char *name);
 /*
 * GL_EXT, GL_ARB procs
 */
+
+#define NGL_ARB_direct_state_access \
+	NGL( void, glCreateVertexArrays, GLsizei n, GLuint *vaos ) \
+	NGL( void, glCreateBuffers, GLsizei n, GLuint *buffers ) \
+	NGL( void, glNamedBufferData, GLuint buffer, GLsizeiptr size, const void *data, GLenum usage ) \
+	NGL( void, glNamedBufferSubData, GLuint buffer, GLintptr offset, GLsizeiptr size, const void *data ) \
+	NGL( void*, glMapNamedBuffer, GLuint buffer, GLbitfield access ) \
+	NGL( void, glUnmapNamedBuffer, GLuint buffer ) \
+	NGL( void*, glMapNamedBufferRange, GLuint buffer, GLsizeiptr offset, GLsizeiptr length, GLbitfield access ) \
+	NGL( void, glFlushMappedNamedBufferRange, GLuint buffer, GLintptr offset, GLsizeiptr length ) \
+	NGL( void, glNamedBufferStorage, GLuint buffer, GLsizeiptr length, const void *data, GLbitfield access ) \
+	NGL( void, glEnableVertexArrayAttrib, GLuint vaobj, GLuint index ) \
+	NGL( void, glDisableVertexArrayAttrib, GLuint vaobj, GLuint index ) \
+	NGL( void, glVertexArrayElementBuffer, GLuint vaobj, GLuint buffer ) \
+	NGL( void, glVertexArrayVertexBuffer, GLuint vaobj, GLuint bindingindex, GLuint buffer, GLintptr offset, GLsizei stride ) \
+	NGL( void, glVertexArrayVertexBuffers, GLuint vaobj, GLuint first, GLsizei count, const GLuint *buffers, const GLintptr *offsets, const GLsizei *strides ) \
+	NGL( void, glVertexArrayAttribBinding, GLuint vaobj, GLuint attribindex, GLuint bindingindex ) \
+	NGL( void, glVertexArrayAttribFormat, GLuint vaobj, GLuint attribindex, GLint size, GLenum type, GLboolean normalized, GLuint relativeoffset ) \
+	NGL( void, glVertexArrayAttribIFormat, GLuint vaobj, GLuint attribindex, GLint size, GLenum type, GLuint relativeoffset ) \
+	NGL( void, glVertexArrayAttribLFormat, GLuint vaobj, GLuint attribindex, GLint size, GLenum type, GLuint relativeoffset ) \
+	NGL( void, glVertexArrayBindingDivisor, GLuint vaobj, GLuint bindingindex, GLuint divisor ) \
+	NGL( void, glBindVertexBuffer, GLuint bindingindex, GLuint buffer, GLintptr offset, GLsizei stride ) \
+	NGL( void, glCreateTextures, GLenum target, GLsizei n, GLuint *textures ) \
+	NGL( void, glTextureStorage2D, GLuint texture, GLsizei levels, GLenum internalFormat, GLsizei width, GLsizei height ) \
+	NGL( void, glTextureSubImage2D, GLuint texture, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels ) \
+	NGL( void, glCompressedTextureSubImage2D, GLuint texture, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, const void *data ) \
+	NGL( void, glTextureParameterf, GLuint texture, GLenum pname, GLfloat param ) \
+	NGL( void, glTextureParameterfv, GLuint texture, GLenum pname, const GLfloat *param ) \
+	NGL( void, glTextureParameteri, GLuint texture, GLenum pname, GLint param ) \
+	NGL( void, glTextureParameterIiv, GLuint texture, GLenum pname, const GLint *param ) \
+	NGL( void, glBindTextureUnit, GLuint unit, GLuint texture ) \
+	NGL( void, glCreateFramebuffers, GLsizei n, GLuint *framebuffers ) \
+	NGL( void, glNamedFramebufferRenderbuffer, GLuint framebuffer, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer ) \
+	NGL( void, glNamedFramebufferTexture, GLuint framebuffer, GLenum attachment, GLuint texture, GLint level ) \
+	NGL( void, glNamedFramebufferDrawBuffer, GLuint framebuffer, GLenum mode ) \
+	NGL( void, glNamedFramebufferDrawBuffers, GLuint framebuffer, GLsizei n, const GLenum *bufs ) \
+	NGL( void, glBlitNamedFramebuffer, GLuint readFramebuffer, GLuint drawFramebuffer, GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter ) \
+	NGL( GLenum, glCheckNamedFramebufferStatus, GLuint framebuffer, GLenum target ) \
+	NGL( void, glCreateRenderbuffers, GLsizei n, GLuint *renderbuffers ) \
+	NGL( void, glNamedRenderbufferStorage, GLuint renderbuffer, GLenum internalformat, GLsizei width, GLsizei height ) \
+	NGL( void, glNamedRenderbufferStorageMultisample, GLuint renderbuffer, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height ) \
 
 #define NGL_ARB_bindless_texture \
 	NGL( GLuint64, glGetTextureHandleARB, GLuint texture ) \
@@ -378,7 +418,7 @@ NGL_ARB_map_buffer_range
 NGL_ARB_buffer_storage
 NGL_ARB_sync
 NGL_ARB_bindless_texture
-NGL_NV_shader_buffer_load
+NGL_ARB_direct_state_access
 #undef NGL
 
 #define LOAD_GL_PROCS( procs ) procs
