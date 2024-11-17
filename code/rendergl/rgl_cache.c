@@ -878,7 +878,11 @@ void RB_FlushBatchBuffer( void )
 	
 	if ( rg.world && rg.world->buffer == buf ) {
 		if ( HAVE_DIRECT_STATE_ACCESS ) {
-			nglFlushMappedNamedBufferRange( rg.world->buffer->vertex[0].id, 0, backend.drawBatch.vtxDataSize * backend.drawBatch.vtxOffset );
+			nglFlushMappedNamedBufferRange(
+				rg.world->buffer->vertex[ ATTRIB_INDEX_POSITION ].id,
+				rg.world->buffer->vertex[ ATTRIB_INDEX_POSITION ].offset,
+				backend.drawBatch.vtxDataSize * backend.drawBatch.vtxOffset
+			);
 		} else {
 			nglFlushMappedBufferRange(
 				GL_ARRAY_BUFFER,

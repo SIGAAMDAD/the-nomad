@@ -1219,33 +1219,39 @@ void GLSL_SetUniformMatrix4(shaderProgram_t *program, uint32_t uniformNum, const
 	nglUniformMatrix4fv(uniforms[uniformNum], 1, GL_FALSE, &m[0][0]);
 }
 
+
 void GLSL_ShaderBufferData( shaderProgram_t *shader, uint32_t uniformNum, uniformBuffer_t *buffer, uint64_t nSize, uint64_t nOffset, qboolean dynamicStorage )
 {
 	GLint *uniforms;
 	GLuint bufferObject;
 	GLenum target;
 
+	GLSL_UseProgram( shader );
+
 	uniforms = shader->uniforms;
 	bufferObject = buffer ? buffer->id : 0;
+
+	if ( buffer->binding == -1 ) {
+		ri.Printf( PRINT_WARNING, "Bad binding for uniform buffer '%s'\n", buffer->name );
+		return;
+	}
 
 	if ( uniformsInfo[ uniformNum ].type != GLSL_BUFFER ) {
 		ri.Printf( PRINT_INFO, COLOR_YELLOW "WARNING: GLSL_BindShaderBuffer: wrong type for uniform %i in program %s\n", uniformNum, shader->name );
 		return;
 	}
 
-	GLSL_UseProgram( shader );
-
 	nglBindBuffer( GL_SHADER_STORAGE_BUFFER, buffer->id );
-	nglBindBufferBase( GL_SHADER_STORAGE_BUFFER, buffer->binding, buffer->id );
-	nglBindBufferRange( GL_SHADER_STORAGE_BUFFER, buffer->binding, buffer->id, nOffset, nSize );
+	nglBufferSubData( GL_SHADER_STORAGE_BUFFER, nOffset, nSize, buffer->data );
 
-	void *data = nglMapBufferRange( GL_SHADER_STORAGE_BUFFER, nOffset, nSize, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT );
-	memcpy( data, buffer->data + nOffset, nSize );
-	nglUnmapBuffer( GL_SHADER_STORAGE_BUFFER );
+//	void *data = nglMapBufferRange( GL_SHADER_STORAGE_BUFFER, nOffset, nSize, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT );
+//	if ( data ) {
+//		memcpy( data, buffer->data, nSize );
+//	}
+//	nglUnmapBuffer( GL_SHADER_STORAGE_BUFFER );
+	GL_CheckErrors();
 
 	nglBindBuffer( GL_SHADER_STORAGE_BUFFER, 0 );
-
-	GL_CheckErrors();
 }
 
 void GLSL_LinkUniformToShader( shaderProgram_t *program, uint32_t uniformNum, uniformBuffer_t *buffer, qboolean dynamicStorage, uint32_t binding )
@@ -1254,13 +1260,25 @@ void GLSL_LinkUniformToShader( shaderProgram_t *program, uint32_t uniformNum, un
 	GLuint *compare = (GLuint *)( program->uniformBuffer + program->uniformBufferOffsets[ uniformNum ] );
 	GLenum target;
 
-	buffer->binding = binding;
-	
+	GLSL_UseProgram( program );
+
+//	buffer->binding = nglGetUniformBlockIndex( program->programId, uniformsInfo[ uniformNum ].name );
+//	if ( buffer->binding == -1 ) {
+//		ri.Printf( PRINT_WARNING, "GLSL_LinkUniformToShader: uniformBuffer %s not in program '%s'\n", buffer->name, program->name );
+//		return;
+//	}
+//	nglUniformBlockBinding( program->programId, buffer->binding, program->numBuffers );
+
+	target = GL_SHADER_STORAGE_BUFFER;
+
 	nglBindBuffer( GL_SHADER_STORAGE_BUFFER, buffer->id );
-	nglBindBufferBase( GL_SHADER_STORAGE_BUFFER, buffer->binding, buffer->id );
-	nglBindBufferRange( GL_SHADER_STORAGE_BUFFER, buffer->binding, buffer->id, 0, buffer->size );
+	nglBindBufferRange( GL_SHADER_STORAGE_BUFFER, 0, buffer->id, 0, buffer->size );
+	nglBindBufferBase( GL_SHADER_STORAGE_BUFFER, 0, buffer->id );
 	nglBindBuffer( GL_SHADER_STORAGE_BUFFER, 0 );
+
 	GL_CheckErrors();
+	
+	GLSL_UseProgram( NULL );
 
 	program->numBuffers++;
 
@@ -1293,18 +1311,19 @@ uniformBuffer_t *GLSL_InitUniformBuffer( const char *name, byte *buffer, uint64_
 	memset( buf, 0, size );
 
 	buf->name = (char *)( buf + 1 );
-	buf->size = PAD( bufSize, 64 );
+	buf->size = bufSize;
 	strcpy( buf->name, name );
 
-	nglCreateBuffers( 1, &buf->id );
-	nglBindBuffer( GL_SHADER_STORAGE_BUFFER, buf->id );
-	nglBufferData( GL_SHADER_STORAGE_BUFFER, buf->size, buf->data, GL_STREAM_DRAW );
-	buf->data = ri.Hunk_Alloc( buf->size, h_low );
-	nglBindBuffer( GL_SHADER_STORAGE_BUFFER, 0 );
-
-	GL_CheckErrors();
-
 	target = GL_SHADER_STORAGE_BUFFER;
+
+	// generate buffer
+	nglGenBuffers( 1, &buf->id );
+	nglBindBuffer( GL_SHADER_STORAGE_BUFFER, buf->id );
+
+	// good 'ol fashioned buffers
+	buf->data = ri.Hunk_Alloc( bufSize, h_low );
+	nglBufferData( GL_SHADER_STORAGE_BUFFER, bufSize, buffer, GL_STREAM_DRAW );
+	nglBindBuffer( GL_SHADER_STORAGE_BUFFER, 0 );
 
 	rg.numUniformBuffers++;
 
