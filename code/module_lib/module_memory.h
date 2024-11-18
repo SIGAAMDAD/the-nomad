@@ -36,7 +36,7 @@ void		Mem_Dump_f( const class idCmdArgs &args );
 void		Mem_DumpCompressed_f( const class idCmdArgs &args );
 void		Mem_AllocDefragBlock( void );
 
-#ifndef _NOMAD_DEBUG
+#ifndef MEMHEAP_DEBUG
 void *		Mem_Alloc( const uint32_t size );
 void *		Mem_ClearedAlloc( const uint32_t size );
 void		Mem_Free( void *ptr );

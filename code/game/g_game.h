@@ -47,6 +47,7 @@ typedef enum {
 	GS_SETTINGS,
 	GS_STATS_MENU,
 	GS_MEMORY_VIEW,
+	GS_LOADING,
 
 	NUM_GAME_STATES
 } gameState_t;

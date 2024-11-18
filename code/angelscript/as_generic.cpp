@@ -81,7 +81,7 @@ asIScriptFunction *asCGeneric::GetFunction() const
 }
 
 // interface
-void *asCGeneric::GetObject()
+void *asCGeneric::GetObjectData()
 {
 	return currentObject;
 }
