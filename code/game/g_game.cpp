@@ -1986,10 +1986,7 @@ void G_Init( void )
 	if ( !g_pModuleLib ) {
 		G_InitModuleLib();
 	}
-
-	// init archive handler
-	G_InitArchiveHandler();
-
+	
 	// init developer console
 	Con_Init();
 
