@@ -1013,11 +1013,9 @@ void GLSL_DeleteGPUShader( shaderProgram_t *program )
 {
 	if ( program->programId ) {
 		if ( program->vertexId ) {
-		//	nglDetachShader( program->programId, program->vertexId );
 			nglDeleteShader( program->vertexId );
 		}
 		if ( program->fragmentId ) {
-		//	nglDetachShader( program->programId, program->fragmentId );
 			nglDeleteShader( program->fragmentId );
 		}
 

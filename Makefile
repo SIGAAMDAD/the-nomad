@@ -309,7 +309,6 @@ SRC=\
 	$(O)/ui/ui_pause.o \
 	$(O)/ui/ui_mods.o \
 	$(O)/ui/ui_database.o \
-	$(O)/ui/ui_loadscreen.o \
 	\
 	$(O)/sdl/sdl_input.o \
 	$(O)/sdl/sdl_glimp.o \

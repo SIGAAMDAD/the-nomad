@@ -1793,14 +1793,14 @@ void CScriptArray::Precache( void )
 
 	// We need to make sure the cache is created only once, even
 	// if multiple threads reach the same point at the same time
-	asAcquireExclusiveLock();
+//	asAcquireExclusiveLock();
 
 	// Now that we got the lock, we need to check again to make sure the
 	// cache wasn't created while we were waiting for the lock
 	cache = reinterpret_cast<SArrayCache*>(objType->GetUserData(ARRAY_CACHE));
 	if( cache )
 	{
-		asReleaseExclusiveLock();
+//		asReleaseExclusiveLock();
 		return;
 	}
 
@@ -1810,7 +1810,7 @@ void CScriptArray::Precache( void )
 		asIScriptContext *ctx = asGetActiveContext();
 		if( ctx )
 			ctx->SetException("out of memory");
-		asReleaseExclusiveLock();
+//		asReleaseExclusiveLock();
 		return;
 	}
 	memset(cache, 0, sizeof(SArrayCache));
@@ -1904,7 +1904,7 @@ void CScriptArray::Precache( void )
 	// Set the user data only at the end so others that retrieve it will know it is complete
 	objType->SetUserData(cache, ARRAY_CACHE);
 
-	asReleaseExclusiveLock();
+//	asReleaseExclusiveLock();
 }
 
 // GC behaviour

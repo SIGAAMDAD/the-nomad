@@ -520,8 +520,6 @@ static void G_InitRenderRef( void )
 	import.GLimp_FrontEndSleep = GLimp_FrontEndSleep;
 	import.GLimp_WakeRenderer = GLimp_WakeRenderer;
 	import.GLimp_RenderSleep = GLimp_RenderSleep;
-	import.GLimp_AcquireContext = LoadMenu_AcquireContext;
-	import.GLimp_ReleaseContext = LoadMenu_ReleaseContext;
 #ifdef USE_OPENGL_API
 	import.GLimp_EndFrame = GLimp_EndFrame;
 	import.GLimp_SetGamma = GLimp_SetGamma;
@@ -1981,8 +1979,6 @@ void G_Init( void )
 		re.GetConfig( &gi.gpuConfig );
 	}
 
-	LoadMenu_Begin();
-
 	// init sound
 	Snd_Init();
 	gi.soundStarted = qtrue;
@@ -2145,8 +2141,6 @@ void G_StartHunkUsers( void )
 		gi.sgameStarted = qtrue;
 		G_InitSGame();
 	}
-
-	LoadMenu_End();
 }
 
 void G_ShutdownAll( void )

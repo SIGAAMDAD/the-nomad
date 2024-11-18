@@ -149,11 +149,7 @@ typedef struct {
 	void (*ProfileFunctionBegin)( const char *function );
 	void (*ProfileFunctionEnd)( void );
 
-	void (*GLimp_AcquireContext)( void );
-
 	void (*G_GetMapData)( maptile_t **tiles, uint32_t *numTiles );
-
-	void (*GLimp_ReleaseContext)( void );
 } refimport_t;
 
 typedef struct {

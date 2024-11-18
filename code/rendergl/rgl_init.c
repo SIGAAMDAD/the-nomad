@@ -1682,21 +1682,8 @@ void RE_GetGPUMemStats( gpuMemory_t *memstats )
 
 void RE_WaitRegistered( void )
 {
-	if ( ri.Cvar_VariableInteger( "sys_forceSingleThreading" ) ) {
-		// init imgui
-		R_InitImGui();
-
-		return;
-	}
-
-	rg.registered = qtrue;
-
 	// init imgui
 	R_InitImGui();
-
-	// only create the smp thread after we've fully initialized
-	// otherwise we just hang in the init thread
-	R_InitCommandBuffers();
 }
 
 GDR_EXPORT renderExport_t *GDR_DECL GetRenderAPI( uint32_t version, refimport_t *import )

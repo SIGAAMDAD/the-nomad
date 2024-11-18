@@ -90,10 +90,6 @@ extern "C" void UI_Init( void );
 extern "C" void UI_Shutdown( void );
 extern "C" void UI_Refresh( int32_t realtime );
 extern "C" void UI_DrawText( const char *txt );
-extern void LoadMenu_Begin( void );
-extern void LoadMenu_End( void );
-extern void LoadMenu_AcquireContext( void );
-extern void LoadMenu_ReleaseContext( void );
 extern void UI_SetActiveMenu( uiMenu_t menu );
 
 // commonly used fonts in the UI system

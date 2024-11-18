@@ -612,17 +612,17 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 		if ( vtx_buffer_size > bd->VertexBufferSize ) {
 			bd->VertexBufferSize = vtx_buffer_size;
 			if ( bd->GlDirectStateAccess ) {
-				renderImport.glNamedBufferData( bd->VboHandle, bd->VertexBufferSize, NULL, GL_STREAM_DRAW );
+				renderImport.glNamedBufferData( bd->VboHandle, bd->VertexBufferSize, NULL, GL_DYNAMIC_DRAW );
 			} else {
-				renderImport.glBufferData( GL_ARRAY_BUFFER, bd->VertexBufferSize, NULL, GL_STREAM_DRAW );
+				renderImport.glBufferData( GL_ARRAY_BUFFER, bd->VertexBufferSize, NULL, GL_DYNAMIC_DRAW );
 			}
 		}
 		if ( idx_buffer_size > bd->IndexBufferSize ) {
 			bd->IndexBufferSize = idx_buffer_size;
 			if ( bd->GlDirectStateAccess ) {
-				renderImport.glNamedBufferData( bd->ElementsHandle, bd->IndexBufferSize, NULL, GL_STREAM_DRAW );
+				renderImport.glNamedBufferData( bd->ElementsHandle, bd->IndexBufferSize, NULL, GL_DYNAMIC_DRAW );
 			} else {
-				renderImport.glBufferData( GL_ELEMENT_ARRAY_BUFFER, bd->IndexBufferSize, NULL, GL_STREAM_DRAW );
+				renderImport.glBufferData( GL_ELEMENT_ARRAY_BUFFER, bd->IndexBufferSize, NULL, GL_DYNAMIC_DRAW );
 			}
 		}
 		{
@@ -674,7 +674,7 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 				if (bd->GlVersion >= 320) {
 					renderImport.DrawShaderStages( (nhandle_t)(intptr_t)pcmd->GetTexID(), pcmd->ElemCount,
 						sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, (void *)(intptr_t)(pcmd->IdxOffset * sizeof(ImDrawIdx)),
-						(GLint)pcmd->VtxOffset  );
+						(GLint)pcmd->VtxOffset );
 					//renderImport.glDrawElementsBaseVertex( GL_TRIANGLES, (GLsizei)pcmd->ElemCount,
 					//    sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, (void *)(intptr_t)(pcmd->IdxOffset * sizeof(ImDrawIdx)),
 					//    (GLint)pcmd->VtxOffset );
@@ -903,14 +903,14 @@ int ImGui_ImplOpenGL3_CreateDeviceObjects( void )
 
 		renderImport.glBindBuffer( GL_ARRAY_BUFFER, bd->VboHandle );
 		renderImport.glBufferStorage( GL_ARRAY_BUFFER, DEFAULT_VERTEX_BUFFER_SIZE, NULL, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
-		//renderImport.glBufferData( GL_ARRAY_BUFFER, DEFAULT_VERTEX_BUFFER_SIZE, NULL, GL_STREAM_DRAW );
+		//renderImport.glBufferData( GL_ARRAY_BUFFER, DEFAULT_VERTEX_BUFFER_SIZE, NULL, GL_DYNAMIC_DRAW );
 		bd->VertexBufferSize = DEFAULT_VERTEX_BUFFER_SIZE;
 		bd->VertexBuffer = renderImport.glMapBufferRange( GL_ARRAY_BUFFER, 0, DEFAULT_VERTEX_BUFFER_SIZE, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT |
 			GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_UNSYNCHRONIZED_BIT );
 
 		renderImport.glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, bd->ElementsHandle );
 		renderImport.glBufferStorage( GL_ELEMENT_ARRAY_BUFFER, DEFAULT_INDEX_BUFFER_SIZE, NULL, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
-		//renderImport.glBufferData( GL_ELEMENT_ARRAY_BUFFER, DEFAULT_INDEX_BUFFER_SIZE, NULL, GL_STREAM_DRAW );
+		//renderImport.glBufferData( GL_ELEMENT_ARRAY_BUFFER, DEFAULT_INDEX_BUFFER_SIZE, NULL, GL_DYNAMIC_DRAW );
 		bd->IndexBufferSize = DEFAULT_INDEX_BUFFER_SIZE;
 		bd->IndexBuffer = renderImport.glMapBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, DEFAULT_INDEX_BUFFER_SIZE, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT |
 			GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_UNSYNCHRONIZED_BIT );

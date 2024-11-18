@@ -17,12 +17,6 @@ namespace ImGui {
 
 namespace nomadmain {
 
-//
-// LoadLevelAssets: caches level relevant data
-//
-void LoadLevelAssets() {
-}
-
 void InitCvars() {
 	ConsolePrint( "Registering SGame Cvars...\n" );
 
@@ -109,10 +103,9 @@ void InitResources() {
 	TheNomad::Engine::ResourceCache.GetShader( "gfx/hud/blood_screen" );
 
 	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "raio_torso" );
-
 	for ( int i = 0; i < TheNomad::SGame::NUMFACING; i++ ) {
-//		TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "raio_arms_0_" + i );
-//		TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "raio_arms_1_" + i );
+		TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "raio_arms_0_" + i );
+		TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "raio_arms_1_" + i );
 		TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "raio_legs_" + i );
 	}
 
@@ -192,9 +185,6 @@ int ModuleOnInit() {
 	@TheNomad::SGame::EntityManager = cast<TheNomad::SGame::EntitySystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::EntitySystem() ) );
 	@TheNomad::SGame::GfxManager = cast<TheNomad::SGame::GfxSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::GfxSystem() ) );
 
-	// load assets
-	InitResources();
-
 	TheNomad::SGame::InitCheatCodes();
 	TheNomad::SGame::ScreenData.Init();
 
@@ -247,6 +237,9 @@ int ModuleOnSaveGame() {
 }
 
 int ModuleOnLoadGame() {
+	// load assets
+	InitResources();
+
 	TheNomad::GameSystem::GameManager.SetLoadGame( true );
 	TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::InLevel;
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
@@ -259,6 +252,9 @@ int ModuleOnLoadGame() {
 }
 
 int ModuleOnLevelStart() {
+	// load assets
+	InitResources();
+
 	TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::InLevel;
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnLevelStart();

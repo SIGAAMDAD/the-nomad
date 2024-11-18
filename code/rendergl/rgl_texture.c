@@ -2324,8 +2324,11 @@ static void R_AllocateTextureStorage( texture_t *image )
 	uint32_t estSize = 0;
 	qboolean rgba8 = image->picFormat == GL_RGBA8 || image->picFormat == GL_SRGB8_ALPHA8;
 
-	ri.GLimp_AcquireContext();
-	nglGenTextures( 1, &image->id );
+	if ( glContext.directStateAccess ) {
+		nglCreateTextures( GL_TEXTURE_2D, 1, &image->id );
+	} else {
+		nglGenTextures( 1, &image->id );
+	}
 
 	if ( image->flags & IMGFLAG_CLAMPTOBORDER ) {
 		glWrapClampMode = GL_CLAMP_TO_BORDER;
@@ -2337,8 +2340,8 @@ static void R_AllocateTextureStorage( texture_t *image )
 
 	// possibly scale image before uploading
 	if ( rgba8 && !R_HasExtension( "GL_ARB_texture_non_power_of_two" ) ) {
-//		ri.Printf( PRINT_DEVELOPER, "Scaling '%s' to power of two...\n", image->imgName );
-//		image->scaled = RawImage_ScaleToPower2( &image->data, &image->width, &image->height, image->type, image->flags, &image->data );
+		ri.Printf( PRINT_DEVELOPER, "Scaling '%s' to power of two...\n", image->imgName );
+		image->scaled = RawImage_ScaleToPower2( &image->data, &image->width, &image->height, image->type, image->flags, &image->data );
 	}
 
 	image->uploadWidth = image->width;
@@ -2390,14 +2393,25 @@ static void R_AllocateTextureStorage( texture_t *image )
 	*/
 
 	// set all necessary parameters
-	nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, glWrapClampMode );
-	nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, glWrapClampMode );
-	nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0 );
+	if ( glContext.directStateAccess ) {
+		nglTextureParameteri( image->id, GL_TEXTURE_WRAP_T, glWrapClampMode );
+		nglTextureParameteri( image->id, GL_TEXTURE_WRAP_S, glWrapClampMode );
+		nglTextureParameteri( image->id, GL_TEXTURE_BASE_LEVEL, 0 );
+	} else {
+		nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, glWrapClampMode );
+		nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, glWrapClampMode );
+		nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0 );
+	}
 
 	// set anisotropy
 	if ( r_arb_texture_filter_anisotropic->i ) {
-		nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
-			(GLint)Com_Clamp( 1, glContext.maxAnisotropy, r_arb_texture_max_anisotropy->i ) );
+		if ( glContext.directStateAccess ) {
+			nglTextureParameteri( image->id, GL_TEXTURE_MAX_ANISOTROPY_EXT,
+				(GLint)Com_Clamp( 1, glContext.maxAnisotropy, r_arb_texture_max_anisotropy->i ) );
+		} else {
+			nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
+				(GLint)Com_Clamp( 1, glContext.maxAnisotropy, r_arb_texture_max_anisotropy->i ) );
+		}
 	}
 	switch ( image->internalFormat ) {
 	case GL_DEPTH_COMPONENT:
@@ -2406,13 +2420,24 @@ static void R_AllocateTextureStorage( texture_t *image )
 	case GL_DEPTH_COMPONENT32_ARB:
 		// Fix for sampling depth buffer on old nVidia cards.
 		// from http://www.idevgames.com/forums/thread-4141-post-34844.html#pid34844
-		nglTexParameteri( GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE_ARB, GL_LUMINANCE );
-		nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-		nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+		if ( glContext.directStateAccess ) {
+			nglTextureParameteri( image->id, GL_DEPTH_TEXTURE_MODE_ARB, GL_LUMINANCE );
+			nglTextureParameteri( image->id, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+			nglTextureParameteri( image->id, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+		} else {
+			nglTexParameteri( GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE_ARB, GL_LUMINANCE );
+			nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+			nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+		}
 		break;
 	default:
-		nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min );
-		nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max );
+		if ( glContext.directStateAccess ) {
+			nglTextureParameteri( image->id, GL_TEXTURE_MIN_FILTER, gl_filter_min );
+			nglTextureParameteri( image->id, GL_TEXTURE_MAG_FILTER, gl_filter_max );
+		} else {
+			nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min );
+			nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max );
+		}
 		break;
 	};
 
@@ -2536,7 +2561,6 @@ static void R_AllocateTextureStorage( texture_t *image )
 			nglMakeTextureHandleResidentARB( image->handle );
 		}
 	}
-	ri.GLimp_ReleaseContext();
 
 	image->evicted = qfalse;
 }

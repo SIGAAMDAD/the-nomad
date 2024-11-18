@@ -2,11 +2,6 @@
 #include "../rendercommon/imgui_internal.h"
 
 typedef struct {
-    const string_t *name;
-    char *pText;
-} dataBaseSource_t;
-
-typedef struct {
     menuframework_t menu;
     nlohmann::json *sections;
     bool *filters;
