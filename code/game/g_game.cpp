@@ -1980,15 +1980,17 @@ void G_Init( void )
 	G_InitRenderer();
 	gi.rendererStarted = qtrue;
 
-	// init sound
-	Snd_Init();
-	gi.soundStarted = qtrue;
-
 	re.WaitRegistered();
 
 	if ( !sys_forceSingleThreading->i ) {
 		re.GetConfig( &gi.gpuConfig );
 	}
+
+	LoadMenu_Begin();
+
+	// init sound
+	Snd_Init();
+	gi.soundStarted = qtrue;
 
 	if ( !g_pModuleLib ) {
 		G_InitModuleLib();
@@ -2116,25 +2118,26 @@ void G_ShutdownVMs( qboolean quit ) {
 
 void G_StartHunkUsers( void )
 {
-	// cache all maps
-	G_InitMapCache();
-
-	G_InitArchiveHandler();
-
 	if ( !gi.rendererStarted ) {
 		gi.rendererStarted = qtrue;
 		G_InitRenderer();
+	
+		// the renderer could have a multithreaded init
+		re.WaitRegistered();
 	}
+	if ( !sys_forceSingleThreading->i ) {
+		re.GetConfig( &gi.gpuConfig );
+	}
+
 	if ( !gi.soundStarted ) {
 		gi.soundStarted = qtrue;
 		Snd_Init();
 	}
 
-	// the renderer could have a multithreaded init
-	re.WaitRegistered();
-	if ( !sys_forceSingleThreading->i ) {
-		re.GetConfig( &gi.gpuConfig );
-	}
+	// cache all maps
+	G_InitMapCache();
+
+	G_InitArchiveHandler();
 	
 	if ( !g_pModuleLib ) {
 		G_InitModuleLib();
@@ -2147,6 +2150,8 @@ void G_StartHunkUsers( void )
 		gi.sgameStarted = qtrue;
 		G_InitSGame();
 	}
+
+	LoadMenu_End();
 }
 
 void G_ShutdownAll( void )

@@ -102,12 +102,8 @@ static void BeginNewGame( void )
 
 	gi.playTimeStart = Sys_Milliseconds();
 
-	LoadMenu_Begin();
-
 	// start a new game
 	g_pModuleLib->ModuleCall( sgvm, ModuleOnLevelStart, 0 );
-
-	LoadMenu_End();
 }
 
 static void PlayMenu_MissionSelect( void )
