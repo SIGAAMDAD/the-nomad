@@ -102,36 +102,12 @@ static void BeginNewGame( void )
 
 	gi.playTimeStart = Sys_Milliseconds();
 
-	/*
-	re.EndFrame( NULL, NULL, NULL );
-
-	re.BeginFrame( STEREO_CENTER );
-	ImGui::Begin( "##LoadingScreen", NULL, MENU_DEFAULT_FLAGS );
-	ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-	ImGui::SetWindowSize( ImVec2( ui->gpuConfig.vidWidth, ui->gpuConfig.vidHeight ) );
-
-	refdef_t refdef;
-	memset( &refdef, 0, sizeof( refdef ) );
-	refdef.x = 0;
-	refdef.y = 0;
-	refdef.width = ui->gpuConfig.vidWidth;
-	refdef.height = ui->gpuConfig.vidHeight;
-	refdef.flags = RSF_ORTHO_TYPE_SCREENSPACE | RSF_NOWORLDMODEL;
-
-	re.DrawImage( 0, 0, refdef.width, refdef.height, 0, 0, 1, 1, re.RegisterShader( "menu/mainbackground" ) );
-
-	ImGui::SetCursorScreenPos( ImVec2( 128 * ui->scale, 660 * ui->scale ) );
-	ImGui::TextUnformatted( "Loading Level..." );
-
-	ImGui::End();
-	re.RenderScene( &refdef );
-	re.EndFrame( NULL, NULL, NULL );
-
-	re.BeginFrame( STEREO_CENTER );
-	*/
+	LoadMenu_Begin();
 
 	// start a new game
 	g_pModuleLib->ModuleCall( sgvm, ModuleOnLevelStart, 0 );
+
+	LoadMenu_End();
 }
 
 static void PlayMenu_MissionSelect( void )
