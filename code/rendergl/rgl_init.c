@@ -1525,8 +1525,6 @@ void R_Init( void )
 	glState.viewData.camera.zoom = 1.0f;
 	screenshotFrame = qfalse;
 
-	ri.GLimp_AcquireContext();
-
 	//
 	// init function tables
 	//
@@ -1587,27 +1585,9 @@ void R_Init( void )
 	ri.Printf( PRINT_INFO, "---------- finished RE_Init ----------\n" );
 }
 
-static pthread_t initThread;
-
-static void *InitRenderer( void * )
-{
-	R_Init();
-
-	return NULL;
-}
-
 void RE_BeginRegistration( gpuConfig_t *config )
 {
-	if ( !ri.Cvar_VariableInteger( "sys_forceSingleThreading" ) ) {
-		int ret;
-
-		if ( ( ret = pthread_create( &initThread, NULL, InitRenderer, NULL ) ) ) {
-			ri.Printf( PRINT_ERROR, "Error creating InitRenderer thread, pthread_create(): %s\n", strerror( ret ) );
-			R_Init();
-		}
-	} else {
-		R_Init();
-	}
+	R_Init();
 	rg.registered = qtrue;
 	*config = glConfig;
 }
@@ -1709,11 +1689,7 @@ void RE_WaitRegistered( void )
 		return;
 	}
 
-	pthread_join( initThread, NULL );
-
 	rg.registered = qtrue;
-
-	ri.GLimp_AcquireContext();
 
 	// init imgui
 	R_InitImGui();

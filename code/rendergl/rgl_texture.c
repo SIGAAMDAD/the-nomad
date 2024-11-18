@@ -2324,6 +2324,7 @@ static void R_AllocateTextureStorage( texture_t *image )
 	uint32_t estSize = 0;
 	qboolean rgba8 = image->picFormat == GL_RGBA8 || image->picFormat == GL_SRGB8_ALPHA8;
 
+	ri.GLimp_AcquireContext();
 	nglGenTextures( 1, &image->id );
 
 	if ( image->flags & IMGFLAG_CLAMPTOBORDER ) {
@@ -2529,15 +2530,15 @@ static void R_AllocateTextureStorage( texture_t *image )
 	glState.memstats.estTextureMemUsed += estSize;
 	glState.memstats.numTextures++;
 
-	if ( r_loadTexturesOnDemand->i && glContext.bindlessTextures ) {
+	if ( glContext.bindlessTextures ) {
 		image->handle = nglGetTextureHandleARB( image->id );
+		if ( !r_loadTexturesOnDemand->i ) {
+			nglMakeTextureHandleResidentARB( image->handle );
+		}
 	}
+	ri.GLimp_ReleaseContext();
 
 	image->evicted = qfalse;
-	
-	if ( rg.world && rg.worldMapLoaded ) {
-		rg.world->levelTextures++;
-	}
 }
 
 /*
@@ -2593,7 +2594,7 @@ static texture_t *R_CreateImage2( const char *name, byte *pic, int width, int he
 
 	image->data = pic;
 
-	if ( !r_loadTexturesOnDemand->i && glContext.bindlessTextures ) {
+	if ( !r_loadTexturesOnDemand->i ) {
 		R_AllocateTextureStorage( image );
 	} else {
 		if ( pic ) {

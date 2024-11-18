@@ -636,7 +636,7 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 			}
 			if ( idx_buffer_size > 0 ) {
 				if ( bd->GlDirectStateAccess ) {
-					renderImport.glNamedBufferSubData( bd->ElementsHandle, 0, vtx_buffer_size, cmd_list->IdxBuffer.Data );
+					renderImport.glNamedBufferSubData( bd->ElementsHandle, 0, idx_buffer_size, cmd_list->IdxBuffer.Data );
 				} else {
 					renderImport.glBufferSubData( GL_ELEMENT_ARRAY_BUFFER, 0, idx_buffer_size, cmd_list->IdxBuffer.Data );
 				}
@@ -821,7 +821,7 @@ int ImGui_ImplOpenGL3_CreateFontsTexture( void )
 	fontsTex->height = height;
 	fontsTex->uploadWidth = width;
 	fontsTex->uploadHeight = height;
-	if ( Cvar_VariableInteger( "r_loadTexturesOnDemand" ) ) {
+	if ( strstr( gi.gpuConfig.extensions_string, "ARB_bindless_texture" ) ) {
 		fontsTex->handle = renderImport.glGetTextureHandleARB( fontsTex->id );
 		renderImport.glMakeTextureHandleResidentARB( fontsTex->handle );
 	}

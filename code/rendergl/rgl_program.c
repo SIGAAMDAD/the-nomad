@@ -634,7 +634,7 @@ static void GLSL_PrepareHeader(GLenum shaderType, const GLchar *extra, char *des
 	//
 	// add any extensions
 	//
-	if ( r_loadTexturesOnDemand->i && glContext.bindlessTextures ) {
+	if ( glContext.bindlessTextures ) {
 		N_strcat( dest, size, "#extension GL_ARB_bindless_texture : enable\n" );
 		N_strcat( dest, size, "#define USE_BINDLESS_TEXTURE\n" );
 		N_strcat( dest, size, "#define TEXTURE2D layout( bindless_sampler ) uniform sampler2D\n" );
@@ -1043,8 +1043,7 @@ void GLSL_SetUniformTexture( shaderProgram_t *program, uint32_t uniformNum, text
 	}
 	
 	*compare = (uintptr_t)(void *)value;
-	if ( r_loadTexturesOnDemand->i ) {
-//		( (GLuint64 *)rg.textureData->data )[ value - rg.textures ] = value->handle;
+	if ( glContext.bindlessTextures ) {
 		nglUniformHandleui64ARB( uniforms[ uniformNum ], value->handle );
 	} else {
 		nglUniform1i( uniforms[ uniformNum ], uniformNum );
