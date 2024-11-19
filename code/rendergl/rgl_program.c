@@ -111,16 +111,13 @@ static uniformInfo_t uniformsInfo[UNIFORM_COUNT] = {
 	{ "u_DispatchComputeSize",	GLSL_UVEC2 },
 	{ "u_FinalPass",			GLSL_INT },
 };
-
-//static shaderProgram_t *hashTable[MAX_RENDER_SHADERS];
-
-/*
+#define SHADER_CACHE_HEADER (('L'<<24)+('S'<<16)+('L'<<8)+'G')
 #define SHADER_CACHE_FILE_NAME CACHE_DIR "/glshadercache.dat"
 
 typedef struct {
 	char name[MAX_NPATH];
 	void *data;
-	uint64_t size;
+	GLint size;
 	GLenum fmt;
 } shaderCacheEntry_t;
 
@@ -132,32 +129,43 @@ static void R_LoadShaderCache( void )
 	uint32_t i;
 	char name[MAX_NPATH];
 	shaderCacheEntry_t *entry;
-	fileHandle_t f;
+	fileHandle_t fh;
+	GLint *programFormats;
+	GLint numProgramFormats, f;
+	qboolean valid;
+	uint32_t ident;
+	fileStats_t tmp;
 
 	cacheNumEntries = 0;
 	cacheHashTable = NULL;
 
-	if ( !glContext.ARB_gl_spirv || !r_useShaderCache->i ) {
+	if ( !glContext.ARB_gl_spirv || !r_useShaderCache->i || !ri.FS_FileExists( SHADER_CACHE_FILE_NAME ) ) {
 		return;
 	}
 
-#if 0
-	nLength = ri.FS_LoadFile( SHADER_CACHE_FILE_NAME, (void **)&f.v );
-	if ( !nLength || !f.v ) {
+	nglGetIntegerv( GL_NUM_PROGRAM_BINARY_FORMATS, &numProgramFormats );
+	programFormats = (GLint *)alloca( sizeof( *programFormats ) * numProgramFormats );
+	nglGetIntegerv( GL_PROGRAM_BINARY_FORMATS, programFormats );
+
+	fh = ri.FS_FOpenRead( SHADER_CACHE_FILE_NAME );
+	if ( fh == FS_INVALID_HANDLE ) {
 		ri.Printf( PRINT_INFO, "Failed to load glshadercache.dat\n" );
 		return;
 	}
-	if ( nLength < sizeof( uint32_t ) ) {
-		ri.Printf( PRINT_ERROR, "glshadercache.dat is too small to contain a header.\n" );
-		ri.FS_FreeFile( f.v );
-		return;
+
+	if ( !ri.FS_Read( &ident, sizeof( ident ), fh ) ) {
+		ri.Printf( PRINT_ERROR, "Error reading glshadercache identifier.\n" );
+		goto error;
 	}
-	buf = f.b;
+	if ( ident != SHADER_CACHE_HEADER ) {
+		ri.Printf( PRINT_ERROR, "glshadercache.dat has incorrec identifier.\n" );
+		goto error;
+	}
 
-	cacheNumEntries = *(uint32_t *)buf;
-	buf += sizeof( uint32_t );
-	pos += sizeof( uint32_t );
-
+	if ( !ri.FS_Read( &cacheNumEntries, sizeof( cacheNumEntries ), fh ) ) {
+		ri.Printf( PRINT_ERROR, "Error reading glshadercache header.\n" );
+		goto error;
+	}
 	if ( !cacheNumEntries ) {
 		ri.Error( ERR_DROP, "R_LoadShaderCache: numEntries is a funny number" );
 	}
@@ -168,163 +176,81 @@ static void R_LoadShaderCache( void )
 	for  ( i = 0; i < cacheNumEntries; i++ ) {
 		entry = &cacheHashTable[i];
 
-		if ( pos + sizeof( entry->name ) >= nLength ) {
+		if ( !ri.FS_Read( entry->name, sizeof( entry->name ), fh ) ) {
 			ri.Printf( PRINT_ERROR, "Error reading shader cache entry name at %u\n", i );
 			goto error;
 		}
-		N_strncpyz( entry->name, buf, sizeof( entry->name ) - 1 );
 
-		buf += sizeof( entry->name );
-		pos += sizeof( entry->name );
-
-		if ( pos + sizeof( entry->fmt ) >= nLength ) {
+		if ( !ri.FS_Read( &entry->fmt, sizeof( entry->fmt ), fh ) ) {
 			ri.Printf( PRINT_ERROR, "Error reading shader cache entry format at %u\n", i );
 			goto error;
 		}
 
-		entry->fmt = *(GLenum *)buf;
+		valid = qfalse;
+		for ( f = 0; f < numProgramFormats; f++ ) {
+			if ( entry->fmt == programFormats[f] ) {
+				valid = qtrue;
+				break;
+			}
+		}
+		if ( !valid ) {
+			ri.Printf( PRINT_ERROR, "Cached SPIR-V '%s' object has incorrect binary format (0x%04x)\n",
+				entry->name, entry->fmt );
+			goto error;
+		}
 
-		buf += sizeof( entry->fmt );
-		pos += sizeof( entry->fmt );
-
-//        if ( entry->fmt != GL_SHADER_BINARY_FORMAT_SPIR_V_ARB && entry->fmt != GL_SHADER_BINARY_FORMAT_SPIR_V ) {
-//            ri.Printf( PRINT_ERROR, "Cached SPIR-V '%s' object has incorrect binary format, "
-//                                    "0x%04x instead of GL_SHADER_BINARY_FORMAT_SPIR_V_BINARY_ARB (0x%04x)\n",
-//                entry->name, entry->fmt, GL_SHADER_BINARY_FORMAT_SPIR_V_ARB );
-//            goto error;
-//        }
-
-		if ( pos + sizeof( entry->size ) >= nLength ) {
+		if ( !ri.FS_Read( &entry->size, sizeof( entry->size ), fh ) ) {
 			ri.Printf( PRINT_ERROR, "Error reading shader cache entry size at %u\n", i );
 			goto error;
 		}
 
-		entry->size = *(uint64_t *)buf;
-
-		buf += sizeof( entry->size );
-		pos += sizeof( entry->size );
-
 		// the buffer shouldn't be that big
 		if ( !entry->size || entry->size >= MAX_UINT ) {
-			ri.Printf( PRINT_ERROR, "Cached SPIR-V object has funny size %lu\n", entry->size );
-			goto error;
-		}
-		if ( pos + entry->size >= nLength ) {
-			ri.Printf( PRINT_ERROR, "Error reading shader cache entry buffer at %u\n", i );
+			ri.Printf( PRINT_ERROR, "Cached SPIR-V object has funny size %i\n", entry->size );
 			goto error;
 		}
 
 		entry->data = ri.Hunk_Alloc( entry->size, h_low );
-		memcpy( entry->data, buf, entry->size );
-		
-		buf += entry->size;
-		pos += entry->size;
-	}
-
-	ri.FS_FreeFile( f.v );
-
-	ri.Printf( PRINT_INFO, "Loaded %u cached SPIR-V shader objects.\n", cacheNumEntries );
-
-error:
-	ri.FS_FreeFile( f.v );
-	cacheNumEntries = 0;
-	cacheHashTable = NULL;
-	ri.Printf( PRINT_ERROR, "Error loading glshadercache.dat, clearing.\n" );
-	ri.FS_HomeRemove( SHADER_CACHE_FILE_NAME );
-	ri.FS_Remove( SHADER_CACHE_FILE_NAME );
-#else
-	f = ri.FS_FOpenRead( SHADER_CACHE_FILE_NAME );
-	if ( f == FS_INVALID_HANDLE ) {
-		ri.Printf( PRINT_INFO, "Failed to load glshadercache.dat\n" );
-		return;
-	}
-
-	if ( !ri.FS_Read( &cacheNumEntries, sizeof( cacheNumEntries ), f ) ) {
-		ri.Printf( PRINT_ERROR, "Error reading glshadercache header.\n" );
-		goto error;
-	}
-	if ( !cacheNumEntries ) {
-		ri.Error( ERR_DROP, "R_LoadShaderCache: numEntries is a funny number" );
-	}
-
-	ri.Printf( PRINT_INFO, "Got %u cached SPIR-V objects.\n", cacheNumEntries );
-	cacheHashTable = ri.Malloc( sizeof( *cacheHashTable ) * cacheNumEntries );
-
-	for  ( i = 0; i < cacheNumEntries; i++ ) {
-		entry = &cacheHashTable[i];
-
-		if ( !ri.FS_Read( entry->name, sizeof( entry->name ), f ) ) {
-			ri.Printf( PRINT_ERROR, "Error reading shader cache entry name at %u\n", i );
-			goto error;
-		}
-
-		if ( !ri.FS_Read( &entry->fmt, sizeof( entry->fmt ), f ) ) {
-			ri.Printf( PRINT_ERROR, "Error reading shader cache entry format at %u\n", i );
-			goto error;
-		}
-
-		if ( entry->fmt != GL_SHADER_BINARY_FORMAT_SPIR_V ) {
-			ri.Printf( PRINT_ERROR, "Cached SPIR-V '%s' object has incorrect binary format, "
-									"0x%04x instead of GL_SHADER_BINARY_FORMAT_SPIR_V (0x%04x)\n",
-				entry->name, entry->fmt, GL_SHADER_BINARY_FORMAT_SPIR_V_ARB );
-			goto error;
-		}
-
-		if ( !ri.FS_Read( &entry->size, sizeof( entry->size ), f ) ) {
-			ri.Printf( PRINT_ERROR, "Error reading shader cache entry size at %u\n", i );
-			goto error;
-		}
-
-		// the buffer shouldn't be that big
-		if ( !entry->size || entry->size >= MAX_UINT ) {
-			ri.Printf( PRINT_ERROR, "Cached SPIR-V object has funny size %lu\n", entry->size );
-			goto error;
-		}
-
-		entry->data = ri.Malloc( entry->size );
-		if ( !ri.FS_Read( entry->data, entry->size, f ) ) {
+		if ( !ri.FS_Read( entry->data, entry->size, fh ) ) {
 			ri.Printf( PRINT_ERROR, "Error reading shader cache buffer at %u\n", i );
 			goto error;
 		}
 	}
 
-	ri.FS_FClose( f );
+	ri.FS_FClose( fh );
 	ri.Printf( PRINT_INFO, "Loaded %u cached SPIR-V shader objects.\n", cacheNumEntries );
 	return;
 
 error:
-	ri.FS_FClose( f );
-
-	for ( i = 0; i < cacheNumEntries; i++ ) {
-		if ( cacheHashTable[i].data ) {
-			ri.Free( cacheHashTable[i].data );
-		}
-	}
-	ri.Free( cacheHashTable );
+	ri.FS_FClose( fh );
 
 	cacheNumEntries = 0;
 	cacheHashTable = NULL;
 	ri.Printf( PRINT_ERROR, "Error loading glshadercache.dat, clearing.\n" );
 	ri.FS_HomeRemove( SHADER_CACHE_FILE_NAME );
 	ri.FS_Remove( SHADER_CACHE_FILE_NAME );
-#endif
 }
 
-static int R_GetShaderFromCache( shaderProgram_t *program )
+static uint32_t R_GetShaderFromCache( shaderProgram_t *program )
 {
-	int i;
+	uint32_t i;
 
+#ifdef _NOMAD_DEBUG
+	return (unsigned)-1; // for speed development
+#endif
 	if ( !glContext.ARB_gl_spirv || !cacheHashTable || !r_useShaderCache->i ) {
-		return -1;
+		return (unsigned)-1;
 	}
-	
+
+	ri.Printf( PRINT_INFO, "Searching for program '%s' in GLSL SPIR-V cache...\n", program->name );
 	for ( i = 0; i < cacheNumEntries; i++ ) {
 		if ( !N_stricmp( program->name, cacheHashTable[i].name ) ) {
+			ri.Printf( PRINT_INFO, "...found.\n" );
 			return i;
 		}
 	}
 
-	return -1;
+	return (unsigned)-1;
 }
 
 static void R_SaveShaderCache( void )
@@ -332,9 +258,10 @@ static void R_SaveShaderCache( void )
 	shaderCacheEntry_t entry;
 	GLint length;
 	GLenum fmt;
-	uint64_t i;
+	uint32_t i;
 	fileHandle_t cacheFile;
 	const shaderProgram_t *program;
+	uint32_t ident;
 
 	if ( !glContext.ARB_gl_spirv || !r_useShaderCache->i ) {
 		return;
@@ -345,26 +272,25 @@ static void R_SaveShaderCache( void )
 		ri.Printf( PRINT_ERROR, "Couldn't create file '%s' in write-only mode\n", SHADER_CACHE_FILE_NAME );
 		return;
 	}
+	ident = SHADER_CACHE_HEADER;
+	ri.FS_Write( &ident, sizeof( ident ), cacheFile );
 	ri.FS_Write( &rg.numPrograms, sizeof( rg.numPrograms ), cacheFile );
 
 	for ( i = 0; i < rg.numPrograms; i++ ) {
 		memset( &entry, 0, sizeof( entry ) );
 		program = rg.programs[i];
 
-		nglGetProgramiv( program->programId, GL_PROGRAM_BINARY_LENGTH, &length );
+		nglGetProgramiv( program->programId, GL_PROGRAM_BINARY_LENGTH, &entry.size );
+		entry.data = ri.Hunk_AllocateTempMemory( entry.size );
 
-		entry.data = ri.Hunk_AllocateTempMemory( length );
-		entry.size = length;
+		nglGetProgramBinary( program->programId, entry.size, NULL, &entry.fmt, (char *)entry.data );
 
-		nglGetProgramBinary( program->programId, length, NULL, &entry.fmt, (char *)entry.data );
-
-		N_strncpyz( entry.name, program->name, sizeof( entry.name ) );
-		ri.FS_Write( entry.name, sizeof( entry.name ), cacheFile );
+		ri.FS_Write( program->name, sizeof( program->name ), cacheFile );
 		ri.FS_Write( &entry.fmt, sizeof( entry.fmt ), cacheFile );
 		ri.FS_Write( &entry.size, sizeof( entry.size ), cacheFile );
 		ri.FS_Write( entry.data, entry.size, cacheFile );
 		
-		GL_LogComment( "Wrote cached GLSL SPIR-V object binary \"%s\" to \"%s\", %lu bytes, format is 0x%04x",
+		GL_LogComment( "Wrote cached GLSL SPIR-V object binary \"%s\" to \"%s\", %u bytes, format is 0x%04x",
 			program->name, SHADER_CACHE_FILE_NAME, entry.size, entry.fmt );
 
 		ri.Hunk_FreeTempMemory( entry.data );
@@ -372,7 +298,6 @@ static void R_SaveShaderCache( void )
 
 	ri.FS_FClose( cacheFile );
 }
-*/
 
 typedef enum {
 	GLSL_PRINTLOG_PROGRAM_INFO,
@@ -766,7 +691,7 @@ static void GLSL_CheckAttribLocation(GLuint id, const char *name, const char *at
 	}
 }
 
-static int GLSL_InitGPUShader2( shaderProgram_t *program, const char *name, uint32_t attribs, const char *vsCode, const char *fsCode, int fromCache )
+static int GLSL_InitGPUShader2( shaderProgram_t *program, const char *name, uint32_t attribs, const char *vsCode, const char *fsCode, uint32_t fromCache )
 {
 	ri.Printf( PRINT_DEVELOPER, "---------- GPU Shader ----------\n" );
 
@@ -781,26 +706,29 @@ static int GLSL_InitGPUShader2( shaderProgram_t *program, const char *name, uint
 
 	GL_SetObjectDebugName( GL_PROGRAM, program->programId, name, "_program" );
 
-	if ( vsCode ) {
-		if ( !( GLSL_CompileGPUShader( program->programId, &program->vertexId, vsCode, strlen(vsCode),
-			GL_VERTEX_SHADER, name, fromCache ) ) )
-		{
-			ri.Printf(PRINT_INFO, "GLSL_InitGPUShader2: Unable to load \"%s\" as GL_VERTEX_SHADER\n", name);
-			nglDeleteProgram(program->programId);
-			return qfalse;
+	if ( fromCache == (unsigned)-1 ) {
+		if ( vsCode ) {
+			if ( !( GLSL_CompileGPUShader( program->programId, &program->vertexId, vsCode, strlen(vsCode),
+				GL_VERTEX_SHADER, name, fromCache ) ) )
+			{
+				ri.Printf(PRINT_INFO, "GLSL_InitGPUShader2: Unable to load \"%s\" as GL_VERTEX_SHADER\n", name);
+				nglDeleteProgram(program->programId);
+				return qfalse;
+			}
 		}
-	}
 
-	if ( fsCode ) {
-		if (!(GLSL_CompileGPUShader( program->programId, &program->fragmentId, fsCode, strlen(fsCode),
-			GL_FRAGMENT_SHADER, name, fromCache ) ) )
-		{
-			ri.Printf(PRINT_INFO, "GLSL_InitGPUShader2: Unable to load \"%s\" as GL_FRAGMENT_SHADER\n", name);
-			nglDeleteProgram(program->programId);
-			return qfalse;
+		if ( fsCode ) {
+			if (!(GLSL_CompileGPUShader( program->programId, &program->fragmentId, fsCode, strlen(fsCode),
+				GL_FRAGMENT_SHADER, name, fromCache ) ) )
+			{
+				ri.Printf(PRINT_INFO, "GLSL_InitGPUShader2: Unable to load \"%s\" as GL_FRAGMENT_SHADER\n", name);
+				nglDeleteProgram(program->programId);
+				return qfalse;
+			}
 		}
+	} else {
+		nglProgramBinary( program->programId, cacheHashTable[ fromCache ].fmt, cacheHashTable[ fromCache ].data, cacheHashTable[ fromCache ].size );
 	}
-
 	if ( attribs & ATTRIB_POSITION ) {
 		nglBindAttribLocation( program->programId, ATTRIB_INDEX_POSITION, "a_Position" );
 	}
@@ -853,13 +781,13 @@ static int GLSL_InitComputeShader( shaderProgram_t *program, const char *name, c
 	char csCode[32000];
 	char *postHeader;
 	uint64_t size;
-	int fromCache = -1;
+	uint32_t fromCache;
 
-	rg.programs[rg.numPrograms] = program;
+	rg.programs[ rg.numPrograms ] = program;
 	rg.numPrograms++;
 
-	N_strncpyz( program->name, name, sizeof( program->name ) - 1 );
-	fromCache = -1;
+	N_strncpyz( program->name, name, sizeof( program->name ) );
+	fromCache = R_GetShaderFromCache( program );
 	if ( fromCache != -1 ) {
 		ri.Printf( PRINT_INFO, "GLSL Program '%s' loaded from shader cache.\n", name );
 	}
@@ -890,47 +818,48 @@ int GLSL_InitGPUShader( shaderProgram_t *program, const char *name, uint32_t att
 	char fsCode[32000];
 	char *postHeader;
 	uint64_t size;
-	int fromCache = -1;
+	uint32_t fromCache;
 
 	rg.programs[rg.numPrograms] = program;
 	rg.numPrograms++;
 
-	N_strncpyz( program->name, name, sizeof( program->name ) - 1 );
-	fromCache = -1;
-	if ( fromCache != -1 ) {
+	N_strncpyz( program->name, name, sizeof( program->name ) );
+	fromCache = R_GetShaderFromCache( program );
+	if ( fromCache != (unsigned)-1 ) {
 		ri.Printf( PRINT_INFO, "GLSL Program '%s' loaded from shader cache.\n", name );
 	}
 
-	// even if we are loading it from the cache, we can still use the text as a fallback
-	size = sizeof( vsCode );
+	if ( fromCache == (unsigned)-1 ) {
+		size = sizeof( vsCode );
 
-	if ( addHeader ) {
-		GLSL_PrepareHeader(GL_VERTEX_SHADER, extra, vsCode, size);
-		postHeader = &vsCode[strlen(vsCode)];
-		size -= strlen(vsCode);
-	}
-	else {
-		postHeader = &vsCode[0];
-	}
-
-	if (!GLSL_LoadGPUShaderText(name, fallback_vs, GL_VERTEX_SHADER, postHeader, size)) {
-		return qfalse;
-	}
-
-	if ( fragmentShader ) {
-		size = sizeof(fsCode);
-
-		if (addHeader) {
-			GLSL_PrepareHeader(GL_FRAGMENT_SHADER, extra, fsCode, size);
-			postHeader = &fsCode[strlen(fsCode)];
-			size -= strlen(fsCode);
+		if ( addHeader ) {
+			GLSL_PrepareHeader(GL_VERTEX_SHADER, extra, vsCode, size);
+			postHeader = &vsCode[strlen(vsCode)];
+			size -= strlen(vsCode);
 		}
 		else {
-			postHeader = &fsCode[0];
+			postHeader = &vsCode[0];
 		}
 
-		if ( !GLSL_LoadGPUShaderText( name, fallback_fs, GL_FRAGMENT_SHADER, postHeader, size ) ) {
+		if (!GLSL_LoadGPUShaderText(name, fallback_vs, GL_VERTEX_SHADER, postHeader, size)) {
 			return qfalse;
+		}
+
+		if ( fragmentShader ) {
+			size = sizeof(fsCode);
+
+			if (addHeader) {
+				GLSL_PrepareHeader(GL_FRAGMENT_SHADER, extra, fsCode, size);
+				postHeader = &fsCode[strlen(fsCode)];
+				size -= strlen(fsCode);
+			}
+			else {
+				postHeader = &fsCode[0];
+			}
+
+			if ( !GLSL_LoadGPUShaderText( name, fallback_fs, GL_FRAGMENT_SHADER, postHeader, size ) ) {
+				return qfalse;
+			}
 		}
 	}
 
@@ -1426,6 +1355,8 @@ void GLSL_InitGPUShaders_f( void )
 
 	start = ri.Milliseconds();
 
+	R_LoadShaderCache();
+
 	for ( i = 0; i < GENERICDEF_COUNT; i++ ) {
 		qboolean fastLight = !( r_normalMapping->i || r_specularMapping->i || r_bloom->i );
 
@@ -1510,6 +1441,8 @@ void GLSL_InitGPUShaders_f( void )
 
 	numGenShaders++;
 
+	R_SaveShaderCache();
+
 	end = ri.Milliseconds();
 
 	ri.Printf( PRINT_INFO, "...loaded %u GLSL shaders (%u gen %u etc %u light) in %5.2f seconds\n",
@@ -1535,6 +1468,8 @@ void GLSL_ShutdownGPUShaders( void )
 	}
 	
 	GL_BindNullProgram();
+
+	R_SaveShaderCache();
 
 	GLSL_DeleteGPUShader( &rg.imguiShader );
 	GLSL_DeleteGPUShader( &rg.textureColorShader );

@@ -77,7 +77,6 @@ typedef void*(*NGLloadproc)(const char *name);
 	NGL( void, glPolygonMode, GLenum face, GLenum mode ) \
 	NGL( void, glPixelStorei, GLenum pname, GLint param ) \
 	NGL( GLboolean, glIsEnabled, GLenum cap ) \
-	NGL( GLboolean, glIsDisabled, GLenum cap ) \
 	NGL( GLboolean, glIsProgram, GLenum program ) \
 	NGL( GLboolean, glIsShader, GLenum shader ) \
 	NGL( void, glDrawBuffer, GLenum mode ) \

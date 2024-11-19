@@ -1593,9 +1593,9 @@ typedef struct {
 
 typedef struct {
 	uint64_t name;
-	uint64_t compressedSize;
-	uint64_t size;
-	uint64_t pos;
+	int64_t compressedSize;
+	int64_t size;
+	int64_t pos;
 } bffCacheFileItem_t;
 
 #pragma pack(pop)
@@ -1961,7 +1961,7 @@ static qboolean FS_LoadBffFromFile( FILE *f )
 		return qfalse;
 	}
 
-	if ( !Sys_GetFileStats( &stats, bffName ) || stats.size != header.size || stats.mtime != header.mtime || stats.ctime != header.ctime ) {
+	if ( !Sys_GetFileStats( &stats, bffName ) || stats.mtime != header.mtime || stats.ctime != header.ctime ) {
 		const int seek_len = header.namesLen + header.numFiles * sizeof( it ) + (header.numHeaderLongs-1) * sizeof( bff->headerLongs[0] ) + header.contentLen;
 //		const int seek_len = header.namesLen + header.numFiles * sizeof( it ) + header.contentLen;
 		if ( fseek( f, seek_len, SEEK_CUR ) != 0 ) {
@@ -2130,7 +2130,7 @@ static qboolean FS_SaveCache( void )
 
 	sp = fs_searchpaths;
 
-	ospath = FS_BuildOSPath( fs_homepath->s, filename, NULL );
+	ospath = FS_BuildOSPath( fs_homepath->s, NULL, filename );
 
 	fp = Sys_FOpen( ospath, "wb" );
 	if ( fp == NULL ) {
@@ -2180,7 +2180,7 @@ static void FS_LoadCache( void )
 	fs_bffsCached = 0;
 	fs_bffsSkipped = 0;
 
-	ospath = FS_BuildOSPath( fs_homepath->s, filename, NULL );
+	ospath = FS_BuildOSPath( fs_homepath->s, NULL, filename );
 
 	Con_Printf( "Loading cached bffs from '%s'...\n", ospath );
 	fp = Sys_FOpen( ospath, "rb" );
