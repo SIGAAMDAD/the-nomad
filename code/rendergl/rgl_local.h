@@ -135,6 +135,7 @@ typedef struct
 	qboolean bindlessTextures;
 	qboolean transformFeedback;
 	qboolean directStateAccess;
+	qboolean shaderSubroutine;
 
 	int maxTextureUnits;
 	int maxTextureSize;

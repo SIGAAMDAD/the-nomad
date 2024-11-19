@@ -379,6 +379,14 @@ typedef void*(*NGLloadproc)(const char *name);
 #define NGL_ARB_buffer_storage \
 	NGL( void, glBufferStorage, GLenum target, GLsizeiptr size, const void *data, GLbitfield flags )
 
+#define NGL_ARB_shader_subroutine \
+	NGL( GLuint, glGetSubroutineIndex, GLuint program, GLenum shaderType, const char *name ) \
+	NGL( void, glGetProgramStageiv, GLuint program, GLenum shaderType, GLenum pname, GLint *values ) \
+	NGL( void, glGetActiveSubroutineName, GLuint program, GLenum shaderType, GLuint index, GLsizei bufsize, GLsizei *length, char *name ) \
+	NGL( void, glGetActiveSubroutineUniformiv, GLuint program, GLenum shaderType, GLuint index, GLenum pname, GLint *values ) \
+	NGL( void, glGetSubroutineUniformLocation, GLuint program, GLenum shaderType, const char *name ) \
+	NGL( void, glUniformSubroutinesuiv, GLenum shaderType, GLsizei count, const GLuint *indices ) \
+
 #define NGL_Procs \
 	NGL_Core_Procs \
 	NGL_Debug_Procs \
@@ -418,6 +426,7 @@ NGL_ARB_buffer_storage
 NGL_ARB_sync
 NGL_ARB_bindless_texture
 NGL_ARB_direct_state_access
+NGL_ARB_shader_subroutine
 #undef NGL
 
 #define LOAD_GL_PROCS( procs ) procs

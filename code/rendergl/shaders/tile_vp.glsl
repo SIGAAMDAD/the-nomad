@@ -9,23 +9,10 @@ out vec3 v_WorldPos;
 out vec3 v_Position;
 
 uniform mat4 u_ModelViewProjection;
-uniform mat4 u_ModelMatrix;
 uniform vec4 u_BaseColor;
 uniform vec4 u_VertColor;
 uniform int u_ColorGen;
 uniform int u_AlphaGen;
-
-#if defined(USE_TCGEN)
-uniform vec4 u_DiffuseTexMatrix;
-uniform vec4 u_DiffuseTexOffTurb;
-#endif
-
-#if defined(USE_TCGEN)
-uniform int u_TCGen0;
-uniform vec3 u_TCGen0Vector0;
-uniform vec3 u_TCGen0Vector1;
-uniform vec3 u_WorldPos;
-#endif
 
 TEXTURE2D u_DiffuseMap;
 

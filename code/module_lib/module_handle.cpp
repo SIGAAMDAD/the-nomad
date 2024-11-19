@@ -182,7 +182,7 @@ void LogExceptionInfo( asIScriptContext *pContext, void *userData )
 		pContext->GetExceptionString() );
 	}
 
-	N_Error( ERR_DROP, "%s", msg );
+	N_Error( ERR_FATAL, "%s", msg );
 }
 
 void CModuleHandle::PrepareContext( asIScriptFunction *pFunction )
@@ -237,8 +237,8 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, int *pArgLis
 		} catch ( const nlohmann::json::exception& e ) {
 			const asIScriptFunction *pFunc;
 			pFunc = pContext->GetExceptionFunction();
-		
-			N_Error( ERR_DROP,
+			
+			N_Error( ERR_FATAL,
 				"nlohmann::json::exception was thrown in module ->\n"
 				" Module ID: %s\n"
 				" Section Name: %s\n"
@@ -295,7 +295,7 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, int *pArgLis
 		const asIScriptFunction *pFunc;
 		pFunc = pContext->GetExceptionFunction();
 	
-		N_Error( ERR_DROP,
+		N_Error( ERR_FATAL,
 			"nlohmann::json::exception was thrown in module ->\n"
 			" Module ID: %s\n"
 			" Section Name: %s\n"

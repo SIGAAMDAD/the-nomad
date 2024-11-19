@@ -1474,7 +1474,7 @@ static void ModuleAssertion( bool bCheck ) {
 		return;
 	}
 
-	N_Error( ERR_DROP,
+	N_Error( ERR_FATAL,
 		"Module Assertion Exception thrown ->\n"
 		" Line: %i\n"
 		" Section: %s\n"
@@ -1530,6 +1530,43 @@ static void GetMousePosition( asIScriptGeneric *pGeneric ) {
 	SDL_GetMouseState( &x, &y );
 
 	new ( pGeneric->GetAddressOfReturnLocation() ) ivec2( x, y );
+}
+
+static void AllocateExternalScriptObject( asIScriptGeneric *pGeneric )
+{
+	asIScriptObject *pObject;
+	asIScriptFunction *pFactory;
+	asITypeInfo *pTypeInfo;
+	char szFactoryName[ 1024 ];
+	
+	const string_t& nameSpace = *(const string_t *)pGeneric->GetArgObject( 0 );
+	const string_t& name = *(const string_t *)pGeneric->GetArgObject( 1 );
+
+	memset( szFactoryName, 0, sizeof( szFactoryName ) );
+	snprintf( szFactoryName, sizeof( szFactoryName ) - 1, "%s::%s@ %s()", nameSpace.c_str(), name.c_str(), name.c_str() );
+
+	pTypeInfo = g_pModuleLib->GetScriptModule()->GetTypeInfoByDecl( va( "%s::%s", nameSpace.c_str(), name.c_str() ) );
+	if ( !pTypeInfo ) {
+		Con_Printf( COLOR_RED "ERROR: invalid script class type \"%s::%s\"!\n", nameSpace.c_str(), name.c_str() );
+		return;
+	}
+
+	pFactory = g_pModuleLib->GetScriptModule()->GetFunctionByDecl( szFactoryName );
+	if ( !pFactory ) {
+		Con_Printf( COLOR_RED "ERROR: script class \"%s::%s\" has no default factory!\n", nameSpace.c_str(), name.c_str() );
+		return;
+	}
+
+	g_pModuleLib->GetScriptContext()->PushState();
+	g_pModuleLib->GetScriptContext()->Prepare( pFactory );
+	g_pModuleLib->GetScriptContext()->Execute();
+	g_pModuleLib->GetScriptContext()->Unprepare();
+	g_pModuleLib->GetScriptContext()->PopState();
+
+	pObject = *(asIScriptObject **)g_pModuleLib->GetScriptContext()->GetAddressOfReturnValue();
+	pObject->AddRef();
+
+	pGeneric->SetReturnObject( pObject );
 }
 
 static void GetString( asIScriptGeneric *pGeneric ) {
@@ -3016,6 +3053,8 @@ void ModuleLib_Register_Engine( void )
 		REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Util::BoundsIntersect( const TheNomad::GameSystem::BBox& in, const TheNomad::GameSystem::BBox& in )", WRAP_FN_PR( BoundsIntersect, ( const CModuleBoundBox *, const CModuleBoundBox * ), bool ) );
 		REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Util::BoundsIntersectPoint( const TheNomad::GameSystem::BBox& in, const vec3& in )", WRAP_FN_PR( BoundsIntersectPoint, ( const CModuleBoundBox *, const vec3 * ), bool ) );
 		REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Util::BoundsIntersectSphere( const TheNomad::GameSystem::BBox& in, const vec3& in, float )", WRAP_FN_PR( BoundsIntersectSphere, ( const CModuleBoundBox *, const vec3 *, float ), bool ) );
+
+		REGISTER_GLOBAL_FUNCTION( "ref@ TheNomad::Util::AllocateExternalScriptClass( const string& in nameSpace, const string& in name )", asFUNCTION( AllocateExternalScriptObject ) );
 
 		RESET_NAMESPACE();
 	}

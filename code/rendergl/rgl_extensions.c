@@ -245,7 +245,26 @@ void R_InitExtensions( void )
 		}
 	}
 	else {
-		ri.Printf(PRINT_INFO, result[EXT_NOTFOUND], ext);
+		ri.Printf( PRINT_INFO, result[EXT_NOTFOUND], ext );
+	}
+
+	//
+	// ARB_shader_subroutine
+	//
+	ext = "GL_ARB_shader_subroutine";
+	glContext.shaderSubroutine = qfalse;
+	if ( NGL_VERSION_ATLEAST( 4, 0 ) || R_HasExtension( ext ) ) {
+		NGL_ARB_shader_subroutine
+
+		glContext.shaderSubroutine = qtrue;
+		if ( !nglGetSubroutineUniformLocation || !nglUniformSubroutinesuiv ) {
+			ri.Printf( PRINT_INFO, ext[ EXT_FAILED ], ext );
+			glContext.shaderSubroutine = qfalse;
+		} else {
+			ri.Printf( PRINT_INFO, ext[ EXT_USING ], ext );
+		}
+	} else {
+		ri.Printf( PRINT_INFO, result[ EXT_NOTFOUND ], ext );
 	}
 
 	//
@@ -259,18 +278,18 @@ void R_InitExtensions( void )
 		glContext.ARB_vertex_buffer_object = r_arb_vertex_buffer_object->i;
 
 		if (!nglGenBuffersARB || !nglDeleteBuffersARB || !nglBindBufferARB || !nglBufferDataARB || !nglBufferSubDataARB ) {
-			ri.Printf( PRINT_INFO, result[EXT_FAILED], ext);
+			ri.Printf( PRINT_INFO, result[EXT_FAILED], ext );
 			glContext.vboTarget = GL_ARRAY_BUFFER;
 			glContext.iboTarget = GL_ELEMENT_ARRAY_BUFFER;
 			glContext.ARB_vertex_buffer_object = qfalse;
 		}
 		else {
-			ri.Printf(PRINT_INFO, result[EXT_USING], ext);
+			ri.Printf( PRINT_INFO, result[EXT_USING], ext );
 		}
 		
 	}
 	else {
-		ri.Printf(PRINT_INFO, result[EXT_NOTFOUND], ext);
+		ri.Printf( PRINT_INFO, result[EXT_NOTFOUND], ext );
 	}
 
 	ri.Cvar_Set( "r_arb_vertex_buffer_object", va( "%i", glContext.ARB_vertex_buffer_object ) );

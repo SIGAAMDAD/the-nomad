@@ -543,8 +543,8 @@ static void GLSL_PrepareHeader(GLenum shaderType, const GLchar *extra, char *des
 		N_strcat( dest, size, "#version 450 core\n" );
 	}
 	// otherwise, do the Quake3e method
-	else if (GLSL_VERSION_ATLEAST(1, 30)) {
-		if (GLSL_VERSION_ATLEAST(1, 50)) {
+	else if ( GLSL_VERSION_ATLEAST( 1, 30 ) ) {
+		if ( GLSL_VERSION_ATLEAST( 1, 50 ) ) {
 			N_strcat( dest, size, "#version 150\n" );
 		}
 		else if (GLSL_VERSION_ATLEAST(1, 30)) {
@@ -567,6 +567,26 @@ static void GLSL_PrepareHeader(GLenum shaderType, const GLchar *extra, char *des
 		N_strcat( dest, size, "#define TEXTURE2D uniform sampler2D\n" );
 	}
 
+	if ( !glContext.shaderSubroutine ) {
+		if ( r_hdr->i ) {
+			N_strcat( dest, size, "#define USE_HDR\n" );
+		}
+		if ( r_bloom->i ) {
+			N_strcat( dest, size, "#define USE_BLOOM\n" );
+		}
+		if ( r_pbr->i ) {
+			N_strcat( dest, size, "#define USE_PBR\n" );
+		}
+		if ( r_postProcess->i ) {
+			N_strcat( dest, size, "#define USE_POSTPROCESS\n" );
+		}
+		if ( r_ignorehwgamma->i ) {
+			N_strcat( dest, size, "#define IGNORE_HWGAMMA\n" );
+		}
+		N_strcat( dest, size, va( "#define ANTIALIAS_TYPE %i\n", r_multisampleType->i ) );
+		N_strcat( dest, size, va( "#define ANTIALIAS_QUALITY %i\n", r_antialiasQuality->i ) );
+		N_strcat( dest, size, va( "#define LIGHTING_QUALITY %i\n", r_lightingQuality->i ) );
+	}
 	if ( !( NGL_VERSION_ATLEAST( 1, 30 ) ) ) {
 		if ( shaderType == GL_VERTEX_SHADER ) {
 			N_strcat( dest, size, "#define in attribute\n" );
@@ -820,7 +840,7 @@ int GLSL_InitGPUShader( shaderProgram_t *program, const char *name, uint32_t att
 	uint64_t size;
 	uint32_t fromCache;
 
-	rg.programs[rg.numPrograms] = program;
+	rg.programs[ rg.numPrograms ] = program;
 	rg.numPrograms++;
 
 	N_strncpyz( program->name, name, sizeof( program->name ) );
@@ -1355,7 +1375,9 @@ void GLSL_InitGPUShaders_f( void )
 
 	start = ri.Milliseconds();
 
-	R_LoadShaderCache();
+	if ( !cacheNumEntries ) {
+		R_LoadShaderCache();
+	}
 
 	for ( i = 0; i < GENERICDEF_COUNT; i++ ) {
 		qboolean fastLight = !( r_normalMapping->i || r_specularMapping->i || r_bloom->i );

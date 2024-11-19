@@ -23,10 +23,6 @@ uniform int u_LightingQuality;
 uniform bool u_Bloom;
 uniform bool u_PostProcess;
 
-#if defined(USE_SHADOWMAP)
-TEXTURE2D u_ShadowMap;
-#endif
-
 uniform int u_AlphaTest;
 
 TEXTURE2D u_DiffuseMap;
@@ -67,35 +63,6 @@ uniform vec3 u_AmbientColor;
 #include "image_sharpen.glsl"
 #include "fxaa.glsl"
 
-float CalcLightAttenuation(float point, float normDist)
-{
-	// zero light at 1.0, approximating q3 style
-	// also don't attenuate directional light
-	float attenuation = (0.5 * normDist - 1.5) * point + 1.0;
-
-	// clamp attenuation
-	#if defined(NO_LIGHT_CLAMP)
-	attenuation = max(attenuation, 0.0);
-	#else
-	attenuation = clamp(attenuation, 0.0, 1.0);
-	#endif
-
-	return attenuation;
-}
-
-vec3 CalcDiffuse( vec3 diffuseAlbedo, float NH, float EH, float roughness )
-{
-#if defined(USE_BURLEY)
-	// modified from https://disney-animation.s3.amazonaws.com/library/s2012_pbs_disney_brdf_notes_v2.pdf
-	float fd90 = -0.5 + EH * EH * roughness;
-	float burley = 1.0 + fd90 * 0.04 / NH;
-	burley *= burley;
-	return diffuseAlbedo * burley;
-#else
-	return diffuseAlbedo;
-#endif
-}
-
 vec3 CalcNormal() {
 #if defined(USE_NORMALMAP)
 	vec3 normal = texture( u_NormalMap, v_TexCoords ).rgb;
@@ -110,6 +77,36 @@ vec3 CalcScreenSpaceNormal( vec3 position ) {
 	vec3 dx = dFdx( position );
 	vec3 dy = dFdy( position );
 	return normalize( cross( dx, dy ) );
+}
+
+vec3 CalcSpecular() {
+#if defined(USE_SPECULARMAP)
+	vec3 upper = texture( u_SpecularMap, v_TexCoords ).rgb;
+	vec3 lower = a_Color.rgb;
+	vec3 outColor = vec3( 0.0, 0.0, 0.0 );
+
+	if ( upper.r > 0.5 ) {
+		outColor.r = ( 1.0 - ( 1.0 - lower.r ) * ( 1.0 - 2.0 * ( upper.r - 0.5 ) ) );
+	} else {
+		outColor.r = lower.r * ( 2.0 * upper.r );
+	}
+
+	if ( upper.g > 0.5 ) {
+		outColor.g = ( 1.0 - ( 1.0 - lower.g ) * ( 1.0 - 2.0 * ( upper.g - 0.5 ) ) );
+	} else {
+		outColor.g = lower.g * ( 2.0 * upper.g );
+	}
+
+	if ( upper.b > 0.5 ) {
+		outColor.b = ( 1.0 - ( 1.0 - lower.b ) * ( 1.0 - 2.0 * ( upper.b - 0.5 ) ) );
+	} else {
+		outColor.b = lower.b * ( 2.0 * upper.b );
+	}
+
+	return outColor;
+#else
+	return outColor;
+#endif
 }
 
 vec3 CalcPointLight( Light light ) {
@@ -129,14 +126,8 @@ vec3 CalcPointLight( Light light ) {
 
 	attenuation = ( light.constant + light.linear + light.quadratic * ( light.range * light.range ) );
 	if ( u_LightingQuality == 2 ) {
+		const vec3 specular = CalcSpecular();
 		const vec3 normal = CalcNormal();
-		const vec3 lightDir = v_Position - vec3( light.origin, 0.0 );
-		const vec3 viewDir = normalize( normalize( u_ViewOrigin ) - v_Position );
-		const vec3 reflectDir = reflect( -lightDir, CalcScreenSpaceNormal( v_Position ) );
-
-		float spec = pow( max( dot( viewDir, reflectDir ), 0.0 ), 32 );
-		vec3 specular = texture( u_SpecularMap, v_TexCoords ).r * spec * light.color.rgb;
-
 		diffuse = mix( diffuse, specular, 0.025 );
 		diffuse = mix( diffuse, normal, 0.025 );
 	}
