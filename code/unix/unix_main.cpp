@@ -591,19 +591,6 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error( cons
 
 	Sys_DebugStacktrace( MAX_STACKTRACE_FRAMES );
 	
-	/*
-	if ( !errorCaught ) {
-		// [SIREngine] 16/5/2024
-		// this would recurse with the SDL2/X11 window stuff allocating and then we get
-		// a memory corruption error that goes unhandled
-		errorCaught = qtrue;
-		Sys_MessageBox( "Engine Error", text, false );
-	}
-	*/
-
-	msg = va( "Sys_Error: %s\n", text );
-	write( STDERR_FILENO, msg, strlen( msg ) );
-	
 	// fprintf COULD call malloc, and if we're out of memory, this would not do anything
 	// but make even more problems
 //	fprintf( stderr, "Sys_Error: %s\n", text );

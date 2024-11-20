@@ -2,7 +2,7 @@
 	"ItemInfo": [
 		{
 			"Type": "Powerup",
-			"Id": "powerup_a",
+			"Id": 0,
 			"Name": "Trigger Happy",
 			"Effect": "sgame.toggle_powerup 0",
 			"Duration": 50,
@@ -15,7 +15,7 @@
 		},
 		{
 			"Type": "Powerup",
-			"Id": "powerup_b",
+			"Id": 1,
 			"Name": "Endless Anger",
 			"Effect": "sgame.toggle_powerup 1",
 			"Duration": 5,
@@ -28,7 +28,7 @@
 		},
 		{
 			"Type": "Consumable",
-			"Id": "item_stimpack",
+			"Id": 2,
 			"Name": "Stim Pack",
 			"Effect": "sgame.add_health_mult 5.0",
 			"Icon": "icons/icon_healthpack",
@@ -42,7 +42,7 @@
 		},
 		{
 			"Type": "Consumable",
-			"Id": "item_ammopack",
+			"Id": 3,
 			"Name": "Bullets",
 			"Effect": "add_player_ammo bullet 15",
 			"SpriteOffsetX": 0,
@@ -53,7 +53,7 @@
 		},
 		{
 			"Type": "Consumable",
-			"Id": "item_shellpack",
+			"Id": 4,
 			"Name": "Shells",
 			"Effect": "sgame.add_player_ammo shell 12",
 			"SpriteOffsetX": 0,
@@ -64,7 +64,7 @@
 		},
 		{
 			"Type": "Consumable",
-			"Id": "item_rocketpack",
+			"Id": 5,
 			"Name": "Rockets",
 			"Effect": "sgame.add_player_ammo rocket 5",
 			"SpriteOffsetX": 0,
@@ -75,7 +75,7 @@
 		},
 		{
 			"Type": "Consumable",
-			"Id": "item_grenadepack",
+			"Id": 6,
 			"Name": "Grenades",
 			"Effect": "sgame.add_player_ammo grenade 5",
 			"SpriteOffsetX": 0,

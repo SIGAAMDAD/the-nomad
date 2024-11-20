@@ -2,7 +2,7 @@
 	"MobInfo": [
 		{
 			"Name": "Zurgut Grunt",
-			"Type": "mob_grunt",
+			"Id": "mob_grunt",
 			"Health": 24,
 			"ArmorType": "None",
 			"SoundTolerance": 24.0,
@@ -58,7 +58,7 @@
 		},
 		{
 			"Name": "Mercenary",
-			"Type": "mob_mercenary",
+			"Id": "mob_mercenary",
 			"Health": 50,
 			"ArmorType": "Light",
 			"SoundTolerance": 14.0,

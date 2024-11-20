@@ -8,19 +8,16 @@ namespace TheNomad::SGame::InfoSystem {
 		bool Load( json@ json ) {
 			string str;
 			bool useSpriteSheet = false;
-			EntityData@ entity = null;
 
 			if ( !json.get( "Name", name ) ) {
 				ConsoleWarning( "invalid item info, missing variable 'Name'\n" );
 				return false;
 			}
-			if ( !json.get( "Id", str ) ) {
+			if ( !json.get( "Id", type ) ) {
 				ConsoleWarning( "invalid item info, missing variable 'Id'\n" );
 				return false;
 			} else {
-				if ( ( @entity = @InfoManager.GetItemType( str ) ) !is null ) {
-					type = entity.GetID();
-				} else {
+				if ( @InfoManager.GetItemType( type ) is null ) {
 					GameError( "invalid item info, Type \"" + str + "\" wasn't found" );
 				}
 			}

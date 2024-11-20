@@ -230,11 +230,12 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, int *pArgLis
 			CheckASCall( pContext->SetArgDWord( i, pArgList[i] ) );
 		}
 		
+		retn = asEXECUTION_FINISHED;
 		try {
 			retn = pContext->Execute();
-		} catch ( const ModuleException& e ) {
+		} catch ( const ModuleException& moduleError ) {
 			LogExceptionInfo( pContext, this );
-		} catch ( const nlohmann::json::exception& e ) {
+		} catch ( const nlohmann::json::exception& jsonError ) {
 			const asIScriptFunction *pFunc;
 			pFunc = pContext->GetExceptionFunction();
 			
@@ -247,7 +248,10 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, int *pArgLis
 				" Error Message: %s\n"
 				" Id: %i\n"
 			, pFunc->GetModuleName(), pFunc->GetScriptSectionName(), pFunc->GetDeclaration(), pContext->GetExceptionLineNumber(),
-			e.what(), e.id );
+			jsonError.what(), jsonError.id );
+		} catch ( const std::exception& e ) {
+			Cvar_Set( "com_errorMessage", e.what() );
+			LogExceptionInfo( pContext, this );
 		}
 	
 		switch ( retn ) {
