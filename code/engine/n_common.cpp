@@ -28,7 +28,7 @@ static sysEvent_t com_pushedEvents[MAX_PUSHED_EVENTS];
 qboolean gw_minimized = qfalse;
 qboolean gw_active = qtrue;
 
-static qboolean com_safeMode = qfalse;
+qboolean com_safeMode = qfalse;
 
 uint32_t com_fps;
 int CPU_flags;
@@ -204,143 +204,6 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Con_DPrintf( const char *fmt
 	Con_Printf( COLOR_CYAN "%s", msg );
 }
 
-void Com_WriteCrashReport( void )
-{
-    char msg[MAX_CVAR_VALUE];
-    char path[MAX_OSPATH];
-    char timestr[32];
-    struct tm *t;
-    time_t ctime;
-	cvar_t *var;
-	const char *match;
-	FILE *fp;
-	extern cvar_t *cvar_vars;
-
-    ctime = time( NULL );
-    t = localtime( &ctime );
-    strftime( timestr, sizeof( timestr ) - 1, "%d%m%Y_%S%M%H", t );
-
-    Cvar_VariableStringBuffer( "com_errorMessage", msg, sizeof( msg ) - 1 );
-    Com_snprintf( path, sizeof( path ) - 1, "%s/%s/" LOG_DIR "/CrashReports/crashreport_%s.txt", FS_GetHomePath(), FS_GetBaseGameDir(), timestr );
-	
-	fp = fopen( path, "w" );
-	if ( !fp ) {
-	    fprintf( stderr, "Error creating file %s in write-only mode!\n", path );
-		if ( logfile != FS_INVALID_HANDLE && FS_Initialized() ) {
-			FS_Printf( logfile, "Error creating file %s in write-only mode!\n", path );
-		}
-		return;
-	}
-
-	strftime( timestr, sizeof( timestr ) - 1, "%d/%m/%Y %S:%M:%H", t );
-
-    fprintf( fp, "[ERROR INFO]\n" );
-	fprintf( fp, "Time: %s\n", timestr );
-    fprintf( fp, "Message: %s\n", msg );
-    if ( gi.state == GS_LEVEL ) {
-        fprintf( fp, "MapName: %s\n", gi.mapCache.info.name );
-        fprintf( fp, "SaveName: %s\n", Cvar_VariableString( "sgame_SaveName" ) );
-    }
-    else if ( gi.state == GS_MENU ) {
-        fprintf( fp, "ActiveMenu: %i\n", ui->menustate );
-    }
-    fprintf( fp, "StackTrace:\n" );
-    Sys_DebugStacktraceFile( MAX_STACKTRACE_FRAMES, fp );
-	fprintf( fp, "\n" );
-
-    fprintf( fp, "[ENGINE INFO]\n" );
-	fprintf( fp, "Version String: " GLN_VERSION "\n" );
-	if ( FS_Initialized() && ui ) {
-		fprintf( fp, "Demo: %i\n", ui->demoVersion );
-	}
-    fprintf( fp, "Architecture: " ARCH_STRING "\n" );
-    fprintf( fp, "Operating System: " OS_STRING "\n" );
-    fprintf( fp, "CPU: %s\n", sys_cpuString->s );
-    fprintf( fp, "Build Information:\n" );
-	fprintf( fp, "\tC++ Version: %li\n", __cplusplus );
-	fprintf( fp, "\tCompiler: " COMPILER_STRING "\n" );
-	fprintf( fp, "\tCompiler Version: %lu\n", (uint64_t)EA_COMPILER_VERSION );
-	fprintf( fp, "Compiler Macros:\n" );
-#ifdef USE_CPU_AFFINITY
-    fprintf( fp, "\tUSE_CPU_AFFINITY\n" );
-#endif
-#ifdef USE_OPENGL_API
-	fprintf( fp, "\tUSE_OPENGL_API\n" );
-#endif
-#ifdef USE_VULKAN_API
-	fprintf( fp, "\tUSE_VULKAN_API\n" );
-#endif
-	fprintf( fp, "\n" );
-
-    fprintf( fp, "[CVAR INFO]\n" );
-	for ( var = cvar_vars; var; var = var->next ) {
-        if ( !var->name ) {
-			continue;
-		}
-		else if ( var->name && !N_stricmp( var->name, "com_errorMessage" ) ) {
-			continue; // don't print this redundantly
-		}
-
-		if ( var->flags & CVAR_SERVERINFO ) {
-			fprintf( fp, "S" );
-		} else {
-			fprintf( fp, " " );
-		}
-		if ( var->flags & CVAR_SYSTEMINFO ) {
-			fprintf( fp, "s" );
-		} else {
-			fprintf( fp, " " );
-		}
-		if ( var->flags & CVAR_USERINFO ) {
-			fprintf( fp, "U" );
-		} else {
-			fprintf( fp, " " );
-		}
-		if ( var->flags & CVAR_ROM ) {
-			fprintf( fp, "R" );
-		} else {
-			fprintf( fp, " " );
-		}
-		if ( var->flags & CVAR_INIT ) {
-			fprintf( fp, "I" );
-		} else {
-			fprintf( fp, " ");
-		}
-		if ( var->flags & CVAR_SAVE ) {
-			fprintf( fp, "A" );
-		} else {
-			fprintf( fp, " " );
-		}
-		if ( var->flags & CVAR_LATCH ) {
-			fprintf( fp, "L" );
-		} else {
-			fprintf( fp, " " );
-		}
-		if ( var->flags & CVAR_CHEAT ) {
-			fprintf( fp, "C" );
-		} else {
-			fprintf( fp, " " );
-		}
-		if ( var->flags & CVAR_USER_CREATED ) {
-			fprintf( fp, "?" );
-		} else {
-			fprintf( fp, " " );
-		}
-
-		fprintf( fp, " %s \"%s\"\n", var->name, var->s );
-    }
-
-    fprintf( fp, "\n" );
-    fprintf( fp, "[FILESYSTEM INFO]\n" );
-    fprintf( fp, "Referenced BFFs: %s\n", FS_ReferencedBFFNames() );
-    fprintf( fp, "Loaded BFFs: %s\n", FS_LoadedBFFNames() );
-
-	fclose( fp );
-
-	Con_Printf( "CrashReport data written to '%s'\n", path );
-	Cvar_SetIntegerValue( "com_crashReportCount", Cvar_VariableInteger( "com_crashReportCount" ) + 1 );
-}
-
 void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL N_Error( errorCode_t code, const char *err, ... )
 {
 	va_list argptr;
@@ -352,9 +215,6 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL N_Error( errorC
 	if ( com_errorEntered ) {
 		if ( !calledSystemError ) {
 			calledSystemError = qtrue;
-			if ( com_fullyInitialized ) {
-				Com_WriteCrashReport(); // we most likely won't crash from the crash report
-			}
 			Sys_Error( "recursive error after: %s", com_errorMessage );
 		}
 	}
@@ -384,7 +244,6 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL N_Error( errorC
 	if ( code == ERR_DROP ) {
 		Con_Printf( "********************\nERROR: %s\n********************\n", com_errorMessage );
 //		VM_Forced_Unload_Start();
-		Com_WriteCrashReport();
 		Com_EndRedirect();
 		G_FlushMemory();
 //		VM_Forced_Unload_Done();
@@ -394,9 +253,6 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL N_Error( errorC
 		Q_longjmp( abortframe, -1 );
 	} else { // ERR_FATAL
 //		VM_Forced_Unload_Start();
-		if ( com_fullyInitialized ) {
-			Com_WriteCrashReport(); // we most likely won't crash from the crash report
-		}
 		G_ShutdownVMs( qtrue );
 		G_ShutdownRenderer( REF_UNLOAD_DLL );
 		Com_EndRedirect();
@@ -1727,36 +1583,6 @@ static void Com_PrintVersionStrings( const char *commandLine )
 	Com_VersionString(), version_str);
 }
 
-//
-// Com_CheckCrash: checks if the game crashed
-//
-static void Com_CheckCrash( void )
-{
-	FILE *fp;
-	int ret;
-
-	// shut up compiler
-	ret = 0;
-
-	fp = Sys_FOpen( "nomad.pid", "r" );
-	if ( fp ) {
-		ret = Sys_MessageBox( "Safe Mode", "Game shut down unexpectedly the last time it was run.\n"
-			"Would you like to enable safe mode?", true );
-		
-		if ( ret ) {
-			if ( Com_SafeMode() ) {
-				return; // already set
-			}
-			com_safeMode = qtrue;
-		} else {
-			com_safeMode = qfalse;
-		}
-	} else {
-		fp = Sys_FOpen( "nomad.pid", "w" );
-	}
-	fclose( fp );
-}
-
 /*
 * Com_Init: initializes all the engine's systems
 */
@@ -1786,7 +1612,6 @@ void Com_Init( char *commandLine )
 	// prepare enough of the subsystems to handle
 	// cvar and command buffer management
 	Com_ParseCommandLine( commandLine );
-	Com_CheckCrash();
 
 	Cbuf_Init();
 
@@ -1916,6 +1741,8 @@ void Com_Init( char *commandLine )
 	Con_Printf( "%s\n", Cvar_VariableString( "sys_cpuString" ) );
 
 	Cvar_Get( "com_errorMessage", "", CVAR_ROM | CVAR_NORESTART );
+
+	Sys_InitPIDFile( FS_GetCurrentGameDir() );
 
 #ifdef USE_AFFINITY_MASK
 	// get initial process affinity - we will respect it when setting custom affinity masks
@@ -2639,5 +2466,37 @@ void Com_SortFileList( char **list, uint64_t nfiles, uint64_t fastSort )
 				}
 			}
 		} while( flag );
+	}
+}
+
+#define PID_FILENAME "nomad.pid"
+
+/*
+=================
+Sys_PIDFileName
+=================
+*/
+const char *Sys_PIDFileName( const char *gamedir )
+{
+	const char *homePath = Cvar_VariableString( "fs_homepath" );
+
+	if ( *homePath != '\0' ) {
+		return va( "%s/%s/%s", homePath, gamedir, PID_FILENAME );
+	}
+
+	return NULL;
+}
+
+/*
+=================
+Sys_RemovePIDFile
+=================
+*/
+void Sys_RemovePIDFile( const char *gamedir )
+{
+	const char *pidFile = Sys_PIDFileName( gamedir );
+
+	if ( pidFile != NULL ) {
+		remove( pidFile );
 	}
 }

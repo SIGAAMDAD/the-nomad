@@ -8,8 +8,6 @@ namespace TheNomad::SGame {
 			m_nTics = tics;
 			m_nStateNum = num;
 			m_SpriteOffset = spriteOffset;
-			
-			m_nTicker = 0;
 		}
 		
 		const string& GetName() const {
@@ -28,7 +26,8 @@ namespace TheNomad::SGame {
 		bool Load( json@ data ) {
 			array<json@> values;
 			string base;
-			json@ anim;
+			json@ anim = null;
+			InfoSystem::EntityData@ entity = null;
 
 			if ( !data.get( "Id", m_Name ) ) {
 				ConsoleWarning( "invalid state info, missing variable 'Id'\n" );
@@ -52,8 +51,10 @@ namespace TheNomad::SGame {
 			} else {
 				if ( Util::StrICmp( base, "player" ) == 0 ) {
 					m_nStateOffset = 0;
-				} else if ( InfoSystem::InfoManager.GetMobTypes().TryGetValue( base, m_nStateOffset ) ) {
-				} else if ( InfoSystem::InfoManager.GetItemTypes().TryGetValue( base, m_nStateOffset ) ) {
+				} else if ( ( @entity = @InfoSystem::InfoManager.GetMobType( base ) ) !is null ) {
+					m_nStateOffset = entity.GetID();
+				} else if ( ( @entity = @InfoSystem::InfoManager.GetItemType( base ) ) !is null ) {
+					m_nStateOffset = entity.GetID();
 				} else {
 					GameError( "invalid state info, Entity \"" + base + "\" doesn't exist" );
 				}
@@ -106,22 +107,19 @@ namespace TheNomad::SGame {
 			return m_nStateNum + m_nStateOffset;
 		}
 
-		void Reset() {
-			m_nTicker = TheNomad::GameSystem::GameManager.GetGameTic();
+		void Reset( uint& out ticker ) {
+			ticker = TheNomad::GameSystem::GameManager.GetGameTic();
 		}
 		
 		const uvec2& GetSpriteOffset() const {
 			return m_SpriteOffset;
 		}
-		bool Done() const {
-			return TheNomad::GameSystem::GameManager.GetGameTic() - m_nTicker >= m_nTics;
+		bool Done( uint ticker ) const {
+			return TheNomad::GameSystem::GameManager.GetGameTic() - ticker >= m_nTics;
 		}
-		uint GetTics() const {
-			return m_nTicker;
-		}
-		EntityState@ Run() {
-			if ( TheNomad::GameSystem::GameManager.GetGameTic() - m_nTicker > m_nTics ) {
-				Reset();
+		EntityState@ Run( uint& out ticker ) {
+			if ( TheNomad::GameSystem::GameManager.GetGameTic() - ticker > m_nTics ) {
+				Reset( ticker );
 				return @m_NextState;
 			}
 			m_Animation.Run();
@@ -134,7 +132,6 @@ namespace TheNomad::SGame {
 			return @m_Animation;
 		}
 		
-		// static data
 		private string m_Name;
 		private uvec2 m_SpriteOffset = uvec2( 0 );
 		private EntityState@ m_NextState = null;
@@ -142,8 +139,5 @@ namespace TheNomad::SGame {
 		private uint m_nTics = 0;
 		private uint m_nStateNum = 0;
 		private uint m_nStateOffset = 0;
-
-		// runtime data
-		private uint m_nTicker = 0;
 	};
 };

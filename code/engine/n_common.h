@@ -464,6 +464,8 @@ int FS_FileToFileno(fileHandle_t f);
 fileHandle_t FS_FOpenWithMode(const char *path, fileMode_t mode);
 uint64_t FS_FOpenFileWithMode(const char *path, fileHandle_t *f, fileMode_t mode);
 
+qboolean FS_CreatePath( const char *OSPath );
+
 fileHandle_t FS_FOpenRead(const char *path);
 fileHandle_t FS_FOpenWrite(const char *path);
 fileHandle_t FS_FOpenRW(const char *path);
@@ -606,6 +608,7 @@ uint64_t Sys_EventSubtime( uint64_t time );
 
 uint64_t Sys_StackMemoryRemaining( void );
 
+void Sys_InitPIDFile( const char *gamedir );
 qboolean Sys_mkdir( const char *name );
 
 void Sys_Print(const char *msg);
@@ -628,6 +631,8 @@ const char *Sys_DefaultHomePath( void );
 const char *Sys_DefaultBasePath( void );
 qboolean Sys_RandomBytes( byte *s, uint64_t len );
 
+const char *Sys_PIDFileName( const char *gamedir );
+void Sys_RemovePIDFile( const char *gamedir );
 qboolean Sys_LowPhysicalMemory( void );
 void Sys_Sleep( double msec );
 

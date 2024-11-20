@@ -34,6 +34,7 @@ namespace TheNomad::SGame::InfoSystem {
             string type;
             string str;
             uint i, a;
+            EntityData@ entity = null;
 
             if ( !json.get( "Name", name ) ) {
                 ConsoleWarning( "invalid ammo info, missing variable 'Name'\n" );
@@ -47,7 +48,9 @@ namespace TheNomad::SGame::InfoSystem {
                 ConsoleWarning( "invalid ammo info, missing variable 'Id'\n" );
                 return false;
             } else {
-                if ( !InfoManager.GetAmmoTypes().TryGetValue( str, id ) ) {
+                if ( ( @entity = @InfoManager.GetAmmoType( str ) ) !is null ) {
+                    id = entity.GetID();
+                } else {
 					GameError( "invalid ammo info, Type \"" + str + "\" wasn't found" );
 				}
             }

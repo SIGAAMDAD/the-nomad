@@ -39,6 +39,8 @@
 #ifndef ANGELSCRIPT_H
 #define ANGELSCRIPT_H
 
+#include "../engine/n_shared.h"
+
 #include <stddef.h>
 #ifndef _MSC_VER
 #include <stdint.h>

@@ -32,10 +32,22 @@ namespace TheNomad::SGame {
 			m_Emitter.SetPosition( m_Link.m_Origin, 0.5f, 0.0f,
 				m_PhysicsObject.GetAcceleration().x + m_PhysicsObject.GetAcceleration().y );
 		}
+		void RunState() {
+			@m_State = @m_State.Run( m_nTicker );
+		}
 		
 		//
 		// getters
 		//
+		bool StateDone() const {
+			return m_State.Done( m_nTicker );
+		}
+		uint& GetTicker() {
+			return m_nTicker;
+		}
+		uint GetTicker() const {
+			return m_nTicker;
+		}
 		float GetAngle() const {
 			return m_PhysicsObject.GetAngle();
 		}
@@ -135,7 +147,7 @@ namespace TheNomad::SGame {
 		}
 		void SetState( StateNum stateNum ) {
 			@m_State = @StateManager.GetStateForNum( stateNum );
-			m_State.Reset();
+			m_State.Reset( m_nTicker );
 		}
 		void SetState( EntityState@ state ) {
 			@m_State = @state;
@@ -143,7 +155,7 @@ namespace TheNomad::SGame {
 				ConsoleWarning( "null state\n" );
 				return;
 			}
-			m_State.Reset();
+			m_State.Reset( m_nTicker );
 		}
 		void SetFlags( uint flags ) {
 			m_Flags = EntityFlags( flags );
@@ -242,6 +254,8 @@ namespace TheNomad::SGame {
 		// linked list stuff
 		EntityObject@ m_Next = null;
 		EntityObject@ m_Prev = null;
+
+		protected uint m_nTicker = 0;
 
 		protected TheNomad::Engine::SoundSystem::SoundEmitter m_Emitter;
 	};

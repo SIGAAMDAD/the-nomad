@@ -151,6 +151,13 @@ namespace TheNomad::SGame {
 			
 		}
 
+		uint& GetLegTicker() {
+			return m_nLegTicker;
+		}
+		uint GetLegTicker() const {
+			return m_nLegTicker;
+		}
+
 		bool IsSliding() const {
 			return ( m_iFlags & PF_SLIDING ) != 0;
 		}
@@ -494,7 +501,7 @@ namespace TheNomad::SGame {
 			}
 			m_nRage = Util::Clamp( m_nRage, 0.0f, m_nRage );
 
-			@m_LegState = @m_LegState.Run();
+			@m_LegState = @m_LegState.Run( m_nLegTicker );
 		}
 
 		void SetLeftArmState( StateNum num ) {
@@ -534,7 +541,7 @@ namespace TheNomad::SGame {
 				}
 				else {
 					// slap it back
-					if ( mob.GetState().GetTics() <= ( mob.GetState().GetTics() / 4 ) ) {
+					if ( mob.GetTicker() <= ( mob.GetTicker() / 4 ) ) {
 						// counter parry, like in MGR, but more brutal, but for the future...
 					}
 					
@@ -581,8 +588,8 @@ namespace TheNomad::SGame {
 			m_EmptyInfo.weaponProps = InfoSystem::WeaponProperty( uint( InfoSystem::WeaponProperty::OneHandedBlunt ) );
 			m_EmptyInfo.weaponType = InfoSystem::WeaponType::LeftArm;
 
-			InfoSystem::InfoManager.GetWeaponTypes()[ "weapon_fist" ] = ENTITYNUM_INVALID - 2;
-			InfoSystem::InfoManager.AddWeaponInfo( @m_EmptyInfo );
+			InfoSystem::InfoManager.GetWeaponTypes().Add( InfoSystem::EntityData( "weapon_fist", ENTITYNUM_INVALID - 2 ) );
+			InfoSystem::InfoManager.GetWeaponInfos()[ "weapon_fist" ] = @m_EmptyInfo;
 
 			@m_WeaponSlots[0] = @m_HeavyPrimary;
 			@m_WeaponSlots[1] = @m_HeavySidearm;
@@ -871,6 +878,7 @@ namespace TheNomad::SGame {
 
 		private SpriteSheet@[] m_LegSpriteSheet( NUMFACING );
 		private EntityState@ m_LegState = null;
+		private uint m_nLegTicker = 0;
 		private uint m_LegsFacing = FACING_RIGHT;
 
 		private AfterImage m_AfterImage;

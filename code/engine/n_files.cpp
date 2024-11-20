@@ -756,7 +756,7 @@ FS_CreatePath
 Creates any directories needed to store the given filename
 ============
 */
-static qboolean FS_CreatePath( const char *OSPath ) {
+qboolean FS_CreatePath( const char *OSPath ) {
 	char	path[MAX_OSPATH*2+1];
 	char	*ofs;
 	

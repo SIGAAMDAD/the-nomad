@@ -314,7 +314,7 @@ namespace TheNomad::SGame {
 		
 			if ( TheNomad::Engine::CmdArgv( 0 )[0] == '+' ) {
 				if ( @obj.GetLeftArmState() is @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_MELEE )
-					&& !obj.GetLeftArmState().Done() )
+					&& !obj.GetLeftArmState().Done( obj.GetLegTicker() ) )
 				{
 					return;
 				}

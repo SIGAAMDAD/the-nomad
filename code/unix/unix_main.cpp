@@ -3,6 +3,8 @@
 #include "../game/g_game.h"
 #include "../game/g_threads.h"
 #include "unix_local.h"
+#include <wait.h>
+#include <stdarg.h>
 
 #define SYS_BACKTRACE_MAX 1024
 #define MEM_THRESHOLD (96*1024*1024)
@@ -31,41 +33,41 @@ tty_err Sys_ConsoleInputInit( void );
 
 bool Sys_IsInDebugSession( void )
 {
-    char buf[4096];
-    int status_fd;
-    ssize_t readCount;
-    constexpr const char tracerPidString[] = "TracerPid:";
-    const char *tracer_pid_ptr, *characterPtr;
+	char buf[4096];
+	int status_fd;
+	ssize_t readCount;
+	constexpr const char tracerPidString[] = "TracerPid:";
+	const char *tracer_pid_ptr, *characterPtr;
 
-    status_fd = open("/proc/self/status", O_RDONLY);
-    if (status_fd == -1)
-        return false;
+	status_fd = open("/proc/self/status", O_RDONLY);
+	if (status_fd == -1)
+		return false;
 
-    readCount = read(status_fd, buf, sizeof(buf) - 1);
-    close(status_fd);
+	readCount = read(status_fd, buf, sizeof(buf) - 1);
+	close(status_fd);
 
-    if (readCount <= 0)
-        return false;
+	if (readCount <= 0)
+		return false;
 
-    buf[readCount] = '\0';
-    tracer_pid_ptr = strstr(buf, tracerPidString);
-    if (!tracer_pid_ptr)
-        return false;
+	buf[readCount] = '\0';
+	tracer_pid_ptr = strstr(buf, tracerPidString);
+	if (!tracer_pid_ptr)
+		return false;
 
-    for (characterPtr = tracer_pid_ptr + sizeof(tracerPidString) - 1; characterPtr <= buf + readCount; ++characterPtr) {
-        if (isspace(*characterPtr))
-            continue;
-        else
-            return isdigit(*characterPtr) != 0 && *characterPtr != '0';
-    }
+	for (characterPtr = tracer_pid_ptr + sizeof(tracerPidString) - 1; characterPtr <= buf + readCount; ++characterPtr) {
+		if (isspace(*characterPtr))
+			continue;
+		else
+			return isdigit(*characterPtr) != 0 && *characterPtr != '0';
+	}
 
-    return false;
+	return false;
 }
 
 // flush stdin, I suspect some terminals are sending a LOT of shit
-static void tty_FlushIn(void)
+static void tty_FlushIn( void )
 {
-    tcflush(STDIN_FILENO, TCIFLUSH);
+	tcflush( STDIN_FILENO, TCIFLUSH );
 }
 
 // do a backspace
@@ -129,29 +131,29 @@ void tty_Show( void )
 qboolean Sys_LowPhysicalMemory( void )
 {
 #if 1
-    uint64_t pageSize = sysconf( _SC_PAGESIZE );
-    uint64_t numPhysPages = sysconf( _SC_AVPHYS_PAGES );
-    return ( pageSize * numPhysPages ) < MEM_THRESHOLD ? qtrue : qfalse;
+	uint64_t pageSize = sysconf( _SC_PAGESIZE );
+	uint64_t numPhysPages = sysconf( _SC_AVPHYS_PAGES );
+	return ( pageSize * numPhysPages ) < MEM_THRESHOLD ? qtrue : qfalse;
 #else
-    struct statfs buf;
-    size_t memLeft;
+	struct statfs buf;
+	size_t memLeft;
 
-    if (statfs( "/", &buf ) == -1) {
-        N_Error( ERR_FATAL, "statfs() failed, strerror(): %s", strerror( errno ) );
-    }
-    return (buf.f_bsize * buf.f_bfree) > MEM_THRESHOLD ? qtrue : qfalse;
+	if (statfs( "/", &buf ) == -1) {
+		N_Error( ERR_FATAL, "statfs() failed, strerror(): %s", strerror( errno ) );
+	}
+	return (buf.f_bsize * buf.f_bfree) > MEM_THRESHOLD ? qtrue : qfalse;
 #endif
 }
 
 const exittype_t signals[] = {
-    { SIGSEGV,  qfalse, "segmentation violation" },
-    { SIGBUS,   qfalse, "bus error" },
-    { SIGABRT,  qfalse, "abnormal program termination" },
-    { SIGSTOP,  qtrue,  "pausing program" },
-    { SIGTERM,  qtrue,  "program termination" },
-    { SIGILL,   qtrue,  "illegal instruction" },
-    { SIGTRAP,  qtrue,  "debug breakpoint" },
-    { 0,        qtrue,  "No System Error "}
+	{ SIGSEGV,  qfalse, "segmentation violation" },
+	{ SIGBUS,   qfalse, "bus error" },
+	{ SIGABRT,  qfalse, "abnormal program termination" },
+	{ SIGSTOP,  qtrue,  "pausing program" },
+	{ SIGTERM,  qtrue,  "program termination" },
+	{ SIGILL,   qtrue,  "illegal instruction" },
+	{ SIGTRAP,  qtrue,  "debug breakpoint" },
+	{ 0,        qtrue,  "No System Error "}
 };
 
 const exittype_t *exit_type;
@@ -161,32 +163,415 @@ const exittype_t *exit_type;
 //
 int Sys_MessageBox( const char *title, const char *text, bool ShowOkAndCancelButton )
 {
-    extern SDL_Window *SDL_window;
+	extern SDL_Window *SDL_window;
 
-    int buttonid = 0;
-    SDL_MessageBoxData boxData = { 0 };
-    SDL_MessageBoxButtonData buttonData[] = {
-        { SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 1, "OK"      },
-        { SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 0, "Cancel"  },
-    };
+	int buttonid = 0;
+	SDL_MessageBoxData boxData = { 0 };
+	SDL_MessageBoxButtonData buttonData[] = {
+		{ SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 1, "OK"      },
+		{ SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 0, "Cancel"  },
+	};
 
-    boxData.window = SDL_window;
-    boxData.title = title;
-    boxData.message = text;
-    boxData.numbuttons = ShowOkAndCancelButton ? 2 : 1;
-    boxData.buttons = buttonData;
+	boxData.window = SDL_window;
+	boxData.title = title;
+	boxData.message = text;
+	boxData.numbuttons = ShowOkAndCancelButton ? 2 : 1;
+	boxData.buttons = buttonData;
 
-    SDL_ShowMessageBox( &boxData, &buttonid );
-    return ( buttonid == 1 );
+	SDL_ShowMessageBox( &boxData, &buttonid );
+	return ( buttonid == 1 );
 }
 
 static qboolean errorCaught = qfalse;
 
+static char execBuffer[ 1024 ];
+static char *execBufferPointer;
+static char *execArgv[ 16 ];
+static int execArgc;
+
+/*
+==============
+Sys_ClearExecBuffer
+==============
+*/
+static void Sys_ClearExecBuffer( void )
+{
+	execBufferPointer = execBuffer;
+	memset( execArgv, 0, sizeof( execArgv ) );
+	execArgc = 0;
+}
+
+/*
+==============
+Sys_AppendToExecBuffer
+==============
+*/
+static void Sys_AppendToExecBuffer( const char *text )
+{
+	size_t size = sizeof( execBuffer ) - ( execBufferPointer - execBuffer );
+	int length = strlen( text ) + 1;
+
+	if ( length > size || execArgc >= arraylen( execArgv ) ) {
+		return;
+	}
+
+	N_strncpyz( execBufferPointer, text, size );
+	execArgv[ execArgc++ ] = execBufferPointer;
+
+	execBufferPointer += length;
+}
+
+/*
+==============
+Sys_Exec
+==============
+*/
+static int Sys_Exec( void )
+{
+	pid_t pid = fork( );
+
+	if ( pid < 0 ) {
+		return -1;
+	}
+
+	if ( pid ) {
+		// Parent
+		int exitCode;
+
+		wait( &exitCode );
+
+		return WEXITSTATUS( exitCode );
+	}
+	else {
+		// Child
+		execvp( execArgv[ 0 ], execArgv );
+
+		// Failed to execute
+		exit( -1 );
+
+		return -1;
+	}
+}
+
+/*
+==============
+Sys_ZenityCommand
+==============
+*/
+static void Sys_ZenityCommand( dialogType_t type, const char *message, const char *title )
+{
+	Sys_ClearExecBuffer();
+	Sys_AppendToExecBuffer( "zenity" );
+
+	switch ( type ) {
+	default:
+	case DT_INFO:      Sys_AppendToExecBuffer( "--info" ); break;
+	case DT_WARNING:   Sys_AppendToExecBuffer( "--warning" ); break;
+	case DT_ERROR:     Sys_AppendToExecBuffer( "--error" ); break;
+	case DT_YES_NO:
+		Sys_AppendToExecBuffer( "--question" );
+		Sys_AppendToExecBuffer( "--ok-label=Yes" );
+		Sys_AppendToExecBuffer( "--cancel-label=No" );
+		break;
+	case DT_OK_CANCEL:
+		Sys_AppendToExecBuffer( "--question" );
+		Sys_AppendToExecBuffer( "--ok-label=OK" );
+		Sys_AppendToExecBuffer( "--cancel-label=Cancel" );
+		break;
+	};
+
+	Sys_AppendToExecBuffer( va( "--text=%s", message ) );
+	Sys_AppendToExecBuffer( va( "--title=%s", title ) );
+}
+
+/*
+==============
+Sys_KdialogCommand
+==============
+*/
+static void Sys_KdialogCommand( dialogType_t type, const char *message, const char *title )
+{
+	Sys_ClearExecBuffer( );
+	Sys_AppendToExecBuffer( "kdialog" );
+
+	switch( type ) {
+	default:
+	case DT_INFO:      Sys_AppendToExecBuffer( "--msgbox" ); break;
+	case DT_WARNING:   Sys_AppendToExecBuffer( "--sorry" ); break;
+	case DT_ERROR:     Sys_AppendToExecBuffer( "--error" ); break;
+	case DT_YES_NO:    Sys_AppendToExecBuffer( "--warningyesno" ); break;
+	case DT_OK_CANCEL: Sys_AppendToExecBuffer( "--warningcontinuecancel" ); break;
+	};
+
+	Sys_AppendToExecBuffer( message );
+	Sys_AppendToExecBuffer( va( "--title=%s", title ) );
+}
+
+/*
+==============
+Sys_XmessageCommand
+==============
+*/
+static void Sys_XmessageCommand( dialogType_t type, const char *message, const char *title )
+{
+	Sys_ClearExecBuffer( );
+	Sys_AppendToExecBuffer( "xmessage" );
+	Sys_AppendToExecBuffer( "-buttons" );
+
+	switch ( type ) {
+	default:           Sys_AppendToExecBuffer( "OK:0" ); break;
+	case DT_YES_NO:    Sys_AppendToExecBuffer( "Yes:0,No:1" ); break;
+	case DT_OK_CANCEL: Sys_AppendToExecBuffer( "OK:0,Cancel:1" ); break;
+	};
+
+	Sys_AppendToExecBuffer( "-center" );
+	Sys_AppendToExecBuffer( message );
+}
+
+/*
+==============
+Sys_Dialog
+
+Display a *nix dialog box
+==============
+*/
+dialogResult_t Sys_Dialog( dialogType_t type, const char *message, const char *title )
+{
+	typedef enum
+	{
+		NONE = 0,
+		ZENITY,
+		KDIALOG,
+		XMESSAGE,
+		NUM_DIALOG_PROGRAMS
+	} dialogCommandType_t;
+	typedef void (*dialogCommandBuilder_t)( dialogType_t, const char *, const char * );
+
+	const char              *session = getenv( "DESKTOP_SESSION" );
+	qboolean                tried[ NUM_DIALOG_PROGRAMS ] = { qfalse };
+	dialogCommandBuilder_t  commands[ NUM_DIALOG_PROGRAMS ] = { NULL };
+	dialogCommandType_t     preferredCommandType = NONE;
+	int                     i;
+
+	commands[ ZENITY ] = &Sys_ZenityCommand;
+	commands[ KDIALOG ] = &Sys_KdialogCommand;
+	commands[ XMESSAGE ] = &Sys_XmessageCommand;
+
+	// This may not be the best way
+	if ( !N_stricmp( session, "gnome" ) ) {
+		preferredCommandType = ZENITY;
+	} else if ( !N_stricmp( session, "kde" ) ) {
+		preferredCommandType = KDIALOG;
+	}
+
+	for( i = NONE + 1; i < NUM_DIALOG_PROGRAMS; i++ )
+	{
+		if ( preferredCommandType != NONE && preferredCommandType != i ) {
+			continue;
+		}
+
+		if ( !tried[ i ] ) {
+			int exitCode;
+
+			commands[ i ]( type, message, title );
+			exitCode = Sys_Exec( );
+
+			if ( exitCode >= 0 ) {
+				switch ( type ) {
+				case DT_YES_NO:    return exitCode ? DR_NO : DR_YES;
+				case DT_OK_CANCEL: return exitCode ? DR_CANCEL : DR_OK;
+				default:           return DR_OK;
+				};
+			}
+
+			tried[ i ] = qtrue;
+
+			// The preference failed, so start again in order
+			if ( preferredCommandType != NONE ) {
+				preferredCommandType = NONE;
+				i = NONE + 1;
+			}
+		}
+	}
+
+	Con_DPrintf( COLOR_YELLOW "WARNING: failed to show a dialog\n" );
+	return DR_OK;
+}
+
+static void Sys_CrashPrintf( int fd, const char *fmt, ... )
+{
+	va_list argptr;
+	char str[ 1024 ];
+
+	va_start( argptr, fmt );
+	vsnprintf( str, sizeof( str ) - 1, fmt, argptr );
+	va_end( argptr );
+
+	write( fd, str, strlen( str ) );
+}
+
+void Sys_WriteCrashReport( int fd )
+{
+	char msg[ MAX_CVAR_VALUE ];
+	char timestr[32];
+	struct tm *t;
+	time_t ctime;
+	cvar_t *var;
+	extern cvar_t *cvar_vars;
+
+	ctime = time( NULL );
+	t = localtime( &ctime );
+	strftime( timestr, sizeof( timestr ) - 1, "%d%m%Y_%S%M%H", t );
+
+	Cvar_VariableStringBuffer( "com_errorMessage", msg, sizeof( msg ) - 1 );
+	
+	strftime( timestr, sizeof( timestr ) - 1, "%d/%m/%Y %S:%M:%H", t );
+
+	Sys_CrashPrintf( fd, "[ERROR INFO]\n" );
+	Sys_CrashPrintf( fd, "Time: %s\n", timestr );
+	Sys_CrashPrintf( fd, "Message: %s\n", msg );
+	if ( gi.state == GS_LEVEL ) {
+		Sys_CrashPrintf( fd, "MapName: %s\n", gi.mapCache.info.name );
+		Sys_CrashPrintf( fd, "SaveName: %s\n", Cvar_VariableString( "sgame_SaveName" ) );
+	}
+
+	Sys_CrashPrintf( fd, "[ENGINE INFO]\n" );
+	Sys_CrashPrintf( fd, "Version String: " GLN_VERSION "\n" );
+	Sys_CrashPrintf( fd, "Architecture: " ARCH_STRING "\n" );
+	Sys_CrashPrintf( fd, "Operating System: " OS_STRING "\n" );
+	Sys_CrashPrintf( fd, "CPU: %s\n", sys_cpuString->s );
+	Sys_CrashPrintf( fd, "Build Information:\n" );
+	Sys_CrashPrintf( fd, "\tC++ Version: %li\n", __cplusplus );
+	Sys_CrashPrintf( fd, "\tCompiler: " COMPILER_STRING "\n" );
+	Sys_CrashPrintf( fd, "\tCompiler Version: %lu\n", (uint64_t)EA_COMPILER_VERSION );
+	Sys_CrashPrintf( fd, "Compiler Macros:\n" );
+#ifdef USE_CPU_AFFINITY
+	Sys_CrashPrintf( fd, "\tUSE_CPU_AFFINITY\n" );
+#endif
+#ifdef USE_OPENGL_API
+	Sys_CrashPrintf( fd, "\tUSE_OPENGL_API\n" );
+#endif
+#ifdef USE_VULKAN_API
+	Sys_CrashPrintf( fd, "\tUSE_VULKAN_API\n" );
+#endif
+	Sys_CrashPrintf( fd, "\n" );
+
+	Sys_CrashPrintf( fd, "[CVAR INFO]\n" );
+	for ( var = cvar_vars; var; var = var->next ) {
+		if ( !var->name ) {
+			continue;
+		}
+		else if ( var->name && !N_stricmp( var->name, "com_errorMessage" ) ) {
+			continue; // don't print this redundantly
+		}
+
+		if ( var->flags & CVAR_SERVERINFO ) {
+			Sys_CrashPrintf( fd, "S" );
+		} else {
+			Sys_CrashPrintf( fd, " " );
+		}
+		if ( var->flags & CVAR_SYSTEMINFO ) {
+			Sys_CrashPrintf( fd, "s" );
+		} else {
+			Sys_CrashPrintf( fd, " " );
+		}
+		if ( var->flags & CVAR_USERINFO ) {
+			Sys_CrashPrintf( fd, "U" );
+		} else {
+			Sys_CrashPrintf( fd, " " );
+		}
+		if ( var->flags & CVAR_ROM ) {
+			Sys_CrashPrintf( fd, "R" );
+		} else {
+			Sys_CrashPrintf( fd, " " );
+		}
+		if ( var->flags & CVAR_INIT ) {
+			Sys_CrashPrintf( fd, "I" );
+		} else {
+			Sys_CrashPrintf( fd, " ");
+		}
+		if ( var->flags & CVAR_SAVE ) {
+			Sys_CrashPrintf( fd, "A" );
+		} else {
+			Sys_CrashPrintf( fd, " " );
+		}
+		if ( var->flags & CVAR_LATCH ) {
+			Sys_CrashPrintf( fd, "L" );
+		} else {
+			Sys_CrashPrintf( fd, " " );
+		}
+		if ( var->flags & CVAR_CHEAT ) {
+			Sys_CrashPrintf( fd, "C" );
+		} else {
+			Sys_CrashPrintf( fd, " " );
+		}
+		if ( var->flags & CVAR_USER_CREATED ) {
+			Sys_CrashPrintf( fd, "?" );
+		} else {
+			Sys_CrashPrintf( fd, " " );
+		}
+
+		Sys_CrashPrintf( fd, " %s \"%s\"\n", var->name, var->s );
+	}
+
+	Sys_CrashPrintf( fd, "\n" );
+	Sys_CrashPrintf( fd, "[FILESYSTEM INFO]\n" );
+	Sys_CrashPrintf( fd, "Referenced BFFs: %s\n", FS_ReferencedBFFNames() );
+	Sys_CrashPrintf( fd, "Loaded BFFs: %s\n", FS_LoadedBFFNames() );
+}
+
+/*
+==============
+Sys_ErrorDialog
+
+Display an error message
+==============
+*/
+void Sys_ErrorDialog( const char *error )
+{
+	char buffer[ 1024 ];
+	unsigned int size;
+	int f = -1;
+	const char *homepath = Cvar_VariableString( "fs_homepath" );
+	const char *gamedir = Cvar_VariableString( "fs_game" );
+	const char *fileName = "crashlog.txt";
+	char *dirpath = FS_BuildOSPath( homepath, gamedir, "");
+	char *ospath = FS_BuildOSPath( homepath, gamedir, fileName );
+
+	Sys_Print( va( "%s\n", error ) );
+
+	Sys_Dialog( DT_ERROR, va( "%s. See \"%s\" for details.", error, ospath ), "Error" );
+
+	// Make sure the write path for the crashlog exists...
+
+	if ( !Sys_mkdir( homepath ) ) {
+		Con_Printf( "ERROR: couldn't create path '%s' for crash log.\n", homepath );
+		return;
+	}
+
+	if ( !Sys_mkdir( dirpath ) ) {
+		Con_Printf( "ERROR: couldn't create path '%s' for crash log.\n", dirpath );
+		return;
+	}
+
+	// We might be crashing because we maxed out the Quake MAX_FILE_HANDLES,
+	// which will come through here, so we don't want to recurse forever by
+	// calling FS_FOpenFileWrite()...use the Unix system APIs instead.
+	f = open( ospath, O_CREAT | O_TRUNC | O_WRONLY, 0640 );
+	if ( f == -1 ) {
+		Con_Printf( "ERROR: couldn't open %s\n", fileName );
+		return;
+	}
+	Sys_WriteCrashReport( f );
+
+	close( f );
+}
+
 void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error( const char *fmt, ... )
 {
-    va_list argptr;
+	va_list argptr;
 	char text[MAXPRINTMSG];
-    const char *msg;
+	const char *msg;
 
 	// change stdin to non blocking
 	// NOTE TTimo not sure how well that goes with tty console mode
@@ -204,22 +589,26 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error( cons
 	N_vsnprintf( text, sizeof( text ), fmt, argptr );
 	va_end( argptr );
 
-    Sys_DebugStacktrace( MAX_STACKTRACE_FRAMES );
-    
+	Sys_DebugStacktrace( MAX_STACKTRACE_FRAMES );
+	
+	/*
 	if ( !errorCaught ) {
 		// [SIREngine] 16/5/2024
 		// this would recurse with the SDL2/X11 window stuff allocating and then we get
 		// a memory corruption error that goes unhandled
 		errorCaught = qtrue;
-    	Sys_MessageBox( "Engine Error", text, false );
+		Sys_MessageBox( "Engine Error", text, false );
 	}
+	*/
 
-    msg = va( "Sys_Error: %s\n", text );
-    write( STDERR_FILENO, msg, strlen( msg ) );
-    
-    // fprintf COULD call malloc, and if we're out of memory, this would not do anything
-    // but make even more problems
+	msg = va( "Sys_Error: %s\n", text );
+	write( STDERR_FILENO, msg, strlen( msg ) );
+	
+	// fprintf COULD call malloc, and if we're out of memory, this would not do anything
+	// but make even more problems
 //	fprintf( stderr, "Sys_Error: %s\n", text );
+
+	Sys_ErrorDialog( text );
 
 	Sys_Exit( -1 ); // bk010104 - use single exit point.
 }
@@ -228,7 +617,7 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error( cons
 void Sys_ConsoleInputShutdown( void )
 {
 	if ( ttycon_on ) {
-//		Com_Printf( "Shutdown tty console\n" ); // -EC-
+//		Con_Printf( "Shutdown tty console\n" ); // -EC-
 		tty_Back(); // delete "]" ? -EC-
 		tcsetattr( STDIN_FILENO, TCSADRAIN, &tty_tc );
 	}
@@ -247,26 +636,114 @@ void Sys_ConsoleInputShutdown( void )
 	ttycon_hide = 0;
 }
 
+/*
+==============
+Sys_PID
+==============
+*/
+int Sys_PID( void )
+{
+	return getpid( );
+}
+
+/*
+==============
+Sys_PIDIsRunning
+==============
+*/
+qboolean Sys_PIDIsRunning( int pid )
+{
+	return kill( pid, 0 ) == 0;
+}
+
+/*
+=================
+Sys_WritePIDFile
+
+Return qtrue if there is an existing stale PID file
+=================
+*/
+static qboolean Sys_WritePIDFile( const char *gamedir )
+{
+	const char	*pidFile = Sys_PIDFileName( gamedir );
+	FILE		*f;
+	qboolean	stale = qfalse;
+
+	if ( pidFile == NULL ) {
+		return qfalse;
+	}
+
+	// First, check if the pid file is already there
+	if ( ( f = fopen( pidFile, "r" ) ) != NULL ) {
+		char  pidBuffer[ 64 ] = { 0 };
+		int   pid;
+
+		pid = fread( pidBuffer, sizeof( char ), sizeof( pidBuffer ) - 1, f );
+		fclose( f );
+
+		if ( pid > 0 ) {
+			pid = atoi( pidBuffer );
+			if ( !Sys_PIDIsRunning( pid ) ) {
+				stale = qtrue;
+			}
+		}
+		else {
+			stale = qtrue;
+		}
+	}
+
+	if ( FS_CreatePath( pidFile ) ) {
+		return 0;
+	}
+
+	if ( ( f = fopen( pidFile, "w" ) ) != NULL ) {
+		fprintf( f, "%d", Sys_PID() );
+		fclose( f );
+	}
+	else {
+		Con_Printf( COLOR_YELLOW "Couldn't write %s.\n", pidFile );
+	}
+
+	return stale;
+}
+
+/*
+=================
+Sys_InitPIDFile
+=================
+*/
+void Sys_InitPIDFile( const char *gamedir ) {
+	if ( Sys_WritePIDFile( gamedir ) ) {
+		char message[1024];
+		extern qboolean com_safeMode;
+
+		Com_snprintf( message, sizeof( message ) - 1, "The last time the-nomad ran, "
+			"it didn't exit properly. This may be due to inappropriate "
+			"settings. Would you like to start with \"safe\" settings?" );
+
+		if ( Sys_Dialog( DT_YES_NO, message, "Abnormal Exit" ) == DR_YES ) {
+			if ( Com_SafeMode() ) {
+				return; // already set
+			}
+			com_safeMode = qtrue;
+		}
+	}
+}
+
 void GDR_NORETURN Sys_Exit( int code )
 {
-    const char *err;
-#ifdef _NOMAD_DEBUG
-    const bool debug = true;
-#else
-    const bool debug = false;
-#endif
-
-    Sys_ConsoleInputShutdown();
+	Sys_ConsoleInputShutdown();
 
 	Cvar_Set( "com_exitFlag", "1" );
 	Cbuf_ExecuteText( EXEC_NOW, "hunkfree\n" );
 	Cvar_Set( "com_exitFlag", "0" );
 
-    if ( code == -1 ) {
-        exit( EXIT_FAILURE );
-    }
-    
-    exit( EXIT_SUCCESS );
+	if ( code != -1 && com_fullyInitialized ) {
+		// normal exit
+		Sys_RemovePIDFile( FS_GetCurrentGameDir() );
+	}
+	
+	exit( code );
 }
 
 /*
@@ -278,12 +755,12 @@ Platform-dependent event handling
 */
 void Sys_SendKeyEvents( void )
 {
-    HandleEvents();
+	HandleEvents();
 }
 
 void fpe_exception_handler( int signum )
 {
-    signal( SIGFPE, fpe_exception_handler );
+	signal( SIGFPE, fpe_exception_handler );
 }
 
 /*
@@ -373,22 +850,22 @@ static const char *getANSIcolor( char Q3color ) {
 
 void Sys_ShutdownConsole( void )
 {
-    if ( ttycon_on ) {
-        tty_Back();
-        tcsetattr( STDIN_FILENO, TCSADRAIN, &tty_tc );
-    }
+	if ( ttycon_on ) {
+		tty_Back();
+		tcsetattr( STDIN_FILENO, TCSADRAIN, &tty_tc );
+	}
 
-    // restore stdin blocking mode
-    if ( stdin_active ) {
-        fcntl( STDIN_FILENO, F_SETFL, stdin_flags );
-    }
+	// restore stdin blocking mode
+	if ( stdin_active ) {
+		fcntl( STDIN_FILENO, F_SETFL, stdin_flags );
+	}
 
-    memset( &tty_con, 0, sizeof( tty_con ) );
+	memset( &tty_con, 0, sizeof( tty_con ) );
 
-    stdin_active = qfalse;
-    ttycon_on = qfalse;
+	stdin_active = qfalse;
+	ttycon_on = qfalse;
 
-    ttycon_hide = 0;
+	ttycon_hide = 0;
 }
 
 void CON_SigTStp( int signum )
@@ -410,23 +887,23 @@ void CON_SigTStp( int signum )
 
 void Sys_SigCont( int signum )
 {
-    Sys_ConsoleInputInit();
+	Sys_ConsoleInputInit();
 }
 
 void Sys_SigTStp( int signum )
 {
-    sigset_t mask;
+	sigset_t mask;
 
-    tty_FlushIn();
-    Sys_ShutdownConsole();
+	tty_FlushIn();
+	Sys_ShutdownConsole();
 
-    sigemptyset( &mask );
-    sigaddset( &mask, SIGTSTP );
-    sigprocmask( SIG_UNBLOCK, &mask, NULL );
+	sigemptyset( &mask );
+	sigaddset( &mask, SIGTSTP );
+	sigprocmask( SIG_UNBLOCK, &mask, NULL );
 
-    signal( SIGTSTP, SIG_DFL );
+	signal( SIGTSTP, SIG_DFL );
 
-    kill( getpid(), SIGTSTP );
+	kill( getpid(), SIGTSTP );
 }
 
 static qboolean printableChar( char c ) {
@@ -438,81 +915,81 @@ static qboolean printableChar( char c ) {
 
 void Sys_ANSIColorMsg( const char *msg, char *buffer, uint64_t bufSize )
 {
-    uint64_t msgLength;
-    uint64_t i;
-    char tmpbuf[8];
-    const char *ANSIcolor;
+	uint64_t msgLength;
+	uint64_t i;
+	char tmpbuf[8];
+	const char *ANSIcolor;
 
-    if ( !msg || !buffer ) {
-        return;
+	if ( !msg || !buffer ) {
+		return;
 	}
 
-    msgLength = strlen( msg );
-    i = 0;
-    buffer[0] = '\0';
+	msgLength = strlen( msg );
+	i = 0;
+	buffer[0] = '\0';
 
-    while ( i < msgLength ) {
-        if ( msg[i] == '\n' ) {
-            snprintf( tmpbuf, sizeof( tmpbuf ), "%c[0m\n", 0x1B );
-            strncat( buffer, tmpbuf, bufSize - 1 );
-            i += 1;
-        }
-        else if ( msg[i] == Q_COLOR_ESCAPE && ( ANSIcolor = getANSIcolor( msg[i+1] ) ) != NULL ) {
-            snprintf( tmpbuf, sizeof( tmpbuf ), "%c[%sm", 0x1B, ANSIcolor );
-            strncat( buffer, tmpbuf, bufSize - 1 );
-            i += 2;
-        }
-        else {
-            if ( printableChar( msg[i] ) ) {
-                snprintf( tmpbuf, sizeof( tmpbuf ), "%c", msg[i] );
-                strncat( buffer, tmpbuf, bufSize - 1 );
-            }
-            i += 1;
-        }
-    }
+	while ( i < msgLength ) {
+		if ( msg[i] == '\n' ) {
+			snprintf( tmpbuf, sizeof( tmpbuf ), "%c[0m\n", 0x1B );
+			strncat( buffer, tmpbuf, bufSize - 1 );
+			i += 1;
+		}
+		else if ( msg[i] == Q_COLOR_ESCAPE && ( ANSIcolor = getANSIcolor( msg[i+1] ) ) != NULL ) {
+			snprintf( tmpbuf, sizeof( tmpbuf ), "%c[%sm", 0x1B, ANSIcolor );
+			strncat( buffer, tmpbuf, bufSize - 1 );
+			i += 2;
+		}
+		else {
+			if ( printableChar( msg[i] ) ) {
+				snprintf( tmpbuf, sizeof( tmpbuf ), "%c", msg[i] );
+				strncat( buffer, tmpbuf, bufSize - 1 );
+			}
+			i += 1;
+		}
+	}
 }
 
 void Sys_Print( const char *msg )
 {
-    char printmsg[MAXPRINTMSG];
-    size_t len;
+	char printmsg[MAXPRINTMSG];
+	size_t len;
 
-    memset( printmsg, 0, sizeof( printmsg ) );
+	memset( printmsg, 0, sizeof( printmsg ) );
 
-    if ( ttycon_on ) {
-        tty_Hide();
-    }
-    if ( ttycon_color_on ) {
-        Sys_ANSIColorMsg( msg, printmsg, sizeof( printmsg ) );
-        len = strlen( printmsg );
-    }
-    else {
-        char *out = printmsg;
-        while ( *msg != '\0' && out < printmsg + sizeof( printmsg ) ) {
-            if ( printableChar( *msg ) ) {
-                *out++ = *msg;
+	if ( ttycon_on ) {
+		tty_Hide();
+	}
+	if ( ttycon_color_on ) {
+		Sys_ANSIColorMsg( msg, printmsg, sizeof( printmsg ) );
+		len = strlen( printmsg );
+	}
+	else {
+		char *out = printmsg;
+		while ( *msg != '\0' && out < printmsg + sizeof( printmsg ) ) {
+			if ( printableChar( *msg ) ) {
+				*out++ = *msg;
 			}
-            msg++;
-        }
-        len = out - printmsg;
-    }
+			msg++;
+		}
+		len = out - printmsg;
+	}
 
-    write(STDERR_FILENO, printmsg, len);
-    if (ttycon_on) {
-        tty_Show();
-    }
+	write(STDERR_FILENO, printmsg, len);
+	if (ttycon_on) {
+		tty_Show();
+	}
 }
 
 char *Sys_ConsoleInput( void )
 {
-    // we use this when sending back commands
-    static char text[ sizeof( tty_con.buffer ) ];
-    int avail;
-    char key;
-    char *s;
-    field_t history;
+	// we use this when sending back commands
+	static char text[ sizeof( tty_con.buffer ) ];
+	int avail;
+	char key;
+	char *s;
+	field_t history;
 
-    if ( ttycon_on ) {
+	if ( ttycon_on ) {
 		avail = read( STDIN_FILENO, &key, 1 );
 		if ( avail != -1 ) {
 			// we have something
@@ -598,7 +1075,7 @@ char *Sys_ConsoleInput( void )
 			}
 			if ( tty_con.cursor >= sizeof( text ) - 1 ) {
 				return NULL;
-            }
+			}
 
 			// push regular character
 			tty_con.buffer[ tty_con.cursor ] = key;
@@ -630,14 +1107,14 @@ char *Sys_ConsoleInput( void )
 
 		if ( len < 1 ) {
 			return NULL;
-        }
+		}
 
 		text[len-1] = '\0'; // rip off the /n and terminate
 		s = text;
 
 		while ( *s == '\\' || *s == '/' ) { // skip leading slashes
 			s++;
-        }
+		}
 
 		return s;
 	}
@@ -646,67 +1123,67 @@ char *Sys_ConsoleInput( void )
 }
 
 const char *Sys_GetError( void ) {
-    return strerror( errno );
+	return strerror( errno );
 }
 
 tty_err Sys_ConsoleInputInit( void )
 {
-    struct termios tc;
-    struct rlimit64 limit;
-    const char *term;
+	struct termios tc;
+	struct rlimit64 limit;
+	const char *term;
 
-    // TTimo
+	// TTimo
 	// https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=390
 	// ttycon 0 or 1, if the process is backgrounded (running non interactively)
 	// then SIGTTIN or SIGTOU is emitted, if not catched, turns into a SIGSTP
 	signal( SIGTTIN, SIG_IGN );
 	signal( SIGTTOU, SIG_IGN );
 
-    // if SIGCONT is recieved, reinitialize the console
-    signal( SIGCONT, CON_SigCont );
+	// if SIGCONT is recieved, reinitialize the console
+	signal( SIGCONT, CON_SigCont );
 
-    if ( signal( SIGTSTP, SIG_IGN ) == SIG_DFL ) {
-        signal( SIGTSTP, CON_SigTStp );
-    }
+	if ( signal( SIGTSTP, SIG_IGN ) == SIG_DFL ) {
+		signal( SIGTSTP, CON_SigTStp );
+	}
 
-    stdin_flags = fcntl( STDIN_FILENO, F_GETFL, 0 );
-    if ( stdin_flags == -1 ) {
-        stdin_active = qfalse;
-        return TTY_ERROR;
-    }
+	stdin_flags = fcntl( STDIN_FILENO, F_GETFL, 0 );
+	if ( stdin_flags == -1 ) {
+		stdin_active = qfalse;
+		return TTY_ERROR;
+	}
 
-    // set non-blocking mode
-    fcntl( STDIN_FILENO, F_SETFL, stdin_flags | O_NONBLOCK );
-    stdin_active = qtrue;
+	// set non-blocking mode
+	fcntl( STDIN_FILENO, F_SETFL, stdin_flags | O_NONBLOCK );
+	stdin_active = qtrue;
 
-    ttycon_color_on = qtrue;
+	ttycon_color_on = qtrue;
 
-    term = getenv( "TERM" );
-    if ( isatty( STDIN_FILENO ) != 1 || !term || !strcmp( term, "dumb" ) || !strcmp( term, "raw" ) ) {
-        ttycon_on = qfalse;
-        return TTY_DISABLED;
-    }
+	term = getenv( "TERM" );
+	if ( isatty( STDIN_FILENO ) != 1 || !term || !strcmp( term, "dumb" ) || !strcmp( term, "raw" ) ) {
+		ttycon_on = qfalse;
+		return TTY_DISABLED;
+	}
 
-    Field_Clear( &tty_con );
-    tcgetattr( STDIN_FILENO, &tty_tc );
-    tty_erase = tty_tc.c_cc[VERASE];
-    tty_eof = tty_tc.c_cc[VEOF];
-    tc = tty_tc;
+	Field_Clear( &tty_con );
+	tcgetattr( STDIN_FILENO, &tty_tc );
+	tty_erase = tty_tc.c_cc[VERASE];
+	tty_eof = tty_tc.c_cc[VEOF];
+	tc = tty_tc;
 
-    tc.c_lflag &= ~( ECHO | ICANON );
-    tc.c_iflag &= ~( ISTRIP | INPCK );
-    tc.c_cc[VMIN] = 1;
-    tc.c_cc[VTIME] = 0;
-    tcsetattr( STDIN_FILENO, TCSADRAIN, &tc );
+	tc.c_lflag &= ~( ECHO | ICANON );
+	tc.c_iflag &= ~( ISTRIP | INPCK );
+	tc.c_cc[VMIN] = 1;
+	tc.c_cc[VTIME] = 0;
+	tcsetattr( STDIN_FILENO, TCSADRAIN, &tc );
 
 	if ( ttycon_ansicolor && ttycon_ansicolor->i ) {
 		ttycon_color_on = qtrue;
 	}
 
-    ttycon_on = qtrue;
+	ttycon_on = qtrue;
 
-    tty_Hide();
-    tty_Show();
+	tty_Hide();
+	tty_Show();
 
 	if ( 0 ) {
 		if ( getrlimit64( RLIMIT_CORE, &limit ) == -1 ) {
@@ -717,7 +1194,7 @@ tty_err Sys_ConsoleInputInit( void )
 		}
 	}
 
-    return TTY_ENABLED;
+	return TTY_ENABLED;
 }
 
 void Sys_ConfigureFPU( void )  // bk001213 - divide by zero
@@ -828,38 +1305,38 @@ char *Sys_DefaultAppPath( void )
 const char *Sys_DefaultBasePath( void )
 {
 #ifdef __APPLE__
-    if ( installPath[0] != '\0' ) {
-        return installPath;
-    }
+	if ( installPath[0] != '\0' ) {
+		return installPath;
+	}
 #endif
-    return Sys_pwd();
+	return Sys_pwd();
 }
 
 const char *Sys_DefaultHomePath( void )
 {
-    // used to determine where to store user-specific files
-    static char homePath[MAX_OSPATH];
+	// used to determine where to store user-specific files
+	static char homePath[MAX_OSPATH];
 
-    const char *p;
+	const char *p;
 
-    if (*homePath)
-        return homePath;
+	if (*homePath)
+		return homePath;
 
-    if ( ( p = getenv( "HOME" ) ) != NULL ) {
-        N_strncpyz( homePath, p, sizeof( homePath ) );
+	if ( ( p = getenv( "HOME" ) ) != NULL ) {
+		N_strncpyz( homePath, p, sizeof( homePath ) );
 #ifdef MACOS_X
-        N_strcat( homePath, sizeof( homePath ), "/Library/Application Support/TheNomad" );
+		N_strcat( homePath, sizeof( homePath ), "/Library/Application Support/TheNomad" );
 #else
-        N_strcat( homePath, sizeof( homePath ), "/.thenomad" );
+		N_strcat( homePath, sizeof( homePath ), "/.thenomad" );
 #endif
-        if ( mkdir( homePath, 0750 ) ) {
-            if ( errno != EEXIST ) {
-                N_Error( ERR_DROP, "Unable to create directory \"%s\", error is %s(%d)", homePath, strerror( errno ), errno );
-            }
-        }
-        return homePath;
-    }
-    return ""; // assume current directory
+		if ( mkdir( homePath, 0750 ) ) {
+			if ( errno != EEXIST ) {
+				N_Error( ERR_DROP, "Unable to create directory \"%s\", error is %s(%d)", homePath, strerror( errno ), errno );
+			}
+		}
+		return homePath;
+	}
+	return ""; // assume current directory
 }
 
 void Sys_PrintBinVersion( const char* name )
@@ -905,7 +1382,7 @@ const char *Sys_BinName( const char *arg0 )
 		N_strncpyz( dst, arg0, PATH_MAX );
 	}
 #else
-    #warning Sys_BinName not implemented
+	#warning Sys_BinName not implemented
 	N_strncpyz( dst, arg0, PATH_MAX );
 #endif
 
@@ -929,68 +1406,68 @@ static int Sys_ParseArgs( int argc, const char* argv[] )
 
 int main( int argc, char **argv )
 {
-    char con_title[ MAX_CVAR_VALUE ];
-    int xpos, ypos;
-    char *cmdline;
-    int len, i;
-    tty_err err;
+	char con_title[ MAX_CVAR_VALUE ];
+	int xpos, ypos;
+	char *cmdline;
+	int len, i;
+	tty_err err;
 
 #ifdef __APPLE__
 	// This is passed if we are launched by double-clicking
 	if ( argc >= 2 && N_strncmp( argv[1], "-psn", 4 ) == 0 ) {
 		argc = 1;
-    }
+	}
 #endif
 
-    if ( Sys_ParseArgs( argc, (const char **)argv ) ) {
-        return 0; // print version and exit
-    }
+	if ( Sys_ParseArgs( argc, (const char **)argv ) ) {
+		return 0; // print version and exit
+	}
 
 #ifdef __APPLE__
-    Sys_SetBinaryPath( argv[ 0 ] );
-    Sys_SetDefaultBasePath( Sys_StripAppBundle( binaryPath ) );
+	Sys_SetBinaryPath( argv[ 0 ] );
+	Sys_SetDefaultBasePath( Sys_StripAppBundle( binaryPath ) );
 #endif
 
-    // merge the command line, this is kinda silly
+	// merge the command line, this is kinda silly
 	for ( len = 1, i = 1; i < argc; i++ )
 		len += strlen( argv[i] ) + 1;
 
-    Con_Printf( "Working directory: %s\n", Sys_pwd() );
+	Con_Printf( "Working directory: %s\n", Sys_pwd() );
 
-    InitSig();
+	InitSig();
 
 	cmdline = (char *)malloc( len );
-    if ( !cmdline ) { // oh shit
-        write( STDERR_FILENO, "malloc() failed, out of memory, FREE UP SOME GODDAMN MEMORY\n",
-            sizeof( "malloc() failed, out of memory, FREE UP SOME GODDAMN MEMORY\n" ) );
-        _Exit( EXIT_FAILURE );
-    }
+	if ( !cmdline ) { // oh shit
+		write( STDERR_FILENO, "malloc() failed, out of memory, FREE UP SOME GODDAMN MEMORY\n",
+			sizeof( "malloc() failed, out of memory, FREE UP SOME GODDAMN MEMORY\n" ) );
+		_Exit( EXIT_FAILURE );
+	}
 	*cmdline = '\0';
 	for ( i = 1; i < argc; i++ ) {
 		if ( i > 1 )
 			strcat( cmdline, " " );
-        
+		
 		strcat( cmdline, argv[i] );
 	}
-    Com_EarlyParseCmdLine( cmdline, con_title, sizeof( con_title ), &xpos, &ypos );
+	Com_EarlyParseCmdLine( cmdline, con_title, sizeof( con_title ), &xpos, &ypos );
 
-    // get initial time base
-    Sys_Milliseconds();
+	// get initial time base
+	Sys_Milliseconds();
 
-    err = Sys_ConsoleInputInit();
-    if ( err == TTY_ENABLED ) {
-        Con_Printf( "Started tty console (use +set ttycon 0 to disable)\n" );
-    }
-    else {
-        if ( err == TTY_ERROR ) {
-            Con_Printf( "stdin is not a tty, tty console mode failed\n" );
+	err = Sys_ConsoleInputInit();
+	if ( err == TTY_ENABLED ) {
+		Con_Printf( "Started tty console (use +set ttycon 0 to disable)\n" );
+	}
+	else {
+		if ( err == TTY_ERROR ) {
+			Con_Printf( "stdin is not a tty, tty console mode failed\n" );
 			Cvar_Set( "ttycon", "0" );
-        }
-    }
-    
-    Com_Init( cmdline );
+		}
+	}
+	
+	Com_Init( cmdline );
 
-    // Sys_ConsoleInputInit() might be called in signal handler
+	// Sys_ConsoleInputInit() might be called in signal handler
 	// so modify/init any cvars here
 	ttycon = Cvar_Get( "ttycon", "1", 0 );
 	Cvar_SetDescription( ttycon, "Enable access to input/output console terminal." );
@@ -999,10 +1476,10 @@ int main( int argc, char **argv )
 
 	while ( 1 ) {
 #ifdef __linux__
-        Sys_ConfigureFPU();
+		Sys_ConfigureFPU();
 #endif
-        // check for other input devices
-        IN_Frame();
+		// check for other input devices
+		IN_Frame();
 		// run the game
 		Com_Frame( qfalse );
 	}

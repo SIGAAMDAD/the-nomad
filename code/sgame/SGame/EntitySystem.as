@@ -123,7 +123,7 @@ namespace TheNomad::SGame {
 //					DebugPrint( "EntitySystem::OnRunTic: null entity state\n" );
 					continue;
 				} else {
-					ent.SetState( @ent.GetState().Run() );
+					ent.RunState();
 				}
 
 				switch ( ent.GetType() ) {

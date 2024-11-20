@@ -72,7 +72,7 @@ namespace TheNomad::SGame {
 			
 			SpriteSheet@ sheet = @CalcState();
 			
-			@m_State = @m_State.Run();
+			@m_State = @m_State.Run( m_nTicker );
 			
 			refEntity.origin = m_EntityData.GetOrigin();
 			refEntity.sheetNum = m_SpriteSheet[ m_nFacing ].GetShader();
@@ -104,6 +104,12 @@ namespace TheNomad::SGame {
 		int GetFacing() const {
 			return m_nFacing;
 		}
+		uint& GetTicker() {
+			return m_nTicker;
+		}
+		uint GetTicker() const {
+			return m_nTicker;
+		}
 		
 		void SetEquippedWeapon( WeaponObject@ weapon ) {
 			@m_Equipped = @weapon;
@@ -128,5 +134,6 @@ namespace TheNomad::SGame {
 		private InfoSystem::WeaponProperty m_nMode = InfoSystem::WeaponProperty::None;
 		private int m_nFacing = FACING_RIGHT;
 		private int m_nArmIndex = 0;
+		private uint m_nTicker = 0;
 	};
 };

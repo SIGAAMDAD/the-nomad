@@ -11,6 +11,7 @@ namespace TheNomad::SGame::InfoSystem {
 			string str;
 			array<json@> values;
 			uint i;
+			EntityData@ entity = null;
 			
 			if ( !json.get( "Name", name ) ) {
 				ConsoleWarning( "invalid mob info, missing variable 'Name'\n" );
@@ -20,7 +21,9 @@ namespace TheNomad::SGame::InfoSystem {
 				ConsoleWarning( "invalid mob info, missing variable 'Type'\n" );
 				return false;
 			} else {
-				if ( !InfoManager.GetMobTypes().TryGetValue( str, this.type ) ) {
+				if ( ( @entity = @InfoManager.GetMobType( str ) ) !is null ) {
+					this.type = entity.GetID();
+				} else {
 					GameError( "invalid mob info, Type \"" + str + "\" wasn't found" );
 				}
 			}
@@ -44,10 +47,6 @@ namespace TheNomad::SGame::InfoSystem {
 				ConsoleWarning( "invalid mob info, missing variable 'SoundTolerance'\n" );
 				return false;
 			}
-		//	if ( !json.get( "SmellTolerance", smellTolerance ) ) {
-		//		ConsoleWarning( "invalid mob info, missing variable 'SmellTolerance'\n" );
-		//		return false;
-		//	}
 			if ( !json.get( "SightRadius", sightRadius ) ) {
 				ConsoleWarning( "invalid mob info, missing variable 'SightRadius'\n" );
 				return false;

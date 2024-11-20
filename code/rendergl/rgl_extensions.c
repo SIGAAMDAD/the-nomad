@@ -258,10 +258,10 @@ void R_InitExtensions( void )
 
 		glContext.shaderSubroutine = qtrue;
 		if ( !nglGetSubroutineUniformLocation || !nglUniformSubroutinesuiv ) {
-			ri.Printf( PRINT_INFO, ext[ EXT_FAILED ], ext );
+			ri.Printf( PRINT_INFO, result[ EXT_FAILED ], ext );
 			glContext.shaderSubroutine = qfalse;
 		} else {
-			ri.Printf( PRINT_INFO, ext[ EXT_USING ], ext );
+			ri.Printf( PRINT_INFO, result[ EXT_USING ], ext );
 		}
 	} else {
 		ri.Printf( PRINT_INFO, result[ EXT_NOTFOUND ], ext );

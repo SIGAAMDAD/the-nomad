@@ -6,6 +6,31 @@
 #include "SGame/InfoSystem/AmmoInfo.as"
 
 namespace TheNomad::SGame::InfoSystem {
+	class EntityData {
+		EntityData() {
+		}
+		EntityData( const string& in name, uint id ) {
+			m_Name = name;
+			m_ID = id;
+		}
+		
+		bool opEquals( const string& in name ) const {
+			return m_Name == name;
+		}
+		bool opEquals( uint id ) const {
+			return m_ID == id;
+		}
+		const string& GetName() const {
+			return m_Name;
+		}
+		uint GetID() const {
+			return m_ID;
+		}
+		
+		private string m_Name;
+		private uint m_ID = 0;
+	};
+	
     class InfoDataManager {
 		InfoDataManager() {
 			ConsolePrint( "Loading mod info files...\n" );
@@ -34,16 +59,15 @@ namespace TheNomad::SGame::InfoSystem {
 		}
 		
 		private void LoadEntityIds() {
-			string path;
-			json@ data;
 			json@ obj;
-			array<json@> values;
+			uint a, id;
 			string name;
-			uint id;
-
-			@data = json();
+			
+			json@ data = json();
 			for ( uint i = 0; i < sgame_ModList.Count(); i++ ) {
-				path = "modules/" + sgame_ModList[i] + "/DataScripts/entitydata.json";
+				const string path = "modules/" + sgame_ModList[i] + "/DataScripts/entitydata.json";
+				array<json@> values;
+				
 				if ( !data.ParseFile( path ) ) {
 					ConsoleWarning( "failed to load entity data info file for \"" + sgame_ModList[i] + "\"\n" );
 					return;
@@ -55,14 +79,17 @@ namespace TheNomad::SGame::InfoSystem {
 				if ( !data.get( "MobData", values ) ) {
 					ConsoleWarning( "entity data info file for \"" + sgame_ModList[i] + "\" has no mob data\n" );
 				} else {
-					for ( uint a = 0; a < values.Count(); a++ ) {
+					m_MobTypes.Reserve( values.Count() );
+					for ( a = 0; a < values.Count(); a++ ) {
 						if ( !values[a].get( "Name", name ) ) {
-							GameError( "invalid entity data info file, MobData object missing variable 'Name'" );
+							ConsoleWarning( "invalid entity data info file, MobData object missing variable 'Name'\n" );
+							continue;
 						}
 						if ( !values[a].get( "Id", id ) ) {
-							GameError( "invalid entity data info file, MobData object missing variable 'Id'" );
+							ConsoleWarning( "invalid entity data info file, MobData object missing variable 'Id'\n" );
+							continue;
 						}
-						m_MobTypes[ name ] = id;
+						m_MobTypes.Add( EntityData( name, id ) );
 					}
 				}
 				DebugPrint( "Loaded " + m_MobTypes.Count() + " mob types.\n" );
@@ -73,14 +100,17 @@ namespace TheNomad::SGame::InfoSystem {
 				if ( !data.get( "AmmoData", values ) ) {
 					ConsoleWarning( "entity data info file for \"" + sgame_ModList[i] + "\" has no ammo data\n" );
 				} else {
-					for ( uint a = 0; a < values.Count(); a++ ) {
+					m_AmmoTypes.Reserve( values.Count() );
+					for ( a = 0; a < values.Count(); a++ ) {
 						if ( !values[a].get( "Name", name ) ) {
-							GameError( "invalid entity data info file, AmmoData object missing variable 'Name'" );
+							ConsoleWarning( "invalid entity data info file, AmmoData object missing variable 'Name'\n" );
+							continue;
 						}
 						if ( !values[a].get( "Id", id ) ) {
-							GameError( "invalid entity data info file, AmmoData object missing variable 'Id'" );
+							ConsoleWarning( "invalid entity data info file, AmmoData object missing variable 'Id'\n" );
+							continue;
 						}
-						m_AmmoTypes[ name ] = id;
+						m_AmmoTypes.Add( EntityData( name, id ) );
 					}
 				}
 				DebugPrint( "Loaded " + m_AmmoTypes.Count() + " ammo types.\n" );
@@ -91,14 +121,17 @@ namespace TheNomad::SGame::InfoSystem {
 				if ( !data.get( "ItemData", values ) ) {
 					ConsoleWarning( "entity data info file for \"" + sgame_ModList[i] + "\" has no item data\n" );
 				} else {
-					for ( uint a = 0; a < values.Count(); a++ ) {
+					m_ItemTypes.Reserve( values.Count() );
+					for ( a = 0; a < values.Count(); a++ ) {
 						if ( !values[a].get( "Name", name ) ) {
-							GameError( "invalid entity data info file, ItemData object missing variable 'Name'" );
+							ConsoleWarning( "invalid entity data info file, ItemData object missing variable 'Name'\n" );
+							continue;
 						}
 						if ( !values[a].get( "Id", id ) ) {
-							GameError( "invalid entity data info file, ItemData object missing variable 'Id'" );
+							ConsoleWarning( "invalid entity data info file, ItemData object missing variable 'Id'\n" );
+							continue;
 						}
-						m_ItemTypes[ name ] = id;
+						m_ItemTypes.Add( EntityData( name, id ) );
 					}
 				}
 				DebugPrint( "Loaded " + m_ItemTypes.Count() + " item types.\n" );
@@ -109,14 +142,17 @@ namespace TheNomad::SGame::InfoSystem {
 				if ( !data.get( "WeaponData", values ) ) {
 					ConsoleWarning( "entity data info file for \"" + sgame_ModList[i] + "\" has no weapon data\n" );
 				} else {
-					for ( uint a = 0; a < values.Count(); a++ ) {
+					m_WeaponTypes.Reserve( values.Count() );
+					for ( a = 0; a < values.Count(); a++ ) {
 						if ( !values[a].get( "Name", name ) ) {
-							GameError( "invalid entity data info file, WeaponData object missing variable 'Name'" );
+							ConsoleWarning( "invalid entity data info file, WeaponData object missing variable 'Name'\n" );
+							continue;
 						}
 						if ( !values[a].get( "Id", id ) ) {
-							GameError( "invalid entity data info file, WeaponData object missing variable 'Id'" );
+							ConsoleWarning( "invalid entity data info file, WeaponData object missing variable 'Id'\n" );
+							continue;
 						}
-						m_WeaponTypes[ name ] = id;
+						m_WeaponTypes.Add( EntityData( name, id ) );
 					}
 				}
 				DebugPrint( "Loaded " + m_WeaponTypes.Count() + " weapon datas.\n" );
@@ -124,250 +160,324 @@ namespace TheNomad::SGame::InfoSystem {
 		}
 		
 		void LoadMobInfos() {
-			array<json@>@ infos;
-			MobInfo@ info;
 			string path;
 
 			for ( uint i = 0; i < sgame_ModList.Count(); i++ ) {
 				ConsolePrint( "Loading mob infos from module \"" + sgame_ModList[i] + "\"...\n" );
 
-				@infos = @LoadJSonFile( path, sgame_ModList[i], "mobs.json", "MobInfo" );
+				array<json@>@ infos = @LoadJSonFile( path, sgame_ModList[i], "mobs.json", "MobInfo" );
 				if ( @infos is null ) {
-					return;
+					continue;
 				}
 				ConsolePrint( "Got " + infos.Count() + " mob infos.\n" );
 			
 				for ( uint a = 0; a < infos.Count(); a++ ) {
-					@info = MobInfo();
+					MobInfo@ info = null;
+					const string id = string( infos[a][ "Id" ] );
+
+					if ( m_MobInfos.Contains( id ) ) {
+						@info = cast<MobInfo@>( @m_MobInfos[ id ] );
+					} else {
+						@info = MobInfo();
+						m_MobInfos.Add( id, @info );
+					}
 					if ( !info.Load( @infos[a] ) ) {
-						ConsoleWarning( "failed to load mob info at " + a + "\n" );
+						ConsoleWarning( "failed to load mob info " + id + "\n" );
 						continue;
 					}
-
-					m_MobInfos.Add( @info );
 				}
 			}
 		}
 		
 		void LoadItemInfos() {
-			array<json@>@ infos;
-			ItemInfo@ info;
 			string path;
 
 			for ( uint i = 0; i < sgame_ModList.Count(); i++ ) {
 				ConsolePrint( "Loading item infos from module \"" + sgame_ModList[i] + "\"...\n" );
 
-				@infos = @LoadJSonFile( path, sgame_ModList[i], "items.json", "ItemInfo" );
+				array<json@>@ infos = @LoadJSonFile( path, sgame_ModList[i], "items.json", "ItemInfo" );
 				if ( @infos is null ) {
-					return;
+					continue;
 				}
 			
 				for ( uint a = 0; a < infos.Count(); a++ ) {
-					@info = ItemInfo();
+					ItemInfo@ info = null;
+					const string id = string( infos[a][ "Id" ] );
+					
+					if ( m_ItemInfos.Contains( id ) ) {
+						@info = cast<ItemInfo@>( @m_ItemInfos[ id ] );
+					} else {
+						@info = ItemInfo();
+						m_ItemInfos.Add( id, @info );
+					}
 					if ( !info.Load( @infos[a] ) ) {
-						ConsoleWarning( "failed to load item info at " + a + "\n" );
+						ConsoleWarning( "failed to load item info " + id + "\n" );
 						continue;
 					}
-					
-					m_ItemInfos.Add( @info );
 				}
 			}
 		}
 
 		void LoadAmmoInfos() {
-			array<json@>@ infos;
-			AmmoInfo@ info;
 			string path;
 
 			for ( uint i = 0; i < sgame_ModList.Count(); i++ ) {
 				ConsolePrint( "Loading ammo infos from module \"" + sgame_ModList[i] + "\"...\n" );
 
-				@infos = @LoadJSonFile( path, sgame_ModList[i], "ammo.json", "AmmoInfo" );
+				array<json@>@ infos = @LoadJSonFile( path, sgame_ModList[i], "ammo.json", "AmmoInfo" );
 				if ( @infos is null ) {
-					return;
+					continue;
 				}
 			
 				for ( uint a = 0; a < infos.Count(); a++ ) {
-					@info = AmmoInfo();
+					AmmoInfo@ info = null;
+					const string id = string( infos[a][ "Id" ] );
+					
+					if ( m_AmmoInfos.Contains( id ) ) {
+						@info = cast<AmmoInfo@>( @m_AmmoInfos[ id ] );
+					} else {
+						@info = AmmoInfo();
+						m_AmmoInfos.Add( id, @info );
+					}
 					if ( !info.Load( @infos[a] ) ) {
-						ConsoleWarning( "failed to load ammo info at " + a + "\n" );
+						ConsoleWarning( "failed to load ammo info " + id + "\n" );
 						continue;
 					}
-					
-					m_AmmoInfos.Add( @info );
 				}
 			}
 		}
 		
 		void LoadWeaponInfos() {
-			array<json@>@ infos;
-			WeaponInfo@ info;
 			string path;
 
 			for ( uint i = 0; i < sgame_ModList.Count(); i++ ) {
 				ConsolePrint( "Loading weapon infos from module \"" + sgame_ModList[i] + "\"...\n" );
 
-				@infos = @LoadJSonFile( path, sgame_ModList[i], "weapons.json", "WeaponInfo" );
+				array<json@>@ infos = @LoadJSonFile( path, sgame_ModList[i], "weapons.json", "WeaponInfo" );
 				if ( @infos is null ) {
-					return;
+					continue;
 				}
 			
 				for ( uint a = 0; a < infos.Count(); a++ ) {
-					@info = WeaponInfo();
+					WeaponInfo@ info = null;
+					const string id = string( infos[a][ "Id" ] );
+					
+					if ( m_WeaponInfos.Contains( id ) ) {
+						@info = cast<WeaponInfo@>( @m_WeaponInfos[ id ] );
+					} else {
+						@info = WeaponInfo();
+						m_WeaponInfos.Add( id, @info );
+					}
 					if ( !info.Load( @infos[a] ) ) {
-						ConsoleWarning( "failed to load weapon info at " + a + "\n" );
+						ConsoleWarning( "failed to load weapon info " + id + "\n" );
 						continue;
 					}
-
-					m_WeaponInfos.Add( @info );
 				}
 			}
 		}
 
 		AmmoInfo@ GetAmmoInfo( const string& in name ) {
-			for ( uint i = 0; i < m_AmmoInfos.Count(); i++ ) {
-				if ( Util::StrICmp( m_AmmoInfos[i].name, name ) == 0 ) {
-					return m_AmmoInfos[i];
-				}
+			if ( !m_AmmoInfos.Contains( name ) ) {
+				return null;
 			}
-			return null;
+			return cast<AmmoInfo@>( @m_AmmoInfos[ name ] );
 		}
 		
 		WeaponInfo@ GetWeaponInfo( const string& in name ) {
-			for ( uint i = 0; i < m_WeaponInfos.Count(); i++ ) {
-				if ( Util::StrICmp( m_WeaponInfos[i].name, name ) == 0 ) {
-					return m_WeaponInfos[i];
-				}
+			if ( !m_WeaponInfos.Contains( name ) ) {
+				return null;
 			}
-			return null;
+			return cast<WeaponInfo@>( @m_WeaponInfos[ name ] );
 		}
 		
 		ItemInfo@ GetItemInfo( const string& in name ) {
-			for ( uint i = 0; i < m_ItemInfos.Count(); i++ ) {
-				if ( Util::StrICmp( m_ItemInfos[i].name, name ) == 0 ) {
-					return m_ItemInfos[i];
-				}
+			if ( !m_ItemInfos.Contains( name ) ) {
+				return null;
 			}
-			return null;
+			return cast<ItemInfo@>( @m_ItemInfos[ name ] );
 		}
 		
 		MobInfo@ GetMobInfo( const string& in name ) {
-			for ( uint i = 0; i < m_MobInfos.Count(); i++ ) {
-				if ( Util::StrICmp( m_MobInfos[i].name, name ) == 0 ) {
-					return m_MobInfos[i];
-				}
+			if ( !m_MobInfos.Contains( name ) ) {
+				return null;
 			}
-			return null;
+			return cast<MobInfo@>( @m_MobInfos[ name ] );
 		}
 		
 		bool WeaponInfoExists( const string& in name ) const {
-			for ( uint i = 0; i < m_WeaponInfos.Count(); i++ ) {
-				if ( Util::StrICmp( m_WeaponInfos[i].name, name ) == 0 ) {
-					return true;
-				}
-			}
-			return false;
+			return m_WeaponInfos.Contains( name );
 		}
 		
 		bool ItemInfoExists( const string& in name ) const {
-			for ( uint i = 0; i < m_ItemInfos.Count(); i++ ) {
-				if ( Util::StrICmp( m_ItemInfos[i].name, name ) == 0 ) {
-					return true;
-				}
-			}
-			return false;
+			return m_ItemInfos.Contains( name );
 		}
 		
 		bool MobInfoExists( const string& in name ) const {
-			for ( uint i = 0; i < m_MobInfos.Count(); i++ ) {
-				if ( Util::StrICmp( m_MobInfos[i].name, name ) == 0 ) {
-					return true;
-				}
-			}
-			return false;
+			return m_MobInfos.Contains( name );
 		}
 
 		WeaponInfo@ GetWeaponInfo( uint id ) {
-			for ( uint i = 0; i < m_WeaponInfos.Count(); i++ ) {
-				if ( m_WeaponInfos[i].type == id ) {
-					return @m_WeaponInfos[i];
-				}
+			EntityData@ entity = @GetWeaponType( id );
+			if ( @entity is null ) {
+				return null;
 			}
-			return null;
+			if ( !m_WeaponInfos.Contains( entity.GetName() ) ) {
+				GameError( "InfoDataManager::GetWeaponInfo: weapon \"" + entity.GetName()
+					+ "\" has a type definition but not a data entry" );
+			}
+			return cast<WeaponInfo@>( @m_WeaponInfos[ entity.GetName() ] );
 		}
 		
-		AmmoInfo@ GetAmmoInfo( AmmoType id ) {
-			for ( uint i = 0; i < m_AmmoInfos.Count(); i++ ) {
-				if ( ( m_AmmoInfos[i].baseType & id ) != 0 ) {
-					return @m_AmmoInfos[i];
-				}
+		AmmoInfo@ GetAmmoInfo( uint id ) {
+			EntityData@ entity = @GetAmmoType( id );
+			if ( @entity is null ) {
+				return null;
 			}
-			return null;
+			if ( !m_AmmoInfos.Contains( entity.GetName() ) ) {
+				GameError( "InfoDataManager::GetAmmoInfo: item \"" + entity.GetName()
+					+ "\" has a type definition but not a data entry" );
+			}
+			return cast<AmmoInfo@>( @m_AmmoInfos[ entity.GetName() ] );
 		}
 
 		ItemInfo@ GetItemInfo( uint id ) {
-			for ( uint i = 0; i < m_ItemInfos.Count(); i++ ) {
-				if ( m_ItemInfos[i].type == id ) {
-					return @m_ItemInfos[i];
-				}
+			EntityData@ entity = @GetItemType( id );
+			if ( @entity is null ) {
+				return null;
 			}
-			return null;
+			if ( !m_ItemInfos.Contains( entity.GetName() ) ) {
+				GameError( "InfoDataManager::GetItemInfo: item \"" + entity.GetName()
+					+ "\" has a type definition but not a data entry" );
+			}
+			return cast<ItemInfo@>( @m_ItemInfos[ entity.GetName() ] );
 		}
 
 		MobInfo@ GetMobInfo( uint id ) {
-			for ( uint i = 0; i < m_MobInfos.Count(); i++ ) {
-				if ( m_MobInfos[i].type == id ) {
-					return @m_MobInfos[i];
+			EntityData@ entity = @GetMobType( id );
+			if ( @entity is null ) {
+				return null;
+			}
+			if ( !m_MobInfos.Contains( entity.GetName() ) ) {
+				GameError( "InfoDataManager::GetMobInfo: mob \"" + entity.GetName()
+					+ "\" has a type definition but not a data entry" );
+			}
+			return cast<MobInfo@>( @m_MobInfos[ entity.GetName() ] );
+		}
+
+		EntityData@ GetItemType( const string& in name ) {
+			for ( uint it = 0; it < m_ItemTypes.Count(); ++it ) {
+				if ( m_ItemTypes[ it ] == name ) {
+					return @m_ItemTypes[ it ];
+				}
+			}
+			return null;
+		}
+		EntityData@ GetMobType( const string& in name ) {
+			for ( uint it = 0; it < m_MobTypes.Count(); ++it ) {
+				if ( m_MobTypes[ it ] == name ) {
+					return @m_MobTypes[ it ];
+				}
+			}
+			return null;
+		}
+		EntityData@ GetWeaponType( const string& in name ) {
+			for ( uint it = 0; it < m_WeaponTypes.Count(); ++it ) {
+				if ( m_WeaponTypes[ it ] == name ) {
+					return @m_WeaponTypes[ it ];
+				}
+			}
+			return null;
+		}
+		EntityData@ GetAmmoType( const string& in name ) {
+			for ( uint it = 0; it < m_AmmoTypes.Count(); ++it ) {
+				if ( m_AmmoTypes[ it ] == name ) {
+					return @m_AmmoTypes[ it ];
 				}
 			}
 			return null;
 		}
 
-		dictionary@ GetItemTypes() {
+		EntityData@ GetItemType( uint id ) {
+			for ( uint it = 0; it < m_ItemTypes.Count(); ++it ) {
+				if ( m_ItemTypes[ it ].GetID() == id ) {
+					return @m_ItemTypes[ it ];
+				}
+			}
+			return null;
+		}
+		EntityData@ GetMobType( uint id ) {
+			for ( uint it = 0; it < m_MobTypes.Count(); ++it ) {
+				if ( m_MobTypes[ it ].GetID() == id ) {
+					return @m_MobTypes[ it ];
+				}
+			}
+			return null;
+		}
+		EntityData@ GetWeaponType( uint id ) {
+			for ( uint it = 0; it < m_WeaponTypes.Count(); ++it ) {
+				if ( m_WeaponTypes[ it ].GetID() == id ) {
+					return @m_WeaponTypes[ it ];
+				}
+			}
+			return null;
+		}
+		EntityData@ GetAmmoType( uint id ) {
+			for ( uint it = 0; it < m_AmmoTypes.Count(); ++it ) {
+				if ( m_AmmoTypes[ it ].GetID() == id ) {
+					return @m_AmmoTypes[ it ];
+				}
+			}
+			return null;
+		}
+
+		array<EntityData>@ GetItemTypes() {
 			return @m_ItemTypes;
 		}
-		dictionary@ GetMobTypes() {
+		array<EntityData>@ GetMobTypes() {
 			return @m_MobTypes;
 		}
-		dictionary@ GetWeaponTypes() {
+		array<EntityData>@ GetWeaponTypes() {
 			return @m_WeaponTypes;
 		}
-		dictionary@ GetAmmoTypes() {
+		array<EntityData>@ GetAmmoTypes() {
 			return @m_AmmoTypes;
 		}
 
-		const dictionary@ GetItemTypes() const {
+		const array<EntityData>@ GetItemTypes() const {
 			return @m_ItemTypes;
 		}
-		const dictionary@ GetMobTypes() const {
+		const array<EntityData>@ GetMobTypes() const {
 			return @m_MobTypes;
 		}
-		const dictionary@ GetWeaponTypes() const {
+		const array<EntityData>@ GetWeaponTypes() const {
 			return @m_WeaponTypes;
 		}
-		const dictionary@ GetAmmoTypes() const {
+		const array<EntityData>@ GetAmmoTypes() const {
 			return @m_AmmoTypes;
 		}
 		
-		void AddMobInfo( MobInfo@ info ) {
-			m_MobInfos.Add( info );
+		dictionary@ GetItemInfos() {
+			return @m_ItemInfos;
 		}
-		void AddItemInfo( ItemInfo@ info ) {
-			m_ItemInfos.Add( info );
+		dictionary@ GetMobInfos() {
+			return @m_MobInfos;
 		}
-		void AddWeaponInfo( WeaponInfo@ info ) {
-			m_WeaponInfos.Add( info );
+		dictionary@ GetWeaponInfos() {
+			return @m_WeaponInfos;
 		}
-
-		private dictionary m_ItemTypes;
-		private dictionary m_MobTypes;
-		private dictionary m_WeaponTypes;
-		private dictionary m_AmmoTypes;
+		dictionary@ GetAmmoInfos() {
+			return @m_AmmoInfos;
+		}
 		
-		private array<MobInfo@> m_MobInfos;
-		private array<ItemInfo@> m_ItemInfos;
-		private array<WeaponInfo@> m_WeaponInfos;
-		private array<AmmoInfo@> m_AmmoInfos;
+		private array<EntityData> m_ItemTypes;
+		private array<EntityData> m_MobTypes;
+		private array<EntityData> m_WeaponTypes;
+		private array<EntityData> m_AmmoTypes;
+		
+		private dictionary m_ItemInfos;
+		private dictionary m_MobInfos;
+		private dictionary m_WeaponInfos;
+		private dictionary m_AmmoInfos;
 	};
 
 	enum ItemType {
@@ -590,5 +700,5 @@ namespace TheNomad::SGame::InfoSystem {
 		"RightArm"
 	};
 
-    InfoDataManager@ InfoManager;
+    InfoDataManager@ InfoManager = null;
 };

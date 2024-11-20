@@ -41,15 +41,15 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 /* We translate axes movement into keypresses. */
 int joy_keys[16] = {
-    KEY_LEFTARROW, KEY_RIGHTARROW,
-    KEY_UPARROW, KEY_DOWNARROW,
-    KEY_JOY16, KEY_JOY17,
-    KEY_JOY18, KEY_JOY19,
-    KEY_JOY20, KEY_JOY21,
-    KEY_JOY22, KEY_JOY23,
-    
-    KEY_JOY24, KEY_JOY25,
-    KEY_JOY26, KEY_JOY27
+	KEY_LEFTARROW, KEY_RIGHTARROW,
+	KEY_UPARROW, KEY_DOWNARROW,
+	KEY_JOY16, KEY_JOY17,
+	KEY_JOY18, KEY_JOY19,
+	KEY_JOY20, KEY_JOY21,
+	KEY_JOY22, KEY_JOY23,
+	
+	KEY_JOY24, KEY_JOY25,
+	KEY_JOY26, KEY_JOY27
 };
 
 /* Our file descriptor for the joystick device. */

@@ -66,10 +66,10 @@ public:
 	void Sort( asUINT startAt, asUINT count, bool asc );
 	void Sort( asIScriptFunction *less, asUINT startAt, asUINT count );
 	void Reverse( void );
-	int Find( void *value ) const;
-	int Find( asUINT startAt, void *value ) const;
-	int FindByRef( void *ref ) const;
-	int FindByRef( asUINT startAt, void *ref ) const;
+	asUINT Find( void *value ) const;
+	asUINT Find( asUINT startAt, void *value ) const;
+	asUINT FindByRef( void *ref ) const;
+	asUINT FindByRef( asUINT startAt, void *ref ) const;
 
 	void *GetBuffer( void );
 	const void *GetBuffer( void ) const;

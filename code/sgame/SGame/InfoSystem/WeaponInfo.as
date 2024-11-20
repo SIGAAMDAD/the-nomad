@@ -12,6 +12,7 @@ namespace TheNomad::SGame::InfoSystem {
 			string str;
 			string type;
 			bool useSpriteSheet = false;
+			EntityData@ entity = null;
 
 			if ( !json.get( "Name", name ) ) {
 				ConsoleWarning( "invalid weapon info, missing variable 'Name'\n" );
@@ -21,7 +22,9 @@ namespace TheNomad::SGame::InfoSystem {
 				ConsoleWarning( "invalid weapon info, missing variable 'Id'\n" );
 				return false;
 			} else {
-				if ( !InfoManager.GetWeaponTypes().TryGetValue( type, this.type ) ) {
+				if ( ( @entity = @InfoManager.GetWeaponType( type ) ) !is null ) {
+					this.type = entity.GetID();
+				} else {
 					GameError( "invalid weapon info, Type \"" + type + "\" wasn't found" );
 				}
 			}

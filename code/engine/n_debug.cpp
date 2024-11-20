@@ -77,7 +77,6 @@ public:
 #ifdef POSIX
     struct backtrace_state *m_pBTState;
 	bool m_bBacktraceError;
-	FILE *m_hBackTraceOutput;
 #endif
 
     const char *m_pExePath;
@@ -121,16 +120,10 @@ static void bt_syminfo_callback( void *data, uintptr_t pc, const char *symname,
 		if ( logfile != FS_INVALID_HANDLE && FS_Initialized() ) {
 			FS_Printf( logfile, "  %-8zu %s\n", pc, symname );
 		}
-		if ( g_debugSession.m_hBackTraceOutput ) {
-			fprintf( g_debugSession.m_hBackTraceOutput, "  %-8zu %s\n", pc, symname );
-		}
 		fprintf( stdout, "  %-8zu %s\n", pc, symname );
 	} else {
 		if ( logfile != FS_INVALID_HANDLE && FS_Initialized() ) {
 			FS_Printf( logfile, "%-8zu (unknown symbol)\n", pc );
-		}
-		if ( g_debugSession.m_hBackTraceOutput ) {
-			fprintf( g_debugSession.m_hBackTraceOutput, "%-8zu (unknown symbol)\n", pc );
 		}
 		fprintf( stdout, "  %-8zu (unknown symbol)\n", pc );
 	}
@@ -164,9 +157,6 @@ static int bt_pcinfo_callback( void *data, uintptr_t pc, const char *filename, i
 		}
 		if (logfile != FS_INVALID_HANDLE) {
 			FS_Printf( logfile,  "  %-8zu %-16s:%-8d %s\n", pc, filename, lineno, function );
-		}
-		if ( g_debugSession.m_hBackTraceOutput ) {
-			fprintf( g_debugSession.m_hBackTraceOutput, "  %-8zu %-16s:%-8d %s\n", pc, filename, lineno, function );
 		}
 		fprintf( stdout, "  %-8zu %-16s:%-8d %s\n", pc, filename, lineno, function );
 	}
@@ -389,76 +379,14 @@ void Sys_DebugString( const char *str )
 #endif
 }
 
-#ifdef _WIN32
-#ifdef _M_X64
-STACKFRAME64 InitStackFrame( CONTEXT c )
+void Sys_DebugStacktraceFile( uint32_t frames )
 {
-    STACKFRAME64 s;
-    s.AddrPC.Offset = c.Rip;
-    s.AddrPC.Mode = AddrModeFlat;
-    s.AddrStack.Offset = c.Rsp;
-    s.AddrStack.Mode = AddrModeFlat;    
-    s.AddrFrame.Offset = c.Rbp;
-    s.AddrFrame.Mode = AddrModeFlat;
-    return s;
-}
-#else
-STACKFRAME64 InitStackFrame( CONTEXT c )
-{
-    STACKFRAME64 s;
-    s.AddrPC.Offset = c.Eip;
-    s.AddrPC.Mode = AddrModeFlat;
-    s.AddrStack.Offset = c.Esp;
-    s.AddrStack.Mode = AddrModeFlat;    
-    s.AddrFrame.Offset = c.Ebp;
-    s.AddrFrame.Mode = AddrModeFlat;
-    return s;
-}
-#endif
+	static qboolean called = qfalse;
 
-typedef struct {
-	char szImageName[1024];
-	char szModuleName[1024];
-	void *pAddress;
-	DWORD dwLoadSize;
-} ModuleInfo_t;
-
-void *LoadModuleSymbols( HANDLE hProcess, DWORD pid )
-{
-	ModuleInfo_t *pModules;
-	uint32_t nModuleCount, i;
-	DWORD cbNeeded;
-
-	HMODULE hModule, *hModules;
-
-	EnumProcessModules( hProcess, &hModule, sizeof( HMODULE ), &cbNeeded );
-	hModules = (HMODULE *)alloca( cbNeeded );
-	EnumProcessModules( hProcess, hModules, cbNeeded, &cbNeeded );
-
-	pModules = (ModuleInfo_t *)alloca( sizeof( *pModules ) * ( cbNeeded / sizeof( HMODULE ) ) );
-	nModuleCount = cbNeeded / sizeof( HMODULE );
-	for ( i = 0; i < nModuleCount; i++ ) {
-		char szTemp[1024];
-		MODULEINFO moduleInfo;
-
-		GetModuleInformation( hProcess, hModules[i], &moduleInfo, sizeof( moduleInfo ) );
-		pModules[i].pAddress = moduleInfo.lpBaseOfDll;
-		pModules[i].dwLoadSize = moduleInfo.SizeOfImage;
-
-		GetModuleFileNameEx( hProcess, hModules[i], szTemp, sizeof( szTemp ) );
-		N_strncpyz( pModules[i].szImageName, szTemp, sizeof( pModules[i].szImageName ) );
-		GetModuleBaseName( hProcess, hModules[i], szTemp, sizeof( szTemp ) );
-		N_strncpyz( pModules[i].szModuleName, szTemp, sizeof( pModules[i].szModuleName ) );
-
-		SymLoadModule64( hProcess, 0, pModules[i].szImageName, pModules[i].szModuleName, (DWORD64)pModules[i].pAddress,
-			pModules[i].dwLoadSize );
+	if ( called ) {
+		return;
 	}
-	return pModules[0].pAddress;
-}
-#endif
-
-void Sys_DebugStacktraceFile( uint32_t frames, FILE *fp )
-{
+	called = qtrue;
 #ifdef _WIN32
 	DWORD i;
 	USHORT nFrames;
@@ -487,7 +415,6 @@ void Sys_DebugStacktraceFile( uint32_t frames, FILE *fp )
 	hThread = GetCurrentThread();
 	frames = 0;
 
-/*
 	ZeroMemory( &stackFrame, sizeof( stackFrame ) );
 #ifdef _M_IX86
 	image = IMAGE_FILE_MACHINE_I386;
@@ -516,43 +443,6 @@ void Sys_DebugStacktraceFile( uint32_t frames, FILE *fp )
 	stackFrame.AddrStack.Offset = g_debugSession.m_Context.IntSp;
 	stackFrame.AddrStack.Mode = AddrModeFlat;
 #endif
-*/
-
-	void *pBase = LoadModuleSymbols( hProcess, GetCurrentProcessId() );
-
-	stackFrame = InitStackFrame( g_debugSession.m_Context );
-	h = ImageNtHeader( pBase );
-
-	do {
-		if ( !StackWalk64( h->FileHeader.Machine, hProcess, hThread, &stackFrame, &g_debugSession.m_Context, NULL,
-			SymFunctionTableAccess64, SymGetModuleBase64, NULL ) )
-		{
-			break;
-		}
-		Con_Printf( "\n%i:\t", frames );
-		if ( stackFrame.AddrPC.Offset ) {
-			pSymbol = (IMAGEHLP_SYMBOL64 *)alloca( sizeof( *pSymbol ) + 1024 );
-			pSymbol->SizeOfStruct = sizeof( *pSymbol );
-			pSymbol->MaxNameLength = 1024;
-			
-			if ( !SymGetSymFromAddr( hProcess, stackFrame.AddrPC.Offset, &dwDisplacement64, pSymbol ) ) {
-				break;
-			}
-
-			char szName[1024];
-			UnDecorateSymbolName( pSymbol->Name, szName, sizeof( szName ), UNDNAME_COMPLETE );
-			Con_Printf( "%s", szName );
-
-			if ( !SymGetLineFromAddr64( hProcess, stackFrame.AddrPC.Offset, &dwOffset, &SymLine ) ) {
-				break;
-			}
-			Con_Printf( "\t%s(%u)", SymLine.FileName, SymLine.LineNumber );
-		}
-
-		frames++;
-	} while ( stackFrame.AddrReturn.Offset != 0 );
-
-/*
 	for ( uint32_t i = 0; i < frames; i++ ) {
 		const BOOL result = StackWalk64( image, hProcess, hThread, &stackFrame, &g_debugSession.m_Context, NULL, SymFunctionTableAccess64,
 			SymGetModuleBase64, NULL );
@@ -573,19 +463,11 @@ void Sys_DebugStacktraceFile( uint32_t frames, FILE *fp )
 			Con_Printf( "[Frame %i] %s\n"
 						"(0x%04lx) %s:%i:%i -> %s\n"
 				, i, ModuleInfo.ModuleName, symbol->Address, SymLine.FileName, SymLine.LineNumber, dwDisplacement, (const char *)symbol->Name );
-			
-			fprintf( fp, "[Frame %i] %s\n"
-						"(0x%04lx) %s:%i:%i -> %s\n"
-				, i, ModuleInfo.ModuleName, symbol->Address, SymLine.FileName, SymLine.LineNumber, dwDisplacement, (const char *)symbol->Name );
 		} else {
 			Con_Printf( "SymFromAddr failed: %s\n", Sys_GetError() );
 			Con_Printf( "[Frame %i] (unknown symbol) ???\n", i );
-
-			fprintf( fp, "SymFromAddr failed: %s\n", Sys_GetError() );
-			fprintf( fp, "[Frame %i] (unknown symbol) ???\n", i );
 		}
 	}
-*/
 
 /*
 	memset( g_debugSession.m_pSymbolArray, 0, sizeof( void * ) * MAX_STACKTRACE_FRAMES );
@@ -619,45 +501,9 @@ void Sys_DebugStacktraceFile( uint32_t frames, FILE *fp )
     int numframes;
     uint64_t fileLength;
 
-	g_debugSession.m_hBackTraceOutput = fp;
-
     if ( g_debugSession.m_pBTState ) {
         int skip = 2; // skip this function in backtrace
 		backtrace_simple( g_debugSession.m_pBTState, skip, bt_simple_callback, bt_error_callback, NULL );
-    }
-    else {
-        // use libgcc's backtrace
-
-        numframes = backtrace( g_debugSession.m_pSymbolArray, frames );
-
-        /* write the backtrace */
-        backtrace_symbols_fd( g_debugSession.m_pSymbolArray, numframes, fileno(g_debugSession.m_pBacktraceFile) );
-
-        fseek( g_debugSession.m_pBacktraceFile, 0L, SEEK_END );
-        fileLength = ftell( g_debugSession.m_pBacktraceFile );
-        fseek( g_debugSession.m_pBacktraceFile, 0L, SEEK_SET );
-
-        if ( fileLength >= MAX_STACKTRACE_FILESIZE ) {
-			if ( !FS_Initialized() ) {
-				fprintf( stderr, "WARNING: stacktrace file size is %lu\n", fileLength );
-			}
-	        else {
-			    Con_Printf( "WARNING: stacktrace file size is %lu\n", fileLength );
-			}
-            return;
-        }
-
-        if (!((int64_t)Sys_StackMemoryRemaining() - (int64_t)fileLength)) {
-            buffer = g_debugSession.m_pStacktraceBuffer;
-        }
-        else {
-            // just use a stack buffer
-            static char *p = (char *)alloca( fileLength );
-            buffer = p;
-        }
-
-	    fread( buffer, fileLength, 1, g_debugSession.m_pBacktraceFile );
-		fwrite( buffer, fileLength, 1, fp );
     }
 #endif
 }
@@ -667,5 +513,5 @@ void Sys_DebugStacktrace( uint32_t frames )
 	if ( com_errorEntered && g_debugSession.m_iErrorReason != ERR_NONE ) {
         g_debugSession.m_bDoneErrorStackdump = true;
     }
-	Sys_DebugStacktraceFile( frames, FS_Handle( logfile ) );
+	Sys_DebugStacktraceFile( frames );
 }

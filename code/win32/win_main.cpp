@@ -1282,7 +1282,6 @@ char *Sys_GetClipboardData( void )
 }
 
 
-
 void Sys_SetClipboadBitmap( const byte *bitmap, uint64_t length )
 {
     HGLOBAL hMem;
@@ -1302,6 +1301,80 @@ void Sys_SetClipboadBitmap( const byte *bitmap, uint64_t length )
 		SetClipboardData( CF_DIB, hMem );
 	}
 	CloseClipboard();
+}
+
+/*
+==============
+Sys_ErrorDialog
+
+Display an error message
+==============
+*/
+void Sys_ErrorDialog( const char *error )
+{
+	Sys_Print( va( "%s\n", error ) );
+
+	if( Sys_Dialog( DT_YES_NO, va( "%s. Copy console log to clipboard?", error ),
+			"Error" ) == DR_YES )
+	{
+		HGLOBAL memoryHandle;
+		char *clipMemory;
+
+		memoryHandle = GlobalAlloc( GMEM_MOVEABLE|GMEM_DDESHARE, CON_LogSize( ) + 1 );
+		clipMemory = (char *)GlobalLock( memoryHandle );
+
+		if( clipMemory )
+		{
+			char *p = clipMemory;
+			char buffer[ 1024 ];
+			unsigned int size;
+
+			while( ( size = CON_LogRead( buffer, sizeof( buffer ) ) ) > 0 )
+			{
+				Com_Memcpy( p, buffer, size );
+				p += size;
+			}
+
+			*p = '\0';
+
+			if( OpenClipboard( NULL ) && EmptyClipboard( ) )
+				SetClipboardData( CF_TEXT, memoryHandle );
+
+			GlobalUnlock( clipMemory );
+			CloseClipboard( );
+		}
+	}
+}
+
+/*
+==============
+Sys_Dialog
+
+Display a win32 dialog box
+==============
+*/
+dialogResult_t Sys_Dialog( dialogType_t type, const char *message, const char *title )
+{
+	UINT uType;
+
+	switch( type )
+	{
+		default:
+		case DT_INFO:      uType = MB_ICONINFORMATION|MB_OK; break;
+		case DT_WARNING:   uType = MB_ICONWARNING|MB_OK; break;
+		case DT_ERROR:     uType = MB_ICONERROR|MB_OK; break;
+		case DT_YES_NO:    uType = MB_ICONQUESTION|MB_YESNO; break;
+		case DT_OK_CANCEL: uType = MB_ICONWARNING|MB_OKCANCEL; break;
+	}
+
+	switch( MessageBox( NULL, message, title, uType ) )
+	{
+		default:
+		case IDOK:      return DR_OK;
+		case IDCANCEL:  return DR_CANCEL;
+		case IDYES:     return DR_YES;
+		case IDNO:      return DR_NO;
+	}
 }
 
 /*
