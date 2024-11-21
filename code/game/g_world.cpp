@@ -339,8 +339,9 @@ void G_GetSpawnData( uvec3_t xyz, uint32_t *type, uint32_t *id, uint32_t nIndex,
 		info->spawns[nIndex].entitytype, info->spawns[nIndex].entityid );
 }
 
-void G_GetTileData( uint32_t *pTiles, uint32_t nLevel ) {
+void G_GetTileData( uint64_t *pTiles, uint32_t nLevel ) {
 	const mapinfo_t *info;
+	uint64_t i;
 
 	if ( !pTiles ) {
 		N_Error( ERR_DROP, "G_GetTileData: NULL tiles" );
@@ -354,7 +355,7 @@ void G_GetTileData( uint32_t *pTiles, uint32_t nLevel ) {
 
 	info = &gi.mapCache.info;
 	
-	for ( uint64_t i = 0; i < info->numTiles; i++ ) {
+	for ( i = 0; i < info->numTiles; i++ ) {
 		pTiles[i] = info->tiles[i].flags;
 	}
 }

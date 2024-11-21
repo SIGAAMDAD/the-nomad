@@ -300,7 +300,7 @@ static FMOD_RESULT fmod_debug_callback( FMOD_DEBUG_FLAGS flags, const char *file
 		Con_Printf( COLOR_YELLOW "[FMOD API][%s:%s:%i] %s", file, func, line, message );
 	} else {
 		FS_Printf( fmodLogFile, "[%s:%s:%i] %s", file, func, line, message );
-		Con_Printf( "[FMOD API][%s:%s:%i] %s", file, func, line, message );
+//		Con_Printf( "[FMOD API][%s:%s:%i] %s", file, func, line, message );
 	}
 
 	return FMOD_OK;

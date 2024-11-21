@@ -153,16 +153,16 @@ void CScriptJson::Set( const jsonKey_t& key, const string_t& value )
 
 void CScriptJson::Set( const jsonKey_t& key, const CScriptArray& value )
 {
-	json js_temp = json::array({});
+	json js_temp = json::array( {} );
 
 	// make sure we're not just being handed a random array
 	if ( N_stricmp( g_pModuleLib->GetScriptEngine()->GetTypeInfoById( value.GetElementTypeId() )->GetName(), "json" ) != 0 ) {
-		throw ModuleException( "json opIndex( const array<json@>& in ) called on invalid array" );
+		throw std::invalid_argument( "json opIndex( const array<json@>& in ) called on invalid array" );
 	}
 
-	for (asUINT i = 0; i < value.GetSize(); i++) {
-		CScriptJson** node  = (CScriptJson**)value.At( i );
-		if (node && *node) {
+	for ( asUINT i = 0; i < value.GetSize(); i++ ) {
+		CScriptJson **node  = (CScriptJson **)value.At( i );
+		if ( node && *node ) {
 			js_temp += (*node)->js_info;
 		}
 	}
@@ -229,7 +229,7 @@ bool CScriptJson::Get( const jsonKey_t& key, CScriptArray& value ) const
 	value.Resize( js_temp.size() );
 
 	for ( asUINT i = 0; i < js_temp.size(); ++i ) {
-		CScriptJson* childNode = Create( engine );
+		CScriptJson *childNode = Create( engine );
 		childNode->js_info = js_temp[i];
 		value.SetValue( i, &childNode );
 		childNode->Release();
@@ -243,6 +243,7 @@ bool CScriptJson::Get( const jsonKey_t& key, CScriptJson& value ) const
 		return false;
 	}
 
+	value.js_info = js_info.at( key );
 	return true;
 }
 
@@ -271,13 +272,12 @@ string_t CScriptJson::GetString()
 	return js_info;
 }
 
-CScriptArray* CScriptJson::GetArray()
+CScriptArray *CScriptJson::GetArray()
 {
-	CScriptArray* retVal = CScriptArray::Create( engine->GetTypeInfoByDecl( "array<json@>" ) );
+	CScriptArray *retVal = CScriptArray::Create( engine->GetTypeInfoByDecl( "array<json@>" ) );
 	
 	retVal->Reserve( js_info.size() );
-	for (json::iterator it = js_info.begin(); it != js_info.end(); ++it)
-	{
+	for ( json::iterator it = js_info.begin(); it != js_info.end(); ++it ) {
 		CScriptJson* childNode = CScriptJson::Create(engine, *it);
 
 		retVal->InsertLast( childNode );
@@ -286,29 +286,19 @@ CScriptArray* CScriptJson::GetArray()
 	return retVal;
 }
 
-CScriptJson *CScriptJson::operator[](const jsonKey_t& key)
+CScriptJson *CScriptJson::operator[]( const jsonKey_t& key )
 {
-	CScriptJson* retVal = Create(engine);
-	retVal->js_info = eastl::move( (js_info)[key] );
+	CScriptJson* retVal = Create( engine );
+	retVal->js_info = (js_info)[key];
 	// Return the existing value if it exists, else insert an empty value
 	return retVal;
 }
 
 const CScriptJson *CScriptJson::operator[](const jsonKey_t& key) const
 {
-	if(js_info.contains(key))
-	{
-		CScriptJson* retVal = Create(engine);
-		(retVal->js_info) = (js_info)[key];
-		return retVal;
-	}
-
-	// Else raise an exception
-	asIScriptContext *ctx = asGetActiveContext();
-	if( ctx )
-		ctx->SetException("Invalid access to non-existing value");
-
-	return 0;
+	CScriptJson* retVal = Create(engine);
+	(retVal->js_info) = (js_info)[key];
+	return retVal;
 }
 
 CScriptJson *CScriptJson::operator[](const uint32_t key)

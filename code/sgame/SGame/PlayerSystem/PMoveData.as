@@ -78,7 +78,7 @@ namespace TheNomad::SGame {
 					m_EntityData.SetSliding( false );
 				}
 			} else {
-				const uint tile = LevelManager.GetMapData().GetTile( m_EntityData.GetOrigin(), m_EntityData.GetBounds() );
+				const uint64 tile = LevelManager.GetMapData().GetTile( m_EntityData.GetOrigin(), m_EntityData.GetBounds() );
 				if ( accel.x != 0.0f || accel.y != 0.0f ) {
 					// sync the extra particles and sounds with the actual animation
 					uint lerpTime = m_EntityData.GetLegState().GetAnimation().GetTicRate() * m_EntityData.GetLegState().GetAnimation().NumFrames();
@@ -154,13 +154,6 @@ namespace TheNomad::SGame {
 			}
 			
 			m_EntityData.GetPhysicsObject().SetAcceleration( accel );
-		}
-		
-		private void WaterMove() {
-			const uint gameTic = TheNomad::GameSystem::GameManager.GetGameTic();
-			vec3 accel = m_EntityData.GetPhysicsObject().GetAcceleration();
-			
-			KeyMove();
 		}
 		
 		private bool CheckJump() {
@@ -325,11 +318,7 @@ namespace TheNomad::SGame {
 			
 			groundPlane = m_EntityData.GetWaterLevel() < 1;
 
-			if ( m_EntityData.GetWaterLevel() > 1 ) {
-				WaterMove();
-			} else if ( groundPlane ) {
-				WalkMove();
-			}
+			WalkMove();
 			AirMove();
 
 			SetMovementDir();
@@ -405,6 +394,10 @@ namespace TheNomad::SGame {
 
 		void KeyMove() {
 			float base = 1.25f;
+
+			if ( m_EntityData.GetWaterLevel() > 0 ) {
+				base = 0.90f;
+			}
 
 			forward = 0.0f;
 			side = 0.0f;

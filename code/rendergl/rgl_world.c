@@ -726,3 +726,9 @@ void RE_LoadWorldMap( const char *filename )
 
 	ri.FS_FreeFile( buffer.v );
 }
+
+typedef struct {
+	size_t minOutsideRoot;
+	size_t maxOutsideRoot;
+	
+} quadtree_t;

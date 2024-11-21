@@ -326,6 +326,7 @@ asCThreadLocalData::~asCThreadLocalData()
 #ifndef AS_NO_THREADS
 asCThreadCriticalSection::asCThreadCriticalSection()
 {
+	/*
 #if defined AS_POSIX_THREADS
 	pthread_mutex_init(&cs, 0);
 #elif defined AS_WINDOWS_THREADS
@@ -338,37 +339,45 @@ asCThreadCriticalSection::asCThreadCriticalSection()
 	InitializeCriticalSection(&cs);
 #endif
 #endif
+	*/
 }
 
 asCThreadCriticalSection::~asCThreadCriticalSection()
 {
+	/*
 #if defined AS_POSIX_THREADS
 	pthread_mutex_destroy(&cs);
 #elif defined AS_WINDOWS_THREADS
 	DeleteCriticalSection(&cs);
 #endif
+	*/
 }
 
 void asCThreadCriticalSection::Enter()
 {
+	/*
 #if defined AS_POSIX_THREADS
 	pthread_mutex_lock(&cs);
 #elif defined AS_WINDOWS_THREADS
 	EnterCriticalSection(&cs);
 #endif
+	*/
 }
 
 void asCThreadCriticalSection::Leave()
 {
+	/*
 #if defined AS_POSIX_THREADS
 	pthread_mutex_unlock(&cs);
 #elif defined AS_WINDOWS_THREADS
 	LeaveCriticalSection(&cs);
 #endif
+	*/
 }
 
 bool asCThreadCriticalSection::TryEnter()
 {
+	/*
 #if defined AS_POSIX_THREADS
 	return !pthread_mutex_trylock(&cs);
 #elif defined AS_WINDOWS_THREADS
@@ -376,10 +385,13 @@ bool asCThreadCriticalSection::TryEnter()
 #else
 	return true;
 #endif
+	*/
+	return true;
 }
 
 asCThreadReadWriteLock::asCThreadReadWriteLock()
 {
+	/*
 #if defined AS_POSIX_THREADS
 	int r = pthread_rwlock_init(&lock, 0);
 	asASSERT( r == 0 );
@@ -397,20 +409,24 @@ asCThreadReadWriteLock::asCThreadReadWriteLock()
 	InitializeCriticalSection(&writeLock);
 #endif
 #endif
+	*/
 }
 
 asCThreadReadWriteLock::~asCThreadReadWriteLock()
 {
+	/*
 #if defined AS_POSIX_THREADS
 	pthread_rwlock_destroy(&lock);
 #elif defined AS_WINDOWS_THREADS
 	DeleteCriticalSection(&writeLock);
 	CloseHandle(readLocks);
 #endif
+	*/
 }
 
 void asCThreadReadWriteLock::AcquireExclusive()
 {
+	/*
 #if defined AS_POSIX_THREADS
 	pthread_rwlock_wrlock(&lock);
 #elif defined AS_WINDOWS_THREADS
@@ -428,36 +444,43 @@ void asCThreadReadWriteLock::AcquireExclusive()
 	// lock the readers when this writer releases them anyway.
 	LeaveCriticalSection(&writeLock);
 #endif
+	*/
 }
 
 void asCThreadReadWriteLock::ReleaseExclusive()
 {
+	/*
 #if defined AS_POSIX_THREADS
 	pthread_rwlock_unlock(&lock);
 #elif defined AS_WINDOWS_THREADS
 	// Release all readers at once
 	ReleaseSemaphore(readLocks, maxReaders, 0);
 #endif
+	*/
 }
 
 void asCThreadReadWriteLock::AcquireShared()
 {
+	/*
 #if defined AS_POSIX_THREADS
 	pthread_rwlock_rdlock(&lock);
 #elif defined AS_WINDOWS_THREADS
 	// Lock a reader slot
 	WaitForSingleObjectEx(readLocks, INFINITE, FALSE);
 #endif
+	*/
 }
 
 void asCThreadReadWriteLock::ReleaseShared()
 {
+	/*
 #if defined AS_POSIX_THREADS
 	pthread_rwlock_unlock(&lock);
 #elif defined AS_WINDOWS_THREADS
 	// Release the reader slot
 	ReleaseSemaphore(readLocks, 1, 0);
 #endif
+	*/
 }
 
 #endif

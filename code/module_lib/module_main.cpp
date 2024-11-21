@@ -263,10 +263,8 @@ void CModuleLib::RunModules( EModuleFuncId nCallId, uint32_t nArgs, ... )
 	va_end( argptr );
 
 	time.Start();
-	if ( nCallId == ModuleOnLevelEnd || nCallId == ModuleOnLoadGame ) {
-		g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_DETECT_GARBAGE | asGC_DESTROY_GARBAGE
-			| asGC_FULL_CYCLE, (uint32_t)ml_garbageCollectionIterations->i );
-	}
+	g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_DETECT_GARBAGE | asGC_DESTROY_GARBAGE | asGC_FULL_CYCLE,
+		(uint32_t)ml_garbageCollectionIterations->i );
 	time.Stop();
 
 	for ( j = 0; j < m_nModuleCount; j++ ) {
@@ -305,10 +303,8 @@ int CModuleLib::ModuleCall( CModuleInfo *pModule, EModuleFuncId nCallId, uint32_
 	name = funcDefs[ nCallId ].name;
 
 	time.Start();
-	if ( nCallId == ModuleOnLevelEnd || nCallId == ModuleOnLoadGame ) {
-		g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_DETECT_GARBAGE | asGC_DESTROY_GARBAGE
-			| asGC_FULL_CYCLE, (uint32_t)ml_garbageCollectionIterations->i );
-	}
+	g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_DETECT_GARBAGE | asGC_DESTROY_GARBAGE | asGC_FULL_CYCLE,
+		(uint32_t)ml_garbageCollectionIterations->i );
 	time.Stop();
 
 	return pModule->m_pHandle->CallFunc( nCallId, nArgs, args );
@@ -950,7 +946,7 @@ CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *
 
 	Mem_Init();
 
-	asSetGlobalMemoryFunctions( AS_Alloc, AS_Free );
+//	asSetGlobalMemoryFunctions( AS_Alloc, AS_Free );
 
 	g_pModuleLib = new ( Hunk_Alloc( sizeof( *g_pModuleLib ), h_high ) ) CModuleLib();
 
@@ -1007,7 +1003,8 @@ void CModuleLib::Shutdown( qboolean quit )
 	m_pModule->Discard();
 
 	// this MUST be here
-	asCThreadManager::GetLocalData()->activeContexts.Allocate( 0, false );
+	asResetGlobalMemoryFunctions();
+//	asCThreadManager::GetLocalData()->activeContexts.Allocate( 0, false );
 
 	Mem_GetFrameStats( allocs, frees );
 	Con_Printf( "\n" );

@@ -721,10 +721,6 @@ void GDR_NORETURN Sys_Exit( int code )
 {
 	Sys_ConsoleInputShutdown();
 
-	Cvar_Set( "com_exitFlag", "1" );
-	Cbuf_ExecuteText( EXEC_NOW, "hunkfree\n" );
-	Cvar_Set( "com_exitFlag", "0" );
-
 	if ( code != -1 && com_fullyInitialized ) {
 		// normal exit
 		Sys_RemovePIDFile( FS_GetCurrentGameDir() );
@@ -961,8 +957,8 @@ void Sys_Print( const char *msg )
 		len = out - printmsg;
 	}
 
-	write(STDERR_FILENO, printmsg, len);
-	if (ttycon_on) {
+	write( STDERR_FILENO, printmsg, len );
+	if ( ttycon_on ) {
 		tty_Show();
 	}
 }
@@ -1116,7 +1112,6 @@ const char *Sys_GetError( void ) {
 tty_err Sys_ConsoleInputInit( void )
 {
 	struct termios tc;
-	struct rlimit64 limit;
 	const char *term;
 
 	// TTimo
@@ -1146,6 +1141,7 @@ tty_err Sys_ConsoleInputInit( void )
 	ttycon_color_on = qtrue;
 
 	term = getenv( "TERM" );
+	// ncurses doing me favors here
 	if ( isatty( STDIN_FILENO ) != 1 || !term || !strcmp( term, "dumb" ) || !strcmp( term, "raw" ) ) {
 		ttycon_on = qfalse;
 		return TTY_DISABLED;
@@ -1171,15 +1167,6 @@ tty_err Sys_ConsoleInputInit( void )
 
 	tty_Hide();
 	tty_Show();
-
-	if ( 0 ) {
-		if ( getrlimit64( RLIMIT_CORE, &limit ) == -1 ) {
-			Con_Printf( COLOR_YELLOW "WARNING: getrlimit64( RLIMIT_CORE ) failed, %s\n", Sys_GetError() );
-		} else {
-			limit.rlim_cur = limit.rlim_max = UINT64_MAX;
-			setrlimit64( RLIMIT_CORE, &limit );
-		}
-	}
 
 	return TTY_ENABLED;
 }

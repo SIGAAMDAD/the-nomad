@@ -74,10 +74,18 @@ void InitResources() {
 
 	timer.Start();
 
+	//
+	// load infos
+	//
+
 	TheNomad::SGame::InfoSystem::InfoManager.LoadMobInfos();
 	TheNomad::SGame::InfoSystem::InfoManager.LoadItemInfos();
 	TheNomad::SGame::InfoSystem::InfoManager.LoadAmmoInfos();
 	TheNomad::SGame::InfoSystem::InfoManager.LoadWeaponInfos();
+
+	//
+	// load sound effects
+	//
 
 	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/death1" );
 	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/death2" );
@@ -97,8 +105,13 @@ void InitResources() {
 	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/weapon_change_hand" );
 	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/weapon_change_mode" );
 
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/player/clothRuffle0.ogg" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/player/clothRuffle1.ogg" );
+	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/cloth_foley_0" );
+	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/cloth_foley_1" );
+
+
+	//
+	// load materials
+	//
 
 	TheNomad::Engine::ResourceCache.GetShader( "gfx/hud/blood_screen" );
 

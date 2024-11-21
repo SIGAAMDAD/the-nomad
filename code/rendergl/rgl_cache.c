@@ -897,14 +897,14 @@ void RB_FlushBatchBuffer( void )
 
 		if ( HAVE_DIRECT_STATE_ACCESS ) {
 			data = nglMapNamedBufferRange( buf->index.id, 0, backend.drawBatch.idxDataSize * backend.drawBatch.idxOffset,
-				GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT );
+				GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_INVALIDATE_RANGE_BIT );
 			if ( data ) {
 				memcpy( data, backend.drawBatch.indices, backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize );
 			}
 			nglUnmapNamedBuffer( buf->index.id );
 
 			data = nglMapNamedBufferRange( buf->vertex->id, 0, backend.drawBatch.vtxDataSize * backend.drawBatch.vtxOffset,
-				GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT );
+				GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_INVALIDATE_BUFFER_BIT );
 			if ( data ) {
 				memcpy( data, backend.drawBatch.vertices, backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize );
 			}

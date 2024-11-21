@@ -58,10 +58,10 @@ namespace TheNomad::SGame {
 				+ "Width is " + m_nWidth + " and Height is " + m_nHeight + "\n" );
 		}
 		
-		const array<array<uint>>@ GetTiles() const {
+		const array<array<uint64>>@ GetTiles() const {
 			return @m_TileData;
 		}
-		array<array<uint>>@ GetTiles() {
+		array<array<uint64>>@ GetTiles() {
 			return @m_TileData;
 		}
 		
@@ -73,7 +73,7 @@ namespace TheNomad::SGame {
 			const uint level = uint( floor( bounds.m_Mins.z + bounds.m_Maxs.z ) );
 			return 0;
 		}
-		uint GetTile( const vec3& in origin, const TheNomad::GameSystem::BBox& in bounds ) const {
+		uint64 GetTile( const vec3& in origin, const TheNomad::GameSystem::BBox& in bounds ) const {
 			const uint level = GetLevel( bounds );
 			const int x = int( ceil( origin.x ) );
 			const int y = int( ceil( origin.y ) );
@@ -105,7 +105,7 @@ namespace TheNomad::SGame {
 		private array<MapSecret> m_Secrets;
 		private array<MapSpawn> m_Spawns;
 		private array<MapCheckpoint> m_Checkpoints;
-		private array<array<uint>> m_TileData;
+		private array<array<uint64>> m_TileData;
 		private int m_nWidth = 0;
 		private int m_nHeight = 0;
 	};

@@ -1146,7 +1146,7 @@ static void GetTileData( asIScriptGeneric *pGeneric ) {
 	tiles->Resize( gi.mapCache.info.numLevels );
 	for ( uint32_t i = 0; i < gi.mapCache.info.numLevels; i++ ) {
 		( (CScriptArray *)tiles->At( i ) )->Resize( gi.mapCache.info.numTiles );
-		G_GetTileData( (uint32_t *)( (CScriptArray *)tiles->At( i ) )->GetBuffer(), i );
+		G_GetTileData( (uint64_t *)( (CScriptArray *)tiles->At( i ) )->GetBuffer(), i );
 	}
 }
 
@@ -3007,7 +3007,7 @@ void ModuleLib_Register_Engine( void )
 //            asFUNCTION( TransformCameraFromWorld ), asCALL_GENERIC );
 		g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::GameSystem::GetSpawnData( uvec3& out, uint& out, uint& out, uint, uint& out )",
 			asFUNCTION( GetSpawnData ), asCALL_GENERIC );
-		REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetTileData( array<array<uint>>@ )", asFUNCTION( GetTileData ) );
+		REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetTileData( array<array<uint64>>@ )", asFUNCTION( GetTileData ) );
 		g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::GameSystem::SetActiveMap( int, uint& out, uint& out, uint& out, int& out, int& out )",
 			asFUNCTION( ModuleLib_SetActiveMap ), asCALL_GENERIC );
 		REGISTER_GLOBAL_FUNCTION( "int TheNomad::GameSystem::LoadMap( const string& in )", asFUNCTION( LoadMap ) );
