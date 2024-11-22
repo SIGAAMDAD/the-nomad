@@ -69,7 +69,7 @@ namespace TheNomad::SGame {
 				ConsolePrint( "Loaded level '" + data.m_Name + "'...\n" );
 
 				for ( uint j = 0; j < TheNomad::GameSystem::GameDifficulty::NumDifficulties; j++ ) {
-					if ( !info.get( "MapNameDifficulty_" + formatUInt( j ), mapname ) ) {
+					if ( !info.get( "MapNameDifficulty_" + j, mapname ) ) {
 						ConsoleWarning( "invalid level map info for \"" + levelName
 							+ "\", missing value for 'MapNameDifficulty_" + j + "', skipping.\n" );
 						continue;

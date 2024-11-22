@@ -314,21 +314,21 @@ static void StringResize(asDWORD l, string_t& str)
 // string_t formatInt(int64 val, const string_t& in options, uint width)
 static string_t formatInt(asINT32 value, const string_t& format)
 {
-	return va( format.c_str(), value );
+	return string_t().sprintf( format.c_str(), value );
 }
 
 // AngelScript signature:
 // string_t formatUInt(uint64 val, const string_t& in options, uint width)
 static string_t formatUInt(asDWORD value, const string_t& format)
 {
-	return va( format.c_str(), value );
+	return string_t().sprintf( format.c_str(), value );
 }
 
 // AngelScript signature:
 // string_t formatFloat(double val, const string_t& in options, uint width, uint precision)
 static string_t formatFloat(double value, const string_t& format)
 {
-	return va( format.c_str(), value );
+	return string_t().sprintf( format.c_str(), value );
 }
 
 // AngelScript signature:
@@ -569,9 +569,9 @@ void RegisterStdString_Native(asIScriptEngine *engine)
 	CheckASCall( engine->RegisterObjectMethod("string", "void Insert(uint pos, const string& in other)", asFUNCTION(StringInsert), asCALL_CDECL_OBJLAST) );
 	CheckASCall( engine->RegisterObjectMethod("string", "void Erase(uint pos, int count = -1)", asFUNCTION(StringErase), asCALL_CDECL_OBJLAST) );
 
-	CheckASCall( engine->RegisterGlobalFunction("string formatInt(int32 val, const string& in options = \"\", uint width = 0)", asFUNCTION(formatInt), asCALL_CDECL) );
-	CheckASCall( engine->RegisterGlobalFunction("string formatUInt(uint32 val, const string& in options = \"\", uint width = 0)", asFUNCTION(formatUInt), asCALL_CDECL) );
-	CheckASCall( engine->RegisterGlobalFunction("string formatFloat(double val, const string& in options = \"\", uint width = 0, uint precision = 0)", asFUNCTION(formatFloat), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("string formatInt(int32 val, const string& in options = \"%i\", uint width = 0)", asFUNCTION(formatInt), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("string formatUInt(uint32 val, const string& in options = \"%u\", uint width = 0)", asFUNCTION(formatUInt), asCALL_CDECL) );
+	CheckASCall( engine->RegisterGlobalFunction("string formatFloat(double val, const string& in options = \"%f\", uint width = 0, uint precision = 0)", asFUNCTION(formatFloat), asCALL_CDECL) );
 	CheckASCall( engine->RegisterGlobalFunction("int32 parseInt(const string& in, uint base = 10, uint &out byteCount = 0)", asFUNCTION(parseInt), asCALL_CDECL) );
 	CheckASCall( engine->RegisterGlobalFunction("uint32 parseUInt(const string& in, uint base = 10, uint &out byteCount = 0)", asFUNCTION(parseUInt), asCALL_CDECL) );
 	CheckASCall( engine->RegisterGlobalFunction("double parseFloat(const string& in, uint &out byteCount = 0)", asFUNCTION(parseFloat), asCALL_CDECL) );
