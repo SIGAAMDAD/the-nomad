@@ -155,7 +155,7 @@ void ApplyLighting() {
 }
 
 void main() {
-	if ( distance( u_ViewOrigin, v_WorldPos ) >= 13.0 ) {
+	if ( distance( u_ViewOrigin.xy, v_WorldPos.xy ) >= 13.0 ) {
 		discard;
 	}
 

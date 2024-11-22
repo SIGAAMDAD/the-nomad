@@ -37,7 +37,6 @@ void CScriptJson::Release( void ) const
 
 CScriptJson& CScriptJson::operator=( bool other )
 {
-	// Clear everything we had before
 	js_info.clear();
 
 	js_info = other;
@@ -47,7 +46,6 @@ CScriptJson& CScriptJson::operator=( bool other )
 
 CScriptJson& CScriptJson::operator=( asINT32 other )
 {
-	// Clear everything we had before
 	js_info.clear();
 
 	js_info = other;
@@ -57,7 +55,6 @@ CScriptJson& CScriptJson::operator=( asINT32 other )
 
 CScriptJson& CScriptJson::operator=( asDWORD other )
 {
-	// Clear everything we had before
 	js_info.clear();
 
 	js_info = other;
@@ -67,7 +64,6 @@ CScriptJson& CScriptJson::operator=( asDWORD other )
 
 CScriptJson& CScriptJson::operator=( float other )
 {
-	// Clear everything we had before
 	js_info.clear();
 
 	js_info = other;
@@ -77,7 +73,6 @@ CScriptJson& CScriptJson::operator=( float other )
 
 CScriptJson& CScriptJson::operator=( const string_t& other )
 {
-	// Clear everything we had before
 	js_info.clear();
 	js_info = other;
 
@@ -86,30 +81,25 @@ CScriptJson& CScriptJson::operator=( const string_t& other )
 
 CScriptJson& CScriptJson::operator=(const CScriptArray& other)
 {
-	json js_temp;
-
 	// make sure we're not just being handed a random array
 	if ( N_stricmp( g_pModuleLib->GetScriptEngine()->GetTypeInfoById( other.GetElementTypeId() )->GetName(), "json" ) != 0 ) {
 		throw ModuleException( "json opIndex( const array<json@>& in ) called on invalid array" );
 	}
 
-	for (asUINT i = 0; i < other.GetSize(); i++) {
-		CScriptJson** node  = (CScriptJson**)other.At(i);
+	js_info.clear();
+
+	for ( asUINT i = 0; i < other.GetSize(); i++ ) {
+		CScriptJson **node  = (CScriptJson**)other.At(i);
 		if (node && *node) {
-			js_temp.emplace_back( (*node)->js_info );
+			js_info.emplace_back( (*node)->js_info );
 		}
 	}
-
-	// Clear everything we had before
-	js_info.clear();
-	js_info = eastl::move( js_temp );
 
 	return *this;
 }
 
 CScriptJson& CScriptJson::operator=( const CScriptJson& other )
 {
-	// Clear everything we had before
 	js_info.clear();
 	js_info = other.js_info;
 
@@ -157,7 +147,7 @@ void CScriptJson::Set( const jsonKey_t& key, const CScriptArray& value )
 
 	// make sure we're not just being handed a random array
 	if ( N_stricmp( g_pModuleLib->GetScriptEngine()->GetTypeInfoById( value.GetElementTypeId() )->GetName(), "json" ) != 0 ) {
-		throw std::invalid_argument( "json opIndex( const array<json@>& in ) called on invalid array" );
+		asGetActiveContext()->SetException( "json opIndex( const array<json@>& in ) called on invalid array" );
 	}
 
 	for ( asUINT i = 0; i < value.GetSize(); i++ ) {
@@ -713,7 +703,7 @@ static CScriptJson* JsonParseFile(const string_t& fileName)
 	}
 
 	CScriptJson* newNode = CScriptJson::Create( g_pModuleLib->GetScriptEngine() );
-	CATCH_JSON_BLOCK( (newNode->js_info) = eastl::move( json::parse( f.b, f.b + nLength, NULL, true, true ) );, FS_FreeFile( f.v ); );
+	CATCH_JSON_BLOCK( newNode->js_info = eastl::move( json::parse( f.b, f.b + nLength, NULL, true, true ) );, FS_FreeFile( f.v ); );
 //    CATCH_JSON_BLOCK( *(newNode->js_info) = json::parse( f.b, f.b + nLength );, FS_FreeFile( f.v ); );
 
 	FS_FreeFile( f.v );

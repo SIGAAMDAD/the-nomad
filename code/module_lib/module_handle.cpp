@@ -249,9 +249,6 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, int *pArgLis
 				" Id: %i\n"
 			, pFunc->GetModuleName(), pFunc->GetScriptSectionName(), pFunc->GetDeclaration(), pContext->GetExceptionLineNumber(),
 			jsonError.what(), jsonError.id );
-		} catch ( const std::exception& e ) {
-			Cvar_Set( "com_errorMessage", e.what() );
-			LogExceptionInfo( pContext, this );
 		}
 	
 		switch ( retn ) {

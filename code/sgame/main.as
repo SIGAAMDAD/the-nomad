@@ -60,6 +60,7 @@ void InitCvars() {
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_AirSpeed, "sgame_AirSpeed", "2.5", CVAR_TEMP, false );
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_SaveLastUsedWeaponModes, "sgame_SaveLastUsedWeaponModes", "0", CVAR_SAVE, true );
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_Blood, "sgame_Blood", "1", CVAR_SAVE, false );
+	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_CameraZoom, "sgame_CameraZoom", "0.07", CVAR_SAVE, false );
 }
 
 //

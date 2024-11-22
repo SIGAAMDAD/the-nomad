@@ -413,9 +413,12 @@ namespace TheNomad::SGame {
 				m_CurrentCheckpoint = 0;
 			}
 
+			LevelInfoData@ handle = @m_LevelInfoDatas[ m_nIndex ];
+
+			ConsolePrint( "MapHandles.Count(): " + handle.m_MapHandles.Count() );
 			DebugPrint( "Initializing level at " + m_nIndex + ", difficulty set to \"" + SP_DIFF_STRINGS[ difficulty ] + "\".\n" );
 			
-			ConsolePrint( "Loading level \"" + m_LevelInfoDatas[m_nIndex].m_MapHandles[difficulty].m_Name + "\"...\n" );
+			ConsolePrint( "Loading level \"" + m_LevelInfoDatas[ m_nIndex ].m_MapHandles[ difficulty ].m_Name + "\"...\n" );
 			
 			m_RankData = LevelStats();
 			@m_Current = @m_LevelInfoDatas[ m_nIndex ];

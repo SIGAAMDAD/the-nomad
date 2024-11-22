@@ -65,4 +65,5 @@ namespace TheNomad::SGame {
 	ConVar sgame_Blood;
 	ConVar sgame_InteractionPrompts;
 	ConVar sgame_QuestMarkers;
+	ConVar sgame_CameraZoom;
 };
