@@ -387,9 +387,6 @@ void R_DrawWorld( void )
 				}
 				*/
 				xyz += 4;
-				uv += 4;
-				tangent += 4;
-				bitangent += 4;
 			}
 		}
 	}
