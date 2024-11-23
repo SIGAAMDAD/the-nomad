@@ -33,33 +33,24 @@ uniform int u_AlphaTest;
 #include "fxaa.glsl"
 
 void main() {
-	// calculate a slight x offset, otherwise we get some black line bleeding
-	// going on
-	ivec2 texSize = textureSize( u_DiffuseMap, 0 );
-	float sOffset = ( 1.0 / ( float( texSize.x ) ) * 0.75 );
-	float tOffset = ( 1.0 / ( float( texSize.y ) ) * 0.75 );
-	vec2 texCoord = vec2( v_TexCoords.x + sOffset, v_TexCoords.y + tOffset );
-
 	if ( u_AntiAliasing == AntiAlias_FXAA ) {
-		vec2 fragCoord = texCoord * u_ScreenSize;
-		a_Color = ApplyFXAA( u_DiffuseMap, fragCoord );
+		vec2 fragCoord = v_TexCoords * u_ScreenSize;
+		a_Color = ApplyFXAA( u_DiffuseMap, v_TexCoords );
 	} else {
-		a_Color = sharpenImage( u_DiffuseMap, texCoord );
+		a_Color = sharpenImage( u_DiffuseMap, v_TexCoords );
 	}
 	if ( a_Color.a == 0.0 ) {
 		discard;
 	}
 
 	if ( u_Bloom && u_HDR ) {
-		// check whether fragment output is higher than threshold, if so output as brightness color
 		float brightness = dot( a_Color.rgb, vec3( 0.1, 0.1, 0.1 ) );
 		if ( brightness > 0.5 ) {
 			a_BrightColor = vec4( a_Color.rgb, 1.0 );
 		} else {
 			a_BrightColor = vec4( 0.0, 0.0, 0.0, 1.0 );
 		}
-	}
-	else {
+	} else {
 		a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
 	}
 	a_Color.rgb *= v_Color.rgb;

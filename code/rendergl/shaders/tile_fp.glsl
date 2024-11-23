@@ -143,19 +143,13 @@ vec3 CalcPointLight( Light light ) {
 
 void ApplyLighting() {
 	for ( int i = 0; i < u_NumLights; i++ ) {
-		switch ( u_LightData[i].type ) {
-		case POINT_LIGHT:
-			a_Color.rgb += CalcPointLight( u_LightData[i] );
-			break;
-		case DIRECTION_LIGHT:
-			break;
-		};
+		a_Color.rgb += CalcPointLight( u_LightData[i] );
 	}
 	a_Color.rgb *= u_AmbientColor;
 }
 
 void main() {
-	if ( distance( u_ViewOrigin.xy, v_WorldPos.xy ) >= 13.0 ) {
+	if ( distance( u_ViewOrigin.xy, v_WorldPos.xy ) >= 16.0 ) {
 		discard;
 	}
 
@@ -198,16 +192,15 @@ void main() {
 	ApplyLighting();
 
 	// if we have post processing active, don't calculate gamma until the final pass
-	if ( u_HDR ) {
-		if ( u_Bloom ) {
-			// check whether fragment output is higher than threshold, if so output as brightness color
-			float brightness = dot( a_Color.rgb, vec3( 0.1, 0.1, 0.1 ) );
-			if ( brightness > 0.5 ) {
-				a_BrightColor = vec4( a_Color.rgb, 1.0 );
-			} else {
-				a_BrightColor = vec4( 0.0, 0.0, 0.0, 1.0 );
-			}
+	if ( u_HDR && u_Bloom ) {
+		float brightness = dot( a_Color.rgb, vec3( 0.1, 0.1, 0.1 ) );
+		if ( brightness > 0.5 ) {
+			a_BrightColor = vec4( a_Color.rgb, 1.0 );
+		} else {
+			a_BrightColor = vec4( 0.0, 0.0, 0.0, 1.0 );
 		}
+	} else {
+		a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
 	}
 	if ( u_GamePaused ) {
 		a_Color.rgb = vec3( a_Color.rg * 0.5, 0.5 );
