@@ -761,13 +761,15 @@ void RB_FinishPostProcess( fbo_t *srcFbo )
 			nglScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 			nglViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 		}
-		GLSL_UseProgram( &rg.bloomResolveShader );
-		GLSL_SetUniformInt( &rg.bloomResolveShader, UNIFORM_USE_HDR, r_hdr->i );
-		GLSL_SetUniformInt( &rg.bloomResolveShader, UNIFORM_USE_BLOOM, r_bloom->i );
-		GL_BindTexture( UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
-		GLSL_SetUniformTexture( &rg.bloomResolveShader, UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
-		GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_EXPOSURE, r_autoExposure->f );
-		GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_GAMMA, r_gammaAmount->f );
+		if ( r_hdr->i ) {
+			// doing the final bloom/hdr pass when we're not using hdr or bloom is BAD
+			GLSL_UseProgram( &rg.bloomResolveShader );
+			GLSL_SetUniformInt( &rg.bloomResolveShader, UNIFORM_USE_BLOOM, r_bloom->i );
+			GL_BindTexture( UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
+			GLSL_SetUniformTexture( &rg.bloomResolveShader, UNIFORM_DIFFUSE_MAP, rg.firstPassImage );
+			GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_EXPOSURE, r_autoExposure->f );
+			GLSL_SetUniformFloat( &rg.bloomResolveShader, UNIFORM_GAMMA, r_gammaAmount->f );
+		}
 
 		RB_RenderPass();
 	}

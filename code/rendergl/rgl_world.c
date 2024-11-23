@@ -681,11 +681,11 @@ void RE_LoadWorldMap( const char *filename )
 
 	rg.worldMapLoaded = qtrue;
 
-	memset( &r_worldData, 0, sizeof( r_worldData ) );
-	N_strncpyz( rg.world->name, filename, sizeof( rg.world->name ) );
-	N_strncpyz( rg.world->baseName, COM_SkipPath( rg.world->name ), sizeof( rg.world->baseName ) );
+	memset( &r_worldData,0, sizeof( r_worldData ) );
+	N_strncpyz( r_worldData.name, filename, sizeof( r_worldData.name ) );
+	N_strncpyz( r_worldData.baseName, COM_SkipPath( r_worldData.name ), sizeof( r_worldData.baseName ) );
 
-	COM_StripExtension( rg.world->baseName, rg.world->baseName, sizeof( rg.world->baseName ) );
+	COM_StripExtension( r_worldData.baseName, r_worldData.baseName, sizeof( r_worldData.baseName ) );
 
 	header = (bmf_t *)buffer.b;
 	if ( LittleInt( header->version ) != LEVEL_VERSION ) {
@@ -703,16 +703,16 @@ void RE_LoadWorldMap( const char *filename )
 		( (int32_t *)header )[i] = LittleInt( ( (int32_t *)header )[i] );
 	}
 
-	VectorCopy( rg.world->ambientLightColor, mheader->ambientLightColor );
+	VectorCopy( r_worldData.ambientLightColor, mheader->ambientLightColor );
 
-	rg.world->width = mheader->mapWidth;
-	rg.world->height = mheader->mapHeight;
-	rg.world->numTiles = rg.world->width * rg.world->height;
+	r_worldData.width = mheader->mapWidth;
+	r_worldData.height = mheader->mapHeight;
+	r_worldData.numTiles = r_worldData.width * r_worldData.height;
 
 	ri.Cmd_ExecuteCommand( "snd.startup_level" );
 
 	// load into heap
-	ri.G_GetMapData( &rg.world->tiles, &rg.world->numTiles );
+	ri.G_GetMapData( &r_worldData.tiles, &r_worldData.numTiles );
 	R_LoadLights( &mheader->lumps[LUMP_LIGHTS], &r_worldData );
 
 	rg.world = &r_worldData;
