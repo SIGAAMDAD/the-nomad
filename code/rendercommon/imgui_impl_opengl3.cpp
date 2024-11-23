@@ -313,7 +313,7 @@ void ImGui_ImplOpenGL3_Init(void *shaderData, const char *glsl_version, const im
 	GLint current_texture;
 	GLint major, minor;
 	const char *gl_version;
-	ImGui_ImplOpenGL3_Data *bd;
+	static ImGui_ImplOpenGL3_Data data;
 
 	renderImport = *import;
 	imguiShader = (GLuint)(uintptr_t)shaderData;
@@ -322,8 +322,8 @@ void ImGui_ImplOpenGL3_Init(void *shaderData, const char *glsl_version, const im
 	IM_ASSERT(io.BackendRendererUserData == nullptr && "Already initialized a renderer backend!");
 
 	// Setup backend capabilities flags
-	bd = (ImGui_ImplOpenGL3_Data *)Hunk_Alloc( sizeof(*bd), h_low );
-	memset(bd, 0, sizeof(*bd));
+	bd = &data;
+	memset( bd, 0, sizeof( *bd ) );
 	io.BackendRendererUserData = (void *)bd;
 	io.BackendRendererName = "imgui_impl_opengl3";
 
@@ -799,7 +799,7 @@ int ImGui_ImplOpenGL3_CreateFontsTexture( void )
 	shader = (shader_t *)renderImport.GetShaderByHandle( re.RegisterShader( "gfx/fonts" ) );
 	fontsTex = shader->stages[0]->bundle[0].image[0];
 
-	if ( Cvar_VariableInteger( "r_loadTexturesOnDemand" ) ) {
+	if ( strstr( gi.gpuConfig.extensions_string, "ARB_bindless_texture" ) ) {
 		renderImport.glGenTextures( 1, &fontsTex->id );
 	}
 
@@ -821,7 +821,7 @@ int ImGui_ImplOpenGL3_CreateFontsTexture( void )
 	fontsTex->height = height;
 	fontsTex->uploadWidth = width;
 	fontsTex->uploadHeight = height;
-	if ( Cvar_VariableInteger( "r_loadTexturesOnDemand" ) ) {
+	if ( strstr( gi.gpuConfig.extensions_string, "ARB_bindless_texture" ) ) {
 		fontsTex->handle = renderImport.glGetTextureHandleARB( fontsTex->id );
 		renderImport.glMakeTextureHandleResidentARB( fontsTex->handle );
 	}

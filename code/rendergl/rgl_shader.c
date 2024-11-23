@@ -2279,10 +2279,6 @@ static shader_t *FinishShader( void )
 	// determine which vertex attributes this shader needs
 	ComputeVertexAttribs();
 
-	if ( rg.world && rg.worldMapLoaded ) {
-		rg.world->levelShaders++;
-	}
-
     return GeneratePermanentShader();
 }
 
@@ -2935,28 +2931,9 @@ void R_InitShaders( void )
 {
 	ri.Printf( PRINT_INFO, "Initializing Shaders\n" );
 
-//	hashTable = ri.Hunk_Alloc( sizeof( *hashTable ) * FILE_HASH_SIZE, h_low );
 	memset( hashTable, 0, sizeof( hashTable ) );
 
 	CreateInternalShaders();
 
 	ScanAndLoadShaderFiles();
-}
-
-void R_UnloadLevelShaders( void )
-{
-	uint64_t i, j;
-
-	ri.Printf( PRINT_INFO, "R_UnloadLevelShaders(): Releasing %u shaders...\n", rg.world->levelShaders );
-
-	for ( i = 0; i < MAX_RENDER_SHADERS; i++ ) {
-		if ( hashTable[i] && hashTable[i]->index >= rg.world->firstLevelShader ) {
-			hashTable[i]->next = NULL;
-			hashTable[i] = NULL;
-		}
-	}
-	for ( i = 0; i < rg.world->levelShaders; i++ ) {
-		rg.shaders[ i + rg.world->firstLevelShader ] = NULL;
-	}
-	rg.numShaders = rg.world->firstLevelShader;
 }

@@ -1992,7 +1992,8 @@ void SettingsMenu_Cache( void )
 	s_windowModes[3] = strManager->ValueForKey( "GAMEUI_MODE_BORDERLESS_FULLSCREEN" )->value;
 
 	if ( !ui->uiAllocated ) {
-		s_settingsMenu = (settingsMenu_t *)Hunk_Alloc( sizeof( *s_settingsMenu ), h_high );
+		static settingsMenu_t menu;
+		s_settingsMenu = &menu;
 		SettingsMenu_InitPresets();
 	}
 

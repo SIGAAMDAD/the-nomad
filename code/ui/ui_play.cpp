@@ -516,7 +516,8 @@ void PlayMenu_Cache( void )
 	static const char *difficulties[NUMDIFS];
 
 	if ( !ui->uiAllocated ) {
-		s_playMenu = (playMenu_t *)Hunk_Alloc( sizeof( *s_playMenu ), h_high );
+		static playMenu_t menu;
+		s_playMenu = &menu;
 	}
 	memset( &ui->virtKeyboard, 0, sizeof( ui->virtKeyboard ) );
 

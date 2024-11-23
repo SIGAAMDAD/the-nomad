@@ -211,7 +211,8 @@ static void PauseMenu_LoadDailyTips( void )
 void PauseMenu_Cache( void )
 {
 	if ( !ui->uiAllocated ) {
-		s_pauseMenu = (pauseMenu_t *)Hunk_Alloc( sizeof( *s_pauseMenu ), h_high );
+		static pauseMenu_t menu;
+		s_pauseMenu = &menu;
 		PauseMenu_LoadDailyTips();
 	}
 

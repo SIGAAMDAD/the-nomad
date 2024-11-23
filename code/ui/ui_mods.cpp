@@ -28,129 +28,129 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 typedef struct {
 	module_t *modList;
-    uint32_t numMods;
+	uint32_t numMods;
 
 	menuframework_t menu;
 
-    nhandle_t backgroundShader;
-    nhandle_t ambience;
+	nhandle_t backgroundShader;
+	nhandle_t ambience;
 	qboolean changed;
-    
-    uint32_t selectedMod;
+	
+	uint32_t selectedMod;
 } modmenu_t;
 
 static modmenu_t *mods;
 
 static uint32_t GetModLoadIndex( const char *pName ) {
-    uint32_t i;
+	uint32_t i;
 
-    for ( i = 0; i < mods->numMods; i++ ) {
-        if ( !N_strcmp( pName, mods->modList[i].info->m_szName ) ) {
-            break;
-        }
-    }
+	for ( i = 0; i < mods->numMods; i++ ) {
+		if ( !N_strcmp( pName, mods->modList[i].info->m_szName ) ) {
+			break;
+		}
+	}
 
-    return i;
+	return i;
 }
 
 static void ModsMenu_ClearLoadList_f( void ) {
-    FS_Remove( CACHE_DIR "/loadlist.json" );
-    FS_HomeRemove( CACHE_DIR "/loadlist.json" );
+	FS_Remove( CACHE_DIR "/loadlist.json" );
+	FS_HomeRemove( CACHE_DIR "/loadlist.json" );
 }
 
 static const module_t *GetModuleFromName( const char *pName )
 {
-    uint64_t i;
+	uint64_t i;
 
-    for ( i = 0; i < mods->numMods; i++ ) {
-        if ( !N_strcmp( pName, mods->modList[i].info->m_szName ) && mods->modList[i].active ) {
-            return &mods->modList[i];
-        }
-    }
+	for ( i = 0; i < mods->numMods; i++ ) {
+		if ( !N_strcmp( pName, mods->modList[i].info->m_szName ) && mods->modList[i].active ) {
+			return &mods->modList[i];
+		}
+	}
 
-    return NULL;
+	return NULL;
 }
 
 static void ModsMenu_LoadMod( module_t *mod ) {
 }
 
 qboolean ModsMenu_IsModuleActive( const char *pName ) {
-    uint32_t i;
+	uint32_t i;
 
-    for ( i = 0; i < mods->numMods; i++ ) {
-        if ( !N_strcmp( pName, mods->modList[i].info->m_szName ) && ( mods->modList[i].active || mods->modList[i].valid ) ) {
-            return qtrue;
-        }
-    }
-    return qfalse;
+	for ( i = 0; i < mods->numMods; i++ ) {
+		if ( !N_strcmp( pName, mods->modList[i].info->m_szName ) && ( mods->modList[i].active || mods->modList[i].valid ) ) {
+			return qtrue;
+		}
+	}
+	return qfalse;
 }
 
 void ModsMenu_SaveModList( void )
 {
-    uint32_t i, j;
-    fileHandle_t f;
+	uint32_t i, j;
+	fileHandle_t f;
 
-    Con_Printf( "Saving mod list...\n" );
-    
-    f = FS_FOpenWrite( CACHE_DIR "/loadlist.cfg" );
-    if ( f == FS_INVALID_HANDLE ) {
-    	N_Error( ERR_DROP, "ModsMenu_SaveModList: failed to save " CACHE_DIR "/loadlist.cfg" );
-    }
-    
-    for ( i = 0; i < mods->numMods; i++ ) {
-    	FS_Printf( f, "\"%s\" %i %i\n" , mods->modList[i].info->m_szName, mods->modList[i].valid, mods->modList[i].active );
-    }
-    
-    FS_FClose( f );
+	Con_Printf( "Saving mod list...\n" );
+	
+	f = FS_FOpenWrite( CACHE_DIR "/loadlist.cfg" );
+	if ( f == FS_INVALID_HANDLE ) {
+		N_Error( ERR_DROP, "ModsMenu_SaveModList: failed to save " CACHE_DIR "/loadlist.cfg" );
+	}
+	
+	for ( i = 0; i < mods->numMods; i++ ) {
+		FS_Printf( f, "\"%s\" %i %i\n" , mods->modList[i].info->m_szName, mods->modList[i].valid, mods->modList[i].active );
+	}
+	
+	FS_FClose( f );
 }
 
 static void ModsMenu_LoadModList( void )
 {
-    char *b;
-    uint64_t nLength;
+	char *b;
+	uint64_t nLength;
 	int i, j;
 	const char **text;
 	const char *text_p;
 	const char *tok;
 	char *modName;
 	char **loadList;
-    nlohmann::json json;
+	nlohmann::json json;
 
-    nLength = FS_LoadFile( CACHE_DIR "/loadlist.json", (void **)&b );
-    if ( !nLength || !b ) {
-        return;
-    }
+	nLength = FS_LoadFile( CACHE_DIR "/loadlist.json", (void **)&b );
+	if ( !nLength || !b ) {
+		return;
+	}
 
-    try {
-        json = nlohmann::json::parse( b, b + nLength );
-    } catch ( const nlohmann::json::exception& e ) {
-        Con_Printf( COLOR_RED "ModsMenu_LoadModList: invalid loadlist.json (nlohmann::json::exception) ->\n  id: %i\n  message: %s\n",
-            e.id, e.what() );
+	try {
+		json = nlohmann::json::parse( b, b + nLength );
+	} catch ( const nlohmann::json::exception& e ) {
+		Con_Printf( COLOR_RED "ModsMenu_LoadModList: invalid loadlist.json (nlohmann::json::exception) ->\n  id: %i\n  message: %s\n",
+			e.id, e.what() );
 		FS_FreeFile( b );
 		return;
-    }
-    FS_FreeFile( b );
+	}
+	FS_FreeFile( b );
 
-    if ( json.at( "LoadList" ).size() != mods->numMods ) {
-        Con_Printf( COLOR_YELLOW "WARNING: ModsMenu_LoadModList: bad load list, mods in list different than in memory\n" );
-    }
+	if ( json.at( "LoadList" ).size() != mods->numMods ) {
+		Con_Printf( COLOR_YELLOW "WARNING: ModsMenu_LoadModList: bad load list, mods in list different than in memory\n" );
+	}
 
-    const nlohmann::json& data = json.at( "LoadList" );
-    for ( i = 0; i < mods->numMods; i++ ) {
-        for ( const auto& it : data ) {
+	const nlohmann::json& data = json.at( "LoadList" );
+	for ( i = 0; i < mods->numMods; i++ ) {
+		for ( const auto& it : data ) {
 			if ( !N_strcmp( mods->modList[i].info->m_szName, it.at( "Name" ).get<nlohmann::json::string_t>().c_str() ) ) {
-			    mods->modList[i].valid = it.at( "Valid" );
-			    mods->modList[i].active = it.at( "Active" );
-			    mods->modList[i].bootIndex = i;
+				mods->modList[i].valid = it.at( "Valid" );
+				mods->modList[i].active = it.at( "Active" );
+				mods->modList[i].bootIndex = i;
 			}
-        }
-    }
+		}
+	}
 	
-    for ( i = 0; i < mods->numMods; i++ ) {
+	for ( i = 0; i < mods->numMods; i++ ) {
 		module_t m = mods->modList[ mods->modList[i].bootIndex ];
 		mods->modList[ mods->modList[i].bootIndex ] = mods->modList[i];
 		mods->modList[i] = m;
-    }
+	}
 }
 
 static void ModToggleActive( module_t *mod, qboolean valid )
@@ -307,32 +307,32 @@ static void ModsMenu_DrawListing( module_t *mod, qboolean dimColor )
 
 void ModsMenu_Draw( void )
 {
-    uint32_t i, j;
-    const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
-                            ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground;
-    ImGuiStyle *style;
-    char loadId[MAX_STRING_CHARS];
-    qboolean dimColor;
+	uint32_t i, j;
+	const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
+							ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground;
+	ImGuiStyle *style;
+	char loadId[MAX_STRING_CHARS];
+	qboolean dimColor;
 	float itemSpacing;
-    const float fontScale = ImGui::GetFont()->Scale;
-    extern ImFont *RobotoMono;
-    
+	const float fontScale = ImGui::GetFont()->Scale;
+	extern ImFont *RobotoMono;
+	
 	ui->menubackShader = mods->backgroundShader;
 
 	ImGui::Begin( "##ModsMenuMainMenuConfigMenu", NULL, mods->menu.flags );
 	ImGui::SetWindowSize( ImVec2( mods->menu.width, mods->menu.height ) );
 	ImGui::SetWindowPos( ImVec2( mods->menu.x, mods->menu.y ) );
-    
+	
 	UI_EscapeMenuToggle();
-    if ( UI_MenuTitle( strManager->ValueForKey( "MOD_MENU_TITLE" )->value, 1.75f ) ) {
+	if ( UI_MenuTitle( strManager->ValueForKey( "MOD_MENU_TITLE" )->value, 1.75f ) ) {
 		UI_MainMenu();
-        ModsMenu_SaveModList();
-        return;
-    }
-    
-    style = eastl::addressof( ImGui::GetStyle() );
+		ModsMenu_SaveModList();
+		return;
+	}
+	
+	style = eastl::addressof( ImGui::GetStyle() );
 	itemSpacing = style->ItemSpacing.y;
-    style->ItemSpacing.y = 50.0f;
+	style->ItemSpacing.y = 50.0f;
    	
    	ImGui::BeginTable( "##ModLoadList", 5 );
 
@@ -368,10 +368,10 @@ void ModsMenu_Draw( void )
 		ImGui::TextUnformatted( mods->modList[i].info->m_szName );
 		ImGui::TableNextColumn();
 		ImGui::Text( "v%i.%i.%i", mods->modList[i].info->m_nModVersionMajor, mods->modList[i].info->m_nModVersionUpdate,
-            mods->modList[i].info->m_nModVersionPatch );
-        ImGui::TableNextColumn();
-        ImGui::Text( "v%hu.%hu.%u", mods->modList[i].info->m_GameVersion.m_nVersionMajor,
-            mods->modList[i].info->m_GameVersion.m_nVersionUpdate, mods->modList[i].info->m_GameVersion.m_nVersionPatch );
+			mods->modList[i].info->m_nModVersionPatch );
+		ImGui::TableNextColumn();
+		ImGui::Text( "v%hu.%hu.%u", mods->modList[i].info->m_GameVersion.m_nVersionMajor,
+			mods->modList[i].info->m_GameVersion.m_nVersionUpdate, mods->modList[i].info->m_GameVersion.m_nVersionPatch );
 		
 		if ( dimColor ) {
 			ImGui::PopStyleColor( 3 );
@@ -380,8 +380,8 @@ void ModsMenu_Draw( void )
 		ImGui::TableNextColumn();
 		
 		if ( i < mods->numMods - 1 ) {
-            ImGui::TableNextRow();
-        }
+			ImGui::TableNextRow();
+		}
 
 		ImGui::PopID();
 
@@ -390,7 +390,7 @@ void ModsMenu_Draw( void )
 		}
    	}
    	
-    ImGui::EndTable();
+	ImGui::EndTable();
 
 	ImGui::End();
 
@@ -399,12 +399,12 @@ void ModsMenu_Draw( void )
 
 static void ModsMenu_Load( void )
 {
-    uint32_t i, j;
+	uint32_t i, j;
 	module_t *m;
 
-    Con_Printf( "Caching module info data...\n" );
+	Con_Printf( "Caching module info data...\n" );
 
-    mods->modList = g_pModuleLib->m_pModList;
+	mods->modList = g_pModuleLib->m_pModList;
 	mods->numMods = g_pModuleLib->GetModCount();
 }
 
@@ -412,15 +412,19 @@ void ModsMenu_Cache( void )
 {
 	uint64_t size, i;
 	
-    Con_Printf( "Setting menu to mods menu...\n" );
+	Con_Printf( "Setting menu to mods menu...\n" );
 	
 	size = 0;
 	size += PAD( sizeof( *mods ), sizeof( uintptr_t ) );
 	size += PAD( sizeof( *mods->modList ) * g_pModuleLib->GetModCount(), sizeof( uintptr_t ) );
-    mods = (modmenu_t *)Hunk_Alloc( size, h_high );
-    memset( mods, 0, size );
-    if ( g_pModuleLib->GetModCount() ) {
-	    mods->modList = (module_t *)( mods + 1 );
+
+	if ( !ui->uiAllocated ) {
+		static modmenu_t *menu = (modmenu_t *)alloca( size );
+		mods = menu;
+	}
+	memset( mods, 0, size );
+	if ( g_pModuleLib->GetModCount() ) {
+		mods->modList = (module_t *)( mods + 1 );
 	}
 
 	mods->menu.draw = ModsMenu_Draw;
@@ -431,13 +435,13 @@ void ModsMenu_Cache( void )
 	mods->menu.name = strManager->ValueForKey( "MOD_MENU_TITLE" )->value;
 	mods->menu.track = Snd_RegisterTrack( "event:/music/campfire" );
 
-    ModsMenu_Load();
+	ModsMenu_Load();
 
-    mods->backgroundShader = re.RegisterShader( "menu/tales_around_the_campfire" );
+	mods->backgroundShader = re.RegisterShader( "menu/tales_around_the_campfire" );
 
 	ui->menubackShader = mods->backgroundShader;
 
-    Cmd_AddCommand( "ui.clear_load_list", ModsMenu_ClearLoadList_f );
+	Cmd_AddCommand( "ui.clear_load_list", ModsMenu_ClearLoadList_f );
 
 //    ModsMenu_SaveModList();
 }

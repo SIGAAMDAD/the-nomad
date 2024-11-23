@@ -1,9 +1,9 @@
 #include "rgl_local.h"
 
-static world_t r_worldData;
+//static world_t rg.world->
 static byte *fileBase;
 
-static void R_LoadLights( const lump_t *lights )
+static void R_LoadLights( const lump_t *lights, world_t *world )
 {
 	uint32_t count;
 	maplight_t *in, *out;
@@ -13,45 +13,46 @@ static void R_LoadLights( const lump_t *lights )
 		return;
 	}
 	if ( lights->length % sizeof( *in ) ) {
-		ri.Error( ERR_DROP, "RE_LoadWorldMap: funny lump size (lights) in %s", r_worldData.name );
+		ri.Error( ERR_DROP, "RE_LoadWorldMap: funny lump size (lights) in %s", world->name );
 	}
 	
 	count = lights->length / sizeof(*in);
 	out = ri.Hunk_Alloc( sizeof(*out) * count, h_low );
 
-	r_worldData.lights = out;
-	r_worldData.numLights = count;
+	world->lights = out;
+	world->numLights = count;
 
 	memcpy(out, in, count*sizeof(*out));
 }
 
-static void R_LoadTiles( const lump_t *tiles )
+static void R_LoadTiles( const lump_t *tiles, world_t *world )
 {
 	uint32_t count;
 	maptile_t *in, *out;
 
 	in = (maptile_t *)(fileBase + tiles->fileofs);
 	if ( tiles->length % sizeof( *in ) ) {
-		ri.Error(ERR_DROP, "RE_LoadWorldMap: funny lump size (tiles) in %s", r_worldData.name);
+		ri.Error( ERR_DROP, "RE_LoadWorldMap: funny lump size (tiles) in %s", world->name );
 	}
 	
 	count = tiles->length / sizeof(*in);
 	out = ri.Hunk_Alloc( sizeof(*out) * count, h_low );
 
-	r_worldData.tiles = out;
-	r_worldData.numTiles = count;
+	world->tiles = out;
+	world->numTiles = count;
 
 	memcpy(out, in, count*sizeof(*out));
 }
 
-static spriteCoord_t *R_LoadTileset( const lump_t *sprites, const tile2d_header_t *theader )
+static spriteCoord_t *R_LoadTileset( const lump_t *sprites, const tile2d_header_t *theader, world_t *world )
 {
 	uint32_t count, i;
 	spriteCoord_t *in, *out;
 
 	in = (spriteCoord_t *)( fileBase + sprites->fileofs );
-	if (sprites->length % sizeof(*out))
-		ri.Error(ERR_DROP, "RE_LoadWorldMap: funny lump size (tileset) in %s", r_worldData.name);
+	if ( sprites->length % sizeof( *out ) ) {
+		ri.Error( ERR_DROP, "RE_LoadWorldMap: funny lump size (tileset) in %s", world->name );
+	}
 	
 	count = sprites->length / sizeof(*in);
 	out = ri.Hunk_AllocateTempMemory( sizeof( *out ) * count );
@@ -104,12 +105,12 @@ static void R_GenerateTexCoords( tile2d_info_t *info )
 	}
 
 	R_FindImageFile( info->texture, IMGTYPE_COLORALPHA, IMGFLAG_CLAMPTOEDGE );
-	r_worldData.shader = R_GetShaderByHandle( RE_RegisterShader( texture ) );
-	if ( r_worldData.shader == rg.defaultShader ) {
-		ri.Error( ERR_DROP, "RE_LoadWorldMap: failed to load shader for '%s'", r_worldData.name );
+	rg.world->shader = R_GetShaderByHandle( RE_RegisterShader( texture ) );
+	if ( rg.world->shader == rg.defaultShader ) {
+		ri.Error( ERR_DROP, "RE_LoadWorldMap: failed to load shader for '%s'", rg.world->name );
 	}
 
-	image = r_worldData.shader->stages[0]->bundle[0].image[0];
+	image = rg.world->shader->stages[0]->bundle[0].image[0];
 
 	// we might be getting higher quality textures, so scale coordinates appropriately
 	scaleWidth = image->width / info->imageWidth;
@@ -136,19 +137,19 @@ static void R_GenerateTexCoords( tile2d_info_t *info )
 		}
 	}
 
-	xyz = r_worldData.xyz;
-	uv = r_worldData.uv;
-	worldPos = r_worldData.worldPos;
-	color = r_worldData.color;
-	for ( y = 0; y < r_worldData.height; y++ ) {
-		for ( x = 0; x < r_worldData.width; x++ ) {
+	xyz = rg.world->xyz;
+	uv = rg.world->uv;
+	worldPos = rg.world->worldPos;
+	color = rg.world->color;
+	for ( y = 0; y < rg.world->height; y++ ) {
+		for ( x = 0; x < rg.world->width; x++ ) {
 		#if 0
-			VectorCopy2( uv[0], sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][0] );
-			VectorCopy2( uv[1], sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][1] );
-			VectorCopy2( uv[2], sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][2] );
-			VectorCopy2( uv[3], sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][3] );
+			VectorCopy2( uv[0], sprites[ rg.world->tiles[ y * rg.world->width + x ].index ][0] );
+			VectorCopy2( uv[1], sprites[ rg.world->tiles[ y * rg.world->width + x ].index ][1] );
+			VectorCopy2( uv[2], sprites[ rg.world->tiles[ y * rg.world->width + x ].index ][2] );
+			VectorCopy2( uv[3], sprites[ rg.world->tiles[ y * rg.world->width + x ].index ][3] );
 		#else
-			memcpy( uv, sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ], sizeof( spriteCoord_t ) );
+			memcpy( uv, sprites[ rg.world->tiles[ y * rg.world->width + x ].index ], sizeof( spriteCoord_t ) );
 		#endif
 
 			VectorSet2( worldPos[0], x, y );
@@ -200,15 +201,15 @@ static void R_OptimizeVertexCache( void )
 	triangle_t *triangles;
 	uint32_t *vertToTri;
 
-	const uint32_t numTriangles = r_worldData.numIndices / 3;
+	const uint32_t numTriangles = rg.world->numIndices / 3;
 
-	pIndices = r_worldData.indices;
-	pVerts = r_worldData.vertices;
+	pIndices = rg.world->indices;
+	pVerts = rg.world->vertices;
 
-	vertices = ri.Hunk_AllocateTempMemory( r_worldData.numVertices * sizeof( *vertices ) );
+	vertices = ri.Hunk_AllocateTempMemory( rg.world->numVertices * sizeof( *vertices ) );
 	triangles = ri.Hunk_AllocateTempMemory( numTriangles * sizeof( *triangles ) );
 	
-	for ( i = 0; i < r_worldData.numVertices; ++i ) {
+	for ( i = 0; i < rg.world->numVertices; ++i ) {
 		vertices[i].numAdjecentTris = 0;
 		vertices[i].numTrisLeft = 0;
 		vertices[i].triListIndex = 0;
@@ -224,11 +225,11 @@ static void R_OptimizeVertexCache( void )
 	}
 	
 	// Loop through and find index for the tri list for vertex->tri
-	for ( i = 1; i < r_worldData.numVertices; ++i ) {
+	for ( i = 1; i < rg.world->numVertices; ++i ) {
 		vertices[i].triListIndex = vertices[ i - 1 ].triListIndex+vertices[ i - 1 ].numAdjecentTris;
 	}
 	
-	const int numVertToTri = vertices[ r_worldData.numVertices - 1 ].triListIndex+vertices[ r_worldData.numVertices - 1 ].numAdjecentTris;
+	const int numVertToTri = vertices[ rg.world->numVertices - 1 ].triListIndex+vertices[ rg.world->numVertices - 1 ].numAdjecentTris;
 	vertToTri = ri.Hunk_AllocateTempMemory( numVertToTri * sizeof( *vertToTri ) );
 	
 	for ( i = 0; i < numTriangles; ++i ) {
@@ -251,7 +252,7 @@ static void R_OptimizeVertexCache( void )
 	}
 	
 	int numIndicesDone = 0;
-	while ( numIndicesDone != r_worldData.numIndices ) {
+	while ( numIndicesDone != rg.world->numIndices ) {
 		// update vertex scoring
 		for ( i = 0; i < LRUCacheSize && LRUCache[i] >= 0; ++i ) {
 			int vertexIndex = LRUCache[i];
@@ -383,8 +384,8 @@ float R_CalcCacheEfficiency( void )
 		cache[i] = -1;
 	}
     
-    for ( i = 0; i < r_worldData.numIndices; ++i ) {
-    	index = r_worldData.indices[i];
+    for ( i = 0; i < rg.world->numIndices; ++i ) {
+    	index = rg.world->indices[i];
 
         // check if vertex in cache
         foundInCache = qfalse;
@@ -403,7 +404,7 @@ float R_CalcCacheEfficiency( void )
         }
     }
     
-    return (float)numCacheMisses / (float)( r_worldData.numIndices / 3 );
+    return (float)numCacheMisses / (float)( rg.world->numIndices / 3 );
 }
 
 static void R_ProcessLights( void )
@@ -420,7 +421,7 @@ static void R_ProcessLights( void )
 	extern const char *fallbackShader_tile_vp;
 	extern const char *fallbackShader_tile_fp;
 
-	ri.Printf( PRINT_DEVELOPER, "Processing %u lights\n", r_worldData.numLights );
+	ri.Printf( PRINT_DEVELOPER, "Processing %u lights\n", rg.world->numLights );
 
 	if ( r_dynamiclight->i ) {
 		rg.lightData = GLSL_InitUniformBuffer( "u_LightBuffer", NULL, sizeof( shaderLight_t ) * ( rg.world->numLights + r_maxDLights->i ), qfalse );
@@ -462,9 +463,9 @@ static void R_ProcessLights( void )
 	GLSL_UseProgram( &rg.tileShader );
 
 	lights = (shaderLight_t *)rg.lightData->data;
-	data = r_worldData.lights;
+	data = rg.world->lights;
 
-	for ( i = 0; i < r_worldData.numLights; i++ ) {
+	for ( i = 0; i < rg.world->numLights; i++ ) {
 		VectorCopy4( lights[i].color, data[i].color );
 		VectorCopy2( lights[i].origin, data[i].origin );
 		lights[i].brightness = data[i].brightness;
@@ -496,8 +497,8 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 	vec3_t *normal;
 	float f;
 
-	r_worldData.numIndices = r_worldData.width * r_worldData.height * 6;
-	r_worldData.numVertices = r_worldData.width * r_worldData.height * 4;
+	rg.world->numIndices = rg.world->width * rg.world->height * 6;
+	rg.world->numVertices = rg.world->width * rg.world->height * 4;
 
 	memset( attribs, 0, sizeof( attribs ) );
 
@@ -542,15 +543,15 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 	attribs[ATTRIB_INDEX_NORMAL].normalized		= GL_FALSE;
 
 	if ( glContext.directStateAccess ) {
-		attribs[ATTRIB_INDEX_WORLDPOS].size			= sizeof( worldPos_t ) * r_worldData.numVertices;
-		attribs[ATTRIB_INDEX_POSITION].size			= sizeof( vec3_t ) * r_worldData.numVertices;
-		attribs[ATTRIB_INDEX_TEXCOORD].size			= sizeof( texCoord_t ) * r_worldData.numVertices;
-		attribs[ATTRIB_INDEX_COLOR].size			= sizeof( color4ub_t ) * r_worldData.numVertices;
+		attribs[ATTRIB_INDEX_WORLDPOS].size			= sizeof( worldPos_t ) * rg.world->numVertices;
+		attribs[ATTRIB_INDEX_POSITION].size			= sizeof( vec3_t ) * rg.world->numVertices;
+		attribs[ATTRIB_INDEX_TEXCOORD].size			= sizeof( texCoord_t ) * rg.world->numVertices;
+		attribs[ATTRIB_INDEX_COLOR].size			= sizeof( color4ub_t ) * rg.world->numVertices;
 	} else {
 		attribs[ATTRIB_INDEX_WORLDPOS].offset		= 0;
-		attribs[ATTRIB_INDEX_POSITION].offset		= attribs[ ATTRIB_INDEX_WORLDPOS ].offset + ( sizeof( worldPos_t ) * r_worldData.numVertices );
-		attribs[ATTRIB_INDEX_TEXCOORD].offset		= attribs[ ATTRIB_INDEX_POSITION ].offset + ( sizeof( vec3_t ) * r_worldData.numVertices );
-		attribs[ATTRIB_INDEX_COLOR].offset			= attribs[ ATTRIB_INDEX_TEXCOORD ].offset + ( sizeof( texCoord_t ) * r_worldData.numVertices );
+		attribs[ATTRIB_INDEX_POSITION].offset		= attribs[ ATTRIB_INDEX_WORLDPOS ].offset + ( sizeof( worldPos_t ) * rg.world->numVertices );
+		attribs[ATTRIB_INDEX_TEXCOORD].offset		= attribs[ ATTRIB_INDEX_POSITION ].offset + ( sizeof( vec3_t ) * rg.world->numVertices );
+		attribs[ATTRIB_INDEX_COLOR].offset			= attribs[ ATTRIB_INDEX_TEXCOORD ].offset + ( sizeof( texCoord_t ) * rg.world->numVertices );
 	}
 
 	attribs[ATTRIB_INDEX_POSITION].stride		= sizeof( vec3_t );
@@ -561,45 +562,45 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 	attribs[ATTRIB_INDEX_BITANGENT].stride		= sizeof( vec3_t );
 	attribs[ATTRIB_INDEX_NORMAL].stride			= sizeof( vec3_t );
 
-	r_worldData.buffer = R_AllocateBuffer( "worldDrawBuffer", NULL, sizeof( *r_worldData.vertices ) * r_worldData.numVertices, NULL,
-										sizeof( glIndex_t ) * r_worldData.numIndices, BUFFER_STREAM, attribs );
+	rg.world->buffer = R_AllocateBuffer( "worldDrawBuffer", NULL, sizeof( *rg.world->vertices ) * rg.world->numVertices, NULL,
+										sizeof( glIndex_t ) * rg.world->numIndices, BUFFER_STREAM, attribs );
 
-	VBO_Bind( r_worldData.buffer );
+	VBO_Bind( rg.world->buffer );
 	if ( glContext.directStateAccess ) {
-		r_worldData.buffer->vertex[ ATTRIB_INDEX_POSITION ].size = sizeof( vec3_t ) * r_worldData.numVertices;
-		r_worldData.buffer->vertex[ ATTRIB_INDEX_TEXCOORD ].size = sizeof( texCoord_t ) * r_worldData.numVertices;
-		r_worldData.buffer->vertex[ ATTRIB_INDEX_WORLDPOS ].size = sizeof( worldPos_t ) * r_worldData.numVertices;
-		r_worldData.buffer->vertex[ ATTRIB_INDEX_COLOR ].size = sizeof( color4ub_t ) * r_worldData.numVertices;
+		rg.world->buffer->vertex[ ATTRIB_INDEX_POSITION ].size = sizeof( vec3_t ) * rg.world->numVertices;
+		rg.world->buffer->vertex[ ATTRIB_INDEX_TEXCOORD ].size = sizeof( texCoord_t ) * rg.world->numVertices;
+		rg.world->buffer->vertex[ ATTRIB_INDEX_WORLDPOS ].size = sizeof( worldPos_t ) * rg.world->numVertices;
+		rg.world->buffer->vertex[ ATTRIB_INDEX_COLOR ].size = sizeof( color4ub_t ) * rg.world->numVertices;
 
-		r_worldData.buffer->vertex[ ATTRIB_INDEX_POSITION ].target = GL_ARRAY_BUFFER;
-		r_worldData.buffer->vertex[ ATTRIB_INDEX_TEXCOORD ].target = GL_ARRAY_BUFFER;
-		r_worldData.buffer->vertex[ ATTRIB_INDEX_WORLDPOS ].target = GL_ARRAY_BUFFER;
-		r_worldData.buffer->vertex[ ATTRIB_INDEX_COLOR ].target = GL_ARRAY_BUFFER;
+		rg.world->buffer->vertex[ ATTRIB_INDEX_POSITION ].target = GL_ARRAY_BUFFER;
+		rg.world->buffer->vertex[ ATTRIB_INDEX_TEXCOORD ].target = GL_ARRAY_BUFFER;
+		rg.world->buffer->vertex[ ATTRIB_INDEX_WORLDPOS ].target = GL_ARRAY_BUFFER;
+		rg.world->buffer->vertex[ ATTRIB_INDEX_COLOR ].target = GL_ARRAY_BUFFER;
 
-		r_worldData.buffer->index.target = GL_ELEMENT_ARRAY_BUFFER;
+		rg.world->buffer->index.target = GL_ELEMENT_ARRAY_BUFFER;
 
-		VBO_MapBuffers( &r_worldData.buffer->vertex[ ATTRIB_INDEX_POSITION ] );
-		VBO_MapBuffers( &r_worldData.buffer->vertex[ ATTRIB_INDEX_TEXCOORD ] );
-		VBO_MapBuffers( &r_worldData.buffer->vertex[ ATTRIB_INDEX_WORLDPOS ] );
-		VBO_MapBuffers( &r_worldData.buffer->vertex[ ATTRIB_INDEX_COLOR ] );
+		VBO_MapBuffers( &rg.world->buffer->vertex[ ATTRIB_INDEX_POSITION ] );
+		VBO_MapBuffers( &rg.world->buffer->vertex[ ATTRIB_INDEX_TEXCOORD ] );
+		VBO_MapBuffers( &rg.world->buffer->vertex[ ATTRIB_INDEX_WORLDPOS ] );
+		VBO_MapBuffers( &rg.world->buffer->vertex[ ATTRIB_INDEX_COLOR ] );
 	} else {
-		r_worldData.buffer->vertex[0].size = sizeof( *r_worldData.vertices ) * r_worldData.numVertices;
-		VBO_MapBuffers( &r_worldData.buffer->vertex[0] );
+		rg.world->buffer->vertex[0].size = sizeof( *rg.world->vertices ) * rg.world->numVertices;
+		VBO_MapBuffers( &rg.world->buffer->vertex[0] );
 	}
-	VBO_MapBuffers( &r_worldData.buffer->index );
+	VBO_MapBuffers( &rg.world->buffer->index );
 	GL_CheckErrors();
 
-	r_worldData.indices = r_worldData.buffer->index.data;
+	rg.world->indices = rg.world->buffer->index.data;
 
 	// cache the indices so that we aren't calculating these every frame (there could be thousands)
-	for ( i = 0, offset = 0; i < r_worldData.numIndices; i += 6, offset += 4 ) {
-		r_worldData.indices[ i + 0 ] = offset + 0;
-		r_worldData.indices[ i + 1 ] = offset + 1;
-		r_worldData.indices[ i + 2 ] = offset + 2;
+	for ( i = 0, offset = 0; i < rg.world->numIndices; i += 6, offset += 4 ) {
+		rg.world->indices[ i + 0 ] = offset + 0;
+		rg.world->indices[ i + 1 ] = offset + 1;
+		rg.world->indices[ i + 2 ] = offset + 2;
 
-		r_worldData.indices[ i + 3 ] = offset + 3;
-		r_worldData.indices[ i + 4 ] = offset + 2;
-		r_worldData.indices[ i + 5 ] = offset + 0;
+		rg.world->indices[ i + 3 ] = offset + 3;
+		rg.world->indices[ i + 4 ] = offset + 2;
+		rg.world->indices[ i + 5 ] = offset + 0;
 	}
 
 	ri.Printf( PRINT_INFO, "Optimizing vertex cache... (Current cache misses: %f)\n", R_CalcCacheEfficiency() );
@@ -607,16 +608,16 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 	ri.Printf( PRINT_INFO, "Optimized cache misses: %f\n", R_CalcCacheEfficiency() );
 
 	if ( glContext.directStateAccess ) {
-		r_worldData.worldPos = (worldPos_t *)r_worldData.buffer->vertex[ ATTRIB_INDEX_WORLDPOS ].data;
-		r_worldData.xyz = (vec3_t *)( r_worldData.buffer->vertex[ ATTRIB_INDEX_POSITION ].data );
-		r_worldData.uv = (texCoord_t *)( r_worldData.buffer->vertex[ ATTRIB_INDEX_TEXCOORD ].data );
-		r_worldData.color = (color4ub_t *)( r_worldData.buffer->vertex[ ATTRIB_INDEX_COLOR ].data );
+		rg.world->worldPos = (worldPos_t *)rg.world->buffer->vertex[ ATTRIB_INDEX_WORLDPOS ].data;
+		rg.world->xyz = (vec3_t *)( rg.world->buffer->vertex[ ATTRIB_INDEX_POSITION ].data );
+		rg.world->uv = (texCoord_t *)( rg.world->buffer->vertex[ ATTRIB_INDEX_TEXCOORD ].data );
+		rg.world->color = (color4ub_t *)( rg.world->buffer->vertex[ ATTRIB_INDEX_COLOR ].data );
 	} else {
-		r_worldData.vertices = r_worldData.buffer->vertex[0].data;
-		r_worldData.worldPos = (worldPos_t *)r_worldData.vertices;
-		r_worldData.xyz = (vec3_t *)( r_worldData.worldPos + r_worldData.numVertices );
-		r_worldData.uv = (texCoord_t *)( r_worldData.xyz + r_worldData.numVertices );
-		r_worldData.color = (color4ub_t *)( r_worldData.uv + r_worldData.numVertices );
+		rg.world->vertices = rg.world->buffer->vertex[0].data;
+		rg.world->worldPos = (worldPos_t *)rg.world->vertices;
+		rg.world->xyz = (vec3_t *)( rg.world->worldPos + rg.world->numVertices );
+		rg.world->uv = (texCoord_t *)( rg.world->xyz + rg.world->numVertices );
+		rg.world->color = (color4ub_t *)( rg.world->uv + rg.world->numVertices );
 	}
 
 	R_GenerateTexCoords( &theader->info );
@@ -627,18 +628,18 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 
 	VBO_BindNull();
 
-	VBO_Bind( r_worldData.buffer );
+	VBO_Bind( rg.world->buffer );
 
 	if ( glContext.directStateAccess ) {
-		nglFlushMappedNamedBufferRange( r_worldData.buffer->vertex[ ATTRIB_INDEX_WORLDPOS ].id, 0, sizeof( worldPos_t ) * r_worldData.numVertices );
-		nglFlushMappedNamedBufferRange( r_worldData.buffer->vertex[ ATTRIB_INDEX_TEXCOORD ].id, 0, sizeof( texCoord_t ) * r_worldData.numVertices );
-		nglFlushMappedNamedBufferRange( r_worldData.buffer->vertex[ ATTRIB_INDEX_COLOR ].id, 0, sizeof( color4ub_t ) * r_worldData.numVertices );
-		nglFlushMappedNamedBufferRange( r_worldData.buffer->index.id, 0, sizeof( glIndex_t ) * r_worldData.numIndices );
+		nglFlushMappedNamedBufferRange( rg.world->buffer->vertex[ ATTRIB_INDEX_WORLDPOS ].id, 0, sizeof( worldPos_t ) * rg.world->numVertices );
+		nglFlushMappedNamedBufferRange( rg.world->buffer->vertex[ ATTRIB_INDEX_TEXCOORD ].id, 0, sizeof( texCoord_t ) * rg.world->numVertices );
+		nglFlushMappedNamedBufferRange( rg.world->buffer->vertex[ ATTRIB_INDEX_COLOR ].id, 0, sizeof( color4ub_t ) * rg.world->numVertices );
+		nglFlushMappedNamedBufferRange( rg.world->buffer->index.id, 0, sizeof( glIndex_t ) * rg.world->numIndices );
 	} else {
-		nglFlushMappedBufferRange( GL_ARRAY_BUFFER, attribs[ ATTRIB_INDEX_WORLDPOS ].offset, sizeof( worldPos_t ) * r_worldData.numVertices );
-		nglFlushMappedBufferRange( GL_ARRAY_BUFFER, attribs[ ATTRIB_INDEX_TEXCOORD ].offset, sizeof( vec2_t ) * r_worldData.numVertices );
-		nglFlushMappedBufferRange( GL_ARRAY_BUFFER, attribs[ ATTRIB_INDEX_COLOR ].offset, sizeof( color4ub_t ) * r_worldData.numVertices );
-		nglFlushMappedBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, sizeof( glIndex_t ) * r_worldData.numIndices );
+		nglFlushMappedBufferRange( GL_ARRAY_BUFFER, attribs[ ATTRIB_INDEX_WORLDPOS ].offset, sizeof( worldPos_t ) * rg.world->numVertices );
+		nglFlushMappedBufferRange( GL_ARRAY_BUFFER, attribs[ ATTRIB_INDEX_TEXCOORD ].offset, sizeof( vec2_t ) * rg.world->numVertices );
+		nglFlushMappedBufferRange( GL_ARRAY_BUFFER, attribs[ ATTRIB_INDEX_COLOR ].offset, sizeof( color4ub_t ) * rg.world->numVertices );
+		nglFlushMappedBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, sizeof( glIndex_t ) * rg.world->numIndices );
 	}
 	
 	VBO_BindNull();
@@ -650,6 +651,7 @@ void RE_LoadWorldMap( const char *filename )
 	mapheader_t *mheader;
 	tile2d_header_t *theader;
 	spriteCoord_t *sprites;
+	static world_t r_worldData;
 	int i;
 	char texture[MAX_NPATH];
 	union {
@@ -680,10 +682,10 @@ void RE_LoadWorldMap( const char *filename )
 	rg.worldMapLoaded = qtrue;
 
 	memset( &r_worldData, 0, sizeof( r_worldData ) );
-	N_strncpyz( r_worldData.name, filename, sizeof( r_worldData.name ) );
-	N_strncpyz( r_worldData.baseName, COM_SkipPath( r_worldData.name ), sizeof( r_worldData.baseName ) );
+	N_strncpyz( rg.world->name, filename, sizeof( rg.world->name ) );
+	N_strncpyz( rg.world->baseName, COM_SkipPath( rg.world->name ), sizeof( rg.world->baseName ) );
 
-	COM_StripExtension( r_worldData.baseName, r_worldData.baseName, sizeof( r_worldData.baseName ) );
+	COM_StripExtension( rg.world->baseName, rg.world->baseName, sizeof( rg.world->baseName ) );
 
 	header = (bmf_t *)buffer.b;
 	if ( LittleInt( header->version ) != LEVEL_VERSION ) {
@@ -701,24 +703,17 @@ void RE_LoadWorldMap( const char *filename )
 		( (int32_t *)header )[i] = LittleInt( ( (int32_t *)header )[i] );
 	}
 
-	VectorCopy( r_worldData.ambientLightColor, mheader->ambientLightColor );
+	VectorCopy( rg.world->ambientLightColor, mheader->ambientLightColor );
 
-	r_worldData.width = mheader->mapWidth;
-	r_worldData.height = mheader->mapHeight;
-	r_worldData.numTiles = r_worldData.width * r_worldData.height;
-
-	r_worldData.firstLevelShader = rg.numShaders;
-	r_worldData.firstLevelSpriteSheet = rg.numSpriteSheets;
-	r_worldData.firstLevelTexture = rg.numTextures;
-	r_worldData.levelShaders = 0;
-	r_worldData.levelSpriteSheets = 0;
-	r_worldData.levelTextures = 0;
+	rg.world->width = mheader->mapWidth;
+	rg.world->height = mheader->mapHeight;
+	rg.world->numTiles = rg.world->width * rg.world->height;
 
 	ri.Cmd_ExecuteCommand( "snd.startup_level" );
 
 	// load into heap
-	ri.G_GetMapData( &r_worldData.tiles, &r_worldData.numTiles );
-	R_LoadLights( &mheader->lumps[LUMP_LIGHTS] );
+	ri.G_GetMapData( &rg.world->tiles, &rg.world->numTiles );
+	R_LoadLights( &mheader->lumps[LUMP_LIGHTS], &r_worldData );
 
 	rg.world = &r_worldData;
 

@@ -525,7 +525,8 @@ extern "C" void UI_Init( void )
 	ui = (uiGlobals_t *)Hunk_Alloc( sizeof( *ui ), h_high );
 
 	// init the string manager
-	strManager = (CUIStringManager *)Hunk_Alloc( sizeof( *strManager ), h_high );
+	static CUIStringManager string_database;
+	strManager = &string_database;
 	strManager->Init();
 	// load the language string file
 	strManager->LoadLanguage( ui_language->s );

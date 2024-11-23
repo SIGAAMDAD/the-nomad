@@ -112,7 +112,9 @@ static void ConfirmMenu_Draw( void )
 void ConfirmMenu_Cache( void )
 {
 	if ( !ui->uiAllocated ) {
-		s_confirm = (confirmMenu_t *)Hunk_Alloc( sizeof( *s_confirm ), h_high );
+		static confirmMenu_t menu;
+		s_confirm = &menu;
+//		s_confirm = (confirmMenu_t *)Hunk_Alloc( sizeof( *s_confirm ), h_high );
 	}
 	memset( s_confirm, 0, sizeof( *s_confirm ) );
 }

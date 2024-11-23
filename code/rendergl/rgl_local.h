@@ -966,35 +966,24 @@ typedef struct {
 
 	qboolean drawing;
 
-	uint16_t levelTextures;
-	uint16_t levelShaders;
-	uint16_t levelSpriteSheets;
-
-	uint16_t firstLevelTexture;
-	uint16_t firstLevelShader;
-	uint16_t firstLevelSpriteSheet;
-
-	uint32_t width;
-	uint32_t height;
+	uint16_t width;
+	uint16_t height;
 
 	maplight_t *lights;
-	uint32_t numLights;
+	uint16_t numLights;
 
 	maptile_t *tiles;
 	uint32_t numTiles;
 
 	glIndex_t *indices;
-	uint32_t numIndices;
+	uint16_t numIndices;
 
 	worldPos_t *worldPos;
 	vec3_t *xyz;
 	texCoord_t *uv;
 	color4ub_t *color;
-	vec3_t *tangent;
-	vec3_t *bitangent;
-	vec3_t *normal;
 	drawVert_t *vertices;
-	uint32_t numVertices;
+	uint16_t numVertices;
 
 	// frame based draw data
 	vertexBuffer_t *buffer;

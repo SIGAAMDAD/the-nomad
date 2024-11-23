@@ -235,7 +235,7 @@ void R_UpdateTextures( void )
     for ( i = 0; i < rg.numTextures; i++ ) {
         t = rg.textures[i];
         
-		if ( !( r_loadTexturesOnDemand->i && glContext.bindlessTextures ) ) {
+		if ( !glContext.bindlessTextures ) {
 	    	GL_BindTexture( TB_COLORMAP, t );
 			
 	    	nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min );
@@ -3306,30 +3306,6 @@ void R_DeleteTextures( void )
 		}
 	}
 	memset( rg.textures, 0, sizeof( rg.textures ) );
-
-	GL_BindNullTextures();
-}
-
-void R_UnloadLevelTextures( void )
-{
-	uint64_t i, j;
-
-	ri.Printf( PRINT_INFO, "R_UnloadLevelTextures(): Releasing %u textures...\n", rg.world->levelTextures );
-
-	for ( i = 0; i < FILE_HASH_SIZE; i++ ) {
-		for ( j = 0; j < rg.world->levelTextures; j++ ) {
-			if ( hashTable[i] == rg.textures[ j + rg.world->firstLevelTexture ] && hashTable[i] ) {
-				nglDeleteTextures( 1, &rg.textures[ j + rg.world->firstLevelTexture ]->id );
-				if ( r_loadTexturesOnDemand->i && glContext.bindlessTextures ) {
-					nglDeleteSamplers( 1, &rg.textures[ j + rg.world->firstLevelTexture ]->samplerID );
-				}
-				hashTable[i]->next = NULL;
-				hashTable[i] = NULL;
-				rg.textures[ j + rg.world->firstLevelTexture ] = NULL;
-			}
-		}
-	}
-	rg.numTextures = rg.world->firstLevelTexture;
 
 	GL_BindNullTextures();
 }

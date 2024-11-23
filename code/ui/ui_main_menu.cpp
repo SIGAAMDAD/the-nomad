@@ -596,9 +596,13 @@ static void MainMenu_LoadNews( void )
 void MainMenu_Cache( void )
 {
 	if ( !ui->uiAllocated ) {
-		s_main = (mainmenu_t *)Hunk_Alloc( sizeof( *s_main ), h_high );
-		s_errorMenu = (errorMessage_t *)Hunk_Alloc( sizeof( *s_errorMenu ), h_high );
-		s_splashScreen = (splashScreenMenu_t *)Hunk_Alloc( sizeof( *s_splashScreen ), h_high );
+		static mainmenu_t menu;
+		static errorMessage_t error;
+		static splashScreenMenu_t splash;
+
+		s_main = &menu;
+		s_errorMenu = &error;
+		s_splashScreen = &splash;
 
 		MainMenu_LoadNews();
 	}

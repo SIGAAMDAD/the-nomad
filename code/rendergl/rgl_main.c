@@ -323,13 +323,7 @@ void R_DrawWorld( void )
 	backend.drawBatch.instanceCount = 1;
 	backend.drawBatch.instanced = qtrue;
 
-	vtx = rg.world->vertices;
 	xyz = rg.world->xyz;
-
-	normal = rg.world->normal;
-	tangent = rg.world->tangent;
-	bitangent = rg.world->bitangent;
-	uv = rg.world->uv;
 	
 	// if we haven't moved at all, we don't need to do any redundant calculations
 	if ( !( ri.Cvar_VariableInteger( "g_paused" ) || VectorCompare( cameraPos, glState.viewData.camera.origin ) ) ) {
@@ -346,46 +340,7 @@ void R_DrawWorld( void )
 				VectorCopy( xyz[ 1 ], verts[1].xyz );
 				VectorCopy( xyz[ 2 ], verts[2].xyz );
 				VectorCopy( xyz[ 3 ], verts[3].xyz );
-				/*
 
-				VectorSubtract( edge1, xyz[ 1 ], xyz[ 0 ] );
-				VectorSubtract( edge2, xyz[ 2 ], xyz[ 0 ] );
-
-				VectorSubtract( deltaUV1, uv[ 1 ], uv[ 0 ] );
-				VectorSubtract( deltaUV2, uv[ 2 ], uv[ 0 ] );
-
-				f = 1.0 / ( deltaUV1[0] * deltaUV2[1] - deltaUV2[0] * deltaUV1[1] );
-
-				(*tangent)[0] = f * ( deltaUV2[1] * edge1[0] - deltaUV1[1] * edge2[0] );
-				(*tangent)[1] = f * ( deltaUV2[1] * edge1[1] - deltaUV1[1] * edge2[1] );
-				(*tangent)[2] = f * ( deltaUV2[1] * edge1[2] - deltaUV1[1] * edge2[2] );
-
-				(*bitangent)[0] = f * ( -deltaUV2[0] * edge1[0] + deltaUV1[0] * edge2[0] );
-				(*bitangent)[1] = f * ( -deltaUV2[0] * edge1[1] + deltaUV1[0] * edge2[1] );
-				(*bitangent)[2] = f * ( -deltaUV2[0] * edge1[2] + deltaUV1[0] * edge2[2] );
-				*/
-
-				// check if there's any entities in the way
-	//			VectorSet4( color, 1.0f, 1.0f, 1.0f, 1.0f );
-
-				/*
-				for ( j = 0; j < backend.refdef.numEntities; j++ ) {
-					refEntity = &backend.refdef.entities[j];
-
-					origin[0] = refEntity->e.origin[0];
-					origin[1] = (int)( refEntity->e.origin[1] + 1 );
-					origin[2] = refEntity->e.origin[2];
-
-					if ( origin[0] < 0.0f || origin[1] < 0.0f || origin[0] >= rg.world->width || origin[1] >= rg.world->height ) {
-						continue; // not in clipping range
-					}
-
-					if ( rg.world->tiles[ origin[1] * rg.world->width + origin[0] ].flags & TILESIDE_SOUTH ) {
-	//					color[3] = 0.10f;
-						break;
-					}
-				}
-				*/
 				xyz += 4;
 			}
 		}
@@ -532,9 +487,6 @@ nhandle_t RE_RegisterSpriteSheet( const char *npath, uint32_t sheetWidth, uint32
 	}
 
 	rg.numSpriteSheets++;
-	if ( rg.world && rg.worldMapLoaded ) {
-		rg.world->levelSpriteSheets++;
-	}
 
 	return handle;
 }
