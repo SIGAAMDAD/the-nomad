@@ -5,7 +5,7 @@ in vec4 a_Color;
 
 out vec2 v_TexCoords;
 out vec4 v_Color;
-out vec3 v_WorldPos;
+out uvec2 v_WorldPos;
 out vec3 v_Position;
 
 uniform mat4 u_ModelViewProjection;
@@ -24,7 +24,7 @@ void main() {
 	} else {
 		v_Color = u_VertColor * a_Color + u_BaseColor;
 	}
-	v_WorldPos = vec3( a_WorldPos.xy, 0.0 );
+	v_WorldPos = a_WorldPos;
 	v_Position = a_Position;
 	
     gl_Position = u_ModelViewProjection * vec4( a_Position, 1.0 );

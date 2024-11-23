@@ -5,7 +5,7 @@ layout( location = 1 ) out vec4 a_BrightColor;
 
 in vec2 v_TexCoords;
 in vec4 v_Color;
-in vec3 v_WorldPos;
+in flat uvec2 v_WorldPos;
 in vec3 v_Position;
 
 uniform float u_GammaAmount;
@@ -111,7 +111,7 @@ vec3 CalcSpecular() {
 
 vec3 CalcPointLight( Light light ) {
 	vec3 diffuse = a_Color.rgb;
-	float dist = distance( v_WorldPos, vec3( light.origin, gl_FragCoord.z ) );
+	float dist = distance( v_WorldPos, light.origin );
 	float diff = 0.0;
 	float range = light.range;
 	float attenuation = 1.0;
