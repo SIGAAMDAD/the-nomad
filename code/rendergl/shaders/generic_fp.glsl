@@ -4,8 +4,6 @@ layout( location = 1 ) out vec4 a_BrightColor;
 #endif
 
 in vec2 v_TexCoords;
-in vec3 v_FragPos;
-in vec3 v_WorldPos;
 in vec4 v_Color;
 
 TEXTURE2D u_DiffuseMap;
@@ -22,10 +20,6 @@ uniform bool u_HDR;
 uniform bool u_PBR;
 uniform bool u_Bloom;
 uniform int u_ToneMap;
-
-#if defined(USE_SHADOWMAP)
-TEXTURE2D uniform sampler2D u_ShadowMap;
-#endif
 
 uniform int u_AlphaTest;
 

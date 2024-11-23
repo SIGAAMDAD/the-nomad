@@ -1738,14 +1738,14 @@ GDR_EXPORT renderExport_t *GDR_DECL GetRenderAPI( uint32_t version, refimport_t 
 	return &re;
 }
 
-void R_GLDebug_Callback_AMD(GLuint id, GLenum category, GLenum severity, GLsizei length, const GLchar *message, GLvoid *userParam)
-{
-
-}
-
 #define MAX_CACHED_GL_MESSAGES 8192
 static char *cachedGLMessages[ MAX_CACHED_GL_MESSAGES ];
 static int numCachedGLMessages = 0;
+
+void R_GLDebug_Callback_AMD( GLuint id, GLenum category, GLenum severity, GLsizei length, const GLchar *message, GLvoid *userParam )
+{
+
+}
 
 void R_GLDebug_Callback_ARB( GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const GLvoid *userParam )
 {

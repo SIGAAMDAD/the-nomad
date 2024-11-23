@@ -155,7 +155,7 @@ IMGUI_API uint64_t          ImFileWrite(const void* data, uint64_t size, uint64_
 // Another way to allow large meshes while keeping 16-bit indices is to handle ImDrawCmd::VtxOffset in your renderer.
 // Read about ImGuiBackendFlags_RendererHasVtxOffset for details.
 //#include <stdint.h>
-#define ImDrawIdx uint32_t
+#define ImDrawIdx uint16_t
 
 //---- Override ImDrawCallback signature (will need to modify renderer backends accordingly)
 //struct ImDrawList;

@@ -636,7 +636,7 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 			}
 			if ( idx_buffer_size > 0 ) {
 				if ( bd->GlDirectStateAccess ) {
-					renderImport.glNamedBufferSubData( bd->ElementsHandle, 0, vtx_buffer_size, cmd_list->IdxBuffer.Data );
+					renderImport.glNamedBufferSubData( bd->ElementsHandle, 0, idx_buffer_size, cmd_list->IdxBuffer.Data );
 				} else {
 					renderImport.glBufferSubData( GL_ELEMENT_ARRAY_BUFFER, 0, idx_buffer_size, cmd_list->IdxBuffer.Data );
 				}
@@ -870,11 +870,11 @@ int ImGui_ImplOpenGL3_CreateDeviceObjects( void )
 		renderImport.glCreateBuffers( 1, &bd->VboHandle );
 		renderImport.glCreateBuffers( 1, &bd->ElementsHandle );
 
-		renderImport.glNamedBufferStorage( bd->VboHandle, DEFAULT_VERTEX_BUFFER_SIZE, NULL, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT );
+		renderImport.glNamedBufferData( bd->VboHandle, DEFAULT_VERTEX_BUFFER_SIZE, NULL, GL_STREAM_DRAW );
 		bd->VertexBufferSize = DEFAULT_VERTEX_BUFFER_SIZE;
 		bd->VertexBufferOffset = 0;
 
-		renderImport.glNamedBufferStorage( bd->ElementsHandle, DEFAULT_INDEX_BUFFER_SIZE, NULL, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT );
+		renderImport.glNamedBufferData( bd->ElementsHandle, DEFAULT_INDEX_BUFFER_SIZE, NULL, GL_STREAM_DRAW );
 		bd->IndexBufferSize = DEFAULT_INDEX_BUFFER_SIZE;
 		bd->IndexBufferOffset = 0;
 
