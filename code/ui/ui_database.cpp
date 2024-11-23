@@ -232,7 +232,8 @@ void DataBaseMenu_Draw( void )
 void DataBaseMenu_Cache( void )
 {
     if ( !ui->uiAllocated ) {
-        s_dataBase = (dataBaseMenu_t *)Hunk_Alloc( sizeof( *s_dataBase ), h_high );
+        static dataBaseMenu_t menu;
+        s_dataBase = &menu;
         DataBase_Load();
     }
     s_dataBase->currentEntry = NULL;

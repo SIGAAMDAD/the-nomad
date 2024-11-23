@@ -238,7 +238,7 @@ static void DrawMenu_Text( void )
 		return;
 	}
 
-	ImGui::SetCursorScreenPos( ImVec2( 16 * ui->scale, 400 * ui->scale ) );
+	ImGui::SetCursorScreenPos( ImVec2( ImGui::GetCursorScreenPos().x, 400 * ui->scale ) );
 	for ( i = 0; i < menu->nitems; i++ ) {
 		Menu_DrawItemGeneric( (menucommon_t *)menu->items[i] );
 	}

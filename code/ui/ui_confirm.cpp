@@ -137,7 +137,7 @@ void UI_ConfirmMenu( const char *question, void (*draw)( void ), void (*action)(
 	s_confirm->action = action;
 
 	s_confirm->menu.draw = ConfirmMenu_Draw;
-	s_confirm->menu.x = 720 - ( n1 * ui->scale );
+	s_confirm->menu.x = 540 - ( n1 * ui->scale );
 	s_confirm->menu.y = 280 * ui->scale;
 	s_confirm->menu.width = l1 * ui->scale + ui->bias;
 	s_confirm->menu.height = 372 * ui->scale;
