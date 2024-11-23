@@ -1744,7 +1744,95 @@ static int numCachedGLMessages = 0;
 
 void R_GLDebug_Callback_AMD( GLuint id, GLenum category, GLenum severity, GLsizei length, const GLchar *message, GLvoid *userParam )
 {
+	const char *color;
+	uint64_t len, i;
+	char msg[1024];
+	uint64_t hash;
 
+	color = COLOR_WHITE;
+
+	// save the messages so OpenGL can't spam us with useless shit
+	for ( i = 0; i < numCachedGLMessages; i++ ) {
+		if ( !N_stricmp( cachedGLMessages[ i ], message ) ) {
+			return;
+		}
+	}
+
+	len = strlen( message ) + 1;
+	cachedGLMessages[ numCachedGLMessages ] = ri.Hunk_Alloc( len, h_low );
+	N_strncpyz( cachedGLMessages[ numCachedGLMessages ], message, len );
+	numCachedGLMessages++;
+
+	if ( severity == GL_DEBUG_SEVERITY_NOTIFICATION ) {
+		ri.Printf( PRINT_INFO, COLOR_MAGENTA "[AMD GLDebug Log]:" COLOR_WHITE " %s\n", message );
+		return;
+	}
+
+	if ( !color ) {
+		if ( category == GL_DEBUG_CATEGORY_API_ERROR_AMD || category == GL_DEBUG_CATEGORY_UNDEFINED_BEHAVIOR_AMD ) {
+			color = COLOR_RED;
+		} else if ( category == GL_DEBUG_CATEGORY_DEPRECATION_AMD ) {
+			color = COLOR_YELLOW;
+		} else if ( category == GL_DEBUG_CATEGORY_PERFORMANCE_AMD || category == GL_DEBUG_CATEGORY_SHADER_COMPILER_AMD ) {
+			color = COLOR_CYAN;
+		} else {
+			color = COLOR_WHITE;
+		}
+	}
+
+	msg[ 0 ] = '\0';
+	N_strcat( msg, sizeof( msg ) - 1, va( "%s[AMD GLDebug Log] " COLOR_WHITE " %s\n", color, message ) );
+
+	switch ( category ) {
+	case GL_DEBUG_CATEGORY_API_ERROR_AMD:
+		N_strcat( msg, sizeof( msg ) - 1, "\tCategory: GL_DEBUG_CATEGORY_API_ERROR_AMD\n" );
+		break;
+	case GL_DEBUG_CATEGORY_APPLICATION_AMD:
+		N_strcat( msg, sizeof( msg ) - 1, "\tCategory: GL_DEBUG_TYPE_DEPRECATED_BEHAVIOUR_ARB\n" );
+		break;
+	case GL_DEBUG_CATEGORY_DEPRECATION_AMD:
+		N_strcat( msg, sizeof( msg ) - 1, "\tCategory: GL_DEBUG_CATEGORY_DEPRECATION_AMD\n" );
+		break;
+	case GL_DEBUG_CATEGORY_OTHER_AMD:
+		N_strcat( msg, sizeof( msg ) - 1, "\tCategory: GL_DEBUG_CATEGORY_OTHER_AMD\n" );
+		break;
+	case GL_DEBUG_CATEGORY_PERFORMANCE_AMD:
+		N_strcat( msg, sizeof( msg ) - 1, "\tCategory: GL_DEBUG_TYPE_PORTABILITY_ARB\n" );
+		break;
+	case GL_DEBUG_CATEGORY_SHADER_COMPILER_AMD:
+		N_strcat( msg, sizeof( msg ) - 1, "\tCategory: GL_DEBUG_CATEGORY_SHADER_COMPILER_AMD\n" );
+		break;
+	case GL_DEBUG_CATEGORY_UNDEFINED_BEHAVIOR_AMD:
+		N_strcat( msg, sizeof( msg ) - 1, "\tCategory: GL_DEBUG_CATEGORY_UNDEFINED_BEHAVIOR_AMD\n" );
+		break;
+	case GL_DEBUG_CATEGORY_WINDOW_SYSTEM_AMD:
+		N_strcat( msg, sizeof( msg ) - 1, "\tCategory: GL_DEBUG_CATEGORY_WINDOW_SYSTEM_AMD\n" );
+		break;
+	default:
+		N_strcat( msg, sizeof( msg ) - 1, "\tCategory: unknown\n" );
+		break;
+	};
+
+	switch ( severity ) {
+	case GL_DEBUG_SEVERITY_HIGH_AMD:
+		N_strcat( msg, sizeof( msg ) - 1, "\tSeverity: GL_DEBUG_SEVERITY_HIGH_AMD\n" );
+		break;
+	case GL_DEBUG_SEVERITY_MEDIUM_AMD:
+		N_strcat( msg, sizeof( msg ) - 1, "\tSeverity: GL_DEBUG_SEVERITY_MEDIUM_AMD\n" );
+		break;
+	case GL_DEBUG_SEVERITY_LOW_AMD:
+		N_strcat( msg, sizeof( msg ) - 1, "\tSeverity: GL_DEBUG_SEVERITY_LOW_AMD\n" );
+		break;
+	default:
+		N_strcat( msg, sizeof( msg ) - 1, "\tSeverity: unknown\n" );
+		break;
+	};
+	N_strcat( msg, sizeof( msg ) - 1, "\n" );
+
+	if ( r_glDebug->i ) {
+		ri.Printf( PRINT_INFO, "%s", msg );
+	}
+	ri.GLimp_LogComment( msg );
 }
 
 void R_GLDebug_Callback_ARB( GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const GLvoid *userParam )
@@ -1769,7 +1857,7 @@ void R_GLDebug_Callback_ARB( GLenum source, GLenum type, GLuint id, GLenum sever
 	numCachedGLMessages++;
 
 	if ( severity == GL_DEBUG_SEVERITY_NOTIFICATION ) {
-		ri.Printf( PRINT_INFO, COLOR_MAGENTA "[GLDebug Log]:" COLOR_WHITE " %s\n", message );
+		ri.Printf( PRINT_INFO, COLOR_MAGENTA "[ARB GLDebug Log]:" COLOR_WHITE " %s\n", message );
 		return;
 	}
 
@@ -1786,7 +1874,7 @@ void R_GLDebug_Callback_ARB( GLenum source, GLenum type, GLuint id, GLenum sever
 	}
 
 	msg[ 0 ] = '\0';
-	N_strcat( msg, sizeof( msg ) - 1, va( "%s[GLDebug Log] " COLOR_WHITE " %s\n", color, message ) );
+	N_strcat( msg, sizeof( msg ) - 1, va( "%s[ARB GLDebug Log] " COLOR_WHITE " %s\n", color, message ) );
 
 	switch ( source ) {
 	case GL_DEBUG_SOURCE_API_ARB:
