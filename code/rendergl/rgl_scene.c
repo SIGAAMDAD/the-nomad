@@ -302,22 +302,22 @@ void RE_ProcessEntities( void )
 		}
 
 		VectorSet2( verts[0].worldPos, refEntity->e.origin[0], refEntity->e.origin[1] + refEntity->e.origin[2] );
-		VectorCopy( verts[0].xyz, xyz[0] );
+		VectorCopy2( verts[0].xyz, xyz[0] );
 		verts[0].modulate.u32 = refEntity->e.shader.u32;
 		verts[0].modulate.u32 += refEntity->ambientLightInt;
 
 		VectorSet2( verts[1].worldPos, refEntity->e.origin[0], refEntity->e.origin[1] + refEntity->e.origin[2] );
-		VectorCopy( verts[1].xyz, xyz[1] );
+		VectorCopy2( verts[1].xyz, xyz[1] );
 		verts[1].modulate.u32 = refEntity->e.shader.u32;
 		verts[1].modulate.u32 += refEntity->ambientLightInt;
 
 		VectorSet2( verts[2].worldPos, refEntity->e.origin[0], refEntity->e.origin[1] + refEntity->e.origin[2] );
-		VectorCopy( verts[2].xyz, xyz[2] );
+		VectorCopy2( verts[2].xyz, xyz[2] );
 		verts[2].modulate.u32 = refEntity->e.shader.u32;
 		verts[2].modulate.u32 += refEntity->ambientLightInt;
 
 		VectorSet2( verts[3].worldPos, refEntity->e.origin[0], refEntity->e.origin[1] + refEntity->e.origin[2] );
-		VectorCopy( verts[3].xyz, xyz[3] );
+		VectorCopy2( verts[3].xyz, xyz[3] );
 		verts[3].modulate.u32 = refEntity->e.shader.u32;
 		verts[3].modulate.u32 += refEntity->ambientLightInt;
 

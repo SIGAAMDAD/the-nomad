@@ -94,7 +94,7 @@ static void R_GenerateTexCoords( tile2d_info_t *info )
 	vec3_t tmp1, tmp2;
 	drawVert_t *vtx;
 	spriteCoord_t *sprites;
-	vec3_t *xyz;
+	vec2_t *xyz;
 	texCoord_t *uv;
 	color4ub_t *color;
 	worldPos_t *worldPos;
@@ -510,7 +510,7 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 	attribs[ATTRIB_INDEX_BITANGENT].enabled		= qfalse;
 	attribs[ATTRIB_INDEX_NORMAL].enabled		= qfalse;
 
-	attribs[ATTRIB_INDEX_POSITION].count		= 3;
+	attribs[ATTRIB_INDEX_POSITION].count		= 2;
 	attribs[ATTRIB_INDEX_TEXCOORD].count		= 2;
 	attribs[ATTRIB_INDEX_COLOR].count			= 4;
 	attribs[ATTRIB_INDEX_WORLDPOS].count		= 2;
@@ -544,17 +544,17 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 
 	if ( glContext.directStateAccess ) {
 		attribs[ATTRIB_INDEX_WORLDPOS].size			= sizeof( worldPos_t ) * rg.world->numVertices;
-		attribs[ATTRIB_INDEX_POSITION].size			= sizeof( vec3_t ) * rg.world->numVertices;
+		attribs[ATTRIB_INDEX_POSITION].size			= sizeof( vec2_t ) * rg.world->numVertices;
 		attribs[ATTRIB_INDEX_TEXCOORD].size			= sizeof( texCoord_t ) * rg.world->numVertices;
 		attribs[ATTRIB_INDEX_COLOR].size			= sizeof( color4ub_t ) * rg.world->numVertices;
 	} else {
 		attribs[ATTRIB_INDEX_WORLDPOS].offset		= 0;
 		attribs[ATTRIB_INDEX_POSITION].offset		= attribs[ ATTRIB_INDEX_WORLDPOS ].offset + ( sizeof( worldPos_t ) * rg.world->numVertices );
-		attribs[ATTRIB_INDEX_TEXCOORD].offset		= attribs[ ATTRIB_INDEX_POSITION ].offset + ( sizeof( vec3_t ) * rg.world->numVertices );
+		attribs[ATTRIB_INDEX_TEXCOORD].offset		= attribs[ ATTRIB_INDEX_POSITION ].offset + ( sizeof( vec2_t ) * rg.world->numVertices );
 		attribs[ATTRIB_INDEX_COLOR].offset			= attribs[ ATTRIB_INDEX_TEXCOORD ].offset + ( sizeof( texCoord_t ) * rg.world->numVertices );
 	}
 
-	attribs[ATTRIB_INDEX_POSITION].stride		= sizeof( vec3_t );
+	attribs[ATTRIB_INDEX_POSITION].stride		= sizeof( vec2_t );
 	attribs[ATTRIB_INDEX_TEXCOORD].stride		= sizeof( texCoord_t );
 	attribs[ATTRIB_INDEX_COLOR].stride			= sizeof( color4ub_t );
 	attribs[ATTRIB_INDEX_WORLDPOS].stride		= sizeof( worldPos_t );
@@ -567,7 +567,7 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 
 	VBO_Bind( rg.world->buffer );
 	if ( glContext.directStateAccess ) {
-		rg.world->buffer->vertex[ ATTRIB_INDEX_POSITION ].size = sizeof( vec3_t ) * rg.world->numVertices;
+		rg.world->buffer->vertex[ ATTRIB_INDEX_POSITION ].size = sizeof( vec2_t ) * rg.world->numVertices;
 		rg.world->buffer->vertex[ ATTRIB_INDEX_TEXCOORD ].size = sizeof( texCoord_t ) * rg.world->numVertices;
 		rg.world->buffer->vertex[ ATTRIB_INDEX_WORLDPOS ].size = sizeof( worldPos_t ) * rg.world->numVertices;
 		rg.world->buffer->vertex[ ATTRIB_INDEX_COLOR ].size = sizeof( color4ub_t ) * rg.world->numVertices;
@@ -609,13 +609,13 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 
 	if ( glContext.directStateAccess ) {
 		rg.world->worldPos = (worldPos_t *)rg.world->buffer->vertex[ ATTRIB_INDEX_WORLDPOS ].data;
-		rg.world->xyz = (vec3_t *)( rg.world->buffer->vertex[ ATTRIB_INDEX_POSITION ].data );
+		rg.world->xyz = (vec2_t *)( rg.world->buffer->vertex[ ATTRIB_INDEX_POSITION ].data );
 		rg.world->uv = (texCoord_t *)( rg.world->buffer->vertex[ ATTRIB_INDEX_TEXCOORD ].data );
 		rg.world->color = (color4ub_t *)( rg.world->buffer->vertex[ ATTRIB_INDEX_COLOR ].data );
 	} else {
 		rg.world->vertices = rg.world->buffer->vertex[0].data;
 		rg.world->worldPos = (worldPos_t *)rg.world->vertices;
-		rg.world->xyz = (vec3_t *)( rg.world->worldPos + rg.world->numVertices );
+		rg.world->xyz = (vec2_t *)( rg.world->worldPos + rg.world->numVertices );
 		rg.world->uv = (texCoord_t *)( rg.world->xyz + rg.world->numVertices );
 		rg.world->color = (color4ub_t *)( rg.world->uv + rg.world->numVertices );
 	}

@@ -879,7 +879,7 @@ int ImGui_ImplOpenGL3_CreateDeviceObjects( void )
 		bd->IndexBufferOffset = 0;
 
 		renderImport.glEnableVertexArrayAttrib( bd->vaoId, 0 );
-		renderImport.glVertexArrayAttribFormat( bd->vaoId, 0, 3, GL_FLOAT, GL_FALSE, offsetof( ImDrawVert, pos ) );
+		renderImport.glVertexArrayAttribFormat( bd->vaoId, 0, 2, GL_FLOAT, GL_FALSE, offsetof( ImDrawVert, pos ) );
 		renderImport.glVertexArrayAttribBinding( bd->vaoId, 0, 0 );
 
 		renderImport.glEnableVertexArrayAttrib( bd->vaoId, 1 );
@@ -890,7 +890,7 @@ int ImGui_ImplOpenGL3_CreateDeviceObjects( void )
 		renderImport.glVertexArrayAttribFormat( bd->vaoId, 2, 4, GL_UNSIGNED_BYTE, GL_TRUE, offsetof( ImDrawVert, col ) );
 		renderImport.glVertexArrayAttribBinding( bd->vaoId, 2, 0 );
 
-		renderImport.glVertexArrayVertexBuffer( bd->vaoId, 0, bd->VboHandle, 0, sizeof( drawVert_t ) );
+		renderImport.glVertexArrayVertexBuffer( bd->vaoId, 0, bd->VboHandle, 0, sizeof( ImDrawVert ) );
 		renderImport.glVertexArrayElementBuffer( bd->vaoId, bd->ElementsHandle );
 	}
 	else {

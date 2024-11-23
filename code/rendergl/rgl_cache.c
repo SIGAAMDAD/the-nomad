@@ -242,10 +242,10 @@ void R_InitGPUBuffers( void )
 //	if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
 		// NOTE: NEVER CHANGE THIS
 		srfVert_t quadVertices[] = {
-			{ { 0, 0 }, { -1.0f, -1.0f, 0.0f }, { 0.0f, 0.0f }, { 1, 1, 1, 1 } },
-			{ { 0, 0 }, {  1.0f, -1.0f, 0.0f }, { 1.0f, 0.0f }, { 1, 1, 1, 1 } },
-			{ { 0, 0 }, {  1.0f,  1.0f, 0.0f }, { 1.0f, 1.0f }, { 1, 1, 1, 1 } },
-			{ { 0, 0 }, { -1.0f,  1.0f, 0.0f }, { 0.0f, 1.0f }, { 1, 1, 1, 1 } },
+			{ { 0, 0 }, { -1.0f, -1.0f }, { 0.0f, 0.0f }, { 1, 1, 1, 1 } },
+			{ { 0, 0 }, {  1.0f, -1.0f }, { 1.0f, 0.0f }, { 1, 1, 1, 1 } },
+			{ { 0, 0 }, {  1.0f,  1.0f }, { 1.0f, 1.0f }, { 1, 1, 1, 1 } },
+			{ { 0, 0 }, { -1.0f,  1.0f }, { 0.0f, 1.0f }, { 1, 1, 1, 1 } },
 		};
 
 		rg.buffers[ rg.numBuffers ] = rg.renderPassVBO = ri.Hunk_Alloc( sizeof( *rg.renderPassVBO ), h_low );
@@ -257,7 +257,7 @@ void R_InitGPUBuffers( void )
 		rg.renderPassVBO->attribs[ ATTRIB_INDEX_POSITION ].type			= GL_FLOAT;
 		rg.renderPassVBO->attribs[ ATTRIB_INDEX_TEXCOORD ].type			= GL_FLOAT;
 
-		rg.renderPassVBO->attribs[ ATTRIB_INDEX_POSITION ].count		= 3;
+		rg.renderPassVBO->attribs[ ATTRIB_INDEX_POSITION ].count		= 2;
 		rg.renderPassVBO->attribs[ ATTRIB_INDEX_TEXCOORD ].count		= 2;
 
 		rg.renderPassVBO->attribs[ ATTRIB_INDEX_POSITION ].normalized	= GL_FALSE;
@@ -324,7 +324,7 @@ void R_InitGPUBuffers( void )
 	attribs[ATTRIB_INDEX_COLOR].enabled			= qtrue;
 	attribs[ATTRIB_INDEX_WORLDPOS].enabled		= qtrue;
 
-	attribs[ATTRIB_INDEX_POSITION].count		= 3;
+	attribs[ATTRIB_INDEX_POSITION].count		= 2;
 	attribs[ATTRIB_INDEX_TEXCOORD].count		= 2;
 	attribs[ATTRIB_INDEX_COLOR].count			= 4;
 	attribs[ATTRIB_INDEX_WORLDPOS].count		= 2;

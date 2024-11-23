@@ -439,7 +439,7 @@ typedef struct {
 
 typedef struct {
 	uint16_t		worldPos[2];
-	vec3_t			xyz;
+	vec2_t			xyz;
 	vec2_t			uv;
 //	color4ub_t		color;
 } drawVert_t;
@@ -454,7 +454,7 @@ typedef struct {
 
 typedef struct {
 	uint16_t		worldPos[2];
-	vec3_t			xyz;
+	vec2_t			xyz;
 	vec2_t			st;
 	color4ub_t		color;
 } srfVert_t;
@@ -979,7 +979,7 @@ typedef struct {
 	uint16_t numIndices;
 
 	worldPos_t *worldPos;
-	vec3_t *xyz;
+	vec2_t *xyz;
 	texCoord_t *uv;
 	color4ub_t *color;
 	drawVert_t *vertices;
@@ -1212,7 +1212,6 @@ typedef struct
 	uint64_t frontEndMsec;
 
 	shaderProgram_t genericShader[GENERICDEF_COUNT];
-//	shaderProgram_t lightallShader[LIGHTDEF_COUNT];
 	shaderProgram_t spriteShader;
 	shaderProgram_t imguiShader;
 	shaderProgram_t tileShader;

@@ -1,4 +1,4 @@
-in vec3 a_Position;
+in vec2 a_Position;
 in vec2 a_TexCoords;
 in vec4 a_Color;
 
@@ -78,12 +78,12 @@ vec2 GenTexCoords( int TCGen, vec3 position, vec3 normal, vec3 TCGenVector0, vec
 
 void main() {
 #if defined(USE_TCGEN)
-	vec2 texCoords = GenTexCoords( u_TCGen0, a_Position, vec3( 0.0 ), u_TCGen0Vector0, u_TCGen0Vector1 );
+	vec2 texCoords = GenTexCoords( u_TCGen0, vec3( a_Position.xy, 0.0 ), vec3( 0.0 ), u_TCGen0Vector0, u_TCGen0Vector1 );
 #else
 	vec2 texCoords = a_TexCoords;
 #endif
 #if defined(USE_TCMOD)
-	v_TexCoords = ModTexCoords( texCoords, a_Position, u_DiffuseTexMatrix, u_DiffuseTexOffTurb );
+	v_TexCoords = ModTexCoords( texCoords, vec3( a_Position.xy, 0.0 ), u_DiffuseTexMatrix, u_DiffuseTexOffTurb );
 #else
 	v_TexCoords = texCoords;
 #endif

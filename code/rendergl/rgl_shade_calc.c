@@ -127,7 +127,6 @@ static void RB_CalcDeformVertexes( deformStage_t *ds )
 			
 			vtx->xyz[0] += offset[0] * scale;
 			vtx->xyz[1] += offset[1] * scale;
-			vtx->xyz[2] += offset[2] * scale;
 		}
 	}
 	else
@@ -136,7 +135,7 @@ static void RB_CalcDeformVertexes( deformStage_t *ds )
 
 		for ( i = 0; i < backend.drawBatch.vtxOffset; i++, vtx++ )
 		{
-			float off = ( vtx->xyz[0] + vtx->xyz[1] + vtx->xyz[2] ) * ds->deformationSpread;
+			float off = ( vtx->xyz[0] + vtx->xyz[1] ) * ds->deformationSpread;
 
 			scale = WAVEVALUE( table, ds->deformationWave.base, 
 				ds->deformationWave.amplitude,
@@ -147,7 +146,6 @@ static void RB_CalcDeformVertexes( deformStage_t *ds )
 
 			vtx->xyz[0] += offset[0] * scale;
 			vtx->xyz[1] += offset[1] * scale;
-			vtx->xyz[2] += offset[2] * scale;
 		}
 	}
 }
@@ -226,7 +224,6 @@ static void RB_CalcBulgeVertexes( deformStage_t *ds ) {
 			
 		vtx[xyz].xyz[0] += fNormal[0] * scale;
 		vtx[xyz].xyz[1] += fNormal[1] * scale;
-		vtx[xyz].xyz[2] += fNormal[2] * scale;
 	}
 }
 
@@ -509,7 +506,6 @@ static void Autosprite2Deform( void ) {
 
 			mid[j][0] = 0.5f * (v1->xyz[0] + v2->xyz[0]);
 			mid[j][1] = 0.5f * (v1->xyz[1] + v2->xyz[1]);
-			mid[j][2] = 0.5f * (v1->xyz[2] + v2->xyz[2]);
 		}
 
 		// find the vector of the major axis

@@ -86,7 +86,7 @@
 
 #define IMGUI_OVERRIDE_DRAWVERT_STRUCT_LAYOUT \
 	struct ImDrawVert { \
-		ImVec3			pos; \
+		ImVec2			pos; \
 		ImVec2			uv; \
 		ImU32			col; \
 	};

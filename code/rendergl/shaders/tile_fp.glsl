@@ -6,7 +6,6 @@ layout( location = 1 ) out vec4 a_BrightColor;
 in vec2 v_TexCoords;
 in vec4 v_Color;
 in flat uvec2 v_WorldPos;
-in vec3 v_Position;
 
 uniform float u_GammaAmount;
 uniform bool u_GamePaused;

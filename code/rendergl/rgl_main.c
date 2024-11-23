@@ -267,7 +267,7 @@ void R_DrawPolys( void )
 		}
 		
 		for ( j = 0; j < backend.refdef.polys[i].numVerts; j++ ) {
-			VectorCopy( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].xyz, backend.refdef.polys[i].verts[j].xyz );
+			VectorCopy2( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].xyz, backend.refdef.polys[i].verts[j].xyz );
 			VectorCopy2( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].st, backend.refdef.polys[i].verts[j].uv );
 			VectorCopy( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].worldPos, backend.refdef.polys[i].verts[j].worldPos );
 			backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].color.u32 = backend.refdef.polys[i].verts[j].modulate.u32;
@@ -293,7 +293,7 @@ void R_DrawWorld( void )
 	vec3_t origin;
 	drawVert_t *vtx;
 	drawVert_t verts[4];
-	vec3_t *xyz;
+	vec2_t *xyz;
 	vec3_t edge1, edge2;
 	vec2_t deltaUV1, deltaUV2;
 	texCoord_t *uv;
@@ -315,7 +315,7 @@ void R_DrawWorld( void )
 	}
 
 	// prepare the batch
-	RB_SetBatchBuffer( rg.world->buffer, rg.world->vertices, sizeof( vec3_t ), rg.world->indices, sizeof( glIndex_t ) );
+	RB_SetBatchBuffer( rg.world->buffer, rg.world->vertices, sizeof( vec2_t ), rg.world->indices, sizeof( glIndex_t ) );
 	GL_CheckErrors();
 
 	backend.drawBatch.shader = rg.world->shader;
@@ -336,10 +336,10 @@ void R_DrawWorld( void )
 				// convert the local world coordinates to OpenGL screen coordinates
 				R_WorldToGL( verts, pos );
 
-				VectorCopy( xyz[ 0 ], verts[0].xyz );
-				VectorCopy( xyz[ 1 ], verts[1].xyz );
-				VectorCopy( xyz[ 2 ], verts[2].xyz );
-				VectorCopy( xyz[ 3 ], verts[3].xyz );
+				VectorCopy2( xyz[ 0 ], verts[0].xyz );
+				VectorCopy2( xyz[ 1 ], verts[1].xyz );
+				VectorCopy2( xyz[ 2 ], verts[2].xyz );
+				VectorCopy2( xyz[ 3 ], verts[3].xyz );
 
 				xyz += 4;
 			}

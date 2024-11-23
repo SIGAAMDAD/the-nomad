@@ -1,4 +1,4 @@
-in vec3 a_Position;
+in vec2 a_Position;
 in vec2 a_TexCoords;
 in uvec2 a_WorldPos;
 in vec4 a_Color;
@@ -21,5 +21,5 @@ void main() {
 	v_WorldPos = a_WorldPos;
 	v_TexCoords = a_TexCoords;
 	
-    gl_Position = u_ModelViewProjection * vec4( a_Position, 1.0 );
+    gl_Position = u_ModelViewProjection * vec4( a_Position, 0.0, 1.0 );
 }
