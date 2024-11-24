@@ -635,6 +635,8 @@ const char *Sys_PIDFileName( const char *gamedir );
 void Sys_RemovePIDFile( const char *gamedir );
 qboolean Sys_LowPhysicalMemory( void );
 void Sys_Sleep( double msec );
+qboolean Sys_PIDIsRunning( int pid );
+int Sys_PID( void );
 
 void *Sys_AllocVirtualMemory( uint64_t nBytes );
 void Sys_ReleaseVirtualMemory( void *pMemory, uint64_t nBytes );

@@ -14,9 +14,6 @@
 #include "../win32/win_local.h"
 #pragma comment( lib, "dbghelp" )
 #pragma comment( lib, "psapi" )
-#pragma pack( push, before_imagehlp, 8 )
-#include <imagehlp.h>
-#pragma pack( pop, before_imagehlp )
 #endif
 #include "../system/sys_thread.h"
 #include "../system/sys_thread.inl"
@@ -305,7 +302,21 @@ GDR_INLINE bool ValidStackAddress( void *pAddress, const void *pNoLessThan, cons
 void Sys_DebugMessageBox( const char *title, const char *message )
 {
 #ifdef _WIN32
-    ::MessageBox( NULL, message, title, MB_OK );
+	TCHAR szMessage[ 1024 ], szTitle[ 1024 ];
+	const TCHAR *str;
+	size_t len;
+
+	len = strlen( message );
+	str = AtoW( message );
+	memset( szMessage, 0, sizeof( szMessage ) );
+	memcpy( szMessage, str, len * sizeof( *str ) );
+
+	len = strlen( title );
+	str = AtoW( title );
+	memset( szTitle, 0, sizeof( szTitle ) );
+	memcpy( szTitle, str, len * sizeof( *str ) );
+
+    ::MessageBox( NULL, szMessage, szTitle, MB_OK );
 #else
     int buttonid = 0;
     SDL_MessageBoxData boxData = { 0 };

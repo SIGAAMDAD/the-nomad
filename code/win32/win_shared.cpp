@@ -4,6 +4,7 @@
 #include "sys_win32.h"
 #include <errhandlingapi.h>
 #include <processthreadsapi.h>
+#include <wincrypt.h>
 
 uint64_t Sys_Milliseconds( void )
 {
@@ -253,6 +254,7 @@ FILE *Sys_FOpen( const char *ospath, const char *mode )
 	size_t length;
 	FILE *fp;
 	const TCHAR *path;
+	TCHAR _mode[3];
 
 	// Windows API ignores all trailing spaces and periods which can get around Quake 3 file system restrictions.
 	length = strlen( ospath );
@@ -261,9 +263,14 @@ FILE *Sys_FOpen( const char *ospath, const char *mode )
 	}
 
 	path = AtoW( ospath );
+	_mode[0] = mode[0];
+	_mode[1] = _mode[2] = 0;
+	if ( mode[1] ) {
+		_mode[1] = mode[1];
+	}
 
 #ifdef _UNICODE
-	wfopen_s( &fp, path, mode );
+	_wfopen_s( &fp, path, _mode );
 #else
 	fopen_s( &fp, path, mode );
 #endif
