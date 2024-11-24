@@ -38,6 +38,18 @@ namespace TheNomad::SGame::InfoSystem {
 			LoadEntityIds();
 		}
 
+		void Clear() {
+			m_ItemTypes.Clear();
+			m_MobTypes.Clear();
+			m_WeaponTypes.Clear();
+			m_AmmoTypes.Clear();
+
+			m_ItemInfos.Clear();
+			m_MobInfos.Clear();
+			m_WeaponInfos.Clear();
+			m_AmmoInfos.Clear();
+		}
+
 		private array<json@>@ LoadJSonFile( string& in path, const string& in modName, const string& in fileName,
 			const string& in ArrayName )
 		{
@@ -206,6 +218,9 @@ namespace TheNomad::SGame::InfoSystem {
 					
 					if ( m_ItemInfos.Contains( id ) ) {
 						@info = cast<ItemInfo@>( @m_ItemInfos[ id ] );
+						if ( @info is null ) {
+							GameError( "ItemInfo \"" + id + "\" is null!" );
+						}
 					} else {
 						@info = ItemInfo();
 						m_ItemInfos.Add( id, @info );
@@ -264,6 +279,9 @@ namespace TheNomad::SGame::InfoSystem {
 					
 					if ( m_WeaponInfos.Contains( id ) ) {
 						@info = cast<WeaponInfo@>( @m_WeaponInfos[ id ] );
+						if ( @info is null ) {
+							GameError( "WeaponInfo \"" + id + "\" is null!" );
+						}
 					} else {
 						@info = WeaponInfo();
 						m_WeaponInfos.Add( id, @info );

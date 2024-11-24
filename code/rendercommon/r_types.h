@@ -19,8 +19,8 @@
 #define MAX_VERTS_ON_POLY				1024
 
 typedef struct {
-    vec3_t xyz;
-	vec3_t worldPos;
+    vec2_t xyz;
+	vec2_t worldPos;
     vec2_t uv;
 	color4ub_t modulate;
 } polyVert_t;

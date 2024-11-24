@@ -1342,11 +1342,10 @@ void Mem_Dump( const char *fileName ) {
 		}
 		dump[i] = '\0';
 		if ( ( b->size >> 10 ) != 0 ) {
-			FS_Printf( f, "size: %6d KB: %s, line: %d [%s]\r\n", ( b->size >> 10 ), Mem_CleanupFileName(b->fileName), b->lineNumber, dump );
+			FS_Printf( f, "size: %6d KB: %s, line: %d [%s]\r\n", ( b->size >> 10 ), Mem_CleanupFileName( b->fileName ), b->lineNumber, dump );
 		}
 		else {
-//			FS_Printf( f, "size: %7d B: %s, line: %d [%s], call stack:\r\n", b->size, Mem_CleanupFileName(b->fileName), b->lineNumber, dump );
-			FS_Printf( f, "size: %7d B: %s, line: %d [%s], call stack: %s\r\n", b->size, Mem_CleanupFileName(b->fileName), b->lineNumber, dump );
+			FS_Printf( f, "size: %7d B: %s, line: %d [%s], call stack:\r\n", b->size, Mem_CleanupFileName( b->fileName ), b->lineNumber, dump );
 		}
 	}
 
@@ -1452,6 +1451,7 @@ void Mem_DumpCompressed( const char *fileName, memorySortType_t memSort, int num
 		nexta = a->next;
 
 		prevSorted = NULL;
+		nextSorted = NULL;
 		switch( memSort ) {
 			// sort on size
 			case MEMSORT_SIZE: {
@@ -1484,7 +1484,7 @@ void Mem_DumpCompressed( const char *fileName, memorySortType_t memSort, int num
 				}
 				break;
 			}
-		}
+		};
 		if ( !prevSorted ) {
 			a->next = sortedAllocInfo;
 			sortedAllocInfo = a;

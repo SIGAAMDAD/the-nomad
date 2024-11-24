@@ -214,6 +214,9 @@ int ModuleOnShutdown() {
 		TheNomad::GameSystem::GameSystems[i].OnShutdown();
 		@TheNomad::GameSystem::GameSystems[i] = null;
 	}
+
+	TheNomad::SGame::InfoSystem::InfoManager.Clear();
+
 	@TheNomad::Engine::CvarManager = null;
 	@TheNomad::GameSystem::GameManager = null;
 	@TheNomad::SGame::LevelManager = null;
@@ -282,6 +285,7 @@ int ModuleOnLevelEnd() {
 		TheNomad::GameSystem::GameSystems[i].OnLevelEnd();
 	}
 
+	TheNomad::SGame::InfoSystem::InfoManager.Clear();
 	TheNomad::Engine::ResourceCache.ClearCache();
 	return 1;
 }

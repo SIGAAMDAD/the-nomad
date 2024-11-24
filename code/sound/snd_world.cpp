@@ -111,6 +111,8 @@ void CSoundWorld::Init( void )
 
 	m_pszChannels = (channel_t *)Hunk_Alloc( sizeof( *m_pszChannels ) * snd_maxChannels->i, h_high );
 
+	// unnecessary
+	/*
 	if ( !LoadOcclusionGeometry() ) {
 		wallCount = 0;
 		numVertices = 0;
@@ -185,6 +187,7 @@ void CSoundWorld::Init( void )
 		FS_WriteFile( va( "Cache/occlusion/%s.fsb.geom", COM_SkipPath( path ) ), savedGeometry, savedGeometrySize );
 		Hunk_FreeTempMemory( savedGeometry );
 	}
+	*/
 }
 
 void CSoundWorld::Update( void )
@@ -208,6 +211,7 @@ void CSoundWorld::Update( void )
 		em->channel->event->set3DAttributes( &attribs );
 		em->channel->event->setListenerMask( em->listenerMask );
 		em->channel->event->getPlaybackState( &state );
+		em->channel->event->setVolume( em->volume );
 
 		if ( state == FMOD_STUDIO_PLAYBACK_STOPPED ) {
 			em->channel->event->release();
@@ -259,10 +263,28 @@ void CSoundWorld::PlayEmitterSound( nhandle_t hEmitter, float nVolume, uint32_t 
 
 void CSoundWorld::SetListenerVolume( nhandle_t hListener, float nVolume )
 {
+	listener_t *listener;
+
+	if ( hListener >= m_nListenerCount || hListener < 0 ) {
+		N_Error( ERR_DROP, "CSoundWorld::SetListenerVolume: invalid listener ID %i", hListener );
+	}
+
+	listener = &m_szListeners[ hListener ];
+
+	listener->volume = nVolume;
 }
 
 void CSoundWorld::SetListenerAudioMask( nhandle_t hListener, uint32_t nMask )
 {
+	listener_t *listener;
+
+	if ( hListener >= m_nListenerCount || hListener < 0 ) {
+		N_Error( ERR_DROP, "CSoundWorld::SetListenerAudioMask: invalid listener ID %i", hListener );
+	}
+
+	listener = &m_szListeners[ hListener ];
+
+	listener->listenerMask = nMask;
 }
 
 void CSoundWorld::SetEmitterPosition( nhandle_t hEmitter, const vec3_t origin, float forward, float up, float speed )
@@ -312,6 +334,14 @@ void CSoundWorld::SetEmitterAudioMask( nhandle_t hEmitter, uint32_t nMask )
 
 void CSoundWorld::SetEmitterVolume( nhandle_t hEmitter, float nVolume )
 {
+	emitter_t *em;
+
+	if ( hEmitter >= m_nEmitterCount || hEmitter < 0 ) {
+		N_Error( ERR_DROP, "CSoundWorld::SetEmitterVolume: invalid emitter ID %i", hEmitter );
+	}
+
+	em = &m_pszEmitters[ hEmitter ];
+	em->volume = nVolume;
 }
 	
 nhandle_t CSoundWorld::PushListener( uint32_t nEntityNumber )

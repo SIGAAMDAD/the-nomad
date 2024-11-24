@@ -228,9 +228,10 @@ void R_DrawPolys( void )
 
 	rg.world->drawing = qtrue;
 
+	RE_ProcessDLights();
+
 	RB_SetBatchBuffer( backend.drawBuffer, backendData[ 0 ]->verts, sizeof( srfVert_t ),
 		backendData[ 0 ]->indices, sizeof( glIndex_t ) );
-	RE_ProcessDLights();
 
 	// sort the polys to be more efficient with our shaders
 	R_RadixSort( backend.refdef.polys, backend.refdef.numPolys );
@@ -269,7 +270,7 @@ void R_DrawPolys( void )
 		for ( j = 0; j < backend.refdef.polys[i].numVerts; j++ ) {
 			VectorCopy2( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].xyz, backend.refdef.polys[i].verts[j].xyz );
 			VectorCopy2( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].st, backend.refdef.polys[i].verts[j].uv );
-			VectorCopy( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].worldPos, backend.refdef.polys[i].verts[j].worldPos );
+			VectorCopy2( backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].worldPos, backend.refdef.polys[i].verts[j].worldPos );
 			backendData[ rg.smpFrame ]->verts[ backend.drawBatch.vtxOffset ].color.u32 = backend.refdef.polys[i].verts[j].modulate.u32;
 
 			backend.drawBatch.vtxOffset++;

@@ -558,7 +558,11 @@ static void RB_StageIteratorGeneric( shader_t *shader )
 		}
 
 		if ( rg.world && rg.world->drawing ) {
-			sp = &rg.tileShader;
+			if ( backend.drawBatch.vtxDataSize == sizeof( srfVert_t ) ) {
+				sp = &rg.spriteShader;
+			} else if ( backend.drawBatch.vtxDataSize == sizeof( vec2_t ) ) {
+				sp = &rg.tileShader;
+			}
 		}
 		else {
 			if ( backend.depthFill ) {

@@ -83,6 +83,7 @@ typedef struct emitter_s {
 	float forward;
 	float up;
 	float velocity;
+	float volume;
 } emitter_t;
 
 typedef struct {

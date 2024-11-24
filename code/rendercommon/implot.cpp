@@ -125,9 +125,13 @@ You can read releases logs https://github.com/epezent/implot/releases for more d
 
 */
 
+#ifndef IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS
+#endif
 #include "implot.h"
+#ifndef IMGUI_DISABLE
 #include "implot_internal.h"
+#include "imgui_internal.h"
 
 #include <stdlib.h>
 
@@ -5171,7 +5175,7 @@ void ShowUserGuide() {
     ImGui::Indent();
         ImGui::BulletText("Left-click drag on axis labels to pan an individual axis.");
     ImGui::Unindent();
-    ImGui::BulletText("Scroll in the plot area to zoom both X any Y axes.");
+    ImGui::BulletText("Scroll in the plot area to zoom both X and Y axes.");
     ImGui::Indent();
         ImGui::BulletText("Scroll on axis labels to zoom an individual axis.");
     ImGui::Unindent();
@@ -5883,3 +5887,5 @@ bool BeginPlot(const char* title, const char* x_label, const char* y1_label, con
 #endif
 
 }  // namespace ImPlot
+
+#endif // #ifndef IMGUI_DISABLE

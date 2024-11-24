@@ -230,9 +230,14 @@ void RE_ProcessDLights( void )
 			dlight++;
 		}
 	}
-	GLSL_UseProgram( &rg.tileShader );
-	GLSL_SetUniformInt( &rg.tileShader, UNIFORM_NUM_LIGHTS, numLights );
-	GLSL_ShaderBufferData( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, sizeof( *gpuLight ) * numLights, 0, qfalse );
+	if ( r_dynamiclight->i ) {
+		GLSL_UseProgram( &rg.tileShader );
+		GLSL_SetUniformInt( &rg.tileShader, UNIFORM_NUM_LIGHTS, numLights );
+		GLSL_ShaderBufferData( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, sizeof( *gpuLight ) * numLights, 0, qfalse );
+
+		GLSL_UseProgram( &rg.spriteShader );
+		GLSL_SetUniformInt( &rg.spriteShader, UNIFORM_NUM_LIGHTS, numLights );
+	}
 }
 
 void RE_ProcessEntities( void )

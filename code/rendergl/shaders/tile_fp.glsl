@@ -1,11 +1,10 @@
-#if !defined(GLSL_LEGACY)
 layout( location = 0 ) out vec4 a_Color;
 layout( location = 1 ) out vec4 a_BrightColor;
-#endif
 
 in vec2 v_TexCoords;
 in vec4 v_Color;
 in flat uvec2 v_WorldPos;
+in vec3 v_LightingColor;
 
 uniform float u_GammaAmount;
 uniform bool u_GamePaused;
@@ -72,12 +71,6 @@ vec3 CalcNormal() {
 #endif
 }
 
-vec3 CalcScreenSpaceNormal( vec3 position ) {
-	vec3 dx = dFdx( position );
-	vec3 dy = dFdy( position );
-	return normalize( cross( dx, dy ) );
-}
-
 vec3 CalcSpecular() {
 #if defined(USE_SPECULARMAP)
 	vec3 upper = texture( u_SpecularMap, v_TexCoords ).rgb;
@@ -125,8 +118,6 @@ vec3 CalcPointLight( Light light ) {
 
 	attenuation = ( light.constant + light.linear + light.quadratic * ( light.range * light.range ) );
 	switch ( u_LightingQuality ) {
-	case QUALITY_LOW:
-		return ( diffuse * attenuation );
 	case QUALITY_NORMAL:
 		const vec3 normal = CalcNormal();
 		return ( mix( diffuse, normal, 0.025 ) * attenuation );	
@@ -143,6 +134,10 @@ vec3 CalcPointLight( Light light ) {
 }
 
 void ApplyLighting() {
+	if ( u_LightingQuality == QUALITY_LOW ) {
+		a_Color.rgb *= v_LightingColor;
+		return;
+	}
 	for ( int i = 0; i < u_NumLights; i++ ) {
 		a_Color.rgb += CalcPointLight( u_LightData[i] );
 	}

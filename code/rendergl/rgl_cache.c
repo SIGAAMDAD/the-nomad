@@ -242,10 +242,10 @@ void R_InitGPUBuffers( void )
 //	if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
 		// NOTE: NEVER CHANGE THIS
 		srfVert_t quadVertices[] = {
-			{ { 0, 0 }, { -1.0f, -1.0f }, { 0.0f, 0.0f }, { 1, 1, 1, 1 } },
-			{ { 0, 0 }, {  1.0f, -1.0f }, { 1.0f, 0.0f }, { 1, 1, 1, 1 } },
-			{ { 0, 0 }, {  1.0f,  1.0f }, { 1.0f, 1.0f }, { 1, 1, 1, 1 } },
-			{ { 0, 0 }, { -1.0f,  1.0f }, { 0.0f, 1.0f }, { 1, 1, 1, 1 } },
+			{ { 0.0f, 0.0f  }, { -1.0f, -1.0f }, { 0.0f, 0.0f }, { 1, 1, 1, 1 } },
+			{ { 0.0f, 0.0f  }, {  1.0f, -1.0f }, { 1.0f, 0.0f }, { 1, 1, 1, 1 } },
+			{ { 0.0f, 0.0f  }, {  1.0f,  1.0f }, { 1.0f, 1.0f }, { 1, 1, 1, 1 } },
+			{ { 0.0f, 0.0f  }, { -1.0f,  1.0f }, { 0.0f, 1.0f }, { 1, 1, 1, 1 } },
 		};
 
 		rg.buffers[ rg.numBuffers ] = rg.renderPassVBO = ri.Hunk_Alloc( sizeof( *rg.renderPassVBO ), h_low );
@@ -332,7 +332,7 @@ void R_InitGPUBuffers( void )
 	attribs[ATTRIB_INDEX_POSITION].type			= GL_FLOAT;
 	attribs[ATTRIB_INDEX_TEXCOORD].type			= GL_FLOAT;
 	attribs[ATTRIB_INDEX_COLOR].type			= GL_UNSIGNED_BYTE;
-	attribs[ATTRIB_INDEX_WORLDPOS].type			= GL_UNSIGNED_SHORT;
+	attribs[ATTRIB_INDEX_WORLDPOS].type			= GL_FLOAT;
 
 	attribs[ATTRIB_INDEX_POSITION].index		= ATTRIB_INDEX_POSITION;
 	attribs[ATTRIB_INDEX_TEXCOORD].index		= ATTRIB_INDEX_TEXCOORD;
@@ -819,8 +819,8 @@ void RB_SetBatchBuffer( vertexBuffer_t *buffer, void *vertexBuffer, uintptr_t vt
     backend.drawBatch.vtxDataSize = vtxSize;
     backend.drawBatch.idxDataSize = idxSize;
 	
-	backend.drawBatch.maxVertices = 4*1024*1024;
-	backend.drawBatch.maxIndices = 4*1024*1024;
+	backend.drawBatch.maxVertices = sizeof( srfVert_t ) * ( r_maxPolys->i * 4 );
+	backend.drawBatch.maxIndices = sizeof( glIndex_t ) * ( r_maxPolys->i * 6 );
 
     backend.drawBatch.vertices = vertexBuffer;
     backend.drawBatch.indices = indexBuffer;

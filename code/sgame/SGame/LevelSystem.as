@@ -703,7 +703,7 @@ namespace TheNomad::SGame {
 
 	GameState GlobalState;
 
-	LevelSystem@ LevelManager;
+	LevelSystem@ LevelManager = null;
 
 	TheNomad::Engine::SoundSystem::SoundEffect selectedSfx;
 	string[] SP_DIFF_STRINGS( TheNomad::GameSystem::GameDifficulty::NumDifficulties );

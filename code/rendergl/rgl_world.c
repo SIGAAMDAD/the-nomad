@@ -415,11 +415,11 @@ static void R_ProcessLights( void )
 	dirtype_t dir;
 	char extradefines[1024];
 	uint32_t attribs;
-	uint32_t stage;
-	GLuint64 *texture;
 
 	extern const char *fallbackShader_tile_vp;
 	extern const char *fallbackShader_tile_fp;
+	extern const char *fallbackShader_sprite_vp;
+	extern const char *fallbackShader_sprite_fp;
 
 	ri.Printf( PRINT_DEVELOPER, "Processing %u lights\n", rg.world->numLights );
 
@@ -429,7 +429,7 @@ static void R_ProcessLights( void )
 		rg.lightData = GLSL_InitUniformBuffer( "u_LightBuffer", NULL, sizeof( shaderLight_t ) * rg.world->numLights, qfalse );
 	}
 
-	attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_WORLDPOS;
+	attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_WORLDPOS | ATTRIB_COLOR;
 
 	extradefines[0] = '\0';
 	N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_LIGHT\n" );
@@ -460,7 +460,14 @@ static void R_ProcessLights( void )
 	GLSL_InitUniforms( &rg.tileShader );
 	GLSL_FinishGPUShader( &rg.tileShader );
 
-	GLSL_UseProgram( &rg.tileShader );
+	if ( !GLSL_InitGPUShader( &rg.spriteShader, "sprite", attribs, qtrue, extradefines, qtrue, fallbackShader_sprite_vp, fallbackShader_sprite_fp ) ) {
+		ri.Error( ERR_FATAL, "Could not load sprite shader!" );
+	}
+
+	GLSL_LinkUniformToShader( &rg.spriteShader, UNIFORM_LIGHTDATA, rg.lightData, qfalse, 0 );
+
+	GLSL_InitUniforms( &rg.spriteShader );
+	GLSL_FinishGPUShader( &rg.spriteShader );
 
 	lights = (shaderLight_t *)rg.lightData->data;
 	data = rg.world->lights;
@@ -476,9 +483,18 @@ static void R_ProcessLights( void )
 		lights[i].type = data[i].type;
 	}
 
+	GLSL_UseProgram( &rg.tileShader );
 	GLSL_SetUniformVec3( &rg.tileShader, UNIFORM_AMBIENTLIGHT, rg.world->ambientLightColor );
 	if ( !r_dynamiclight->i ) {
-		GLSL_SetUniformInt( &rg.tileShader, UNIFORM_NUM_LIGHTS, rg.world->numLights + backend.refdef.numDLights );
+		GLSL_SetUniformInt( &rg.tileShader, UNIFORM_NUM_LIGHTS, rg.world->numLights );
+		GLSL_ShaderBufferData( &rg.tileShader, UNIFORM_LIGHTDATA, rg.lightData, sizeof( *lights ) * rg.world->numLights, 0, qfalse );
+	}
+
+	GLSL_UseProgram( &rg.spriteShader );
+	GLSL_SetUniformVec3( &rg.spriteShader, UNIFORM_AMBIENTLIGHT, rg.world->ambientLightColor );
+	if ( !r_dynamiclight->i ) {
+		GLSL_SetUniformInt( &rg.spriteShader, UNIFORM_NUM_LIGHTS, rg.world->numLights );
+		GLSL_ShaderBufferData( &rg.spriteShader, UNIFORM_LIGHTDATA, rg.lightData, sizeof( *lights ) * rg.world->numLights, 0, qfalse );
 	}
 }
 

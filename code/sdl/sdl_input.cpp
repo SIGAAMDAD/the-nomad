@@ -32,7 +32,6 @@ SDL_Joystick *sticks[MAX_COOP_PLAYERS];
 static SDL_Cursor *mouse_cursor_active, *mouse_cursor;
 qboolean sdlImageActive = qfalse;
 
-
 static qboolean mouseAvailable = qfalse;
 static qboolean mouseActive = qfalse;
 

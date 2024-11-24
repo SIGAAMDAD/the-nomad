@@ -441,7 +441,7 @@ typedef struct {
 	uint16_t		worldPos[2];
 	vec2_t			xyz;
 	vec2_t			uv;
-//	color4ub_t		color;
+	color4ub_t		color;
 } drawVert_t;
 
 // when sgame directly specifies a polygon, it becomes a srfPoly_t
@@ -453,7 +453,7 @@ typedef struct {
 } srfPoly_t;
 
 typedef struct {
-	uint16_t		worldPos[2];
+	vec2_t			worldPos;
 	vec2_t			xyz;
 	vec2_t			st;
 	color4ub_t		color;
@@ -1153,9 +1153,7 @@ typedef struct
 
 	texture_t				*defaultImage;
 	texture_t				*scratchImage[ MAX_VIDEO_HANDLES ];
-//	texture_t				*fogImage;
 	texture_t				*dlightImage;	// inverse-quare highlight for projective adding
-	texture_t				*flareImage;
 	texture_t				*whiteImage;			// full of 0xff
 	texture_t				*identityLightImage;	// full of tr.identityLightByte	
 
@@ -1165,20 +1163,13 @@ typedef struct
 	texture_t				*renderImage;
 	texture_t				*renderDepthImage;
 	texture_t				*hdrDepthImage;
-	texture_t				*computeImage;
 
 	fbo_t					bloomPingPongFbo[ 2 ];
 	fbo_t					renderFbo;
 	fbo_t					msaaResolveFbo;
 	fbo_t                   ssaaResolveFbo;
-//	fbo_t					thirdBufferFbo;
 
 	shader_t				*defaultShader;
-
-	uint32_t				numLightmaps;
-	uint32_t				lightmapSize;
-	texture_t				**lightmaps;
-	texture_t				**deluxemaps;
 
 	uniformBuffer_t         *lightData;
 
@@ -1207,9 +1198,11 @@ typedef struct
 	float identityLight;
 	uint32_t identityLightByte;
 	uint32_t overbrightBits;
-//	uint32_t currentDrawBuffer;
 
 	uint64_t frontEndMsec;
+
+	uint32_t numLightmaps;
+	texture_t **lightmaps;
 
 	shaderProgram_t genericShader[GENERICDEF_COUNT];
 	shaderProgram_t spriteShader;
@@ -1218,7 +1211,6 @@ typedef struct
 	shaderProgram_t textureColorShader;
 	shaderProgram_t blurShader;
 	shaderProgram_t bloomResolveShader;
-	shaderProgram_t gaussianShader;
 
 	qboolean beganQuery;
 
