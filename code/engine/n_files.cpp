@@ -2037,7 +2037,7 @@ static qboolean FS_LoadBffFromFile( FILE *f )
 			goto __error;
 		}
 		if ( it.name >= header.namesLen ) {
-			Con_Printf( "bad name offset: %i (expecting less than %i)\n", it.name, header.namesLen );
+			Con_Printf( "bad name offset: %lu (expecting less than %lu)\n", it.name, header.namesLen );
 			goto __error;
 		}
 

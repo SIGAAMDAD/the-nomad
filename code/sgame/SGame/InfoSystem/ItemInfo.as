@@ -57,9 +57,7 @@ namespace TheNomad::SGame::InfoSystem {
 				iconShader = TheNomad::Engine::ResourceCache.GetShader( str );
 			}
 
-			TheNomad::GameSystem::GetString( name + "_DESC", description );
-
-			ConsolePrint( "Loaded item info for '" + name + "'\n" );
+			ConsolePrint( "Loaded WeaponInfo for \"" + entity.GetName() + "\", " + entity.GetID() + "\n" );
 
 			return true;
 		}

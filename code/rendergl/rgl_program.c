@@ -728,6 +728,7 @@ static int GLSL_InitGPUShader2( shaderProgram_t *program, const char *name, uint
 				return qfalse;
 			}
 		}
+		GLSL_LinkProgram( program->programId, fromCache );
 	} else {
 		nglProgramBinary( program->programId, cacheHashTable[ fromCache ].fmt, cacheHashTable[ fromCache ].data, cacheHashTable[ fromCache ].size );
 	}
@@ -743,8 +744,6 @@ static int GLSL_InitGPUShader2( shaderProgram_t *program, const char *name, uint
 	if ( attribs & ATTRIB_WORLDPOS ) {
 		nglBindAttribLocation( program->programId, ATTRIB_INDEX_WORLDPOS, "a_WorldPos" );
 	}
-	
-	GLSL_LinkProgram( program->programId, fromCache );
 
 	return qtrue;
 }

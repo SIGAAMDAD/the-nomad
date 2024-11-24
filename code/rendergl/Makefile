@@ -17,7 +17,7 @@ DEBUGDEF  =-D_NOMAD_DEBUG
 FTYPE     =-Og -g
 else
 DEBUGDEF  =
-FTYPE     =-Ofast -s
+FTYPE     =-Ofast -g
 endif
 
 VERSION_MAJOR = 1

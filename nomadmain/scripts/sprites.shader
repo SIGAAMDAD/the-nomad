@@ -192,7 +192,6 @@ sprites/players/raio_arms_1_0
 	{
 		texFilter nearest
 		map textures/sprites/players/raio_arms_1_0_n.dds
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		stage normalMap
 	}
 }
@@ -210,7 +209,6 @@ sprites/players/raio_arms_1_1
 	{
 		texFilter nearest
 		map textures/sprites/players/raio_arms_1_1_n.dds
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		stage normalMap
 	}
 }
@@ -228,7 +226,6 @@ sprites/players/raio_legs_0
 	{
 		texFilter nearest
 		map textures/sprites/players/raio_legs_0_n.dds
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		stage normalMap
 	}
 }
@@ -246,151 +243,169 @@ sprites/players/raio_legs_1
 	{
 		texFilter nearest
 		map textures/sprites/players/raio_legs_1_n.dds
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		stage normalMap
 	}
 }
 
-sprites/mobs/shotty/shotty_base
+sprites/mobs/shotty/base_0
 {
 	nomipmaps
 	nopicmip
 	{
 		texFilter nearest
-		map textures/sprites/mobs/shotty/shotty_base.dds
+		map textures/sprites/mobs/shotty/base_0.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		stage diffuseMap
 	}
 	{
 		texFilter nearest
-		map textures/sprites/mobs/shotty/shotty_base_n.dds
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		map textures/sprites/mobs/shotty/base_0_n.dds
 		stage normalMap
 	}
 }
 
-sprites/mobs/shotty/shotty_wounded
+sprites/mobs/shotty/wounded_0
 {
 	nomipmaps
 	nopicmip
 	{
 		texFilter nearest
-		map textures/sprites/mobs/shotty/shotty_wounded.dds
+		map textures/sprites/mobs/shotty/wounded_0.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		stage diffuseMap
 	}
 	{
 		texFilter nearest
-		map textures/sprites/mobs/shotty/shotty_wounded_n.dds
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		map textures/sprites/mobs/shotty/wounded_0_n.dds
 		stage normalMap
 	}
 }
 
-sprites/mobs/shotty/shotty_fatal
+sprites/mobs/shotty/fatal_0
 {
 	nomipmaps
 	nopicmip
 	{
 		texFilter nearest
-		map textures/sprites/mobs/shotty/shotty_fatal.dds
+		map textures/sprites/mobs/shotty/fatal_0.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		stage diffuseMap
 	}
 	{
 		texFilter nearest
-		map textures/sprites/mobs/shotty/shotty_fatal_n.dds
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		map textures/sprites/mobs/shotty/fatal_0_n.dds
 		stage normalMap
 	}
 }
 
-sprites/mobs/grunt/grunt_base
+sprites/mobs/grunt/base_0
 {
 	nomipmaps
 	nopicmip
 	{
 		texFilter nearest
-		map textures/sprites/mobs/grunt/grunt_base.dds
+		map textures/sprites/mobs/grunt/base_0.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		stage diffuseMap
 	}
 	{
 		texFilter nearest
-		map textures/sprites/mobs/grunt/grunt_base_n.dds
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		map textures/sprites/mobs/grunt/base_0_n.dds
 		stage normalMap
 	}
 }
 
-sprites/mobs/grunt/grunt_wounded_0
+sprites/mobs/grunt/base_1
 {
 	nomipmaps
 	nopicmip
 	{
 		texFilter nearest
-		map textures/sprites/mobs/grunt/grunt_wounded_0.dds
+		map textures/sprites/mobs/grunt/base_1.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		stage diffuseMap
 	}
 	{
 		texFilter nearest
-		map textures/sprites/mobs/grunt/grunt_wounded_0_n.dds
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		map textures/sprites/mobs/grunt/base_1_n.dds
 		stage normalMap
 	}
 }
 
-sprites/mobs/grunt/grunt_wounded_1
+sprites/mobs/grunt/wounded_0
 {
 	nomipmaps
 	nopicmip
 	{
 		texFilter nearest
-		map textures/sprites/mobs/grunt/grunt_wounded_1.dds
+		map textures/sprites/mobs/grunt/wounded_0.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		stage diffuseMap
 	}
 	{
 		texFilter nearest
-		map textures/sprites/mobs/grunt/grunt_wounded_1_n.dds
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		map textures/sprites/mobs/grunt/wounded_0_n.dds
 		stage normalMap
 	}
 }
 
-sprites/mobs/grunt/grunt_fatal_0
+sprites/mobs/grunt/wounded_1
 {
 	nomipmaps
 	nopicmip
 	{
 		texFilter nearest
-		map textures/sprites/mobs/grunt/grunt_fatal_0.dds
+		map textures/sprites/mobs/grunt/wounded_1.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		stage diffuseMap
 	}
 	{
 		texFilter nearest
-		map textures/sprites/mobs/grunt/grunt_fatal_0_n.dds
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		map textures/sprites/mobs/grunt/wounded_1_n.dds
 		stage normalMap
 	}
 }
 
-sprites/mobs/grunt/grunt_fatal_1
+sprites/mobs/grunt/fatal_0
 {
 	nomipmaps
 	nopicmip
 	{
 		texFilter nearest
-		map textures/sprites/mobs/grunt/grunt_fatal_1.dds
+		map textures/sprites/mobs/grunt/fatal_0.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		stage diffuseMap
 	}
 	{
 		texFilter nearest
-		map textures/sprites/mobs/grunt/grunt_fatal_1_n.dds
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		map textures/sprites/mobs/grunt/fatal_0_n.dds
 		stage normalMap
+	}
+}
+
+sprites/mobs/grunt/fatal_1
+{
+	nomipmaps
+	nopicmip
+	{
+		texFilter nearest
+		map textures/sprites/mobs/grunt/fatal_1.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		stage diffuseMap
+	}
+	{
+		texFilter nearest
+		map textures/sprites/mobs/grunt/fatal_1_n.dds
+		stage normalMap
+	}
+}
+
+sprites/weapons/plasma_smg_0
+{
+	nomipmaps
+	{
+		texFilter nearest
+		map textures/sprites/weapons/plasma_smg_0.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 	}
 }

@@ -236,7 +236,7 @@ static void MissionMenu_Event( void *ptr, int event )
 	switch ( ( (const menucommon_t *)ptr )->id ) {
 	case ID_CONTINUE:
 		Cvar_SetIntegerValue( "g_paused", 0 );
-		Cvar_Set( "sgame_SaveName", va( "SLOT_%lu", s_playMenu->selectedSaveSlot ) );
+		Cvar_Set( "sgame_SaveName", va( "SLOT_%i", s_playMenu->selectedSaveSlot ) );
 		gi.state = GS_LEVEL;
 		gi.playTimeStart = Sys_Milliseconds();
 //		Cbuf_ExecuteText( EXEC_APPEND, va( "setmap \"%s\"\n", gi.mapCache.mapList[ slot->gd.mapIndex ] ) );
@@ -282,14 +282,15 @@ static void PlayMenu_DrawNewGameEdit( void )
 	slot = &s_playMenu->saveSlots[ s_playMenu->selectedSaveSlot ];
 
 	focusedDif = 0;
-	for ( i = 0; i < DIF_VERY_HARD; i++ ) {
+	for ( i = 0; i < NUMDIFS; i++ ) {
 		Menu_DrawItemGeneric( &s_playMenu->difficulties[i].generic );
 		if ( s_playMenu->difficulties[i].generic.focused ) {
 			focusedDif = i;
 		}
 	}
 
-	ImGui::SetCursorScreenPos( ImVec2( 16 * ui->scale, 300 * ui->scale ) );
+	ImGui::SetWindowFontScale( 1.5f );
+	ImGui::SetCursorScreenPos( ImVec2( 16 * ui->scale, 600 * ui->scale ) );
 	FontCache()->SetActiveFont( RobotoMono );
 	ImGui::TextWrapped( "%s", difficultyTable[ focusedDif ].tooltip );
 
@@ -574,7 +575,7 @@ void PlayMenu_Cache( void )
 	s_playMenu->exit.text = "EXIT";
 
 	for ( i = 0; i < NUMDIFS; i++ ) {
-		s_playMenu->difficulties[i].color = color_white;
+		s_playMenu->difficulties[i].color = color_red;
 		s_playMenu->difficulties[i].text = difficulties[i];
 		s_playMenu->difficulties[i].generic.parent = &s_playMenu->menu;
 		s_playMenu->difficulties[i].generic.flags = QMF_HIGHLIGHT_IF_FOCUS;

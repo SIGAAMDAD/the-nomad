@@ -124,6 +124,8 @@ namespace TheNomad::SGame::InfoSystem {
 				ConsoleWarning( "invalid weapon info, WeaponProperties are invalid ( None, abide by physics pls ;) )\n" );
 				return false;
 			}
+
+			ConsolePrint( "Loaded WeaponInfo for \"" + entity.GetName() + "\", " + entity.GetID() + "\n" );
 			
 			return true;
 		}

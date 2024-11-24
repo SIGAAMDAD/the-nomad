@@ -10,7 +10,7 @@ FTYPE     =-Og -g
 endif
 else
 DEBUGDEF  =
-FTYPE     =-Ofast -s
+FTYPE     =-Ofast -g
 endif
 
 ifeq ($(shell uname -m),arm64)

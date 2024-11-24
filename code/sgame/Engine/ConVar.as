@@ -15,7 +15,7 @@ namespace TheNomad {
 			m_Value = value;
 			m_Flags = flags;
 			m_bTrackChanges = bTrackChanges;
-			Engine::CvarRegister( name, value, flags, m_IntValue, m_FloatValue, m_nModificationCount, m_nCvarHandle );
+			TheNomad::Engine::CvarRegister( name, value, flags, m_IntValue, m_FloatValue, m_nModificationCount, m_nCvarHandle );
 		}
 		
 		const string& GetName() const {
@@ -26,6 +26,9 @@ namespace TheNomad {
 		}
 		int32 GetInt() const {
 			return m_IntValue;
+		}
+		bool GetBool() const {
+			return m_IntValue == 1;
 		}
 		float GetFloat() const {
 			return m_FloatValue;
@@ -39,16 +42,18 @@ namespace TheNomad {
 		bool Track() const {
 			return m_bTrackChanges;
 		}
+
+		// implicit conversions aren't here because if anyone used them, it would be really fucking confusing
 		
 		void Set( const string& in value ) {
-			Engine::CvarSet( m_Name, value );
+			TheNomad::Engine::CvarSet( m_Name, value );
 		}
 		void Update() {
 			int64 intValue;
 			if ( m_nCvarHandle == FS_INVALID_HANDLE ) {
-				Engine::CvarRegister( m_Name, m_Value, m_Flags, intValue, m_FloatValue, m_nModificationCount, m_nCvarHandle );
+				TheNomad::Engine::CvarRegister( m_Name, m_Value, m_Flags, intValue, m_FloatValue, m_nModificationCount, m_nCvarHandle );
 			}
-			Engine::CvarUpdate( m_Value, intValue, m_FloatValue, m_nModificationCount, m_nCvarHandle );
+			TheNomad::Engine::CvarUpdate( m_Value, intValue, m_FloatValue, m_nModificationCount, m_nCvarHandle );
 			m_IntValue = intValue;
 		}
 		

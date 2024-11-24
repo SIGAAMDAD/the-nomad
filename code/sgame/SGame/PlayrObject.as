@@ -465,9 +465,9 @@ namespace TheNomad::SGame {
 				m_QuickShot.Think();
 			}
 
-			if ( ( m_iFlags & PF_USING_WEAPON ) != 0 ) {
+			if ( ( m_iFlags & PF_USING_WEAPON ) != 0 && @GetCurrentWeapon() !is null ) {
 				m_nFrameDamage += GetCurrentWeapon().Use( cast<EntityObject>( @this ), GetCurrentWeaponMode() );
-			} else if ( ( m_iFlags & PF_USING_WEAPON_ALT ) != 0 ) {
+			} else if ( ( m_iFlags & PF_USING_WEAPON_ALT ) != 0 && @GetCurrentWeapon() !is null ) {
 				m_nFrameDamage += GetCurrentWeapon().UseAlt( cast<EntityObject>( @this ), GetCurrentWeaponMode() );
 			}
 

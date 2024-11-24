@@ -389,7 +389,7 @@ static void SplashScreen_Draw( void )
 
 	switch ( s_splashScreen->splashPhase ) {
 	case SPLASH_SCREEN_LOGO: { // get attribution to 3rd party stuff done with
-		int cursorX = 100;
+		int cursorX = 80;
 
 		re.DrawImage( cursorX * ui->scale + ui->bias, 100 * ui->scale, 330 * ui->scale + ui->bias, 180 * ui->scale, 0, 0, 1, 1, s_splashScreen->companyLogoShader );
 		cursorX += 300 * ui->scale + ui->bias;

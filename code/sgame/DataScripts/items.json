@@ -28,7 +28,7 @@
 		},
 		{
 			"Type": "Consumable",
-			"Id": "item",
+			"Id": "item_stimpack",
 			"Name": "Stim Pack",
 			"Icon": "icons/icon_healthpack",
 			"SpriteOffsetX": 0,

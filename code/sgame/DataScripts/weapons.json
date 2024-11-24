@@ -4,16 +4,26 @@
 			"Id": "sidearm_murstar",
 			"Name": "Murstar Revolver",
 			"Type": "Sidearm",
-			"Cost": 200,
-			"Icon": "icons/iconw_murstar",
-			"PickupSfx": "sfx/items/pickup_murstar.ogg",
-			"UseSfx": "sfx/items/use_murstar.ogg",
-			"MagSize": 7,
 			"AmmoType": "Bullet",
-			"Range": 55.0,
-			"Damage": 78.0,
-			"Width": 0.9,
-			"Height": 0.9,
+			"RenderData": {
+				"SheetSize": [ 512, 512 ],
+				"SpriteSize": [ 64, 32 ],
+				"ShaderLeft": "sprites/weapons/plasma_smg_0",
+				"ShaderRight": "sprites/weapons/plasma_smg_1",
+				"Icon": "icons/iconw_plasma_smg"
+			},
+			"Stats": {
+				"MagSize": 7,
+				"Range": 55.0,
+				"Damage": 78.0,
+				"Width": 0.9,
+				"Height": 0.9
+			},
+			"Sounds": {
+				"Pickup": "event:/sfx/env/",
+				"Use": "event:/sfx/weapons/plasma_smg_use",
+				"Reload": "event:/sfx/weapons/plasma_smg_rld"
+			},
 			"WeaponProperties": [
 				"OneHandedSidearmFirearm",
 				"OneHandedBlunt"
@@ -23,16 +33,27 @@
 			"Id": "primary_plasma_smg",
 			"Name": "Plasma SMG",
 			"Type": "Primary",
-			"Cost": 10,
 			"Icon": "icons/iconw_plasma",
-			"PickupSfx": "sfx/items/pickup_plasma.ogg",
-			"UseSfx": "sfx/items/use_plasma.ogg",
-			"MagSize": 40,
 			"AmmoType": "Bullet",
-			"Range": 42.0,
-			"Damage": 23.5,
-			"Width": 0.9,
-			"Height": 0.9,
+			"RenderData": {
+				"SheetSize": [ 512, 512 ],
+				"SpriteSize": [ 64, 32 ],
+				"ShaderLeft": "sprites/weapons/plasma_smg_0",
+				"ShaderRight": "sprites/weapons/plasma_smg_1",
+				"Icon": "icons/iconw_plasma_smg"
+			},
+			"Stats": {
+				"MagSize": 40,
+				"Range": 42.0,
+				"Damage": 23.5,
+				"Width": 0.9,
+				"Height": 0.9
+			},
+			"Sounds": {
+				"Pickup": "event:/sfx/env/",
+				"Use": "event:/sfx/weapons/plasma_smg_use",
+				"Reload": "event:/sfx/weapons/plasma_smg_rld"
+			},
 			"WeaponProperties": [
 				"OneHandedPrimaryFirearm",
 				"OneHandedSidearmFirearm",
@@ -44,17 +65,22 @@
 			"Id": "primary_double_barrel",
 			"Name": "Asturion Double-Barrel",
 			"Type": "Primary",
-			"Cost": 20,
 			"Icon": "icons/iconw_db",
-			"PickupSfx": "sfx/items/pickup_db.ogg",
-			"UseSfx": "sfx/item/use_db.ogg",
 			"MagSize": 2,
 			"AmmoType": "Shell",
 			"Range": 55.0,
 			"Damage": 81.9,
 			"Width": 0.9,
 			"Height": 0.9,
-			"WeaponProperties": [ "TwoHandedPrimaryFirearm", "TwoHandedBlunt" ]
+			"Sounds": {
+				"Pickup": "event:/sfx/env/",
+				"Use": "event:/sfx/weapons/plasma_smg_use",
+				"Reload": "event:/sfx/weapons/plasma_smg_rld"
+			},
+			"WeaponProperties": [
+				"TwoHandedPrimaryFirearm",
+				"TwoHandedBlunt"
+			]
 		}
 	]
 }

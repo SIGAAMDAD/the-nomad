@@ -10,6 +10,11 @@
             "MapNameDifficulty_4": "maps/darkofthenight.bmf",
             "MapNameDifficulty_5": "maps/darkofthenight.bmf",
             "BeginLevelScript": "scripts/levels/darkofthenight.level",
+            "Music": {
+                "AmbientStealth": "event:/music/level0/ambience_music",
+                "AmbientEnvironment": "event:/music/level0/ambience_world",
+                "Combat": "event:/music/level0/combat"
+            },
             "RankS": {
                 "MinKills": 0,
                 "MinStyle": 0,

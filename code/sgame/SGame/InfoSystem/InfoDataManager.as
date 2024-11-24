@@ -36,6 +36,17 @@ namespace TheNomad::SGame::InfoSystem {
 			ConsolePrint( "Loading mod info files...\n" );
 
 			LoadEntityIds();
+			
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.DumpCache_f ), "print", true
+			);
+
+			if ( sgame_DebugMode.GetInt() == 1 ) {
+				DumpCache_f();
+			}
+		}
+
+		void DumpCache_f() const {
 		}
 
 		void Clear() {
@@ -218,9 +229,6 @@ namespace TheNomad::SGame::InfoSystem {
 					
 					if ( m_ItemInfos.Contains( id ) ) {
 						@info = cast<ItemInfo@>( @m_ItemInfos[ id ] );
-						if ( @info is null ) {
-							GameError( "ItemInfo \"" + id + "\" is null!" );
-						}
 					} else {
 						@info = ItemInfo();
 						m_ItemInfos.Add( id, @info );

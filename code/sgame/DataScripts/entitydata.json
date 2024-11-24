@@ -1,8 +1,9 @@
 {
     "MobData": [
-        { "Name": "mob_grunt", "Id": 0 },
-        { "Name": "mob_mercenary", "Id": 1 },
-        { "Name": "mob_hulk", "Id": 2 },
+        { "Name": "mob_merc_gatling", "Id": 0 },
+        { "Name": "mob_merc_shotgunner", "Id": 1 },
+        { "Name": "mob_zurgut_grunt", "Id": 2 },
+        { "Name": "mob_zurgut_hulk", "Id": 3 },
         { "Name": "mob_death", "Id": 100 }
     ],
     "ItemData": [
