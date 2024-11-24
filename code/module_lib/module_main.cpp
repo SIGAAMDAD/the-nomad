@@ -946,7 +946,7 @@ CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *
 
 	Mem_Init();
 
-//	asSetGlobalMemoryFunctions( AS_Alloc, AS_Free );
+	asSetGlobalMemoryFunctions( AS_Alloc, AS_Free );
 
 	g_pModuleLib = new ( Hunk_Alloc( sizeof( *g_pModuleLib ), h_high ) ) CModuleLib();
 

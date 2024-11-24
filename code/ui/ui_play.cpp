@@ -478,7 +478,7 @@ void UI_ReloadSaveFiles_f( void )
 			continue;
 		}
 
-		info->valid = g_pArchiveHandler->LoadPartial( va( "SaveData/%s.ngd", info->name ), &info->gd );
+		info->valid = g_pArchiveHandler->LoadPartial( va( "gamedata/SaveData/%s.ngd", info->name ), &info->gd );
 		if ( !info->valid ) {
 			Con_Printf( COLOR_YELLOW "WARNING: Failed to get valid header data from savefile '%s'\n", info->name );
 		}

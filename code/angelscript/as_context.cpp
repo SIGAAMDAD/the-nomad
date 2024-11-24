@@ -4931,6 +4931,7 @@ static const void *const dispatch_table[256] = {
 	INSTRUCTION(255): l_bc = (asDWORD*)255; goto case_FAULT;
 #endif
 
+#if asUSE_COMPUTED_GOTOS == 0
 #ifdef AS_DEBUG
 	default:
 		asASSERT(false);
@@ -4943,6 +4944,7 @@ static const void *const dispatch_table[256] = {
 		// it will know that the code will never
 		// reach this point
 		__assume(0);
+#endif
 #endif
 	} // end of switch
 

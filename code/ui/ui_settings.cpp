@@ -1886,7 +1886,7 @@ qboolean R_HasExtension( const char *ext )
 #define NUM_HUD_OPTIONS 4
 #define NUM_VSYNC_TYPES 3
 #define NUM_WINDOW_MODES 4
-#define NUM_WINDOW_SIZES NUMVIDMODES
+#define NUM_WINDOW_SIZES NUMVIDMODES + 1
 #define NUM_TEXTURE_FILTERS 4
 #define NUM_TEXTURE_DETAILS 5
 
