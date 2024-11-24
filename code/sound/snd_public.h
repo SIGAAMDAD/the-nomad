@@ -6,9 +6,6 @@
 #include "../engine/n_shared.h"
 #include <EASTL/string.h>
 #include <EASTL/vector.h>
-#include <sndfile.h>
-#include <ALsoft/alext.h>
-#include <ALsoft/al.h>
 #include <fmod/fmod.hpp>
 #include <fmod/fmod_studio.hpp>
 #include <EASTL/map.h>
