@@ -175,11 +175,10 @@ namespace TheNomad::GameSystem {
 		}
 
 		void Cast() {
-			CastRay( m_Start, m_End, m_Origin, m_nEntityNumber, m_nLength, m_nAngle, m_Flags );
+			CastRay( m_Start, m_Origin, m_nEntityNumber, m_nLength, m_nAngle, m_Flags );
 		}
 
 		vec3 m_Start = vec3( 0.0f );
-		vec3 m_End = vec3( 0.0f );
 		vec3 m_Origin = vec3( 0.0f );
 	    uint m_nEntityNumber = 0;
 		float m_nLength = 0.0f;

@@ -273,6 +273,8 @@ SRC=\
 	$(O)/module_lib/scriptparser.o \
 	$(O)/module_lib/contextmgr.o \
 	$(O)/module_lib/imgui_stdlib.o \
+	$(O)/module_lib/funcdefs/module_funcdef_sound.o \
+	$(O)/module_lib/funcdefs/module_funcdef_game.o \
 	\
 	$(O)/engine/n_common.o \
 	$(O)/engine/n_files.o \

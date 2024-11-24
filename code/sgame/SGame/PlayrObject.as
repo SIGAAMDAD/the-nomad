@@ -461,8 +461,6 @@ namespace TheNomad::SGame {
 		}
 		
 		void Think() override {
-			TheNomad::Engine::SoundSystem::SetWorldListener( m_Link.m_Origin );
-
 			if ( m_State.GetID() == StateNum::ST_PLAYR_QUICKSHOT ) {
 				m_QuickShot.Think();
 			}

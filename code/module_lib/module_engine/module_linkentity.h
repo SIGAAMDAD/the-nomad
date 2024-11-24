@@ -37,13 +37,13 @@ public:
     linkEntity_t handle;
 };
 
-CModuleLinkEntity::CModuleLinkEntity( void ) {
+GDR_INLINE CModuleLinkEntity::CModuleLinkEntity( void ) {
     memset( this, 0, sizeof( *this ) );
     m_bLinked = qfalse;
     ToLinkEntity( &handle );
 }
 
-CModuleLinkEntity::CModuleLinkEntity( const glm::vec3& origin, const CModuleBoundBox& bounds, uint32_t nEntityId, uint32_t nEntityType )
+GDR_INLINE CModuleLinkEntity::CModuleLinkEntity( const glm::vec3& origin, const CModuleBoundBox& bounds, uint32_t nEntityId, uint32_t nEntityType )
 {
     m_Origin = origin;
     m_Bounds = bounds;
@@ -55,38 +55,38 @@ CModuleLinkEntity::CModuleLinkEntity( const glm::vec3& origin, const CModuleBoun
     g_world->LinkEntity( &handle );
 }
 
-CModuleLinkEntity::~CModuleLinkEntity() {
+GDR_INLINE CModuleLinkEntity::~CModuleLinkEntity() {
     if ( m_bLinked ) {
         g_world->UnlinkEntity( &handle );
     }
 }
 
-CModuleLinkEntity& CModuleLinkEntity::operator=( const CModuleLinkEntity& other ) {
+GDR_INLINE CModuleLinkEntity& CModuleLinkEntity::operator=( const CModuleLinkEntity& other ) {
     memcpy( this, eastl::addressof( other ), sizeof( *this ) );
     return *this;
 }
 
-void CModuleLinkEntity::Update( void ) {
+GDR_INLINE void CModuleLinkEntity::Update( void ) {
     ToLinkEntity( &handle );
 }
 
-void CModuleLinkEntity::SetOrigin( const glm::vec3& origin ) {
+GDR_INLINE void CModuleLinkEntity::SetOrigin( const glm::vec3& origin ) {
     VectorCopy( m_Origin, origin );
 }
 
-void CModuleLinkEntity::SetBounds( const CModuleBoundBox& bounds ) {
+GDR_INLINE void CModuleLinkEntity::SetBounds( const CModuleBoundBox& bounds ) {
     m_Bounds = bounds;
 }
 
-const glm::vec3& CModuleLinkEntity::GetOrigin( void ) {
+GDR_INLINE const glm::vec3& CModuleLinkEntity::GetOrigin( void ) {
     return m_Origin;
 }
 
-const CModuleBoundBox& CModuleLinkEntity::GetBounds( void ) {
+GDR_INLINE const CModuleBoundBox& CModuleLinkEntity::GetBounds( void ) {
     return m_Bounds;
 }
 
-void CModuleLinkEntity::ToLinkEntity( linkEntity_t *ent ) {
+GDR_INLINE void CModuleLinkEntity::ToLinkEntity( linkEntity_t *ent ) {
     VectorCopy( ent->origin, m_Origin );
     VectorCopy( ent->bounds.mins, m_Bounds.mins );
     VectorCopy( ent->bounds.maxs, m_Bounds.maxs );

@@ -125,11 +125,11 @@ private:
 	
 	emitter_t *m_pszEmitters;
 	emitter_t m_EmitterList;
-	uint32_t m_nEmitterCount;
+	int32_t m_nEmitterCount;
 	
 	// one listener per player
 	listener_t m_szListeners[ 4 ];
-	uint32_t m_nListenerCount;
+	int32_t m_nListenerCount;
 
 	FMOD::Geometry *m_pGeometryBuffer;
 
@@ -210,6 +210,6 @@ extern cvar_t *snd_debugPrint;
 extern cvar_t *snd_noSound;
 extern cvar_t *snd_muteUnfocused;
 extern cvar_t *snd_maxChannels;
-extern CSoundWorld s_SoundWorld;
+extern CSoundWorld *s_SoundWorld;
 
 #endif

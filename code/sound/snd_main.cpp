@@ -15,7 +15,7 @@ cvar_t *snd_maxChannels;
 cvar_t *snd_speakerMode;
 cvar_t *snd_debug;
 
-CSoundWorld s_SoundWorld;
+CSoundWorld *s_SoundWorld;
 
 static FMOD::Studio::System *s_pStudioSystem;
 static FMOD::System *s_pCoreSystem;
@@ -277,9 +277,14 @@ void CSoundSystem::AddSourceToHash( CSoundSource *pSource )
 
 void CSoundSystem::ForceStop( void )
 {
-	for ( auto& it : m_szSources ) {
-		if ( it ) {
-			it->Stop();
+	uint32_t i;
+
+	if ( !gi.soundRegistered || !gi.soundStarted || !sndManager ) {
+		return;
+	}
+	for ( i = 0; i < MAX_SOUND_SOURCES; i++ ) {
+		if ( m_szSources[i] ) {
+			m_szSources[i]->Stop();
 		}
 	}
 	Snd_ClearLoopingTracks();
@@ -369,26 +374,26 @@ void CSoundSystem::Init( void )
 
 void CSoundSystem::Shutdown( void )
 {
+	uint32_t i;
+
 	Snd_ClearLoopingTracks();
 
 	ERRCHECK( m_pSFXBus->stopAllEvents( FMOD_STUDIO_STOP_IMMEDIATE ) );
 	ERRCHECK( m_pMusicBus->stopAllEvents( FMOD_STUDIO_STOP_IMMEDIATE ) );
 
 	m_szLoopingTracks.clear();
-	for ( auto& it : m_szSources ) {
-		if ( !it ) {
+	for ( i = 0; i < MAX_SOUND_SOURCES; i++ ) {
+		if ( !m_szSources[i] ) {
 			continue;
 		}
-		it->Release();
+		m_szSources[i]->Release();
 	}
-	for ( auto& it : m_szBanks ) {
-		if ( !it ) {
+	for ( i = 0; i < MAX_SOUND_BANKS; i++ ) {
+		if ( !m_szBanks[i] ) {
 			break;
 		}
-		it->Shutdown();
+		m_szBanks[i]->Shutdown();
 	}
-	memset( m_szSources, 0, sizeof( m_szSources ) );
-	memset( m_szBanks, 0, sizeof( m_szBanks ) );
 
 	m_nSources = 0;
 
@@ -397,7 +402,10 @@ void CSoundSystem::Shutdown( void )
 	gi.soundRegistered = qfalse;
 	gi.soundStarted = qfalse;
 
-	s_SoundWorld.Shutdown();
+	if ( s_SoundWorld ) {
+		s_SoundWorld->Shutdown();
+		s_SoundWorld = NULL;
+	}
 
 	if ( fmodLogFile ) {
 		FS_FClose( fmodLogFile );
@@ -710,7 +718,7 @@ void Snd_Shutdown( void )
 void Snd_Update( int msec )
 {
 	if ( gi.mapLoaded ) {
-		s_SoundWorld.Update();
+		s_SoundWorld->Update();
 	}
 	sndManager->Update();
 }
@@ -838,7 +846,7 @@ void Snd_Init( void )
 	Cvar_SetDescription( snd_speakerMode, "Sets the speaker mode used by fmod" );
 
 	// init sound manager
-	sndManager = (CSoundSystem *)Hunk_Alloc( sizeof( *sndManager ), h_low );
+	sndManager = (CSoundSystem *)Hunk_Alloc( sizeof( *sndManager ), h_high );
 	sndManager->Init();
 
 	Cmd_AddCommand( "snd.setvolume", Snd_SetVolume_f );

@@ -2179,8 +2179,6 @@ void G_ShutdownAll( void )
 
 	gi.rendererStarted = qfalse;
 	gi.soundStarted = qfalse;
-
-	g_world = NULL;
 }
 
 /*

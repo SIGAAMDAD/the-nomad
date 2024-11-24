@@ -80,9 +80,6 @@ GDR_INLINE void ValidateGlobalVar( const char *func, const char *name, int resul
 	}
 }
 
-typedef struct {
-	const char *funcDecl;
-	eastl::function<void( asIScriptGeneric * )> genericCallback;
-} scriptlib_funcdef_t;
+void ScriptLib_Register_Sound( void );
 
 #endif

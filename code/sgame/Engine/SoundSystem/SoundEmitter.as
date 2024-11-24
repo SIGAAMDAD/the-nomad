@@ -25,7 +25,7 @@ namespace TheNomad::Engine::SoundSystem {
 			m_nListenerMask = nMask;
 		}
 		void SetPosition( const vec3& in origin, float forward, float up, float velocity ) {
-			SetEmitterPosition( origin, forward, up, velocity );
+			SetEmitterPosition( m_hEmitter, origin, forward, up, velocity );
 		}
 
 		void PlaySound( const TheNomad::Engine::SoundSystem::SoundEffect& in sfx, float nVolume, uint nListenerMask ) {

@@ -119,7 +119,7 @@ namespace TheNomad::SGame {
 			if ( sgame_Difficulty.GetInt() < TheNomad::GameSystem::GameDifficulty::Hard ) {
 				return damage;
 			} else {
-				if ( Util::Distance( ray.m_End, ent.GetOrigin() ) <= 2.75f ) {
+				if ( Util::Distance( ray.m_Origin, ent.GetOrigin() ) <= 2.75f ) {
 					// close enough to the blood
 					return damage;
 				}

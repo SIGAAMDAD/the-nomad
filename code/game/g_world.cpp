@@ -200,8 +200,6 @@ void G_InitMapCache( void )
 
 	Con_Printf( "Got %lu map files\n", gi.mapCache.numMapFiles );
 
-	g_world = new ( Hunk_Alloc( sizeof( *g_world ), h_low ) ) CGameWorld();
-
 	gi.mapCache.mapList = (char **)Hunk_Alloc( sizeof( *gi.mapCache.mapList ) * gi.mapCache.numMapFiles, h_low );
 	for ( i = 0; i < gi.mapCache.numMapFiles; i++ ) {
 		Com_snprintf( path, sizeof( path ) - 1, "maps/%s", fileList[i] );
@@ -267,6 +265,8 @@ void G_SetMap_f( void ) {
 		gi.mapLoaded = qfalse;
 		gi.state = GS_INACTIVE;
 		gi.mapCache.currentMapLoaded = FS_INVALID_HANDLE;
+
+		g_world = NULL;
 
 		Hunk_ClearToMark();
 
@@ -388,10 +388,14 @@ void G_SetActiveMap( nhandle_t hMap, uint32_t *nCheckpoints, uint32_t *nSpawns, 
 	*pWidth = info->width;
 	*pHeight = info->height;
 
+	static CGameWorld gameWorld;
+	g_world = &gameWorld;
 	g_world->Init( &gi.mapCache.info );
 	Key_SetCatcher( Key_GetCatcher() | KEYCATCH_SGAME );
 
-	s_SoundWorld.Init();
+	static CSoundWorld soundWorld;
+	s_SoundWorld = &soundWorld;
+	s_SoundWorld->Init();
 
 	Cbuf_ExecuteText( EXEC_APPEND, va( "setmap %s\n", gi.mapCache.info.name ) );
 }
