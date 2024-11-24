@@ -52,7 +52,7 @@ vec3 FxaaLerp3( vec3 a, vec3 b, float amountOfA ) {
 vec4 FxaaTexOff( sampler2D tex, vec2 pos, ivec2 off, vec2 rcpFrame ) {
     float x = pos.x + float( off.x ) * rcpFrame.x;
     float y = pos.y + float( off.y ) * rcpFrame.y;
-    return texture2D( tex, vec2( x, y ) );
+    return texture( tex, vec2( x, y ) );
 }
 
 // pos is the output of FxaaVertexShader interpolated across screen.
@@ -184,11 +184,11 @@ vec4 ApplyFXAA( sampler2D tex, vec2 pos ) {
     for(int i = 0; i < FXAA_SEARCH_STEPS; i++) {
         if(!doneN)
         {
-            lumaEndN = FxaaLuma(texture2D(tex, posN.xy).xyz);
+            lumaEndN = FxaaLuma(texture(tex, posN.xy).xyz);
         }
         if(!doneP)
         {
-            lumaEndP = FxaaLuma(texture2D(tex, posP.xy).xyz);
+            lumaEndP = FxaaLuma(texture(tex, posP.xy).xyz);
         }
         
         doneN = doneN || (abs(lumaEndN - lumaN) >= gradientN);
@@ -222,7 +222,7 @@ vec4 ApplyFXAA( sampler2D tex, vec2 pos ) {
     float spanLength = (dstP + dstN);
     dstN = directionN ? dstN : dstP;
     float subPixelOffset = (0.5 + (dstN * (-1.0/spanLength))) * lengthSign;
-    vec3 rgbF = texture2D(tex, vec2(
+    vec3 rgbF = texture(tex, vec2(
         pos.x + (horzSpan ? 0.0 : subPixelOffset),
         pos.y + (horzSpan ? subPixelOffset : 0.0))).xyz;
     
@@ -286,11 +286,11 @@ vec4 fxaa(sampler2D tex, vec2 fragCoord, vec2 resolution,
 			vec2 v_rgbM) {
 	vec4 color;
 	vec2 inverseVP = vec2(1.0 / resolution.x, 1.0 / resolution.y);
-	vec3 rgbNW = texture2D(tex, v_rgbNW).xyz;
-	vec3 rgbNE = texture2D(tex, v_rgbNE).xyz;
-	vec3 rgbSW = texture2D(tex, v_rgbSW).xyz;
-	vec3 rgbSE = texture2D(tex, v_rgbSE).xyz;
-	vec4 texColor = texture2D(tex, v_rgbM);
+	vec3 rgbNW = texture(tex, v_rgbNW).xyz;
+	vec3 rgbNE = texture(tex, v_rgbNE).xyz;
+	vec3 rgbSW = texture(tex, v_rgbSW).xyz;
+	vec3 rgbSE = texture(tex, v_rgbSE).xyz;
+	vec4 texColor = texture(tex, v_rgbM);
 	vec3 rgbM  = texColor.xyz;
 	vec3 luma = vec3(0.299, 0.587, 0.114);
 	float lumaNW = dot(rgbNW, luma);
@@ -314,11 +314,11 @@ vec4 fxaa(sampler2D tex, vec2 fragCoord, vec2 resolution,
 			  dir * rcpDirMin)) * inverseVP;
 	
 	vec3 rgbA = 0.5 * (
-		texture2D(tex, fragCoord * inverseVP + dir * (1.0 / 3.0 - 0.5)).xyz +
-		texture2D(tex, fragCoord * inverseVP + dir * (2.0 / 3.0 - 0.5)).xyz);
+		texture(tex, fragCoord * inverseVP + dir * (1.0 / 3.0 - 0.5)).xyz +
+		texture(tex, fragCoord * inverseVP + dir * (2.0 / 3.0 - 0.5)).xyz);
 	vec3 rgbB = rgbA * 0.5 + 0.25 * (
-		texture2D(tex, fragCoord * inverseVP + dir * -0.5).xyz +
-		texture2D(tex, fragCoord * inverseVP + dir * 0.5).xyz);
+		texture(tex, fragCoord * inverseVP + dir * -0.5).xyz +
+		texture(tex, fragCoord * inverseVP + dir * 0.5).xyz);
 
 	float lumaB = dot(rgbB, luma);
 	if ((lumaB < lumaMin) || (lumaB > lumaMax))

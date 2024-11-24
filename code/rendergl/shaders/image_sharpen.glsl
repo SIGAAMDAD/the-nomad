@@ -14,7 +14,7 @@ uniform vec2 u_ScreenSize;
 
 vec4 sharpenImage( sampler2D tex, vec2 pos )
 {
-	vec4 colorInput = texture2D( tex, pos );
+	vec4 colorInput = texture( tex, pos );
   	
 	vec3 ori = colorInput.rgb;
 
@@ -30,10 +30,10 @@ vec4 sharpenImage( sampler2D tex, vec2 pos )
 	float px = 1.0 / u_ScreenSize[0];
 	float py = 1.0 / u_ScreenSize[1];
 
-	vec3 blur_ori = texture2D(tex, pos + vec2(px,-py) * 0.5 * offset_bias).rgb // South East
-		+ texture2D(tex, pos + vec2(-px,-py) * 0.5 * offset_bias).rgb  // South West
-		+ texture2D(tex, pos + vec2(px,py) * 0.5 * offset_bias).rgb // North East
-		+ texture2D(tex, pos + vec2(-px,py) * 0.5 * offset_bias).rgb // North West
+	vec3 blur_ori = texture(tex, pos + vec2(px,-py) * 0.5 * offset_bias).rgb // South East
+		+ texture(tex, pos + vec2(-px,-py) * 0.5 * offset_bias).rgb  // South West
+		+ texture(tex, pos + vec2(px,py) * 0.5 * offset_bias).rgb // North East
+		+ texture(tex, pos + vec2(-px,py) * 0.5 * offset_bias).rgb // North West
 		* 0.25;  // ( /= 4) Divide by the number of texture fetches
 
 	// -- Calculate the sharpening --

@@ -124,20 +124,22 @@ vec3 CalcPointLight( Light light ) {
 	range = light.range * light.brightness;
 
 	attenuation = ( light.constant + light.linear + light.quadratic * ( light.range * light.range ) );
-	if ( u_LightingQuality == 2 ) {
-		const vec3 specular = CalcSpecular();
+	switch ( u_LightingQuality ) {
+	case QUALITY_LOW:
+		return ( diffuse * attenuation );
+	case QUALITY_NORMAL:
 		const vec3 normal = CalcNormal();
-		diffuse = mix( diffuse, specular, 0.025 );
-		diffuse = mix( diffuse, normal, 0.025 );
-	}
-	else if ( u_LightingQuality == 1 ) {
-		const vec3 normal = CalcNormal();
-		diffuse = mix( diffuse, normal, 0.025 );
-	}
+		return ( mix( diffuse, normal, 0.025 ) * attenuation );	
+	default:
+		break;
+	};
 
-	diffuse *= attenuation;
+	const vec3 specular = CalcSpecular();
+	const vec3 normal = CalcNormal();
+	diffuse = mix( diffuse, specular, 0.025 );
+	diffuse = mix( diffuse, normal, 0.025 );
 
-	return diffuse;
+	return ( diffuse * attenuation );
 }
 
 void ApplyLighting() {

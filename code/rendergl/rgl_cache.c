@@ -354,8 +354,8 @@ void R_InitGPUBuffers( void )
 	attribs[ATTRIB_INDEX_COLOR].stride			= sizeof( srfVert_t );
 	attribs[ATTRIB_INDEX_WORLDPOS].stride		= sizeof( srfVert_t );
 
-	backend.drawBuffer = R_AllocateBuffer( "batchBuffer0", NULL, 4*1024*1024, NULL,
-		4*1024*1024, BUFFER_STREAM, attribs );
+	backend.drawBuffer = R_AllocateBuffer( "batchBuffer0", NULL, sizeof( srfVert_t ) * ( r_maxPolys->i * 4 ), NULL,
+		sizeof( glIndex_t ) * ( r_maxPolys->i * 6 ), BUFFER_STREAM, attribs );
 
 	VBO_BindNull();
 	
@@ -551,7 +551,7 @@ vertexBuffer_t *R_AllocateBuffer( const char *name, void *vertices, uint32_t ver
 					buf->vertex[i].offset = szAttribs[i].offset;
 					buf->vertex[i].target = GL_ARRAY_BUFFER;
 
-					nglNamedBufferStorage( buf->vertex[i].id, verticesSize, vertices, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
+					nglNamedBufferStorage( buf->vertex[i].id, verticesSize, vertices, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT );
 					GL_CheckErrors();
 
 					nglVertexArrayVertexBuffer( buf->vaoId, i, buf->vertex[i].id, szAttribs[i].offset, szAttribs[i].stride );
@@ -571,7 +571,7 @@ vertexBuffer_t *R_AllocateBuffer( const char *name, void *vertices, uint32_t ver
 			}
 			
 			nglCreateBuffers( 1, &buf->index.id );
-			nglNamedBufferStorage( buf->index.id, indicesSize, indices, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT );
+			nglNamedBufferStorage( buf->index.id, indicesSize, indices, GL_MAP_WRITE_BIT | GL_MAP_COHERENT_BIT | GL_MAP_PERSISTENT_BIT );
 			
 			nglVertexArrayElementBuffer( buf->vaoId, buf->index.id );
 		} else {
@@ -786,11 +786,11 @@ void VBO_MapBuffers( buffer_t *buf )
 
 	if ( HAVE_DIRECT_STATE_ACCESS ) {
 		buf->data = nglMapNamedBufferRange( buf->id, 0, buf->size, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT
-			| GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_PERSISTENT_BIT );
+			| GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT );
 	} else {
 		nglBindBuffer( buf->target, buf->id );
 		buf->data = nglMapBufferRange( buf->target, 0, buf->size, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT
-			| GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_PERSISTENT_BIT );
+			| GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT );
 		nglBindBuffer( buf->target, 0 );
 	}
 	
@@ -946,6 +946,7 @@ void RB_CommitDrawData( const void *verts, uint32_t numVerts, const void *indice
     // copy the data into the client side buffer
     //
 
+/*
     // we could be submitting either indices or vertices
     if ( verts && backend.drawBatch.buffer == backend.drawBuffer ) {
 		data = (byte *)( backend.drawBuffer->vertex->data ) + ( backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize );
@@ -955,6 +956,7 @@ void RB_CommitDrawData( const void *verts, uint32_t numVerts, const void *indice
 		data = (byte *)( backend.drawBuffer->index.data ) + ( backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize );
         memcpy( data, indices, numIndices * backend.drawBatch.idxDataSize );
     }
+*/
 
     backend.drawBatch.vtxOffset += numVerts;
     backend.drawBatch.idxOffset += numIndices;
