@@ -16,13 +16,13 @@
 fileHandle_t logfile = FS_INVALID_HANDLE;
 static fileHandle_t com_journalFile = FS_INVALID_HANDLE;
 
-static sysEvent_t eventQueue[MAX_EVENT_QUEUE];
-static sysEvent_t *lastEvent = eventQueue + MAX_EVENT_QUEUE - 1;
+static sysEvent_t *eventQueue;
+static sysEvent_t *lastEvent;
 static uint32_t eventHead = 0;
 static uint32_t eventTail = 0;
 static uint32_t com_pushedEventsHead;
 static uint32_t com_pushedEventsTail;
-static sysEvent_t com_pushedEvents[MAX_PUSHED_EVENTS];
+static sysEvent_t *com_pushedEvents;
 
 // renderer window states
 qboolean gw_minimized = qfalse;
@@ -277,16 +277,23 @@ EVENT LOOP
 
 static void Com_InitPushEvent( void )
 {
+	static sysEvent_t events[ MAX_EVENT_QUEUE ];
+	static sysEvent_t pushedEvents[ MAX_PUSHED_EVENTS ];
+
+	com_pushedEvents = pushedEvents;
+	eventQueue = events;
+	lastEvent = eventQueue + MAX_EVENT_QUEUE - 1;
+
 	// clear the static buffer array
 	// this requires SE_NONE to be accepted as a valid but NOP event
-	memset( com_pushedEvents, 0, sizeof( com_pushedEvents ) );
+	memset( com_pushedEvents, 0, sizeof( pushedEvents ) );
 	// reset counters while we are at it
 	// beware: GetEvent might still return an SE_NONE from the buffer
 	com_pushedEventsHead = 0;
 	com_pushedEventsTail = 0;
 }
 
-static const char *Com_EventName(sysEventType_t evType)
+static const char *Com_EventName( sysEventType_t evType )
 {
 	static const char *evNames[SE_MAX] = {
 		"SE_NONE",
@@ -297,29 +304,28 @@ static const char *Com_EventName(sysEventType_t evType)
 		"SE_WINDOW"
 	};
 
-	if ( (unsigned)evType >= arraylen(evNames) ) {
+	if ( (unsigned)evType >= arraylen( evNames ) ) {
 		return "SE_UNKOWN";
 	} else {
 		return evNames[evType];
 	}
 }
 
-static void Com_PushEvent(const sysEvent_t *event)
+static void Com_PushEvent( const sysEvent_t *event )
 {
 	sysEvent_t *ev;
 	static qboolean printedWarning = qfalse;
 
-	ev = &com_pushedEvents[com_pushedEventsTail & (MAX_EVENT_QUEUE - 1)];
+	ev = &com_pushedEvents[ com_pushedEventsTail & ( MAX_EVENT_QUEUE - 1 ) ];
 
-	if (com_pushedEventsHead - com_pushedEventsTail >= MAX_EVENT_QUEUE) {
+	if ( com_pushedEventsHead - com_pushedEventsTail >= MAX_EVENT_QUEUE ) {
 		// don't print the warning constantly, or it can give time for more...
-		if (!printedWarning) {
+		if ( !printedWarning ) {
 			printedWarning = qtrue;
-			Con_Printf(COLOR_YELLOW "Com_PushEvent: overflow\\n");
+			Con_Printf( COLOR_YELLOW "Com_PushEvent: overflow\n" );
 		}
-
-		if (ev->evPtr) {
-			Z_Free(ev->evPtr);
+		if ( ev->evPtr ) {
+			Z_Free( ev->evPtr );
 		}
 		com_pushedEventsTail++;
 	}
@@ -481,91 +487,16 @@ static keynum_t Com_TranslateSDL2ToQ3Key( SDL_Keysym *keysym, qboolean down )
 	return key;
 }
 
-/*
-static void Com_PumpKeyEvents(void)
-{
-	SDL_Event event;
-	uint32_t in_eventTime;
-
-	SDL_PumpEvents();
-
-	in_eventTime = Sys_Milliseconds();
-
-	while (SDL_PollEvent(&event)) {
-		if ( Key_GetCatcher() & KEYCATCH_CONSOLE || Key_GetCatcher() & KEYCATCH_UI ) {
-			ImGui_ImplSDL2_ProcessEvent(&event);
-		}
-
-		switch ( event.type ) {
-		case SDL_KEYDOWN:
-			Com_QueueEvent( in_eventTime, SE_KEY, Com_TranslateSDL2ToQ3Key( &event.key.keysym, qtrue ), qtrue, 0, NULL );
-			break;
-		case SDL_KEYUP:
-			Com_QueueEvent( in_eventTime, SE_KEY, Com_TranslateSDL2ToQ3Key( &event.key.keysym, qfalse ), qfalse, 0, NULL );
-			break;
-		case SDL_WINDOWEVENT:
-			switch (event.window.event) {
-			case SDL_WINDOWEVENT_MOVED: {
-				if (!((SDL_GetWindowFlags(G_GetSDLWindow()) & SDL_WINDOW_FULLSCREEN) && (SDL_GetWindowFlags(G_GetSDLWindow()) & SDL_WINDOW_FULLSCREEN_DESKTOP))
-				&& G_GetSDLWindow() && !(SDL_GetWindowFlags(G_GetSDLWindow()) & SDL_WINDOW_MINIMIZED)) {
-//					Cvar_SetIntegerValue( "vid_xpos", event.window.data1 );
-//					Cvar_SetIntegerValue( "vid_ypos", event.window.data2 );
-				}
-				break; }
-			case SDL_WINDOWEVENT_MINIMIZED:
-			case SDL_WINDOWEVENT_FOCUS_LOST: {
-				if ( gi.state == GS_LEVEL && gi.mapLoaded && !Cvar_VariableInteger( "g_paused" ) ) {
-					Cbuf_ExecuteText( EXEC_APPEND, "togglepausemenu\n" );
-				}
-				Key_ClearStates();
-				break; }
-			};
-			break;
-		case SDL_QUIT:
-			Cbuf_ExecuteText( EXEC_NOW, "quit\n" );
-			break;
-		case SDL_MOUSEMOTION:
-			if ( !event.motion.xrel && !event.motion.yrel ) {
-				break;
-			}
-			Com_QueueEvent( com_frameTime, SE_MOUSE, event.motion.xrel, event.motion.yrel, 0, NULL );
-			break;
-		case SDL_MOUSEBUTTONUP:
-		case SDL_MOUSEBUTTONDOWN: {
-			if ( event.button.button == SDL_BUTTON_LEFT ) {
-				Com_QueueEvent( com_frameTime, SE_KEY, KEY_MOUSE_LEFT, (event.type == SDL_MOUSEBUTTONDOWN ? qtrue : qfalse), 0, NULL );
-			} else if ( event.button.button == SDL_BUTTON_RIGHT ) {
-				Com_QueueEvent( com_frameTime, SE_KEY, KEY_MOUSE_RIGHT, (event.type == SDL_MOUSEBUTTONDOWN ? qtrue : qfalse), 0, NULL );
-			} else if ( event.button.button == SDL_BUTTON_MIDDLE ) {
-				Com_QueueEvent( com_frameTime, SE_KEY, KEY_MOUSE_MIDDLE, (event.type == SDL_MOUSEBUTTONDOWN ? qtrue : qfalse), 0, NULL );
-			}
-			break; }
-		case SDL_MOUSEWHEEL: {
-			if ( event.wheel.y > 0 ) {
-				Com_QueueEvent( com_frameTime, SE_KEY, KEY_WHEEL_UP, qtrue, 0, NULL );
-				Com_QueueEvent( com_frameTime, SE_KEY, KEY_WHEEL_UP, qfalse, 0, NULL );
-			}
-			else if ( event.wheel.y < 0 ) {
-				Com_QueueEvent( com_frameTime, SE_KEY, KEY_WHEEL_DOWN, qtrue, 0, NULL );
-				Com_QueueEvent( com_frameTime, SE_KEY, KEY_WHEEL_DOWN, qtrue, 0, NULL );
-			}
-			break; }
-		default:
-			break;
-		};
-	}
-}
-*/
-
-static sysEvent_t Com_GetSystemEvent(void)
+static sysEvent_t Com_GetSystemEvent( void )
 {
 	sysEvent_t ev;
 	const char *s;
 	int evTime;
 
 	// return if we have data
-	if (eventHead - eventTail > 0)
-		return eventQueue[(eventTail++) & MASK_QUEUED_EVENTS];
+	if ( eventHead - eventTail > 0 ) {
+		return eventQueue[ (eventTail++) & MASK_QUEUED_EVENTS ];
+	}
 	
 	Sys_SendKeyEvents();
 
@@ -584,11 +515,12 @@ static sysEvent_t Com_GetSystemEvent(void)
 	}
 
 	// return if we have data
-	if (eventHead - eventTail > 0)
+	if ( eventHead - eventTail > 0 ) {
 		return eventQueue[(eventTail++) & MASK_QUEUED_EVENTS];
+	}
 	
 	// create a new empty event to return
-	memset(&ev, 0, sizeof(ev));
+	memset( &ev, 0, sizeof( ev ) );
 	ev.evTime = evTime;
 
 	return ev;
@@ -643,7 +575,7 @@ void Com_QueueEvent( uint32_t evTime, sysEventType_t evType, uint32_t evValue, u
 {
 	sysEvent_t *ev;
 
-	if (evTime == 0) {
+	if ( evTime == 0 ) {
 		evTime = Sys_Milliseconds();
 	}
 
@@ -657,7 +589,7 @@ void Com_QueueEvent( uint32_t evTime, sysEventType_t evType, uint32_t evValue, u
 
 	ev = &eventQueue[eventHead & MASK_QUEUED_EVENTS];
 
-	if (eventHead - eventTail >= MAX_EVENT_QUEUE) {
+	if ( eventHead - eventTail >= MAX_EVENT_QUEUE ) {
 		Con_Printf("%s(type=%s,keys=(%i,%i),time=%i): overflow\n", __func__, Com_EventName(evType), evValue, evValue2, evTime);
 		// we are discarding an event, but avoid leaking memory
 		if (ev->evPtr) {
@@ -696,7 +628,7 @@ uint64_t Com_EventLoop( void )
 {
 	sysEvent_t ev;
 
-	while (1) {
+	while ( 1 ) {
 		ev = Com_GetEvent();
 
 		// no more events are available

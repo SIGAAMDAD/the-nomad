@@ -80,10 +80,9 @@ typedef struct {
 typedef struct linkEntity_s {
 	bbox_t bounds;
 	vec3_t origin;
-	uint32_t type;
-	uint32_t id;
 	uint32_t entityNumber;
-
+	uint32_t id;
+	uint32_t type;
 	struct linkEntity_s *next;
 	struct linkEntity_s *prev;
 } linkEntity_t;

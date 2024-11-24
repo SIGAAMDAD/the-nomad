@@ -9,7 +9,6 @@
 #include "../module_public.h"
 
 CModuleStringFactory *g_pStringFactory;
-static idBlockAlloc<byte, sizeof( string_t )> s_classAllocator;
 
 CModuleStringFactory *GetStringFactorySingleton( void )
 {
@@ -17,21 +16,11 @@ CModuleStringFactory *GetStringFactorySingleton( void )
 		CThreadMutex mutex;
 		
 		CThreadAutoLock<CThreadMutex> lock( mutex );
-		g_pStringFactory = new ( malloc( sizeof( *g_pStringFactory ) ) ) CModuleStringFactory();
+		static CModuleStringFactory stringFactory;
+		g_pStringFactory = &stringFactory;
 	}
 	return g_pStringFactory;
 }
-
-struct CStringFactoryDeleter {
-	~CStringFactoryDeleter() {
-		if ( g_pStringFactory ) {
-			g_pStringFactory->~CModuleStringFactory();
-			free( g_pStringFactory );
-		}
-	}
-};
-
-static CStringFactoryDeleter factoryDeleter;
 
 // This macro is used to avoid warnings about unused variables.
 // Usually where the variables are only used in debug mode.

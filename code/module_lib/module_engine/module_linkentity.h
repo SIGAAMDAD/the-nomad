@@ -91,8 +91,6 @@ GDR_INLINE void CModuleLinkEntity::ToLinkEntity( linkEntity_t *ent ) {
     VectorCopy( ent->bounds.mins, m_Bounds.mins );
     VectorCopy( ent->bounds.maxs, m_Bounds.maxs );
 
-    ent->id = m_nEntityId;
-    ent->type = m_nEntityType;
     ent->entityNumber = m_nEntityNumber;
 }
 

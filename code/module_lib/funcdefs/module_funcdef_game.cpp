@@ -101,6 +101,16 @@ bool CModuleBoundBox::LineIntersection( const glm::vec3& start, const glm::vec3&
 	return true;
 }
 
+bool CModuleBoundBox::ContainsPoint( const glm::vec3& p ) const
+{
+	if ( p[0] < mins[0] || p[1] < mins[1] || p[2] < mins[2]
+		|| p[0] > maxs[0] || p[1] > maxs[1] || p[2] > maxs[2] )
+	{
+		return false;
+	}
+	return true;
+}
+
 bool CModuleBoundBox::RayIntersection( const glm::vec3& start, const glm::vec3& dir, float& scale ) const {
 	int i, ax0, ax1, ax2, side, inside;
 	float f;
@@ -327,6 +337,12 @@ void ScriptLib_Register_Game( void )
 		asMETHODPR( CModuleBoundBox, operator=, ( const CModuleBoundBox& ), CModuleBoundBox& ), asCALL_THISCALL );
 	REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::BBox", "void MakeBounds( const vec3& in )",
 		asMETHODPR( CModuleBoundBox, MakeBounds, ( const glm::vec3& ), void ), asCALL_THISCALL );
+	REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::BBox", "bool LineIntersection( const vec3& in, const vec3& in )",
+		asMETHODPR( CModuleBoundBox, LineIntersection, ( const glm::vec3&, const glm::vec3& ) const, bool ), asCALL_THISCALL );
+	REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::BBox", "bool ContainsPoint( const vec3& in )",
+		asMETHODPR( CModuleBoundBox, ContainsPoint, ( const glm::vec3& ) const, bool ), asCALL_THISCALL );
+	REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::BBox", "bool RayIntersection( const vec3& in, const vec3& in, float )",
+		asMETHODPR( CModuleBoundBox, RayIntersection, ( const glm::vec3&, const glm::vec3&, float& ) const, bool ), asCALL_THISCALL );
 
 	REGISTER_OBJECT_TYPE( "LinkEntity", CModuleLinkEntity, asOBJ_VALUE );
 	REGISTER_OBJECT_BEHAVIOUR( "TheNomad::GameSystem::LinkEntity", asBEHAVE_CONSTRUCT, "void f()", asFUNCTION( LinkEntityConstruct ), asCALL_CDECL_OBJFIRST );
@@ -338,7 +354,7 @@ void ScriptLib_Register_Game( void )
 	REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::LinkEntity", "uint32 m_nEntityType", offsetof( CModuleLinkEntity, m_nEntityType ) );
 	REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::LinkEntity", "uint32 m_nEntityNumber", offsetof( CModuleLinkEntity, m_nEntityNumber ) );
 	REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::LinkEntity", "BBox m_Bounds", offsetof( CModuleLinkEntity, m_Bounds ) );
-		
+	
 	REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::LinkEntity", "TheNomad::GameSystem::LinkEntity& opAssign( const TheNomad::GameSystem::LinkEntity& in )",
 		asMETHODPR( CModuleLinkEntity, operator=, ( const CModuleLinkEntity& ), CModuleLinkEntity& ), asCALL_THISCALL );
 	REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::LinkEntity", "void SetOrigin( const vec3& in )",
