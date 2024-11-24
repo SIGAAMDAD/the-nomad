@@ -448,10 +448,12 @@ void CSoundSystem::Update( void )
 		snd_effectsVolume->modified = qfalse;
 	}
 	if ( gi.mapLoaded ) {
-		if ( g_paused->i ) {
-			Snd_PlaySfx( Snd_RegisterSfx( "snapshot:/PauseMenu" ) );
-		} else {
-			Snd_StopSfx( Snd_RegisterSfx( "snapshot:/PauseMenu" ) );
+		if ( g_paused->modified ) {
+			if ( g_paused->i ) {
+//				Snd_PlaySfx( Snd_RegisterSfx( "snapshot:/PauseMenu" ) );
+			} else {
+//				Snd_StopSfx( Snd_RegisterSfx( "snapshot:/PauseMenu" ) );
+			}
 		}
 	}
 

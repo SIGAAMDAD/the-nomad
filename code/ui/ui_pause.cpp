@@ -70,6 +70,7 @@ static void PauseMenu_EventCallback( void *ptr, int event )
 	switch ( ( (menucommon_t *)ptr )->id ) {
 	case ID_RESUME:
 		UI_SetActiveMenu( UI_MENU_NONE );
+		Snd_StopSfx( Snd_RegisterSfx( "snapshot:/PauseMenu" ) );
 		break;
 	case ID_CHECKPOINT:
 		// rewind the checkpoint
@@ -284,7 +285,7 @@ void PauseMenu_Cache( void )
 	s_pauseMenu->dailyTipText.generic.ownerdraw = DailyTip_Draw;
 	srand( Sys_Milliseconds() );
 	s_pauseMenu->dailyTipText.color = color_white;
-	s_pauseMenu->dailyTipText.text = s_pauseMenu->dailyTips[ rand() & s_pauseMenu->numDailyTips - 1 ];
+	s_pauseMenu->dailyTipText.text = s_pauseMenu->dailyTips[ rand() & ( s_pauseMenu->numDailyTips - 1 ) ];
 
 	Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->resume );
 	Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->checkpoint );
@@ -304,8 +305,9 @@ void UI_PauseMenu( void )
 	if ( !ui_active->i ) {
 		Key_SetCatcher( Key_GetCatcher() | KEYCATCH_UI );
 		UI_PushMenu( &s_pauseMenu->menu );
+		Snd_PlaySfx( Snd_RegisterSfx( "snapshot:/PauseMenu" ) );
+		Key_SetCatcher( Key_GetCatcher() & ~KEYCATCH_SGAME );
 	}
-	Key_SetCatcher( Key_GetCatcher() | KEYCATCH_SGAME );
 	Snd_PlaySfx( ui->sfx_select );
 	Cvar_SetIntegerValue( "g_paused", !ui_active->i );
 }

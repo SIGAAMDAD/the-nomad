@@ -1029,7 +1029,7 @@ static void G_KeyDownEvent( uint32_t key, uint32_t time )
 	}
 	else if ( Key_GetCatcher() & KEYCATCH_UI ) {
 		// send the bound action
-		if ( !( Key_GetCatcher() & KEYCATCH_CONSOLE ) ) {
+		if ( !( Key_GetCatcher() & KEYCATCH_CONSOLE )  ) {
 			Key_ParseBinding( key, qtrue, time );
 		}
 	}
@@ -1062,13 +1062,13 @@ static void G_KeyUpEvent( uint32_t key, uint32_t time )
 		return;
 	}
 	
-	if ( Key_GetCatcher() & KEYCATCH_SGAME ) {
+	if ( Key_GetCatcher() & KEYCATCH_UI ) {
+	}
+	else if ( Key_GetCatcher() & KEYCATCH_SGAME && !g_paused->i ) {
 		if ( sgvm ) {
 			g_pModuleLib->ModuleCall( sgvm, ModuleOnKeyEvent, 2, key, qfalse );
 		}
 		Key_ParseBinding( key, qfalse, time );
-	}
-	if ( Key_GetCatcher() & KEYCATCH_UI ) {
 	}
 }
 

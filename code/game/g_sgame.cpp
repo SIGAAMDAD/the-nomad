@@ -63,7 +63,7 @@ void G_InitSGame( void )
 */
 qboolean G_SGameCommand( void )
 {
-	if ( !sgvm ) {
+	if ( !sgvm || g_paused->i ) {
 		return qfalse;
 	}
 
