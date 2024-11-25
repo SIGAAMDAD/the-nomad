@@ -1,0 +1,481 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{8fed5e46-5b9b-4a0c-85ed-c8aba3b4ea50}</ProjectGuid>
+    <RootNamespace>thenomad</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.22621.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.props" />
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\marmasm.props" />
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <TargetName>TheNomad.x64</TargetName>
+    <IncludePath>$(SolutionDir)code\engine\;$(SolutionDir)code\libsdl\include\;$(SolutionDir)code\pthread-win32\;$(SolutionDir)deps\glm\;$(SolutionDir)deps\EABase\include\Common;$(SolutionDir)code\;$(SolutionDir)code\json\;$(SolutionDir)code\bzip2\include\;$(SolutionDir)code\zlib\include\;$(SolutionDir)code\curl\include\;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)obj\Release-Unicode64bit-x64\;$(SolutionDir);$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <TargetName>TheNomad.x64.debug</TargetName>
+    <IncludePath>$(SolutionDir)code\engine\;$(SolutionDir)code\libsdl\include\;$(SolutionDir)code\pthread-win32\;$(SolutionDir)deps\glm\;$(SolutionDir)deps\EABase\include\Common;$(SolutionDir)code\;$(SolutionDir)code\json\;$(SolutionDir)code\bzip2\include\;$(SolutionDir)code\zlib\include\;$(SolutionDir)code\curl\include\;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)obj\Debug-Unicode64bit-x64\;$(SolutionDir);$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_NOMAD_ENGINE;USE_FMOD;_NOMAD_VERSION_MAJOR=1;_NOMAD_VERSION_UPDATE=1;_NOMAD_VERSION_PATCH=0;USE_OPENGL_API=1;_NOMAD_DEBUG</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>false</OmitFramePointers>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <StringPooling>false</StringPooling>
+      <FloatingPointExceptions>true</FloatingPointExceptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MinimalRebuild>false</MinimalRebuild>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>$(SolutionDir)bin\Debug-Unicode-64bit-x64\pthread_static_lib.lib;%(AdditionalDependencies);$(SolutionDir)$(Platform)\$(Configuration)\libjpeg.lib;$(SolutionDir)fmodstudio_vc.lib;$(SolutionDir)fmodstudioL_vc.lib;$(SolutionDir)fmod_vc.lib;$(SolutionDir)fmodL_vc.lib;$(SolutionDir)$(Platform)\$(Configuration)\TheNomad.ASLib.$(Platform).Debug.lib;$(SolutionDir)SDL2.lib;$(SolutionDir)$(Platform)\$(Configuration)\libEASTL.lib;$(SolutionDir)SDL2_image.lib;$(SolutionDir)libbz2.lib;$(SolutionDir)zdll.lib;$(SolutionDir)libcurl.dll.a</AdditionalDependencies>
+      <StackReserveSize>4194304</StackReserveSize>
+      <LargeAddressAware>true</LargeAddressAware>
+      <ProgramDatabaseFile>$(IntDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <GenerateMapFile>true</GenerateMapFile>
+      <MapFileName>$(IntDir)$(TargetName).map</MapFileName>
+      <FixedBaseAddress>false</FixedBaseAddress>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level1</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);_NOMAD_ENGINE;USE_FMOD;_NOMAD_VERSION_MAJOR=1;_NOMAD_VERSION_UPDATE=1;_NOMAD_VERSION_PATCH=0;USE_OPENGL_API=1</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>false</OmitFramePointers>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <StringPooling>false</StringPooling>
+      <FloatingPointExceptions>true</FloatingPointExceptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+      <CompileAs>CompileAsCpp</CompileAs>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <StackReserveSize>4194304</StackReserveSize>
+      <LargeAddressAware>true</LargeAddressAware>
+      <ProgramDatabaseFile>$(IntDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <GenerateMapFile>true</GenerateMapFile>
+      <MapFileName>$(IntDir)$(TargetName).map</MapFileName>
+      <FixedBaseAddress>false</FixedBaseAddress>
+      <AdditionalDependencies>$(SolutionDir)bin\Release-Unicode-64bit-x64\pthread_static_lib.lib;$(CoreLibraryDependencies);%(AdditionalDependencies);$(SolutionDir)$(Platform)\$(Configuration)\libjpeg.lib;$(SolutionDir)fmodstudio_vc.lib;$(SolutionDir)fmodstudioL_vc.lib;$(SolutionDir)fmod_vc.lib;$(SolutionDir)fmodL_vc.lib;$(SolutionDir)$(Platform)\$(Configuration)\TheNomad.ASLib.$(Platform).lib;$(SolutionDir)SDL2.lib;$(SolutionDir)$(Platform)\$(Configuration)\libEASTL.lib;$(SolutionDir)SDL2_image.lib;$(SolutionDir)libbz2.lib;$(SolutionDir)zlib.lib;$(SolutionDir)libcurl.dll.a</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="code\engine\gln_files.h" />
+    <ClInclude Include="code\engine\keycodes.h" />
+    <ClInclude Include="code\engine\n_allocator.h" />
+    <ClInclude Include="code\engine\n_cvar.h" />
+    <ClInclude Include="code\engine\n_debug.h" />
+    <ClInclude Include="code\engine\n_math.h" />
+    <ClInclude Include="code\engine\n_shared.h" />
+    <ClInclude Include="code\engine\n_steam.h" />
+    <ClInclude Include="code\engine\n_threads.h" />
+    <ClInclude Include="code\game\g_archive.h" />
+    <ClInclude Include="code\game\g_game.h" />
+    <ClInclude Include="code\game\g_sound.h" />
+    <ClInclude Include="code\game\g_threads.h" />
+    <ClInclude Include="code\game\g_world.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\begin_code.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\close_code.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_assert.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_atomic.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_audio.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_bits.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_blendmode.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_clipboard.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_config.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_config_android.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_config_emscripten.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_config_iphoneos.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_config_macosx.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_config_minimal.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_config_ngage.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_config_os2.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_config_pandora.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_config_windows.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_config_wingdk.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_config_winrt.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_config_xbox.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_copying.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_cpuinfo.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_egl.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_endian.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_error.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_events.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_filesystem.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_gamecontroller.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_gesture.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_guid.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_haptic.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_hidapi.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_hints.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_image.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_joystick.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_keyboard.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_keycode.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_loadso.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_locale.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_log.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_main.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_messagebox.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_metal.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_misc.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_mouse.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_mutex.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_name.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_opengl.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_opengles.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_opengles2.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_opengles2_gl2.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_opengles2_gl2ext.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_opengles2_gl2platform.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_opengles2_khrplatform.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_opengl_glext.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_pixels.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_platform.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_power.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_quit.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_rect.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_render.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_revision.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_rwops.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_scancode.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_sensor.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_shape.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_stdinc.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_surface.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_system.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_syswm.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_test.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_test_assert.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_test_common.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_test_compare.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_test_crc32.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_test_font.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_test_fuzzer.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_test_harness.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_test_images.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_test_log.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_test_md5.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_test_memory.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_test_random.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_thread.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_timer.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_touch.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_types.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_version.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_video.h" />
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_vulkan.h" />
+    <ClInclude Include="code\module_lib\aswrappedcall.h" />
+    <ClInclude Include="code\module_lib\contextmgr.h" />
+    <ClInclude Include="code\module_lib\imgui_stdlib.h" />
+    <ClInclude Include="code\module_lib\module_alloc.h" />
+    <ClInclude Include="code\module_lib\module_debugger.h" />
+    <ClInclude Include="code\module_lib\module_engine\module_bbox.h" />
+    <ClInclude Include="code\module_lib\module_engine\module_gpuconfig.h" />
+    <ClInclude Include="code\module_lib\module_engine\module_linkentity.h" />
+    <ClInclude Include="code\module_lib\module_engine\module_polyvert.h" />
+    <ClInclude Include="code\module_lib\module_funcdefs.hpp" />
+    <ClInclude Include="code\module_lib\module_handle.h" />
+    <ClInclude Include="code\module_lib\module_jit.h" />
+    <ClInclude Include="code\module_lib\module_memory.h" />
+    <ClInclude Include="code\module_lib\module_public.h" />
+    <ClInclude Include="code\module_lib\module_stringfactory.hpp" />
+    <ClInclude Include="code\module_lib\module_virtual_asm.h" />
+    <ClInclude Include="code\module_lib\scriptbuilder.h" />
+    <ClInclude Include="code\module_lib\scriptlib\scriptany.h" />
+    <ClInclude Include="code\module_lib\scriptlib\scriptarray.h" />
+    <ClInclude Include="code\module_lib\scriptlib\scriptdictionary.h" />
+    <ClInclude Include="code\module_lib\scriptlib\scripthandle.h" />
+    <ClInclude Include="code\module_lib\scriptlib\scriptjson.h" />
+    <ClInclude Include="code\module_lib\scriptlib\scriptmath.h" />
+    <ClInclude Include="code\module_lib\scriptlib\scriptstdstring.h" />
+    <ClInclude Include="code\module_lib\scriptlib\script_cache_ids.h" />
+    <ClInclude Include="code\module_lib\scriptlib\weakref.h" />
+    <ClInclude Include="code\module_lib\scriptpreprocessor.h" />
+    <ClInclude Include="code\rendercommon\imconfig.h" />
+    <ClInclude Include="code\rendercommon\imgui.h" />
+    <ClInclude Include="code\rendercommon\imgui_impl_opengl3.h" />
+    <ClInclude Include="code\rendercommon\imgui_internal.h" />
+    <ClInclude Include="code\rendercommon\r_public.h" />
+    <ClInclude Include="code\rendercommon\r_types.h" />
+    <ClInclude Include="code\rendercommon\stb_sprintf.h" />
+    <ClInclude Include="code\sdl\sdl_glw.h" />
+    <ClInclude Include="code\sdl\sdl_icon.h" />
+    <ClInclude Include="code\sound\snd_local.h" />
+    <ClInclude Include="code\sound\snd_public.h" />
+    <ClInclude Include="code\steam\isteamapplist.h" />
+    <ClInclude Include="code\steam\isteamapps.h" />
+    <ClInclude Include="code\steam\isteamappticket.h" />
+    <ClInclude Include="code\steam\isteamclient.h" />
+    <ClInclude Include="code\steam\isteamcontroller.h" />
+    <ClInclude Include="code\steam\isteamdualsense.h" />
+    <ClInclude Include="code\steam\isteamfriends.h" />
+    <ClInclude Include="code\steam\isteamgamecoordinator.h" />
+    <ClInclude Include="code\steam\isteamgameserver.h" />
+    <ClInclude Include="code\steam\isteamgameserverstats.h" />
+    <ClInclude Include="code\steam\isteamhtmlsurface.h" />
+    <ClInclude Include="code\steam\isteamhttp.h" />
+    <ClInclude Include="code\steam\isteaminput.h" />
+    <ClInclude Include="code\steam\isteaminventory.h" />
+    <ClInclude Include="code\steam\isteammatchmaking.h" />
+    <ClInclude Include="code\steam\isteammusic.h" />
+    <ClInclude Include="code\steam\isteammusicremote.h" />
+    <ClInclude Include="code\steam\isteamnetworking.h" />
+    <ClInclude Include="code\steam\isteamnetworkingmessages.h" />
+    <ClInclude Include="code\steam\isteamnetworkingsockets.h" />
+    <ClInclude Include="code\steam\isteamnetworkingutils.h" />
+    <ClInclude Include="code\steam\isteamparentalsettings.h" />
+    <ClInclude Include="code\steam\isteamps3overlayrenderer.h" />
+    <ClInclude Include="code\steam\isteamremoteplay.h" />
+    <ClInclude Include="code\steam\isteamremotestorage.h" />
+    <ClInclude Include="code\steam\isteamscreenshots.h" />
+    <ClInclude Include="code\steam\isteamugc.h" />
+    <ClInclude Include="code\steam\isteamuser.h" />
+    <ClInclude Include="code\steam\isteamuserstats.h" />
+    <ClInclude Include="code\steam\isteamutils.h" />
+    <ClInclude Include="code\steam\isteamvideo.h" />
+    <ClInclude Include="code\steam\matchmakingtypes.h" />
+    <ClInclude Include="code\steam\steamclientpublic.h" />
+    <ClInclude Include="code\steam\steamencryptedappticket.h" />
+    <ClInclude Include="code\steam\steamhttpenums.h" />
+    <ClInclude Include="code\steam\steamnetworkingfakeip.h" />
+    <ClInclude Include="code\steam\steamnetworkingtypes.h" />
+    <ClInclude Include="code\steam\steamps3params.h" />
+    <ClInclude Include="code\steam\steamtypes.h" />
+    <ClInclude Include="code\steam\steamuniverse.h" />
+    <ClInclude Include="code\steam\steam_api.h" />
+    <ClInclude Include="code\steam\steam_api_common.h" />
+    <ClInclude Include="code\steam\steam_api_flat.h" />
+    <ClInclude Include="code\steam\steam_api_internal.h" />
+    <ClInclude Include="code\steam\steam_gameserver.h" />
+    <ClInclude Include="code\ui\colors.h" />
+    <ClInclude Include="code\ui\RobotoMono-Bold.h" />
+    <ClInclude Include="code\ui\ui_lib.h" />
+    <ClInclude Include="code\ui\ui_menu.h" />
+    <ClInclude Include="code\ui\ui_public.hpp" />
+    <ClInclude Include="code\ui\ui_string_manager.h" />
+    <ClInclude Include="code\win32\resource.h" />
+    <ClInclude Include="code\win32\sys_win32.h" />
+    <ClInclude Include="code\win32\win_local.h" />
+    <ClInclude Include="qasm.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="code\engine\decompress.cpp" />
+    <ClCompile Include="code\engine\md4.cpp" />
+    <ClCompile Include="code\engine\md5.cpp" />
+    <ClCompile Include="code\engine\n_cmd.cpp" />
+    <ClCompile Include="code\engine\n_common.cpp" />
+    <ClCompile Include="code\engine\n_cvar.cpp" />
+    <ClCompile Include="code\engine\n_debug.cpp" />
+    <ClCompile Include="code\engine\n_files.cpp" />
+    <ClCompile Include="code\engine\n_history.cpp" />
+    <ClCompile Include="code\engine\n_math.c" />
+    <ClCompile Include="code\engine\n_memory.cpp" />
+    <ClCompile Include="code\engine\n_shared.c" />
+    <ClCompile Include="code\engine\n_steam.cpp" />
+    <ClCompile Include="code\game\g_archive.cpp" />
+    <ClCompile Include="code\game\g_console.cpp" />
+    <ClCompile Include="code\game\g_demo.cpp" />
+    <ClCompile Include="code\game\g_event.cpp" />
+    <ClCompile Include="code\game\g_game.cpp" />
+    <ClCompile Include="code\game\g_jpeg.cpp" />
+    <ClCompile Include="code\game\g_screen.cpp" />
+    <ClCompile Include="code\game\g_sgame.cpp" />
+    <ClCompile Include="code\game\g_threads.cpp" />
+    <ClCompile Include="code\game\g_world.cpp" />
+    <ClCompile Include="code\module_lib\contextmgr.cpp" />
+    <ClCompile Include="code\module_lib\imgui_stdlib.cpp" />
+    <ClCompile Include="code\module_lib\module_debugger.cpp" />
+    <ClCompile Include="code\module_lib\module_funcdefs.cpp" />
+    <ClCompile Include="code\module_lib\module_handle.cpp" />
+    <ClCompile Include="code\module_lib\module_jit.cpp" />
+    <ClCompile Include="code\module_lib\module_main.cpp" />
+    <ClCompile Include="code\module_lib\module_memory.cpp" />
+    <ClCompile Include="code\module_lib\module_virtual_asm_windows.cpp" />
+    <ClCompile Include="code\module_lib\module_virtual_asm_x64.cpp" />
+    <ClCompile Include="code\module_lib\module_virtual_asm_x86.cpp" />
+    <ClCompile Include="code\module_lib\scriptbuilder.cpp" />
+    <ClCompile Include="code\module_lib\scriptlib\scriptany.cpp" />
+    <ClCompile Include="code\module_lib\scriptlib\scriptarray.cpp" />
+    <ClCompile Include="code\module_lib\scriptlib\scriptdictionary.cpp" />
+    <ClCompile Include="code\module_lib\scriptlib\scripthandle.cpp" />
+    <ClCompile Include="code\module_lib\scriptlib\scriptjson.cpp" />
+    <ClCompile Include="code\module_lib\scriptlib\scriptmath.cpp" />
+    <ClCompile Include="code\module_lib\scriptlib\scriptparser.cpp" />
+    <ClCompile Include="code\module_lib\scriptlib\scriptstdstring.cpp" />
+    <ClCompile Include="code\module_lib\scriptlib\scriptstdstring_utils.cpp" />
+    <ClCompile Include="code\module_lib\scriptlib\weakref.cpp" />
+    <ClCompile Include="code\module_lib\scriptpreprocessor.cpp" />
+    <ClCompile Include="code\rendercommon\imgui.cpp" />
+    <ClCompile Include="code\rendercommon\imgui_draw.cpp" />
+    <ClCompile Include="code\rendercommon\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="code\rendercommon\imgui_impl_sdl2.cpp" />
+    <ClCompile Include="code\rendercommon\imgui_tables.cpp" />
+    <ClCompile Include="code\rendercommon\imgui_widgets.cpp" />
+    <ClCompile Include="code\sdl\sdl_glimp.cpp" />
+    <ClCompile Include="code\sdl\sdl_input.cpp" />
+    <ClCompile Include="code\sound\snd_bank.cpp" />
+    <ClCompile Include="code\sound\snd_main.cpp" />
+    <ClCompile Include="code\sound\snd_world.cpp" />
+    <ClCompile Include="code\ui\ui_confirm.cpp" />
+    <ClCompile Include="code\ui\ui_credits.cpp" />
+    <ClCompile Include="code\ui\ui_database.cpp" />
+    <ClCompile Include="code\ui\ui_demo.cpp" />
+    <ClCompile Include="code\ui\ui_lib.cpp" />
+    <ClCompile Include="code\ui\ui_main.cpp" />
+    <ClCompile Include="code\ui\ui_main_menu.cpp" />
+    <ClCompile Include="code\ui\ui_menu.cpp" />
+    <ClCompile Include="code\ui\ui_mods.cpp" />
+    <ClCompile Include="code\ui\ui_pause.cpp" />
+    <ClCompile Include="code\ui\ui_play.cpp" />
+    <ClCompile Include="code\ui\ui_settings.cpp" />
+    <ClCompile Include="code\ui\ui_string_manager.cpp" />
+    <ClCompile Include="code\win32\win_main.cpp" />
+    <ClCompile Include="code\win32\win_shared.cpp" />
+    <ClCompile Include="code\win32\win_syscon.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="code\asm\common_x64.asm">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">c:\nasm\nasm -f win64 common_x64.asm</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">common_x64.obj</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">c:\nasm\nasm -f win64 common_x64.asm</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">common_x64.obj</Outputs>
+      <CallingConvention Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">0</CallingConvention>
+    </MASM>
+    <None Include="code\libsdl\include\SDL2\SDL_revision.h.cmake" />
+    <None Include="code\steam\steam_api.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="extensions.txt" />
+    <Text Include="x64\Debug\gamedata\default.cfg" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\marmasm.targets" />
+  </ImportGroup>
+</Project>

@@ -1,0 +1,917 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Header Files\engine">
+      <UniqueIdentifier>{b56c4ad5-2945-4fff-8671-5e400415a6af}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\game">
+      <UniqueIdentifier>{1f183af8-6195-4f3b-a476-1a30ef76a5a5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\rendercommon">
+      <UniqueIdentifier>{104aab9f-9981-42e8-8e32-aaf3787382e9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\module_lib">
+      <UniqueIdentifier>{4ac61987-d7be-4bc8-9037-3d6a568efe2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\engine">
+      <UniqueIdentifier>{5acc41e3-6844-4f0e-bbd6-0befa38a08cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\imgui">
+      <UniqueIdentifier>{0899603a-332c-4996-a58b-0754a029f068}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\game">
+      <UniqueIdentifier>{a7147e23-61da-4c2b-906b-9e80f541a3ed}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\module_lib">
+      <UniqueIdentifier>{f1ec1765-259d-4af0-998b-3c13b3a73c29}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\module_lib\scriptlib">
+      <UniqueIdentifier>{a184a70e-428e-4603-80f0-c5d352fc129a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\SDL2">
+      <UniqueIdentifier>{a20376af-f9ab-4ed5-a603-39f03fcb2e84}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\module_lib\scriptlib">
+      <UniqueIdentifier>{452ecf76-5265-4e58-a948-5d4687495834}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\module_lib\module_engine">
+      <UniqueIdentifier>{991dea21-adc1-4703-aac4-87f7109da264}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\sound">
+      <UniqueIdentifier>{4bf1e86d-5d18-444c-a3da-0fba39ff02e8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\sound">
+      <UniqueIdentifier>{c42589e9-0b5e-4a46-ae3d-2fd89e7deb89}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\steam">
+      <UniqueIdentifier>{79b53bd2-0059-442b-9b0a-77a0048b5cdf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\steam">
+      <UniqueIdentifier>{003fdcb9-e957-4fab-944e-8b154f289d45}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ui">
+      <UniqueIdentifier>{2046b031-2648-4d9b-aebb-455fbee68fc2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ui">
+      <UniqueIdentifier>{1947ee39-8d68-4209-b4b3-3a499246186c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\sdl">
+      <UniqueIdentifier>{0e12dab5-6056-420b-a283-3cfb5cbc732e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\sdl">
+      <UniqueIdentifier>{76752916-22e5-4801-adf4-d49bc613ff94}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="code\engine\gln_files.h">
+      <Filter>Header Files\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="code\engine\n_cvar.h">
+      <Filter>Header Files\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="code\engine\n_math.h">
+      <Filter>Header Files\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="code\engine\keycodes.h">
+      <Filter>Header Files\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="code\engine\n_allocator.h">
+      <Filter>Header Files\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="code\engine\n_threads.h">
+      <Filter>Header Files\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="code\engine\n_steam.h">
+      <Filter>Header Files\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="code\engine\n_shared.h">
+      <Filter>Header Files\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="code\engine\n_debug.h">
+      <Filter>Header Files\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\begin_code.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\close_code.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_assert.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_atomic.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_audio.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_bits.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_blendmode.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_clipboard.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_config.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_config_android.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_config_emscripten.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_config_iphoneos.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_config_macosx.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_config_minimal.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_config_ngage.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_config_os2.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_config_pandora.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_config_windows.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_config_wingdk.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_config_winrt.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_config_xbox.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_copying.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_cpuinfo.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_egl.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_endian.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_error.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_events.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_filesystem.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_gamecontroller.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_gesture.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_guid.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_haptic.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_hidapi.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_hints.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_image.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_joystick.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_keyboard.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_keycode.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_loadso.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_locale.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_log.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_main.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_messagebox.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_metal.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_misc.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_mouse.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_mutex.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_name.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_opengl.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_opengl_glext.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_opengles.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_opengles2.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_opengles2_gl2.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_opengles2_gl2ext.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_opengles2_gl2platform.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_opengles2_khrplatform.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_pixels.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_platform.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_power.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_quit.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_rect.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_render.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_revision.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_rwops.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_scancode.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_sensor.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_shape.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_stdinc.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_surface.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_system.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_syswm.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_test.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_test_assert.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_test_common.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_test_compare.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_test_crc32.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_test_font.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_test_fuzzer.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_test_harness.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_test_images.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_test_log.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_test_md5.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_test_memory.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_test_random.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_thread.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_timer.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_touch.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_types.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_version.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_video.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\libsdl\include\SDL2\SDL_vulkan.h">
+      <Filter>Header Files\SDL2</Filter>
+    </ClInclude>
+    <ClInclude Include="code\module_lib\contextmgr.h">
+      <Filter>Header Files\module_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="code\module_lib\module_alloc.h">
+      <Filter>Header Files\module_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="code\module_lib\module_funcdefs.hpp">
+      <Filter>Header Files\module_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="code\module_lib\imgui_stdlib.h">
+      <Filter>Header Files\module_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="code\module_lib\aswrappedcall.h">
+      <Filter>Header Files\module_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="code\module_lib\scriptbuilder.h">
+      <Filter>Header Files\module_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="code\module_lib\module_virtual_asm.h">
+      <Filter>Header Files\module_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="code\module_lib\module_debugger.h">
+      <Filter>Header Files\module_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="code\module_lib\module_stringfactory.hpp">
+      <Filter>Header Files\module_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="code\module_lib\module_public.h">
+      <Filter>Header Files\module_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="code\module_lib\module_jit.h">
+      <Filter>Header Files\module_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="code\module_lib\module_memory.h">
+      <Filter>Header Files\module_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="code\module_lib\module_handle.h">
+      <Filter>Header Files\module_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="code\game\g_archive.h">
+      <Filter>Header Files\game</Filter>
+    </ClInclude>
+    <ClInclude Include="code\game\g_game.h">
+      <Filter>Header Files\game</Filter>
+    </ClInclude>
+    <ClInclude Include="code\game\g_world.h">
+      <Filter>Header Files\game</Filter>
+    </ClInclude>
+    <ClInclude Include="code\game\g_threads.h">
+      <Filter>Header Files\game</Filter>
+    </ClInclude>
+    <ClInclude Include="code\game\g_sound.h">
+      <Filter>Header Files\game</Filter>
+    </ClInclude>
+    <ClInclude Include="code\module_lib\scriptlib\scriptany.h">
+      <Filter>Header Files\module_lib\scriptlib</Filter>
+    </ClInclude>
+    <ClInclude Include="code\module_lib\scriptlib\script_cache_ids.h">
+      <Filter>Header Files\module_lib\scriptlib</Filter>
+    </ClInclude>
+    <ClInclude Include="code\module_lib\scriptlib\scriptarray.h">
+      <Filter>Header Files\module_lib\scriptlib</Filter>
+    </ClInclude>
+    <ClInclude Include="code\module_lib\scriptlib\scriptdictionary.h">
+      <Filter>Header Files\module_lib\scriptlib</Filter>
+    </ClInclude>
+    <ClInclude Include="code\module_lib\scriptlib\scripthandle.h">
+      <Filter>Header Files\module_lib\scriptlib</Filter>
+    </ClInclude>
+    <ClInclude Include="code\module_lib\scriptlib\scriptjson.h">
+      <Filter>Header Files\module_lib\scriptlib</Filter>
+    </ClInclude>
+    <ClInclude Include="code\module_lib\scriptlib\scriptmath.h">
+      <Filter>Header Files\module_lib\scriptlib</Filter>
+    </ClInclude>
+    <ClInclude Include="code\module_lib\scriptlib\weakref.h">
+      <Filter>Header Files\module_lib\scriptlib</Filter>
+    </ClInclude>
+    <ClInclude Include="code\module_lib\scriptlib\scriptstdstring.h">
+      <Filter>Header Files\module_lib\scriptlib</Filter>
+    </ClInclude>
+    <ClInclude Include="code\module_lib\module_engine\module_bbox.h">
+      <Filter>Header Files\module_lib\module_engine</Filter>
+    </ClInclude>
+    <ClInclude Include="code\module_lib\module_engine\module_gpuconfig.h">
+      <Filter>Header Files\module_lib\module_engine</Filter>
+    </ClInclude>
+    <ClInclude Include="code\module_lib\module_engine\module_linkentity.h">
+      <Filter>Header Files\module_lib\module_engine</Filter>
+    </ClInclude>
+    <ClInclude Include="code\module_lib\module_engine\module_polyvert.h">
+      <Filter>Header Files\module_lib\module_engine</Filter>
+    </ClInclude>
+    <ClInclude Include="code\rendercommon\imgui.h">
+      <Filter>Header Files\rendercommon</Filter>
+    </ClInclude>
+    <ClInclude Include="code\rendercommon\imgui_impl_opengl3.h">
+      <Filter>Header Files\rendercommon</Filter>
+    </ClInclude>
+    <ClInclude Include="code\rendercommon\imgui_internal.h">
+      <Filter>Header Files\rendercommon</Filter>
+    </ClInclude>
+    <ClInclude Include="code\rendercommon\r_public.h">
+      <Filter>Header Files\rendercommon</Filter>
+    </ClInclude>
+    <ClInclude Include="code\rendercommon\r_types.h">
+      <Filter>Header Files\rendercommon</Filter>
+    </ClInclude>
+    <ClInclude Include="code\rendercommon\stb_sprintf.h">
+      <Filter>Header Files\rendercommon</Filter>
+    </ClInclude>
+    <ClInclude Include="code\rendercommon\imconfig.h">
+      <Filter>Header Files\rendercommon</Filter>
+    </ClInclude>
+    <ClInclude Include="code\sound\snd_local.h">
+      <Filter>Header Files\sound</Filter>
+    </ClInclude>
+    <ClInclude Include="code\sound\snd_public.h">
+      <Filter>Header Files\sound</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteamapplist.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteamapps.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteamappticket.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteamclient.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteamcontroller.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteamdualsense.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteamfriends.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteamgamecoordinator.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteamgameserver.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteamgameserverstats.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteamhtmlsurface.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteamhttp.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteaminput.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteaminventory.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteammatchmaking.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteammusic.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteammusicremote.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteamnetworking.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteamnetworkingmessages.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteamnetworkingsockets.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteamnetworkingutils.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteamparentalsettings.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteamps3overlayrenderer.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteamremoteplay.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteamremotestorage.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteamscreenshots.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteamugc.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteamuser.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteamuserstats.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteamutils.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\isteamvideo.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\matchmakingtypes.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\steam_api.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\steam_api_common.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\steam_api_flat.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\steam_api_internal.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\steam_gameserver.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\steamclientpublic.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\steamencryptedappticket.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\steamhttpenums.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\steamnetworkingfakeip.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\steamnetworkingtypes.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\steamps3params.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\steamtypes.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\steam\steamuniverse.h">
+      <Filter>Header Files\steam</Filter>
+    </ClInclude>
+    <ClInclude Include="code\ui\colors.h">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="code\ui\RobotoMono-Bold.h">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="code\ui\ui_menu.h">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="code\ui\ui_string_manager.h">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="code\ui\ui_public.hpp">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="code\ui\ui_lib.h">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="code\win32\win_local.h">
+      <Filter>Header Files\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="code\win32\sys_win32.h">
+      <Filter>Header Files\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="code\win32\resource.h">
+      <Filter>Header Files\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="code\sdl\sdl_glw.h">
+      <Filter>Header Files\sdl</Filter>
+    </ClInclude>
+    <ClInclude Include="code\sdl\sdl_icon.h">
+      <Filter>Header Files\sdl</Filter>
+    </ClInclude>
+    <ClInclude Include="code\module_lib\scriptpreprocessor.h">
+      <Filter>Header Files\module_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="code\asm\qasm.h">
+      <Filter>Header Files\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="code\engine\n_common.h">
+      <Filter>Header Files\engine</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="code\rendercommon\imgui.cpp">
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="code\rendercommon\imgui_draw.cpp">
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="code\rendercommon\imgui_impl_opengl3.cpp">
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="code\rendercommon\imgui_widgets.cpp">
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="code\rendercommon\imgui_tables.cpp">
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="code\engine\md4.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="code\engine\md5.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="code\engine\n_files.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="code\engine\n_history.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="code\engine\n_cmd.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="code\engine\n_common.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="code\engine\n_steam.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="code\engine\n_cvar.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="code\engine\n_shared.c">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="code\engine\n_memory.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="code\game\g_archive.cpp">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
+    <ClCompile Include="code\game\g_console.cpp">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
+    <ClCompile Include="code\game\g_demo.cpp">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
+    <ClCompile Include="code\game\g_event.cpp">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
+    <ClCompile Include="code\game\g_game.cpp">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
+    <ClCompile Include="code\game\g_world.cpp">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
+    <ClCompile Include="code\game\g_jpeg.cpp">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
+    <ClCompile Include="code\game\g_screen.cpp">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
+    <ClCompile Include="code\game\g_sgame.cpp">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
+    <ClCompile Include="code\game\g_threads.cpp">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
+    <ClCompile Include="code\module_lib\contextmgr.cpp">
+      <Filter>Source Files\module_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="code\module_lib\scriptbuilder.cpp">
+      <Filter>Source Files\module_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="code\module_lib\imgui_stdlib.cpp">
+      <Filter>Source Files\module_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="code\module_lib\module_debugger.cpp">
+      <Filter>Source Files\module_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="code\module_lib\module_funcdefs.cpp">
+      <Filter>Source Files\module_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="code\module_lib\module_virtual_asm_windows.cpp">
+      <Filter>Source Files\module_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="code\module_lib\module_virtual_asm_x64.cpp">
+      <Filter>Source Files\module_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="code\module_lib\module_virtual_asm_x86.cpp">
+      <Filter>Source Files\module_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="code\module_lib\module_memory.cpp">
+      <Filter>Source Files\module_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="code\module_lib\module_handle.cpp">
+      <Filter>Source Files\module_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="code\module_lib\module_main.cpp">
+      <Filter>Source Files\module_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="code\module_lib\module_jit.cpp">
+      <Filter>Source Files\module_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="code\module_lib\scriptlib\scriptany.cpp">
+      <Filter>Source Files\module_lib\scriptlib</Filter>
+    </ClCompile>
+    <ClCompile Include="code\module_lib\scriptlib\scriptarray.cpp">
+      <Filter>Source Files\module_lib\scriptlib</Filter>
+    </ClCompile>
+    <ClCompile Include="code\module_lib\scriptlib\scriptdictionary.cpp">
+      <Filter>Source Files\module_lib\scriptlib</Filter>
+    </ClCompile>
+    <ClCompile Include="code\module_lib\scriptlib\scripthandle.cpp">
+      <Filter>Source Files\module_lib\scriptlib</Filter>
+    </ClCompile>
+    <ClCompile Include="code\module_lib\scriptlib\scriptjson.cpp">
+      <Filter>Source Files\module_lib\scriptlib</Filter>
+    </ClCompile>
+    <ClCompile Include="code\module_lib\scriptlib\weakref.cpp">
+      <Filter>Source Files\module_lib\scriptlib</Filter>
+    </ClCompile>
+    <ClCompile Include="code\module_lib\scriptlib\scriptstdstring_utils.cpp">
+      <Filter>Source Files\module_lib\scriptlib</Filter>
+    </ClCompile>
+    <ClCompile Include="code\sound\snd_world.cpp">
+      <Filter>Source Files\sound</Filter>
+    </ClCompile>
+    <ClCompile Include="code\sound\snd_main.cpp">
+      <Filter>Source Files\sound</Filter>
+    </ClCompile>
+    <ClCompile Include="code\sound\snd_bank.cpp">
+      <Filter>Source Files\sound</Filter>
+    </ClCompile>
+    <ClCompile Include="code\engine\n_math.c">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="code\ui\ui_confirm.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="code\ui\ui_credits.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="code\ui\ui_demo.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="code\ui\ui_database.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="code\ui\ui_settings.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="code\ui\ui_main_menu.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="code\ui\ui_lib.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="code\ui\ui_mods.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="code\ui\ui_pause.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="code\ui\ui_play.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="code\ui\ui_string_manager.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="code\ui\ui_main.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="code\win32\win_main.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="code\win32\win_syscon.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="code\win32\win_shared.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="code\engine\decompress.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="code\ui\ui_menu.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="code\sdl\sdl_glimp.cpp">
+      <Filter>Source Files\sdl</Filter>
+    </ClCompile>
+    <ClCompile Include="code\sdl\sdl_input.cpp">
+      <Filter>Source Files\sdl</Filter>
+    </ClCompile>
+    <ClCompile Include="code\engine\n_debug.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="code\rendercommon\imgui_impl_sdl2.cpp">
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="code\module_lib\scriptpreprocessor.cpp">
+      <Filter>Source Files\module_lib</Filter>
+    </ClCompile>
+    <ClCompile Include="code\module_lib\scriptlib\scriptstdstring.cpp">
+      <Filter>Source Files\module_lib\scriptlib</Filter>
+    </ClCompile>
+    <ClCompile Include="code\module_lib\scriptlib\scriptmath.cpp">
+      <Filter>Source Files\module_lib\scriptlib</Filter>
+    </ClCompile>
+    <ClCompile Include="code\module_lib\scriptlib\scriptparser.cpp">
+      <Filter>Source Files\module_lib\scriptlib</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="code\libsdl\include\SDL2\SDL_revision.h.cmake">
+      <Filter>Header Files\SDL2</Filter>
+    </None>
+    <None Include="code\steam\steam_api.json">
+      <Filter>Resource Files\steam</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="code\asm\common_x64.asm">
+      <Filter>Source Files\engine</Filter>
+    </MASM>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="x64\Debug\gamedata\default.cfg" />
+    <Text Include="extensions.txt" />
+  </ItemGroup>
+</Project>
