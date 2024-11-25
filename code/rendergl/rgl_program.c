@@ -384,11 +384,7 @@ static int GLSL_CompileGPUShader( GLuint program, GLuint *prevShader, const GLch
 	};
 
 	// give it the source
-	if ( fromCache ) {
-		nglShaderSource( shader, 1, (const GLchar **)&buffer, (const GLint *)&size );
-	} else {
-		nglShaderBinary( 1, &shader, GL_SHADER_BINARY_FORMAT_SPIR_V, buffer, size );
-	}
+	nglShaderSource( shader, 1, (const GLchar **)&buffer, (const GLint *)&size );
 
 	// compile
 	nglCompileShader( shader );
@@ -708,7 +704,7 @@ static int GLSL_InitGPUShader2( shaderProgram_t *program, const char *name, uint
 
 	GL_SetObjectDebugName( GL_PROGRAM, program->programId, name, "_program" );
 
-	if ( fromCache == (unsigned)-1 ) {
+//	if ( fromCache == (unsigned)-1 ) {
 		if ( vsCode ) {
 			if ( !( GLSL_CompileGPUShader( program->programId, &program->vertexId, vsCode, strlen(vsCode),
 				GL_VERTEX_SHADER, name, fromCache ) ) )
@@ -728,10 +724,7 @@ static int GLSL_InitGPUShader2( shaderProgram_t *program, const char *name, uint
 				return qfalse;
 			}
 		}
-		GLSL_LinkProgram( program->programId, fromCache );
-	} else {
-		nglProgramBinary( program->programId, cacheHashTable[ fromCache ].fmt, cacheHashTable[ fromCache ].data, cacheHashTable[ fromCache ].size );
-	}
+//	}
 	if ( attribs & ATTRIB_POSITION ) {
 		nglBindAttribLocation( program->programId, ATTRIB_INDEX_POSITION, "a_Position" );
 	}
@@ -744,6 +737,8 @@ static int GLSL_InitGPUShader2( shaderProgram_t *program, const char *name, uint
 	if ( attribs & ATTRIB_WORLDPOS ) {
 		nglBindAttribLocation( program->programId, ATTRIB_INDEX_WORLDPOS, "a_WorldPos" );
 	}
+
+	GLSL_LinkProgram( program->programId, fromCache );
 
 	return qtrue;
 }
@@ -788,10 +783,6 @@ static int GLSL_InitComputeShader( shaderProgram_t *program, const char *name, c
 	rg.numPrograms++;
 
 	N_strncpyz( program->name, name, sizeof( program->name ) );
-	fromCache = R_GetShaderFromCache( program );
-	if ( fromCache != -1 ) {
-		ri.Printf( PRINT_INFO, "GLSL Program '%s' loaded from shader cache.\n", name );
-	}
 
 	// even if we are loading it from the cache, we can still use the text as a fallback
 	size = sizeof( csCode );
@@ -825,42 +816,36 @@ int GLSL_InitGPUShader( shaderProgram_t *program, const char *name, uint32_t att
 	rg.numPrograms++;
 
 	N_strncpyz( program->name, name, sizeof( program->name ) );
-	fromCache = R_GetShaderFromCache( program );
-	if ( fromCache != (unsigned)-1 ) {
-		ri.Printf( PRINT_INFO, "GLSL Program '%s' loaded from shader cache.\n", name );
+
+	size = sizeof( vsCode );
+
+	if ( addHeader ) {
+		GLSL_PrepareHeader(GL_VERTEX_SHADER, extra, vsCode, size);
+		postHeader = &vsCode[strlen(vsCode)];
+		size -= strlen(vsCode);
+	}
+	else {
+		postHeader = &vsCode[0];
 	}
 
-	if ( fromCache == (unsigned)-1 ) {
-		size = sizeof( vsCode );
+	if (!GLSL_LoadGPUShaderText(name, fallback_vs, GL_VERTEX_SHADER, postHeader, size)) {
+		return qfalse;
+	}
 
-		if ( addHeader ) {
-			GLSL_PrepareHeader(GL_VERTEX_SHADER, extra, vsCode, size);
-			postHeader = &vsCode[strlen(vsCode)];
-			size -= strlen(vsCode);
+	if ( fragmentShader ) {
+		size = sizeof(fsCode);
+
+		if (addHeader) {
+			GLSL_PrepareHeader(GL_FRAGMENT_SHADER, extra, fsCode, size);
+			postHeader = &fsCode[strlen(fsCode)];
+			size -= strlen(fsCode);
 		}
 		else {
-			postHeader = &vsCode[0];
+			postHeader = &fsCode[0];
 		}
 
-		if (!GLSL_LoadGPUShaderText(name, fallback_vs, GL_VERTEX_SHADER, postHeader, size)) {
+		if ( !GLSL_LoadGPUShaderText( name, fallback_fs, GL_FRAGMENT_SHADER, postHeader, size ) ) {
 			return qfalse;
-		}
-
-		if ( fragmentShader ) {
-			size = sizeof(fsCode);
-
-			if (addHeader) {
-				GLSL_PrepareHeader(GL_FRAGMENT_SHADER, extra, fsCode, size);
-				postHeader = &fsCode[strlen(fsCode)];
-				size -= strlen(fsCode);
-			}
-			else {
-				postHeader = &fsCode[0];
-			}
-
-			if ( !GLSL_LoadGPUShaderText( name, fallback_fs, GL_FRAGMENT_SHADER, postHeader, size ) ) {
-				return qfalse;
-			}
 		}
 	}
 
@@ -1354,10 +1339,6 @@ void GLSL_InitGPUShaders_f( void )
 
 	start = ri.Milliseconds();
 
-	if ( !cacheNumEntries ) {
-		R_LoadShaderCache();
-	}
-
 	for ( i = 0; i < GENERICDEF_COUNT; i++ ) {
 		qboolean fastLight = !( r_normalMapping->i || r_specularMapping->i || r_bloom->i );
 
@@ -1443,8 +1424,6 @@ void GLSL_InitGPUShaders_f( void )
 
 	numGenShaders++;
 
-	R_SaveShaderCache();
-
 	end = ri.Milliseconds();
 
 	ri.Printf( PRINT_INFO, "...loaded %u GLSL shaders (%u gen %u etc %u light) in %5.2f seconds\n",
@@ -1470,8 +1449,6 @@ void GLSL_ShutdownGPUShaders( void )
 	}
 	
 	GL_BindNullProgram();
-
-	R_SaveShaderCache();
 
 	GLSL_DeleteGPUShader( &rg.imguiShader );
 	GLSL_DeleteGPUShader( &rg.textureColorShader );

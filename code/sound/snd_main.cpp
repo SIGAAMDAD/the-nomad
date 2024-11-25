@@ -176,7 +176,7 @@ FMOD::Studio::EventInstance *CSoundSource::AllocEvent( void )
 		return NULL;
 	}
 
-	ERRCHECK( m_pData->createInstance( &pEvent ) );
+	m_pData->createInstance( &pEvent );
 
 	return pEvent;
 }
@@ -299,7 +299,7 @@ static FMOD_RESULT fmod_debug_callback( FMOD_DEBUG_FLAGS flags, const char *file
 {
 	if ( flags & FMOD_DEBUG_LEVEL_ERROR ) {
 		FS_Printf( fmodLogFile, "[%s:%s:%i] %s", file, func, line, message );
-		N_Error( ERR_DROP, COLOR_RED "[FMOD API][%s:%s:%i] %s", file, func, line, message );
+		Con_Printf( COLOR_RED "[FMOD API][%s:%s:%i] %s", file, func, line, message );
 	} else if ( flags & FMOD_DEBUG_LEVEL_WARNING ) {
 		FS_Printf( fmodLogFile, "[%s:%s:%i] %s", file, func, line, message );
 		Con_Printf( COLOR_YELLOW "[FMOD API][%s:%s:%i] %s", file, func, line, message );
