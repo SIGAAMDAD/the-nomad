@@ -31,7 +31,7 @@ namespace TheNomad::Engine::SoundSystem {
 		void PlaySound( const TheNomad::Engine::SoundSystem::SoundEffect& in sfx, float nVolume, uint nListenerMask ) {
 			m_nVolume = nVolume;
 			m_nListenerMask = nListenerMask;
-
+			
 			PlayEmitterSound( m_hEmitter, m_nVolume, m_nListenerMask, sfx );
 		}
 

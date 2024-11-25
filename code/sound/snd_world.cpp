@@ -251,13 +251,14 @@ void CSoundWorld::PlayEmitterSound( nhandle_t hEmitter, float nVolume, uint32_t 
 
 	em->channel = AllocateChannel( pSource );
 	em->listenerMask = nListenerMask;
+	em->volume = snd_effectsVolume->f / 100.0f;
 
 	memset( &attribs, 0, sizeof( attribs ) );
 	memcpy( &attribs.position, em->link->origin, sizeof( vec3_t ) );
 
 	em->channel->event->set3DAttributes( &attribs );
 	em->channel->event->setListenerMask( nListenerMask );
-	em->channel->event->setVolume( snd_effectsVolume->f / 100.0f );
+	em->channel->event->setVolume( em->volume );
 	em->channel->event->start();
 }
 
