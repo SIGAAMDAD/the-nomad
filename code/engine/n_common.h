@@ -600,6 +600,25 @@ int Sys_MessageBox( const char *title, const char *text, bool ShowOkAndCancelBut
 
 void Sys_GetRAMUsage( uint64_t *curVirt, uint64_t *curPhys, uint64_t *peakVirt, uint64_t *peakPhys );
 
+typedef enum {
+	DR_YES = 0,
+	DR_NO = 1,
+	DR_OK = 0,
+	DR_CANCEL = 1
+} dialogResult_t;
+
+typedef enum
+{
+	DT_INFO,
+	DT_WARNING,
+	DT_ERROR,
+	DT_YES_NO,
+	DT_OK_CANCEL
+} dialogType_t;
+
+
+dialogResult_t Sys_Dialog( dialogType_t type, const char *message, const char *title );
+
 uint64_t Sys_GetCacheLine( void );
 uint64_t Sys_GetPageSize( void );
 
