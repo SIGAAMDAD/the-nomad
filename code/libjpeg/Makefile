@@ -49,6 +49,11 @@ CFLAGS   =$(FTYPE) $(DEFINES) $(INCLUDE) $(OPTIMIZERS) -fPIC
 SDIR     =code
 LIB      =libjpeg.$(DLL_EXT)
 
+ifdef win32
+STATIC_LIB      =libjpeg.lib
+COMPILE_LIB=x86_64-w64-mingw32-ar
+endif
+
 all: $(LIB)
 
 INTERNAL_OBJS=\
@@ -102,7 +107,10 @@ INTERNAL_OBJS=\
 $(O)/libjpeg/%.o: $(SDIR)/libjpeg/%.c
 	$(CC) $(CFLAGS) -shared -fPIC -o $@ -c $<
 
-$(LIB): $(INTERNAL_OBJS)
+$(STATIC_LIB): $(INTERNAL_OBJS)
+	$(COMPILE_LIB) rcs $(STATIC_LIB) $(INTERNAL_OBJS)
+
+$(LIB): $(STATIC_LIB)
 	$(CC) $(CFLAGS) $(INTERNAL_OBJS) -shared -fPIC -o $(LIB)
 
 clean:

@@ -516,10 +516,6 @@ static void G_InitRenderRef( void )
 
 	import.GLimp_Init = G_InitDisplay;
 	import.GLimp_InitGamma = GLimp_InitGamma;
-	import.GLimp_SpawnRenderThread = GLimp_SpawnRenderThread;
-	import.GLimp_FrontEndSleep = GLimp_FrontEndSleep;
-	import.GLimp_WakeRenderer = GLimp_WakeRenderer;
-	import.GLimp_RenderSleep = GLimp_RenderSleep;
 #ifdef USE_OPENGL_API
 	import.GLimp_EndFrame = GLimp_EndFrame;
 	import.GLimp_SetGamma = GLimp_SetGamma;

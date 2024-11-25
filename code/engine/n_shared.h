@@ -812,8 +812,8 @@ extern const byte locase[256];
 #if defined (_WIN32)
 #if !defined(_MSC_VER)
 // use GCC/Clang functions
-#define Q_setjmp __builtin_setjmp
-#define Q_longjmp __builtin_longjmp
+#define Q_setjmp setjmp
+#define Q_longjmp longjmp
 #elif GDRx64 && (_MSC_VER >= 1910)
 // use custom setjmp()/longjmp() implementations
 #define Q_setjmp Q_setjmp_c

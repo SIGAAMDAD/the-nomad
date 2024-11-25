@@ -163,10 +163,7 @@ LDLIBS= \
 		-lGL \
 		libbacktrace.a \
 		libEASTL.a \
-		libopenal.a \
 		TheNomad.ASLib.x64.a \
-		libfoonathan_memory-0.7.3.a \
-		/usr/local/lib/libcoredumper.a \
 		-L. \
 		-lSDL2 \
 		-lsndfile \
@@ -177,7 +174,6 @@ LDLIBS= \
 		-Wl,-rpath='.' \
 		-ljpeg -lsteam_api \
 		-lfmodL -lfmodstudioL \
-		libbox2d.a \
 		-lcurl
 
 ifndef release
@@ -191,7 +187,7 @@ SYS=\
 	$(O)/module_lib/module_virtual_asm_linux.o
 SYS_DIR=$(SDIR)/unix
 else
-INCLUDE+=-Ideps/ -Ideps/glm -Icode/libsdl/include
+INCLUDE+=-Ideps/ -Ideps/glm -Icode/libsdl/include -Icode/curl/include/
 LDLIBS=-L. \
 		-lgdi32 \
 		-lmingw32 \
@@ -206,13 +202,16 @@ LDLIBS=-L. \
 		-lvcruntime140_1d \
 		-lSDL2 \
 		-lSDL2_image \
-		OpenAL32.lib \
 		-lopengl32 \
-		-lsndfile \
 		/usr/x86_64-w64-mingw32/lib/libmsvcrt.a \
-		-ljpeg-9 \
-		-lsteam_api64 \
 		TheNomad.ASLib.x64.lib \
+		-Wl,-rpath='.' \
+		-ljpeg -lsteam_api64 \
+		-L. \
+		-lfmodL -lfmodstudioL \
+		-lfmod -lfmodstudio \
+		-lfsbank \
+		-lcurl
 
 ifndef release
 LDLIBS+=-ldbghelp

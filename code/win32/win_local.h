@@ -105,6 +105,8 @@ void Conbuf_AppendText( const char *msg );
 void Conbuf_BeginPrint( void );
 void Conbuf_EndPrint( void );
 
+void Sys_ErrorDialog( const char *error );
+
 typedef struct
 {
 	HWND			hWnd;

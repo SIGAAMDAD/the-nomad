@@ -254,7 +254,7 @@ static uint64_t LoadUInt64( const string_t& name, nhandle_t hSection )
 { return g_pArchiveHandler->LoadULong( name.c_str(), hSection ); }
 static float LoadFloat( const string_t& name, nhandle_t hSection )
 { return g_pArchiveHandler->LoadFloat( name.c_str(), hSection ); }
-static void LoadString( const string_t& name, string_t& value, nhandle_t hSection )
+static void LoadStringObject( const string_t& name, string_t& value, nhandle_t hSection )
 { g_pArchiveHandler->LoadString( name.c_str(), eastl::addressof( value ), hSection ); }
 static void LoadVec2( const string_t& name, glm::vec2& value, nhandle_t hSection )
 { g_pArchiveHandler->LoadVec2( name.c_str(), (vec_t *)glm::value_ptr( value ), hSection ); }
@@ -439,7 +439,7 @@ void ScriptLib_Register_Game( void )
 	REGISTER_GLOBAL_FUNCTION( "float TheNomad::GameSystem::LoadFloat( const string& in, int )", asFUNCTION( LoadFloat ), asCALL_CDECL );
 	REGISTER_GLOBAL_FUNCTION( "float TheNomad::GameSystem::LoadDecimal( const string& in, int )", asFUNCTION( LoadFloat ), asCALL_CDECL );
 
-	REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadString( const string& in, string& out, int )", asFUNCTION( LoadString ), asCALL_CDECL );
+	REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadString( const string& in, string& out, int )", asFUNCTION( LoadStringObject ), asCALL_CDECL );
 	REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadVec2( const string& in, vec2& out, int )", asFUNCTION( LoadVec2 ), asCALL_CDECL );
 	REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadVec3( const string& in, vec3& out, int )", asFUNCTION( LoadVec3 ), asCALL_CDECL );
 	REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadVec4( const string& in, vec4& out, int )", asFUNCTION( LoadVec4 ), asCALL_CDECL );
