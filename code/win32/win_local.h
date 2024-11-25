@@ -81,6 +81,7 @@ qboolean IN_MouseActive( void );
 void	IN_Win32MouseEvent( int x, int y, int mstate );
 void	IN_RawMouseEvent( LPARAM lParam );
 
+void	Sys_ShowConsole( int visLevel, qboolean quitOnClose );
 void	Sys_CreateConsole( const char *title, int xPos, int yPos, qboolean usePos );
 void	Sys_DestroyConsole( void );
 

@@ -1125,6 +1125,7 @@ void Sys_SetErrorText( const char *buf )
 	Sys_SetStatus( "Fatal error occurred" );
 }
 
+extern void Com_Quit_f( void );
 
 void HandleConsoleEvents( void ) {
 	MSG msg;
@@ -1133,7 +1134,7 @@ void HandleConsoleEvents( void ) {
 	while ( PeekMessage( &msg, NULL, 0, 0, PM_NOREMOVE ) ) {
 		if ( GetMessage( &msg, NULL, 0, 0 ) <= 0 ) {
 			Cmd_Clear();
-			Cbuf_ExecuteText( EXEC_NOW, "quit\n" );
+			Com_Quit_f();
 		}
 
 		TranslateMessage( &msg );

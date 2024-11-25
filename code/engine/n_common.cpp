@@ -1701,23 +1701,8 @@ void Com_Init( char *commandLine )
 	com_version = Cvar_Get( "version", s, CVAR_PROTECTED | CVAR_ROM );
 	Cvar_SetDescription( com_version, "Read-only CVAR to see the version of the game." );
 
-//	VM_Init();
-
 	G_Init();
 	G_StartHunkUsers();
-
-	{
-		char **fileList;
-		uint64_t nFiles;
-
-		fileList = FS_ListFiles( "Config/CrashReports", ".txt", &nFiles );
-		if ( nFiles > 10 ) {
-			FS_HomeRemove( va( "Config/CrashReports/%s", fileList[0] ) );
-			FS_Remove( va( "Config/CrashReports/%s", fileList[0] ) );
-		}
-		Cvar_Set( "com_crashReportCount", va( "%i", (int)nFiles ) );
-		FS_FreeFileList( fileList );
-	}
 
 	// set com_frameTime so that if a map is started on the
 	// command line it will still be able to count on com_frameTime

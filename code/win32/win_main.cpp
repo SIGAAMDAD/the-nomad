@@ -254,30 +254,13 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error( cons
     va_list argptr;
     char text[MAXPRINTMSG];
     MSG msg;
-	const char *str;
 
     va_start( argptr, err );
-    N_vsnprintf( text, sizeof(text), err, argptr );
+    N_vsnprintf( text, sizeof( text ), err, argptr );
     va_end( argptr );
 
-	str = va("Sys_Error: %s\n", text);
-	Sys_Print( str );
-
 	Sys_DebugStacktrace( MAX_STACKTRACE_FRAMES );
-	Sys_MessageBox( "Engine Error", text, false );
-
-	Com_Shutdown();
-
-    // wait for the user to quit
-	#if 0
-    while (1) {
-        if (!GetMessage( &msg, NULL, 0, 0 )) {
-            Cmd_Clear();
-        }
-        TranslateMessage( &msg );
-        DispatchMessage( &msg );
-    }
-	#endif
+	Sys_ErrorDialog( text );
 
     Sys_Exit( -1 );
 }
@@ -673,6 +656,7 @@ static const char *GetExceptionName( DWORD code )
 }
 
 
+
 /*
 ==================
 ExceptionFilter
@@ -704,7 +688,7 @@ static LONG WINAPI ExceptionFilter( struct _EXCEPTION_POINTERS *ExceptionInfo )
 
 			pGetModuleHandleExA = (PFN_GetModuleHandleExA) GetProcAddress( hKernel32, "GetModuleHandleExA" );
 			if ( pGetModuleHandleExA != NULL ) {
-				if ( pGetModuleHandleExA( GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCTSTR)addr, &hModule ) ) {
+				if ( pGetModuleHandleExA( GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCSTR)addr, &hModule ) ) {
 					if (GetModuleFileNameA( hModule, name, arraylen(name) - 1) != 0 ) {
 						name[arraylen(name) - 1] = '\0';
 						basename = strrchr( name, '\\' );
@@ -1314,9 +1298,10 @@ void Sys_ErrorDialog( const char *error )
 {
 	Sys_Print( va( "%s\n", error ) );
 
-	if( Sys_Dialog( DT_YES_NO, va( "%s. Copy console log to clipboard?", error ),
-			"Error" ) == DR_YES )
+	if ( Sys_Dialog( DT_YES_NO, error,
+			"Engine Error" ) == DR_YES )
 	{
+		/*
 		HGLOBAL memoryHandle;
 		char *clipMemory;
 
@@ -1343,6 +1328,7 @@ void Sys_ErrorDialog( const char *error )
 			GlobalUnlock( clipMemory );
 			CloseClipboard( );
 		}
+		*/
 	}
 }
 
@@ -1367,7 +1353,7 @@ dialogResult_t Sys_Dialog( dialogType_t type, const char *message, const char *t
 		case DT_OK_CANCEL: uType = MB_ICONWARNING|MB_OKCANCEL; break;
 	}
 
-	switch( MessageBox( NULL, message, title, uType ) )
+	switch( MessageBoxA( NULL, message, title, uType ) )
 	{
 		default:
 		case IDOK:      return DR_OK;
@@ -1415,7 +1401,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	Sys_CreateConsole( con_title, xpos, ypos, useXYpos );
 
 	// no abort/retry/fail errors
-//	SetErrorMode( SEM_FAILCRITICALERRORS );
+	SetErrorMode( SEM_FAILCRITICALERRORS );
 
 	SetUnhandledExceptionFilter( ExceptionFilter );
 
@@ -1425,6 +1411,10 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	Com_Init( sys_cmdline );
 
 	Con_Printf( "Working directory: %s\n", Sys_pwd() );
+
+	if ( !com_viewlog->i ) {
+		Sys_ShowConsole( 0, qfalse );
+	}
 
 	// main game loop
 	while ( 1 ) {

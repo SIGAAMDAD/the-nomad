@@ -399,7 +399,7 @@ void Sys_DebugStacktraceFile( uint32_t frames )
 	}
 	called = qtrue;
 #ifdef _WIN32
-	DWORD i;
+		DWORD i;
 	USHORT nFrames;
 	IMAGEHLP_LINE64 SymLine;
 	IMAGEHLP_MODULE64 ModuleInfo;
@@ -454,58 +454,27 @@ void Sys_DebugStacktraceFile( uint32_t frames )
 	stackFrame.AddrStack.Offset = g_debugSession.m_Context.IntSp;
 	stackFrame.AddrStack.Mode = AddrModeFlat;
 #endif
+	frames = CaptureStackBackTrace( 2, MAX_STACKTRACE_FRAMES, g_debugSession.m_pSymbolArray, NULL );
+
+	char buffer[sizeof( SYMBOL_INFO ) + ( MAX_SYM_NAME - 1 ) * sizeof ( TCHAR )];
+	PSYMBOL_INFO symbol = (PSYMBOL_INFO)buffer;
+	symbol->MaxNameLen = MAX_SYM_NAME - 1;
+	symbol->SizeOfStruct = sizeof ( SYMBOL_INFO );
+
+	Con_Printf( "Stacktrace:\n" );
+
 	for ( uint32_t i = 0; i < frames; i++ ) {
-		const BOOL result = StackWalk64( image, hProcess, hThread, &stackFrame, &g_debugSession.m_Context, NULL, SymFunctionTableAccess64,
-			SymGetModuleBase64, NULL );
-		if ( !result ) {
-			break;
-		}
-
-		char buffer[ sizeof( SYMBOL_INFO ) + ( MAX_SYM_NAME - 1 ) * sizeof( TCHAR ) ];
-		PSYMBOL_INFO symbol = (PSYMBOL_INFO)buffer;
-		symbol->SizeOfStruct = sizeof( SYMBOL_INFO );
-		symbol->MaxNameLen = MAX_SYM_NAME - 1;
-
-		SymLine.SizeOfStruct = sizeof( IMAGEHLP_LINE64 );
-		SymGetLineFromAddr64( hProcess, stackFrame.AddrPC.Offset, &dwDisplacement, &SymLine );
-		SymGetModuleInfo64( hProcess, symbol->ModBase, &ModuleInfo );
-
-		if ( SymFromAddr( hProcess, stackFrame.AddrPC.Offset, &dwDisplacement64, symbol ) ) {
-			Con_Printf( "[Frame %i] %s\n"
-						"(0x%04lx) %s:%i:%i -> %s\n"
-				, i, ModuleInfo.ModuleName, symbol->Address, SymLine.FileName, SymLine.LineNumber, dwDisplacement, (const char *)symbol->Name );
+		const char* str;
+		if ( SymFromAddr( hProcess, (DWORD64)(g_debugSession.m_pSymbolArray[i]), 0, symbol ) ) {
+			str = va ( "%-04i (%lu) %s\n", i, (uintptr_t)symbol->Address, symbol->Name );
+			Sys_Print( str );
+			FS_Printf( logfile, "%s", str );
 		} else {
-			Con_Printf( "SymFromAddr failed: %s\n", Sys_GetError() );
-			Con_Printf( "[Frame %i] (unknown symbol) ???\n", i );
+			str = va( "%-04i (%lu) (unknown symbol)\n", i, (uintptr_t)symbol->Address );
+			Sys_Print( str );
+			FS_Printf( logfile, "%s", str );
 		}
 	}
-
-/*
-	memset( g_debugSession.m_pSymbolArray, 0, sizeof( void * ) * MAX_STACKTRACE_FRAMES );
-	nFrames = CaptureStackBackTrace( 1, frames, g_debugSession.m_pSymbolArray, NULL );
-
-	ModuleInfo.SizeOfStruct = sizeof( IMAGEHLP_MODULE64 );
-	SymLine.SizeOfStruct = sizeof( IMAGEHLP_LINE64 );
-
-	pSymbol = g_debugSession.m_pSymbolBuffer;
-	pSymbol->SizeOfStruct = sizeof( SYMBOL_INFO ) + ( ( MAX_SYMBOL_LENGTH - 1 ) * sizeof( char ) );
-	pSymbol->MaxNameLength = MAX_SYMBOL_LENGTH - 1;
-
-	for ( i = 0; i < nFrames; i++ ) {
-		dwModuleBase = SymGetModuleBase64( hProcess, (DWORD64)g_debugSession.m_pSymbolArray[i] );
-		SymGetSymFromAddr64( hProcess,(DWORD64)( g_debugSession.m_pSymbolArray[i] ), NULL, pSymbol );
-		SymGetLineFromAddr64( hProcess, (DWORD64)g_debugSession.m_pSymbolArray[i], &dwDisplacement, &SymLine );
-		SymGetModuleInfo64( hProcess, dwModuleBase, &ModuleInfo );
-
-		Con_Printf( "[Frame #%i]\n"
-					"  Module Name: %s\n"
-					"  Address: 0x%04lx\n"
-					"  Line: %i\n"
-					"  Name: %s\n"
-					"  File: %s\n"
-				, nFrames - i - 1, ModuleInfo.ModuleName, pSymbol->Address, SymLine.LineNumber, (char *)pSymbol->Name, SymLine.FileName );
-	}
-	*/
 
 #elif defined(POSIX)
 	char *buffer;

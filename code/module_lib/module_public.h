@@ -234,7 +234,7 @@ typedef struct
 	void (*Sys_FreeFileList)( char **list );
 
 	void (GDR_DECL *Printf)( int level, const char *fmt, ... ) GDR_ATTRIBUTE((format(printf, 2, 3)));
-	void GDR_NORETURN (GDR_DECL *Error)(errorCode_t code, const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 2, 3)));
+	void GDR_NORETURN_FUNCPTR (GDR_DECL *Error)(errorCode_t code, const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 2, 3)));
 
 	void (*Cvar_VariableStringBuffer)(const char *name, char *buffer, uint64_t bufferSize);
 	void (*Cvar_VariableStringBufferSafe)(const char *name, char *buffer, uint64_t bufferSize, uint32_t flag);
