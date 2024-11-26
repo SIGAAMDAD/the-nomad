@@ -4,6 +4,7 @@
 #include "win_local.h"
 #include <signal.h>
 #include <excpt.h>
+#include <psapi.h>
 
 #define MEM_THRESHOLD (96*1024*1024)
 
@@ -1298,8 +1299,9 @@ void Sys_ErrorDialog( const char *error )
 {
 	Sys_Print( va( "%s\n", error ) );
 
-	if ( Sys_Dialog( DT_YES_NO, error,
-			"Engine Error" ) == DR_YES )
+	if ( Sys_Dialog( DT_YES_NO,
+		va( "%s.\nPlease send your debug.log (in gamedata/Config/) and crash.log (in gamedata/) in a bug report form", error ),
+		"Engine Error" ) == DR_YES )
 	{
 		/*
 		HGLOBAL memoryHandle;
@@ -1361,6 +1363,38 @@ dialogResult_t Sys_Dialog( dialogType_t type, const char *message, const char *t
 		case IDYES:     return DR_YES;
 		case IDNO:      return DR_NO;
 	}
+}
+
+int Sys_PID( void )
+{
+	return GetCurrentProcessId();
+}
+
+/*
+==============
+Sys_PIDIsRunning
+==============
+*/
+qboolean Sys_PIDIsRunning( int pid )
+{
+	DWORD processes[ 1024 ];
+	DWORD numBytes, numProcesses;
+	int i;
+
+	if( !EnumProcesses( processes, sizeof( processes ), &numBytes ) )
+		return qfalse; // Assume it's not running
+
+	numProcesses = numBytes / sizeof( DWORD );
+
+	// Search for the pid
+	for( i = 0; i < numProcesses; i++ )
+	{
+		if ( processes[ i ] == pid ) {
+			return qtrue;
+		}
+	}
+
+	return qfalse;
 }
 
 /*

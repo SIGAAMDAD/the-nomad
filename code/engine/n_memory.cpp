@@ -25,7 +25,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../game/g_game.h"
 #include "n_threads.h"
 #include "../game/imgui_memory_editor.h"
-#include <pthread.h>
 
 /*
 ===============================
@@ -55,8 +54,10 @@ meant for temp engine system allocations. Used by allocation callbacks. Blocks c
 #define HUNK_DEFSIZE 128
 #define HUNK_MINSIZE 56
 
-#define LOCK_HUNK() if ( hunkbase != NULL ) { pthread_mutex_lock( &hunkLock ); }
-#define UNLOCK_HUNK() if ( hunkbase != NULL ) { pthread_mutex_unlock( &hunkLock ); }
+#define LOCK_HUNK()
+#define UNLOCK_HUNK()
+//#define LOCK_HUNK() if ( hunkbase != NULL ) { pthread_mutex_lock( &hunkLock ); }
+//#define UNLOCK_HUNK() if ( hunkbase != NULL ) { pthread_mutex_unlock( &hunkLock ); }
 
 // tunables
 #define USE_MEMSTATIC
@@ -126,8 +127,6 @@ typedef struct memzone_s {
 	memblock_t	*rover;
 #endif
 } memzone_t;
-
-static pthread_mutex_t hunkLock;
 
 uint64_t hunksize;
 byte *hunkbase;
@@ -1796,12 +1795,6 @@ void Hunk_InitMemory( void )
 	// cacheline align
 	hunkbase = (byte *)PADP( hunkbase, com_cacheLine );
 	Hunk_Clear();
-
-	pthread_mutexattr_t attrib;
-	pthread_mutexattr_init( &attrib );
-	pthread_mutexattr_settype( &attrib, PTHREAD_MUTEX_RECURSIVE );
-
-	pthread_mutex_init( &hunkLock, &attrib );
 
 	Cmd_AddCommand( "hunkfree", Hunk_Free_f );
 	Cmd_AddCommand( "meminfo", Com_Meminfo_f );

@@ -1803,3 +1803,8 @@ void Mem_EnableLeakTest( const char *name ) {
 }
 
 #endif /* !MEMHEAP_DEBUG */
+
+uint32_t Mem_Msize( void *ptr )
+{
+	return mem_heap->Msize( ptr );
+}

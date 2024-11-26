@@ -207,11 +207,9 @@ LDLIBS=-L. \
 		TheNomad.ASLib.x64.lib \
 		-Wl,-rpath='.' \
 		-ljpeg -lsteam_api64 \
-		-L. \
-		-lfmodL -lfmodstudioL \
-		-lfmod -lfmodstudio \
-		-lfsbank \
-		-lcurl
+		-lcurl \
+		-lfmod \
+		-lfmodstudio \
 
 ifndef release
 LDLIBS+=-ldbghelp

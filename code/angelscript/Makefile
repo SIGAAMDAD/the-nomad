@@ -45,21 +45,10 @@ CC       =$(COMPILER)
 CFLAGS   =$(FTYPE) $(DEFINES) $(INCLUDE) $(OPTIMIZERS) -fPIC
 SDIR     =code
 
-ifdef win32
-LIB      =TheNomad.ASLib.x64.lib
-COMPILE_LIB=x86_64-w64-mingw32-ar
-else
-LIB      =TheNomad.ASLib.x64.a
-COMPILE_LIB=ar
-endif
-
-all: $(LIB)
-
 INTERNAL_OBJS=\
 	$(O)/angelscript/as_atomic.o \
 	$(O)/angelscript/as_builder.o \
 	$(O)/angelscript/as_bytecode.o \
-	$(O)/angelscript/as_callfunc_x64_gcc.o \
 	$(O)/angelscript/as_callfunc.o \
 	$(O)/angelscript/as_compiler.o \
 	$(O)/angelscript/as_configgroup.o \
@@ -86,11 +75,23 @@ INTERNAL_OBJS=\
 	$(O)/angelscript/as_typeinfo.o \
 	$(O)/angelscript/as_variablescope.o \
 
+ifdef win32
+LIB      =TheNomad.ASLib.x64.lib
+COMPILE_LIB=x86_64-w64-mingw32-ar
+ASM=$(O)/angelscript/as_callfunc_x64_mingw.o
+else
+LIB      =TheNomad.ASLib.x64.a
+COMPILE_LIB=ar
+ASM=$(O)/angelscript/as_callfunc_x64_gcc.o
+endif
+
+all: $(LIB)
+
 $(O)/angelscript/%.o: $(SDIR)/angelscript/%.cpp
 	$(CC) $(CFLAGS) -o $@ -c $<
 
-$(LIB): $(INTERNAL_OBJS)
-	$(COMPILE_LIB) rcs $(LIB) $(INTERNAL_OBJS)
+$(LIB): $(INTERNAL_OBJS) $(ASM)
+	$(COMPILE_LIB) rcs $(LIB) $(ASM) $(INTERNAL_OBJS)
 
 clean:
 	rm -rf $(INTERNAL_OBJS)

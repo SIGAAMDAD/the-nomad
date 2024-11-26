@@ -419,8 +419,7 @@ void ModsMenu_Cache( void )
 	size += PAD( sizeof( *mods->modList ) * g_pModuleLib->GetModCount(), sizeof( uintptr_t ) );
 
 	if ( !ui->uiAllocated ) {
-		static modmenu_t *menu = (modmenu_t *)alloca( size );
-		mods = menu;
+		mods = (modmenu_t *)Hunk_Alloc( size, h_high );
 	}
 	memset( mods, 0, size );
 	if ( g_pModuleLib->GetModCount() ) {

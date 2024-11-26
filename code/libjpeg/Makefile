@@ -110,7 +110,13 @@ $(O)/libjpeg/%.o: $(SDIR)/libjpeg/%.c
 $(STATIC_LIB): $(INTERNAL_OBJS)
 	$(COMPILE_LIB) rcs $(STATIC_LIB) $(INTERNAL_OBJS)
 
-$(LIB): $(STATIC_LIB)
+ifdef win32
+TARGET=$(STATIC_LIB)
+else
+TARGET=$(INTERNAL_OBJS)
+endif
+
+$(LIB): $(TARGET)
 	$(CC) $(CFLAGS) $(INTERNAL_OBJS) -shared -fPIC -o $(LIB)
 
 clean:

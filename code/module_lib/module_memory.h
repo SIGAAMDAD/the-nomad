@@ -35,6 +35,7 @@ void		Mem_GetStats( memoryStats_t &stats );
 void		Mem_Dump_f( const class idCmdArgs &args );
 void		Mem_DumpCompressed_f( const class idCmdArgs &args );
 void		Mem_AllocDefragBlock( void );
+uint32_t	Mem_Msize( void *ptr );
 
 #ifndef MEMHEAP_DEBUG
 void *		Mem_Alloc( const uint32_t size );

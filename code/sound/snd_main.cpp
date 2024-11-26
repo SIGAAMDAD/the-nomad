@@ -142,6 +142,7 @@ void CSoundSource::Release( void )
 	Stop();
 	if ( m_pData ) {
 		ERRCHECK( m_pData->releaseAllInstances() );
+		m_pData->unloadSampleData();
 	}
 	m_pData = NULL;
 }
@@ -162,6 +163,7 @@ bool CSoundSource::Load( const char *npath, int64_t nTag )
 		Con_Printf( COLOR_YELLOW "WARNING: Error loading sound source. Event not found.\n" );
 		return false;
 	}
+	m_pData->unloadSampleData();
 
 	m_nTag = nTag;
 
@@ -177,6 +179,7 @@ FMOD::Studio::EventInstance *CSoundSource::AllocEvent( void )
 	}
 
 	m_pData->createInstance( &pEvent );
+	m_pData->loadSampleData();
 
 	return pEvent;
 }
@@ -190,6 +193,7 @@ void CSoundSource::Play( bool bLooping, uint64_t nTimeOffset, bool bIsWorldSound
 	}
 
 	ERRCHECK( m_pData->createInstance( &m_pEmitter ) );
+	ERRCHECK( m_pData->loadSampleData() );
 	ERRCHECK( m_pEmitter->getPlaybackState( &state ) );
 	ERRCHECK( m_pEmitter->start() );
 
@@ -237,6 +241,7 @@ void CSoundSource::Stop( void )
 	};
 
 	ERRCHECK( m_pEmitter->release() );
+	ERRCHECK( m_pData->unloadSampleData() );
 
 	m_pEmitter = NULL;
 }
@@ -311,10 +316,34 @@ static FMOD_RESULT fmod_debug_callback( FMOD_DEBUG_FLAGS flags, const char *file
 	return FMOD_OK;
 }
 
+static void *FMOD_Realloc( void *ptr, unsigned int size, FMOD_MEMORY_TYPE type, const char *source )
+{
+	void *newBuffer = Mem_Alloc( size );
+	if ( ptr ) {
+		unsigned int old = Mem_Msize( ptr );
+		memcpy( newBuffer, ptr, old > size ? size : old );
+		Mem_Free( ptr );
+	}
+	return newBuffer;
+}
+
+static void *FMOD_Alloc( unsigned int size, FMOD_MEMORY_TYPE type, const char *source )
+{
+	return Mem_Alloc( size );
+}
+
+static void FMOD_Free( void *ptr, FMOD_MEMORY_TYPE type, const char *source )
+{
+	if ( ptr ) {
+		Mem_Free( ptr );
+	}
+}
+
 void CSoundSystem::Init( void )
 {
 	int ret;
 	FMOD_INITFLAGS flags;
+	FMOD_ADVANCEDSETTINGS settings;
 
 	if ( snd_debug->i ) {
 		Con_Printf( "Sound debug log enabled, creating logfile...\n" );
@@ -328,15 +357,16 @@ void CSoundSystem::Init( void )
 			| FMOD_DEBUG_DISPLAY_THREAD, FMOD_DEBUG_MODE_CALLBACK, fmod_debug_callback, NULL ) );
 	}
 
-	flags = FMOD_INIT_CHANNEL_DISTANCEFILTER | FMOD_INIT_PROFILE_ENABLE | FMOD_INIT_THREAD_UNSAFE | FMOD_INIT_VOL0_BECOMES_VIRTUAL
+	flags = FMOD_INIT_CHANNEL_DISTANCEFILTER | FMOD_INIT_THREAD_UNSAFE | FMOD_INIT_VOL0_BECOMES_VIRTUAL
 		| FMOD_INIT_CHANNEL_LOWPASS;
 
 	ERRCHECK( FMOD::Studio::System::create( &s_pStudioSystem ) );
 	ERRCHECK( s_pStudioSystem->getCoreSystem( &s_pCoreSystem ) );
+	ERRCHECK( s_pCoreSystem->setStreamBufferSize( 12*1024, FMOD_TIMEUNIT_RAWBYTES ) );
 
 	// get default audio info
 	memset( &m_AudioInfo, 0, sizeof( m_AudioInfo ) );
-	ERRCHECK( s_pCoreSystem->setSoftwareFormat( 48000, (FMOD_SPEAKERMODE)snd_speakerMode->i, 0 ) );
+	ERRCHECK( s_pCoreSystem->setSoftwareFormat( 48000, (FMOD_SPEAKERMODE)snd_speakerMode->i, 1 ) );
 	
 	ERRCHECK( s_pCoreSystem->getSoftwareFormat( &m_AudioInfo.samplerate, &m_AudioInfo.audioMode, &m_AudioInfo.speakerCount ) );
 	Cvar_SetIntegerValue( "snd_speakerMode", m_AudioInfo.audioMode );
@@ -446,15 +476,6 @@ void CSoundSystem::Update( void )
 	if ( snd_effectsVolume->modified ) {
 		ERRCHECK( m_pSFXBus->setVolume( snd_effectsVolume->f / 100.0f ) );
 		snd_effectsVolume->modified = qfalse;
-	}
-	if ( gi.mapLoaded ) {
-		if ( g_paused->modified ) {
-			if ( g_paused->i ) {
-//				Snd_PlaySfx( Snd_RegisterSfx( "snapshot:/PauseMenu" ) );
-			} else {
-//				Snd_StopSfx( Snd_RegisterSfx( "snapshot:/PauseMenu" ) );
-			}
-		}
 	}
 
 	ERRCHECK( s_pStudioSystem->update() );
