@@ -220,7 +220,7 @@ BOOL Win_CheckHotkeyMod( void ) {
 int Sys_MessageBox(const char *title, const char *text, bool ShowOkAndCancelButton)
 {
 #if 0
-    if (MessageBox( NULL, title, text, MB_ICONEXCLAMATION | ( ShowOkAndCancelButton ? MB_OKCANCEL : MB_OK )) == IDOK) {
+    if ( MessageBox( NULL, title, text, MB_ICONEXCLAMATION | ( ShowOkAndCancelButton ? MB_OKCANCEL : MB_OK ) ) == IDOK ) {
         return true;
     }
     return false;
@@ -268,11 +268,12 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error( cons
 
 void GDR_NORETURN Sys_Exit( int code )
 {
-    if (code == -1) {
-        exit( EXIT_FAILURE );
-    }
+	if ( code != -1 && com_fullyInitialized ) {
+		// normal exit
+		Sys_RemovePIDFile( FS_GetCurrentGameDir() );
+	}
 
-    exit( EXIT_SUCCESS );
+    exit( code );
 }
 
 static const struct Q3ToAnsiColorTable_s
@@ -1288,37 +1289,29 @@ void Sys_ErrorDialog( const char *error )
 	Sys_Print( va( "%s\n", error ) );
 
 	if ( Sys_Dialog( DT_YES_NO,
-		va( "%s.\nPlease send your debug.log (in gamedata/Config/) and crash.log (in gamedata/) in a bug report form", error ),
+		va( "%s. Would you like to copy the error to your clipboard?\n"
+		"Please send your debug.log (in gamedata/Config/) and crash.log (in gamedata/) in a bug report form", error ),
 		"Engine Error" ) == DR_YES )
 	{
-		/*
 		HGLOBAL memoryHandle;
 		char *clipMemory;
+		size_t len;
 
-		memoryHandle = GlobalAlloc( GMEM_MOVEABLE|GMEM_DDESHARE, CON_LogSize( ) + 1 );
+		len = strlen( error );
+
+		memoryHandle = GlobalAlloc( GMEM_MOVEABLE|GMEM_DDESHARE, len + 1 );
 		clipMemory = (char *)GlobalLock( memoryHandle );
 
-		if( clipMemory )
-		{
-			char *p = clipMemory;
-			char buffer[ 1024 ];
-			unsigned int size;
+		if ( clipMemory ) {
+			N_strncpyz( clipMemory, error, len + 1 );
 
-			while( ( size = CON_LogRead( buffer, sizeof( buffer ) ) ) > 0 )
-			{
-				Com_Memcpy( p, buffer, size );
-				p += size;
+			if ( OpenClipboard( NULL ) && EmptyClipboard() ) {
+				SetClipboardData( CF_TEXT, memoryHandle );
 			}
 
-			*p = '\0';
-
-			if( OpenClipboard( NULL ) && EmptyClipboard( ) )
-				SetClipboardData( CF_TEXT, memoryHandle );
-
 			GlobalUnlock( clipMemory );
-			CloseClipboard( );
+			CloseClipboard();
 		}
-		*/
 	}
 }
 

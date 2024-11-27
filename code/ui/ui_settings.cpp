@@ -2087,7 +2087,6 @@ void SettingsMenu_Cache( void )
 		"PERFORMANCE",
 		"ULTRA PERFORMANCE",
 		"QUALITY",
-		"ULTRA QUALITY",
 		"CUSTOM"
 	};
 	static const char *s_onOff[] = {

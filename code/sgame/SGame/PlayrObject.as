@@ -614,15 +614,15 @@ namespace TheNomad::SGame {
 			slideSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/slide_0" );
 			slideSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/slide_1" );
 
-			dashSfx = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/dash" );
+			dashSfx = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/use_jumpkit_0" );
 
 			meleeSfx = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/melee" );
 
 			weaponChangeHandSfx = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/weapon_change_hand" );
 			weaponChangeModeSfx = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/weapon_change_mode" );
 
-			crouchDownSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/player/clothRuffle0.ogg" );
-			crouchUpSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/player/clothRuffle1.ogg" );
+			crouchDownSfx = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/cloth_foley_0" );
+			crouchUpSfx = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/cloth_foley_1" );
 		}
 
 		private void CacheGfx() {
@@ -649,8 +649,8 @@ namespace TheNomad::SGame {
 			m_nHealMultDecay = LevelManager.GetDifficultyScale();
 
 			CacheGfx();
-			InitLoadout();
 			CacheSfx();
+			InitLoadout();
 
 			m_HudData.Init( @this );
 
