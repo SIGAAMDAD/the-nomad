@@ -57,13 +57,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define ID_SETDEFAULTS  7
 #define ID_SAVECONFIG   8
 
-#define PRESET_LOW         0
-#define PRESET_NORMAL      1
-#define PRESET_HIGH        2
-#define PRESET_PERFORMANCE 3
-#define PRESET_QUALITY     4
-#define PRESET_CUSTOM      5
-#define NUM_PRESETS        6
+#define PRESET_LOW				0
+#define PRESET_NORMAL			1
+#define PRESET_HIGH				2
+#define PRESET_PERFORMANCE		3
+#define PRESET_ULTRAPERFORMANCE	4
+#define PRESET_QUALITY			5
+#define PRESET_CUSTOM			6
+#define NUM_PRESETS				7
 
 #define ID_MOVENORTH       0
 #define ID_MOVEWEST        1
@@ -87,11 +88,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define BINDGROUP_COMBAT   1
 #define BINDGROUP_MISC     2
 
-#define TEXFILTER_ANISOTROPY32	4
-#define TEXFILTER_ANISOTROPY16	3
-#define TEXFILTER_ANISOTROPY8	2
-#define TEXFILTER_ANISOTROPY4	1
-#define TEXFILTER_ANISOTROPY2	0
+#define TEXFILTER_LINEARNEAREST	3
+#define TEXFILTER_NEARESTLINEAR	2
+#define TEXFILTER_NEAREST		1
+#define TEXFILTER_BILINEAR		0
+
+#define ANISOTROPY_ANISOTROPY32	5
+#define ANISOTROPY_ANISOTROPY16	4
+#define ANISOTROPY_ANISOTROPY8	3
+#define ANISOTROPY_ANISOTROPY4	2
+#define ANISOTROPY_ANISOTROPY2	1
+#define ANISOTROPY_NONE			0
 
 #define MAXFPS_30				0
 #define MAXFPS_35				1
@@ -148,14 +155,17 @@ typedef struct {
 	const char **textureFilters;
 	const char **onoff;
 	const char **qualityTypes;
+	const char **anisotropyAmounts;
 
 	int numMultisampleTypes;
 	int numTextureDetails;
 	int numTextureFilters;
 	int numQualities;
+	int numAnisotropyAmounts;
 
 	select_t textureFilter;
 	select_t multisampleType;
+	select_t anisotropyAmount;
 	
 	quality_t multisampleQuality;
 	quality_t textureDetail;
@@ -168,6 +178,8 @@ typedef struct {
 	toggle_t autoExposure;
 	toggle_t dynamicLighting;
 	toggle_t fixedRendering;
+	toggle_t hdr;
+	toggle_t bloom;
 } performanceSettings_t;
 
 typedef struct {
@@ -330,9 +342,6 @@ static float PerformanceMenu_CalcScore( void )
 	case AntiAlias_None:
 		score += 50.0f;
 		break;
-	case AntiAlias_SSAA:
-		score -= 6.0f * s_settingsMenu->performance.multisampleQuality;;
-		break;
 	case AntiAlias_MSAA:
 		score -= 10.0f * s_settingsMenu->performance.multisampleQuality;
 		break;
@@ -340,6 +349,35 @@ static float PerformanceMenu_CalcScore( void )
 		score -= 2.0f * s_settingsMenu->performance.multisampleQuality;;
 		break;
 	};
+
+	switch ( s_settingsMenu->performance.textureFilter ) {
+	case TEXFILTER_BILINEAR:
+		score -= 15.0f;
+		break;
+	case TEXFILTER_LINEARNEAREST:
+	case TEXFILTER_NEARESTLINEAR:
+		score -= 0.5f; // we can't really be sure because it's using both methods
+		break;
+	case TEXFILTER_NEAREST:
+		score += 15.0f;
+		break;
+	};
+
+	if ( s_settingsMenu->performance.fixedRendering ) {
+		float scale = 1.0f;
+		if ( s_settingsMenu->performance.fixedResolutionScaling > 0.0f ) {
+			scale = s_settingsMenu->performance.fixedResolutionScaling;
+		}
+		
+		score += scale * 12.0f;
+	}
+
+	if ( s_settingsMenu->performance.hdr ) {
+		score -= 15.0f;
+	}
+	if ( s_settingsMenu->performance.bloom ) {
+		score -= 30.0f;
+	}
 	
 	if ( s_settingsMenu->performance.dynamicLighting ) {
 		score -= 16.0f;
@@ -374,41 +412,81 @@ static void SettingsMenu_InitPresets( void ) {
 
 	// some quality but more optimized just for playability
 	s_settingsMenu->presets[ PRESET_LOW ].basic.multisampleType = AntiAlias_FXAA;
-	s_settingsMenu->presets[ PRESET_LOW ].basic.multisampleQuality = 0;
+	s_settingsMenu->presets[ PRESET_LOW ].basic.multisampleQuality = 1;
 	s_settingsMenu->presets[ PRESET_LOW ].basic.textureDetail = TexDetail_IntegratedGPU;
-	s_settingsMenu->presets[ PRESET_LOW ].basic.textureFilter = TEXFILTER_ANISOTROPY2;
+	s_settingsMenu->presets[ PRESET_LOW ].basic.textureFilter = TEXFILTER_NEAREST;
 	s_settingsMenu->presets[ PRESET_LOW ].basic.dynamicLighting = qtrue;
 	s_settingsMenu->presets[ PRESET_LOW ].basic.lightingQuality = 0;
+	s_settingsMenu->presets[ PRESET_LOW ].basic.anisotropyAmount = ANISOTROPY_ANISOTROPY2;
+	s_settingsMenu->presets[ PRESET_LOW ].basic.fixedRendering = qtrue;
+	s_settingsMenu->presets[ PRESET_LOW ].basic.fixedResolutionScaling = 0.0f;
+	s_settingsMenu->presets[ PRESET_LOW ].basic.loadTexturesOnDemand = qtrue;
 
-	s_settingsMenu->presets[ PRESET_NORMAL ].basic.multisampleType = AntiAlias_MSAA;
-	s_settingsMenu->presets[ PRESET_NORMAL ].basic.multisampleQuality = 1;
+	s_settingsMenu->presets[ PRESET_NORMAL ].basic.multisampleType = AntiAlias_FXAA;
+	s_settingsMenu->presets[ PRESET_NORMAL ].basic.multisampleQuality = 2;
 	s_settingsMenu->presets[ PRESET_NORMAL ].basic.textureDetail = TexDetail_Normie;
-	s_settingsMenu->presets[ PRESET_NORMAL ].basic.textureFilter = TEXFILTER_ANISOTROPY4;
+	s_settingsMenu->presets[ PRESET_NORMAL ].basic.textureFilter = TEXFILTER_NEAREST;
 	s_settingsMenu->presets[ PRESET_NORMAL ].basic.dynamicLighting = qtrue;
 	s_settingsMenu->presets[ PRESET_NORMAL ].basic.lightingQuality = 1;
+	s_settingsMenu->presets[ PRESET_NORMAL ].basic.anisotropyAmount = ANISOTROPY_ANISOTROPY2;
+	s_settingsMenu->presets[ PRESET_NORMAL ].basic.fixedRendering = qfalse;
+	s_settingsMenu->presets[ PRESET_NORMAL ].basic.fixedResolutionScaling = 0.0f;
+	s_settingsMenu->presets[ PRESET_NORMAL ].basic.loadTexturesOnDemand = qtrue;
 
 	s_settingsMenu->presets[ PRESET_HIGH ].basic.multisampleType = AntiAlias_MSAA;
-	s_settingsMenu->presets[ PRESET_HIGH ].basic.multisampleQuality = 2;
+	s_settingsMenu->presets[ PRESET_HIGH ].basic.multisampleQuality = 1;
 	s_settingsMenu->presets[ PRESET_HIGH ].basic.textureDetail = TexDetail_ExpensiveShitWeveGotHere;
-	s_settingsMenu->presets[ PRESET_HIGH ].basic.textureFilter = TEXFILTER_ANISOTROPY8;
+	s_settingsMenu->presets[ PRESET_HIGH ].basic.textureFilter = TEXFILTER_LINEARNEAREST;
 	s_settingsMenu->presets[ PRESET_HIGH ].basic.dynamicLighting = qtrue;
-	s_settingsMenu->presets[ PRESET_HIGH ].basic.lightingQuality = 2;
+	s_settingsMenu->presets[ PRESET_HIGH ].basic.lightingQuality = 1;
+	s_settingsMenu->presets[ PRESET_HIGH ].basic.hdr = qtrue;
+	s_settingsMenu->presets[ PRESET_HIGH ].basic.bloom = qfalse;
+	s_settingsMenu->presets[ PRESET_HIGH ].basic.anisotropyAmount = ANISOTROPY_ANISOTROPY4;
+	s_settingsMenu->presets[ PRESET_HIGH ].basic.fixedRendering = qfalse;
+	s_settingsMenu->presets[ PRESET_HIGH ].basic.fixedResolutionScaling = 0.0f;
+	s_settingsMenu->presets[ PRESET_HIGH ].basic.loadTexturesOnDemand = qtrue;
 
 	// highest quality rendering, no care for performance
 	s_settingsMenu->presets[ PRESET_QUALITY ].basic.multisampleType = AntiAlias_MSAA;
 	s_settingsMenu->presets[ PRESET_QUALITY ].basic.multisampleQuality = 2;
-	s_settingsMenu->presets[ PRESET_QUALITY ].basic.textureDetail = TexDetail_GPUvsGod;
-	s_settingsMenu->presets[ PRESET_QUALITY ].basic.textureFilter = TEXFILTER_ANISOTROPY16;
+	s_settingsMenu->presets[ PRESET_QUALITY ].basic.textureDetail = TexDetail_ExpensiveShitWeveGotHere;
+	s_settingsMenu->presets[ PRESET_QUALITY ].basic.textureFilter = TEXFILTER_LINEARNEAREST;
 	s_settingsMenu->presets[ PRESET_QUALITY ].basic.dynamicLighting = qtrue;
 	s_settingsMenu->presets[ PRESET_QUALITY ].basic.lightingQuality = 2;
-	
+	s_settingsMenu->presets[ PRESET_QUALITY ].basic.hdr = qtrue;
+	s_settingsMenu->presets[ PRESET_QUALITY ].basic.bloom = qtrue;
+	s_settingsMenu->presets[ PRESET_QUALITY ].basic.anisotropyAmount = ANISOTROPY_ANISOTROPY16;
+	s_settingsMenu->presets[ PRESET_QUALITY ].basic.fixedRendering = qfalse;
+	s_settingsMenu->presets[ PRESET_QUALITY ].basic.fixedResolutionScaling = 0.0f;
+	s_settingsMenu->presets[ PRESET_QUALITY ].basic.loadTexturesOnDemand = qtrue;
+
 	// looks the worst but gets the best framerate and much less memory consumption
-	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.multisampleType = AntiAlias_None;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.multisampleType = AntiAlias_FXAA;
 	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.multisampleQuality = 0;
 	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.textureDetail = TexDetail_MSDOS;
-	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.textureFilter = TEXFILTER_ANISOTROPY2;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.textureFilter = TEXFILTER_NEAREST;
 	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.dynamicLighting = qfalse;
 	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.lightingQuality = 0;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.hdr = qfalse;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.bloom = qfalse;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.anisotropyAmount = ANISOTROPY_ANISOTROPY2;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.fixedRendering = qtrue;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.fixedResolutionScaling = 0.0f;
+	s_settingsMenu->presets[ PRESET_PERFORMANCE ].basic.loadTexturesOnDemand = qtrue;
+
+	// you just want them FRAMES
+	s_settingsMenu->presets[ PRESET_ULTRAPERFORMANCE ].basic.multisampleType = AntiAlias_None;
+	s_settingsMenu->presets[ PRESET_ULTRAPERFORMANCE ].basic.multisampleQuality = 0;
+	s_settingsMenu->presets[ PRESET_ULTRAPERFORMANCE ].basic.textureDetail = TexDetail_MSDOS;
+	s_settingsMenu->presets[ PRESET_ULTRAPERFORMANCE ].basic.textureFilter = TEXFILTER_NEAREST;
+	s_settingsMenu->presets[ PRESET_ULTRAPERFORMANCE ].basic.dynamicLighting = qfalse;
+	s_settingsMenu->presets[ PRESET_ULTRAPERFORMANCE ].basic.lightingQuality = 0;
+	s_settingsMenu->presets[ PRESET_ULTRAPERFORMANCE ].basic.hdr = qfalse;
+	s_settingsMenu->presets[ PRESET_ULTRAPERFORMANCE ].basic.bloom = qfalse;
+	s_settingsMenu->presets[ PRESET_ULTRAPERFORMANCE ].basic.anisotropyAmount = ANISOTROPY_NONE;
+	s_settingsMenu->presets[ PRESET_ULTRAPERFORMANCE ].basic.fixedRendering = qtrue;
+	s_settingsMenu->presets[ PRESET_ULTRAPERFORMANCE ].basic.fixedResolutionScaling = 0.0f;
+	s_settingsMenu->presets[ PRESET_ULTRAPERFORMANCE ].basic.loadTexturesOnDemand = qtrue;
 }
 
 static void SettingsMenu_SetPreset( const preset_t *preset )
@@ -1058,6 +1136,20 @@ static void PerformanceMenu_DrawBasic( void )
 		&s_settingsMenu->performance.multisampleQuality, true );
 	
 	ImGui::TableNextRow();
+
+	SettingsMenu_MultiAdjustable( "TEXTURE FILTERING", "TextureFiltering",
+		"Sets the engine's method of texture filtering.",
+		s_settingsMenu->performance.textureFilters, s_settingsMenu->performance.numTextureFilters,
+		&s_settingsMenu->performance.textureFilter, true );
+	
+	ImGui::TableNextRow();
+
+	SettingsMenu_MultiAdjustable( "ANISOTROPIC FILTERING", "AnisotropicFiltering",
+		"Sets the amount of anisotropic filtering used in the engine. Must be supported in hardware.",
+		s_settingsMenu->performance.anisotropyAmounts, s_settingsMenu->performance.numAnisotropyAmounts,
+		&s_settingsMenu->performance.anisotropyAmount, Cvar_VariableInteger( "r_arb_texture_filter_anisotropic" ) );
+
+	ImGui::TableNextRow();
 	
 	SettingsMenu_MultiAdjustable( "TEXTURE QUALITY", "TextureQuality",
 		"Sets the quality of textures rendered, may effect performance",
@@ -1065,13 +1157,6 @@ static void PerformanceMenu_DrawBasic( void )
 		&s_settingsMenu->performance.textureDetail, true );
 
 	ImGui::TableNextRow();
-
-//	ImGui::TableNextRow();
-//
-//	SettingsMenu_MultiAdjustable( "TEXTURE FILTERING", "TextureFiltering",
-//		"Sets the type of texture filtering",
-//		s_settingsMenu->advancedPerformance.anisotropyTypes, s_settingsMenu->advancedPerformance.numAnisotropyTypes,
-//		&s_settingsMenu->performance.textureFilter, true );
 
 	SettingsMenu_MultiAdjustable( "LIGHTING QUALITY", "LightingQuality",
 		"Sets lighting quality", s_settingsMenu->performance.qualityTypes + 1, s_settingsMenu->performance.numQualities - 2,
@@ -1086,8 +1171,8 @@ static void PerformanceMenu_DrawBasic( void )
 	ImGui::TableNextRow();
 
 	SettingsMenu_MultiSliderFloat( "FIXED RESOLUTION SCALE", "FixedResolutionScaling",
-		"Sets the fixed resolution scaling.", &s_settingsMenu->performance.fixedResolutionScaling, 0.0f, 1.0f, 0.01f,
-		s_settingsMenu->performance.fixedRendering );
+		"Sets the rendering viewport scale, starting from 1024x720.",
+		&s_settingsMenu->performance.fixedResolutionScaling, 0.0f, 1.0f, 0.01f, s_settingsMenu->performance.fixedRendering );
 
 	ImGui::TableNextRow();
 
@@ -1098,8 +1183,21 @@ static void PerformanceMenu_DrawBasic( void )
 	ImGui::TableNextRow();
 
 	SettingsMenu_RadioButton( "DYNAMIC LIGHTING", "DynamicLighting",
-		"Enables per-pixel dynamic lighting", &s_settingsMenu->performance.dynamicLighting, true );
+		"Enables per-pixel dynamic lighting. This will have a heavy impact on performance, especially on IGPUs.",
+		&s_settingsMenu->performance.dynamicLighting, true );
+
+	ImGui::TableNextRow();
+
+	SettingsMenu_RadioButton( "BLOOM", "Bloom",
+		"Enables the usage of a bloom effect so that light sources of a certain brightness produce a glow effect.",
+		&s_settingsMenu->performance.bloom, s_settingsMenu->performance.hdr );
 	
+	ImGui::TableNextRow();
+
+	SettingsMenu_RadioButton( "HDR", "HighDynamicRange",
+		"Enables the engine to render in a far greater range of colors. Consumes more memory and some slight post-processing overhead.",
+		&s_settingsMenu->performance.hdr, Cvar_VariableInteger( "r_postProcess" ) );
+
 	ImGui::EndTable();
 }
 
@@ -1126,10 +1224,12 @@ static void PerformanceMenu_Draw( void )
 		PerformanceMenu_DrawBasic();
 	}
 
+/*
 	ImGui::Begin( "##GPUMemoryInfo", NULL, MENU_DEFAULT_FLAGS );
 	ImGui::SetWindowSize( ImVec2( 390 * ui->scale + ui->bias, 100 * ui->scale ) );
 	ImGui::SetWindowPos( ImVec2( s_settingsMenu->menu.width + 50 * ui->scale + ui->bias, 600 * ui->scale ) );
 	ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * 2.5f );
+*/
 
 	ImGui::End();
 }
@@ -1230,14 +1330,6 @@ static void VideoMenu_Draw( void )
 		SettingsMenu_MultiAdjustable( "FRAME LIMITER", "FrameLimiter",
 			"Sets the maximum amount of frames the game can render per second.",
 			s_settingsMenu->video.frameRates, s_settingsMenu->video.numFrameRates, &s_settingsMenu->video.maxFPS, true );
-		
-		/*
-		ImGui::TableNextRow();
-
-		SettingsMenu_MultiAdjustable( "PERFORMANCE MONITOR", "PerfomanceMonitor",
-			"", s_settingsMenu->performance.qualityTypes, s_settingsMenu->performance.numQualities,
-			&s_settingsMenu->video.performanceMonitor, true );
-		*/
 	}
 	ImGui::EndTable();
 }
@@ -1444,11 +1536,57 @@ static void PerformanceMenu_Save( void )
 		needRestart = true;
 	}
 
+	switch ( s_settingsMenu->performance.textureFilter ) {
+	case TEXFILTER_BILINEAR:
+		Cvar_SetIntegerValue( "r_textureFiltering", TexFilter_Bilinear );
+		break;
+	case TEXFILTER_NEAREST:
+		Cvar_SetIntegerValue( "r_textureFiltering", TexFilter_Nearest );
+		break;
+	case TEXFILTER_LINEARNEAREST:
+		Cvar_SetIntegerValue( "r_textureFiltering", TexFilter_LinearNearest );
+		break;
+	case TEXFILTER_NEARESTLINEAR:
+		Cvar_SetIntegerValue( "r_textureFiltering", TexFilter_NearestLinear );
+		break;
+	default:
+		Con_Printf( COLOR_RED "ERROR: invalid texture filter mode %i, resetting.\n", s_settingsMenu->performance.textureFilter );
+		Cvar_Reset( "r_textureFiltering" );
+		break;
+	};
+	
+	if ( Cvar_VariableInteger( "r_arb_texture_filter_anisotropic" ) ) {
+		// some (very rarely though) hardware doesn't support anisotropic filtering
+		switch ( s_settingsMenu->performance.anisotropyAmount ) {
+		case ANISOTROPY_ANISOTROPY2:
+			Cvar_SetIntegerValue( "r_arb_texture_max_anisotropy", 2 );
+			break;
+		case ANISOTROPY_ANISOTROPY4:
+			Cvar_SetIntegerValue( "r_arb_texture_max_anisotropy", 4 );
+			break;
+		case ANISOTROPY_ANISOTROPY8:
+			Cvar_SetIntegerValue( "r_arb_texture_max_anisotropy", 8 );
+			break;
+		case ANISOTROPY_ANISOTROPY16:
+			Cvar_SetIntegerValue( "r_arb_texture_max_anisotropy", 16 );
+			break;
+		case ANISOTROPY_ANISOTROPY32:
+			Cvar_SetIntegerValue( "r_arb_texture_max_anisotropy", 32 );
+			break;
+		default:
+			Con_Printf( COLOR_RED "ERROR: invalid anisotropy mode %i, resetting.\n", s_settingsMenu->performance.anisotropyAmount );
+			Cvar_Reset( "r_arb_texture_max_anisotropy" );
+			break;
+		};
+	}
+
 	Cvar_Set( "r_textureMode", s_settingsMenu->performance.textureFilters[ s_settingsMenu->performance.textureFilter ] );
 	Cvar_SetIntegerValue( "r_dynamiclight", s_settingsMenu->performance.dynamicLighting );
 	Cvar_SetIntegerValue( "r_textureDetail", s_settingsMenu->performance.textureDetail );
 	Cvar_SetIntegerValue( "r_dynamiclight", s_settingsMenu->performance.dynamicLighting );
 	Cvar_SetIntegerValue( "r_lightingQuality", s_settingsMenu->performance.lightingQuality );
+	Cvar_SetIntegerValue( "r_hdr", s_settingsMenu->performance.hdr );
+	Cvar_SetIntegerValue( "r_bloom", s_settingsMenu->performance.bloom );
 
 	if ( needRestart || PerformanceMenu_FBO_Save() ) {
 		UI_ConfirmMenu( "Some settings that you have changed require a restart to take effect, apply them?",
@@ -1493,7 +1631,6 @@ static void GameplayMenu_Save( void )
 	Cvar_SetIntegerValue( "sgame_CursorType", s_settingsMenu->gameplay.mouseCursor );
 	Cvar_SetIntegerValue( "sgame_DebugMode", s_settingsMenu->gameplay.debugPrint );
 	Cvar_SetIntegerValue( "sgame_ToggleHUD", s_settingsMenu->gameplay.toggleHUD );
-//	Cvar_SetIntegerValue( "sgame_BossHealthbar", s_sett );
 }
 
 static void ModuleMenu_Save( void )
@@ -1507,6 +1644,37 @@ static void PerformanceMenu_SetDefault( void )
 	int i;
 	const char *textureMode;
 
+	switch ( Cvar_VariableInteger( "r_arb_texture_max_anisotropy" ) ) {
+	case 2:
+		s_settingsMenu->performance.anisotropyAmount = ANISOTROPY_ANISOTROPY2;
+		break;
+	case 4:
+		s_settingsMenu->performance.anisotropyAmount = ANISOTROPY_ANISOTROPY4;
+		break;
+	case 8:
+		s_settingsMenu->performance.anisotropyAmount = ANISOTROPY_ANISOTROPY8;
+		break;
+	case 16:
+		s_settingsMenu->performance.anisotropyAmount = ANISOTROPY_ANISOTROPY16;
+		break;
+	case 32:
+		s_settingsMenu->performance.anisotropyAmount = ANISOTROPY_ANISOTROPY32;
+		break;
+	};
+	switch ( Cvar_VariableInteger( "r_textureFiltering" ) ) {
+	case TexFilter_Bilinear:
+		s_settingsMenu->performance.textureFilter = TEXFILTER_BILINEAR;
+		break;
+	case TexFilter_Nearest:
+		s_settingsMenu->performance.textureFilter = TEXFILTER_NEAREST;
+		break;
+	case TexFilter_LinearNearest:
+		s_settingsMenu->performance.textureFilter = TEXFILTER_LINEARNEAREST;
+		break;
+	case TexFilter_NearestLinear:
+		s_settingsMenu->performance.textureFilter = TEXFILTER_NEARESTLINEAR;
+		break;
+	};
 	s_settingsMenu->performance.dynamicLighting = Cvar_VariableInteger( "r_dynamiclight" );
 	s_settingsMenu->performance.multisampleType = Cvar_VariableInteger( "r_multisampleType" );
 	s_settingsMenu->performance.textureDetail = Cvar_VariableInteger( "r_textureDetail" );
@@ -1881,14 +2049,14 @@ qboolean R_HasExtension( const char *ext )
 	return ( ( *ptr == ' ' ) || ( *ptr == '\0' ) );  // verify its complete string.
 }
 
-#define NUM_ANTIALIAS_TYPES 4
-#define NUM_ANISOTROPY_TYPES 5
+#define NUM_ANTIALIAS_TYPES 3
+#define NUM_ANISOTROPY_TYPES 4
 #define NUM_HUD_OPTIONS 4
 #define NUM_VSYNC_TYPES 3
 #define NUM_WINDOW_MODES 4
 #define NUM_WINDOW_SIZES NUMVIDMODES + 1
-#define NUM_TEXTURE_FILTERS 4
-#define NUM_TEXTURE_DETAILS 5
+#define NUM_TEXTURE_FILTERS 6
+#define NUM_TEXTURE_DETAILS 4
 
 void SettingsMenu_Cache( void )
 {
@@ -1896,7 +2064,7 @@ void SettingsMenu_Cache( void )
 	char *p;
 
 	static const char *s_multisampleTypes[ NUM_ANTIALIAS_TYPES ];
-//	static const char *s_anisotropyTypes[ NUM_ANISOTROPY_TYPES ];
+	static const char *s_anisotropyTypes[ NUM_ANISOTROPY_TYPES ];
 	static const char *s_textureDetail[ NUM_TEXTURE_DETAILS ];
 	static const char *s_textureFilters[ NUM_TEXTURE_FILTERS ];
 	static const char *s_windowSizes[ NUM_WINDOW_SIZES ];
@@ -1913,12 +2081,14 @@ void SettingsMenu_Cache( void )
 		"UNLIMITED"
 	};
 	static const char *s_presetLabels[] = {
-		"Low",
-		"Normal",
-		"High",
-		"Performance",
-		"Quality",
-		"Custom"
+		"LOW",
+		"NORMAL",
+		"HIGH",
+		"PERFORMANCE",
+		"ULTRA PERFORMANCE",
+		"QUALITY",
+		"ULTRA QUALITY",
+		"CUSTOM"
 	};
 	static const char *s_onOff[] = {
 		"OFF",
@@ -1930,7 +2100,6 @@ void SettingsMenu_Cache( void )
 		"NORMAL",
 		"HIGH",
 		"VERY HIGH",
-//		"INSANE"
 	};
 	static const char *s_speakerModes[] = {
 		"Default",
@@ -1947,23 +2116,22 @@ void SettingsMenu_Cache( void )
 
 	s_multisampleTypes[0] = strManager->ValueForKey( "GAMEUI_NONE" )->value;
 	s_multisampleTypes[1] = strManager->ValueForKey( "GAMEUI_MSAA" )->value;
-	s_multisampleTypes[2] = strManager->ValueForKey( "GAMEUI_SSAA" )->value;
-	s_multisampleTypes[3] = strManager->ValueForKey( "GAMEUI_FXAA" )->value;
-
-//	s_anisotropyTypes[0] = strManager->ValueForKey( "GAMEUI_ANISOTROPIC2X" )->value;
-//	s_anisotropyTypes[1] = strManager->ValueForKey( "GAMEUI_ANISOTROPIC4X" )->value;
-//	s_anisotropyTypes[2] = strManager->ValueForKey( "GAMEUI_ANISOTROPIC8X" )->value;
-//	s_anisotropyTypes[3] = strManager->ValueForKey( "GAMEUI_ANISOTROPIC16X" )->value;
-//	s_anisotropyTypes[4] = strManager->ValueForKey( "GAMEUI_ANISOTROPIC32X" )->value;
+	s_multisampleTypes[2] = strManager->ValueForKey( "GAMEUI_FXAA" )->value;
 
 	s_vsync[0] = strManager->ValueForKey( "GAMEUI_VSYNC_ADAPTIVE" )->value;
 	s_vsync[1] = strManager->ValueForKey( "GAMEUI_DISABLED" )->value;
 	s_vsync[2] = strManager->ValueForKey( "GAMEUI_ENABLED" )->value;
 
-	s_textureFilters[0] = strManager->ValueForKey( "GAMEUI_BILINEAR" )->value;
-	s_textureFilters[1] = strManager->ValueForKey( "GAMEUI_NEAREST" )->value;
-	s_textureFilters[2] = strManager->ValueForKey( "GAMEUI_LINEARNEAREST" )->value;
-	s_textureFilters[3] = strManager->ValueForKey( "GAMEUI_NEARESTLINEAR" )->value;
+	s_anisotropyTypes[ ANISOTROPY_ANISOTROPY2 ] = strManager->ValueForKey( "GAMEUI_ANISOTROPY2X" )->value;
+	s_anisotropyTypes[ ANISOTROPY_ANISOTROPY4 ] = strManager->ValueForKey( "GAMEUI_ANISOTROPY4X" )->value;
+	s_anisotropyTypes[ ANISOTROPY_ANISOTROPY8 ] = strManager->ValueForKey( "GAMEUI_ANISOTROPY8X" )->value;
+	s_anisotropyTypes[ ANISOTROPY_ANISOTROPY16 ] = strManager->ValueForKey( "GAMEUI_ANISOTROPY16X" )->value;
+	s_anisotropyTypes[ ANISOTROPY_ANISOTROPY32 ] = strManager->ValueForKey( "GAMEUI_ANISOTROPY32X" )->value;
+
+	s_textureFilters[ TEXFILTER_BILINEAR ] = strManager->ValueForKey( "GAMEUI_BILINEAR" )->value;
+	s_textureFilters[ TEXFILTER_NEAREST ] = strManager->ValueForKey( "GAMEUI_NEAREST" )->value;
+	s_textureFilters[ TEXFILTER_NEARESTLINEAR ] = strManager->ValueForKey( "GAMEUI_NEARESTLINEAR" )->value;
+	s_textureFilters[ TEXFILTER_LINEARNEAREST ] = strManager->ValueForKey( "GAMEUI_LINEARNEAREST" )->value;
 
 	s_textureDetail[0] = strManager->ValueForKey( "GAMEUI_TEXDETAIL_VERYLOW" )->value;
 	s_textureDetail[1] = strManager->ValueForKey( "GAMEUI_TEXDETAIL_LOW" )->value;
@@ -2018,6 +2186,7 @@ void SettingsMenu_Cache( void )
 	s_settingsMenu->performance.textureFilters = s_textureFilters;
 	s_settingsMenu->presetNames = s_presetLabels;
 	s_settingsMenu->performance.qualityTypes = s_qualityTypes;
+	s_settingsMenu->performance.anisotropyAmounts = s_anisotropyTypes;
 
 	s_settingsMenu->audio.speakermodeTypes = s_speakerModes;
 
@@ -2039,6 +2208,7 @@ void SettingsMenu_Cache( void )
 	s_settingsMenu->performance.numMultisampleTypes = arraylen( s_multisampleTypes );
 	s_settingsMenu->performance.numTextureDetails = arraylen( s_textureDetail );
 	s_settingsMenu->performance.numTextureFilters = arraylen( s_textureFilters );
+	s_settingsMenu->performance.numAnisotropyAmounts = arraylen( s_anisotropyTypes );
 
 	s_settingsMenu->gameplay.numDifficultyTypes = arraylen( difficulties );
 

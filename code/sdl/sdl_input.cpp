@@ -13,8 +13,10 @@
 #include <SDL2/SDL_image.h>
 
 #ifdef _WIN32
-#else
-#include <X11/Xcursor/Xcursor.h>
+#ifndef WIN32_LEAN_AND_MEAN
+	#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
 #endif
 
 #define CTRL(a) ((a)-'a'+1)
@@ -29,8 +31,12 @@ SDL_GameController *gamepads[MAX_COOP_PLAYERS];
 SDL_Haptic *haptics[MAX_COOP_PLAYERS];
 SDL_Joystick *sticks[MAX_COOP_PLAYERS];
 
+#ifdef _WIN32
+static HCURSOR mouse_cursor_active, mouse_cursor;
+#else
 static SDL_Cursor *mouse_cursor_active, *mouse_cursor;
 qboolean sdlImageActive = qfalse;
+#endif
 
 static qboolean mouseAvailable = qfalse;
 static qboolean mouseActive = qfalse;
@@ -413,123 +419,36 @@ static void IN_GobbleMouseEvents( void )
 	}
 }
 
-/*
-#pragma pack(push, 1)
-typedef struct {
-	char reserved[2];
-	int16_t imageType;
-	int16_t numImages;
-	int8_t width;
-	int8_t height;
-	int16_t hotspotX;
-	int16_t hotspotY;
-	int32_t biSize;
-	int32_t biWidth;
-	int32_t biHeight;
-	int16_t biBitCount;
-	int32_t biCompression;
-	int32_t biSizeImage;
-	int32_t biXPelsPerMeter;
-	int32_t biYPelsPerMeter;
-	int32_t biClrUsed;
-	int32_t biClrImportant;
-} curHeader_t;
-#pragma pack(pop)
-
-static void LoadCursorFile( const char *name )
-{
-#ifdef _WIN32
-
-#else
-	fileHandle_t fh;
-	uint32_t *data, offset;
-	uint16_t maskBytesPerLine;
-	uint16_t maskBytes;
-	char *mask;
-	uint8_t origin;
-	char *buf;
-	uint8_t *bits, *p;
-	curHeader_t header;
-	int y, x;
-	SDL_Surface *surface;
-
-	fh = FS_FOpenRead( va( "%s/cursors/%s.cur", FS_GetBaseGameDir(), name ) );
-	if ( fh == FS_INVALID_HANDLE ) {
-		Con_Printf( "Error loading cursors/%s.cur\n", name );
-		return;
-	}
-
-	if ( !FS_Read( &header, sizeof( header ), fh ) ) {
-		Con_Printf( "Error reading %lu bytes from file 'cursors/%s.cur'!\n", name );
-		return;
-	}
-
-	origin = ( header.biHeight > 0 ? 0 : 1 );
-	header.biWidth = header.width;
-	header.biHeight = header.height;
-	data = (uint32_t *)Hunk_AllocateTempMemory( header.biWidth * header.biHeight );
-
-	for ( y = 0; y < header.biHeight; y++ ) {
-		for ( x = 0; x < header.biWidth; x++ ) {
-			offset = ( ( origin == 1 ? y : header.biHeight - 1 - y ) * header.biWidth ) + x;
-
-			switch ( header.biBitCount ) {
-			case 24:
-				FS_Read( &data[ offset ], 3, fh );
-				break;
-			case 32:
-				FS_Read( &data[ offset ], 4, fh );
-				break;
-			};
-		}
-	}
-
-	maskBytesPerLine = header.biWidth / 8;
-	maskBytes = maskBytesPerLine * header.biHeight;
-
-	mask = (char *)Hunk_AllocateTempMemory( maskBytes );
-
-	FS_Read( mask, maskBytes, fh );
-	FS_FClose( fh );
-
-	buf = (char *)alloca( maskBytesPerLine );
-
-	for ( x = 0; x < maskBytes; x += maskBytesPerLine ) {
-		for ( y = 0; y < maskBytesPerLine; y++ ) {
-			buf[y] = mask[ x + maskBytesPerLine - 1 - y ];
-		}
-		// copy the reversed line
-		for ( y = 0; y < maskBytesPerLine; y++ ) {
-			mask[ x + y ] = buf[ y ];
-		}
-	}
-
-	p = bits = (uint8_t *)Z_Malloc( maskBytes * 8, TAG_STATIC );
-	for ( x = 0; x < maskBytes; x++ ) {
-		for ( y = 0; y < 8; y++ ) {
-			*p++ = ( mask[ x ] & ( 1 << y ) ) ? 1 : 0;
-		}
-	}
-	Hunk_FreeTempMemory( mask );
-
-	eastl::reverse( bits, bits + ( maskBytes * 8 ) );
-
-	surface = SDL_CreateRGBSurfaceFrom( data, header.biWidth, header.biHeight, 0, 0, )
-#endif
-}
-
 static void IN_LoadMouseIcons( void )
 {
 #ifdef _WIN32
+	if ( in_mouseIcon->i == 0 ) {
+		mouse_cursor = LoadCursorFromFileA( va( "%s/cursors/cursor_n.cur", FS_GetBaseGameDir() ) );
+		if ( mouse_cursor == NULL ) {
+			Con_Printf( COLOR_RED "Error loading cursors/cursor_n.cur: %u\n", GetLastError() );
+			return;
+		}
 
+		mouse_cursor_active = LoadCursorFromFileA( va( "%s/cursors/cursor_a.cur", FS_GetBaseGameDir() ) );
+		if ( mouse_cursor_active == NULL ) {
+			Con_Printf( COLOR_RED "Error loading cursors/cursor_a.cur: %u\n", GetLastError() );
+			return;
+		}
+	}
+	else if ( in_mouseIcon->i == 1 ) {
+		mouse_cursor = LoadCursorFromFileA( va( "%s/cursors/cursor_a.cur", FS_GetBaseGameDir() ) );
+		if ( mouse_cursor == NULL ) {
+			Con_Printf( COLOR_RED "Error loading cursors/cursor_a.cur: %u\n", GetLastError() );
+			return;
+		}
+
+		mouse_cursor_active = LoadCursorFromFileA( va( "%s/cursors/cursor_n.cur", FS_GetBaseGameDir() ) );
+		if ( mouse_cursor_active == NULL ) {
+			Con_Printf( COLOR_RED "Error loading cursors/cursor_n.cur: %u\n", GetLastError() );
+			return;
+		}
+	}
 #else
-
-#endif
-}
-*/
-
-static void IN_LoadMouseIcons( void )
-{
 	SDL_Surface *image;
 
 	if ( !sdlImageActive ) {
@@ -574,6 +493,7 @@ static void IN_LoadMouseIcons( void )
 		}
 		SDL_FreeSurface( image );
 	}
+#endif
 }
 
 /*
@@ -588,9 +508,17 @@ static void IN_ActivateMouse( void )
 	}
 
 	if ( keys[ KEY_MOUSE_LEFT ].down ) {
+	#ifdef _WIN32
+		SetCursor( mouse_cursor_active );
+	#else
 		SDL_SetCursor( mouse_cursor_active );
+	#endif
 	} else {
+	#ifdef _WIN32
+		SetCursor( mouse_cursor );
+	#else
 		SDL_SetCursor( mouse_cursor );
+	#endif
 	}
 
 	if ( !mouseActive ) {
@@ -1591,6 +1519,7 @@ void IN_Init( void )
 		return;
 	}
 
+#ifndef _WIN32
 	Con_Printf( "Calling IMG_Init( IMG_INIT_PNG | IMG_INIT_JPG )...\n" );
 	if ( IMG_Init( IMG_INIT_PNG | IMG_INIT_JPG ) == 0 ) {
 		Con_Printf( "IMG_Init( IMG_INIT_PNG ) failed: %s\n", SDL_GetError() );
@@ -1599,6 +1528,7 @@ void IN_Init( void )
 		Con_Printf( "IMG_Init( IMG_INIT_PNG | IMG_INIT_JPG ) passed.\n" );
 		sdlImageActive = qtrue;
 	}
+#endif
 
 	Con_DPrintf( "\n------- Input Initialization -------\n" );
 
@@ -1680,7 +1610,11 @@ void IN_Init( void )
 	// FIXME: dont load mouse icons on console
 	IN_LoadMouseIcons();
 	if ( mouse_cursor ) {
+	#ifdef _WIN32
+		SetCursor( mouse_cursor );
+	#else
 		SDL_SetCursor( mouse_cursor );
+	#endif
 	}
 
 	Con_DPrintf( "------------------------------------\n" );
