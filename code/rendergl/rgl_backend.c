@@ -452,13 +452,7 @@ void RB_ShowImages( void ) {
 			vec4_t quadVerts[4];
 
 			GL_BindTexture(TB_COLORMAP, image);
-
-			VectorSet4(quadVerts[0], x, y, 0, 1);
-			VectorSet4(quadVerts[1], x + w, y, 0, 1);
-			VectorSet4(quadVerts[2], x + w, y + h, 0, 1);
-			VectorSet4(quadVerts[3], x, y + h, 0, 1);
-
-			RB_InstantQuad(quadVerts);
+			RB_RenderPass();
 		}
 	}
 
@@ -663,37 +657,6 @@ static const void *RB_PostProcess( const void *data )
 	srcBox[2] = glState.viewData.viewportWidth;
 	srcBox[3] = glState.viewData.viewportHeight;
 
-/*
-	if ( srcFbo && r_multisampleAmount->i <= AntiAlias_32xMSAA ) {
-		if ( r_hdr->i && ( r_toneMap->i || r_forceToneMap->i ) ) {
-			autoExposure = r_autoExposure->i || r_forceAutoExposure->i;
-			RB_ToneMap( srcFbo, srcBox, NULL, dstBox, autoExposure );
-		}br 
-		else if ( r_autoExposure->f == 0.0f ) {
-			FBO_FastBlit( srcFbo, srcBox, NULL, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
-		}
-		else {
-			vec4_t color;
-
-			color[0] =
-			color[1] =
-			color[2] = pow( 2, r_autoExposure->f ); //exp2(r_cameraExposure->f);
-			color[3] = 1.0f;
-
-//			FBO_Blit( srcFbo, srcBox, NULL, NULL, dstBox, NULL, color, 0 );
-		}
-	}
-*/
-
-	if ( r_drawSunRays->i ) {
-//		RB_SunRays( NULL, srcBox, NULL, dstBox );
-	}
-	
-	if ( 0 ) {
-//		RB_BokehBlur( NULL, srcBox, NULL, dstBox, backend.refdef.blurFactor );
-	} else {
-//		RB_GaussianBlur( backend.refdef.blurFactor );
-	}
 	if ( r_bloom->i ) {
 		if ( r_multisampleType->i == AntiAlias_MSAA ) {
 			// FIXME: very hacky way of getting around the whole upscaling with msaa thing
@@ -1063,12 +1026,6 @@ void RB_ExecuteRenderCommands( const void *data )
 
 	t1 = ri.Milliseconds();
 
-	if ( sys_forceSingleThreading->i || data == backendData[ 0 ]->commandList.buffer ) {
-		backend.smpFrame = 0;
-	} else {
-		backend.smpFrame = 1;
-	}
-
 	while ( 1 ) {
 		data = PADP( data, sizeof( void * ) );
 
@@ -1111,25 +1068,5 @@ void RB_ExecuteRenderCommands( const void *data )
 			backend.pc.msec = t2 - t1;
 			return;
 		}
-	}
-}
-
-void RB_RenderThread( void ) {
-	const void *data;
-
-	// wait for either a rendering command or a quit command
-	while ( 1 ) {
-		// sleep until we have work to do
-		data = ri.GLimp_RenderSleep();
-
-		if ( !data ) {
-			return;	// all done, renderer is shutting down
-		}
-
-		renderThreadActive = qtrue;
-
-		RB_ExecuteRenderCommands( data );
-
-		renderThreadActive = qfalse;
 	}
 }

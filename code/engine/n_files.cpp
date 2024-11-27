@@ -31,7 +31,7 @@ static const uint32_t bff_checksums[] = {
 #define HEADER_MAGIC 0x5f3759df
 #define BFF_IDENT (('B'<<24)+('F'<<16)+('F'<<8)+'I')
 
-typedef struct {
+typedef struct bffheader_s {
 	int64_t ident = BFF_IDENT;
 	int64_t magic = HEADER_MAGIC;
 	int64_t numChunks;
@@ -2827,11 +2827,7 @@ uint64_t FS_Write( const void *buffer, uint64_t size, fileHandle_t f )
 
 	while (remaining) {
 		block = remaining;
-	#ifdef _WIN32
-		writeCount = write( fileno( fp ), buf, block );
-	#else
-		writeCount = fwrite(buf, 1, block, fp);
-	#endif
+		writeCount = fwrite( buf, 1, block, fp );
 		if (writeCount == 0) {
 			if (!tries) {
 				tries = 1;
@@ -2946,11 +2942,7 @@ uint64_t FS_Read( void *buffer, uint64_t size, fileHandle_t f )
 
 		while (remaining) {
 			block = remaining;
-		#ifdef _WIN32
-			readCount = read( fileno( handles[f].data.fp ), buf, block );
-		#else
-			readCount = fread(buf, 1, block, handles[f].data.fp);
-		#endif
+			readCount = fread( buf, 1, block, handles[f].data.fp );
 			if (readCount == 0) {
 				// we might have been trying to read from a CD, which
 				// sometimes returns a 0 read on windows
@@ -3743,7 +3735,11 @@ uint64_t FS_LoadFile(const char *npath, void **buffer)
 
 int FS_FileToFileno( fileHandle_t f )
 {
+#ifdef _WIN32
+	return _fileno( handles[f].data.fp );
+#else
 	return fileno( handles[f].data.fp );
+#endif
 }
 
 void FS_FreeFile( void *buffer )

@@ -1,5 +1,7 @@
-#if !defined(GLSL_LEGACY)
+#if defined(USE_MULTIATTRIB)
 layout( location = 0 ) out vec4 a_Color;
+#else
+out vec4 a_Color;
 #endif
 
 TEXTURE2D u_DiffuseMap;
@@ -21,6 +23,6 @@ void main() {
 //		}
 //		a_Color *= sharpenImage( u_DiffuseMap, v_TexCoords );
 //	} else {
-		a_Color = texture2D( u_DiffuseMap, v_TexCoords );
+		a_Color = texture( u_DiffuseMap, v_TexCoords );
 //	}
 }

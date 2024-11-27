@@ -117,16 +117,21 @@ vec3 CalcPointLight( Light light ) {
 	range = light.range * light.brightness;
 
 	attenuation = ( light.constant + light.linear + light.quadratic * ( light.range * light.range ) );
+#if !defined(USE_SWITCH)
+	if ( u_LightingQuality == QUALITY_NORMAL ) {
+		vec3 normal = CalcNormal();
+		return ( mix( diffuse, normal, 0.025 ) * attenuation );	
+	}
+#else
 	switch ( u_LightingQuality ) {
 	case QUALITY_NORMAL:
-		const vec3 normal = CalcNormal();
+		vec3 normal = CalcNormal();
 		return ( mix( diffuse, normal, 0.025 ) * attenuation );	
-	default:
-		break;
 	};
+#endif
 
-	const vec3 specular = CalcSpecular();
-	const vec3 normal = CalcNormal();
+	vec3 specular = CalcSpecular();
+	vec3 normal = CalcNormal();
 	diffuse = mix( diffuse, specular, 0.025 );
 	diffuse = mix( diffuse, normal, 0.025 );
 
@@ -167,7 +172,7 @@ void main() {
 		a_Color = texture( u_DiffuseMap, texCoord );
 	}
 
-	const float alpha = a_Color.a * v_Color.a;
+	float alpha = a_Color.a * v_Color.a;
 	if ( u_AlphaTest == 1 ) {
 		if ( alpha == 0.0 ) {
 			discard;

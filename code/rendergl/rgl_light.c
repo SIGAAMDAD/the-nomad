@@ -13,7 +13,7 @@ static void R_LightForPoint( const vec3_t origin, const maplight_t *light, vec3_
 	VectorSet( lightPos, light->origin[0], light->origin[1], 0.0f );
 	distance = disBetweenOBJ( origin, lightPos );
 	if ( distance <= light->range ) {
-		diff = 1.0 - abs( distance / range );
+		diff = 1.0 - abs( distance / light->range );
 	}
 	diff = light->brightness;
 	diffuse[0] = MIN( diff * ( diff + light->color[0] ), diffuse[0] );

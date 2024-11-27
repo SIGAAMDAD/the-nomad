@@ -12,8 +12,6 @@
 #endif
 #include <windows.h>
 #include <GL/gl.h>
-#include <GL/glcorearb.h>
-#include <GL/glext.h>
 #elif defined( __linux__ ) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __sun )
 #include <GL/gl.h>
 #include <GL/glcorearb.h>

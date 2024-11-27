@@ -199,9 +199,9 @@ RB_CalcBulgeVertexes
 */
 static void RB_CalcBulgeVertexes( deformStage_t *ds ) {
 	int i;
-	uint32_t st;
-	uint32_t xyz;
-	uint32_t normal;
+	uint32_t st = 0;
+	uint32_t xyz = 0;
+	uint32_t normal = 0;
 	float now;
 	srfVert_t *vtx = (srfVert_t *)backend.drawBuffer->vertex[0].data;
 

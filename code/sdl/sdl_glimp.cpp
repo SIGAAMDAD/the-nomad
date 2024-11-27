@@ -325,13 +325,16 @@ static int GLimp_CreateBaseWindow( gpuConfig_t *config )
 			contextFlags |= SDL_GL_CONTEXT_PROFILE_CORE;
 		}
 
+		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2 );
+		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 1 );
+
 		GLimp_QuerySystemContext();
 
 		// set the recommended version, this is not mandatory,
 		// however if your driver isn't >= 3.3, that'll be
 		// deprecated stuff
-		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 4 );
-		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 5 );
+		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2 );
+		SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
 		SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY );
 
 		if ( contextFlags ) {
@@ -651,10 +654,21 @@ void GLimp_SetGamma( unsigned char red[256], unsigned char green[256], unsigned 
 void G_InitDisplay( gpuConfig_t *config )
 {
 	SDL_DisplayMode mode;
+	cvar_t *sys_openglLocalDLL;
 
 	if ( SDL_Init( SDL_INIT_VIDEO ) != 0 ) {
 		N_Error( ERR_FATAL, "SDL_Init(SDL_INIT_VIDEO) Failed: %s", SDL_GetError() );
 	}
+
+#if defined(_WIN32)
+	sys_openglLocalDLL = Cvar_Get( "sys_openglLocalDLL", "", CVAR_LATCH | CVAR_TEMP );
+
+	// on win32, we may be running from a vm, in that case, we want a custom opengl32.dll
+	// to force a v3.1 context instead of a v2.1 context
+	if ( SDL_GL_LoadLibrary( *sys_openglLocalDLL->s ? sys_openglLocalDLL->s : NULL ) < 0 ) {
+		N_Error( ERR_FATAL, "SDL_GL_LoadLibrary() Failed: %s", SDL_GetError() );
+	}
+#endif
 	
 	if ( SDL_GetDesktopDisplayMode( 0, &mode ) != 0 ) {
 		Con_Printf( COLOR_YELLOW "SDL_GetDesktopDisplayMode() Failed: %s\n", SDL_GetError() );

@@ -514,7 +514,6 @@ void G_ConsolePrint( const char *txt ) {
 		con.initialized = qtrue;
 	}
 	
-	startLine = buf;
 	len = strlen( txt );
 
 	if ( con.used + len >= CON_TEXTSIZE ) {

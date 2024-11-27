@@ -1,5 +1,9 @@
+#if defined(USE_MULTIATTRIB)
 layout( location = 0 ) out vec4 a_Color;
 layout( location = 1 ) out vec4 a_BrightColor;
+#else
+out vec4 a_Color;
+#endif
 
 in vec2 v_TexCoords;
 in vec4 v_Color;
@@ -27,9 +31,10 @@ void main() {
 			a_Color = v_Color * sharpenImage( u_DiffuseMap, v_TexCoords );
 		}
 	} else {
-		a_Color = v_Color * texture2D( u_DiffuseMap, v_TexCoords );
+		a_Color = v_Color * texture( u_DiffuseMap, v_TexCoords );
 	}
 
+#if defined(USE_MULTIATTRIB)
 	if ( u_Bloom && u_HDR ) {
 		// check whether fragment output is higher than threshold, if so output as brightness color
 		float brightness = dot( a_Color.rgb, vec3( 0.1, 0.1, 0.1 ) );
@@ -39,7 +44,9 @@ void main() {
 			a_BrightColor = vec4( 0.0, 0.0, 0.0, 1.0 );
 		}
 	}
-	else {
+	else
+#endif
+	{
 		a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
 	}
 }

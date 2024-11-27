@@ -120,7 +120,11 @@ static int GetStatusBarHeight( void )
 
 static int GetTimerMsec( void )
 {
-	int msec = 1000 / Cvar_VariableInteger( "com_fps" );
+	int fps = Cvar_VariableInteger( "com_fps" );
+	if ( fps == 0 ) {
+		fps = 1;
+	}
+	int msec = 1000 / fps;
 	if ( 1 ) {
 		if ( com_maxfps->i ) {
 			msec = 1000 / com_maxfps->i;
@@ -687,8 +691,9 @@ void Sys_CreateConsole( const char *title, int xPos, int yPos, qboolean useXYpos
 	wc.lpszMenuName  = 0;
 	wc.lpszClassName = DEDCLASS;
 
-	if ( !RegisterClassA (&wc) )
+	if ( !RegisterClassW( &wc ) ) {
 		return;
+	}
 
 	rect.left = 0;
 	rect.right = DEFAULT_WIDTH;
@@ -996,15 +1001,6 @@ void Conbuf_AppendText( const char *msg )
 
 	*b = '\0';
 	bufLen = b - buffer;
-
-	#ifdef _NOMAD_DEBUG
-	if (1)
-#else
-	if (com_devmode->i)
-#endif
-	{
-		_write( STDOUT_FILENO, buffer, bufLen );
-	}
 
 	// not enough space in buffer -> flush
 	if ( bufLen + conBufPos >= sizeof( conBuffer )-1 ) {

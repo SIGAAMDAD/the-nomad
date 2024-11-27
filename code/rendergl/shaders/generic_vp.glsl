@@ -1,6 +1,6 @@
 in vec2 a_Position;
-in uvec2 a_WorldPos;
 in vec2 a_TexCoords;
+in vec2 a_WorldPos;
 in vec4 a_Color;
 
 out vec2 v_TexCoords;

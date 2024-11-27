@@ -1,6 +1,8 @@
-#if !defined(GLSL_LEGACY)
+#if defined(USE_MULTIATTRIB)
 layout( location = 0 ) out vec4 a_Color;
 layout( location = 1 ) out vec4 a_BrightColor;
+#else
+out vec4 a_Color;
 #endif
 
 in vec2 v_TexCoords;
@@ -37,14 +39,19 @@ void main() {
 		discard;
 	}
 
+#if defined(USE_MULTIATTRIB)
 	if ( u_Bloom && u_HDR ) {
+		// check whether fragment output is higher than threshold, if so output as brightness color
 		float brightness = dot( a_Color.rgb, vec3( 0.1, 0.1, 0.1 ) );
 		if ( brightness > 0.5 ) {
 			a_BrightColor = vec4( a_Color.rgb, 1.0 );
 		} else {
 			a_BrightColor = vec4( 0.0, 0.0, 0.0, 1.0 );
 		}
-	} else {
+	}
+	else
+#endif
+	{
 		a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
 	}
 	a_Color.rgb *= v_Color.rgb;

@@ -818,8 +818,8 @@ extern const byte locase[256];
 // use custom setjmp()/longjmp() implementations
 #define Q_setjmp Q_setjmp_c
 #define Q_longjmp Q_longjmp_c
-int Q_setjmp_c(void *);
-int Q_longjmp_c(void *, int);
+GO_AWAY_MANGLE int Q_setjmp_c(void *);
+GO_AWAY_MANGLE int Q_longjmp_c(void *, int);
 #else // !GDRx64 || MSVC<2017
 #define Q_setjmp setjmp
 #define Q_longjmp longjmp

@@ -369,31 +369,19 @@ void Sys_InitConsole( void )
 	SetConsoleMode( hConsole, dwMode );
 }
 
-void Sys_Print(const char *msg)
+void Sys_Print( const char *msg )
 {
     char printmsg[MAXPRINTMSG];
     size_t len;
 	DWORD dwBytesWritten;
 
-    memset(printmsg, 0, sizeof(printmsg));
-
-    if (hConsole) {
-        Sys_ANSIColorMsg(msg, printmsg, sizeof(printmsg));
+    if ( hConsole ) {
+        Sys_ANSIColorMsg( msg, printmsg, sizeof( printmsg ) );
         len = strlen(printmsg);
-		::WriteConsole( hConsole, printmsg, len, &dwBytesWritten, NULL );
+		::WriteConsole( hConsole, AtoW( printmsg ), len, &dwBytesWritten, NULL );
     }
 
-/*    else {
-        char *out = printmsg;
-        while (*msg != '\0' && out < printmsg + sizeof(printmsg)) {
-            if (printableChar(*msg))
-                *out++ = *msg;
-            msg++;
-        }
-        len = out - printmsg;
-    } */
-
-//    _write(STDERR_FILENO, printmsg, len);
+	Conbuf_AppendText( msg );
 }
 
 /*

@@ -132,10 +132,6 @@ typedef struct {
 	void (*GLimp_LogComment)(const char *comment);
 	void (*GLimp_Minimize)( void );
 	void *(*GL_GetProcAddress)( const char *name );
-	qboolean (*GLimp_SpawnRenderThread)( void (*function)( void ) );
-	void *(*GLimp_RenderSleep)( void );
-	void (*GLimp_FrontEndSleep)( void );
-	void (*GLimp_WakeRenderer)( void *data );
 
 	void *(*Sys_LoadDLL)(const char *name);
 	void *(*Sys_GetProcAddress)(void *handle, const char *name);

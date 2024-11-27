@@ -573,7 +573,7 @@ GDR_INLINE const char *CThread::GetName( void )
 	if ( !m_szName[0] ) {
 		memset( m_szName, 0, sizeof( m_szName ) );
 	#ifdef _WIN32
-		_snprintf( m_szName, sizeof( m_szName ) - 1, "Thread(%p/%p)", this, m_hThread );
+		_snprintf_s( m_szName, sizeof( m_szName ) - 1, "Thread(%p/%p)", this, m_hThread );
 	#else
 		snprintf( m_szName, sizeof( m_szName ) - 1, "Thread(%p/0x%04x)", this, (uint32_t)m_hThreadId );
 	#endif
@@ -1346,6 +1346,7 @@ GDR_INLINE T CThreadAtomic<T>::add( T value, MemoryOrder order )
 {
 #ifdef _WIN32
 	InterlockedExchangeAdd( &m_hValue, value );
+	return m_hValue;
 #else
 	return __sync_add_and_fetch( const_cast<T *>( &m_hValue ), value );
 #endif
@@ -1356,6 +1357,7 @@ GDR_INLINE T CThreadAtomic<T>::sub( T value, MemoryOrder order )
 {
 #ifdef _WIN32
 	InterlockedExchangeAdd( &m_hValue, -value );
+	return m_hValue;
 #else
 	return __sync_sub_and_fetch( const_cast<volatile T *>( &value ), const_cast<T *>( &m_hValue ), order );
 #endif

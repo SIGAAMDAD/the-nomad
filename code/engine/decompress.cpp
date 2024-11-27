@@ -1,7 +1,6 @@
 #include "n_shared.h"
 #include "n_common.h"
 
-#ifdef POSIX
 #include <zlib.h>
 #include <bzlib.h>
 
@@ -321,12 +320,3 @@ char *Decompress( void *buf, uint64_t buflen, uint64_t *outlen, int compression 
 	};
 	return (char *)buf;
 }
-#else
-char *Compress( void *buf, uint64_t buflen, uint64_t *outlen, int compression ) {
-	return (char *)buf;
-}
-
-char *Decompress( void *buf, uint64_t buflen, uint64_t *outlen, int compression ) {
-	return (char *)buf;
-}
-#endif

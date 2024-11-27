@@ -557,6 +557,7 @@ static void RB_StageIteratorGeneric( shader_t *shader )
 			break;
 		}
 
+		sp = NULL;
 		if ( rg.world && rg.world->drawing ) {
 			if ( backend.drawBatch.vtxDataSize == sizeof( srfVert_t ) ) {
 				sp = &rg.spriteShader;

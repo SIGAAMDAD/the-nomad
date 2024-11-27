@@ -142,13 +142,15 @@ qboolean R_ClearTextureCache( void )
 {
 	uint64_t i;
 	
-	if ( !r_loadTexturesOnDemand->i || !glContext.bindlessTextures ) {
+	if ( !r_loadTexturesOnDemand->i ) {
 		return qfalse;
 	}
 	
 	for ( i = 0; i < rg.numTextures; i++ ) {
 		if ( !rg.textures[ i ]->evicted ) {
-			nglMakeTextureHandleNonResidentARB( rg.textures[ i ]->handle );
+			if ( glContext.bindlessTextures ) {
+				nglMakeTextureHandleNonResidentARB( rg.textures[ i ]->handle );
+			}
 			nglDeleteTextures( 1, &rg.textures[ i ]->id );
 			rg.textures[ i ]->evicted = qtrue;
 			rg.textures[ i ]->id = 0;
@@ -162,12 +164,14 @@ void R_TouchTexture( texture_t *image )
 {
 	image->frameUsed = rg.frameCount;
 	
-	if ( ( !r_loadTexturesOnDemand->i && glContext.bindlessTextures ) || !image->evicted ) {
+	if ( !r_loadTexturesOnDemand->i || !image->evicted ) {
 		return;
 	}
 	
 	R_AllocateTextureStorage( image );
-	nglMakeTextureHandleResidentARB( image->handle );
+	if ( glContext.bindlessTextures ) {
+		nglMakeTextureHandleResidentARB( image->handle );
+	}
 	ri.Printf( PRINT_DEVELOPER, "Loaded texture handle %s on demand\n", image->imgName );
 	image->evicted = qfalse;
 }
@@ -179,7 +183,7 @@ void R_EvictUnusedTextures( void )
 	texture_t *image;
 	static uint64_t lastEvictionTime = 0;
 	
-	if ( ( !r_loadTexturesOnDemand->i || !glContext.bindlessTextures ) || *ri.Cvar_VariableString( "mapname" ) ) {
+	if ( ( !r_loadTexturesOnDemand->i ) || *ri.Cvar_VariableString( "mapname" ) ) {
 		return;
 	}
 
@@ -199,7 +203,9 @@ void R_EvictUnusedTextures( void )
 		// evict a texture that has gone unused for at least 2 minutes
 		image = rg.textures[ i ];
 		if ( image && rg.frameCount - image->frameUsed >= maxFPS * 12000 && !( image->flags & IMGFLAG_FBO ) && !image->evicted ) {
-			nglMakeTextureHandleNonResidentARB( image->handle );
+			if ( glContext.bindlessTextures ) {
+				nglMakeTextureHandleNonResidentARB( image->handle );
+			}
 			nglDeleteTextures( 1, &image->id );
 			image->evicted = qtrue;
 			image->id = 0;
@@ -244,8 +250,6 @@ void R_UpdateTextures( void )
 			// update the anisotropy while we're at it
 			if ( r_arb_texture_filter_anisotropic->i ) {
 				nglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, r_arb_texture_max_anisotropy->f );
-			} else {
-				nglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 0 );
 			}
 			GL_BindTexture( TB_COLORMAP, 0 );
 		}
@@ -2319,7 +2323,7 @@ static void R_AllocateTextureStorage( texture_t *image )
 {
 	GLenum glWrapClampMode;
 	GLenum dataFormat;
-	GLenum dataType;
+	GLenum dataType = GL_UNSIGNED_BYTE;
 	byte *resampledBuffer = NULL;
 	uint32_t estSize = 0;
 	qboolean rgba8 = image->picFormat == GL_RGBA8 || image->picFormat == GL_SRGB8_ALPHA8;

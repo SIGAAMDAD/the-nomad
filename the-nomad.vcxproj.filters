@@ -73,6 +73,9 @@
     <Filter Include="Header Files\sdl">
       <UniqueIdentifier>{76752916-22e5-4801-adf4-d49bc613ff94}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\module_lib\funcdefs">
+      <UniqueIdentifier>{eef6b929-d673-4a09-99a1-40091a31adc6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="code\engine\gln_files.h">
@@ -669,11 +672,8 @@
     <ClInclude Include="code\module_lib\scriptpreprocessor.h">
       <Filter>Header Files\module_lib</Filter>
     </ClInclude>
-    <ClInclude Include="code\asm\qasm.h">
-      <Filter>Header Files\engine</Filter>
-    </ClInclude>
-    <ClInclude Include="code\engine\n_common.h">
-      <Filter>Header Files\engine</Filter>
+    <ClInclude Include="qasm.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -747,9 +747,6 @@
       <Filter>Source Files\game</Filter>
     </ClCompile>
     <ClCompile Include="code\game\g_sgame.cpp">
-      <Filter>Source Files\game</Filter>
-    </ClCompile>
-    <ClCompile Include="code\game\g_threads.cpp">
       <Filter>Source Files\game</Filter>
     </ClCompile>
     <ClCompile Include="code\module_lib\contextmgr.cpp">
@@ -895,6 +892,15 @@
     </ClCompile>
     <ClCompile Include="code\module_lib\scriptlib\scriptparser.cpp">
       <Filter>Source Files\module_lib\scriptlib</Filter>
+    </ClCompile>
+    <ClCompile Include="code\module_lib\funcdefs\module_funcdef_game.cpp">
+      <Filter>Source Files\module_lib\funcdefs</Filter>
+    </ClCompile>
+    <ClCompile Include="code\module_lib\funcdefs\module_funcdef_util.cpp">
+      <Filter>Source Files\module_lib\funcdefs</Filter>
+    </ClCompile>
+    <ClCompile Include="code\module_lib\funcdefs\module_funcdef_sound.cpp">
+      <Filter>Source Files\module_lib\funcdefs</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

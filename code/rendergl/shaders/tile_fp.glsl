@@ -1,5 +1,9 @@
+#if defined(USE_MULTIATTRIB)
 layout( location = 0 ) out vec4 a_Color;
 layout( location = 1 ) out vec4 a_BrightColor;
+#else
+out vec4 a_Color;
+#endif
 
 in vec2 v_TexCoords;
 in vec4 v_Color;
@@ -117,13 +121,18 @@ vec3 CalcPointLight( Light light ) {
 	range = light.range * light.brightness;
 
 	attenuation = ( light.constant + light.linear + light.quadratic * ( light.range * light.range ) );
+#if !defined(USE_SWITCH)
+	if ( u_LightingQuality == QUALITY_NORMAL ) {
+		const vec3 normal = CalcNormal();
+		return ( mix( diffuse, normal, 0.025 ) * attenuation );	
+	}
+#else
 	switch ( u_LightingQuality ) {
 	case QUALITY_NORMAL:
 		const vec3 normal = CalcNormal();
 		return ( mix( diffuse, normal, 0.025 ) * attenuation );	
-	default:
-		break;
 	};
+#endif
 
 	const vec3 specular = CalcSpecular();
 	const vec3 normal = CalcNormal();
@@ -188,14 +197,19 @@ void main() {
 	ApplyLighting();
 
 	// if we have post processing active, don't calculate gamma until the final pass
-	if ( u_HDR && u_Bloom ) {
+#if defined(USE_MULTIATTRIB)
+	if ( u_Bloom && u_HDR ) {
+		// check whether fragment output is higher than threshold, if so output as brightness color
 		float brightness = dot( a_Color.rgb, vec3( 0.1, 0.1, 0.1 ) );
 		if ( brightness > 0.5 ) {
 			a_BrightColor = vec4( a_Color.rgb, 1.0 );
 		} else {
 			a_BrightColor = vec4( 0.0, 0.0, 0.0, 1.0 );
 		}
-	} else {
+	}
+	else
+#endif
+	{
 		a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
 	}
 	if ( u_GamePaused ) {

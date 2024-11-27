@@ -710,8 +710,8 @@ void CScriptArray::Clear( void )
 	Destruct( buffer, 0, buffer->size );
 	
 	// clear it all
-	buffer->size = 0;
-	memset( buffer->data, 0, buffer->capacity );
+	Mem_Free( buffer );
+	buffer = NULL;
 
 	memstats.numBuffers--;
 }

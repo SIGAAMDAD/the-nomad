@@ -19,13 +19,13 @@ static asIScriptObject *AllocateExternalScriptObject( const string_t& nameSpace,
 	pTypeInfo = g_pModuleLib->GetScriptModule()->GetTypeInfoByDecl( va( "%s::%s", nameSpace.c_str(), name.c_str() ) );
 	if ( !pTypeInfo ) {
 		Con_Printf( COLOR_RED "ERROR: invalid script class type \"%s::%s\"!\n", nameSpace.c_str(), name.c_str() );
-		return;
+		return NULL;
 	}
 
 	pFactory = g_pModuleLib->GetScriptModule()->GetFunctionByDecl( szFactoryName );
 	if ( !pFactory ) {
 		Con_Printf( COLOR_RED "ERROR: script class \"%s::%s\" has no default factory!\n", nameSpace.c_str(), name.c_str() );
-		return;
+		return NULL;
 	}
 
 	g_pModuleLib->GetScriptContext()->PushState();

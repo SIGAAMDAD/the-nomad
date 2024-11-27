@@ -513,25 +513,31 @@ static void GLSL_ShowProgramUniforms(GLuint program)
 static void GLSL_PrepareHeader(GLenum shaderType, const GLchar *extra, char *dest, uint64_t size)
 {
 	float fbufWidthScale, fbufHeightScale;
+	qboolean glslLegacy;
 
 	dest[0] = '\0';
 
 	// OpenGL version from 3.3 and up have corresponding glsl versions
 	if ( NGL_VERSION_ATLEAST( 3, 30 ) ) {
 		N_strcat( dest, size, "#version 450 core\n" );
+		N_strcat( dest, size, "#define USE_SWITCH\n" );
+		glslLegacy = qfalse;
 	}
 	// otherwise, do the Quake3e method
-	else if ( GLSL_VERSION_ATLEAST( 1, 30 ) ) {
-		if ( GLSL_VERSION_ATLEAST( 1, 50 ) ) {
-			N_strcat( dest, size, "#version 150\n" );
-		}
-		else if (GLSL_VERSION_ATLEAST(1, 30)) {
-			N_strcat( dest, size, "#version 130\n" );
-		}
+	else if ( NGL_VERSION_ATLEAST( 2, 1 ) ) {
+		glslLegacy = qtrue;
+		N_strcat( dest, size, "#version 140\n" );
+		N_strcat( dest, size, "#define GLSL_LEGACY\n" );
 	}
 	else {
+		glslLegacy = qtrue;
 		N_strcat( dest, size, "#version 120\n" );
 		N_strcat( dest, size, "#define GLSL_LEGACY\n" );
+	}
+
+	if ( R_HasExtension( "ARB_explicit_attrib_location" ) ) {
+		N_strcat( dest, size, "#extension GL_ARB_explicit_attrib_location : enable\n" );
+		N_strcat( dest, size, "#define USE_MULTIATTRIB\n" );
 	}
 
 	//
@@ -565,7 +571,13 @@ static void GLSL_PrepareHeader(GLenum shaderType, const GLchar *extra, char *des
 		N_strcat( dest, size, va( "#define ANTIALIAS_QUALITY %i\n", r_antialiasQuality->i ) );
 		N_strcat( dest, size, va( "#define LIGHTING_QUALITY %i\n", r_lightingQuality->i ) );
 	}
-	if ( !( NGL_VERSION_ATLEAST( 1, 30 ) ) ) {
+
+	if ( glslLegacy ) {
+		// hacky way of on-the-fly glsl conversion
+		N_strcat( dest, size, "#define texture texture2D\n" );
+	}
+	/*
+	if ( !( GLSL_VERSION_ATLEAST( 1, 3 ) ) ) {
 		if ( shaderType == GL_VERTEX_SHADER ) {
 			N_strcat( dest, size, "#define in attribute\n" );
 			N_strcat( dest, size, "#define out varying\n" );
@@ -576,6 +588,7 @@ static void GLSL_PrepareHeader(GLenum shaderType, const GLchar *extra, char *des
 			N_strcat( dest, size, "#define texture texture2D\n" ); // texture2D is deprecated in modern GLSL
 		}
 	}
+	*/
 
 	N_strcat(dest, size, "#ifndef M_PI\n#define M_PI 3.14159265358979323846\n#endif\n");
 
@@ -810,7 +823,7 @@ int GLSL_InitGPUShader( shaderProgram_t *program, const char *name, uint32_t att
 	char fsCode[32000];
 	char *postHeader;
 	uint64_t size;
-	uint32_t fromCache;
+	uint32_t fromCache = -1;
 
 	rg.programs[ rg.numPrograms ] = program;
 	rg.numPrograms++;
@@ -959,7 +972,7 @@ void GLSL_SetUniformTexture( shaderProgram_t *program, uint32_t uniformNum, text
 	if ( glContext.bindlessTextures ) {
 		nglUniformHandleui64ARB( uniforms[ uniformNum ], value->handle );
 	} else {
-		nglUniform1i( uniforms[ uniformNum ], uniformNum );
+		nglUniform1i( uniforms[ uniformNum ], value->id );
 	}
 }
 

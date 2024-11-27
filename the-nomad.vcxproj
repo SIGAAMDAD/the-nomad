@@ -74,7 +74,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <TargetName>TheNomad.x64</TargetName>
-    <IncludePath>$(SolutionDir)code\engine\;$(SolutionDir)code\libsdl\include\;$(SolutionDir)code\pthread-win32\;$(SolutionDir)deps\glm\;$(SolutionDir)deps\EABase\include\Common;$(SolutionDir)code\;$(SolutionDir)code\json\;$(SolutionDir)code\bzip2\include\;$(SolutionDir)code\zlib\include\;$(SolutionDir)code\curl\include\;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)code\engine\;$(SolutionDir)code\libsdl\include\;$(SolutionDir)code\pthread-win32\;$(SolutionDir)deps\glm\;$(SolutionDir)deps\EABase\include\Common;$(SolutionDir)code\;$(SolutionDir)code\json\;$(SolutionDir)code\bzip2\include\;$(SolutionDir)code\zlib\include\;$(SolutionDir)code\curl\include\;$(SolutionDir)dependencies\include\;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)obj\Release-Unicode64bit-x64\;$(SolutionDir);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -176,7 +176,7 @@
       <GenerateMapFile>true</GenerateMapFile>
       <MapFileName>$(IntDir)$(TargetName).map</MapFileName>
       <FixedBaseAddress>false</FixedBaseAddress>
-      <AdditionalDependencies>$(SolutionDir)bin\Release-Unicode-64bit-x64\pthread_static_lib.lib;$(CoreLibraryDependencies);%(AdditionalDependencies);$(SolutionDir)$(Platform)\$(Configuration)\libjpeg.lib;$(SolutionDir)fmodstudio_vc.lib;$(SolutionDir)fmodstudioL_vc.lib;$(SolutionDir)fmod_vc.lib;$(SolutionDir)fmodL_vc.lib;$(SolutionDir)$(Platform)\$(Configuration)\TheNomad.ASLib.$(Platform).lib;$(SolutionDir)SDL2.lib;$(SolutionDir)$(Platform)\$(Configuration)\libEASTL.lib;$(SolutionDir)SDL2_image.lib;$(SolutionDir)libbz2.lib;$(SolutionDir)zlib.lib;$(SolutionDir)libcurl.dll.a</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);$(SolutionDir)$(Platform)\$(Configuration)\libjpeg.lib;$(SolutionDir)fmodstudio_vc.lib;$(SolutionDir)fmodstudioL_vc.lib;$(SolutionDir)fmod_vc.lib;$(SolutionDir)fmodL_vc.lib;$(SolutionDir)$(Platform)\$(Configuration)\TheNomad.ASLib.$(Platform).lib;$(SolutionDir)SDL2.lib;$(SolutionDir)$(Platform)\$(Configuration)\libEASTL.lib;$(SolutionDir)SDL2_image.lib;$(SolutionDir)libbz2.lib;$(SolutionDir)zlib.lib;$(SolutionDir)libcurl.dll.a</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -402,9 +402,11 @@
     <ClCompile Include="code\game\g_jpeg.cpp" />
     <ClCompile Include="code\game\g_screen.cpp" />
     <ClCompile Include="code\game\g_sgame.cpp" />
-    <ClCompile Include="code\game\g_threads.cpp" />
     <ClCompile Include="code\game\g_world.cpp" />
     <ClCompile Include="code\module_lib\contextmgr.cpp" />
+    <ClCompile Include="code\module_lib\funcdefs\module_funcdef_game.cpp" />
+    <ClCompile Include="code\module_lib\funcdefs\module_funcdef_sound.cpp" />
+    <ClCompile Include="code\module_lib\funcdefs\module_funcdef_util.cpp" />
     <ClCompile Include="code\module_lib\imgui_stdlib.cpp" />
     <ClCompile Include="code\module_lib\module_debugger.cpp" />
     <ClCompile Include="code\module_lib\module_funcdefs.cpp" />

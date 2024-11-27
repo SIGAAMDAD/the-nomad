@@ -355,9 +355,10 @@ static void FBO_Init_f( void )
 		nglGetIntegerv( GL_MAX_SAMPLES, &multisample );
 	}
 
-	if ( sampleCount < multisample ) {
-		multisample = sampleCount;
+	if ( sampleCount > multisample ) {
+		sampleCount = multisample;
 	}
+	multisample = sampleCount;
 
 	if ( multisample < 2 || !glContext.ARB_framebuffer_blit ) {
 		multisample = 0;

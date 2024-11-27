@@ -691,7 +691,6 @@ extern "C" void UI_AddJoystickKeyEvents( void )
 
 extern "C" void UI_Refresh( int32_t realtime )
 {
-	extern cvar_t *in_joystick;
 	static qboolean windowFocus = qfalse;
 
 	ui->realtime = realtime;
@@ -712,7 +711,7 @@ extern "C" void UI_Refresh( int32_t realtime )
 		UI_DrawMenuBackground();
 	}
 
-	if ( in_joystick->i ) {
+	if ( Cvar_VariableInteger( "in_joystick" ) ) {
 		UI_AddJoystickKeyEvents();
 	}
 

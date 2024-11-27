@@ -1226,9 +1226,10 @@ static void R_InitGLContext( void )
 	NGL_Shader_Procs
 	NGL_Texture_Procs
 #undef NGL
-
-	if ( !nglGetString )
+	
+	if ( !nglGetString ) {
 		ri.Error( ERR_FATAL, "glGetString is NULL" );
+	}
 
 	//
 	// get the OpenGL config vars
@@ -1239,14 +1240,26 @@ static void R_InitGLContext( void )
 	N_strncpyz( glContext.version_str, (const char *)nglGetString( GL_VERSION ), sizeof(glContext.version_str) );
 	N_strncpyz( gl_extensions, (const char *)nglGetString( GL_EXTENSIONS ), sizeof(gl_extensions) );
 
-	N_strncpyz( glConfig.renderer_string, glContext.renderer, sizeof(glConfig.renderer_string) );
-	N_strncpyz( glConfig.version_string, glContext.version_str, sizeof(glConfig.version_string) );
-	N_strncpyz( glConfig.vendor_string, glContext.vendor, sizeof(glConfig.vendor_string) );
-	N_strncpyz( glConfig.shader_version_str, (const char *)nglGetString( GL_SHADING_LANGUAGE_VERSION ), sizeof(glConfig.shader_version_str) );
-	N_strncpyz( glConfig.extensions_string, gl_extensions, sizeof(glConfig.extensions_string) );
+	sscanf( glContext.version_str, "%i.%i", &glContext.versionMajor, &glContext.versionMinor );
+
+	ri.Printf( PRINT_INFO, "Getting OpenGL version...\n" );
+	// check OpenGL version
+	if ( !NGL_VERSION_ATLEAST( 2, 1 ) ) {
+		ri.Error( ERR_FATAL, "This game requires OpenGL version > 2.1" );
+	}
+	else {
+		ri.Printf( PRINT_INFO, "...using OpenGL API:" );
+	}
+	ri.Printf( PRINT_INFO, " v%s\n", glContext.version_str );
+
+	N_strncpyz( glConfig.renderer_string, glContext.renderer, sizeof( glConfig.renderer_string ) );
+	N_strncpyz( glConfig.version_string, glContext.version_str, sizeof( glConfig.version_string ) );
+	N_strncpyz( glConfig.vendor_string, glContext.vendor, sizeof( glConfig.vendor_string ) );
+	N_strncpyz( glConfig.shader_version_str, (const char*)nglGetString( GL_SHADING_LANGUAGE_VERSION ), sizeof( glConfig.shader_version_str ) );
+	N_strncpyz( glConfig.extensions_string, gl_extensions, sizeof( glConfig.extensions_string ) );
 
 	nglGetIntegerv( GL_NUM_EXTENSIONS, &glContext.numExtensions );
-	nglGetIntegerv( GL_STEREO, (GLint *)&glContext.stereo );
+	nglGetIntegerv( GL_STEREO, (GLint*)&glContext.stereo );
 	nglGetIntegerv( GL_MAX_IMAGE_UNITS, &glContext.maxTextureUnits );
 	nglGetIntegerv( GL_MAX_TEXTURE_SIZE, &glContext.maxTextureSize );
 	nglGetIntegerv( GL_MAX_SAMPLES, &glContext.maxSamples );
@@ -1260,25 +1273,6 @@ static void R_InitGLContext( void )
 	nglGetIntegeri_v( GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &glContext.workGroupSize[2] );
 
 	nglGetIntegerv( GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &glContext.workGroupInvocations );
-
-	sscanf( glContext.version_str, "%i.%i", &glContext.versionMajor, &glContext.versionMinor );
-
-	ri.Printf( PRINT_INFO, "Getting OpenGL version...\n" );
-	// check OpenGL version
-	if ( !NGL_VERSION_ATLEAST( 3, 3 ) ) {
-		if ( !r_allowLegacy->i ) {
-			ri.Error( ERR_FATAL, "OpenGL version must be at least 3.3, please install more recent drivers" );
-		}
-		else {
-			ri.Printf( PRINT_DEVELOPER, "r_allowLegacy enabled and we have a legacy api version\n" );
-			ri.Printf( PRINT_INFO, "...using Legacy OpenGL API:" );
-		}
-		ri.Printf( PRINT_ERROR, "Update your fucking drivers, jesus...\n" );
-	}
-	else {
-		ri.Printf( PRINT_INFO, "...using OpenGL API:" );
-	}
-	ri.Printf( PRINT_INFO, " v%s\n", glContext.version_str );
 
 	//
 	// check for broken driver
@@ -1610,8 +1604,6 @@ void RE_Shutdown( refShutdownCode_t code )
 	if ( rg.registered ) {
 		R_IssuePendingRenderCommands();
 
-		R_ShutdownCommandBuffers();
-
 		nglDeleteQueries( 3, rg.queries );
 		nglDeleteSamplers( MAX_TEXTURE_UNITS, rg.samplers );
 
@@ -1639,13 +1631,10 @@ void RE_Shutdown( refShutdownCode_t code )
 /*
 =============
 RE_EndRegistration
-
-Touch all images to make sure they are resident (probably obsolete on modern systems)
 =============
 */
 void RE_EndRegistration( void ) {
 	R_IssuePendingRenderCommands();
-//    RB_ShowImages(); // not doing it here
 }
 
 void RE_GetConfig( gpuConfig_t *config ) {

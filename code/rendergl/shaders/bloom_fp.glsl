@@ -1,9 +1,15 @@
+#if defined(USE_MULTIATTRIB)
 layout( location = 0 ) out vec4 a_Color;
+#else
+out vec4 a_Color;
+#endif
 
 in vec2 v_TexCoords;
 
 TEXTURE2D u_DiffuseMap;
+#if defined(USE_MULTIATTRIB)
 TEXTURE2D u_BrightMap;
+#endif
 
 uniform int u_AntiAliasing;
 uniform int u_AntiAliasingQuality;
@@ -26,10 +32,12 @@ void main() {
 	}
 	a_Color.rgb *= sharpenImage( u_DiffuseMap, v_TexCoords ).rgb;
 
+#if defined(USE_MULTIATTRIB)
 	if ( u_Bloom ) {
 		vec3 bloomColor = texture( u_BrightMap, v_TexCoords ).rgb;
 		a_Color.rgb += bloomColor;
 	}
+#endif
 
 	// exposure tone mapping
 	a_Color.rgb = vec3( 1.0 ) - exp( -a_Color.rgb * u_CameraExposure );

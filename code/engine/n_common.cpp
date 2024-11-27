@@ -1306,11 +1306,11 @@ void Com_ParseCommandLine( char *commandLine )
 	static int parsed = 0;
 	int inq;
 
-	if ( parsed )
+	if ( parsed ) {
 		return;
+	}
 
 	inq = 0;
-//	com_consoleLines[0] = commandLine;
 	if ( !com_consoleLines.size() ) {
 		com_consoleLines.reserve( MAX_CONSOLE_LINES );
 		com_consoleLines.emplace_back( commandLine );
