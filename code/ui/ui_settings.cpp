@@ -234,7 +234,7 @@ typedef struct settingsMenu_s {
 
 	const char **presetNames;
 
-	preset_t *presets;
+	preset_t presets[ NUM_PRESETS ];
 	int preset;
 
 	int gpuMemInfoType;
@@ -301,7 +301,8 @@ static const bind_t s_defaultKeybinds[NUMKEYBINDS] = {
 static void SettingsMenu_GetInitial( void )
 {
 	if ( !ui->uiAllocated ) {
-		s_initial = (settingsMenu_t *)Hunk_Alloc( sizeof( *s_initial ), h_high );
+		static settingsMenu_t initial;
+		s_initial = &initial;
 	}
 	s_initial->controls = s_settingsMenu->controls;
 	s_initial->performance = s_settingsMenu->performance;
@@ -405,9 +406,7 @@ static void SettingsMenu_InitPresets( void ) {
 	multisampling = MSAA > 8 is a frame killer
 	*/
 
-	s_settingsMenu->presets = (preset_t *)Hunk_Alloc( sizeof( *s_settingsMenu->presets ) * NUM_PRESETS, h_high );
 	s_settingsMenu->preset = PRESET_NORMAL;
-
 	memset( s_settingsMenu->presets, 0, sizeof( performanceSettings_t ) * NUM_PRESETS );
 
 	// some quality but more optimized just for playability
@@ -503,7 +502,7 @@ static inline void SfxFocused( const void *item ) {
 	if ( ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone ) ) {
 		if ( s_settingsMenu->focusedItem != item ) {
 			s_settingsMenu->focusedItem = item;
-//			Snd_PlaySfx( ui->sfx_move );
+			Snd_PlaySfx( ui->sfx_move );
 		}
 	}
 }
@@ -631,6 +630,7 @@ static void SettingsMenu_Text( const char *name, const char *hint )
 	SfxFocused( name );
 }
 
+/* bannerlord style doesn't play well with imgui
 static void SettingsMenu_List( const char *label, const char **itemnames, int numitems, int *curitem, bool enabled )
 {
 	int i;
@@ -658,7 +658,7 @@ static void SettingsMenu_List( const char *label, const char **itemnames, int nu
 		s_settingsMenu->playedClickSound = qfalse;
 	}
 	ImGui::PopStyleColor();
-	SfxFocused( label );
+//	SfxFocused( label );
 }
 
 static void SettingsMenu_MultiAdjustable( const char *name, const char *label, const char *hint, const char **itemnames, int numitems,
@@ -702,6 +702,50 @@ static void SettingsMenu_MultiAdjustable( const char *name, const char *label, c
 	}
 	ImGui::PopStyleColor();
 }
+*/
+
+static void SettingsMenu_MultiAdjustable( const char *name, const char *label, const char *hint, const char **itemnames, int numitems,
+	int *curitem, bool enabled )
+{
+	if ( !enabled ) {
+		ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
+		ImGui::PushStyleColor( ImGuiCol_FrameBg, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
+		ImGui::PushStyleColor( ImGuiCol_FrameBgActive, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
+		ImGui::PushStyleColor( ImGuiCol_FrameBgHovered, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
+	}
+
+	ImGui::PushStyleColor( ImGuiCol_Text, colorLimeGreen );
+	ImGui::TableNextColumn();
+	SettingsMenu_Text( name, hint );
+	ImGui::TableNextColumn();
+	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigLeft", label ), ImGuiDir_Left ) ) {
+		if ( enabled ) {
+			Snd_PlaySfx( ui->sfx_select );
+			( *curitem )--;
+			if ( *curitem < 0 ) {
+				*curitem = 0;
+			}
+		}
+	}
+	SfxFocused( (void *)( (uintptr_t)curitem * 0xaf ) );
+	ImGui::SameLine();
+	SfxFocused( curitem );
+	ImGui::TextUnformatted( itemnames[ *curitem ] );
+	ImGui::SameLine();
+	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigRight", label ), ImGuiDir_Right ) ) {
+		Snd_PlaySfx( ui->sfx_select );
+		( *curitem )++;
+		if ( *curitem > numitems - 1 ) {
+			*curitem = numitems - 1;
+		}
+	}
+	SfxFocused( (void *)( (uintptr_t)curitem * 0xfa ) );
+
+	if ( !enabled ) {
+		ImGui::PopStyleColor( 4 );
+	}
+	ImGui::PopStyleColor();
+}
 
 static void SettingsMenu_MultiSliderFloat( const char *name, const char *label, const char *hint, float *curvalue, float minvalue, float maxvalue,
 	float delta, bool enabled )
@@ -727,7 +771,9 @@ static void SettingsMenu_MultiSliderFloat( const char *name, const char *label, 
 	}
 	ImGui::SameLine();
 	*/
-	ImGui::SliderFloat( va( "##%sSettingsMenuConfigSlider", label ), curvalue, minvalue, maxvalue, "%.3f", enabled ? 0 : ImGuiSliderFlags_NoInput );
+	const char *str = label;
+	ImGui::SliderFloat( str, curvalue, minvalue, maxvalue, "%.3f", enabled ? 0 : ImGuiSliderFlags_NoInput );
+	SfxFocused( str );
 	/*
 	ImGui::SameLine();
 	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigRight", label ), ImGuiDir_Right ) ) {
@@ -770,7 +816,9 @@ static void SettingsMenu_MultiSliderInt( const char *name, const char *label, co
 	}
 	ImGui::SameLine();
 	*/
-	ImGui::SliderInt( va( "##%sSettingsMenuConfigSlider", label ), curvalue, minvalue, maxvalue, "%d", enabled ? 0 : ImGuiSliderFlags_NoInput );
+	const char *str = label;
+	ImGui::SliderInt( str, curvalue, minvalue, maxvalue, "%d", enabled ? 0 : ImGuiSliderFlags_NoInput );
+	SfxFocused( str );
 	/*
 	ImGui::SameLine();
 	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigRight", label ), ImGuiDir_Right ) ) {
@@ -853,8 +901,8 @@ static void SettingsMenu_Rebind( void )
 
 	x = 256 * ui->scale;
 	y = 128 * ui->scale;
-	width = ( ui->gpuConfig.vidWidth * 0.5f ) - ( x * 0.5f );
-	height = ( ui->gpuConfig.vidHeight * 0.5f ) - ( y * 0.5f );
+	width = ( gi.gpuConfig.vidWidth * 0.5f ) - ( x * 0.5f );
+	height = ( gi.gpuConfig.vidHeight * 0.5f ) - ( y * 0.5f );
 	
 	ImGui::SetNextWindowFocus();
 	ImGui::Begin( "##RebindKeyPopup", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar
@@ -956,7 +1004,7 @@ static void SettingsMenu_DrawHint( void )
 	flags = ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoTitleBar
 			| ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize;
 	ImGui::Begin( "##SettingsMenuHintWindow", NULL, flags );
-	ImGui::SetWindowSize( ImVec2( ui->gpuConfig.vidWidth - s_settingsMenu->menu.width, 472 * ui->scale ) );
+	ImGui::SetWindowSize( ImVec2( gi.gpuConfig.vidWidth - s_settingsMenu->menu.width, 472 * ui->scale ) );
 	ImGui::SetWindowPos( ImVec2( s_settingsMenu->menu.width, 100 * ui->scale ) );
 
 	const ImVec2 cursorPos = ImGui::GetCursorScreenPos();
@@ -2050,13 +2098,13 @@ qboolean R_HasExtension( const char *ext )
 }
 
 #define NUM_ANTIALIAS_TYPES 3
-#define NUM_ANISOTROPY_TYPES 4
+#define NUM_ANISOTROPY_TYPES 6
 #define NUM_HUD_OPTIONS 4
 #define NUM_VSYNC_TYPES 3
 #define NUM_WINDOW_MODES 4
 #define NUM_WINDOW_SIZES NUMVIDMODES + 1
-#define NUM_TEXTURE_FILTERS 6
-#define NUM_TEXTURE_DETAILS 4
+#define NUM_TEXTURE_FILTERS 4
+#define NUM_TEXTURE_DETAILS 5
 
 void SettingsMenu_Cache( void )
 {
@@ -2121,6 +2169,7 @@ void SettingsMenu_Cache( void )
 	s_vsync[1] = strManager->ValueForKey( "GAMEUI_DISABLED" )->value;
 	s_vsync[2] = strManager->ValueForKey( "GAMEUI_ENABLED" )->value;
 
+	s_anisotropyTypes[ ANISOTROPY_NONE ] = strManager->ValueForKey( "GAMEUI_NONE" )->value;
 	s_anisotropyTypes[ ANISOTROPY_ANISOTROPY2 ] = strManager->ValueForKey( "GAMEUI_ANISOTROPY2X" )->value;
 	s_anisotropyTypes[ ANISOTROPY_ANISOTROPY4 ] = strManager->ValueForKey( "GAMEUI_ANISOTROPY4X" )->value;
 	s_anisotropyTypes[ ANISOTROPY_ANISOTROPY8 ] = strManager->ValueForKey( "GAMEUI_ANISOTROPY8X" )->value;
@@ -2173,8 +2222,8 @@ void SettingsMenu_Cache( void )
 	s_settingsMenu->menu.y = 0;
 	s_settingsMenu->menu.draw = SettingsMenu_Draw;
 	s_settingsMenu->menu.flags = MENU_DEFAULT_FLAGS;
-	s_settingsMenu->menu.width = ui->gpuConfig.vidWidth * 0.60f;
-	s_settingsMenu->menu.height = ui->gpuConfig.vidHeight - ( 100 * ui->scale );
+	s_settingsMenu->menu.width = gi.gpuConfig.vidWidth * 0.60f;
+	s_settingsMenu->menu.height = gi.gpuConfig.vidHeight - ( 100 * ui->scale );
 	s_settingsMenu->menu.titleFontScale = 3.5f;
 	s_settingsMenu->menu.textFontScale = 1.5f;
 	s_settingsMenu->lastChild = ID_VIDEO;
@@ -2211,9 +2260,9 @@ void SettingsMenu_Cache( void )
 
 	s_settingsMenu->gameplay.numDifficultyTypes = arraylen( difficulties );
 
-	if ( strstr( ui->gpuConfig.renderer_string, "NVIDIA" ) ) {
+	if ( strstr( gi.gpuConfig.renderer_string, "NVIDIA" ) ) {
 		s_settingsMenu->gpuMemInfoType = GPU_MEMINFO_NVX;
-	} else if ( strstr( ui->gpuConfig.renderer_string, "ATI" ) || strstr( ui->gpuConfig.renderer_string, "AMD" ) ) {
+	} else if ( strstr( gi.gpuConfig.renderer_string, "ATI" ) || strstr( gi.gpuConfig.renderer_string, "AMD" ) ) {
 		s_settingsMenu->gpuMemInfoType = GPU_MEMINFO_ATI;
 	} else {
 		s_settingsMenu->gpuMemInfoType = GPU_MEMINFO_NONE;

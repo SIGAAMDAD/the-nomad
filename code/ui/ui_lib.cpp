@@ -74,17 +74,7 @@ const char *Hunk_CopyString( const char *str, ha_pref pref ) {
 qboolean UI_MenuTitle( const char *label, float fontScale )
 {
 	ImVec2 cursorPos;
-	renderSceneRef_t refdef;
-	extern cvar_t *in_joystick;
 	nhandle_t hShader;
-
-	memset( &refdef, 0, sizeof( refdef ) );
-	refdef.x = 0;
-	refdef.y = 0;
-	refdef.width = ui->gpuConfig.vidWidth;
-	refdef.height = ui->gpuConfig.vidHeight;
-	refdef.time = 0;
-	refdef.flags = RSF_NOWORLDMODEL | RSF_ORTHO_TYPE_SCREENSPACE;
 
 	FontCache()->SetActiveFont( AlegreyaSC );
 
@@ -372,6 +362,7 @@ void UI_DrawHandlePic( float x, float y, float w, float h, nhandle_t hShader )
 /*
 * UI_VirtualKeypoard: creates a somewhat similar experience to the Xbox One/PS4 on-screen gamepad keyboard
 */
+/*
 int UI_VirtualKeyboard( const char *pName, char *pBuffer, size_t nBufSize )
 {
 	int ret;
@@ -679,6 +670,7 @@ int UI_VirtualKeyboard( const char *pName, char *pBuffer, size_t nBufSize )
 
     return ret;
 }
+*/
 
 /*
 ================

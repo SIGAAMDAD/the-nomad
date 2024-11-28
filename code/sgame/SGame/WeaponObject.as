@@ -84,18 +84,22 @@ namespace TheNomad::SGame {
 			const vec3 origin = ent.GetOrigin();
 			const float angle = ent.GetAngle();
 			vec3 end;
+			EntityObject@ active = @EntityManager.GetActiveEnts();
+			EntityObject@ it = null;
 			
 			end.x = origin.x + ( m_Info.range * cos( angle ) );
 			end.y = origin.y + ( m_Info.range * sin( angle ) );
 			end.z = m_Info.range * sin( angle );
 			
-			if ( EntityManager.EntityIntersectsLine( origin, end ) ) {
-				m_Info.useSfx.Play();
-				// pike, bannerlord mode (you crouch to get a spear brace), high-risk, high-reward
-				if ( cast<PlayrObject@>( @ent ).IsCrouching() || cast<PlayrObject@>( @ent ).IsSliding() ) {
-					return 1000.0f; // it's an insta-kill for most mobs
-				} else {
-					return m_Info.damage;
+			for ( @it = @active.m_Next; @it.m_Next !is @active; @it = @it.m_Next ) {
+				if ( it.GetBounds().LineIntersection( origin, end ) ) {
+					EmitSound( m_Info.useSfx, 1.0f, 0xff );
+					// pike, bannerlord mode (you crouch to get a spear brace), high-risk, high-reward
+					if ( cast<PlayrObject@>( @ent ).IsCrouching() || cast<PlayrObject@>( @ent ).IsSliding() ) {
+						return 1000.0f; // it's an insta-kill for most mobs
+					} else {
+						return m_Info.damage;
+					}
 				}
 			}
 			return 0.0f;

@@ -14,7 +14,7 @@ namespace TheNomad::SGame {
 		ST_PLAYR_ARMS_MELEE,
 		ST_PLAYR_ARMS_PARRY,
 		ST_PLAYR_ARMS_STUN,
-		ST_PLAYR_ARMS_SLIDING,
+		ST_PLAYR_ARMS_SLIDE,
 		ST_PLAYR_ARMS_STEALTH_CRAWL,
 		ST_PLAYR_ARMS_STEALTH_READY,
 
@@ -95,7 +95,7 @@ namespace TheNomad::SGame {
 			m_BaseStateCache.Add( "ST_PLAYR_ARMS_MOVE", StateNum::ST_PLAYR_ARMS_MOVE );
 			m_BaseStateCache.Add( "ST_PLAYR_ARMS_MELEE", StateNum::ST_PLAYR_ARMS_MELEE );
 			m_BaseStateCache.Add( "ST_PLAYR_ARMS_PARRY", StateNum::ST_PLAYR_ARMS_PARRY );
-			m_BaseStateCache.Add( "ST_PLAYR_ARMS_SLIDING", StateNum::ST_PLAYR_ARMS_SLIDING );
+			m_BaseStateCache.Add( "ST_PLAYR_ARMS_SLIDE", StateNum::ST_PLAYR_ARMS_SLIDE );
 			m_BaseStateCache.Add( "ST_PLAYR_ARMS_STEALTH_CRAWL", StateNum::ST_PLAYR_ARMS_STEALTH_CRAWL );
 			m_BaseStateCache.Add( "ST_PLAYR_ARMS_STEALTH_READY", StateNum::ST_PLAYR_ARMS_STEALTH_READY );
 			m_BaseStateCache.Add( "ST_PLAYR_ARMS_STUN", StateNum::ST_PLAYR_ARMS_STUN );

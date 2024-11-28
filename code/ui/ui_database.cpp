@@ -241,8 +241,8 @@ void DataBaseMenu_Cache( void )
     s_dataBase->menu.draw = DataBaseMenu_Draw;
     s_dataBase->menu.x = 0;
     s_dataBase->menu.y = 0;
-    s_dataBase->menu.width = ui->gpuConfig.vidWidth;
-    s_dataBase->menu.height = ui->gpuConfig.vidHeight;
+    s_dataBase->menu.width = gi.gpuConfig.vidWidth;
+    s_dataBase->menu.height = gi.gpuConfig.vidHeight;
     s_dataBase->menu.fullscreen = qtrue;
     s_dataBase->menu.flags = MENU_DEFAULT_FLAGS;
     s_dataBase->menu.track = Snd_RegisterSfx( "event:/music/main_theme" );

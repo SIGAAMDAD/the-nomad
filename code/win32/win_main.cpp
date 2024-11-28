@@ -220,50 +220,50 @@ BOOL Win_CheckHotkeyMod( void ) {
 int Sys_MessageBox(const char *title, const char *text, bool ShowOkAndCancelButton)
 {
 #if 0
-    if ( MessageBox( NULL, title, text, MB_ICONEXCLAMATION | ( ShowOkAndCancelButton ? MB_OKCANCEL : MB_OK ) ) == IDOK ) {
-        return true;
-    }
-    return false;
+	if ( MessageBox( NULL, title, text, MB_ICONEXCLAMATION | ( ShowOkAndCancelButton ? MB_OKCANCEL : MB_OK ) ) == IDOK ) {
+		return true;
+	}
+	return false;
 #else
 	int buttonid = 0;
-    SDL_MessageBoxData boxData = { 0 };
-    SDL_MessageBoxButtonData buttonData[] = {
-        { SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 1, "OK"      },
-        { SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 0, "Cancel"  },
-    };
+	SDL_MessageBoxData boxData = { 0 };
+	SDL_MessageBoxButtonData buttonData[] = {
+		{ SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 1, "OK"      },
+		{ SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 0, "Cancel"  },
+	};
 
-    boxData.window = SDL_window;
-    boxData.title = title;
-    boxData.message = text;
-    boxData.numbuttons = ShowOkAndCancelButton ? 2 : 1;
-    boxData.buttons = buttonData;
+	boxData.window = SDL_window;
+	boxData.title = title;
+	boxData.message = text;
+	boxData.numbuttons = ShowOkAndCancelButton ? 2 : 1;
+	boxData.buttons = buttonData;
 
-    SDL_ShowMessageBox( &boxData, &buttonid );
-    return ( buttonid == 1 );
+	SDL_ShowMessageBox( &boxData, &buttonid );
+	return ( buttonid == 1 );
 #endif
 }
 
 qboolean Sys_LowPhysicalMemory( void )
 {
-    MEMORYSTATUSEX stat;
-    GlobalMemoryStatusEx( &stat );
-    return (stat.ullTotalPhys <= MEM_THRESHOLD) ? qtrue : qfalse;
+	MEMORYSTATUSEX stat;
+	GlobalMemoryStatusEx( &stat );
+	return (stat.ullTotalPhys <= MEM_THRESHOLD) ? qtrue : qfalse;
 }
 
 void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error( const char *err, ... )
 {
-    va_list argptr;
-    char text[MAXPRINTMSG];
-    MSG msg;
+	va_list argptr;
+	char text[MAXPRINTMSG];
+	MSG msg;
 
-    va_start( argptr, err );
-    N_vsnprintf( text, sizeof( text ), err, argptr );
-    va_end( argptr );
+	va_start( argptr, err );
+	N_vsnprintf( text, sizeof( text ), err, argptr );
+	va_end( argptr );
 
 	Sys_DebugStacktrace( MAX_STACKTRACE_FRAMES );
 	Sys_ErrorDialog( text );
 
-    Sys_Exit( -1 );
+	Sys_Exit( -1 );
 }
 
 void GDR_NORETURN Sys_Exit( int code )
@@ -273,7 +273,7 @@ void GDR_NORETURN Sys_Exit( int code )
 		Sys_RemovePIDFile( FS_GetCurrentGameDir() );
 	}
 
-    exit( code );
+	exit( code );
 }
 
 static const struct Q3ToAnsiColorTable_s
@@ -310,37 +310,37 @@ static qboolean printableChar( char c ) {
 
 void Sys_ANSIColorMsg(const char *msg, char *buffer, uint64_t bufSize)
 {
-    uint64_t msgLength;
-    uint64_t i;
-    char tmpbuf[8];
-    const char *ANSIcolor;
+	uint64_t msgLength;
+	uint64_t i;
+	char tmpbuf[8];
+	const char *ANSIcolor;
 
-    if (!msg || !buffer)
-        return;
+	if (!msg || !buffer)
+		return;
 
-    msgLength = strlen(msg);
-    i = 0;
-    buffer[0] = '\0';
+	msgLength = strlen(msg);
+	i = 0;
+	buffer[0] = '\0';
 
-    while (i < msgLength) {
-        if (msg[i] == '\n') {
-            snprintf(tmpbuf, sizeof(tmpbuf), "%c[0m\n", 0x1B);
-            strncat(buffer, tmpbuf, bufSize - 1);
-            i += 1;
-        }
-        else if (msg[i] == Q_COLOR_ESCAPE && (ANSIcolor = getANSIcolor(msg[i+1])) != NULL) {
-            snprintf(tmpbuf, sizeof(tmpbuf), "%c[%sm", 0x1B, ANSIcolor);
-            strncat(buffer, tmpbuf, bufSize - 1);
-            i += 2;
-        }
-        else {
-            if (printableChar(msg[i])) {
-                snprintf(tmpbuf, sizeof(tmpbuf), "%c", msg[i]);
-                strncat(buffer, tmpbuf, bufSize - 1);
-            }
-            i += 1;
-        }
-    }
+	while (i < msgLength) {
+		if (msg[i] == '\n') {
+			snprintf(tmpbuf, sizeof(tmpbuf), "%c[0m\n", 0x1B);
+			strncat(buffer, tmpbuf, bufSize - 1);
+			i += 1;
+		}
+		else if (msg[i] == Q_COLOR_ESCAPE && (ANSIcolor = getANSIcolor(msg[i+1])) != NULL) {
+			snprintf(tmpbuf, sizeof(tmpbuf), "%c[%sm", 0x1B, ANSIcolor);
+			strncat(buffer, tmpbuf, bufSize - 1);
+			i += 2;
+		}
+		else {
+			if (printableChar(msg[i])) {
+				snprintf(tmpbuf, sizeof(tmpbuf), "%c", msg[i]);
+				strncat(buffer, tmpbuf, bufSize - 1);
+			}
+			i += 1;
+		}
+	}
 }
 
 static qboolean isInConsole;
@@ -348,17 +348,6 @@ static HANDLE hStdOutConsole;
 static HANDLE hConsole;
 void Sys_InitConsole( void )
 {
-//	HWND consoleWnd = GetConsoleWindow();
-//	DWORD dwProcessId;
-//	GetWindowProcessId( consoleWnd, &dwProcessId );
-//	if (GetCurrentProcessId() == dwProcessId) {
-//		isInConsole = qtrue;
-//		Con_Printf( "using system console.\n" );
-//	}
-//	else {
-//		Con_Printf( "using engine console only\n" );
-//	}
-
 	DWORD dwMode;
 
 	hStdOutConsole = GetStdHandle( STD_OUTPUT_HANDLE );
@@ -372,15 +361,15 @@ void Sys_InitConsole( void )
 
 void Sys_Print( const char *msg )
 {
-    char printmsg[MAXPRINTMSG];
-    size_t len;
+	char printmsg[MAXPRINTMSG];
+	size_t len;
 	DWORD dwBytesWritten;
 
-    if ( hConsole ) {
-        Sys_ANSIColorMsg( msg, printmsg, sizeof( printmsg ) );
-        len = strlen(printmsg);
+	if ( hConsole ) {
+		Sys_ANSIColorMsg( msg, printmsg, sizeof( printmsg ) );
+		len = strlen( printmsg );
 		::WriteConsole( hConsole, AtoW( printmsg ), len, &dwBytesWritten, NULL );
-    }
+	}
 
 	Conbuf_AppendText( msg );
 }
@@ -1258,7 +1247,7 @@ char *Sys_GetClipboardData( void )
 
 void Sys_SetClipboadBitmap( const byte *bitmap, uint64_t length )
 {
-    HGLOBAL hMem;
+	HGLOBAL hMem;
 	byte *ptr;
 
 	if ( !g_wv.hWnd || !OpenClipboard( g_wv.hWnd ) )

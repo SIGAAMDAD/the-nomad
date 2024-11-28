@@ -429,7 +429,7 @@ void ModsMenu_Cache( void )
 	mods->menu.draw = ModsMenu_Draw;
 	mods->menu.fullscreen = qtrue;
 	mods->menu.flags = MENU_DEFAULT_FLAGS | ImGuiWindowFlags_HorizontalScrollbar;
-	mods->menu.width = ui->gpuConfig.vidWidth;
+	mods->menu.width = gi.gpuConfig.vidWidth;
 	mods->menu.height = 680 * ui->scale;
 	mods->menu.name = strManager->ValueForKey( "MOD_MENU_TITLE" )->value;
 	mods->menu.track = Snd_RegisterTrack( "event:/music/campfire" );

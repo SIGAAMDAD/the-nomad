@@ -98,7 +98,7 @@ void CreditsMenu_Cache( void )
 	s_credits->menu.x = 0;
 	s_credits->menu.y = 0;
 	s_credits->menu.draw = CreditsMenu_Draw;
-	s_credits->menu.width = ui->gpuConfig.vidWidth;
+	s_credits->menu.width = gi.gpuConfig.vidWidth;
 	s_credits->menu.height = 680 * ui->scale;
 	s_credits->menu.fullscreen = qtrue;
 	s_credits->menu.textFontScale = 1.5f;

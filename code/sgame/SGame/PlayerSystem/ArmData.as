@@ -48,7 +48,7 @@ namespace TheNomad::SGame {
 			}
 			else if ( m_EntityData.GetPhysicsObject().GetVelocity() != Vec3Origin ) {
 				if ( m_EntityData.IsSliding() ) {
-					@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_SLIDING );
+					@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_SLIDE );
 				}
 				else if ( m_EntityData.IsCrouching() ) {
 					// get a specific stealth state
@@ -76,7 +76,7 @@ namespace TheNomad::SGame {
 			
 			refEntity.origin = m_EntityData.GetOrigin();
 			refEntity.sheetNum = m_SpriteSheet[ m_nFacing ].GetShader();
-			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( @m_SpriteSheet[ m_nFacing ], @m_State );
+//			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( @m_SpriteSheet[ m_nFacing ], @m_State );
 			refEntity.Draw();
 		}
 		

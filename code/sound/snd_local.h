@@ -9,7 +9,7 @@
 #define ERRCHECK( call ) { FMOD_RESULT result = call; if ( result != FMOD_OK ) { FMOD_Error( #call, result ); } }
 void FMOD_Error( const char *call, FMOD_RESULT result );
 
-#define MAX_SOUND_CHANNELS 1024
+#define MAX_SOUND_CHANNELS 512
 #define DISTANCEFACTOR 1.0f
 #define MAX_SOUND_SOURCES 2048
 #define MAX_MUSIC_QUEUE 12
@@ -134,7 +134,7 @@ private:
 
 	FMOD::Geometry *m_pGeometryBuffer;
 
-	channel_t *m_pszChannels;
+	channel_t m_szChannels[ MAX_SOUND_CHANNELS ];
 };
 
 typedef struct {

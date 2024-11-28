@@ -140,16 +140,16 @@ typedef struct {
 	int menusp;
 
 	menuframework_t *activemenu;
-	menuframework_t *stack[MAX_MENU_DEPTH];
+	menuframework_t *stack[ MAX_MENU_DEPTH ];
 
 	ImFont *currentFont;
 
-	gpuConfig_t gpuConfig;
 	qboolean debug;
 
 	nhandle_t whiteShader;
 	nhandle_t menubackShader;
 
+	sfxHandle_t sfx_move;
 	sfxHandle_t sfx_null;
 	sfxHandle_t sfx_back;
 	sfxHandle_t sfx_select;
@@ -184,7 +184,6 @@ typedef struct {
 
     qboolean uiAllocated;
     qboolean setMusic;
-    virtualKeyboard_t virtKeyboard;
 
 	float scale;
 	float bias;
@@ -271,11 +270,12 @@ extern void         UI_IntroMenu( void );
 extern void         IntroMenu_Cache( void );
 
 //
-// ui_main.cpp
+// ui_main_menu.cpp
 //
 extern void         UI_MainMenu( void );
 extern void         MainMenu_Cache( void );
 extern void         MainMenu_Draw( void );
+extern void			MainMenu_LoadNews( void );
 
 //
 // ui_settings.cpp

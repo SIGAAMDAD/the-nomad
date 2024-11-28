@@ -518,11 +518,14 @@ extern "C" void UI_Init( void )
 {
 	Con_Printf( "UI_Init: initializing UI...\n" );
 
+	MainMenu_LoadNews();
+
 	// register cvars
 	UI_RegisterCvars();
 
 	// init the library
-	ui = (uiGlobals_t *)Hunk_Alloc( sizeof( *ui ), h_high );
+	static uiGlobals_t globals;
+	ui = &globals;
 
 	// init the string manager
 	static CUIStringManager string_database;
@@ -554,14 +557,11 @@ extern "C" void UI_Init( void )
 
 	difficultyTable[ DIF_MEME ].tooltip = "PAIN."; // no changing this one, because that's the most accurate description
 
-	// cache redundant calulations
-	re.GetConfig( &ui->gpuConfig );
-
-	// for 640x480 virtualized screen
-	ui->scale = ui->gpuConfig.vidHeight * ( 1.0f / 768.0f );
-	if ( ui->gpuConfig.vidWidth * 1024.0f > ui->gpuConfig.vidHeight * 768.0f ) {
+	// for 1024x768 virtualized screen
+	ui->scale = gi.gpuConfig.vidHeight * ( 1.0f / 768.0f );
+	if ( gi.gpuConfig.vidWidth * 1024.0f > gi.gpuConfig.vidHeight * 768.0f ) {
 		// wide screen
-		ui->bias = 0.5f * ( ui->gpuConfig.vidWidth - ( ui->gpuConfig.vidHeight * ( 1024.0f / 768.0f ) ) );
+		ui->bias = 0.5f * ( gi.gpuConfig.vidWidth - ( gi.gpuConfig.vidHeight * ( 1024.0f / 768.0f ) ) );
 	}
 	else {
 		// no wide screen
@@ -607,6 +607,7 @@ void Menu_Cache( void )
 
 	ui->sfx_select = Snd_RegisterSfx( "event:/sfx/menu/select_item" );
 	ui->sfx_back = Snd_RegisterSfx( "event:/sfx/menu/back" );
+	ui->sfx_move = Snd_RegisterSfx( "event:/sfx/menu/move" );
 
 	ui->controller_start = re.RegisterShader( "menu/xbox_start" );
 	ui->controller_back = re.RegisterShader( "menu/xbox_back" );
@@ -664,8 +665,8 @@ extern "C" void UI_DrawMenuBackground( void )
 	memset( &refdef, 0, sizeof( refdef ) );
 	refdef.x = 0;
 	refdef.y = 0;
-	refdef.width = ui->gpuConfig.vidWidth;
-	refdef.height = ui->gpuConfig.vidHeight;
+	refdef.width = gi.gpuConfig.vidWidth;
+	refdef.height = gi.gpuConfig.vidHeight;
 	refdef.time = ui->realtime;
 	refdef.flags = RSF_NOWORLDMODEL | RSF_ORTHO_TYPE_SCREENSPACE;
 
@@ -673,7 +674,7 @@ extern "C" void UI_DrawMenuBackground( void )
 	// draw the background
 	//
 	re.SetColor( NULL );
-	re.DrawImage( 0, 0, ui->gpuConfig.vidWidth, ui->gpuConfig.vidHeight, 0, 0, 1, 1, ui->menubackShader );
+	re.DrawImage( 0, 0, gi.gpuConfig.vidWidth, gi.gpuConfig.vidHeight, 0, 0, 1, 1, ui->menubackShader );
 }
 
 extern "C" void UI_AddJoystickKeyEvents( void )
@@ -700,7 +701,7 @@ extern "C" void UI_Refresh( int32_t realtime )
 
 	{
 		re.SetColor( colorWhite );
-		re.DrawImage( 0, 0, ui->gpuConfig.vidWidth, ui->gpuConfig.vidHeight, 0, 0, 1, 1, ui->backdrop );
+		re.DrawImage( 0, 0, gi.gpuConfig.vidWidth, gi.gpuConfig.vidHeight, 0, 0, 1, 1, ui->backdrop );
 	}
 
 	if ( !( Key_GetCatcher() & KEYCATCH_UI ) ) {
@@ -734,8 +735,8 @@ extern "C" void UI_Refresh( int32_t realtime )
 	memset( &refdef, 0, sizeof( refdef ) );
 	refdef.x = 0;
 	refdef.y = 0;
-	refdef.width = ui->gpuConfig.vidWidth;
-	refdef.height = ui->gpuConfig.vidHeight;
+	refdef.width = gi.gpuConfig.vidWidth;
+	refdef.height = gi.gpuConfig.vidHeight;
 	refdef.time = 0;
 	refdef.flags = RSF_ORTHO_TYPE_SCREENSPACE | RSF_NOWORLDMODEL;
 

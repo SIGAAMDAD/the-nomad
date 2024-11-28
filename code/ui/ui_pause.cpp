@@ -217,8 +217,8 @@ void PauseMenu_Cache( void )
 		PauseMenu_LoadDailyTips();
 	}
 
-	s_pauseMenu->menu.width = ui->gpuConfig.vidWidth;
-	s_pauseMenu->menu.height = ui->gpuConfig.vidHeight;
+	s_pauseMenu->menu.width = gi.gpuConfig.vidWidth;
+	s_pauseMenu->menu.height = gi.gpuConfig.vidHeight;
 	s_pauseMenu->menu.fullscreen = qfalse;
 	s_pauseMenu->menu.name = "PAUSED";
 	s_pauseMenu->menu.draw = PauseMenu_Draw;
@@ -273,7 +273,7 @@ void PauseMenu_Cache( void )
 	s_pauseMenu->exitToDesktop.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
 	s_pauseMenu->exitToDesktop.generic.eventcallback = PauseMenu_EventCallback;
 	s_pauseMenu->exitToDesktop.generic.font = AlegreyaSC;
-#ifdef _WIN2
+#ifdef _WIN32
 	s_pauseMenu->exitToDesktop.text = "EXIT TO WINDOWS";
 #else
 	s_pauseMenu->exitToDesktop.text = "EXIT TO DESKTOP";
@@ -292,6 +292,7 @@ void PauseMenu_Cache( void )
 	Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->settings );
 	Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->help );
 	Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->exitToMainMenu );
+	Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->exitToDesktop );
 	Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->dailyTipText );
 }
 

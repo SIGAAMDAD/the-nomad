@@ -32,7 +32,7 @@ bool CSoundWorld::LoadOcclusionGeometry( void )
 */
 channel_t *CSoundWorld::AllocateChannel( CSoundSource *pSource )
 {
-	uint32_t i;
+	int32_t i;
 	FMOD_STUDIO_PLAYBACK_STATE state;
 	uint64_t current;
 	channel_t *oldest;
@@ -41,24 +41,24 @@ channel_t *CSoundWorld::AllocateChannel( CSoundSource *pSource )
 
 	oldest = NULL;
 	for ( i = 0; i < snd_maxChannels->i; i++ ) {
-		if ( !m_pszChannels[ i ].event ) {
-			m_pszChannels[ i ].event = pSource->AllocEvent();
-			m_pszChannels[ i ].timestamp = current;
-			return &m_pszChannels[ i ];
+		if ( !m_szChannels[ i ].event ) {
+			m_szChannels[ i ].event = pSource->AllocEvent();
+			m_szChannels[ i ].timestamp = current;
+			return &m_szChannels[ i ];
 		}
 		
-		m_pszChannels[ i ].event->getPlaybackState( &state );
+		m_szChannels[ i ].event->getPlaybackState( &state );
 		if ( state != FMOD_STUDIO_PLAYBACK_STOPPED ) {
 			if ( !oldest ) {
-				oldest = &m_pszChannels[ i ];
-			} else if ( current - oldest->timestamp > m_pszChannels[ i ].timestamp ) {
-				oldest = &m_pszChannels[ i ];
+				oldest = &m_szChannels[ i ];
+			} else if ( current - oldest->timestamp > m_szChannels[ i ].timestamp ) {
+				oldest = &m_szChannels[ i ];
 			}
 		} else {
 			// we have a free event, take it
-			m_pszChannels[ i ].event = pSource->AllocEvent();
-			m_pszChannels[ i ].timestamp = current;
-			return &m_pszChannels[ i ];
+			m_szChannels[ i ].event = pSource->AllocEvent();
+			m_szChannels[ i ].timestamp = current;
+			return &m_szChannels[ i ];
 		}
 	}
 
@@ -84,10 +84,10 @@ void CSoundWorld::Shutdown( void )
 	if ( m_pGeometryBuffer ) {
 		m_pGeometryBuffer->release();
 	}
+	memset( m_szChannels, 0, sizeof( m_szChannels ) );
 
 	m_pGeometryBuffer = NULL;
 	m_pszEmitters = NULL;
-	m_pszChannels = NULL;
 }
 
 void CSoundWorld::Init( void )
@@ -109,7 +109,7 @@ void CSoundWorld::Init( void )
 	
 	m_nEmitterCount = 0;
 
-	m_pszChannels = (channel_t *)Hunk_Alloc( sizeof( *m_pszChannels ) * snd_maxChannels->i, h_high );
+	memset( m_szChannels, 0, sizeof( m_szChannels ) );
 
 	// unnecessary
 	/*
@@ -331,6 +331,10 @@ void CSoundWorld::SetEmitterAudioMask( nhandle_t hEmitter, uint32_t nMask )
 
 	em = &m_pszEmitters[ hEmitter ];
 	em->listenerMask = nMask;
+
+	if ( em->channel ) {
+		em->channel->event->setListenerMask( nMask );
+	}
 }
 
 void CSoundWorld::SetEmitterVolume( nhandle_t hEmitter, float nVolume )
@@ -343,6 +347,10 @@ void CSoundWorld::SetEmitterVolume( nhandle_t hEmitter, float nVolume )
 
 	em = &m_pszEmitters[ hEmitter ];
 	em->volume = nVolume;
+
+	if ( em->channel ) {
+		em->channel->event->setVolume( nVolume );
+	}
 }
 	
 nhandle_t CSoundWorld::PushListener( uint32_t nEntityNumber )

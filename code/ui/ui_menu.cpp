@@ -627,6 +627,9 @@ void Menu_DrawItemGeneric( menucommon_t *generic )
 		ImGui::SameLine();
 	}
 
+	if ( ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone ) && !generic->focused ) {
+		Snd_PlaySfx( ui->sfx_move );
+	}
 	generic->focused = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
 	ImGui::PopStyleColor( colorDepth );
 

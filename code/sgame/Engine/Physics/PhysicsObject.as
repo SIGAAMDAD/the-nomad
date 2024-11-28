@@ -71,42 +71,6 @@ namespace TheNomad::Engine::Physics {
 		}
 		
 		void ApplyFriction() {
-			/*
-			vec3 vec;
-			float speed, newspeed, control;
-			float drop;
-			const uint frameTime = uint( float( TheNomad::GameSystem::GameManager.GetGameTic() * 0.0001f ) );
-			
-			vec = m_Velocity;
-			speed = Util::VectorLength( vec );
-			if ( speed < 1.0f ) {
-				m_Velocity[0] = 0.0f;
-				m_Velocity[1] = 0.0f;
-				m_Velocity[2] = 0.0f; // allow sinking underwater
-				return;
-			}
-			
-			drop = 0.0f;
-			
-			// apply water friction even if just wading
-			if ( m_nWaterLevel > 0 ) {
-				drop += speed * TheNomad::SGame::sgame_WaterFriction.GetFloat() * m_nWaterLevel;
-			} else {
-				drop += speed * TheNomad::SGame::sgame_Friction.GetFloat();
-			}
-			
-			// scale the velocity
-			newspeed = speed - TheNomad::SGame::sgame_Friction.GetFloat();
-			if ( newspeed < 0.0f ) {
-				newspeed = 0.0f;
-			}
-			newspeed /= speed;
-
-			m_Velocity[0] = m_Velocity[0] * newspeed;
-			m_Velocity[1] = m_Velocity[1] * newspeed;
-			m_Velocity[2] = m_Velocity[2] * newspeed;
-			*/
-
 			if ( m_Velocity[0] < 0.0f ) {
 				m_Velocity[0] = TheNomad::Util::Clamp( m_Velocity[0] + TheNomad::SGame::sgame_Friction.GetFloat(), m_Velocity[0], 100.0f );
 			} else if ( m_Velocity[0] > 0.0f ) {
@@ -232,11 +196,19 @@ namespace TheNomad::Engine::Physics {
 			bounds.m_nWidth = m_EntityData.GetBounds().m_nWidth;
 			bounds.m_nHeight = m_EntityData.GetBounds().m_nHeight;
 			bounds.MakeBounds( origin + m_Velocity );
-			const array<TheNomad::SGame::EntityObject@>@ entList = @TheNomad::SGame::EntityManager.GetEntities();
-			for ( uint i = 0; i < entList.Count(); i++ ) {
-				if ( Util::BoundsIntersect( bounds, entList[i].GetBounds() ) && @m_EntityData !is @entList[i] ) {
+			
+			TheNomad::SGame::EntityObject@ active = @TheNomad::SGame::EntityManager.GetActiveEnts();
+			TheNomad::SGame::EntityObject@ ent = null;
+			for ( @ent = @active.m_Next; @ent.m_Next !is @active; @ent = @ent.m_Next ) {
+				if ( bounds.IntersectsBounds( ent.GetBounds() ) && @m_EntityData !is @ent ) {
 					m_Velocity = 0.0f;
 					m_Acceleration = 0.0f;
+					if ( ent.GetType() == TheNomad::GameSystem::EntityType::Mob &&
+						( m_Velocity.x > 2.25f && m_Velocity.y > 2.25f ) )
+					{
+						// damage
+						TheNomad::SGame::EntityManager.DamageEntity( @m_EntityData, @ent );
+					}
 					return; // clip
 				}
 			}

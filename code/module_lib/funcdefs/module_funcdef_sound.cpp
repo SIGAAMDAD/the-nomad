@@ -22,6 +22,16 @@ static void SetEmitterPosition( nhandle_t hEmitter, const glm::vec3& origin, flo
 	s_SoundWorld->SetEmitterPosition( hEmitter, glm::value_ptr( origin ), forward, up, speed );
 }
 
+static void SetEmitterVolume( nhandle_t hEmitter, float nVolume )
+{
+	s_SoundWorld->SetEmitterVolume( hEmitter, nVolume );
+}
+
+static void SetEmitterAudioMask( nhandle_t hEmitter, uint32_t nListenerMask )
+{
+	s_SoundWorld->SetEmitterAudioMask( hEmitter, nListenerMask );
+}
+
 static void PlayEmitterSound( nhandle_t hEmitter, float nVolume, uint32_t nListenerMask, sfxHandle_t hSfx )
 {
 	s_SoundWorld->PlayEmitterSound( hEmitter, nVolume, nListenerMask, hSfx );
@@ -46,6 +56,10 @@ void ScriptLib_Register_Sound( void )
 	REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::SoundSystem::PushListener( uint nEntityNumber )", asFUNCTION( PushListener ), asCALL_CDECL );
 	REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::SetEmitterPosition( int hEmitter, const vec3& in origin, float forward, float up, float speed )",
 		asFUNCTION( SetEmitterPosition ), asCALL_CDECL );
+	REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::SetEmitterVolume( int hEmitter, float nVolume )", asFUNCTION( SetEmitterVolume ),
+		asCALL_CDECL );
+	REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::SetEmitterAudioMask( int hEmitter, uint nListenerMask )",
+		asFUNCTION( SetEmitterAudioMask ), asCALL_CDECL );
 	REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::PlayEmitterSound( int hEmitter, float nVolume, uint nListenerMask, int hSfx )",
 		asFUNCTION( PlayEmitterSound ), asCALL_CDECL );
 	REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::SoundSystem::RegisterEmitter( uint nEntityNumber )", asFUNCTION( RegisterEmitter ), asCALL_CDECL );

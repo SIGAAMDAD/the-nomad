@@ -194,8 +194,8 @@ void UI_Message( const char **lines )
 
 	s_confirm->menu.name = "";
 	s_confirm->menu.fullscreen = qtrue;
-	s_confirm->menu.width = ui->gpuConfig.vidWidth;
-	s_confirm->menu.height = ui->gpuConfig.vidHeight;
+	s_confirm->menu.width = gi.gpuConfig.vidWidth;
+	s_confirm->menu.height = gi.gpuConfig.vidHeight;
 	s_confirm->menu.x = length * ui->scale;
 	s_confirm->menu.y = 268 * ui->scale;
 	s_confirm->menu.draw = MessageMenu_Draw;

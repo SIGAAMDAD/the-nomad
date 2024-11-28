@@ -45,14 +45,6 @@ typedef struct {
 	menutext_t deleteData;
 	menutext_t exit;
 
-	nhandle_t accept_0;
-	nhandle_t accept_1;
-	qboolean acceptHovered;
-
-	nhandle_t delete_0;
-	nhandle_t delete_1;
-	qboolean deleteHovered;
-
 	uint32_t numSaveFiles;
 	uint32_t hoveredSaveSlot;
 	int32_t selectedSaveSlot;
@@ -80,7 +72,7 @@ static void SfxFocused( const void *ptr ) {
 	if ( ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone ) ) {
 		if ( s_playMenu->focusedItem != ptr ) {
 			s_playMenu->focusedItem = ptr;
-//			Snd_PlaySfx( ui->sfx_move );
+			Snd_PlaySfx( ui->sfx_move );
 		}
 	}
 }
@@ -294,18 +286,6 @@ static void PlayMenu_DrawNewGameEdit( void )
 	FontCache()->SetActiveFont( RobotoMono );
 	ImGui::TextWrapped( "%s", difficultyTable[ focusedDif ].tooltip );
 
-	if ( in_mode->i == 1 ) {
-		hShader = ui->controller_start;
-		imageSize = ImVec2( 172 * ui->scale, 64 * ui->scale );
-	} else {
-		hShader = s_playMenu->acceptHovered ? s_playMenu->accept_1 : s_playMenu->accept_0;
-		imageSize = ImVec2( 256 * ui->scale, 72 * ui->scale );
-	}
-	
-	if ( !sgvm->m_pHandle->IsValid() ) {
-		hShader = s_playMenu->accept_0;
-	}
-
 	ImGui::End();
 }
 
@@ -371,16 +351,6 @@ static void PlayMenu_Draw_SaveSlotSelect( void )
 	}
 	ImGui::EndTable();
 
-	ImGui::Begin( "##DeleteSaveSlotWidget", NULL, MENU_DEFAULT_FLAGS | ImGuiWindowFlags_AlwaysAutoResize );
-	ImGui::SetWindowPos( ImVec2( 200 * ui->scale + ui->bias, 680 * ui->scale ) );
-	ImGui::Image( (ImTextureID)(uintptr_t)( s_playMenu->deleteHovered ? s_playMenu->delete_1 : s_playMenu->delete_0 ),
-		ImVec2( 256 * ui->scale, 72 * ui->scale ) );
-	s_playMenu->deleteHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
-	if ( ImGui::IsItemActivated() ) {
-		s_playMenu->deleteSlot = qtrue;
-	}
-	ImGui::End();
-
 	/*
 
 	if ( Key_IsDown( KEY_DOWNARROW ) ) {
@@ -432,13 +402,11 @@ static void PlayMenu_Draw( void )
 	if ( ui->activemenu != &s_playMenu->menu ) {
 		s_playMenu->hoveredSaveSlot = 0;
 		s_playMenu->selectedSaveSlot = -1;
-		memset( &ui->virtKeyboard, 0, sizeof( ui->virtKeyboard ) );
 	}
 	if ( UI_MenuTitle( menuTitle, s_playMenu->menu.titleFontScale ) ) {
 		UI_PopMenu();
 		s_playMenu->hoveredSaveSlot = 0;
 		s_playMenu->selectedSaveSlot = -1;
-		memset( &ui->virtKeyboard, 0, sizeof( ui->virtKeyboard ) );
 		return;
 	}
 
@@ -520,7 +488,6 @@ void PlayMenu_Cache( void )
 		static playMenu_t menu;
 		s_playMenu = &menu;
 	}
-	memset( &ui->virtKeyboard, 0, sizeof( ui->virtKeyboard ) );
 
 	seed = Sys_Milliseconds();
 	numHardestStrings = 0;
@@ -542,8 +509,8 @@ void PlayMenu_Cache( void )
 	s_playMenu->menu.fullscreen = qtrue;
 	s_playMenu->menu.draw = PlayMenu_Draw;
 	s_playMenu->menu.flags = MENU_DEFAULT_FLAGS;
-	s_playMenu->menu.width = ui->gpuConfig.vidWidth;
-	s_playMenu->menu.height = ui->gpuConfig.vidHeight - ( 100 * ui->scale );
+	s_playMenu->menu.width = gi.gpuConfig.vidWidth;
+	s_playMenu->menu.height = gi.gpuConfig.vidHeight - ( 100 * ui->scale );
 	s_playMenu->menu.titleFontScale = 3.5f;
 	s_playMenu->menu.textFontScale = 1.75f;
 	s_playMenu->menu.x = 0;
@@ -586,12 +553,6 @@ void PlayMenu_Cache( void )
 	}
 
 	s_playMenu->difficultyList = difficulties;
-
-	s_playMenu->accept_0 = re.RegisterShader( "menu/accept_0" );
-	s_playMenu->accept_1 = re.RegisterShader( "menu/accept_1" );
-
-	s_playMenu->delete_0 = re.RegisterShader( "menu/delete_0" );
-	s_playMenu->delete_1 = re.RegisterShader( "menu/delete_1" );
 
 	s_playMenu->selectedSaveSlot = -1;
 	s_playMenu->hoveredSaveSlot = 0;

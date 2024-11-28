@@ -118,11 +118,11 @@ namespace TheNomad::SGame {
 			return TheNomad::GameSystem::GameManager.GetGameTic() - ticker >= m_nTics;
 		}
 		EntityState@ Run( uint& out ticker ) {
+			m_Animation.Run();
 			if ( TheNomad::GameSystem::GameManager.GetGameTic() - ticker > m_nTics ) {
 				Reset( ticker );
 				return @m_NextState;
 			}
-			m_Animation.Run();
 			return @this;
 		}
 		EntityState@ Cycle() {
@@ -139,5 +139,7 @@ namespace TheNomad::SGame {
 		private uint m_nTics = 0;
 		private uint m_nStateNum = 0;
 		private uint m_nStateOffset = 0;
+
+		private uint m_nTicker = 0;
 	};
 };

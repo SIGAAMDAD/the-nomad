@@ -25,6 +25,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../rendercommon/imgui_impl_opengl3.h"
 #include <curl/curl.h>
 #include <curl/easy.h>
+#include <pthread.h>
 
 #define ID_SINGEPLAYER      1
 #define ID_MODS             2
@@ -36,7 +37,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 //#define UI_FAST_EDIT
 
-#define NEWS_FILE "Cache/newsfeed.txt"
+#define NEWS_FILE "Cache/newsfeed.dat"
 
 #ifdef UI_FAST_EDIT
 #include "rendercommon/imgui_internal.h"
@@ -94,6 +95,7 @@ typedef struct {
 
 static eastl::fixed_vector<newslabel_t, 5> s_newsLabelList;
 static uint64_t s_nCurrentNewsLabel;
+static pthread_t s_newsThread;
 static errorMessage_t *s_errorMenu;
 static mainmenu_t *s_main;
 static splashScreenMenu_t *s_splashScreen;
@@ -453,8 +455,61 @@ static const char *CopyNewsString( const char *str )
 	return out;
 }
 
-static void MainMenu_LoadNews( void )
+static void *LoadNewsThread( void *mutex )
 {
+	CURL *curl;
+	CURLcode code;
+	fileHandle_t fh;
+		
+	fh = FS_FOpenWrite( NEWS_FILE );
+	if ( fh == FS_INVALID_HANDLE ) {
+		Con_Printf( COLOR_RED "ERROR: failed to create " NEWS_FILE "in write-only mode!\n" );
+		return NULL;
+	}
+		
+	Con_Printf( "Getting latest newsfeed...\n" );
+	
+	code = CURLE_OK;
+	
+	curl = curl_easy_init();
+	if ( curl ) {
+		curl_easy_setopt( curl, CURLOPT_FOLLOWLOCATION, 1L );
+		curl_easy_setopt( curl, CURLOPT_URL,
+			"https://www.dropbox.com/scl/fi/r75o02wgoatmol1fjgb9h/newsfeed.dat?rlkey=783ntq7f138p3d9egkm0qz4g6&st=sfdf3fne&dl=1"
+		);
+		curl_easy_setopt( curl, CURLOPT_SSL_VERIFYPEER, false );
+		curl_easy_setopt( curl, CURLOPT_WRITEFUNCTION, CURL_WriteData );
+		curl_easy_setopt( curl, CURLOPT_WRITEDATA, &fh );
+
+		code = curl_easy_perform( curl );
+
+		curl_easy_cleanup( curl );
+	} else {
+		Con_Printf( COLOR_YELLOW "WARNING: curl_easy_init failed!\n" );
+	}
+	
+	FS_FClose( fh );
+	
+	if ( code != CURLE_OK ) {
+		Con_Printf( COLOR_RED "CURL failed to download newsfeed file: %s\n", curl_easy_strerror( code ) );
+	} else {
+		Con_Printf( "...fetched latest newsfeed\n" );
+	}
+
+	return NULL;
+}
+
+void MainMenu_LoadNews( void )
+{
+	int ret;
+
+	if ( ( ret = pthread_create( &s_newsThread, NULL, LoadNewsThread, NULL ) ) != 0 ) {
+		Con_Printf( COLOR_RED "ERROR: couldn't create posix thread for loading news data! %i\n", ret );
+	} else {
+		return;
+	}
+
+	// if we can't create a separate thread to load the newsfeed, then just block the main thread
 	CURL *curl;
 	CURLcode code;
 	fileHandle_t fh;
@@ -464,7 +519,7 @@ static void MainMenu_LoadNews( void )
 		Con_Printf( COLOR_RED "ERROR: failed to create " NEWS_FILE "in write-only mode!\n" );
 		return;
 	}
-
+	
 	Con_Printf( "Getting latest newsfeed...\n" );
 
 	code = CURLE_OK;
@@ -472,7 +527,9 @@ static void MainMenu_LoadNews( void )
 	curl = curl_easy_init();
 	if ( curl ) {
 		curl_easy_setopt( curl, CURLOPT_FOLLOWLOCATION, 1L );
-		curl_easy_setopt( curl, CURLOPT_URL, "https://www.dropbox.com/scl/fi/er1v17m8jq0ugeay86cub/newsfeed.txt?rlkey=xym8gp7uqgjpphmee5516nh4i&st=p4afeaja&dl=1" );
+		curl_easy_setopt( curl, CURLOPT_URL,
+			"https://www.dropbox.com/scl/fi/r75o02wgoatmol1fjgb9h/newsfeed.dat?rlkey=783ntq7f138p3d9egkm0qz4g6&st=sfdf3fne&dl=1"
+		);
 		curl_easy_setopt( curl, CURLOPT_SSL_VERIFYPEER, false );
 		curl_easy_setopt( curl, CURLOPT_WRITEFUNCTION, CURL_WriteData );
 		curl_easy_setopt( curl, CURLOPT_WRITEDATA, &fh );
@@ -491,6 +548,11 @@ static void MainMenu_LoadNews( void )
 	} else {
 		Con_Printf( "...fetched latest newsfeed\n" );
 	}
+}
+
+static void MainMenu_ParseNews( void )
+{
+	pthread_join( s_newsThread, (void **)NULL );
 
 	newslabel_t tmp;
 	uint64_t i;
@@ -501,6 +563,8 @@ static void MainMenu_LoadNews( void )
 	const char *tok;
 	const char *text_p, **text;
 	uint64_t fileLength;
+	uint64_t *uncompressedSize;
+	char *buf;
 
 	fileLength = FS_LoadFile( NEWS_FILE, &f.v );
 	if ( !fileLength || !f.v ) {
@@ -508,7 +572,11 @@ static void MainMenu_LoadNews( void )
 		return;
 	}
 
-	text_p = f.b;
+	uncompressedSize = (uint64_t *)f.b;
+	buf = Decompress( uncompressedSize + 1, fileLength, uncompressedSize, COMPRESS_ZLIB );
+	FS_FreeFile( f.v );
+
+	text_p = buf;
 	text = (const char **)&text_p;
 
 	s_newsLabelList.clear();
@@ -590,7 +658,7 @@ static void MainMenu_LoadNews( void )
 		}
 	}
 
-	FS_FreeFile( f.v );
+	Z_Free( buf );
 }
 
 void MainMenu_Cache( void )
@@ -604,7 +672,7 @@ void MainMenu_Cache( void )
 		s_errorMenu = &error;
 		s_splashScreen = &splash;
 
-		MainMenu_LoadNews();
+		MainMenu_ParseNews();
 	}
 	memset( s_main, 0, sizeof( *s_main ) );
 	memset( s_errorMenu, 0, sizeof( *s_errorMenu ) );
@@ -618,7 +686,7 @@ void MainMenu_Cache( void )
 		s_errorMenu->menu.draw = MainMenu_Draw;
 		s_errorMenu->menu.fullscreen = qtrue;
 
-		s_errorMenu->menu.x = 528 - strlen( s_errorMenu->message );
+		s_errorMenu->menu.x = 380 - strlen( s_errorMenu->message );
 		s_errorMenu->menu.y = 268;
 
 		UI_ForceMenuOff();
@@ -637,8 +705,8 @@ void MainMenu_Cache( void )
 	s_splashScreen->menu.draw = SplashScreen_Draw;
 	s_splashScreen->menu.x = 0;
 	s_splashScreen->menu.y = 0;
-	s_splashScreen->menu.width = ui->gpuConfig.vidWidth;
-	s_splashScreen->menu.height = ui->gpuConfig.vidHeight;
+	s_splashScreen->menu.width = gi.gpuConfig.vidWidth;
+	s_splashScreen->menu.height = gi.gpuConfig.vidHeight;
 
 	s_main->font = FontCache()->AddFontToCache( "AlegreyaSC-Bold" );
 	RobotoMono = FontCache()->AddFontToCache( "RobotoMono-Bold" );
@@ -648,8 +716,8 @@ void MainMenu_Cache( void )
 	s_main->menu.name = strManager->ValueForKey( "MENU_LOGO_STRING" )->value;
 	s_main->menu.x = 0;
 	s_main->menu.y = 0;
-	s_main->menu.width = ui->gpuConfig.vidWidth;
-	s_main->menu.height = ui->gpuConfig.vidHeight;
+	s_main->menu.width = gi.gpuConfig.vidWidth;
+	s_main->menu.height = gi.gpuConfig.vidHeight;
 	s_main->menu.fullscreen = qtrue;
 	s_main->menu.draw = MainMenu_Draw;
 	s_main->menu.flags = MENU_DEFAULT_FLAGS;

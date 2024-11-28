@@ -652,6 +652,10 @@ namespace TheNomad::SGame {
 			CacheSfx();
 			InitLoadout();
 
+			if ( @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_SLIDE ) is null ) {
+				GameError( "Couldn't cache leg slide state!" );
+			}
+
 			m_HudData.Init( @this );
 
 			m_PhysicsObject.Init( cast<EntityObject>( @this ) );
@@ -693,7 +697,17 @@ namespace TheNomad::SGame {
 			m_AfterImage.Create( @this );
 			m_iFlags |= PF_AFTER_IMAGE;
 
+			m_nLegTicker = 0;
+
 //			@GoreManager = cast<GoreSystem>( @TheNomad::GameSystem::AddSystem( GoreSystem() ) );
+		}
+
+		uint GetSpriteId( SpriteSheet@ sheet, EntityState@ state ) const {
+			if ( @state is null ) {
+				GameError( "GetSpriteID(): bad state!" );
+			}
+			const uint offset = state.GetSpriteOffset().y * sheet.GetSpriteCountX() + state.GetSpriteOffset().x;
+			return offset + state.GetAnimation().GetFrame();
 		}
 
 		private void DrawLegs() {
@@ -748,7 +762,7 @@ namespace TheNomad::SGame {
 
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.sheetNum = m_LegSpriteSheet[ m_LegsFacing ].GetShader();
-			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( @m_LegSpriteSheet[ m_LegsFacing ], @m_LegState );
+			refEntity.spriteId = GetSpriteId( @m_LegSpriteSheet[ m_LegsFacing ], @m_LegState );
 			refEntity.scale = 2.0f;
 			refEntity.Draw();
 		}
