@@ -80,6 +80,8 @@ public:
     // expand bounds in all directions with the given value
 	CModuleBoundBox& ExpandSelf( const float d );
 
+    bool IntersectsSphere( const glm::vec3& p, float radius ) const;
+
     // includes touching
 	bool ContainsPoint( const glm::vec3& p ) const;
 

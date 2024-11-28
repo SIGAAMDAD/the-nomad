@@ -187,7 +187,7 @@ namespace TheNomad::SGame {
 				fn( @ent );
 			}
 		}
-		void ForEachEntity( ForEachEntityIteratorThis@ fn, ref@ thisObject ) {
+		void ForEachEntity( ForEachEntityIteratorThis@ fn, ref thisObject ) {
 			EntityObject@ ent;
 
 			for ( @ent = @m_ActiveEnts.m_Next; @ent !is @m_ActiveEnts; @ent.m_Next ) {

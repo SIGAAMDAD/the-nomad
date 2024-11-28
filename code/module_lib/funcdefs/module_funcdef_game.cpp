@@ -44,6 +44,18 @@ float CModuleBoundBox::GetRadius( void ) const {
 	return sqrtf( total );
 }
 
+bool CModuleBoundBox::IntersectsSphere( const glm::vec3& p, float radius ) const
+{
+	if ( p[0] - radius > maxs[0] || p[0] + radius < mins[0] ||
+		p[1] - radius > maxs[1] || p[1] + radius < mins[1] ||
+		p[2] - radius > maxs[2] || p[2] + radius < mins[2] )
+	{
+		return false;
+	}
+
+	return true;
+}
+
 float CModuleBoundBox::GetRadius( const glm::vec3& center ) const {
 	int		i;
 	float	total, b0, b1;
@@ -350,6 +362,8 @@ void ScriptLib_Register_Game( void )
 		asMETHODPR( CModuleBoundBox, LineIntersection, ( const glm::vec3&, const glm::vec3& ) const, bool ), asCALL_THISCALL );
 	REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::BBox", "bool ContainsPoint( const vec3& in )",
 		asMETHODPR( CModuleBoundBox, ContainsPoint, ( const glm::vec3& ) const, bool ), asCALL_THISCALL );
+	REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::BBox", "bool IntersectsSphere( const vec3& in, float )",
+		asMETHODPR( CModuleBoundBox, IntersectsSphere, ( const glm::vec3&, float ) const, bool ), asCALL_THISCALL );
 	REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::BBox", "bool IntersectsBounds( const TheNomad::GameSystem::BBox& in )",
 		asMETHODPR( CModuleBoundBox, IntersectsBounds, ( const CModuleBoundBox& ) const, bool ), asCALL_THISCALL );
 	REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::BBox", "bool RayIntersection( const vec3& in, const vec3& in, float )",

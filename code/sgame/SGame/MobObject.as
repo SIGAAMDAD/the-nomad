@@ -1,5 +1,6 @@
 #include "SGame/EntityObject.as"
 #include "SGame/EntitySystem.as"
+#include "moblib/MobScript.as"
 
 namespace TheNomad::SGame {
 	class MobObject : EntityObject {
@@ -47,6 +48,10 @@ namespace TheNomad::SGame {
 			return m_MFlags;
 		}
 		
+		void LinkScript( moblib::MobScript@ script ) {
+			@m_ScriptData = @script;
+		}
+
 		void Spawn( uint id, const vec3& in origin ) {
 			@m_Info = @InfoSystem::InfoManager.GetMobInfo( id );
 			if ( @m_Info is null ) {
@@ -108,7 +113,7 @@ namespace TheNomad::SGame {
 			};
 		}
 		
-		protected void SetTarget( EntityObject@ newTarget ) {
+		void SetTarget( EntityObject@ newTarget ) {
 			@m_Target = @newTarget;
 			m_PhysicsObject.SetAngle( atan2( m_Link.m_Origin.x - m_Target.GetOrigin().x, m_Link.m_Origin.y - m_Target.GetOrigin().y ) );
 			m_Direction = Util::Angle2Dir( m_PhysicsObject.GetAngle() );
@@ -142,5 +147,7 @@ namespace TheNomad::SGame {
 		protected bool m_bIsAttacking = false;
 		protected uint m_nAttackTime = 0;
 		protected uint m_nLastAttackTime = 0;
+
+		private moblib::MobScript@ m_ScriptData = null;
 	};
 };

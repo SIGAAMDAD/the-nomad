@@ -14,6 +14,7 @@ namespace hellbreaker {
 		//
 		// register cvars
 		//
+		ConsolePrint( "Initializing Hellbreaker...\n" );
 
 		InitCvars();
 

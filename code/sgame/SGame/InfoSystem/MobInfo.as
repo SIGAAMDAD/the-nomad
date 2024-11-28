@@ -67,6 +67,10 @@ namespace TheNomad::SGame::InfoSystem {
 				ConsoleWarning( "invalid mob info, missing variable 'WaitTics'\n" );
 				return false;
 			}
+			if ( !json.get( "ScriptName", className ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'ScriptName'\n" );
+				return false;
+			}
 			if ( !json.get( "SpriteOffsetX", spriteOffsetX ) ) {
 				ConsoleWarning( "invalid mob info, missing variable 'SpriteOffsetX'\n" );
 				return false;
@@ -126,6 +130,7 @@ namespace TheNomad::SGame::InfoSystem {
 				ConsoleWarning( "invalid mob info, missing variable 'Speed'\n" );
 				return false;
 			}
+
 			
 			if ( values.Count() != 3 ) {
 				ConsoleWarning( "invalid mob info, Speed value List is not exactly 3 values.\n" );
@@ -175,6 +180,7 @@ namespace TheNomad::SGame::InfoSystem {
 		float height = 0.0f;
 		vec3 speed = vec3( 0.0f );
 		float soundTolerance = 0.0f;
+		float soundRadius = 0.0f;
 		float smellTolerance = 0.0f;
 		float sightRadius = 0.0f;
 		int sightRange = 0;
@@ -186,6 +192,7 @@ namespace TheNomad::SGame::InfoSystem {
 		uint spriteOffsetX = 0;
 		uint spriteOffsetY = 0;
 		int hShader = 0;
+		string className;
 		array<AttackInfo@> attacks;
 		TheNomad::Engine::SoundSystem::SoundEffect wakeupSfx;
 		TheNomad::Engine::SoundSystem::SoundEffect moveSfx;
