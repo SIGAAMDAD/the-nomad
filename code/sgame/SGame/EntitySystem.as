@@ -77,7 +77,11 @@ namespace TheNomad::SGame {
 			return "EntityManager";
 		}
 		void OnLoad() {
-			
+			// reset entities
+			@m_ActiveEnts.m_Next =
+			@m_ActiveEnts.m_Prev =
+				@m_ActiveEnts;
+
 			TheNomad::GameSystem::SaveSystem::LoadSection section( "PlayerData" );
 			if ( !section.Found() ) {
 				GameError( "EntitySystem::OnLoad: save file missing section \"PlayerData\"" );
@@ -88,10 +92,6 @@ namespace TheNomad::SGame {
 			ScreenData.InitPlayers();
 		}
 		void OnSave() const {
-			DebugPrint( "Saving entity data...\n" );
-
-			TheNomad::GameSystem::SaveSystem::SaveSection section( "PlayerData" );
-			m_ActivePlayer.Save( section );
 		}
 		void OnRenderScene() {
 			EntityObject@ ent;
@@ -102,7 +102,11 @@ namespace TheNomad::SGame {
 			}
 		}
 		void OnRunTic() {
-			EntityObject@ ent;
+			EntityObject@ ent = null;
+
+			if ( GlobalState == GameState::StatsMenu ) {
+				return;
+			}
 			
 			for ( @ent = @m_ActiveEnts.m_Next; @ent !is @m_ActiveEnts; @ent = @ent.m_Next ) {
 				if ( ent.CheckFlags( EntityFlags::Dead ) ) {
@@ -120,7 +124,7 @@ namespace TheNomad::SGame {
 				}
 
 				if ( @ent.GetState() is null ) {
-					GameError( "EntitySystem::OnRunTic(): entity " + ent.GetEntityNum() + " state is null" );
+					GameError( "EntitySystem::OnRunTic(): entity " + ent.GetName() + " state is null" );
 					continue;
 				} else {
 					ent.RunState();

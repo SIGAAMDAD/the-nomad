@@ -197,6 +197,9 @@ namespace TheNomad::SGame {
 			}
 			return @m_NullState;
 		}
+		EntityState@ GetNullState() {
+			return @m_NullState; // only meant for items
+		}
 
 		dictionary@ GetBaseStateCache() {
 			return @m_BaseStateCache;

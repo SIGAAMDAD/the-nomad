@@ -102,17 +102,8 @@ namespace TheNomad::SGame::InfoSystem {
 				if ( !data.get( "MobData", values ) ) {
 					ConsoleWarning( "entity data info file for \"" + sgame_ModList[i] + "\" has no mob data\n" );
 				} else {
-					m_MobTypes.Reserve( values.Count() );
 					for ( a = 0; a < values.Count(); a++ ) {
-						if ( !values[a].get( "Name", name ) ) {
-							ConsoleWarning( "invalid entity data info file, MobData object missing variable 'Name'\n" );
-							continue;
-						}
-						if ( !values[a].get( "Id", id ) ) {
-							ConsoleWarning( "invalid entity data info file, MobData object missing variable 'Id'\n" );
-							continue;
-						}
-						m_MobTypes.Add( EntityData( name, id ) );
+						m_MobTypes.Add( EntityData( string( values[a][ "Name" ] ), uint( values[a][ "Id" ] ) ) );
 					}
 				}
 				DebugPrint( "Loaded " + m_MobTypes.Count() + " mob types.\n" );
@@ -123,17 +114,8 @@ namespace TheNomad::SGame::InfoSystem {
 				if ( !data.get( "AmmoData", values ) ) {
 					ConsoleWarning( "entity data info file for \"" + sgame_ModList[i] + "\" has no ammo data\n" );
 				} else {
-					m_AmmoTypes.Reserve( values.Count() );
 					for ( a = 0; a < values.Count(); a++ ) {
-						if ( !values[a].get( "Name", name ) ) {
-							ConsoleWarning( "invalid entity data info file, AmmoData object missing variable 'Name'\n" );
-							continue;
-						}
-						if ( !values[a].get( "Id", id ) ) {
-							ConsoleWarning( "invalid entity data info file, AmmoData object missing variable 'Id'\n" );
-							continue;
-						}
-						m_AmmoTypes.Add( EntityData( name, id ) );
+						m_AmmoTypes.Add( EntityData( string( values[a][ "Name" ] ), uint( values[a][ "Id" ] ) ) );
 					}
 				}
 				DebugPrint( "Loaded " + m_AmmoTypes.Count() + " ammo types.\n" );
@@ -144,17 +126,8 @@ namespace TheNomad::SGame::InfoSystem {
 				if ( !data.get( "ItemData", values ) ) {
 					ConsoleWarning( "entity data info file for \"" + sgame_ModList[i] + "\" has no item data\n" );
 				} else {
-					m_ItemTypes.Reserve( values.Count() );
 					for ( a = 0; a < values.Count(); a++ ) {
-						if ( !values[a].get( "Name", name ) ) {
-							ConsoleWarning( "invalid entity data info file, ItemData object missing variable 'Name'\n" );
-							continue;
-						}
-						if ( !values[a].get( "Id", id ) ) {
-							ConsoleWarning( "invalid entity data info file, ItemData object missing variable 'Id'\n" );
-							continue;
-						}
-						m_ItemTypes.Add( EntityData( name, id ) );
+						m_ItemTypes.Add( EntityData( string( values[a][ "Name" ] ), uint( values[a][ "Id" ] ) ) );
 					}
 				}
 				DebugPrint( "Loaded " + m_ItemTypes.Count() + " item types.\n" );
@@ -165,17 +138,8 @@ namespace TheNomad::SGame::InfoSystem {
 				if ( !data.get( "WeaponData", values ) ) {
 					ConsoleWarning( "entity data info file for \"" + sgame_ModList[i] + "\" has no weapon data\n" );
 				} else {
-					m_WeaponTypes.Reserve( values.Count() );
 					for ( a = 0; a < values.Count(); a++ ) {
-						if ( !values[a].get( "Name", name ) ) {
-							ConsoleWarning( "invalid entity data info file, WeaponData object missing variable 'Name'\n" );
-							continue;
-						}
-						if ( !values[a].get( "Id", id ) ) {
-							ConsoleWarning( "invalid entity data info file, WeaponData object missing variable 'Id'\n" );
-							continue;
-						}
-						m_WeaponTypes.Add( EntityData( name, id ) );
+						m_WeaponTypes.Add( EntityData( string( values[a][ "Name" ] ), uint( values[a][ "Id" ] ) ) );
 					}
 				}
 				DebugPrint( "Loaded " + m_WeaponTypes.Count() + " weapon datas.\n" );

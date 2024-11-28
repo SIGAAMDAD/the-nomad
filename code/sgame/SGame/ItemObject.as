@@ -57,6 +57,8 @@ namespace TheNomad::SGame {
 			m_Link.m_Bounds.m_nWidth = m_Info.width;
 			m_Link.m_Bounds.m_nHeight = m_Info.height;
 			m_Link.m_Bounds.MakeBounds( m_Link.m_Origin );
+
+			@m_State = @StateManager.GetNullState();
 		}
 		void Spawn( uint id, const vec3& in origin ) override {
 			@m_Info = @InfoSystem::InfoManager.GetItemInfo( id );
@@ -70,6 +72,10 @@ namespace TheNomad::SGame {
 			m_Link.m_Bounds.m_nWidth = m_Info.width;
 			m_Link.m_Bounds.m_nHeight = m_Info.height;
 			m_Link.m_Bounds.MakeBounds( origin );
+
+			@m_State = @StateManager.GetNullState();
+
+			m_Name = m_Info.name;
 		}
 
 		InfoSystem::ItemInfo@ GetItemInfo() {

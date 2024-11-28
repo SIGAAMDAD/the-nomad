@@ -53,6 +53,8 @@ static void DemoMenu_Draw( void )
     ImGui::End();
 
     if ( Key_AnyDown() && done ) {
+        Cbuf_ExecuteText( EXEC_APPEND, "setmap\n" );
+
         UI_PopMenu();
         UI_ForceMenuOff();
         ui->menusp = 0;

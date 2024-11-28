@@ -11,7 +11,7 @@ namespace moblib {
 		}
 		void AllocScript( TheNomad::SGame::MobObject@ mob ) {
 			MobScript@ script = cast<MobScript@>( @TheNomad::Util::AllocateExternalScriptClass( "moblib",
-				cast<TheNomad::SGame::InfoSystem::MobInfo@>( @mob.GetInfo() ).className ) );
+				cast<TheNomad::SGame::InfoSystem::MobInfo@>( mob.GetInfo() ).className ) );
 			mob.LinkScript( @script );
 			m_ScriptFactory.Add( @script );
 		}
@@ -26,20 +26,18 @@ namespace moblib {
 		void OnLevelStart() {
 			dictionary@ mobs = @TheNomad::SGame::InfoSystem::InfoManager.GetMobInfos();
 			const array<TheNomad::SGame::InfoSystem::EntityData>@ types = @TheNomad::SGame::InfoSystem::InfoManager.GetMobTypes();
-			
+			array<TheNomad::SGame::EntityObject@>@ ents = @TheNomad::SGame::EntityManager.GetEntities();
+
 			ConsolePrint( "Linking mob scripts...\n" );
 
-			TheNomad::SGame::EntityManager.ForEachEntity( function( ref@ thisData, TheNomad::SGame::EntityObject@ ent ){
-				if ( ent.GetType() != TheNomad::GameSystem::EntityType::Mob ) {
-					return;
+			for ( uint i = 0; i < ents.Count(); i++ ) {
+				if ( ents[i].GetType() != TheNomad::GameSystem::EntityType::Mob ) {
+					continue;
 				}
-				
-				AISystem@ this = cast<AISystem@>( @thisData );
-				
-				TheNomad::SGame::MobObject@ mob = cast<TheNomad::SGame::MobObject@>( @ent );
-				
-				this.AllocScript( @mob );
-			}, @this );
+
+				TheNomad::SGame::MobObject@ mob = cast<TheNomad::SGame::MobObject@>( @ents[i] );
+				AllocScript( @mob );
+			}
 		}
 		void OnLevelEnd() {
 			m_ScriptFactory.Clear();

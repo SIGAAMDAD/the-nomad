@@ -698,6 +698,7 @@ namespace TheNomad::SGame {
 			m_iFlags |= PF_AFTER_IMAGE;
 
 			m_nLegTicker = 0;
+			m_Name = "player";
 
 //			@GoreManager = cast<GoreSystem>( @TheNomad::GameSystem::AddSystem( GoreSystem() ) );
 		}

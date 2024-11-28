@@ -642,11 +642,17 @@ CScriptArray::~CScriptArray()
 
 asUINT CScriptArray::GetSize( void ) const
 {
+	if ( !buffer ) {
+		return 0;
+	}
 	return buffer->size;
 }
 
 bool CScriptArray::IsEmpty() const
 {
+	if ( !buffer ) {
+		return true;
+	}
 	return !buffer->size;
 }
 
