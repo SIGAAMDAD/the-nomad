@@ -1,0 +1,24 @@
+{
+	"Name": "MobLib",
+	"Id": "moblib",
+	"Description": "AI management system kept separate from the main VM for extra moddability",
+	"DependedModules": [
+		"nomadmain"
+	],
+	"IsDynamic": false,
+	"IncludePaths": [
+		"gamedata/modules/moblib/",
+        "gamedata/modules/nomadmain/"
+	],
+	"SubModules": [
+		"moblib.as"
+	],
+	"Version": {
+		"GameVersionMajor": 1,
+		"GameVersionUpdate": 1,
+		"GameVersionPatch": 0,
+		"VersionMajor": 1,
+		"VersionUpdate": 0,
+		"VersionPatch": 0
+	}
+}
