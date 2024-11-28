@@ -299,7 +299,6 @@ SRC=\
 	$(O)/ui/ui_main.o \
 	$(O)/ui/ui_lib.o \
 	$(O)/ui/ui_menu.o \
-	$(O)/ui/ui_credits.o \
 	$(O)/ui/ui_string_manager.o \
 	$(O)/ui/ui_demo.o \
 	$(O)/ui/ui_settings.o \

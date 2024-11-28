@@ -65,7 +65,6 @@ static void UI_Cache_f( void ) {
 	DemoMenu_Cache();
 	PlayMenu_Cache();
 	PauseMenu_Cache();
-	CreditsMenu_Cache();
 	ConfirmMenu_Cache();
 	DataBaseMenu_Cache();
 	SettingsMenu_Cache();

@@ -123,9 +123,6 @@ static void MainMenu_EventCallback( void *item, int event )
 	case ID_DATABASE:
 		UI_DataBaseMenu();
 		break;
-	case ID_CREDITS:
-		UI_CreditsMenu();
-		break;
 	case ID_EXIT:
 		Cbuf_ExecuteText( EXEC_APPEND, "quit\n" );
 		break;
@@ -393,7 +390,7 @@ static void SplashScreen_Draw( void )
 	case SPLASH_SCREEN_LOGO: { // get attribution to 3rd party stuff done with
 		int cursorX = 80;
 
-		re.DrawImage( cursorX * ui->scale + ui->bias, 100 * ui->scale, 330 * ui->scale + ui->bias, 180 * ui->scale, 0, 0, 1, 1, s_splashScreen->companyLogoShader );
+		re.DrawImage( cursorX * ui->scale, 100 * ui->scale, 330 * ui->scale + ui->bias, 180 * ui->scale, 0, 0, 1, 1, s_splashScreen->companyLogoShader );
 		cursorX += 300 * ui->scale + ui->bias;
 
 		re.DrawImage( cursorX * ui->scale + ui->bias, 100 * ui->scale, 340 * ui->scale + ui->bias, 220 * ui->scale, 0, 0, 1, 1, s_splashScreen->engineLogoShader );
@@ -780,7 +777,6 @@ void MainMenu_Cache( void )
 	Menu_AddItem( &s_main->menu, &s_main->singleplayer );
 	Menu_AddItem( &s_main->menu, &s_main->settings );
 	Menu_AddItem( &s_main->menu, &s_main->database );
-	Menu_AddItem( &s_main->menu, &s_main->credits );
 	Menu_AddItem( &s_main->menu, &s_main->mods );
 	Menu_AddItem( &s_main->menu, &s_main->exitGame );
 

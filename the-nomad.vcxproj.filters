@@ -821,9 +821,6 @@
     <ClCompile Include="code\ui\ui_confirm.cpp">
       <Filter>Source Files\ui</Filter>
     </ClCompile>
-    <ClCompile Include="code\ui\ui_credits.cpp">
-      <Filter>Source Files\ui</Filter>
-    </ClCompile>
     <ClCompile Include="code\ui\ui_demo.cpp">
       <Filter>Source Files\ui</Filter>
     </ClCompile>

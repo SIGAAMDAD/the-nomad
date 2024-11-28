@@ -31,14 +31,11 @@ public:
 	const void *GetStringConstant( const char *pData, asUINT nLength ) {
 		PROFILE_FUNCTION();
 
-		CThreadAutoLock<CThreadMutex> lock( m_hLock );
-
-		const string_hash_t str( pData, nLength );
-		auto it = m_StringCache.find( str );
+		auto it = m_StringCache.find( pData );
 		if ( it != m_StringCache.end() ) {
 			it->second++;
 		} else {
-			it = m_StringCache.insert( CStringCache::value_type( str, 1 ) ).first;
+			it = m_StringCache.insert( CStringCache::value_type( pData, 1 ) ).first;
 		}
 		return (const void *)&it->first;
 	}
@@ -53,8 +50,6 @@ public:
 		}
 		
 		ret = asSUCCESS;
-		
-		CThreadAutoLock<CThreadMutex> lock( m_hLock );
 
 		const string_hash_t& data = *(const string_t *)pStr;
 
@@ -79,7 +74,6 @@ public:
 			return asERROR;
 		}
 
-		CThreadAutoLock<CThreadMutex> lock( *const_cast<CThreadMutex *>( &m_hLock ) );
 		const string_t *data = (const string_t *)pStr;
 		if ( nLength ) {
 			*nLength = data->size();

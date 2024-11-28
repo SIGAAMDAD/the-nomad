@@ -630,16 +630,31 @@ static void SettingsMenu_Text( const char *name, const char *hint )
 	SfxFocused( name );
 }
 
-/* bannerlord style doesn't play well with imgui
 static void SettingsMenu_List( const char *label, const char **itemnames, int numitems, int *curitem, bool enabled )
 {
 	int i;
 	const char *name;
+	qboolean opened = qfalse;
 	
 	name = va( "##%sSettingsMenuConfigList", label );
 
 	ImGui::PushStyleColor( ImGuiCol_Text, colorLimeGreen );
-	if ( ImGui::BeginCombo( name, itemnames[*curitem] ) ) {
+
+	ImGuiStyle& style = ImGui::GetStyle();
+
+	const float tabRounding = style.TabRounding;
+	const float frameRounding = style.FrameRounding;
+	const float grabRounding = style.GrabRounding;
+	const float windowRounding = style.WindowRounding;
+	const float popupRounding = style.PopupRounding;
+
+	style.TabRounding = 8.0f;
+	style.FrameRounding = 8.0f;
+	style.GrabRounding = 8.0f;
+	style.WindowRounding = 8.0f;
+	style.PopupRounding = 8.0f;
+
+	if ( ImGui::BeginCombo( name, itemnames[ *curitem ] ) ) {
 		for ( i = 0; i < numitems; i++ ) {
 			if ( ImGui::Selectable( va( "%s##%sSettingsMenuConfigList", itemnames[i], label ), ( *curitem == i ) ) ) {
 				if ( enabled ) {
@@ -647,18 +662,17 @@ static void SettingsMenu_List( const char *label, const char **itemnames, int nu
 					*curitem = i;
 				}
 			}
-			SfxFocused( itemnames[i] );
 		}
 		ImGui::EndCombo();
 	}
-	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) && !s_settingsMenu->playedClickSound ) {
-		Snd_PlaySfx( ui->sfx_select );
-		s_settingsMenu->playedClickSound = qtrue;
-	} else {
-		s_settingsMenu->playedClickSound = qfalse;
-	}
+
+	style.TabRounding = tabRounding;
+	style.FrameRounding = frameRounding;
+	style.GrabRounding = grabRounding;
+	style.WindowRounding = windowRounding;
+	style.PopupRounding = popupRounding;
+
 	ImGui::PopStyleColor();
-//	SfxFocused( label );
 }
 
 static void SettingsMenu_MultiAdjustable( const char *name, const char *label, const char *hint, const char **itemnames, int numitems,
@@ -675,6 +689,21 @@ static void SettingsMenu_MultiAdjustable( const char *name, const char *label, c
 	ImGui::TableNextColumn();
 	SettingsMenu_Text( name, hint );
 	ImGui::TableNextColumn();
+
+	ImGuiStyle& style = ImGui::GetStyle();
+
+	const float tabRounding = style.TabRounding;
+	const float frameRounding = style.FrameRounding;
+	const float grabRounding = style.GrabRounding;
+	const float windowRounding = style.WindowRounding;
+	const float popupRounding = style.PopupRounding;
+
+	style.TabRounding = 8.0f;
+	style.FrameRounding = 8.0f;
+	style.GrabRounding = 8.0f;
+	style.WindowRounding = 8.0f;
+	style.PopupRounding = 8.0f;
+
 	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigLeft", label ), ImGuiDir_Left ) ) {
 		if ( enabled ) {
 			Snd_PlaySfx( ui->sfx_select );
@@ -688,6 +717,7 @@ static void SettingsMenu_MultiAdjustable( const char *name, const char *label, c
 	ImGui::SameLine();
 	SettingsMenu_List( label, itemnames, numitems, curitem, enabled );
 	ImGui::SameLine();
+
 	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigRight", label ), ImGuiDir_Right ) ) {
 		Snd_PlaySfx( ui->sfx_select );
 		( *curitem )++;
@@ -697,49 +727,11 @@ static void SettingsMenu_MultiAdjustable( const char *name, const char *label, c
 	}
 	SfxFocused( (void *)( (uintptr_t)curitem * 0xfa ) );
 
-	if ( !enabled ) {
-		ImGui::PopStyleColor( 4 );
-	}
-	ImGui::PopStyleColor();
-}
-*/
-
-static void SettingsMenu_MultiAdjustable( const char *name, const char *label, const char *hint, const char **itemnames, int numitems,
-	int *curitem, bool enabled )
-{
-	if ( !enabled ) {
-		ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
-		ImGui::PushStyleColor( ImGuiCol_FrameBg, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
-		ImGui::PushStyleColor( ImGuiCol_FrameBgActive, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
-		ImGui::PushStyleColor( ImGuiCol_FrameBgHovered, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
-	}
-
-	ImGui::PushStyleColor( ImGuiCol_Text, colorLimeGreen );
-	ImGui::TableNextColumn();
-	SettingsMenu_Text( name, hint );
-	ImGui::TableNextColumn();
-	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigLeft", label ), ImGuiDir_Left ) ) {
-		if ( enabled ) {
-			Snd_PlaySfx( ui->sfx_select );
-			( *curitem )--;
-			if ( *curitem < 0 ) {
-				*curitem = 0;
-			}
-		}
-	}
-	SfxFocused( (void *)( (uintptr_t)curitem * 0xaf ) );
-	ImGui::SameLine();
-	SfxFocused( curitem );
-	ImGui::TextUnformatted( itemnames[ *curitem ] );
-	ImGui::SameLine();
-	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigRight", label ), ImGuiDir_Right ) ) {
-		Snd_PlaySfx( ui->sfx_select );
-		( *curitem )++;
-		if ( *curitem > numitems - 1 ) {
-			*curitem = numitems - 1;
-		}
-	}
-	SfxFocused( (void *)( (uintptr_t)curitem * 0xfa ) );
+	style.TabRounding = tabRounding;
+	style.FrameRounding = frameRounding;
+	style.GrabRounding = grabRounding;
+	style.WindowRounding = windowRounding;
+	style.PopupRounding = popupRounding;
 
 	if ( !enabled ) {
 		ImGui::PopStyleColor( 4 );
@@ -761,29 +753,31 @@ static void SettingsMenu_MultiSliderFloat( const char *name, const char *label, 
 	ImGui::TableNextColumn();
 	SettingsMenu_Text( name, hint );
 	ImGui::TableNextColumn();
-	/*
-	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigLeft", label ), ImGuiDir_Left ) ) {
-		Snd_PlaySfx( ui->sfx_select );
-		( *curvalue ) -= delta;
-		if ( *curvalue < minvalue ) {
-			*curvalue = minvalue;
-		}
-	}
-	ImGui::SameLine();
-	*/
-	const char *str = label;
-	ImGui::SliderFloat( str, curvalue, minvalue, maxvalue, "%.3f", enabled ? 0 : ImGuiSliderFlags_NoInput );
-	SfxFocused( str );
-	/*
-	ImGui::SameLine();
-	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigRight", label ), ImGuiDir_Right ) ) {
-		Snd_PlaySfx( ui->sfx_select );
-		( *curvalue ) += delta;
-		if ( *curvalue > maxvalue ) {
-			*curvalue = maxvalue;
-		}
-	}
-	*/
+
+	ImGuiStyle& style = ImGui::GetStyle();
+
+	const float tabRounding = style.TabRounding;
+	const float frameRounding = style.FrameRounding;
+	const float grabRounding = style.GrabRounding;
+	const float windowRounding = style.WindowRounding;
+	const float popupRounding = style.PopupRounding;
+
+	style.TabRounding = 8.0f;
+	style.FrameRounding = 8.0f;
+	style.GrabRounding = 8.0f;
+	style.WindowRounding = 8.0f;
+	style.PopupRounding = 8.0f;
+
+	ImGui::SliderFloat( va( "%s##%sSettingsMenuSliderFloat", name, label ), curvalue, minvalue, maxvalue, "%.3f",
+		enabled ? 0 : ImGuiSliderFlags_NoInput );
+	SfxFocused( label );
+
+	style.TabRounding = tabRounding;
+	style.FrameRounding = frameRounding;
+	style.GrabRounding = grabRounding;
+	style.WindowRounding = windowRounding;
+	style.PopupRounding = popupRounding;
+
 	ImGui::PopStyleColor();
 
 	if ( !enabled ) {
@@ -804,34 +798,30 @@ static void SettingsMenu_MultiSliderInt( const char *name, const char *label, co
 	ImGui::TableNextColumn();
 	SettingsMenu_Text( name, hint );
 	ImGui::TableNextColumn();
-	/*
-	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigLeft", label ), ImGuiDir_Left ) ) {
-		if ( enabled ) {
-			Snd_PlaySfx( ui->sfx_select );
-			( *curvalue ) -= delta;
-			if ( *curvalue < minvalue ) {
-				*curvalue = minvalue;
-			}
-		}
-	}
-	ImGui::SameLine();
-	*/
-	const char *str = label;
-	ImGui::SliderInt( str, curvalue, minvalue, maxvalue, "%d", enabled ? 0 : ImGuiSliderFlags_NoInput );
-	SfxFocused( str );
-	/*
-	ImGui::SameLine();
-	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigRight", label ), ImGuiDir_Right ) ) {
-		if ( enabled ) {
-			Snd_PlaySfx( ui->sfx_select );
-			( *curvalue ) += delta;
-			if ( *curvalue > maxvalue ) {
-				*curvalue = maxvalue;
-			}
-		}
-	}
-	ImGui::PopStyleColor();
-	*/
+
+	ImGuiStyle& style = ImGui::GetStyle();
+
+	const float tabRounding = style.TabRounding;
+	const float frameRounding = style.FrameRounding;
+	const float grabRounding = style.GrabRounding;
+	const float windowRounding = style.WindowRounding;
+	const float popupRounding = style.PopupRounding;
+
+	style.TabRounding = 8.0f;
+	style.FrameRounding = 8.0f;
+	style.GrabRounding = 8.0f;
+	style.WindowRounding = 8.0f;
+	style.PopupRounding = 8.0f;
+
+	ImGui::SliderInt( va( "%s##%sSettingsMenuSliderFloat", name, label ), curvalue, minvalue, maxvalue, "%d",
+		enabled ? 0 : ImGuiSliderFlags_NoInput );
+	SfxFocused( label );
+
+	style.TabRounding = tabRounding;
+	style.FrameRounding = frameRounding;
+	style.GrabRounding = grabRounding;
+	style.WindowRounding = windowRounding;
+	style.PopupRounding = popupRounding;
 
 	if ( !enabled ) {
 		ImGui::PopStyleColor( 4 );

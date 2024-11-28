@@ -153,9 +153,9 @@
       <ConformanceMode>true</ConformanceMode>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <OmitFramePointers>false</OmitFramePointers>
+      <OmitFramePointers>true</OmitFramePointers>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
-      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
       <StringPooling>true</StringPooling>
       <FloatingPointExceptions>true</FloatingPointExceptions>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -169,14 +169,14 @@
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
       <StackReserveSize>4194304</StackReserveSize>
       <LargeAddressAware>true</LargeAddressAware>
       <ProgramDatabaseFile>$(IntDir)$(TargetName).pdb</ProgramDatabaseFile>
       <GenerateMapFile>true</GenerateMapFile>
       <MapFileName>$(IntDir)$(TargetName).map</MapFileName>
       <FixedBaseAddress>false</FixedBaseAddress>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);$(SolutionDir)$(Platform)\$(Configuration)\libjpeg.lib;$(SolutionDir)fmodstudio_vc.lib;$(SolutionDir)fmodstudioL_vc.lib;$(SolutionDir)fmod_vc.lib;$(SolutionDir)fmodL_vc.lib;$(SolutionDir)$(Platform)\$(Configuration)\TheNomad.ASLib.$(Platform).lib;$(SolutionDir)SDL2.lib;$(SolutionDir)$(Platform)\$(Configuration)\libEASTL.lib;$(SolutionDir)SDL2_image.lib;$(SolutionDir)libbz2.lib;$(SolutionDir)zlib.lib;$(SolutionDir)libcurl.dll.a</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)$(Platform)\$(Configuration)\pthread_static_lib.lib;$(CoreLibraryDependencies);%(AdditionalDependencies);$(SolutionDir)$(Platform)\$(Configuration)\libjpeg.lib;$(SolutionDir)fmodstudio_vc.lib;$(SolutionDir)fmodstudioL_vc.lib;$(SolutionDir)fmod_vc.lib;$(SolutionDir)fmodL_vc.lib;$(SolutionDir)$(Platform)\$(Configuration)\TheNomad.ASLib.$(Platform).lib;$(SolutionDir)SDL2.lib;$(SolutionDir)$(Platform)\$(Configuration)\libEASTL.lib;$(SolutionDir)SDL2_image.lib;$(SolutionDir)libbz2.lib;$(SolutionDir)zlib.lib;$(SolutionDir)libcurl.dll.a</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -441,7 +441,6 @@
     <ClCompile Include="code\sound\snd_main.cpp" />
     <ClCompile Include="code\sound\snd_world.cpp" />
     <ClCompile Include="code\ui\ui_confirm.cpp" />
-    <ClCompile Include="code\ui\ui_credits.cpp" />
     <ClCompile Include="code\ui\ui_database.cpp" />
     <ClCompile Include="code\ui\ui_demo.cpp" />
     <ClCompile Include="code\ui\ui_lib.cpp" />
