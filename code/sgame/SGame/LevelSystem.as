@@ -181,15 +181,13 @@ namespace TheNomad::SGame {
 			m_LevelInfoDatas.Clear();
 		}
 		void OnRenderScene() {
+			if ( GlobalState == GameState::StatsMenu ) {
+				m_RankData.Draw( true, m_nLevelTimer );
+			}
 		}
 		void OnRunTic() {
 			MapCheckpoint@ cp = null;
 			uint checkpointIndex = 0;
-
-			if ( GlobalState == GameState::StatsMenu ) {
-				m_RankData.Draw( true, m_nLevelTimer );
-				return;
-			}
 			
 			//
 			// checkpoint updates

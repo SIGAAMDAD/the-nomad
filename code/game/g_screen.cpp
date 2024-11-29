@@ -389,7 +389,6 @@ void SCR_UpdateScreen( void )
 		switch ( g_pModuleLib->ModuleCall( sgvm, ModuleOnRunTic, 1, gi.realtime ) ) {
 		case 0:
 		default:
-			g_pModuleLib->RunModules( ModuleOnRunTic, 1, gi.realtime );
 			break;
 		case 1:
 			g_pModuleLib->ModuleCall( sgvm, ModuleOnLevelEnd, 0 );

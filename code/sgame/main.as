@@ -309,32 +309,41 @@ int ModuleOnMouseEvent( int dx, int dy ) {
 }
 
 int ModuleOnRunTic( int msec ) {
-	if ( TheNomad::SGame::GlobalState == TheNomad::SGame::GameState::LevelFinish ) {
-		// this will automatically call OnLevelEnd for all registered game objects
-		TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::StatsMenu;
-		return 1;
-	} else if ( TheNomad::SGame::GlobalState == TheNomad::SGame::GameState::EndOfLevel ) {
-		TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::Inactive;
-		return 3;
-	}
+	switch ( TheNomad::SGame::GlobalState ) {
+	case TheNomad::SGame::GameState::InLevel:
+	{
+		// if we're paused, then just draw the stuff, don't run anything else
+		if ( TheNomad::Engine::CvarVariableInteger( "g_paused" ) == 1 ) {
+			TheNomad::SGame::LevelManager.Pause();
+			return 0;
+		}
 
-	TheNomad::GameSystem::GameManager.SetMousePos( TheNomad::Engine::GetMousePosition() );
-	TheNomad::GameSystem::GameManager.SetMsec( TheNomad::Engine::System::Milliseconds() );
+		TheNomad::GameSystem::GameManager.SetMousePos( TheNomad::Engine::GetMousePosition() );
+		TheNomad::GameSystem::GameManager.SetMsec( TheNomad::Engine::System::Milliseconds() );
 
-	// if we're paused, then just draw the stuff, don't run anything else
-	if ( TheNomad::Engine::CvarVariableInteger( "g_paused" ) == 0 ) {
 		TheNomad::SGame::LevelManager.Resume();
 		TheNomad::SGame::EntityManager.SetActivePlayer( @TheNomad::SGame::ScreenData.GetPlayerAt( 0 ) );
 		for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 			TheNomad::GameSystem::GameSystems[i].OnRunTic();
 		}
-	} else {
-		TheNomad::SGame::LevelManager.Pause();
-	}
 
-	TheNomad::SGame::ScreenData.Draw();
-	
-	return TheNomad::SGame::GlobalState == TheNomad::SGame::GameState::StatsMenu ? 2 : 0;
+		TheNomad::SGame::ScreenData.Draw();
+		return 0;
+	}
+	case TheNomad::SGame::GameState::StatsMenu:
+		TheNomad::SGame::LevelManager.OnRenderScene();
+		return 2;
+	case TheNomad::SGame::GameState::LevelFinish:
+		// this will automatically call OnLevelEnd for all registered game objects
+		TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::StatsMenu;
+		return 1;
+	case TheNomad::SGame::GameState::EndOfLevel:
+		TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::Inactive;
+		return 3;
+	case TheNomad::SGame::GameState::Inactive:
+	default:
+		return 0;
+	};
 }
 
 };
