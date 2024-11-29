@@ -2936,7 +2936,7 @@ uint64_t FS_Read( void *buffer, uint64_t size, fileHandle_t f )
 	buf = (byte *)buffer;
 	fs_readCount += size;
 
-	if (!handles[f].bffFile) {
+	if ( !handles[f].bffFile || !N_stricmp( COM_GetExtension( handles[f].name ), "ngd" ) ) {
 		remaining = size;
 		tries = 0;
 
@@ -3731,6 +3731,11 @@ uint64_t FS_LoadFile(const char *npath, void **buffer)
 	FS_FClose( fd );
 
 	return size;
+}
+
+FILE *FS_GetStream( fileHandle_t fh )
+{
+	return handles[fh].data.fp;
 }
 
 int FS_FileToFileno( fileHandle_t f )

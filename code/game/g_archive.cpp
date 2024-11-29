@@ -66,19 +66,19 @@ bool CGameArchive::ValidateHeader( const void *data ) const
 
 	h = (const ngdheader_t *)data;
 
-    if ( h->validation.ident != IDENT ) {
-        Con_Printf( COLOR_RED "LoadArchiveFile: failed to load save, header has incorrect identifier (%i, should be %i).\n",
+	if ( h->validation.ident != IDENT ) {
+		Con_Printf( COLOR_RED "LoadArchiveFile: failed to load save, header has incorrect identifier (%i, should be %i).\n",
 			h->validation.ident, IDENT );
 		return false;
-    }
+	}
 
-    if ( h->validation.version.m_nVersionMajor != NOMAD_VERSION
-    	|| h->validation.version.m_nVersionUpdate != NOMAD_VERSION_UPDATE
-    	|| h->validation.version.m_nVersionPatch != NOMAD_VERSION_PATCH )
+	if ( h->validation.version.m_nVersionMajor != NOMAD_VERSION
+		|| h->validation.version.m_nVersionUpdate != NOMAD_VERSION_UPDATE
+		|| h->validation.version.m_nVersionPatch != NOMAD_VERSION_PATCH )
 	{
-        Con_Printf( COLOR_RED "LoadArchiveFile: failed to load save, header has incorrect version.\n" );
-        return false;
-    }
+		Con_Printf( COLOR_RED "LoadArchiveFile: failed to load save, header has incorrect version.\n" );
+		return false;
+	}
 
 	return true;
 }
@@ -206,10 +206,10 @@ qboolean CGameArchive::LoadArchiveFile( const char *filename, uint64_t index )
 	PROFILE_FUNCTION();
 
 	ngdheader_t header;
-    int i, j;
+	int i, j;
 	int32_t nameLength, numFields;
 	uint64_t size;
-    fileHandle_t hFile;
+	fileHandle_t hFile;
 	ngdsection_read_t *section;
 	ngdfield_t *field;
 	ngd_file_t *file;
@@ -1054,8 +1054,6 @@ bool CGameArchive::Save( const char *filename )
 	if ( m_nSectionDepth ) {
 		N_Error( ERR_DROP, "CGameArchive::Save: called when writing a section" );
 	}
-	
-//	g_pModuleLib->ModuleCall( sgvm, ModuleOnSaveGame, 0 );
 
 	path = va( "SaveData/%s", filename );
 	m_hFile = FS_FOpenWrite( path );
@@ -1141,7 +1139,16 @@ bool CGameArchive::Save( const char *filename )
 	header.numSections = m_nSections;
 	FS_FileSeek( m_hFile, 0, FS_SEEK_SET );
 
-	FS_Write( &header.validation, sizeof( header.validation ), m_hFile );
+	header.validation.ident = IDENT;
+	header.validation.version.m_nVersionMajor = NOMAD_VERSION;
+	header.validation.version.m_nVersionUpdate = NOMAD_VERSION_UPDATE;
+	header.validation.version.m_nVersionPatch = NOMAD_VERSION_PATCH;
+
+	FS_Write( &header.validation.ident, sizeof( header.validation.ident ), m_hFile );
+	FS_Write( &header.validation.version.m_nVersionMajor, sizeof( header.validation.version.m_nVersionMajor ), m_hFile );
+	FS_Write( &header.validation.version.m_nVersionUpdate, sizeof( header.validation.version.m_nVersionUpdate ), m_hFile );
+	FS_Write( &header.validation.version.m_nVersionPatch, sizeof( header.validation.version.m_nVersionPatch ), m_hFile );
+
 	FS_Write( &header.numSections, sizeof( header.numSections ), m_hFile );
 	FS_Write( &header.gamedata.mapIndex, sizeof( header.gamedata.mapIndex ), m_hFile );
 	FS_Write( &header.gamedata.highestDif, sizeof( header.gamedata.highestDif ), m_hFile );
@@ -1193,30 +1200,30 @@ nhandle_t CGameArchive::GetSection( const char *name )
 
 bool CGameArchive::LoadPartial( const char *filename, gamedata_t *gd )
 {
-    fileHandle_t f;
-    ngdheader_t header;
+	fileHandle_t f;
+	ngdheader_t header;
 	uint64_t i;
 
-    f = FS_FOpenRead( filename );
-    if ( f == FS_INVALID_HANDLE ) {
-        return false;
-    }
+	f = FS_FOpenRead( filename );
+	if ( f == FS_INVALID_HANDLE ) {
+		return false;
+	}
 
-    //
-    // validate the header
-    //
-	FS_Read( &header.validation.ident, sizeof( header.validation.ident ), f );
+	//
+	// validate the header
+	//
+	FS_Read( &header.validation.ident, sizeof( header.validation.ident ), m_hFile );
 	FS_Read( &header.validation.version.m_nVersionMajor, sizeof( header.validation.version.m_nVersionMajor ), f );
 	FS_Read( &header.validation.version.m_nVersionUpdate, sizeof( header.validation.version.m_nVersionUpdate ), f );
 	FS_Read( &header.validation.version.m_nVersionPatch, sizeof( header.validation.version.m_nVersionPatch ), f );
 
-    if ( FS_FileLength( f ) < SIZEOF_HEADER ) {
-        Con_Printf( COLOR_RED "CGameArchive::Load: failed to load savefile, file is too small to contain a header.\n" );
-        return false;
-    }
+	if ( FS_FileLength( f ) < SIZEOF_HEADER ) {
+		Con_Printf( COLOR_RED "CGameArchive::Load: failed to load savefile, file is too small to contain a header.\n" );
+		return false;
+	}
 	if ( !ValidateHeader( &header ) ) {
-        return false;
-    }
+		return false;
+	}
 
 	FS_Read( &header.numSections, sizeof( header.numSections ), f );
 	FS_Read( &gd->mapIndex, sizeof( gd->mapIndex ), f );
@@ -1252,9 +1259,9 @@ bool CGameArchive::LoadPartial( const char *filename, gamedata_t *gd )
 	}
 	Con_DPrintf( "\n" );
 
-    FS_FClose( f );
+	FS_FClose( f );
 
-    return true;
+	return true;
 }
 
 bool CGameArchive::Load( uint64_t nSlot )

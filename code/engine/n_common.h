@@ -460,7 +460,8 @@ const char *FS_GetGamePath( void );
 
 void GDR_DECL GDR_ATTRIBUTE((format(printf, 2, 3))) FS_Printf(fileHandle_t f, const char *fmt, ...);
 
-int FS_FileToFileno(fileHandle_t f);
+FILE *FS_GetStream( fileHandle_t fh );
+int FS_FileToFileno( fileHandle_t fh );
 fileHandle_t FS_FOpenWithMode(const char *path, fileMode_t mode);
 uint64_t FS_FOpenFileWithMode(const char *path, fileHandle_t *f, fileMode_t mode);
 

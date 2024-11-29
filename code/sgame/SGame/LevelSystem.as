@@ -35,6 +35,11 @@ namespace TheNomad::SGame {
 
     class LevelSystem : TheNomad::GameSystem::GameObject {
 		LevelSystem() {
+			@m_MapData = MapData();
+		}
+
+		const string& GetName() const {
+			return "LevelSystem";
 		}
 		
 		void OnInit() {
@@ -232,32 +237,10 @@ namespace TheNomad::SGame {
 				}
 			}
 		}
-		void OnSave() const {
-			const LevelStats@ stats;
-			uint i, a;
-			
-			DebugPrint( "Archiving level stats...\n" );
-			
-			{
-				TheNomad::GameSystem::SaveSystem::SaveSection section( GetName() );
-				section.SaveUInt( "NumLevels", m_LevelInfoDatas.Count() );
-				for ( i = 0; i < m_LevelInfoDatas.Count(); i++ ) {
-					section.SaveString( "LevelNames" + i, m_LevelInfoDatas[i].m_Name );
-				}
 
-				section.SaveUInt( "Time", m_nLevelTimer );
-				section.SaveUInt( "MapIndex", m_nIndex );
-				section.SaveInt( "Difficulty", TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" ) );
-
-				// save checkpoint data
-				section.SaveUInt( "CurrentCheckpoint", m_CurrentCheckpoint );
-				for ( i = 0; i < m_CurrentCheckpoint; i++ ) {
-					section.SaveUInt64( "CheckpointTime_" + i, m_MapData.GetCheckpoints()[i].m_nTime );
-				}
-			}
-			
+		private void SaveLevelStats() const {
 			// save individual stats for each level
-			for ( i = 0; i < m_LevelInfoDatas.Count(); i++ ) {
+			for ( uint i = 0; i < m_LevelInfoDatas.Count(); i++ ) {
 				// each section is a different .prt file, so the stats will remain per save-slot unless overwritten
 				// hopefully this doesn't lead to other mods overwriting to data if two levels have the same name,
 				// but that is a rare case and possibly a user/modder error
@@ -265,8 +248,8 @@ namespace TheNomad::SGame {
 				
 				// we don't use NumDifficulties because a map doesn't have to be registered with all difficulties
 				save.SaveUInt( "MapCount", m_LevelInfoDatas[i].m_MapHandles.Count() );
-				for ( a = 0; a < m_LevelInfoDatas[i].m_MapHandles.Count(); a++ ) {
-					@stats = @m_LevelInfoDatas[i].m_MapHandles[a].highStats;
+				for ( uint a = 0; a < m_LevelInfoDatas[i].m_MapHandles.Count(); a++ ) {
+					LevelStats@ stats = @m_LevelInfoDatas[i].m_MapHandles[a].highStats;
 					
 					//
 					// save the ranks, then the actual numbers (for the perfectionists)
@@ -290,73 +273,9 @@ namespace TheNomad::SGame {
 				}
 			}
 		}
-
-		private void LoadLevel() {
-			const int difficulty = TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" );
-			@m_Current = @m_LevelInfoDatas[ m_nIndex ];
-			@m_MapData = MapData();
-
-			ConsolePrint( "Loading map \"" + m_LevelInfoDatas[ m_nIndex ].m_MapHandles[ difficulty ].m_Name + "\"...\n" );
-			m_MapData.Init( m_LevelInfoDatas[ m_nIndex ].m_MapHandles[ difficulty ].m_Name, 1 );
-			m_MapData.Load( m_LevelInfoDatas[ m_nIndex ].m_MapHandles[ difficulty ].mapHandle );
-
-			switch ( TheNomad::GameSystem::GameDifficulty( difficulty ) ) {
-			case TheNomad::GameSystem::GameDifficulty::Easy: // Recruit
-				m_nDifficultyScale = 0.75f;
-				break;
-			case TheNomad::GameSystem::GameDifficulty::Normal: // Mercenary
-				m_nDifficultyScale = 1.0f;
-				break;
-			case TheNomad::GameSystem::GameDifficulty::Hard: // Nomad
-				m_nDifficultyScale = 1.90f;
-				break;
-			case TheNomad::GameSystem::GameDifficulty::VeryHard: // The Black Death
-				m_nDifficultyScale = 2.5f;
-				break;
-			case TheNomad::GameSystem::GameDifficulty::Insane: // Insane
-				m_nDifficultyScale = 5.0f; // ... ;)
-				break;
-			};
-
-			if ( m_Current.m_StartLevelScript.Length() != 0 ) {
-				string script;
-				if ( TheNomad::Engine::FileSystem::LoadFile( m_Current.m_StartLevelScript, script ) == 0 ) {
-					ConsoleWarning( "Error loading StartOfLevel script\n" );
-				} else {
-					TheNomad::Engine::CmdExecuteCommand( script );
-				}
-			}
-		}
-
-		void OnLoad() {
-			LevelStats@ stats;
-			LevelInfoData@ data;
-			array<string> names;
-
-			TheNomad::GameSystem::SaveSystem::LoadSection load( GetName() );
-			DebugPrint( "Loading level stats...\n" );
-			if ( !load.Found() ) {
-				GameError( "LevelSystem::OnLoad: save file corruption, section '" + GetName() + "' not found!" );
-			}
-
-			const uint numLevels = load.LoadUInt( "NumLevels" );
-			ConsolePrint( "Got " + numLevels + " levels\n" );
-			m_LevelInfoDatas.Resize( numLevels );
-			names.Resize( numLevels );
+		private bool LoadLevelStats( const array<string>& in names ) {
 			for ( uint i = 0; i < m_LevelInfoDatas.Count(); i++ ) {
-				load.LoadString( "LevelNames" + i, names[i] );
-			}
-
-			m_nLevelTimer = load.LoadUInt( "Time" );
-			m_nIndex = load.LoadUInt( "MapIndex" );
-			const int difficulty = load.LoadInt( "Difficulty" );
-			m_CurrentCheckpoint = load.LoadUInt( "CurrentCheckpoint" );
-			for ( uint i = 0; i < m_CurrentCheckpoint; i++ ) {
-				m_MapData.GetCheckpoints()[ i ].m_nTime = load.LoadUInt( "CheckpointTime_" + i );
-			}
-
-			for ( uint i = 0; i < m_LevelInfoDatas.Count(); i++ ) {
-				@data = @m_LevelInfoDatas[i];
+				LevelInfoData@ data = @m_LevelInfoDatas[i];
 				ConsolePrint( "Loading level stats for " + names[i] + "\n" );
 				TheNomad::GameSystem::SaveSystem::LoadSection section( data.m_Name + "_RankData" );
 				if ( !section.Found() ) {
@@ -369,7 +288,7 @@ namespace TheNomad::SGame {
 				const uint mapCount = section.LoadUInt( "MapCount" );
 				data.m_MapHandles.Resize( mapCount );
 				for ( uint a = 0; a < mapCount; a++ ) {
-					@stats = @data.m_MapHandles[a].highStats;
+					LevelStats@ stats = @data.m_MapHandles[a].highStats;
 					
 					data.m_MapHandles[a].difficulty = TheNomad::GameSystem::GameDifficulty( section.LoadUInt( "GameDifficulty" ) );
 					
@@ -390,37 +309,19 @@ namespace TheNomad::SGame {
 					stats.numDeaths = section.LoadUInt( "NumDeaths" );
 				}
 			}
-
-			//
-			// setup the level
-			//
-			TheNomad::Engine::CvarSet( "g_levelIndex", formatUInt( m_nIndex ) );
-
-//			LoadLevel();
+			return true;
 		}
-		const string& GetName() const {
-			return "LevelSystem";
-		}
-		void OnLevelStart() {
-			int difficulty;
 
+		void LoadMap() {
 			// get the level index
 			m_nIndex = TheNomad::Engine::CvarVariableInteger( "g_levelIndex" );
-			difficulty = sgame_Difficulty.GetInt();
-			if ( !TheNomad::GameSystem::GameManager.IsLoadActive() ) {
-				m_CurrentCheckpoint = 0;
-			}
+			const int difficulty = TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" );
 
-			LevelInfoData@ handle = @m_LevelInfoDatas[ m_nIndex ];
-
-			ConsolePrint( "MapHandles.Count(): " + handle.m_MapHandles.Count() );
 			DebugPrint( "Initializing level at " + m_nIndex + ", difficulty set to \"" + SP_DIFF_STRINGS[ difficulty ] + "\".\n" );
 			
 			ConsolePrint( "Loading level \"" + m_LevelInfoDatas[ m_nIndex ].m_MapHandles[ difficulty ].m_Name + "\"...\n" );
 			
-			m_RankData = LevelStats();
 			@m_Current = @m_LevelInfoDatas[ m_nIndex ];
-			@m_MapData = MapData();
 			m_MapData.Init( m_LevelInfoDatas[ m_nIndex ].m_MapHandles[ difficulty ].m_Name, 1 );
 			m_MapData.Load( m_LevelInfoDatas[ m_nIndex ].m_MapHandles[ difficulty ].mapHandle );
 
@@ -467,9 +368,74 @@ namespace TheNomad::SGame {
 					TheNomad::Engine::CmdExecuteCommand( script );
 				}
 			}
+		}
+
+		void OnSave() const {
+			const LevelStats@ stats;
+			
+			DebugPrint( "Archiving level stats...\n" );
+			
+			{
+				TheNomad::GameSystem::SaveSystem::SaveSection section( GetName() );
+				section.SaveUInt( "NumLevels", m_LevelInfoDatas.Count() );
+				for ( uint i = 0; i < m_LevelInfoDatas.Count(); i++ ) {
+					section.SaveString( "LevelNames" + i, m_LevelInfoDatas[i].m_Name );
+				}
+
+				section.SaveUInt( "Time", m_nLevelTimer );
+				section.SaveInt( "MapIndex", m_nIndex );
+				section.SaveInt( "Difficulty", sgame_Difficulty.GetInt() );
+
+				// save checkpoint data
+				section.SaveUInt( "CurrentCheckpoint", m_CurrentCheckpoint );
+				for ( uint i = 0; i < m_CurrentCheckpoint; i++ ) {
+					section.SaveUInt64( "CheckpointTime_" + i, m_MapData.GetCheckpoints()[i].m_nTime );
+				}
+			}
+
+			SaveLevelStats();
+		}
+
+		void OnLoad() {
+			LevelInfoData@ data;
+			array<string> names;
+
+			TheNomad::GameSystem::SaveSystem::LoadSection load( GetName() );
+			DebugPrint( "Loading level stats...\n" );
+			if ( !load.Found() ) {
+				GameError( "LevelSystem::OnLoad: save file corruption, section '" + GetName() + "' not found!" );
+			}
+
+			const uint numLevels = load.LoadUInt( "NumLevels" );
+			ConsolePrint( "Got " + numLevels + " levels\n" );
+			m_LevelInfoDatas.Resize( numLevels );
+			names.Resize( numLevels );
+			for ( uint i = 0; i < m_LevelInfoDatas.Count(); i++ ) {
+				load.LoadString( "LevelNames" + i, names[i] );
+			}
+
+			m_nLevelTimer = load.LoadUInt( "Time" );
+			TheNomad::Engine::CvarSet( "g_levelIndex", formatUInt( load.LoadInt( "MapIndex" ) ) );
+			TheNomad::Engine::CvarSet( "sgame_Difficulty", formatUInt( load.LoadInt( "Difficulty" ) ) );
+			m_CurrentCheckpoint = load.LoadUInt( "CurrentCheckpoint" );
+			for ( uint i = 0; i < m_CurrentCheckpoint; i++ ) {
+				m_MapData.GetCheckpoints()[ i ].m_nTime = load.LoadUInt( "CheckpointTime_" + i );
+			}
+
+			if ( !LoadLevelStats( names ) ) {
+				GameError( "Couldn't load level scores from section '" + GetName() + "'" );
+			}
+
+			LoadMap();
+		}
+		void OnLevelStart() {
+			m_RankData = LevelStats();
+			m_CurrentCheckpoint = 0;
+			m_nIndex = 0;
+			m_nLevelTimer = TheNomad::GameSystem::GameManager.GetGameTic();
 
 			if ( !TheNomad::GameSystem::GameManager.IsLoadActive() ) {
-				m_nLevelTimer = TheNomad::GameSystem::GameManager.GetGameTic();
+				LoadMap();
 			}
 		}
 		
@@ -671,7 +637,7 @@ namespace TheNomad::SGame {
 		
 		private uint m_nEndTime = 0;
 		private uint m_nPauseTimer = 0;
-		private uint m_nLevelTimer = 0;
+		private int m_nLevelTimer = 0;
 		private uint m_CurrentCheckpoint = 0;
 		private array<json@> m_LevelInfos;
 		private array<LevelInfoData@> m_LevelInfoDatas;

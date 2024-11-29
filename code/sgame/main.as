@@ -243,9 +243,7 @@ int ModuleOnConsoleCommand() {
 }
 
 int ModuleOnSaveGame() {
-	ConsolePrint( "This stuff's broken, sorry" );
 	return 1;
-	
 	ConsolePrint( "Saving game, please do not close out of the app...\n" );
 	
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
@@ -257,7 +255,6 @@ int ModuleOnSaveGame() {
 }
 
 int ModuleOnLoadGame() {
-	ConsolePrint( "This stuff's broken, sorry" );
 	return 1;
 	// load assets
 	InitResources();
@@ -265,9 +262,12 @@ int ModuleOnLoadGame() {
 	TheNomad::GameSystem::GameManager.SetLoadGame( true );
 	TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::InLevel;
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
-		TheNomad::GameSystem::GameSystems[i].OnLoad();
 		TheNomad::GameSystem::GameSystems[i].OnLevelStart();
 	}
+	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
+		TheNomad::GameSystem::GameSystems[i].OnLoad();
+	}
+	TheNomad::SGame::ScreenData.InitPlayers();
 	TheNomad::GameSystem::GameManager.SetLoadGame( false );
 
 	return 1;

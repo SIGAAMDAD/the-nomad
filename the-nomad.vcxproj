@@ -183,6 +183,7 @@
     <ClInclude Include="code\engine\gln_files.h" />
     <ClInclude Include="code\engine\keycodes.h" />
     <ClInclude Include="code\engine\n_allocator.h" />
+    <ClInclude Include="code\engine\n_common.h" />
     <ClInclude Include="code\engine\n_cvar.h" />
     <ClInclude Include="code\engine\n_debug.h" />
     <ClInclude Include="code\engine\n_math.h" />

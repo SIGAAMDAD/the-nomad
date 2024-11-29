@@ -665,6 +665,12 @@ static void SettingsMenu_List( const char *label, const char **itemnames, int nu
 		}
 		ImGui::EndCombo();
 	}
+	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) && !s_settingsMenu->playedClickSound ) {
+		Snd_PlaySfx( ui->sfx_select );
+		s_settingsMenu->playedClickSound = qtrue;
+	} else {
+		s_settingsMenu->playedClickSound = qfalse;
+	}
 
 	style.TabRounding = tabRounding;
 	style.FrameRounding = frameRounding;

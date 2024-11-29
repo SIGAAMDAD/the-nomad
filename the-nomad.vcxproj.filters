@@ -675,6 +675,9 @@
     <ClInclude Include="qasm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="code\engine\n_common.h">
+      <Filter>Header Files\engine</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="code\rendercommon\imgui.cpp">
