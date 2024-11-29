@@ -17,7 +17,7 @@ static demoMenu_t *s_demo;
 #define DEMO_STRING \
     "Thank you very much for playing this demo of \"The Nomad\"! :)\n" \
     "More levels and a full alpha/early-acccess versions are in development.\n" \
-    "If you would like to stay update, check out the discord for updates or the weekly dev blog.\n"
+    "If you would like to stay updated, check the weekly dev blog.\n"
 
 static void DemoMenu_Draw( void )
 {
@@ -31,17 +31,8 @@ static void DemoMenu_Draw( void )
     ImGui::SetWindowFontScale( 2.5f * gi.scale );
     ImGui::SetWindowPos( ImVec2( 100 * gi.scale, 200 * gi.scale ) );
 
-    ImGui::TextUnformatted( DEMO_STRING );
+    ImGui::TextWrapped( DEMO_STRING );
     ImGui::NewLine();
-
-    ImGui::Image( (ImTextureID)(uintptr_t)s_demo->discordShader, ImVec2( 256 * ui->scale, 256 * ui->scale ) );
-    if ( ImGui::IsItemClicked() ) {
-        Snd_PlaySfx( ui->sfx_select );
-        done = false;
-        // TODO:
-    }
-
-    ImGui::SameLine();
 
     ImGui::Image( (ImTextureID)(uintptr_t)s_demo->sitesShader, ImVec2( 256 * ui->scale, 256 * ui->scale ) );
     if ( ImGui::IsItemClicked() ) {
