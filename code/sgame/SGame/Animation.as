@@ -43,7 +43,7 @@ namespace TheNomad::SGame {
 							m_nTicker = 1;
 						}
 					} else {
-						if ( m_nCurrentFrame >= int( m_nNumFrames ) ) {
+						if ( m_nCurrentFrame >= m_nNumFrames ) {
 							m_nCurrentFrame = 0;
 						}
 					}
@@ -104,7 +104,7 @@ namespace TheNomad::SGame {
 		private uint m_nOldTic = 0;
 		private uint m_nNumFrames = 1;
 		private uint m_nTicRate = 1;
-		private uint m_nTicker = 0;
+		private int m_nTicker = 0;
 		private uint m_nCurrentFrame = 0;
 		private bool m_bOscillate = false;
 		private bool m_bReverse = false;

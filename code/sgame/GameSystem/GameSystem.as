@@ -69,10 +69,7 @@ namespace TheNomad::GameSystem {
 		const ivec2 GetScreenSize() const {
 			return ivec2( m_GPUConfig.screenWidth, m_GPUConfig.screenHeight );
 		}
-		
-		uint GetDeltaTics() const {
-			return m_nDeltaTics;
-		}
+
 		uint GetGameTic() const {
 			return m_nGameTic;
 		}
@@ -82,19 +79,8 @@ namespace TheNomad::GameSystem {
 		float GetUIBias() const {
 			return m_nUIBias;
 		}
-		float GetDeltaTime() const {
-			return m_nDeltaTime;
-		}
 		void SetMsec( uint msec ) {
-			if ( TheNomad::SGame::sgame_MaxFps.GetFloat() != 0.0f ) {
-				m_nLimitFPS = 1.0f / TheNomad::SGame::sgame_MaxFps.GetFloat();
-			}
-
-			m_nDeltaTics = msec - m_nGameTic;
-
 			m_nGameTic = msec;
-			m_nDeltaTime = ( float( msec ) - m_nLastFrameTime ) * m_nLimitFPS;
-			m_nLastFrameTime = float( msec );
 		}
 
 		TheNomad::Engine::Renderer::GPUConfig& GetGPUConfig() {

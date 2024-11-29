@@ -18,7 +18,7 @@ namespace TheNomad::SGame {
 			// NOTE: this might be a little bit slow depending on how many mobs are in the area
 			EntityManager.ForEachEntity( function( ref@ thisObject, EntityObject@ ent ) {
 				LockShot@ this = cast<LockShot>( @thisObject );
-				if ( this.m_Targets.Find( @ent ) == -1 ) {
+				if ( this.m_Targets.Find( @ent ) == this.m_Targets.Count() ) {
 					if ( TheNomad::Util::Distance( ent.GetOrigin(), this.m_Origin ) > sgame_LockShotMaxRange.GetFloat() ) {
 						return; // too far away
 					}

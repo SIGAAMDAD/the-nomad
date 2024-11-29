@@ -631,7 +631,6 @@ namespace TheNomad::SGame {
 		}
 
 		void Spawn( uint id, const vec3& in origin ) override {
-			int i;
 			uvec2 torsoSheetSize, torsoSpriteSize;
 			uvec2 armsSheetSize, armsSpriteSize;
 			uvec2 legsSheetSize, legsSpriteSize;

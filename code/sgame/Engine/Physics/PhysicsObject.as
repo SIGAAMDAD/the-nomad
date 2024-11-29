@@ -165,18 +165,14 @@ namespace TheNomad::Engine::Physics {
 		}
 		
 		void OnRunTic() {
-			const uint gameTic = TheNomad::GameSystem::GameManager.GetDeltaTics();
-			vec3 accel;
-			float friction = TheNomad::SGame::sgame_Friction.GetFloat();
-			vec3 origin;
-
 			ProfileBlock block( "PhysicsObject::OnRunTic" );
 			
 			// clip it
 			ClipBounds();
 			SetWaterLevel();
 			
-			origin = m_EntityData.GetOrigin();
+			float friction = TheNomad::SGame::sgame_Friction.GetFloat();
+			vec3 origin = m_EntityData.GetOrigin();
 			
 			const uint tileFlags = TheNomad::SGame::LevelManager.GetMapData().GetTile( origin, m_EntityData.GetBounds() );
 			if ( ( tileFlags & SURFACEPARM_WATER ) != 0 || ( tileFlags & SURFACEPARM_LAVA ) != 0 ) {
