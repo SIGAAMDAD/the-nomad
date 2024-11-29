@@ -634,6 +634,13 @@ namespace TheNomad::SGame {
 		const string GetLevelName() const {
 			return @m_Current !is null ? m_Current.m_Name : "N/A";
 		}
+
+		void CheckNewGamePlus() {
+			if ( m_CurrentCheckpoint < m_MapData.GetCheckpoints().Count() - 1 ) {
+				return;
+			}
+			m_CurrentCheckpoint = 0;
+		}
 		
 		private uint m_nEndTime = 0;
 		private uint m_nPauseTimer = 0;

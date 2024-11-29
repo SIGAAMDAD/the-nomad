@@ -265,6 +265,9 @@ int ModuleOnLoadGame() {
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnLoad();
 	}
+
+	TheNomad::SGame::LevelManager.CheckNewGamePlus();
+
 	TheNomad::SGame::ScreenData.InitPlayers();
 	TheNomad::GameSystem::GameManager.SetLoadGame( false );
 

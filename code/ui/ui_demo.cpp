@@ -32,7 +32,7 @@ static void DemoMenu_Draw( void )
 	ImGui::SetWindowFontScale( 2.5f * gi.scale );
 	ImGui::SetWindowPos( ImVec2( 100 * gi.scale, 200 * gi.scale ) );
 
-	ImGui::TextWrapped( DEMO_STRING );
+	UI_DrawText( DEMO_STRING );
 	ImGui::NewLine();
 
 	ImGui::Image( (ImTextureID)(uintptr_t)s_demo->sitesShader, ImVec2( 256 * ui->scale, 256 * ui->scale ) );
