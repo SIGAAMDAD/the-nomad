@@ -1190,8 +1190,7 @@ nhandle_t CGameArchive::GetSection( const char *name )
 		}
 	}
 	if ( !section ) {
-//		N_Error( ERR_DROP, "CGameArchive::GetSection: compatibility issue with save file section '%s', section not found in file", name );
-		Con_Printf( COLOR_RED "CGameArchive::GetSection: compatibility issue with save file section '%s', section not found in file", name );
+		Con_Printf( COLOR_RED "CGameArchive::GetSection: compatibility issue with save file section '%s', section not found in file\n", name );
 		return -1;
 	}
 	
@@ -1286,7 +1285,7 @@ bool CGameArchive::Load( uint64_t nSlot )
 
 	CModuleInfo *loadList = g_pModuleLib->GetLoadList();
 
-	m_hFile = FS_FOpenRead( va( "SaveData/%s.ngd", szName ) );
+	m_hFile = FS_FOpenRead( va( "gamedata/SaveData/%s.ngd", szName ) );
 	if ( m_hFile == FS_INVALID_HANDLE ) {
 		N_Error( ERR_DROP, "CGameArchive::Load: failed to open save file '%s'", szName );
 	}

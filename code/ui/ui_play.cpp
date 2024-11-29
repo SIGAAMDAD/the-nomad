@@ -226,14 +226,24 @@ static void MissionMenu_Event( void *ptr, int event )
 	saveinfo_t *slot = &s_playMenu->saveSlots[ s_playMenu->selectedSaveSlot ];
 
 	switch ( ( (const menucommon_t *)ptr )->id ) {
-	case ID_CONTINUE:
-		Cvar_SetIntegerValue( "g_paused", 0 );
-		Cvar_Set( "sgame_SaveName", va( "SLOT_%i", s_playMenu->selectedSaveSlot ) );
+	case ID_CONTINUE: {
+		const saveinfo_t *slot = &s_playMenu->saveSlots[ s_playMenu->selectedSaveSlot ];
+
+		UI_SetActiveMenu( UI_MENU_NONE );
+
 		gi.state = GS_LEVEL;
+
+		Con_Printf( "Beginning new game on map \"%s\"...\n", *gi.mapCache.mapList );
+
+		Cvar_SetIntegerValue( "g_paused", 0 );
+		Cvar_SetIntegerValue( "g_levelIndex", 0 );
+		Cvar_Set( "sgame_SaveName", va( "SLOT_%lu", slot - s_playMenu->saveSlots ) );
+		Cvar_Set( "mapname", *gi.mapCache.mapList );
+
 		gi.playTimeStart = Sys_Milliseconds();
-//		Cbuf_ExecuteText( EXEC_APPEND, va( "setmap \"%s\"\n", gi.mapCache.mapList[ slot->gd.mapIndex ] ) );
+
 		g_pArchiveHandler->Load( s_playMenu->selectedSaveSlot );
-		break;
+		break; }
 	case ID_DELETE:
 		UI_ConfirmMenu( "", DeleteSlot_Draw, DeleteSlot_Event );
 		break;

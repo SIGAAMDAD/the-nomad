@@ -205,7 +205,7 @@ namespace TheNomad::SGame {
 
 				DebugPrint( "Setting checkpoint " + m_CurrentCheckpoint + " to completed.\n" );
 				
-//				TheNomad::Engine::CmdExecuteCommand( "sgame.save_game\n" );
+				TheNomad::Engine::CmdExecuteCommand( "sgame.save_game\n" );
 
 				for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 					TheNomad::GameSystem::GameSystems[i].OnCheckpointPassed( i );

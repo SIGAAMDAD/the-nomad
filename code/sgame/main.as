@@ -243,7 +243,6 @@ int ModuleOnConsoleCommand() {
 }
 
 int ModuleOnSaveGame() {
-	return 1;
 	ConsolePrint( "Saving game, please do not close out of the app...\n" );
 	
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
@@ -255,7 +254,6 @@ int ModuleOnSaveGame() {
 }
 
 int ModuleOnLoadGame() {
-	return 1;
 	// load assets
 	InitResources();
 

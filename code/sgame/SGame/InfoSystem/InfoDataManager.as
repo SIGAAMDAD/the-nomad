@@ -41,12 +41,22 @@ namespace TheNomad::SGame::InfoSystem {
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.DumpCache_f ), "print", true
 			);
 
-			if ( sgame_DebugMode.GetInt() == 1 ) {
+//			if ( sgame_DebugMode.GetInt() == 1 ) {
 				DumpCache_f();
-			}
+//			}
 		}
 
+		private void DumpTypeList( const string& in name, const array<EntityData>& in typeList ) const {
+			ConsolePrint( "\n[" + name + "]\n" );
+			for ( uint i = 0; i < typeList.Count(); i++ ) {
+				ConsolePrint( "(" + typeList[i].GetID() + ") " + typeList[i].GetName() + "\n" );
+			}
+		}
 		void DumpCache_f() const {
+			DumpTypeList( "MobTypes", m_MobTypes );
+			DumpTypeList( "ItemTypes", m_ItemTypes );
+			DumpTypeList( "WeaponTypes", m_WeaponTypes );
+			DumpTypeList( "AmmoTypes", m_AmmoTypes );
 		}
 
 		void Clear() {
@@ -102,6 +112,7 @@ namespace TheNomad::SGame::InfoSystem {
 				if ( !data.get( "MobData", values ) ) {
 					ConsoleWarning( "entity data info file for \"" + sgame_ModList[i] + "\" has no mob data\n" );
 				} else {
+					m_MobTypes.Reserve( values.Count() );
 					for ( a = 0; a < values.Count(); a++ ) {
 						m_MobTypes.Add( EntityData( string( values[a][ "Name" ] ), uint( values[a][ "Id" ] ) ) );
 					}
@@ -115,6 +126,7 @@ namespace TheNomad::SGame::InfoSystem {
 					ConsoleWarning( "entity data info file for \"" + sgame_ModList[i] + "\" has no ammo data\n" );
 				} else {
 					for ( a = 0; a < values.Count(); a++ ) {
+
 						m_AmmoTypes.Add( EntityData( string( values[a][ "Name" ] ), uint( values[a][ "Id" ] ) ) );
 					}
 				}
@@ -126,6 +138,7 @@ namespace TheNomad::SGame::InfoSystem {
 				if ( !data.get( "ItemData", values ) ) {
 					ConsoleWarning( "entity data info file for \"" + sgame_ModList[i] + "\" has no item data\n" );
 				} else {
+					m_ItemTypes.Reserve( values.Count() );
 					for ( a = 0; a < values.Count(); a++ ) {
 						m_ItemTypes.Add( EntityData( string( values[a][ "Name" ] ), uint( values[a][ "Id" ] ) ) );
 					}
@@ -138,6 +151,7 @@ namespace TheNomad::SGame::InfoSystem {
 				if ( !data.get( "WeaponData", values ) ) {
 					ConsoleWarning( "entity data info file for \"" + sgame_ModList[i] + "\" has no weapon data\n" );
 				} else {
+					m_WeaponTypes.Reserve( values.Count() );
 					for ( a = 0; a < values.Count(); a++ ) {
 						m_WeaponTypes.Add( EntityData( string( values[a][ "Name" ] ), uint( values[a][ "Id" ] ) ) );
 					}

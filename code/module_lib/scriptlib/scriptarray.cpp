@@ -63,9 +63,8 @@ CScriptArray *CScriptArray::Create( asITypeInfo *ti, asUINT length )
 	if ( mem == NULL ) {
 		asIScriptContext *ctx = asGetActiveContext();
 		if ( ctx ) {
-			ctx->SetException( "out of memory" );
+			ctx->SetException( va( "Mem_ClearedAlloc() failed on CScriptArray (%lu bytes)", sizeof( CScriptArray ) ) );
 		}
-
 		return NULL;
 	}
 
@@ -80,9 +79,8 @@ CScriptArray *CScriptArray::Create( asITypeInfo *ti, void *initList )
 	if ( mem == NULL ) {
 		asIScriptContext *ctx = asGetActiveContext();
 		if ( ctx ) {
-			ctx->SetException( "out of memory" );
+			ctx->SetException( va( "Mem_ClearedAlloc() failed on CScriptArray (%lu bytes)", sizeof( CScriptArray ) ) );
 		}
-
 		return NULL;
 	}
 
@@ -97,9 +95,8 @@ CScriptArray *CScriptArray::Create( asITypeInfo *ti, asUINT length, void *defVal
 	if ( mem == NULL ) {
 		asIScriptContext *ctx = asGetActiveContext();
 		if ( ctx ) {
-			ctx->SetException( "out of memory" );
+			ctx->SetException( va( "Mem_ClearedAlloc() failed on CScriptArray (%lu bytes)", sizeof( CScriptArray ) ) );
 		}
-
 		return NULL;
 	}
 
@@ -656,15 +653,30 @@ bool CScriptArray::IsEmpty() const
 	return !buffer->size;
 }
 
-void CScriptArray::Reserve(asUINT nItems)
+void CScriptArray::Reserve( asUINT nItems )
 {
 	if ( !CheckMaxSize( nItems ) ) {
 		return;
 	}
 
-	if ( buffer->capacity < nItems ) {
-		DoAllocate( nItems, buffer->size );
+	asUINT capacity, size;
+
+	capacity = nItems;
+	size = 0;
+	if ( buffer ) {
+		capacity += buffer->capacity;
+		size = buffer->size;
 	}
+
+	SArrayBuffer *newBuffer = (SArrayBuffer *)Mem_ClearedAlloc( sizeof( *newBuffer ) + ( capacity * elementSize ) );
+	if ( buffer ) {
+		memcpy( newBuffer->data, buffer->data, buffer->size * elementSize );
+		Mem_Free( buffer );
+	}
+
+	buffer = newBuffer;
+	buffer->size = size;
+	buffer->capacity = capacity;
 }
 
 void CScriptArray::Resize(asUINT numElements)
@@ -725,11 +737,12 @@ void CScriptArray::Clear( void )
 void CScriptArray::AllocBuffer( uint32_t nItems )
 {
 	if ( !buffer ) {
-		buffer = (SArrayBuffer *)Mem_Alloc( sizeof( *buffer ) - 1 + ( ( nItems * 4 ) * elementSize ) );
+		buffer = (SArrayBuffer *)Mem_ClearedAlloc( sizeof( *buffer ) + ( ( nItems * 4 ) * elementSize ) );
 		if ( !buffer ) {
 			asIScriptContext *pContext = asGetActiveContext();
 			if ( pContext ) {
-				throw std::bad_alloc();
+				pContext->SetException( va( "Mem_ClearedAlloc() failed on %lu bytes",
+					sizeof( *buffer ) + ( ( nItems * 4 ) * elementSize ) ) );
 			}
 		}
 		buffer->size = nItems;
@@ -773,14 +786,15 @@ void CScriptArray::DoAllocate( int delta, uint32_t at )
 		// allocate new space
 		buffer->capacity += delta * 4;
 
-		SArrayBuffer *buf = (SArrayBuffer *)Mem_Alloc( sizeof( *buf ) + ( buffer->capacity * elementSize ) );
+		SArrayBuffer *buf = (SArrayBuffer *)Mem_ClearedAlloc( sizeof( *buf ) + ( buffer->capacity * elementSize ) );
 		if ( buf ) {
 			buf->size = buffer->size + delta;
 			buf->capacity = buffer->capacity;
 		} else {
 			asIScriptContext *pContext = asGetActiveContext();
 			if ( pContext ) {
-				throw std::bad_alloc();
+				pContext->SetException( va( "Mem_ClearedAlloc() failed on %lu bytes",
+					sizeof( *buf ) + ( buffer->capacity * elementSize ) ) );
 			}
 		}
 
@@ -810,7 +824,7 @@ void CScriptArray::DoAllocate( int delta, uint32_t at )
 }
 
 // internal
-bool CScriptArray::CheckMaxSize(asUINT numElements)
+bool CScriptArray::CheckMaxSize( asUINT numElements )
 {
 	// This code makes sure the size of the buffer that is allocated
 	// for the array doesn't overflow and becomes smaller than requested
@@ -823,7 +837,7 @@ bool CScriptArray::CheckMaxSize(asUINT numElements)
 	if ( numElements > maxSize ) {
 		asIScriptContext *ctx = asGetActiveContext();
 		if ( ctx ) {
-			throw std::bad_array_new_length();
+			ctx->SetException( va( "invalid new array length, %u, integer overflow", numElements ) );
 		}
 		return false;
 	}
@@ -853,7 +867,7 @@ void CScriptArray::InsertAt(asUINT index, void *value)
 		// If this is called from a script we raise a script exception
 		asIScriptContext *ctx = asGetActiveContext();
 		if ( ctx ) {
-			throw std::out_of_range( "out of range index" );
+			ctx->SetException( va( "out of range index: %u", index ) );
 		}
 		return;
 	}
@@ -861,14 +875,14 @@ void CScriptArray::InsertAt(asUINT index, void *value)
 	SetValue( index, value );
 }
 
-void CScriptArray::InsertAt(asUINT index, const CScriptArray &arr)
+void CScriptArray::InsertAt( asUINT index, const CScriptArray& arr )
 {
 	asUINT n, m;
 
 	if ( index > buffer->size ) {
 		asIScriptContext *ctx = asGetActiveContext();
 		if ( ctx ) {
-			throw std::out_of_range( "out of range index" );
+			ctx->SetException( va( "out of range index: %u", index ) );
 		}
 		return;
 	}
@@ -878,7 +892,7 @@ void CScriptArray::InsertAt(asUINT index, const CScriptArray &arr)
 		// called from a script, but let's check for it anyway
 		asIScriptContext *ctx = asGetActiveContext();
 		if ( ctx ) {
-			throw std::invalid_argument( "mismatching array types" );
+			ctx->SetException( "mismatching array types" );
 		}
 		return;
 	}
@@ -914,19 +928,22 @@ void CScriptArray::InsertAt(asUINT index, const CScriptArray &arr)
 	}
 }
 
-void CScriptArray::InsertLast(void *value)
+void CScriptArray::InsertLast( void *value )
 {
+	if ( !buffer ) {
+		CreateBuffer( &buffer, 8 );
+	}
 	InsertAt( buffer->size, value );
 }
 
-void CScriptArray::RemoveAt(asUINT index)
+void CScriptArray::RemoveAt( asUINT index )
 {
 	if( index >= buffer->size )
 	{
 		// If this is called from a script we raise a script exception
 		asIScriptContext *ctx = asGetActiveContext();
 		if ( ctx ) {
-			throw std::out_of_range( "out of range index" );
+			ctx->SetException( va( "out of range index: %u", index ) );
 		}
 		return;
 	}
@@ -947,18 +964,18 @@ void CScriptArray::DeleteBuffer( SArrayBuffer *buffer )
 
 
 // Return a pointer to the array element. Returns 0 if the index is out of bounds
-const void *CScriptArray::At(asUINT index) const
+const void *CScriptArray::At( asUINT index ) const
 {
 	if( !buffer ) {
 		asIScriptContext *ctx = asGetActiveContext();
 		if ( ctx ) {
-			throw std::length_error( "buffer not allocated" );
+			ctx->SetException( "buffer not allocated" );
 		}
 	}
 	if ( index >= buffer->size ) {
 		asIScriptContext *ctx = asGetActiveContext();
 		if ( ctx ) {
-			throw std::out_of_range( "out of range index" );
+			ctx->SetException( va( "out of range index: %u", index ) );
 		}
 	}
 
@@ -973,14 +990,14 @@ void *CScriptArray::At(asUINT index)
 	if( !buffer ) {
 		asIScriptContext *ctx = asGetActiveContext();
 		if ( ctx ) {
-			throw std::length_error( "buffer not allocated" );
+			ctx->SetException( "buffer not allocated" );
 		}
 		return NULL;
 	}
 	if ( index >= buffer->size ) {
 		asIScriptContext *ctx = asGetActiveContext();
 		if ( ctx ) {
-			throw std::out_of_range( "out of range index" );
+			ctx->SetException( va( "out of range index: %u", index ) );
 		}
 		return NULL;
 	}
@@ -1004,7 +1021,7 @@ const void *CScriptArray::GetBuffer( void ) const {
 // internal
 void CScriptArray::CreateBuffer( SArrayBuffer **buffer, asUINT nItems )
 {
-	*buffer = (SArrayBuffer *)Mem_ClearedAlloc( sizeof( *buffer ) - 1 + ( nItems * elementSize ) );
+	*buffer = (SArrayBuffer *)Mem_ClearedAlloc( sizeof( *buffer ) + ( nItems * elementSize ) );
 
 	if ( *buffer ) {
 		(*buffer)->size = nItems;
@@ -1013,7 +1030,7 @@ void CScriptArray::CreateBuffer( SArrayBuffer **buffer, asUINT nItems )
 	} else {
 		asIScriptContext *ctx = asGetActiveContext();
 		if ( ctx ) {
-			throw std::bad_alloc();
+			ctx->SetException( va( "Mem_ClearedAlloc() failed on %lu bytes", sizeof( *buffer ) + ( nItems * elementSize ) ) );
 		}
 		return;
 	}
@@ -1809,22 +1826,21 @@ void CScriptArray::Precache( void )
 	}
 
 	// Create the cache
-	cache = reinterpret_cast<SArrayCache*>( Mem_Alloc(sizeof(SArrayCache)) );
+	cache = (SArrayCache *)Mem_ClearedAlloc( sizeof( SArrayCache ) );
 	if( !cache ) {
 		asIScriptContext *ctx = asGetActiveContext();
-		if( ctx )
-			ctx->SetException("out of memory");
+		if ( ctx ) {
+			ctx->SetException( va( "Mem_ClearedAlloc() failed on SArrayCache (%lu bytes)", sizeof( SArrayCache ) ) );
+		}
 //		asReleaseExclusiveLock();
 		return;
 	}
-	memset(cache, 0, sizeof(SArrayCache));
 
 	// If the sub type is a handle to const, then the methods must be const too
 	bool mustBeConst = (subTypeId & asTYPEID_HANDLETOCONST) ? true : false;
 
 	asITypeInfo *subType = objType->GetEngine()->GetTypeInfoById(subTypeId);
-	if( subType )
-	{
+	if ( subType ) {
 		for( asUINT i = 0; i < subType->GetMethodCount(); i++ )
 		{
 			asIScriptFunction *func = subType->GetMethodByIndex(i);
@@ -1835,8 +1851,9 @@ void CScriptArray::Precache( void )
 				int returnTypeId = func->GetReturnTypeId(&flags);
 
 				// The method must not return a reference
-				if( flags != asTM_NONE )
+				if( flags != asTM_NONE ) {
 					continue;
+				}
 
 				// opCmp returns an int and opEquals returns a bool
 				bool isCmp = false, isEq = false;
