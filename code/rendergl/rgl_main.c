@@ -63,15 +63,9 @@ void RB_MakeViewMatrix( void )
 		ri.Error( ERR_DROP, "R_RenderView: invalid orthographic matrix type" );
 	};
 
-	if ( r_drawMode->i == DRAWMODE_IMMEDIATE ) {
-		nglMatrixMode( GL_PROJECTION );
-		nglLoadIdentity();
-		nglOrtho( ortho[0], ortho[1], ortho[2], ortho[3], glState.viewData.zFar, glState.viewData.zNear );
-	} else {
-		ri.GLM_MakeVPM( ortho, &glState.viewData.camera.zoom, glState.viewData.zNear, glState.viewData.zFar, glState.viewData.camera.origin,
-			glState.viewData.camera.viewProjectionMatrix, glState.viewData.camera.projectionMatrix, glState.viewData.camera.viewMatrix,
-			viewFlags );
-	}
+	ri.GLM_MakeVPM( ortho, &glState.viewData.camera.zoom, glState.viewData.zNear, glState.viewData.zFar, glState.viewData.camera.origin,
+		glState.viewData.camera.viewProjectionMatrix, glState.viewData.camera.projectionMatrix, glState.viewData.camera.viewMatrix,
+		viewFlags );
 }
 
 /*
@@ -115,10 +109,7 @@ Radix sort with 4 byte size buckets
 */
 static void R_RadixSort( srfPoly_t *source, uint32_t size )
 {
-	srfPoly_t *scratch = (srfPoly_t *)ri.Hunk_AllocateTempMemory( sizeof( *scratch ) * r_maxPolys->i );
-	if ( !scratch ) {
-		N_Error( ERR_FATAL, "R_RadixSort: failed to allocate sufficient memory for scratch sort buffer" );
-	}
+	srfPoly_t *scratch = (srfPoly_t *)alloca( sizeof( *scratch ) * r_maxPolys->i );
 #ifdef GDR_LITTLE_ENDIAN
 	R_Radix( 0, size, source, scratch );
 	R_Radix( 1, size, scratch, source );
@@ -130,7 +121,6 @@ static void R_RadixSort( srfPoly_t *source, uint32_t size )
 	R_Radix( 1, size, source, scratch );
 	R_Radix( 0, size, scratch, source );
 #endif //GDR_LITTLE_ENDIAN
-	ri.Hunk_FreeTempMemory( scratch );
 }
 
 extern uint64_t r_numEntities;

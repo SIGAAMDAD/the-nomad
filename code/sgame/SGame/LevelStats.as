@@ -155,7 +155,7 @@ namespace TheNomad::SGame {
 			TheNomad::Engine::CvarSet( "g_paused", "0" );
 
 			ImGui::SetWindowPos( vec2( 256 * scale, 64 * scale ) );
-			ImGui::SetWindowSize( vec2( 764 * scale, 500 * scale ) );
+			ImGui::SetWindowSize( vec2( 800 * scale, 500 * scale ) );
 
 			TheNomad::Engine::UserInterface::SetActiveFont( TheNomad::Engine::UserInterface::Font_RobotoMono );
 			ImGui::SetWindowFontScale( fontScale * 2.0f );

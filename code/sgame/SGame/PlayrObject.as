@@ -345,6 +345,7 @@ namespace TheNomad::SGame {
 			TheNomad::Engine::CvarSet( "skin", skin );
 			m_nHealth = section.LoadFloat( "health" );
 			m_nRage = section.LoadFloat( "rage" );
+			m_Link.m_Origin = section.LoadVec3( "origin" );
 
 			m_CurrentWeapon = section.LoadInt( "currentWeapon" );
 			m_LeftArm.SetEquippedWeapon( @m_WeaponSlots[ section.LoadUInt( "leftHandSlot" ) ] );
@@ -362,6 +363,7 @@ namespace TheNomad::SGame {
 			section.SaveString( "playerSkin", TheNomad::Engine::CvarVariableString( "skin" ) );
 			section.SaveFloat( "health", m_nHealth );
 			section.SaveFloat( "rage", m_nRage );
+			section.SaveVec3( "origin", m_Link.m_Origin );
 
 			section.SaveInt( "currentWeapon", m_CurrentWeapon );
 

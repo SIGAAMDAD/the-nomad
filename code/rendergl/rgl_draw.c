@@ -3,23 +3,13 @@
 void R_DrawElements( uint32_t numElements, uintptr_t nOffset ) {
 	backend.pc.c_drawCalls++;
 
-	switch ( r_drawMode->i ) {
-	case DRAWMODE_GPU:
-	case DRAWMODE_MAPPED: {
-		if ( rg.world && rg.world->drawing ) {
-			nglDrawElementsInstanced( GL_TRIANGLES, numElements, GLN_INDEX_TYPE, NULL, backend.drawBatch.instanceCount );
-		} else if ( backend.drawBatch.instanced && backend.drawBatch.instanceCount > 1 ) {
-			nglDrawElementsInstanced( GL_TRIANGLES, numElements, GLN_INDEX_TYPE, NULL, backend.drawBatch.instanceCount );
-		} else {
-			nglDrawElements( GL_TRIANGLES, numElements, GLN_INDEX_TYPE, BUFFER_OFFSET( nOffset ) );
-		}
-		break; }
-	case DRAWMODE_CLIENT: {
-		nglDrawElements( GL_TRIANGLES, numElements, GLN_INDEX_TYPE, (byte *)backend.drawBatch.indices + nOffset );
-		break; }
-	default:
-		ri.Error( ERR_FATAL, "R_DrawElements: invalid draw mode" );
-	};
+	if ( rg.world && rg.world->drawing ) {
+		nglDrawElementsInstanced( GL_TRIANGLES, numElements, GLN_INDEX_TYPE, NULL, backend.drawBatch.instanceCount );
+	} else if ( backend.drawBatch.instanced && backend.drawBatch.instanceCount > 1 ) {
+		nglDrawElementsInstanced( GL_TRIANGLES, numElements, GLN_INDEX_TYPE, NULL, backend.drawBatch.instanceCount );
+	} else {
+		nglDrawElements( GL_TRIANGLES, numElements, GLN_INDEX_TYPE, BUFFER_OFFSET( nOffset ) );
+	}
 }
 
 /*
@@ -439,7 +429,7 @@ void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, con
 			GLSL_SetUniformInt( sp, UNIFORM_ALPHATEST, 0 );
 		}
 		
-		if ( r_lightmap->i ) {
+		if ( /* r_lightmap->i */ 0 ) {
 			vec4_t v;
 			VectorSet4( v, 1.0f, 0.0f, 0.0f, 1.0f );
 			GLSL_SetUniformVec4( sp, UNIFORM_DIFFUSE_TEXMATRIX, v );
@@ -591,6 +581,7 @@ static void RB_StageIteratorGeneric( shader_t *shader )
 			else if ( /* stageP->glslShaderGroup == rg.lightallShader */ 0 ) {
 				int index = stageP->glslShaderIndex;
 
+			/*
 				if ( r_sunlightMode->i && ( glState.viewData.flags & RSF_USE_SUNLIGHT ) && ( index & LIGHTDEF_LIGHTTYPE_MASK ) ) {
 					index |= LIGHTDEF_USE_SHADOWMAP;
 				}
@@ -598,6 +589,7 @@ static void RB_StageIteratorGeneric( shader_t *shader )
 				if ( r_lightmap->i && ( ( index & LIGHTDEF_LIGHTTYPE_MASK ) == LIGHTDEF_USE_LIGHTMAP ) ) {
 					index = LIGHTDEF_USE_TCGEN_AND_TCMOD;
 				}
+			*/
 
 				sp = &stageP->glslShaderGroup[ index ];
 				backend.pc.c_lightallDraws++;
@@ -630,7 +622,7 @@ static void RB_StageIteratorGeneric( shader_t *shader )
 		}
 
 
-		if ( r_lightmap->i ) {
+		if ( /* r_lightmap->i */ 0 ) {
 			vec4_t v;
 			VectorSet4( v, 1.0f, 0.0f, 0.0f, 1.0f );
 			GLSL_SetUniformVec4( sp, UNIFORM_DIFFUSE_TEXMATRIX, v );

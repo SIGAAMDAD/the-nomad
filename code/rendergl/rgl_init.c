@@ -36,10 +36,7 @@ char gl_extensions[32768];
 
 cvar_t *r_measureOverdraw;
 
-cvar_t *r_fastsky;
-cvar_t *r_drawSun;
 cvar_t *r_dynamiclight;
-cvar_t *r_dlightBacks;
 
 cvar_t *r_norefresh;
 cvar_t *r_drawentities;
@@ -57,8 +54,6 @@ cvar_t *r_picmip;
 cvar_t *r_finish;
 cvar_t *r_textureMode;
 
-cvar_t *r_fullbright;
-cvar_t *r_lightmap;
 cvar_t *r_vertexLight;
 
 cvar_t *r_showTris;
@@ -76,9 +71,7 @@ cvar_t *r_skipBackEnd;
 cvar_t *r_externalGLSL;
 
 cvar_t *r_hdr;
-cvar_t *r_floatLightmap;
 cvar_t *r_postProcess;
-cvar_t *r_lightmap;
 
 cvar_t *r_toneMap;
 cvar_t *r_forceToneMap;
@@ -91,8 +84,6 @@ cvar_t  *r_forceAutoExposure;
 cvar_t  *r_forceAutoExposureMin;
 cvar_t  *r_forceAutoExposureMax;
 
-cvar_t *r_depthPrepass;
-cvar_t *r_ssao;
 cvar_t *r_bloom;
 
 cvar_t *r_paused;
@@ -105,8 +96,6 @@ cvar_t *r_deluxeMapping;
 cvar_t *r_parallaxMapping;
 cvar_t *r_parallaxMapOffset;
 cvar_t *r_parallaxMapShadows;
-cvar_t *r_cubeMapping;
-cvar_t *r_cubemapSize;
 cvar_t *r_deluxeSpecular;
 cvar_t *r_pbr;
 cvar_t *r_baseNormalX;
@@ -115,25 +104,10 @@ cvar_t *r_baseParallax;
 cvar_t *r_baseSpecular;
 cvar_t *r_baseGloss;
 cvar_t *r_glossType;
-cvar_t *r_dlightMode;
-cvar_t *r_pshadowDist;
-cvar_t *r_mergeLightmaps;
 cvar_t *r_imageUpsample;
 cvar_t *r_imageUpsampleMaxSize;
 cvar_t *r_imageUpsampleType;
 cvar_t *r_genNormalMaps;
-cvar_t *r_forceSun;
-cvar_t *r_forceSunLightScale;
-cvar_t *r_forceSunAmbientScale;
-cvar_t *r_sunlightMode;
-cvar_t *r_drawSunRays;
-cvar_t *r_sunShadows;
-cvar_t *r_shadowFilter;
-cvar_t *r_shadowBlur;
-cvar_t *r_shadowMapSize;
-cvar_t *r_shadowCascadeZNear;
-cvar_t *r_shadowCascadeZFar;
-cvar_t *r_shadowCascadeZBias;
 cvar_t *r_ignoreDstAlpha;
 
 cvar_t *r_greyscale;
@@ -145,17 +119,13 @@ cvar_t *r_mapOverBrightBits;
 
 cvar_t *r_imageSharpenAmount;
 
-cvar_t *r_smaaEdgesType;
 cvar_t *r_showImages;
 
 cvar_t *r_printShaders;
 
 cvar_t *r_useExtensions;
-cvar_t *r_allowLegacy;
-cvar_t *r_allowShaders;
 cvar_t *r_multisampleType;
 cvar_t *r_ignorehwgamma;
-cvar_t *r_drawMode;
 cvar_t *r_glDebug;
 cvar_t *r_textureBits;
 cvar_t *r_stencilBits;
@@ -182,8 +152,6 @@ cvar_t *r_useShaderCache;
 cvar_t *r_lightingQuality;
 cvar_t *r_antialiasQuality;
 
-cvar_t *r_arb_compute_shader;
-
 cvar_t *r_swapInterval;
 
 cvar_t *r_loadTexturesOnDemand;
@@ -198,10 +166,8 @@ cvar_t *r_arb_vertex_buffer_object;
 cvar_t *r_arb_texture_filter_anisotropic;
 cvar_t *r_arb_texture_max_anisotropy;
 cvar_t *r_arb_texture_float;
-cvar_t *r_arb_sync;
 cvar_t *r_arb_shader_storage_buffer_object;
 cvar_t *r_arb_map_buffer_range;
-cvar_t *r_arb_pixel_buffer_object;
 cvar_t *r_arb_direct_state_access;
 
 cvar_t *r_screenshotJpegQuality;
@@ -841,9 +807,6 @@ static void R_Register( void )
 	r_arb_direct_state_access = ri.Cvar_Get( "r_arb_direct_state_access", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_arb_direct_state_access, "Enables direct state access, requires OpenGL driver version 4.5." );
 
-	r_arb_pixel_buffer_object = ri.Cvar_Get( "r_arb_pixel_buffer_object", "0", CVAR_SAVE | CVAR_LATCH );
-	ri.Cvar_SetDescription( r_arb_pixel_buffer_object, "Enables pixel buffer objects." );
-
 	r_arb_texture_compression = ri.Cvar_Get( "r_arb_texture_compression", "3", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_arb_texture_compression, "Enables texture compression." );
 	r_arb_framebuffer_object = ri.Cvar_Get( "r_arb_framebuffer_object", "1", CVAR_SAVE | CVAR_LATCH );
@@ -853,18 +816,12 @@ static void R_Register( void )
 	r_arb_vertex_buffer_object = ri.Cvar_Get( "r_arb_vertex_buffer_object", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_arb_vertex_buffer_object, "Enables use of hardware accelerated vertex and index rendering." );
 
-	r_arb_sync = ri.Cvar_Get( "r_arb_sync", "0", CVAR_SAVE | CVAR_LATCH );
-	ri.Cvar_CheckRange( r_arb_sync, "0", "1", CVT_INT );
-
 	r_arb_texture_filter_anisotropic = ri.Cvar_Get( "r_arb_texture_filter_anisotropic", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_arb_texture_filter_anisotropic, "Enabled anisotropic filtering." );
 	r_arb_texture_max_anisotropy = ri.Cvar_Get( "r_arb_texture_max_anisotropy", "4", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_arb_texture_max_anisotropy, "Sets maximum anisotropic level for your graphics driver. Requires \\r_arb_texture_filter_anisotropic 1." );
 
 	r_arb_map_buffer_range = ri.Cvar_Get( "r_arb_map_buffer_range", "0", CVAR_LATCH | CVAR_SAVE );
-
-	r_arb_compute_shader = ri.Cvar_Get( "r_arb_compute_shader", "1", CVAR_SAVE );
-	ri.Cvar_SetDescription( r_arb_compute_shader, "Enables the usage of compute shaders for parallalized GPU batch work." );
 
 	r_arb_shader_storage_buffer_object = ri.Cvar_Get( "r_arb_shader_storage_buffer_object", "0", CVAR_LATCH | CVAR_SAVE );
 	ri.Cvar_SetDescription( r_arb_shader_storage_buffer_object,
@@ -873,11 +830,6 @@ static void R_Register( void )
 
 	r_arb_texture_float = ri.Cvar_Get( "r_arb_texture_float", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_arb_texture_float, "Enables HDR framebuffer." );
-
-	r_allowLegacy = ri.Cvar_Get( "r_allowLegacy", "0", CVAR_SAVE | CVAR_LATCH );
-	ri.Cvar_SetDescription( r_allowLegacy, "Allow the use of old OpenGL API versions, requires \\r_drawMode 0 or 1 and \\r_allowShaders 0" );
-	r_allowShaders = ri.Cvar_Get( "r_allowShaders", "1", CVAR_SAVE | CVAR_LATCH );
-	ri.Cvar_SetDescription( r_allowShaders, "Allow the use of GLSL shaders, requires \\r_allowLegacy 0." );
 
 	r_lightingQuality = ri.Cvar_Get( "r_lightingQuality", "1", CVAR_SAVE );
 	ri.Cvar_CheckRange( r_lightingQuality, "0", "2", CVT_INT );
@@ -899,8 +851,6 @@ static void R_Register( void )
 	r_hdr = ri.Cvar_Get( "r_hdr", "1", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_hdr, "Do scene rendering in a framebuffer with high dynamic range." );
 
-	r_floatLightmap = ri.Cvar_Get( "r_floatLightmap", "0", CVAR_SAVE | CVAR_LATCH );
-
 	r_toneMap = ri.Cvar_Get( "r_toneMap", "1", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_toneMap, "Enable tone mapping. Requires r_hdr and r_postProcess." );
 	r_forceToneMap = ri.Cvar_Get( "r_forceToneMap", "0", CVAR_CHEAT );
@@ -908,45 +858,11 @@ static void R_Register( void )
 	r_forceToneMapAvg = ri.Cvar_Get( "r_forceToneMapAvg", "-2.0", CVAR_CHEAT );
 	r_forceToneMapMax = ri.Cvar_Get( "r_forceToneMapMax", "0.0", CVAR_CHEAT );
 
-	r_sunShadows = ri.Cvar_Get( "r_sunShadows", "1", CVAR_SAVE | CVAR_LATCH );
-	r_shadowFilter = ri.Cvar_Get( "r_shadowFilter", "1", CVAR_SAVE | CVAR_LATCH );
-	ri.Cvar_SetDescription( r_shadowFilter, "Enable filtering shadows for a smoother look (0 - No. 1 - Some. 2 - Much)." );
-	r_shadowBlur = ri.Cvar_Get("r_shadowBlur", "0", CVAR_SAVE | CVAR_LATCH);
-	r_shadowMapSize = ri.Cvar_Get("r_shadowMapSize", "1024", CVAR_SAVE | CVAR_LATCH);
-	ri.Cvar_SetDescription( r_shadowMapSize, "Size of each cascaded shadow map." );
-	r_shadowCascadeZNear = ri.Cvar_Get( "r_shadowCascadeZNear", "8", CVAR_SAVE | CVAR_LATCH );
-	ri.Cvar_SetDescription( r_shadowCascadeZNear, "Near plane for shadow cascade frustums." );
-	r_shadowCascadeZFar = ri.Cvar_Get( "r_shadowCascadeZFar", "1024", CVAR_SAVE | CVAR_LATCH );
-	ri.Cvar_SetDescription( r_shadowCascadeZFar, "Far plane for shadow cascade frustums." );
-	r_shadowCascadeZBias = ri.Cvar_Get( "r_shadowCascadeZBias", "0", CVAR_SAVE | CVAR_LATCH );
-	ri.Cvar_SetDescription( r_shadowCascadeZBias, "Z-bias for shadow cascade frustums." );
-
-	r_forceSun = ri.Cvar_Get( "r_forceSun", "0", CVAR_CHEAT );
-	r_forceSunLightScale = ri.Cvar_Get( "r_forceSunLightScale", "1.0", CVAR_CHEAT );
-	r_forceSunAmbientScale = ri.Cvar_Get( "r_forceSunAmbientScale", "0.5", CVAR_CHEAT );
-	r_drawSunRays = ri.Cvar_Get( "r_drawSunRays", "0", CVAR_SAVE | CVAR_LATCH );
-	r_sunlightMode = ri.Cvar_Get( "r_sunlightMode", "1", CVAR_SAVE | CVAR_LATCH );
-
-	r_smaaEdgesType = ri.Cvar_Get( "r_smaaEdgesType", "luma", CVAR_SAVE | CVAR_LATCH );
-	ri.Cvar_SetDescription( r_smaaEdgesType, "Sets SMAA anti-aliasing edges processing method. Can be luma, depth, or color." );
-
 	r_useShaderCache = ri.Cvar_Get( "r_useShaderCache", "1", CVAR_LATCH | CVAR_SAVE );
 	ri.Cvar_SetDescription( r_useShaderCache, "Caches GLSL shader objects for faster loading, requires GL_ARB_gl_spirv extension." );
 
 	sys_forceSingleThreading = ri.Cvar_Get( "sys_forceSingleThreading", "0", CVAR_LATCH | CVAR_SAVE );
 
-	r_drawMode = ri.Cvar_Get( "r_drawMode", "2", CVAR_SAVE | CVAR_LATCH );
-	ri.Cvar_SetDescription( r_drawMode,
-							"Sets the rendering mode (see OpenGL docs if you want more info):\n"
-							" 0: immediate mode, deprecated in modern GPUs, this will not be supported\n"
-							" 1: client buffered, cpu buffers, but uses glDrawElements\n"
-							" 2: gpu buffered, gpu and cpu buffers, most supported\n"
-							" 3: mapped to client space using glMapBuffer, the most recent in NVidia\n" );
-
-	r_depthPrepass = ri.Cvar_Get( "r_depthPrepass", "1", CVAR_SAVE );
-	ri.Cvar_SetDescription( r_depthPrepass, "Do a depth-only pass before rendering. Speeds up rendering in cases where advanced features are used. Required for r_sunShadows." );
-	r_ssao = ri.Cvar_Get( "r_ssao", "0", CVAR_SAVE );
-	ri.Cvar_SetDescription( r_ssao, "Enable screen-space ambient occlusion." );
 	r_bloom = ri.Cvar_Get( "r_bloom", "1", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_bloom, "Enables framebuffer based bloom to make light sources stand out, requires \\r_hdr." );
 
@@ -974,14 +890,6 @@ static void R_Register( void )
 	r_baseSpecular = ri.Cvar_Get( "r_baseSpecular", "0.04", CVAR_SAVE | CVAR_LATCH );
 	r_baseGloss = ri.Cvar_Get( "r_baseGloss", "0.3", CVAR_SAVE | CVAR_LATCH );
 	r_glossType = ri.Cvar_Get("r_glossType", "1", CVAR_SAVE | CVAR_LATCH);
-	r_dlightMode = ri.Cvar_Get( "r_dlightMode", "0", CVAR_SAVE | CVAR_LATCH );
-	ri.Cvar_SetDescription( r_dlightMode,
-							"Dynamic light mode:\n"
-							" 0: Software processed per-polygon dynamic lights\n"
-							" 1: High quality per-pixel dynamic lighting done in a shader, slower than per-vertex lighting" );
-	r_pshadowDist = ri.Cvar_Get( "r_pshadowDist", "128", CVAR_SAVE );
-	r_mergeLightmaps = ri.Cvar_Get( "r_mergeLightmaps", "1", CVAR_SAVE | CVAR_LATCH );
-	ri.Cvar_SetDescription( r_mergeLightmaps, "Merge small lightmaps into 2 or fewer giant lightmaps." );
 	r_imageUpsample = ri.Cvar_Get( "r_imageUpsample", "0", CVAR_SAVE | CVAR_LATCH );
 	r_imageUpsampleMaxSize = ri.Cvar_Get( "r_imageUpsampleMaxSize", "1024", CVAR_SAVE | CVAR_LATCH );
 	r_imageUpsampleType = ri.Cvar_Get( "r_imageUpsampleType", "1", CVAR_SAVE | CVAR_LATCH );
@@ -999,8 +907,6 @@ static void R_Register( void )
 	//
 	// temporary latched variables that can only change over a restart
 	//
-	r_fullbright = ri.Cvar_Get( "r_fullbright", "0", CVAR_LATCH | CVAR_CHEAT );
-	ri.Cvar_SetDescription( r_fullbright, "Debugging tool to render the entire level without lighting." );
 	r_intensity = ri.Cvar_Get( "r_intensity", "1", CVAR_LATCH );
 	ri.Cvar_SetDescription( r_intensity, "Global texture lighting scale." );
 	r_singleShader = ri.Cvar_Get( "r_singleShader", "0", CVAR_CHEAT | CVAR_LATCH );
@@ -1012,9 +918,6 @@ static void R_Register( void )
 	//
 	// temporary variables that can change at any time
 	//
-	r_lightmap = ri.Cvar_Get( "r_lightmap", "0", 0 );
-	ri.Cvar_SetDescription( r_lightmap, "Show only lightmaps on all world surfaces." );
-
 	r_debugCamera = ri.Cvar_Get( "r_debugCamera", "0", CVAR_PRIVATE | CVAR_TEMP );
 	ri.Cvar_SetDescription( r_debugCamera, "Toggles free camera movement, used for photomode." );
 
@@ -1089,14 +992,8 @@ static void R_Register( void )
 
 	r_ignoreGLErrors = ri.Cvar_Get( "r_ignoreGLErrors", "1", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_ignoreGLErrors, "Ignore OpenGL errors." );
-//	r_fastsky = ri.Cvar_Get( "r_fastsky", "0", CVAR_SAVE );
-//	ri.Cvar_SetDescription( r_fastsky, "Draw flat colored skies." );
-	r_drawSun = ri.Cvar_Get( "r_drawSun", "0", CVAR_SAVE );
-	ri.Cvar_SetDescription( r_drawSun, "Draw sun shader in skies." );
 	r_dynamiclight = ri.Cvar_Get( "r_dynamiclight", "1", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_dynamiclight, "Enables dynamic lighting." );
-	r_dlightBacks = ri.Cvar_Get( "r_dlightBacks", "1", CVAR_SAVE );
-	ri.Cvar_SetDescription( r_dlightBacks, "Whether or not dynamic lights should light up back-face culled geometry." );
 	r_finish = ri.Cvar_Get( "r_finish", "0", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_finish, "Force a glFinish call after rendering a scene." );
 	r_textureMode = ri.Cvar_Get( "r_textureMode", "Nearest", CVAR_SAVE );
@@ -1158,8 +1055,6 @@ static void R_Register( void )
 
 	r_drawworld = ri.Cvar_Get( "r_drawworld", "1", CVAR_CHEAT );
 	ri.Cvar_SetDescription( r_drawworld, "Set to 0 to disable drawing the world. Set to 1 to enable." );
-	r_lightmap = ri.Cvar_Get( "r_lightmap", "0", 0 );
-	ri.Cvar_SetDescription( r_lightmap, "Show only lightmaps on all world surfaces." );
 
 	r_measureOverdraw = ri.Cvar_Get( "r_measureOverdraw", "0", CVAR_CHEAT );
 	r_ignoreGLErrors = ri.Cvar_Get( "r_ignoreGLErrors", "1", CVAR_LATCH );

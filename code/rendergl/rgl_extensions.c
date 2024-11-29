@@ -117,45 +117,6 @@ void R_InitExtensions( void )
 	}
 
 	//
-	// ARB_sync
-	//
-	ext = "GL_ARB_sync";
-	glContext.ARB_sync = qfalse;
-	if ( NGL_VERSION_ATLEAST( 3, 2 ) || R_HasExtension( ext ) ) {
-		glContext.ARB_sync = qtrue;
-
-		NGL_ARB_sync
-
-		if ( !nglClientWaitSync || !nglFenceSync || !nglDeleteSync || !nglWaitSync ) {
-			ri.Printf( PRINT_WARNING, result[EXT_FAILED], ext );
-			glContext.ARB_sync = qfalse;
-		} else {
-			ri.Printf( PRINT_INFO, result[EXT_USING], ext );
-		}
-	} else {
-		ri.Printf( PRINT_INFO, result[EXT_NOTFOUND], ext );
-	}
-
-	ri.Cvar_Set( "r_arb_sync", va( "%i", glContext.ARB_sync ) );
-
-	//
-	// ARB_pixel_buffer_object
-	//
-	ext = "GL_ARB_pixel_buffer_object";
-	glContext.ARB_pixel_buffer_object = qfalse;
-	if ( NGL_VERSION_ATLEAST( 4, 4 ) || R_HasExtension( ext ) ) {
-		glContext.ARB_pixel_buffer_object = r_arb_pixel_buffer_object->i;
-
-		if ( r_arb_pixel_buffer_object->i ) {
-			ri.Printf( PRINT_INFO, result[ EXT_IGNORE ], ext );
-		} else {
-			ri.Printf( PRINT_INFO, result[ EXT_USING ], ext );
-		}
-	} else {
-		ri.Printf( PRINT_INFO, result[ EXT_NOTFOUND ], ext );
-	}
-
-	//
 	// ARB_shader_storage_buffer_object
 	//
 	ext = "GL_ARB_shader_storage_buffer_object";

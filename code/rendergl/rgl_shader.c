@@ -2083,6 +2083,7 @@ static int CollapseStagesToGLSL( void )
 
 	// convert any remaining lightmap stages to a lighting pass with a white texture
 	// only do this with r_sunlightMode non-zero, as it's only for correct shadows.
+#if 0
 	if ( r_sunlightMode->i /* && shader.numDeforms == 0 */ ) {
 		for  (i = 0; i < MAX_SHADER_STAGES; i++ ) {
 			shaderStage_t *pStage = &stages[i];
@@ -2105,6 +2106,7 @@ static int CollapseStagesToGLSL( void )
 			}
 		}
 	}
+#endif
 
 	// convert any remaining lightingdiffuse stages to a lighting pass
 	if ( shader.numDeforms == 0 ) {

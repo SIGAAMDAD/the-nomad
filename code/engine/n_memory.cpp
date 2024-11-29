@@ -924,10 +924,10 @@ void Z_LogHeap( void ) {
 }
 
 void Z_InitSmallZoneMemory( void ) {
-	static byte zoneBuf[ 512 * 1024 ];
+	static byte zoneBuf[ 256 * 1024 ];
 	uint64_t size;
 
-	size = 512 * 1024;
+	size = 256 * 1024;
 
 	memset( zoneBuf, 0, sizeof( zoneBuf ) );
 	smallzone = (memzone_t *)zoneBuf;

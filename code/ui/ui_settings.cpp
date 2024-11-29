@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../rendergl/ngl.h"
 #include "../rendercommon/imgui_impl_opengl3.h"
 #include "../rendercommon/imgui.h"
+#include "../game/g_world.h"
 #include <fmod/fmod.h>
 
 #define DRAWMODE_IMMEDIATE 0
@@ -167,6 +168,7 @@ typedef struct {
 	select_t multisampleType;
 	select_t anisotropyAmount;
 	
+	quality_t maxCorpses;
 	quality_t multisampleQuality;
 	quality_t textureDetail;
 	quality_t lightingQuality;
@@ -774,7 +776,7 @@ static void SettingsMenu_MultiSliderFloat( const char *name, const char *label, 
 	style.WindowRounding = 8.0f;
 	style.PopupRounding = 8.0f;
 
-	ImGui::SliderFloat( va( "%s##%sSettingsMenuSliderFloat", name, label ), curvalue, minvalue, maxvalue, "%.3f",
+	ImGui::SliderFloat( va( "##%sSettingsMenuSliderFloat", label ), curvalue, minvalue, maxvalue, "%.3f",
 		enabled ? 0 : ImGuiSliderFlags_NoInput );
 	SfxFocused( label );
 
@@ -819,7 +821,7 @@ static void SettingsMenu_MultiSliderInt( const char *name, const char *label, co
 	style.WindowRounding = 8.0f;
 	style.PopupRounding = 8.0f;
 
-	ImGui::SliderInt( va( "%s##%sSettingsMenuSliderFloat", name, label ), curvalue, minvalue, maxvalue, "%d",
+	ImGui::SliderInt( va( "##%sSettingsMenuSliderInt", label ), curvalue, minvalue, maxvalue, "%d",
 		enabled ? 0 : ImGuiSliderFlags_NoInput );
 	SfxFocused( label );
 
@@ -1164,7 +1166,7 @@ static void ControlsMenu_Draw( void )
 
 static void PerformanceMenu_DrawBasic( void )
 {
-	ImGui::BeginTable( "##PerformanceSettingsMenuConfigTable", 2 );
+	ImGui::BeginTable( "##PerformanceSettingsMenuConfigTable_PostProcessing", 2 );
 
 	SettingsMenu_MultiAdjustable( "ANTIALIASING", "AntiAliasing",
 		"Sets anti-aliasing technique used by the engine",
@@ -1174,10 +1176,34 @@ static void PerformanceMenu_DrawBasic( void )
 
 	ImGui::TableNextRow();
 
-	SettingsMenu_MultiAdjustable( "ANTIALIASING QUALITY", "AntiAliasingQuality",
-		"Sets anti-aliasing quality",
+	SettingsMenu_MultiAdjustable( "ANTIALIASING QUALITY", "AntiAliasingQuality", "Sets anti-aliasing quality",
 		s_settingsMenu->performance.qualityTypes + 1, s_settingsMenu->performance.numQualities - 2,
 		&s_settingsMenu->performance.multisampleQuality, true );
+		
+	ImGui::TableNextRow();
+
+	SettingsMenu_RadioButton( "FIXED RENDERING", "FixedRendering",
+		"Forces the engine to render at a fixed virtual resolution (based on \"FIXED RESOLUTION SCALE\")."
+		"This might increase performance on lower end systems", &s_settingsMenu->performance.fixedRendering, true );
+		
+	ImGui::TableNextRow();
+
+	SettingsMenu_MultiSliderFloat( "FIXED RESOLUTION SCALE", "FixedResolutionScaling",
+		"Sets the rendering viewport scale, starting from 1280x720.",
+		&s_settingsMenu->performance.fixedResolutionScaling, 0.0f, 1.0f, 0.01f, s_settingsMenu->performance.fixedRendering );
+	
+	ImGui::TableNextRow();
+
+	SettingsMenu_RadioButton( "BLOOM", "Bloom",
+		"Enables the usage of a bloom effect so that light sources of a certain brightness produce a glow effect.",
+		&s_settingsMenu->performance.bloom, s_settingsMenu->performance.hdr );
+
+	ImGui::TableNextRow();
+
+	SettingsMenu_RadioButton( "HDR", "HighDynamicRange",
+		"Enables the engine to render in a far greater range of colors (16-bit instead of 8-bit)."
+		"Consumes more memory and some slight post-processing overhead.",
+		&s_settingsMenu->performance.hdr, Cvar_VariableInteger( "r_postProcess" ) );
 	
 	ImGui::TableNextRow();
 
@@ -1208,18 +1234,6 @@ static void PerformanceMenu_DrawBasic( void )
 
 	ImGui::TableNextRow();
 
-	SettingsMenu_RadioButton( "FIXED RENDERING", "FixedRendering",
-		"Forces the engine to render at a fixed virtual resolution (based on \"FIXED RESOLUTION SCALE\")."
-		"This might increase performance on lower end systems", &s_settingsMenu->performance.fixedRendering, true );
-
-	ImGui::TableNextRow();
-
-	SettingsMenu_MultiSliderFloat( "FIXED RESOLUTION SCALE", "FixedResolutionScaling",
-		"Sets the rendering viewport scale, starting from 1024x720.",
-		&s_settingsMenu->performance.fixedResolutionScaling, 0.0f, 1.0f, 0.01f, s_settingsMenu->performance.fixedRendering );
-
-	ImGui::TableNextRow();
-
 	SettingsMenu_RadioButton( "LOAD TEXTURES ON DEMAND", "LoadTexturesOnDemand",
 		"Forces the engine to only load textures when they are being rendered, this will cause minor hitches but consume less memory.",
 		&s_settingsMenu->performance.loadTexturesOnDemand, true );
@@ -1229,18 +1243,18 @@ static void PerformanceMenu_DrawBasic( void )
 	SettingsMenu_RadioButton( "DYNAMIC LIGHTING", "DynamicLighting",
 		"Enables per-pixel dynamic lighting. This will have a heavy impact on performance, especially on IGPUs.",
 		&s_settingsMenu->performance.dynamicLighting, true );
-
-	ImGui::TableNextRow();
-
-	SettingsMenu_RadioButton( "BLOOM", "Bloom",
-		"Enables the usage of a bloom effect so that light sources of a certain brightness produce a glow effect.",
-		&s_settingsMenu->performance.bloom, s_settingsMenu->performance.hdr );
 	
 	ImGui::TableNextRow();
 
-	SettingsMenu_RadioButton( "HDR", "HighDynamicRange",
-		"Enables the engine to render in a far greater range of colors. Consumes more memory and some slight post-processing overhead.",
-		&s_settingsMenu->performance.hdr, Cvar_VariableInteger( "r_postProcess" ) );
+	SettingsMenu_RadioButton( "ENABLE PARTICLES", "EnableParticles",
+		"Enables particle effects",
+		&s_settingsMenu->performance.particles, true );
+	
+	ImGui::TableNextRow();
+
+	SettingsMenu_MultiSliderInt( "MAX CORPSES", "MaxCorpses",
+		"Sets the maximum amount of corpses that can stay in a scene at a time.",
+		&s_settingsMenu->performance.maxCorpses, 5, MAX_ENTITIES, 1, true );
 
 	ImGui::EndTable();
 }
@@ -1631,6 +1645,8 @@ static void PerformanceMenu_Save( void )
 	Cvar_SetIntegerValue( "r_lightingQuality", s_settingsMenu->performance.lightingQuality );
 	Cvar_SetIntegerValue( "r_hdr", s_settingsMenu->performance.hdr );
 	Cvar_SetIntegerValue( "r_bloom", s_settingsMenu->performance.bloom );
+	Cvar_SetIntegerValue( "sgame_EnableParticles", s_settingsMenu->performance.particles );
+	Cvar_SetIntegerValue( "sgame_MaxCorpses", s_settingsMenu->performance.maxCorpses );
 
 	if ( needRestart || PerformanceMenu_FBO_Save() ) {
 		UI_ConfirmMenu( "Some settings that you have changed require a restart to take effect, apply them?",
@@ -1728,6 +1744,7 @@ static void PerformanceMenu_SetDefault( void )
 	s_settingsMenu->performance.fixedResolutionScaling = Cvar_VariableFloat( "r_fixedResolutionScaling" );
 	s_settingsMenu->performance.loadTexturesOnDemand = Cvar_VariableInteger( "r_loadTexturesOnDemand" );
 	s_settingsMenu->performance.particles = Cvar_VariableInteger( "sgame_EnableParticles" );
+	s_settingsMenu->performance.maxCorpses = Cvar_VariableInteger( "sgame_MaxCorpses" );
 
 	textureMode = Cvar_VariableString( "r_textureMode" );
 	for ( i = 0; i < s_settingsMenu->performance.numTextureDetails; i++ ) {

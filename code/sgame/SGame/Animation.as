@@ -52,35 +52,10 @@ namespace TheNomad::SGame {
 		}
 		
 		bool Load( json@ json ) {
-			string base;
-
 			m_nTicRate = uint( json[ "TicRate" ] );
 			m_bOscillate = bool( json[ "FlipFlop" ] );
 			m_nNumFrames = uint( json[ "Frames" ] );
 			m_bReverse = bool( json[ "Reverse" ] );
-
-		/*
-			if ( !json.get( "TicRate", base ) ) {
-				ConsoleWarning( "invalid animation info, missing variable 'TicRate'\n" );
-				return false;
-			}
-			m_nTicRate = Convert().ToInt( base );
-			if ( !json.get( "FlipFlop", base ) ) {
-				ConsoleWarning( "invalid animation info, missing variable 'FlipFlop'\n" );
-				return false;
-			}
-			m_bOscillate = Convert().ToBool( base );
-			if ( !json.get( "Frames", base ) ) {
-				ConsoleWarning( "invalid animation info, missing variable 'Frames'\n" );
-				return false;
-			}
-			m_nNumFrames = Convert().ToUInt( base );
-			if ( !json.get( "Reverse", base ) ) {
-				ConsoleWarning( "invalid animation info, missing variable 'Reverse'\n" );
-				return false;
-			}
-			m_bReverse = Convert().ToBool( base );
-		*/
 
 			if ( m_bReverse ) {
 				m_nTicker = -1;

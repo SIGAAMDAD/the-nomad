@@ -228,13 +228,6 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 		return;
 	}
 
-	if ( r_bloom->modified && r_hdr->modified && r_arb_compute_shader->i ) {
-		GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
-		nglClear( GL_COLOR_BUFFER_BIT );
-		r_bloom->modified = qfalse;
-		r_hdr->modified = qfalse;
-	}
-
 	if ( glContext.ARB_framebuffer_object && r_arb_framebuffer_object->i && rg.renderFbo.frameBuffer ) {
 		ri.ProfileFunctionBegin( "BindFramebuffer" );
 		GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo.frameBuffer );
@@ -344,7 +337,7 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 			ri.Cvar_Set( "r_measureOverdraw", "0" );
 			r_measureOverdraw->modified = qfalse;
 		}
-		else if ( r_shadows->i == 2 ) {
+		else if ( /* r_shadows->i == 2 */ 0 ) {
 			ri.Printf( PRINT_INFO, "Warning: stencil shadows and overdraw measurement are mutually exclusive\n" );
 			ri.Cvar_Set( "r_measureOverdraw", "0" );
 			r_measureOverdraw->modified = qfalse;

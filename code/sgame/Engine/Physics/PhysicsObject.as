@@ -173,6 +173,7 @@ namespace TheNomad::Engine::Physics {
 			
 			float friction = TheNomad::SGame::sgame_Friction.GetFloat();
 			vec3 origin = m_EntityData.GetOrigin();
+			bool inAir = false;
 			
 			const uint tileFlags = TheNomad::SGame::LevelManager.GetMapData().GetTile( origin, m_EntityData.GetBounds() );
 			if ( ( tileFlags & SURFACEPARM_WATER ) != 0 || ( tileFlags & SURFACEPARM_LAVA ) != 0 ) {
@@ -185,6 +186,9 @@ namespace TheNomad::Engine::Physics {
 			m_Velocity.x = m_Acceleration.x;
 			m_Velocity.y = m_Acceleration.y;
 			m_Velocity.z += m_Acceleration.z;
+			if ( origin.z > 0.0f ) {
+				inAir = true;
+			}
 			
 			ApplyFriction();
 
@@ -259,6 +263,11 @@ namespace TheNomad::Engine::Physics {
 			// apply gravity
 			if ( origin.z < 0.0f ) {
 				origin.z = 0.0f;
+			}
+			if ( inAir && origin.z <= 0.0f && m_EntityData.GetType() == TheNomad::GameSystem::EntityType::Playr ) {
+				m_EntityData.EmitSound(
+					TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/land_" + formatUInt( Util::PRandom() & 4 ) ),
+					1.0f, 0xff );
 			}
 			
 			m_EntityData.SetOrigin( origin );

@@ -50,7 +50,7 @@ namespace TheNomad::SGame {
 			string levelName;
 			string music;
 
-			m_PassedCheckpointSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/misc/passCheckpoint.ogg" );
+			m_PassedCheckpointSfx = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/env/iteraction/complete_checkpoint" );
 
 			ConsolePrint( "Loading level infos...\n" );
 

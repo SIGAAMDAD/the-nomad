@@ -1307,10 +1307,7 @@ extern renderBackend_t backend;
 
 extern cvar_t *r_measureOverdraw;		// enables stencil buffer overdraw measurement
 
-extern cvar_t *r_fastsky;				// controls whether sky should be cleared or drawn
-extern cvar_t *r_drawSun;				// controls drawing of sun quad
 extern cvar_t *r_dynamiclight;		    // dynamic lights enabled/disabled
-extern cvar_t *r_dlightBacks;			// dlight non-facing surfaces for continuity
 
 extern cvar_t *r_norefresh;			    // bypasses the ref rendering
 extern cvar_t *r_drawentities;		    // disable/enable entity rendering
@@ -1328,15 +1325,10 @@ extern cvar_t *r_picmip;				// controls picmip values
 extern cvar_t *r_finish;
 extern cvar_t *r_textureMode;
 
-extern cvar_t *r_fullbright;			// avoid lightmap pass
-extern cvar_t *r_lightmap;			    // render lightmaps only
 extern cvar_t *r_vertexLight;			// vertex lighting mode for better performance
 
 extern cvar_t *r_showSky;			    // forces sky in front of all surfaces
 extern cvar_t *r_clear;			        // force screen clear every frame
-
-extern cvar_t *r_shadows;				// controls shadows: 0 = none, 1 = blur, 2 = stencil, 3 = black planar projection
-extern cvar_t *r_flares;				// light flares
 
 extern cvar_t *r_intensity;
 
@@ -1347,9 +1339,7 @@ extern cvar_t *r_externalGLSL;
 extern cvar_t *r_imageSharpenAmount;
 
 extern cvar_t *r_hdr;
-extern cvar_t *r_floatLightmap;
 extern cvar_t *r_postProcess;
-extern cvar_t *r_lightmap;
 
 extern cvar_t *r_toneMap;
 extern cvar_t *r_forceToneMap;
@@ -1362,11 +1352,7 @@ extern cvar_t  *r_forceAutoExposure;
 extern cvar_t  *r_forceAutoExposureMin;
 extern cvar_t  *r_forceAutoExposureMax;
 
-extern cvar_t *r_depthPrepass;
-extern cvar_t *r_ssao;
 extern cvar_t *r_bloom;
-
-extern cvar_t *r_smaaEdgesType;
 
 extern cvar_t *r_normalMapping;
 extern cvar_t *r_specularMapping;
@@ -1374,8 +1360,6 @@ extern cvar_t *r_deluxeMapping;
 extern cvar_t *r_parallaxMapping;
 extern cvar_t *r_parallaxMapOffset;
 extern cvar_t *r_parallaxMapShadows;
-extern cvar_t *r_cubeMapping;
-extern cvar_t *r_cubemapSize;
 extern cvar_t *r_deluxeSpecular;
 extern cvar_t *r_pbr;
 extern cvar_t *r_baseNormalX;
@@ -1384,25 +1368,10 @@ extern cvar_t *r_baseParallax;
 extern cvar_t *r_baseSpecular;
 extern cvar_t *r_baseGloss;
 extern cvar_t *r_glossType;
-extern cvar_t *r_dlightMode;
-extern cvar_t *r_pshadowDist;
-extern cvar_t *r_mergeLightmaps;
 extern cvar_t *r_imageUpsample;
 extern cvar_t *r_imageUpsampleMaxSize;
 extern cvar_t *r_imageUpsampleType;
 extern cvar_t *r_genNormalMaps;
-extern cvar_t *r_forceSun;
-extern cvar_t *r_forceSunLightScale;
-extern cvar_t *r_forceSunAmbientScale;
-extern cvar_t *r_sunlightMode;
-extern cvar_t *r_drawSunRays;
-extern cvar_t *r_sunShadows;
-extern cvar_t *r_shadowFilter;
-extern cvar_t *r_shadowBlur;
-extern cvar_t *r_shadowMapSize;
-extern cvar_t *r_shadowCascadeZNear;
-extern cvar_t *r_shadowCascadeZFar;
-extern cvar_t *r_shadowCascadeZBias;
 extern cvar_t *r_ignoreDstAlpha;
 
 extern cvar_t *r_fixedRendering;
@@ -1425,11 +1394,8 @@ extern cvar_t *r_showTris;
 extern cvar_t *r_clearColor;
 
 extern cvar_t *r_useExtensions;
-extern cvar_t *r_allowLegacy;
-extern cvar_t *r_allowShaders;
 extern cvar_t *r_multisampleType;
 extern cvar_t *r_ignorehwgamma;
-extern cvar_t *r_drawMode;
 extern cvar_t *r_glDebug;
 extern cvar_t *r_textureBits;
 extern cvar_t *r_stencilBits;
@@ -1437,7 +1403,6 @@ extern cvar_t *r_textureDetail;
 extern cvar_t *r_drawBuffer;
 extern cvar_t *r_customWidth;
 extern cvar_t *r_customHeight;
-extern cvar_t *r_mappedBuffers;
 extern cvar_t *r_glDiagnostics;
 extern cvar_t *r_colorMipLevels;
 
@@ -1451,8 +1416,6 @@ extern cvar_t *r_imageUpsampleType;
 extern cvar_t *r_imageUpsample;
 extern cvar_t *r_imageUpsampleMaxSize;
 
-extern cvar_t *r_arb_compute_shader;
-
 extern cvar_t *r_lightingQuality;
 extern cvar_t *r_antialiasQuality;
 
@@ -1463,7 +1426,6 @@ extern cvar_t *r_swapInterval;
 extern cvar_t *sys_forceSingleThreading;
 
 // OpenGL extensions
-extern cvar_t *r_arb_pixel_buffer_object;
 extern cvar_t *r_arb_texture_compression;
 extern cvar_t *r_arb_framebuffer_object;
 extern cvar_t *r_arb_vertex_array_object;
@@ -1471,7 +1433,6 @@ extern cvar_t *r_arb_vertex_buffer_object;
 extern cvar_t *r_arb_texture_filter_anisotropic;
 extern cvar_t *r_arb_texture_max_anisotropy;
 extern cvar_t *r_arb_texture_float;
-extern cvar_t *r_arb_sync;
 extern cvar_t *r_arb_shader_storage_buffer_object;
 extern cvar_t *r_arb_map_buffer_range;
 extern cvar_t *r_arb_direct_state_access;
