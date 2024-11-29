@@ -149,13 +149,12 @@ namespace TheNomad::SGame {
 					GameError( "EntitySystem::OnLoad: save file corruption, section '" + GetName() + "' not found!" );
 				}
 				numEntities = load.LoadUInt( "NumEntities" );
+				m_EntityList.Reserve( numEntities );
 			}
 			
 			@m_ActiveEnts.m_Next =
 			@m_ActiveEnts.m_Prev =
 				@m_ActiveEnts;
-			
-			DebugPrint( formatUInt( m_EntityList.Count() ) + " total entities.\n" );
 
 			LevelManager.GetMapData().GetCheckpoints()[ LevelManager.GetCheckpointIndex() ].m_bPassed = true;
 			
@@ -208,6 +207,7 @@ namespace TheNomad::SGame {
 					GameError( "EntitySystem::OnLoad: save file corruption, section 'EntityData_" + i + "' failed to load" );
 				}
 			}
+			DebugPrint( formatUInt( m_EntityList.Count() ) + " total entities.\n" );
 		}
 		void OnSave() const {
 			{
