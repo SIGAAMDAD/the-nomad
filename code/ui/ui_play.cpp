@@ -207,9 +207,6 @@ static void DeleteSlot_Event( qboolean action )
 	g_pArchiveHandler->DeleteSlot( s_playMenu->selectedSaveSlot );
 
 	s_playMenu->deleteSlot = qfalse;
-	if ( s_playMenu->saveSlots[ s_playMenu->selectedSaveSlot ].gd.modList ) {
-		Z_Free( s_playMenu->saveSlots[ s_playMenu->selectedSaveSlot ].gd.modList );
-	}
 	memset( &s_playMenu->saveSlots[ s_playMenu->selectedSaveSlot ], 0, sizeof( saveinfo_t ) );
 	s_playMenu->selectedSaveSlot = 0;
 	s_playMenu->numSaveFiles = 0;

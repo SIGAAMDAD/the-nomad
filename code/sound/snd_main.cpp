@@ -538,9 +538,6 @@ void CSoundSystem::Shutdown( void )
 		FS_FClose( fmodLogFile );
 	}
 
-	Z_FreeTags( TAG_SFX );
-	Z_FreeTags( TAG_MUSIC );
-
 	Cmd_RemoveCommand( "snd.setvolume" );
 	Cmd_RemoveCommand( "snd.toggle" );
 	Cmd_RemoveCommand( "snd.updatevolume" );

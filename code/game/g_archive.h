@@ -18,26 +18,26 @@
 //
 // so overall only really designed for PC users
 #ifndef SAVEFILE_MOD_SAFETY
-    #define SAVEFILE_MOD_SAFETY
+//    #define SAVEFILE_MOD_SAFETY
 #endif
 
 typedef struct {
-    char name[MAX_NPATH];
-    int32_t nVersionMajor;
-    int32_t nVersionUpdate;
-    int32_t nVersionPatch;
+	char name[MAX_NPATH];
+	int32_t nVersionMajor;
+	int32_t nVersionUpdate;
+	int32_t nVersionPatch;
 } modlist_t;
 
 typedef struct {
-    int32_t mapIndex;
-    int32_t highestDif;
-    int32_t saveDif;
-    uint32_t playTimeHours;
-    uint32_t playTimeMinutes;
+	int32_t mapIndex;
+	int32_t highestDif;
+	int32_t saveDif;
+	uint32_t playTimeHours;
+	uint32_t playTimeMinutes;
 
-    // mod info
-    modlist_t *modList;
-    uint64_t numMods;
+	// mod info
+	modlist_t *modList;
+	uint64_t numMods;
 } gamedata_t;
 
 #pragma pack( push, 1 )
@@ -46,7 +46,7 @@ typedef struct {
 	int32_t nameLength;
 	int32_t type;
 	int32_t dataSize;
-    int32_t dataOffset;
+	int32_t dataOffset;
 	union {
 		int8_t s8;
 		int16_t s16;
@@ -73,12 +73,12 @@ typedef union version_s {
 	};
 	uint64_t m_nVersion;
 
-    bool operator==( const version_s& other ) const {
-        return m_nVersion == other.m_nVersion;
-    }
-    bool operator!=( const version_s& other ) const {
-        return m_nVersion != other.m_nVersion;
-    }
+	bool operator==( const version_s& other ) const {
+		return m_nVersion == other.m_nVersion;
+	}
+	bool operator!=( const version_s& other ) const {
+		return m_nVersion != other.m_nVersion;
+	}
 } version_t;
 
 typedef struct {
@@ -91,17 +91,17 @@ typedef struct {
 	ngdvalidation_t validation;
 	int64_t numSections;
 
-    gamedata_t gamedata;
+	gamedata_t gamedata;
 } ngdheader_t;
 
 typedef struct {
-    char name[MAX_SAVE_FIELD_NAME];
-    int32_t nameLength;
-    int32_t numFields;
-    uint32_t offset;
+	char name[MAX_SAVE_FIELD_NAME];
+	int32_t nameLength;
+	int32_t numFields;
+	uint32_t offset;
 #ifdef SAVEFILE_MOD_SAFETY
-    fileHandle_t hFile;
-    const char *m_pModuleName;
+	fileHandle_t hFile;
+	const char *m_pModuleName;
 #endif
 } ngdsection_write_t;
 
@@ -120,95 +120,95 @@ typedef struct ngdsection_read_s {
 typedef struct {
 	char name[MAX_NPATH];
 	
-    int64_t m_nSections;
-    uint64_t m_nMods;
+	int64_t m_nSections;
+	uint64_t m_nMods;
 	ngdsection_read_t *m_pSectionList;
 } ngd_file_t;
 
 class CGameArchive
 {
 public:
-    CGameArchive( void );
-    ~CGameArchive() = default;
+	CGameArchive( void );
+	~CGameArchive() = default;
 
-    void DeleteSlot( uint64_t nSlot );
+	void DeleteSlot( uint64_t nSlot );
 
-    void BeginSaveSection( const char *moduleName, const char *name );
-    void EndSaveSection( void );
+	void BeginSaveSection( const char *moduleName, const char *name );
+	void EndSaveSection( void );
 
-    const char **GetSaveFiles( uint64_t *nFiles ) const;
-    uint64_t NumUsedSaveSlots( void ) const;
-    qboolean SlotIsUsed( uint64_t nSlot ) const;
+	const char **GetSaveFiles( uint64_t *nFiles ) const;
+	uint64_t NumUsedSaveSlots( void ) const;
+	qboolean SlotIsUsed( uint64_t nSlot ) const;
 
-    void SaveFloat( const char *name, float data );
+	void SaveFloat( const char *name, float data );
 
-    void SaveByte( const char *name, uint8_t data );
-    void SaveUShort( const char *name, uint16_t data );
-    void SaveUInt( const char *name, uint32_t data );
-    void SaveULong( const char *name, uint64_t data );
+	void SaveByte( const char *name, uint8_t data );
+	void SaveUShort( const char *name, uint16_t data );
+	void SaveUInt( const char *name, uint32_t data );
+	void SaveULong( const char *name, uint64_t data );
 
-    void SaveChar( const char *name, int8_t data );
-    void SaveShort( const char *name, int16_t data );
-    void SaveInt( const char *name, int32_t data );
-    void SaveLong( const char *name, int64_t data );
+	void SaveChar( const char *name, int8_t data );
+	void SaveShort( const char *name, int16_t data );
+	void SaveInt( const char *name, int32_t data );
+	void SaveLong( const char *name, int64_t data );
 
-    void SaveVec2( const char *name, const vec2_t data );
-    void SaveVec3( const char *name, const vec3_t data );
-    void SaveVec4( const char *name, const vec4_t data );
+	void SaveVec2( const char *name, const vec2_t data );
+	void SaveVec3( const char *name, const vec3_t data );
+	void SaveVec4( const char *name, const vec4_t data );
 
-    void SaveCString( const char *name, const char *data );
-    void SaveString( const char *name, const string_t *pData );
-    void SaveArray( const char *pszName, const CScriptArray *pData );
+	void SaveCString( const char *name, const char *data );
+	void SaveString( const char *name, const string_t *pData );
+	void SaveArray( const char *pszName, const CScriptArray *pData );
 
-    float LoadFloat( const char *name, nhandle_t hSection );
+	float LoadFloat( const char *name, nhandle_t hSection );
 
-    uint8_t LoadByte( const char *name, nhandle_t hSection );
-    uint16_t LoadUShort( const char *name, nhandle_t hSection );
-    uint32_t LoadUInt( const char *name, nhandle_t hSection );
-    uint64_t LoadULong( const char *name, nhandle_t hSection );
+	uint8_t LoadByte( const char *name, nhandle_t hSection );
+	uint16_t LoadUShort( const char *name, nhandle_t hSection );
+	uint32_t LoadUInt( const char *name, nhandle_t hSection );
+	uint64_t LoadULong( const char *name, nhandle_t hSection );
 
-    int8_t LoadChar( const char *name, nhandle_t hSection );
-    int16_t LoadShort( const char *name, nhandle_t hSection );
-    int32_t LoadInt( const char *name, nhandle_t hSection );
-    int64_t LoadLong( const char *name, nhandle_t hSection );
+	int8_t LoadChar( const char *name, nhandle_t hSection );
+	int16_t LoadShort( const char *name, nhandle_t hSection );
+	int32_t LoadInt( const char *name, nhandle_t hSection );
+	int64_t LoadLong( const char *name, nhandle_t hSection );
 
-    void LoadVec2( const char *name, vec2_t data, nhandle_t hSection );
-    void LoadVec3( const char *name, vec3_t data, nhandle_t hSection );
-    void LoadVec4( const char *name, vec4_t data, nhandle_t hSection );
+	void LoadVec2( const char *name, vec2_t data, nhandle_t hSection );
+	void LoadVec3( const char *name, vec3_t data, nhandle_t hSection );
+	void LoadVec4( const char *name, vec4_t data, nhandle_t hSection );
 
-    void LoadCString( const char *name, char *pBuffer, int32_t maxLength, nhandle_t hSection );
-    void LoadString( const char *name, string_t *pString, nhandle_t hSection );
-    void LoadArray( const char *pszName, CScriptArray *pData, nhandle_t hSection );
+	void LoadCString( const char *name, char *pBuffer, int32_t maxLength, nhandle_t hSection );
+	void LoadString( const char *name, string_t *pString, nhandle_t hSection );
+	void LoadArray( const char *pszName, CScriptArray *pData, nhandle_t hSection );
 
-    bool Load( uint64_t nSlot );
-    bool Save( const char *filename = Cvar_VariableString( "sgame_SaveName" ) );
-    bool LoadPartial( const char *filename, gamedata_t *gd );
+	bool Load( uint64_t nSlot );
+	bool Save( const char *filename = Cvar_VariableString( "sgame_SaveName" ) );
+	bool LoadPartial( const char *filename, gamedata_t *gd );
 
-    nhandle_t GetSection( const char *name );
+	nhandle_t GetSection( const char *name );
 
-    void InitCache( void );
+	void InitCache( void );
 
-    friend void G_InitArchiveHandler( void );
-    friend void G_ShutdownArchiveHandler( void );
+	friend void G_InitArchiveHandler( void );
+	friend void G_ShutdownArchiveHandler( void );
 private:
-    void SaveArray( const char *func, const char *name, const void *pData, uint32_t nBytes );
+	void SaveArray( const char *func, const char *name, const void *pData, uint32_t nBytes );
 
-    void AddField( const char *name, int32_t type, const void *data, uint32_t dataSize );
-    bool ValidateHeader( const void *header ) const;
-    qboolean LoadArchiveFile( const char *filename, uint64_t index );
-    const ngdfield_t *FindField( const char *name, int32_t type, nhandle_t hSection ) const;
+	void AddField( const char *name, int32_t type, const void *data, uint32_t dataSize );
+	bool ValidateHeader( const void *header ) const;
+	qboolean LoadArchiveFile( const char *filename, uint64_t index );
+	const ngdfield_t *FindField( const char *name, int32_t type, nhandle_t hSection ) const;
 
-    fileHandle_t m_hFile;
-    
-    int64_t m_nSections;
-    int64_t m_nSectionDepth;
-    ngdsection_write_t *m_pSection;
-    ngdsection_write_t m_szSectionStack[MAX_SAVE_SECTION_DEPTH];
+	fileHandle_t m_hFile;
+	
+	int64_t m_nSections;
+	int64_t m_nSectionDepth;
+	ngdsection_write_t *m_pSection;
+	ngdsection_write_t m_szSectionStack[MAX_SAVE_SECTION_DEPTH];
 
-    ngd_file_t **m_pArchiveCache;
-    char **m_pArchiveFileList;
-    uint64_t m_nCurrentArchive;
-    uint64_t m_nUsedSaveSlots;
+	ngd_file_t **m_pArchiveCache;
+	char **m_pArchiveFileList;
+	uint64_t m_nCurrentArchive;
+	uint64_t m_nUsedSaveSlots;
 };
 
 void G_InitArchiveHandler( void );

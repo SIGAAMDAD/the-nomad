@@ -65,6 +65,7 @@ void ScriptLib_Register_Sound( void )
 	REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::SoundSystem::RegisterEmitter( uint nEntityNumber )", asFUNCTION( RegisterEmitter ), asCALL_CDECL );
 	REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::RemoveEmitter( int hEmitter )", asFUNCTION( RemoveEmitter ), asCALL_CDECL );
 	REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::PlaySfx( int )", asFUNCTION( Snd_PlaySfx ), asCALL_CDECL );
+	REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::StopSfx( int )", asFUNCTION( Snd_StopSfx ), asCALL_CDECL );
 	REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::AddLoopingTrack( int )", asFUNCTION( Snd_AddLoopingTrack ), asCALL_CDECL );
 	REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::ClearLoopingTracks()", asFUNCTION( Snd_ClearLoopingTracks ), asCALL_CDECL );
 

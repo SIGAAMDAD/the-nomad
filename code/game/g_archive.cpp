@@ -254,7 +254,7 @@ qboolean CGameArchive::LoadArchiveFile( const char *filename, uint64_t index )
 	header.gamedata.numMods = LittleLong( header.gamedata.numMods );
 
 	// skip past the mod data
-	G_ListMods( name, header.gamedata.numMods, hFile );
+//	G_ListMods( name, header.gamedata.numMods, hFile );
 	//FS_FileSeek( hFile, ( MAX_NPATH + ( sizeof( int32_t ) * 3 ) ) * header.gamedata.numMods, FS_SEEK_CUR );
 
 	size = PAD( sizeof( *file ) + ( sizeof( *file->m_pSectionList ) * header.numSections ), sizeof( uintptr_t ) );
@@ -353,8 +353,8 @@ CGameArchive::CGameArchive( void )
 	Cvar_CheckRange( g_maxSaveSlots, "1", "1000", CVT_INT );
 	Cvar_SetDescription( g_maxSaveSlots, "Sets the maximum allowed save slots." );
 
-	m_pArchiveCache = (ngd_file_t **)Hunk_Alloc( sizeof( *m_pArchiveCache ) * g_maxSaveSlots->i, h_low );
-	m_pArchiveFileList = (char **)Hunk_Alloc( sizeof( *m_pArchiveCache ) * g_maxSaveSlots->i, h_low );
+	m_pArchiveCache = (ngd_file_t **)Z_Malloc( sizeof( *m_pArchiveCache ) * g_maxSaveSlots->i, TAG_SAVEFILE );
+	m_pArchiveFileList = (char **)Z_Malloc( sizeof( *m_pArchiveCache ) * g_maxSaveSlots->i, TAG_SAVEFILE );
 
 	m_nUsedSaveSlots = 0;
 
@@ -1104,15 +1104,6 @@ bool CGameArchive::Save( const char *filename )
 	FS_Write( &header.gamedata.playTimeMinutes, sizeof( header.gamedata.playTimeMinutes ), m_hFile );
 	FS_Write( &header.gamedata.numMods, sizeof( header.gamedata.numMods ), m_hFile );
 
-	for ( i = 0; i < header.gamedata.numMods; i++ ) {
-		if ( loadList[i].m_pHandle->IsValid() ) {
-			FS_Write( loadList[i].m_szName, sizeof( loadList[i].m_szName ), m_hFile );
-			FS_Write( &loadList[i].m_nModVersionMajor, sizeof( loadList[i].m_nModVersionMajor ), m_hFile );
-			FS_Write( &loadList[i].m_nModVersionUpdate, sizeof( loadList[i].m_nModVersionUpdate ), m_hFile );
-			FS_Write( &loadList[i].m_nModVersionPatch, sizeof( loadList[i].m_nModVersionPatch ), m_hFile );
-		}
-	}
-
 	for ( i = 0; i < g_pModuleLib->GetModCount(); i++ ) {
 		Con_DPrintf( "Adding module '%s' save sections...\n", loadList[i].m_szName );
 
@@ -1232,31 +1223,13 @@ bool CGameArchive::LoadPartial( const char *filename, gamedata_t *gd )
 	FS_Read( &gd->playTimeMinutes, sizeof( gd->playTimeMinutes ), f );
 	FS_Read( &gd->numMods, sizeof( gd->numMods ), f );
 
-	if ( gd->numMods ) {
-		gd->modList = (modlist_t *)Z_Malloc( sizeof( *gd->modList ) * gd->numMods, TAG_SAVEFILE );
-		for ( i = 0; i < gd->numMods; i++ ) {
-			FS_Read( gd->modList[i].name, sizeof( gd->modList[i].name ), f );
-			FS_Read( &gd->modList[i].nVersionMajor, sizeof( gd->modList[i].nVersionMajor ), f );
-			FS_Read( &gd->modList[i].nVersionUpdate, sizeof( gd->modList[i].nVersionUpdate ), f );
-			FS_Read( &gd->modList[i].nVersionPatch, sizeof( gd->modList[i].nVersionPatch ), f );
-		}
-	}
 	Con_DPrintf(
 				"Loaded partial header:\n"
 				" [mapname] %s (%i)\n"
 				" [highDifficulty] %i\n"
 				" [saveDifficulty] %i\n"
 				" [modCount] %lu\n"
-				" [modList] "
 	, gi.mapCache.mapList[ gd->mapIndex ], gd->mapIndex, gd->highestDif, gd->saveDif, gd->numMods );
-
-	for ( i = 0; i < gd->numMods; i++ ) {
-		Con_DPrintf( "%s", gd->modList[i].name );
-		if ( i != gd->numMods - 1 ) {
-			Con_DPrintf( ", " );
-		}
-	}
-	Con_DPrintf( "\n" );
 
 	FS_FClose( f );
 

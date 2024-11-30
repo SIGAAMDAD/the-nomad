@@ -22,6 +22,9 @@ namespace TheNomad::Engine::SoundSystem {
         void Play() const {
             PlaySfx( m_hSfx );
         }
+        void Stop() const {
+            StopSfx( m_hSfx );
+        }
 
         int opConv() const {
             return m_hSfx;

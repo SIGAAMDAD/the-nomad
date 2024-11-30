@@ -88,7 +88,7 @@ namespace TheNomad::SGame {
 						lerpTime *= 2;
 					}
 
-					if ( gameTic - move_toggle >= lerpTime ) {
+					if ( gameTic - move_toggle >= lerpTime && m_EntityData.GetOrigin().z == 0.0f ) {
 						// we can mix in different surfaceparm sound effects for more complex environments
 						if ( ( tile & SURFACEPARM_WATER ) != 0 ) {
 							switch ( TheNomad::Util::PRandom() & 2 ) {

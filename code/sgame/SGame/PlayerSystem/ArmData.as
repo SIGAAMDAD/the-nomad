@@ -32,6 +32,7 @@ namespace TheNomad::SGame {
 
 			m_nArmIndex = nArmIndex;
 			m_nFacing = FACING_RIGHT;
+			m_nTicker = TheNomad::GameSystem::GameManager.GetGameTic();
 		}
 		
 		private SpriteSheet@ CalcState() {
@@ -65,6 +66,9 @@ namespace TheNomad::SGame {
 			
 			return @m_SpriteSheet[ m_nFacing ];
 		}
+		void Think() {
+			@m_State = @m_State.Run( m_nTicker );
+		}
 		void Draw() {
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 			
@@ -72,12 +76,10 @@ namespace TheNomad::SGame {
 			
 			SpriteSheet@ sheet = @CalcState();
 			
-			@m_State = @m_State.Run( m_nTicker );
-			
 			refEntity.origin = m_EntityData.GetOrigin();
 			refEntity.sheetNum = m_SpriteSheet[ m_nFacing ].GetShader();
 			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( @m_SpriteSheet[ m_nFacing ], @m_State );
-//			refEntity.Draw();
+			refEntity.Draw();
 		}
 		
 		SpriteSheet@ GetSpriteSheet() {

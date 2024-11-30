@@ -460,48 +460,6 @@ namespace TheNomad::SGame {
 		const InventoryManager@ GetInventory() const {
 			return @m_Inventory;
 		}
-		
-		void Think() override {
-			if ( m_State.GetID() == StateNum::ST_PLAYR_QUICKSHOT ) {
-				m_QuickShot.Think();
-			}
-
-			if ( ( m_iFlags & PF_USING_WEAPON ) != 0 && @GetCurrentWeapon() !is null ) {
-				m_nFrameDamage += GetCurrentWeapon().Use( cast<EntityObject>( @this ), GetCurrentWeaponMode() );
-			} else if ( ( m_iFlags & PF_USING_WEAPON_ALT ) != 0 && @GetCurrentWeapon() !is null ) {
-				m_nFrameDamage += GetCurrentWeapon().UseAlt( cast<EntityObject>( @this ), GetCurrentWeaponMode() );
-			}
-
-			m_Link.m_Bounds.m_nWidth = sgame_PlayerWidth.GetFloat();
-			m_Link.m_Bounds.m_nHeight = sgame_PlayerHeight.GetFloat();
-			m_Link.m_Bounds.MakeBounds( m_Link.m_Origin ); // breaks movement
-			
-			// run a movement frame
-			Pmove.RunTic();
-
-			if ( m_nHealth <= 15.0f ) {
-				// if there's another haptic going on, we don't want to annihilate their hands
-				Util::HapticRumble( ScreenData.GetPlayerIndex( @this ), 0.50f, 1000 );
-			}
-
-			if ( m_nHealth < 100.0f ) {
-				m_nHealth += m_nHealMult;
-				m_nRage -= m_nHealMult; // rage is essentially just converted mana
-
-				if ( m_nHealMult > HEAL_MULT_BASE ) {
-					m_nHealMult -= m_nHealMultDecay;
-					if ( m_nHealMult < HEAL_MULT_BASE ) {
-						m_nHealMult = HEAL_MULT_BASE;
-					}
-				}
-				if ( m_nHealth > 100.0f ) {
-					m_nHealth = 100.0f;
-				}
-			}
-			m_nRage = Util::Clamp( m_nRage, 0.0f, m_nRage );
-
-			@m_LegState = @m_LegState.Run( m_nLegTicker );
-		}
 
 		void SetLeftArmState( StateNum num ) {
 			m_LeftArm.SetState( num );
@@ -685,8 +643,8 @@ namespace TheNomad::SGame {
 				}
 			}
 
-//			m_LeftArm.Link( @this, FACING_LEFT, armsSheetSize, armsSpriteSize );
-//			m_RightArm.Link( @this, FACING_RIGHT, armsSheetSize, armsSpriteSize );
+			m_LeftArm.Link( @this, FACING_LEFT, armsSheetSize, armsSpriteSize );
+			m_RightArm.Link( @this, FACING_RIGHT, armsSheetSize, armsSpriteSize );
 
 			@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_GROUND );
 			if ( @m_LegState is null ) {
@@ -701,6 +659,59 @@ namespace TheNomad::SGame {
 			m_Name = "player";
 
 //			@GoreManager = cast<GoreSystem>( @TheNomad::GameSystem::AddSystem( GoreSystem() ) );
+		}
+
+		void Think() override {
+			if ( m_State.GetID() == StateNum::ST_PLAYR_QUICKSHOT ) {
+				m_QuickShot.Think();
+			}
+
+			if ( ( m_iFlags & PF_USING_WEAPON ) != 0 && @GetCurrentWeapon() !is null ) {
+				m_nFrameDamage += GetCurrentWeapon().Use( cast<EntityObject>( @this ), GetCurrentWeaponMode() );
+			} else if ( ( m_iFlags & PF_USING_WEAPON_ALT ) != 0 && @GetCurrentWeapon() !is null ) {
+				m_nFrameDamage += GetCurrentWeapon().UseAlt( cast<EntityObject>( @this ), GetCurrentWeaponMode() );
+			}
+
+			m_Link.m_Bounds.m_nWidth = sgame_PlayerWidth.GetFloat();
+			m_Link.m_Bounds.m_nHeight = sgame_PlayerHeight.GetFloat();
+			m_Link.m_Bounds.MakeBounds( m_Link.m_Origin ); // breaks movement
+			
+			// run a movement frame
+			Pmove.RunTic();
+
+			if ( m_nHealth <= 15.0f ) {
+				// if there's another haptic going on, we don't want to annihilate their hands
+				Util::HapticRumble( ScreenData.GetPlayerIndex( @this ), 0.50f, 1000 );
+			}
+
+			if ( m_nHealth < 30.0f && !m_bLowHealthLoop ) {
+				// only the player should be able to hear this
+				m_LowHealthLoop.Play();
+				m_bLowHealthLoop = true;
+			} else if ( m_nHealth >= 30.0f && m_bLowHealthLoop ) {
+				m_LowHealthLoop.Stop();
+				m_bLowHealthLoop = false;
+			}
+
+			if ( m_nHealth < 100.0f ) {
+				m_nHealth += m_nHealMult;
+				m_nRage -= m_nHealMult; // rage is essentially just converted mana
+
+				if ( m_nHealMult > HEAL_MULT_BASE ) {
+					m_nHealMult -= m_nHealMultDecay;
+					if ( m_nHealMult < HEAL_MULT_BASE ) {
+						m_nHealMult = HEAL_MULT_BASE;
+					}
+				}
+				if ( m_nHealth > 100.0f ) {
+					m_nHealth = 100.0f;
+				}
+			}
+			m_nRage = Util::Clamp( m_nRage, 0.0f, m_nRage );
+
+			@m_LegState = @m_LegState.Run( m_nLegTicker );
+			m_LeftArm.Think();
+			m_RightArm.Think();
 		}
 
 		uint GetSpriteId( SpriteSheet@ sheet, EntityState@ state ) const {
@@ -753,12 +764,22 @@ namespace TheNomad::SGame {
 			}
 			*/
 
-			if ( m_PhysicsObject.GetVelocity().x == 0.0f && m_PhysicsObject.GetVelocity().y == 0.0f ) {
-				@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_GROUND );
-			} else if ( IsSliding() ) {
-				@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_SLIDE );
+			const vec3 velocity = m_PhysicsObject.GetVelocity();
+			if ( velocity.z > 0.0f ) {
+				// airborne, special sprites
+				if ( velocity.x == 0.0f && velocity.y == 0.0f ) {
+					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_AIR );
+				} else {
+					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_MOVE_AIR );
+				}
 			} else {
-				@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_MOVE_GROUND );
+				if ( velocity.x == 0.0f && velocity.y == 0.0f ) {
+					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_GROUND );
+				} else if ( IsSliding() ) {
+					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_SLIDE );
+				} else {
+					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_MOVE_GROUND );
+				}
 			}
 
 			refEntity.origin = m_Link.m_Origin;
@@ -769,8 +790,13 @@ namespace TheNomad::SGame {
 		}
 
 		private void DrawArms() {
-			m_LeftArm.Draw();
-			m_RightArm.Draw();
+			if ( m_Facing == FACING_LEFT ) {
+				m_RightArm.Draw();
+				m_LeftArm.Draw();	
+			} else if ( m_Facing == FACING_RIGHT ) {
+				m_LeftArm.Draw();
+				m_RightArm.Draw();
+			}
 		}
 		
 		// custom draw because of adaptive weapons and leg sprites
@@ -804,7 +830,7 @@ namespace TheNomad::SGame {
 			}
 
 			DrawLegs();
-//			DrawArms();
+			DrawArms();
 
 			if ( ( m_iFlags & PF_AFTER_IMAGE ) != 0 ) {
 				// draw the common silhouette after image for the player's last known position to the enemies
@@ -875,6 +901,9 @@ namespace TheNomad::SGame {
 		private TheNomad::Engine::SoundSystem::SoundEffect dieSfx0;
 		private TheNomad::Engine::SoundSystem::SoundEffect dieSfx1;
 		private TheNomad::Engine::SoundSystem::SoundEffect dieSfx2;
+		private TheNomad::Engine::SoundSystem::SoundEffect m_LowHealthLoop;
+
+		private bool m_bLowHealthLoop = false;
 
 		// the amount of damage dealt in the frame
 		private float m_nFrameDamage = 0.0f;
