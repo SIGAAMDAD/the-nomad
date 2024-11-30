@@ -308,6 +308,8 @@ void UI_PauseMenu( void )
 		UI_PushMenu( &s_pauseMenu->menu );
 		Snd_PlaySfx( Snd_RegisterSfx( "snapshot:/PauseMenu" ) );
 		Key_SetCatcher( Key_GetCatcher() & ~KEYCATCH_SGAME );
+	} else {
+		Snd_StopSfx( Snd_RegisterSfx( "snapshot:/PauseMenu" ) );
 	}
 	Snd_PlaySfx( ui->sfx_select );
 	Cvar_SetIntegerValue( "g_paused", !ui_active->i );
