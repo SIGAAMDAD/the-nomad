@@ -447,12 +447,13 @@ void UI_ReloadSaveFiles_f( void )
 	for ( i = 0; i < g_maxSaveSlots->i; i++ ) {
 		char szMapName[ MAX_NPATH ];
 
-		Com_snprintf( info->name, sizeof( info->name ), "SLOT_%lu", i );
 		if ( !g_pArchiveHandler->SlotIsUsed( i ) ) {
 			info->valid = qtrue;
 			info->gd.highestDif = DIF_HARD;
 			continue;
 		}
+
+		Com_snprintf( info->name, sizeof( info->name ), "SLOT_%lu", i );
 
 		info->valid = g_pArchiveHandler->LoadPartial( va( "gamedata/SaveData/%s.ngd", info->name ), &info->gd );
 		if ( !info->valid ) {

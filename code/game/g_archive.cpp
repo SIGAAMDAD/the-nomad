@@ -354,7 +354,10 @@ CGameArchive::CGameArchive( void )
 	Cvar_SetDescription( g_maxSaveSlots, "Sets the maximum allowed save slots." );
 
 	m_pArchiveCache = (ngd_file_t **)Z_Malloc( sizeof( *m_pArchiveCache ) * g_maxSaveSlots->i, TAG_SAVEFILE );
-	m_pArchiveFileList = (char **)Z_Malloc( sizeof( *m_pArchiveCache ) * g_maxSaveSlots->i, TAG_SAVEFILE );
+	memset( m_pArchiveCache, 0, sizeof( *m_pArchiveCache ) * g_maxSaveSlots->i );
+
+	m_pArchiveFileList = (char **)Z_Malloc( sizeof( *m_pArchiveFileList ) * g_maxSaveSlots->i, TAG_SAVEFILE );
+	memset( m_pArchiveFileList, 0, sizeof( *m_pArchiveFileList ) * g_maxSaveSlots->i );
 
 	m_nUsedSaveSlots = 0;
 

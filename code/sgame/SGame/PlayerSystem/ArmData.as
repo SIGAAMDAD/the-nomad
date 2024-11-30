@@ -32,7 +32,7 @@ namespace TheNomad::SGame {
 
 			m_nArmIndex = nArmIndex;
 			m_nFacing = FACING_RIGHT;
-			m_nTicker = TheNomad::GameSystem::GameManager.GetGameTic();
+			m_nTicker = 0;
 		}
 		
 		private SpriteSheet@ CalcState() {

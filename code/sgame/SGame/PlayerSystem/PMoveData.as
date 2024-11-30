@@ -202,11 +202,11 @@ namespace TheNomad::SGame {
 			if ( side > 0 ) {
 				m_EntityData.SetFacing( FACING_RIGHT );
 				m_EntityData.SetLegsFacing( FACING_RIGHT );
-				m_EntityData.SetArmsFacing( FACING_RIGHT );
+//				m_EntityData.SetArmsFacing( FACING_RIGHT );
 			} else if ( side < 0 ) {
 				m_EntityData.SetFacing( FACING_LEFT );
 				m_EntityData.SetLegsFacing( FACING_LEFT );
-				m_EntityData.SetArmsFacing( FACING_LEFT );
+//				m_EntityData.SetArmsFacing( FACING_LEFT );
 			}
 
 			//
@@ -223,18 +223,18 @@ namespace TheNomad::SGame {
 
 				if ( mousePos.x < screenWidth / 2 ) {
 					if ( @m_EntityData.GetLeftHandWeapon() !is null ) {
-						m_EntityData.SetLeftArmFacing( FACING_LEFT );
+//						m_EntityData.SetLeftArmFacing( FACING_LEFT );
 					}
 					if ( @m_EntityData.GetRightHandWeapon() !is null ) {
-						m_EntityData.SetRightArmFacing( FACING_LEFT );
+//						m_EntityData.SetRightArmFacing( FACING_LEFT );
 					}
 					m_nJoystickAngle = -m_nJoystickAngle;
 				} else if ( mousePos.x > screenWidth / 2 ) {
 					if ( @m_EntityData.GetLeftHandWeapon() !is null ) {
-						m_EntityData.SetLeftArmFacing( FACING_RIGHT );
+//						m_EntityData.SetLeftArmFacing( FACING_RIGHT );
 					}
 					if ( @m_EntityData.GetRightHandWeapon() !is null ) {
-						m_EntityData.SetRightArmFacing( FACING_RIGHT );
+//						m_EntityData.SetRightArmFacing( FACING_RIGHT );
 					}
 				}
 			}

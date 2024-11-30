@@ -1139,7 +1139,7 @@ static void R_InitGLContext( void )
 
 	ri.Printf( PRINT_INFO, "Getting OpenGL version...\n" );
 	// check OpenGL version
-	if ( !NGL_VERSION_ATLEAST( 3, 3 ) ) {
+	if ( !NGL_VERSION_ATLEAST( 2, 1 ) ) {
 		ri.Error( ERR_FATAL,
 			"This game requires OpenGL version > 3.3, please install the latest graphics drivers from your vendor"
 			"for optimal performance" );
