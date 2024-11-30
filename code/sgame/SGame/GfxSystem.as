@@ -7,10 +7,11 @@ namespace TheNomad::SGame {
 		}
 
 		void OnInit() {
+			InitLocalEntities();
 		}
 		void OnShutdown() {
 		}
-		
+
 		void OnLoad() {
 		}
 		void OnSave() const {
@@ -22,7 +23,6 @@ namespace TheNomad::SGame {
 		void OnCheckpointPassed( uint ) {
 		}
 		void OnLevelStart() {
-			InitLocalEntities();
 		}
 		void OnLevelEnd() {
 			m_LocalEnts.Clear();
@@ -38,10 +38,11 @@ namespace TheNomad::SGame {
 			TheNomad::Engine::ProfileBlock block( "GfxSystem::OnRenderScene" );
 
 			TheNomad::Engine::Renderer::LocalEntity@ next = null;
+			TheNomad::Engine::Renderer::LocalEntity@ ent = null;
 
 			// walk the list backwards, so any new local entities generated
 			// (trails, marks, etc) will be present this frame
-			TheNomad::Engine::Renderer::LocalEntity@ ent = @m_ActiveLocalEnts.m_Prev;
+			@ent = @m_ActiveLocalEnts.m_Prev;
 			for ( ; @ent !is @m_ActiveLocalEnts; @ent = @next ) {
 				// grab next now, so if the local entity is freed we
 				// still have it
@@ -65,13 +66,12 @@ namespace TheNomad::SGame {
 			@m_FreeLocalEnts = @m_LocalEnts[0];
 
 			for ( uint i = 0; i < m_LocalEnts.Count() - 1; i++ ) {
-				@m_LocalEnts[i].m_Next = @m_LocalEnts[i + 1];
+				@m_LocalEnts[i].m_Next = @m_LocalEnts[ i + 1 ];
 			}
 		}
 
 		private TheNomad::Engine::Renderer::LocalEntity@ AllocLocalEntity() {
-			TheNomad::Engine::Renderer::LocalEntity@ ent;
-			uint time;
+			TheNomad::Engine::Renderer::LocalEntity@ ent = null;
 
 			if ( @m_FreeLocalEnts is null ) {
 				// no free polys, so free the one at the end of the chain

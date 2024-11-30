@@ -5,7 +5,7 @@ namespace TheNomad::SGame {
 	const uint DASH_DURATION = 100;
 	const uint SLIDE_DURATION = 500;
 	
-	const float JUMP_VELOCITY = 2.5f;
+	const float JUMP_VELOCITY = 3.5f;
 	const float OVERCLIP = 1.5f;
 	
     //
@@ -160,11 +160,6 @@ namespace TheNomad::SGame {
 				m_EntityData.GetPhysicsObject().SetAcceleration( accel );
 				return false;
 			}
-			
-//			if ( ( flags & PMF_JUMP_HELD ) != 0 ) {
-//				// double jump
-//				m_EntityData.SetState( @StateManager.GetStateForNum( StateNum::ST_PLAYR_DOUBLEJUMP ) );
-//			}
 			
 			flags |= PMF_JUMP_HELD;
 			accel.z += JUMP_VELOCITY;

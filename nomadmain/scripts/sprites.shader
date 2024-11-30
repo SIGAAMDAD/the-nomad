@@ -27,11 +27,13 @@ sprites/players/raio_rage_arms_0_0
 		rgbGen wave sin 1.0 1.0 1.0 0.1 0.15 0.01
 		stage diffuseMap
 	}
+	/*
 	{
 		texFilter nearest
 		map textures/sprites/players/raio_arms_0_0_n.dds
 		stage normalMap
 	}
+	*/
 }
 
 sprites/players/raio_rage_arms_0_1
@@ -155,11 +157,13 @@ sprites/players/raio_arms_0_0
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		stage diffuseMap
 	}
+	/*
 	{
 		texFilter nearest
 		map textures/sprites/players/raio_arms_0_0_n.dds
 		stage normalMap
 	}
+	*/
 }
 
 sprites/players/raio_arms_0_1
@@ -172,11 +176,13 @@ sprites/players/raio_arms_0_1
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		stage diffuseMap
 	}
+	/*
 	{
 		texFilter nearest
 		map textures/sprites/players/raio_arms_0_1_n.dds
 		stage normalMap
 	}
+	*/
 }
 
 sprites/players/raio_arms_1_0
@@ -189,11 +195,13 @@ sprites/players/raio_arms_1_0
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		stage diffuseMap
 	}
+	/*
 	{
 		texFilter nearest
 		map textures/sprites/players/raio_arms_1_0_n.dds
 		stage normalMap
 	}
+	*/
 }
 
 sprites/players/raio_arms_1_1
@@ -206,11 +214,13 @@ sprites/players/raio_arms_1_1
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		stage diffuseMap
 	}
+	/*
 	{
 		texFilter nearest
 		map textures/sprites/players/raio_arms_1_1_n.dds
 		stage normalMap
 	}
+	*/
 }
 
 sprites/players/raio_legs_0

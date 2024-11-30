@@ -9,12 +9,12 @@ namespace TheNomad::SGame {
 	ConVar sgame_GfxDetail;
 	ConVar sgame_Difficulty;
 	ConVar sgame_DebugMode;
+	ConVar sgame_EnableParticles;
 
 	//
 	// sound system
 	//
 	ConVar sgame_MusicChangeDelta;
-	ConVar sgame_MaxSoundChannels;
 	ConVar sgame_AdaptiveSoundtrack;
 
 	//

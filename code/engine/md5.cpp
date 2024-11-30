@@ -29,7 +29,7 @@ typedef struct MD5Context {
 	} in;
 } MD5_CTX;
 
-#ifndef Q3_BIG_ENDIAN
+#ifndef GDR_BIG_ENDIAN
 	#define byteReverse(buf, len)	/* Nothing */
 #else
 	static void byteReverse(unsigned char *buf, unsigned longs);

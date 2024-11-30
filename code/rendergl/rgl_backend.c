@@ -1009,10 +1009,10 @@ static const void *RB_DrawWorldView( const void *data )
 	
 	cmd = (const drawWorldView_t *)data;
 
-	RE_ProcessEntities();
-	
 	// draw the tilemap
 	R_DrawWorld();
+
+	RE_ProcessEntities();
 
 	// render all submitted sgame polygons
 	R_DrawPolys();

@@ -21,13 +21,12 @@ namespace TheNomad::Engine::Renderer {
 
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 			refEntity.rotation = m_nRotation;
-
 			if ( refEntity.rotation != 0.0f ) {
 				refEntity.rotation += Util::RAD2DEG( Util::PRandom() & 16 );
 			}
 
 			refEntity.origin = m_Origin;
-			refEntity.scale = 1.0f;
+			refEntity.scale = 1.5f;
 			refEntity.sheetNum = -1;
 			refEntity.spriteId = m_hShader;
 			refEntity.Draw();

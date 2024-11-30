@@ -1,4 +1,3 @@
-#include "Engine/SoundSystem/SoundFrameData.as"
 #include "SGame/KeyBind.as"
 #include "SGame/PlayerSystem/PlayerSystem.as"
 
@@ -686,8 +685,8 @@ namespace TheNomad::SGame {
 				}
 			}
 
-			m_LeftArm.Link( @this, FACING_LEFT, armsSheetSize, armsSpriteSize );
-			m_RightArm.Link( @this, FACING_RIGHT, armsSheetSize, armsSpriteSize );
+//			m_LeftArm.Link( @this, FACING_LEFT, armsSheetSize, armsSpriteSize );
+//			m_RightArm.Link( @this, FACING_RIGHT, armsSheetSize, armsSpriteSize );
 
 			@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_GROUND );
 			if ( @m_LegState is null ) {
@@ -695,7 +694,7 @@ namespace TheNomad::SGame {
 			}
 			m_LegsFacing = FACING_RIGHT;
 
-			m_AfterImage.Create( @this );
+//			m_AfterImage.Create( @this );
 			m_iFlags |= PF_AFTER_IMAGE;
 
 			m_nLegTicker = 0;
@@ -788,24 +787,29 @@ namespace TheNomad::SGame {
 			refEntity.scale = 2.0f;
 			refEntity.Draw();
 
+			if ( IsDashing() ) {
+				vec3 origin = m_Link.m_Origin;
+
+				switch ( m_LegsFacing ) {
+				case FACING_LEFT:
+					origin.x += 1.15f;
+					break;
+				case FACING_RIGHT:
+					origin.x -= 1.15f;
+					break;
+				};
+				origin.y += 0.5f;
+
+				TheNomad::Engine::Renderer::AddDLightToScene( origin, 6.15f, vec3( 1.0f, 0.0f, 0.0f ) );
+			}
+
 			DrawLegs();
-			DrawArms();
+//			DrawArms();
 
 			if ( ( m_iFlags & PF_AFTER_IMAGE ) != 0 ) {
 				// draw the common silhouette after image for the player's last known position to the enemies
-				m_AfterImage.Draw();
+//				m_AfterImage.Draw();
 			}
-			
-			refEntity.origin = vec3( 0.0f );
-			refEntity.sheetNum = -1;
-			uint sprite = ( TheNomad::GameSystem::GameManager.GetGameTic() & 5 ) + 1;
-			refEntity.spriteId = TheNomad::Engine::ResourceCache.GetShader( "gfx/effects/flame" + sprite );
-			refEntity.scale = 2.0f;
-			refEntity.rotation = m_Rotation;
-			refEntity.Draw();
-			m_Rotation += 0.1f;
-
-			TheNomad::Engine::Renderer::AddDLightToScene( refEntity.origin, 6.0f, vec3( 1.0f ) );
 
 			m_HudData.Draw();
 		}

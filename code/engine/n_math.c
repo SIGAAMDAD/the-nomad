@@ -624,6 +624,16 @@ float Q_rsqrt(float number)
 #endif
 }
 
+static inline float Q_distance( float dx, float dy )
+{
+	if ( dy > dx ) {
+		float tmp = dx;
+		dx = dy;
+		dy = tmp;
+	}
+	return 1007 / 1024 * dx + 441 / 1024 * dy;
+}
+
 #ifdef __cplusplus
 float disBetweenOBJ( const glm::vec2& src, const glm::vec2& tar )
 {

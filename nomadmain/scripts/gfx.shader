@@ -218,7 +218,7 @@ icons/icon_healthpack
 	nopicmip
 	nomipmaps
 	{
-		map textures/icons/icon_health.tga
+		map icons/icon_health.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 	}
 }
@@ -562,12 +562,10 @@ gfx/env/smokePuff
 {
 	nomipmaps
 	nopicmip
-//	entityMergable		// allow all the sprites to be merged together
 	{
 		map gfx/env/smokepuff3.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		rgbGen		vertex
-//		alphaGen	vertex
 	}
 }
 

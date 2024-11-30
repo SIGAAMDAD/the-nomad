@@ -75,13 +75,13 @@ namespace TheNomad::SGame {
 					// GIBS!
 //					EntityManager.GibbEntity( @this );
 				}
-				TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( m_Info.dieSfx );
+				EmitSound( m_Info.dieSfx, 1.0f, 0xff );
 				EntityManager.KillEntity( @source, cast<EntityObject@>( @this ) );
 				
 				return;
 			}
 			
-			TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( m_Info.painSfx );
+			EmitSound( m_Info.painSfx, 1.0f, 0xff );
 			
 			if ( @source !is @m_Target ) {
 				SetTarget( @source );

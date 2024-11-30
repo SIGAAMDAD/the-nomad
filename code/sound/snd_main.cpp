@@ -557,6 +557,9 @@ void CSoundSystem::Update( void )
 	if ( snd_muteUnfocused->i ) {
 		ERRCHECK( m_pSFXBus->setMute( !gw_active ) );
 		ERRCHECK( m_pMusicBus->setMute( !gw_active ) );
+	} else {
+		ERRCHECK( m_pSFXBus->setMute( false ) );
+		ERRCHECK( m_pMusicBus->setMute( false ) );
 	}
 	if ( snd_musicOn->modified ) {
 		ERRCHECK( m_pMusicBus->setMute( snd_musicOn->i ) );

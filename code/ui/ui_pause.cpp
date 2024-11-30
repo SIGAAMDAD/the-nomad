@@ -90,6 +90,7 @@ static void PauseMenu_EventCallback( void *ptr, int event )
 	case ID_SETTINGS:
 		gi.state = GS_MENU;
 		Cvar_SetIntegerValue( "g_paused", 0 );
+		Snd_StopSfx( Snd_RegisterSfx( "snapshot:/PauseMenu" ) );
 		UI_SettingsMenu();
 		break;
 	case ID_EXIT_LEVEL:
@@ -213,8 +214,17 @@ void PauseMenu_Cache( void )
 {
 	if ( !ui->uiAllocated ) {
 		static pauseMenu_t menu;
+		memset( &menu, 0, sizeof( menu ) );
 		s_pauseMenu = &menu;
 		PauseMenu_LoadDailyTips();
+
+		Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->resume );
+		Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->checkpoint );
+		Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->settings );
+		Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->help );
+		Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->exitToMainMenu );
+		Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->exitToDesktop );
+		Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->dailyTipText );
 	}
 
 	s_pauseMenu->menu.width = gi.gpuConfig.vidWidth;
@@ -286,14 +296,6 @@ void PauseMenu_Cache( void )
 	srand( Sys_Milliseconds() );
 	s_pauseMenu->dailyTipText.color = color_white;
 	s_pauseMenu->dailyTipText.text = s_pauseMenu->dailyTips[ rand() & ( s_pauseMenu->numDailyTips - 1 ) ];
-
-	Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->resume );
-	Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->checkpoint );
-	Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->settings );
-	Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->help );
-	Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->exitToMainMenu );
-	Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->exitToDesktop );
-	Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->dailyTipText );
 }
 
 void UI_PauseMenu( void )
@@ -309,6 +311,7 @@ void UI_PauseMenu( void )
 		Snd_PlaySfx( Snd_RegisterSfx( "snapshot:/PauseMenu" ) );
 		Key_SetCatcher( Key_GetCatcher() & ~KEYCATCH_SGAME );
 	} else {
+		Key_SetCatcher( Key_GetCatcher() | KEYCATCH_SGAME );
 		Snd_StopSfx( Snd_RegisterSfx( "snapshot:/PauseMenu" ) );
 	}
 	Snd_PlaySfx( ui->sfx_select );

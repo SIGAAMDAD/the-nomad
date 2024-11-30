@@ -460,7 +460,7 @@ static void *LoadNewsThread( void *mutex )
 		
 	fh = FS_FOpenWrite( NEWS_FILE );
 	if ( fh == FS_INVALID_HANDLE ) {
-		Con_Printf( COLOR_RED "ERROR: failed to create " NEWS_FILE "in write-only mode!\n" );
+		Con_Printf( COLOR_RED "ERROR: failed to create " NEWS_FILE " in write-only mode!\n" );
 		return NULL;
 	}
 		

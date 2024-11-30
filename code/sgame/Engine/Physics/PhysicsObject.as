@@ -6,7 +6,7 @@ namespace TheNomad::Engine::Physics {
 		Acid
 	};
 
-	const float MAX_JUMP_HEIGHT = 3.5f;
+	const float MAX_JUMP_HEIGHT = 4.5f;
 
     class PhysicsObject {
         PhysicsObject() {
@@ -83,10 +83,8 @@ namespace TheNomad::Engine::Physics {
 			}
 			if ( m_Velocity[2] < 0.0f && m_EntityData.GetOrigin().z <= 0.0f ) {
 				m_Velocity[2] = 0.0f;
-			} else if ( m_Velocity[2] > 0.0f && m_EntityData.GetOrigin().z == 0.0f ) {
-//				m_Velocity[2] += TheNomad::SGame::sgame_Gravity.GetFloat();
 			} else if ( m_Velocity[2] > 0.0f && m_EntityData.GetOrigin().z >= MAX_JUMP_HEIGHT ) {
-				m_Velocity[2] -= TheNomad::SGame::sgame_Gravity.GetFloat();
+				m_Velocity[2] = TheNomad::Util::Clamp( m_Velocity[2] - TheNomad::SGame::sgame_Gravity.GetFloat(), -0.2f, m_Velocity[2] );
 			}
 		}
 		
@@ -268,6 +266,22 @@ namespace TheNomad::Engine::Physics {
 				m_EntityData.EmitSound(
 					TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/land_" + formatUInt( Util::PRandom() & 4 ) ),
 					1.0f, 0xff );
+				
+				//
+				// add a little dust effect for that extra IMPACT
+				//
+
+				// left offset
+				TheNomad::SGame::GfxManager.AddDustPoly( vec3( origin.x - 1.5f, origin.y, origin.z ), vec3( -0.015f, 0.0f, 0.0f ), 500,
+					TheNomad::Engine::ResourceCache.GetShader( "gfx/env/smokePuff" ) );
+				
+				// center
+				TheNomad::SGame::GfxManager.AddDustPoly( origin, vec3( 0.0f ), 500,
+					TheNomad::Engine::ResourceCache.GetShader( "gfx/env/smokePuff" ) );
+				
+				// right offset
+				TheNomad::SGame::GfxManager.AddDustPoly( vec3( origin.x + 1.5f, origin.y, origin.z ), vec3( 0.015f, 0.0f, 0.0f ), 500,
+					TheNomad::Engine::ResourceCache.GetShader( "gfx/env/smokePuff" ) );
 			}
 			
 			m_EntityData.SetOrigin( origin );

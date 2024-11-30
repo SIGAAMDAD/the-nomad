@@ -270,9 +270,12 @@ void RE_ProcessEntities( void )
 			break;
 		}
 
-		if ( disBetweenOBJ( refEntity->e.origin, glState.viewData.camera.origin ) > 12.0f ) {
+/* breaks when rendering gfx
+		if ( disBetweenOBJ( glState.viewData.camera.origin, refEntity->e.origin ) >= 16.0f && refEntity->e.sheetNum != -1 ) {
+			// don't process entities that are out of view
 			continue;
 		}
+*/
 		
 		origin[0] = refEntity->e.origin[0];
 		origin[1] = rg.world->height - ( refEntity->e.origin[1] - refEntity->e.origin[2] );
