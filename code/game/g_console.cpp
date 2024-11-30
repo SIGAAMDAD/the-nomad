@@ -183,6 +183,7 @@ cvar_t *con_color;
 cvar_t *con_noprint;
 cvar_t *g_conXOffset;
 
+uint32_t old_catcher;
 uint32_t g_console_field_width;
 
 /*
@@ -208,9 +209,10 @@ void Con_ToggleConsole_f( void ) {
 	Con_ClearNotify();
 
 	if ( Key_GetCatcher() & KEYCATCH_CONSOLE ) {
-		Key_SetCatcher( Key_GetCatcher() & ~KEYCATCH_CONSOLE );
+		Key_SetCatcher( old_catcher );
 	} else {
-		Key_SetCatcher( Key_GetCatcher() | KEYCATCH_CONSOLE );
+		old_catcher = Key_GetCatcher();
+		Key_SetCatcher( KEYCATCH_CONSOLE | KEYCATCH_UI );
 	}
 }
 

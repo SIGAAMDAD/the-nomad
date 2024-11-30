@@ -10,11 +10,7 @@ namespace TheNomad::SGame {
 		}
 		void OnShutdown() {
 		}
-
-		TheNomad::Engine::Renderer::PolyVert[]@ GetVerts() {
-			return @m_DrawVerts;
-		}
-
+		
 		void OnLoad() {
 		}
 		void OnSave() const {
@@ -35,14 +31,17 @@ namespace TheNomad::SGame {
 			return "GfxManager";
 		}
 		void OnRenderScene() {
-			TheNomad::Engine::Renderer::LocalEntity@ ent;
-			TheNomad::Engine::Renderer::LocalEntity@ next;
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 ) {
+				return;
+			}
 
 			TheNomad::Engine::ProfileBlock block( "GfxSystem::OnRenderScene" );
 
+			TheNomad::Engine::Renderer::LocalEntity@ next = null;
+
 			// walk the list backwards, so any new local entities generated
 			// (trails, marks, etc) will be present this frame
-			@ent = @m_ActiveLocalEnts.m_Prev;
+			TheNomad::Engine::Renderer::LocalEntity@ ent = @m_ActiveLocalEnts.m_Prev;
 			for ( ; @ent !is @m_ActiveLocalEnts; @ent = @next ) {
 				// grab next now, so if the local entity is freed we
 				// still have it
@@ -169,10 +168,6 @@ namespace TheNomad::SGame {
 		private array<TheNomad::Engine::Renderer::LocalEntity> m_LocalEnts;
 		private TheNomad::Engine::Renderer::LocalEntity m_ActiveLocalEnts;
 		private TheNomad::Engine::Renderer::LocalEntity@ m_FreeLocalEnts = null;
-
-		// a single pre-allocated array of polys cuz angelscript won't let me use
-		// stack allocated arrays
-		private TheNomad::Engine::Renderer::PolyVert[] m_DrawVerts( 4 );
 
 		private bool m_bAllowGfx = true;
 	};

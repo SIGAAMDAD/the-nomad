@@ -15,20 +15,20 @@ static demoMenu_t *s_demo;
 
 // NOTE: this will change with each major version
 #define DEMO_STRING \
-	"Thank you very much for playing this demo of \"The Nomad\"! :)\n" \
-	"More levels and a full alpha/early-acccess versions are in development.\n" \
-	"If you would like to stay updated, check the weekly dev blog.\n"
+	"Thank you very much for playing this demo of \"The Nomad\"! :)" \
+	"More levels and a full alpha/early-acccess versions are in development." \
+	"If you would like to stay updated, check the weekly dev blog."
 
 static void DemoMenu_Draw( void )
 {
-	const int windowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
-		| ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoCollapse;
+	const int windowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
+		ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoCollapse;
 	bool done;
 
 	done = true;
 
 	ImGui::Begin( "##DemoMenu", NULL, windowFlags );
-	ImGui::SetWindowSize( ImVec2( 640 * ui->scale, 500 * ui->scale ) );
+	ImGui::SetWindowSize( ImVec2( 640 * ui->scale + ui->bias, 500 * ui->scale ) );
 	ImGui::SetWindowFontScale( 2.5f * gi.scale );
 	ImGui::SetWindowPos( ImVec2( 100 * gi.scale, 200 * gi.scale ) );
 
@@ -38,7 +38,7 @@ static void DemoMenu_Draw( void )
 	ImGui::Image( (ImTextureID)(uintptr_t)s_demo->sitesShader, ImVec2( 256 * ui->scale, 256 * ui->scale ) );
 	if ( ImGui::IsItemClicked() ) {
 		Snd_PlaySfx( ui->sfx_select );
-		SDL_OpenURL( "https://sites.google.com/view/gdrgames" );
+		SDL_OpenURL( "https://sites.google.com/view/gdrgames/articles/developer-log" );
 		done = false;
 	}
 

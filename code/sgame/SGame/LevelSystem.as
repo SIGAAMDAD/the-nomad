@@ -387,7 +387,9 @@ namespace TheNomad::SGame {
 				section.SaveInt( "Difficulty", sgame_Difficulty.GetInt() );
 
 				// save checkpoint data
-				section.SaveUInt( "CurrentCheckpoint", m_CurrentCheckpoint );
+				if ( m_CurrentCheckpoint < m_MapData.GetCheckpoints().Count() - 1 ) {
+					section.SaveUInt( "CurrentCheckpoint", m_CurrentCheckpoint );
+				}
 				for ( uint i = 0; i < m_CurrentCheckpoint; i++ ) {
 					section.SaveUInt64( "CheckpointTime_" + i, m_MapData.GetCheckpoints()[i].m_nTime );
 				}
@@ -637,8 +639,10 @@ namespace TheNomad::SGame {
 
 		void CheckNewGamePlus() {
 			if ( m_CurrentCheckpoint < m_MapData.GetCheckpoints().Count() - 1 ) {
+				ConsolePrint( "NewGamePlus not active.\n" );
 				return;
 			}
+			ConsolePrint( "NewGamePlus active.\n" );
 			m_CurrentCheckpoint = 0;
 		}
 		

@@ -133,14 +133,8 @@ namespace TheNomad::SGame {
 						move_toggle = gameTic;
 
 						vec3 origin;
-						vec3 vel = vec3( 0.01f, 0.01f, 0.0f );
 
 						origin = m_EntityData.GetOrigin();
-						if ( accel.y > accel.x ) {
-							vel.y = accel.y;
-						} else {
-							vel.x = accel.x;
-						}
 
 						if ( m_EntityData.GetFacing() == FACING_LEFT ) {
 							origin.x += 0.15f;
@@ -148,7 +142,7 @@ namespace TheNomad::SGame {
 							origin.x -= 0.15f;
 						}
 
-						GfxManager.AddDustPoly( origin, vel, 500, m_EntityData.m_hDustTrailShader );
+						GfxManager.AddDustPoly( origin, vec3( 0.0f ), 1000, m_EntityData.m_hDustTrailShader );
 					}
 				}
 			}

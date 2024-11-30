@@ -42,7 +42,6 @@ private:
 	char m_szName[ MAX_NPATH ];
 	CSoundSource *m_pNext;
 	int64_t m_nTag;
-	qboolean m_bLoaded;
 	FMOD::Studio::EventInstance *m_pEmitter;
 	FMOD::Studio::EventDescription *m_pData;
 };
@@ -183,12 +182,28 @@ public:
 
 	friend void *Sound_Thread( void *arg );
 
+	FMOD::DSP *GetDSP( void );
+	GDR_INLINE FMOD::DSP **GetDSPPointer( void )
+	{ return &m_pDSP; }
+	GDR_INLINE FMOD::ChannelGroup *GetChannelGroup( void )
+	{ return m_pChannelGroup; }
+	GDR_INLINE FMOD::ChannelGroup **GetChannelGroupPointer( void )
+	{ return &m_pChannelGroup; }
+
 	eastl::fixed_vector<CSoundSource *, 10> m_szLoopingTracks;
 
+	static FMOD_RESULT F_CALLBACK OnCallback( FMOD_STUDIO_EVENT_CALLBACK_TYPE nType, FMOD_STUDIO_EVENTINSTANCE *pEvent,
+		void *pParameters );
+	static FMOD_RESULT CreateInstanceComplete( FMOD_STUDIO_EVENT_CALLBACK_TYPE nType,  FMOD_STUDIO_EVENTINSTANCE *pEvent,
+		void *pParameters );
+	static FMOD_RESULT OnTimeLineBeat( FMOD_STUDIO_EVENT_CALLBACK_TYPE nType, FMOD_STUDIO_EVENTINSTANCE *pEvent, void *pParameters );
+	static FMOD_RESULT OnTimeLineMarker( FMOD_STUDIO_EVENT_CALLBACK_TYPE nType, FMOD_STUDIO_EVENTINSTANCE *pEvent, void *pParameters );
 private:
 	bool LoadBank( const char *pName );
 
 	FMOD::Studio::System *m_pStudioSystem;
+	FMOD::DSP *m_pDSP;
+	FMOD::ChannelGroup *m_pChannelGroup;
 	FMOD::System *m_pSystem;
 
 	CSoundSource *m_szSources[ MAX_SOUND_SOURCES ];

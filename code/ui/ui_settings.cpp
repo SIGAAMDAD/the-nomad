@@ -143,7 +143,6 @@ typedef struct {
 	int windowWidth;
 	int windowHeight;
 	int maxFPS;
-	int performanceMonitor;
 
 	float gamma;
 	float exposure;
@@ -1661,7 +1660,7 @@ static void AudioMenu_Save( void )
 	Cvar_SetIntegerValue( "snd_musicVolume", s_settingsMenu->audio.musicVolume );
 	Cvar_SetIntegerValue( "snd_effectsOn", s_settingsMenu->audio.sfxOn );
 	Cvar_SetIntegerValue( "snd_musicOn", s_settingsMenu->audio.musicOn );
-	Cvar_SetIntegerValue( "snd_maxSoundChannels", s_settingsMenu->audio.maxSoundChannels );
+	Cvar_SetIntegerValue( "snd_maxChannels", s_settingsMenu->audio.maxSoundChannels );
 	Cvar_SetIntegerValue( "snd_speakerMode", s_settingsMenu->audio.speakerMode );
 }
 
@@ -1809,7 +1808,7 @@ static void AudioMenu_SetDefault( void )
 	s_settingsMenu->audio.sfxVolume = Cvar_VariableInteger( "snd_effectsVolume" );
 	s_settingsMenu->audio.musicOn = Cvar_VariableInteger( "snd_musicOn" );
 	s_settingsMenu->audio.sfxOn = Cvar_VariableInteger( "snd_effectsOn" );
-	s_settingsMenu->audio.maxSoundChannels = Cvar_VariableInteger( "snd_maxSoundChannels" );
+	s_settingsMenu->audio.maxSoundChannels = Cvar_VariableInteger( "snd_maxChannels" );
 	s_settingsMenu->audio.speakerMode = Cvar_VariableInteger( "snd_speakerMode" );
 }
 

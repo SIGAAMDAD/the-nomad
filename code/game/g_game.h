@@ -369,7 +369,6 @@ void G_StartHunkUsers( void );
 void G_ShutdownAll( void );
 void G_ShutdownVMs( qboolean quit );
 void G_Frame( int msec, int realMsec );
-void G_InitDisplay( gpuConfig_t *config );
 void GLimp_Minimize( void );
 qboolean G_CheckPaused( void );
 qboolean G_CheckWallHit( const vec3_t origin, dirtype_t dir );
@@ -442,6 +441,7 @@ void Con_ToggleConsole_f( void );
 void HandleEvents( void );
 
 // platform-specific
+void G_InitDisplay( gpuConfig_t *config );
 void GLimp_InitGamma( gpuConfig_t *config );
 void GLimp_SetGamma( unsigned char red[256], unsigned char green[256], unsigned char blue[256] );
 

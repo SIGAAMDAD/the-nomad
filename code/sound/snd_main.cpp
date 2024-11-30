@@ -22,6 +22,27 @@ static FMOD::System *s_pCoreSystem;
 
 static fileHandle_t fmodLogFile;
 
+static int Snd_GetSpecialFlag( void *pData, unsigned int nLength )
+{
+	int flag, i;
+	static const uint32_t specialSongs[] = {
+		0x00000
+	};
+
+	const uint32_t checksum = crc32_buffer( (const byte *)pData, nLength );
+	flag = -1;
+
+	for ( i = 0; i < arraylen( specialSongs ); i++ ) {
+		if ( specialSongs[i] == checksum ) {
+			flag = i;
+			break;
+		}
+	}
+	Con_Printf( "Got checksum %u from flag %i\n", checksum, i );
+
+	return flag;
+}
+
 void FMOD_Error( const char *call, FMOD_RESULT result )
 {
 	int i;
@@ -195,12 +216,13 @@ void CSoundSource::Play( bool bLooping, uint64_t nTimeOffset, bool bIsWorldSound
 	ERRCHECK( m_pData->createInstance( &m_pEmitter ) );
 	ERRCHECK( m_pData->loadSampleData() );
 	ERRCHECK( m_pEmitter->getPlaybackState( &state ) );
-	ERRCHECK( m_pEmitter->start() );
 
 	if ( m_nTag == TAG_SFX ) {
 		ERRCHECK( m_pEmitter->setVolume( snd_effectsVolume->f / 100.0f ) );
+		ERRCHECK( m_pEmitter->start() );
 	} else if ( m_nTag == TAG_MUSIC ) {
 		ERRCHECK( m_pEmitter->setVolume( snd_musicVolume->f / 100.0f ) );
+		ERRCHECK( m_pEmitter->start() );
 	}
 
 	{
@@ -295,6 +317,68 @@ void CSoundSystem::ForceStop( void )
 	Snd_ClearLoopingTracks();
 }
 
+FMOD_RESULT F_CALLBACK CSoundSystem::OnCallback( FMOD_STUDIO_EVENT_CALLBACK_TYPE nType, FMOD_STUDIO_EVENTINSTANCE *pEvent,
+	void *pParameters )
+{
+	FMOD::Studio::EventInstance *pInstance = (FMOD::Studio::EventInstance *)pEvent;
+	
+	switch ( nType ) {
+	case FMOD_STUDIO_EVENT_CALLBACK_CREATE_PROGRAMMER_SOUND:
+	case FMOD_STUDIO_EVENT_CALLBACK_STARTING:
+	case FMOD_STUDIO_EVENT_CALLBACK_STARTED:
+	case FMOD_STUDIO_EVENT_CALLBACK_CREATED: {
+		ERRCHECK( s_pCoreSystem->createDSPByType( FMOD_DSP_TYPE_FFT, sndManager->GetDSPPointer() ) );
+		ERRCHECK( pInstance->getChannelGroup( sndManager->GetChannelGroupPointer() ) );
+		ERRCHECK( sndManager->GetChannelGroup()->addDSP( 0, sndManager->GetDSP() ) );
+		ERRCHECK( sndManager->GetDSP()->setMeteringEnabled( true, true ) );
+		ERRCHECK( pInstance->start() );
+		ERRCHECK( pInstance->setVolume( snd_musicVolume->f / 100.0f ) );
+
+		void *data;
+		unsigned int length;
+		char valuestr[ FMOD_DSP_GETPARAM_VALUESTR_LENGTH ];
+
+		sndManager->GetDSP()->getParameterData( 0, (void **)&data, &length, valuestr, sizeof( valuestr ) - 1 );
+
+		Cvar_SetIntegerValue( "snd_specialFlag", Snd_GetSpecialFlag( data, length ) );
+		break; }
+	case FMOD_STUDIO_EVENT_CALLBACK_TIMELINE_MARKER:
+	case FMOD_STUDIO_EVENT_CALLBACK_TIMELINE_BEAT:
+		break;
+	case FMOD_STUDIO_EVENT_CALLBACK_STOPPED:
+		break;
+	};
+
+	return FMOD_OK;
+}
+
+FMOD_RESULT CSoundSystem::CreateInstanceComplete( FMOD_STUDIO_EVENT_CALLBACK_TYPE nType,  FMOD_STUDIO_EVENTINSTANCE *pEvent,
+	void *pParameters )
+{
+	FMOD::Studio::EventInstance *pInstance = (FMOD::Studio::EventInstance *)pEvent;
+
+//	if ( nType == FMOD_STUDIO_EVENT_CALLBACK_CREATED ) {
+//	}
+
+	return FMOD_OK;
+}
+
+FMOD_RESULT CSoundSystem::OnTimeLineBeat( FMOD_STUDIO_EVENT_CALLBACK_TYPE nType, FMOD_STUDIO_EVENTINSTANCE *pEvent,
+	void *pParameters )
+{
+	FMOD::Studio::EventInstance *pInstance = (FMOD::Studio::EventInstance *)pEvent;
+	FMOD_STUDIO_TIMELINE_BEAT_PROPERTIES *pProp = (FMOD_STUDIO_TIMELINE_BEAT_PROPERTIES *)pParameters;
+	
+	return FMOD_OK;
+}
+
+FMOD_RESULT CSoundSystem::OnTimeLineMarker( FMOD_STUDIO_EVENT_CALLBACK_TYPE nType, FMOD_STUDIO_EVENTINSTANCE *pEvent, void *pParameters )
+{
+	FMOD::Studio::EventInstance *pInstance = (FMOD::Studio::EventInstance *)pEvent;
+	FMOD_STUDIO_TIMELINE_MARKER_PROPERTIES *pProp = (FMOD_STUDIO_TIMELINE_MARKER_PROPERTIES *)pParameters;
+	return FMOD_OK;
+}
+
 void CSoundSystem::SetParameter( const char *pName, float value )
 {
 	ERRCHECK( s_pStudioSystem->setParameterByName( pName, value, false ) );
@@ -339,6 +423,11 @@ static void FMOD_Free( void *ptr, FMOD_MEMORY_TYPE type, const char *source )
 	}
 }
 
+FMOD::DSP *CSoundSystem::GetDSP( void )
+{
+	return m_pDSP;
+}
+
 void CSoundSystem::Init( void )
 {
 	int ret;
@@ -366,10 +455,18 @@ void CSoundSystem::Init( void )
 
 	// get default audio info
 	memset( &m_AudioInfo, 0, sizeof( m_AudioInfo ) );
-	ERRCHECK( s_pCoreSystem->setSoftwareFormat( 48000, (FMOD_SPEAKERMODE)snd_speakerMode->i, 1 ) );
-	
 	ERRCHECK( s_pCoreSystem->getSoftwareFormat( &m_AudioInfo.samplerate, &m_AudioInfo.audioMode, &m_AudioInfo.speakerCount ) );
-	Cvar_SetIntegerValue( "snd_speakerMode", m_AudioInfo.audioMode );
+	if ( snd_speakerMode->i == -1 ) {
+		// not set yet
+		Cvar_SetIntegerValue( "snd_speakerMode", m_AudioInfo.audioMode );
+	} else {
+		m_AudioInfo.audioMode = (FMOD_SPEAKERMODE)Cvar_VariableInteger( "snd_speakerMode" );
+	}
+	ERRCHECK( s_pCoreSystem->setSoftwareFormat( m_AudioInfo.samplerate, m_AudioInfo.audioMode, 1 ) );
+	ERRCHECK( s_pCoreSystem->getSoftwareFormat( &m_AudioInfo.samplerate, &m_AudioInfo.audioMode, &m_AudioInfo.speakerCount ) );
+
+	Con_Printf( "FMOD Audio Driver Data: %i samplerate, %i speakermode, %i speakercount\n", m_AudioInfo.samplerate, m_AudioInfo.audioMode,
+		m_AudioInfo.speakerCount );
 
 	ERRCHECK( s_pCoreSystem->set3DSettings( 1.0f, DISTANCEFACTOR, 0.5f ) );
 #ifdef _NOMAD_DEBUG
@@ -845,17 +942,13 @@ void Snd_Init( void )
 	snd_maxChannels = Cvar_Get( "snd_maxChannels", "256", CVAR_SAVE );
 	Cvar_CheckRange( snd_maxChannels, "24", "512", CVT_INT );
 	Cvar_SetDescription( snd_maxChannels,
-		"Sets the maximum amount of channels the engine can process at a time.\n"
+		"Sets the maximum amount of channels the engine can process at a time in a level instance.\n"
 		"Higher values will increase CPU load.\n"
 	);
 
-#ifdef _WIN32
-	Com_StartupVariable( "s_noSound" );
-	snd_noSound = Cvar_Get( "s_noSound", "1", CVAR_LATCH );
-#else
 	Com_StartupVariable( "s_noSound" );
 	snd_noSound = Cvar_Get( "s_noSound", "0", CVAR_LATCH );
-#endif
+	Cvar_SetDescription( snd_noSound, "Enables sound." );
 
 	snd_debug = Cvar_Get( "snd_debug", "0", CVAR_SAVE );
 	Cvar_SetDescription( snd_debug, "Enables fmod and sound system debug logging" );
@@ -865,7 +958,7 @@ void Snd_Init( void )
 	snd_muteUnfocused = Cvar_Get( "snd_muteUnfocused", "1", CVAR_SAVE );
 	Cvar_SetDescription( snd_muteUnfocused, "Toggles muting sounds when the game's window isn't focused." );
 
-	snd_speakerMode = Cvar_Get( "snd_speakerMode", "0", CVAR_SAVE );
+	snd_speakerMode = Cvar_Get( "snd_speakerMode", "-1", CVAR_SAVE );
 	Cvar_SetDescription( snd_speakerMode, "Sets the speaker mode used by fmod" );
 
 	// init sound manager
@@ -880,8 +973,6 @@ void Snd_Init( void )
 	Cmd_AddCommand( "snd.play_sfx", Snd_PlaySfx_f );
 	Cmd_AddCommand( "snd.queue_track", Snd_QueueTrack_f );
 	Cmd_AddCommand( "snd.play_track", Snd_PlayTrack_f );
-
-	Snd_RegisterTrack( "warcrimes_are_permitted.ogg" );
 
 	gi.soundStarted = qtrue;
 	gi.soundRegistered = qtrue;
