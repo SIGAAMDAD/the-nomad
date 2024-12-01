@@ -143,6 +143,7 @@ sprites/players/raio_torso
 	{
 		texFilter nearest
 		map textures/sprites/players/raio_torso_n.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		stage normalMap
 	}
 }
@@ -236,6 +237,7 @@ sprites/players/raio_legs_0
 	{
 		texFilter nearest
 		map textures/sprites/players/raio_legs_0_n.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		stage normalMap
 	}
 }
@@ -253,6 +255,7 @@ sprites/players/raio_legs_1
 	{
 		texFilter nearest
 		map textures/sprites/players/raio_legs_1_n.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		stage normalMap
 	}
 }
@@ -270,6 +273,7 @@ sprites/mobs/shotty/base_0
 	{
 		texFilter nearest
 		map textures/sprites/mobs/shotty/base_0_n.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		stage normalMap
 	}
 }

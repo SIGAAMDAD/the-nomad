@@ -1686,11 +1686,11 @@ void *Hunk_Alloc (uint64_t size, ha_pref where)
 		Hunk_Log();
 		Hunk_SmallLog();
 
-		N_Error( ERR_DROP, "Hunk_Alloc failed on %lu: %s, line: %lu (%s)"
+		N_Error( ERR_DROP, "Hunk_Alloc failed on %lu: %s, line: %lu (%s)\n"
 							"NOTE: if you are using a mod and got this error, find your " NOMAD_CONFIG " "
 							"and edit the CVar \"com_hunkMegs\" to a higher value.", size, file, line, name );
 #else
-		N_Error( ERR_DROP, "Hunk_Alloc failed on %lu"
+		N_Error( ERR_DROP, "Hunk_Alloc failed on %lu\n"
 							"NOTE: if you are using a mod and got this error, find your " NOMAD_CONFIG " "
 							"and edit the CVar \"com_hunkMegs\" to a higher value.", size );
 #endif
@@ -1757,17 +1757,6 @@ void Hunk_Log( void ) {
 	Hunk_SmallLog();
 }
 
-static void *hunkptr = NULL;
-static void Hunk_Free_f( void ) {
-	if ( !Cvar_VariableInteger( "com_exitFlag" ) ) {
-		Con_Printf( COLOR_RED "DONT\n" );
-		return;
-	}
-	if ( hunkptr != NULL ) {
-		free( hunkptr );
-	}
-}
-
 void Hunk_InitMemory( void )
 {
     cvar_t *cv;
@@ -1785,8 +1774,8 @@ void Hunk_InitMemory( void )
 	Cvar_CheckRange( cv, VSTR( HUNK_MINSIZE ), NULL, CVT_INT );
 	Cvar_SetDescription( cv, "The size of the hunk memory segment." );
 
-	hunksize = PAD( cv->i * 1024 * 1024 + ( com_cacheLine - 1 ), sizeof( uintptr_t ) );
-	hunkptr = hunkbase = (byte *)calloc( hunksize, 1 );
+	hunksize = PAD( (uint64_t)cv->i * 1024UL * 1024UL + ( com_cacheLine - 1 ), sizeof( uintptr_t ) );
+	hunkbase = (byte *)calloc( hunksize, 1 );
 	if ( !hunkbase ) {
 		Sys_SetError( ERR_OUT_OF_MEMORY );
 		N_Error( ERR_FATAL, "Hunk data failed to allocate %lu megs", hunksize / (1024*1024) );
@@ -1796,7 +1785,6 @@ void Hunk_InitMemory( void )
 	hunkbase = (byte *)PADP( hunkbase, com_cacheLine );
 	Hunk_Clear();
 
-	Cmd_AddCommand( "hunkfree", Hunk_Free_f );
 	Cmd_AddCommand( "meminfo", Com_Meminfo_f );
 	Cmd_AddCommand( "zonelog", Z_LogHeap );
 	Cmd_AddCommand( "hunklog", Hunk_Log );

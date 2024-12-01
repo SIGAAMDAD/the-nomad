@@ -414,7 +414,7 @@ void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, con
 		if ( !stageP ) {
 			break;
 		}
-
+		
 		GL_State( stageP->stateBits );
 		if ( ( stageP->stateBits & GLS_ATEST_BITS ) == GLS_ATEST_GT_0 ) {
 			GLSL_SetUniformInt( sp, UNIFORM_ALPHATEST, 1 );

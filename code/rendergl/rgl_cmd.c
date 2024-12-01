@@ -285,15 +285,6 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 		}
 	}
 
-	/*
-	if ( NGL_VERSION_ATLEAST( 4, 3 ) ) {
-		ri.ProfileFunctionBegin( "ComputeShaderDispatch" );
-		GLSL_UseProgram( &rg.computeShader );
-		nglDispatchCompute( glConfig.vidWidth / 64, glConfig.vidHeight / 16, 1 );
-		ri.ProfileFunctionEnd();
-	}
-	*/
-
 	// set 2D virtual screen size
 	{
 		ri.ProfileFunctionBegin( "Set GL State" );
@@ -309,8 +300,8 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 		nglEnable( GL_BLEND );
 		nglEnable( GL_SCISSOR_TEST );
 		nglDisable( GL_STENCIL_TEST );
-//		nglDisable( GL_CULL_FACE );
 		nglDisable( GL_DEPTH_TEST );
+		nglBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
 		ri.ProfileFunctionEnd();
 	}

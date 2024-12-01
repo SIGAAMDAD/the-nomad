@@ -35,6 +35,7 @@ gfx/fonts
 	{
 		texFilter bilinear
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
 	}
 }
 
@@ -74,7 +75,6 @@ gfx/hud/blood_screen
 		map textures/hud/PAIN1.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		rgbGen vertex
-		tcGen vertex
 	}
 	{
 		texFilter bilinear
@@ -394,20 +394,6 @@ gfx/effects/flame
 */
 
 //
-// hud elements
-//
-gfx/hud/health_bar
-{
-	nomipmaps
-	nopicmip
-	{
-		texFilter bilinear
-		map $whiteimage
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-	}
-}
-
-//
 // wall marks
 //
 gfx/bloodSplatter0
@@ -416,7 +402,7 @@ gfx/bloodSplatter0
 	{
 		clampmap gfx/env/blood_spurt.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-		rgbGen identityLighting
+		rgbGen vertex
 		alphaGen vertex
 	}
 }
@@ -515,13 +501,11 @@ gfx/damage/plasma_mrk
 // markShadow is a very cheap blurry blob underneath the player
 markShadow
 {
-	nopicmip
-	nomipmaps
 	polygonOffset
 	{
-		map gfx/shadow.tga
-		blendFunc GL_ZERO GL_ONE_MINUS_SRC_COLOR
-		rgbGen exactVertex
+		map gfx/env/shadow.tga
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_COLOR
+		rgbGen vertex
 	}
 }
 
@@ -529,21 +513,21 @@ markShadow
 wake
 {
 	{
-		clampmapmap sprites/splash.tga
-		blendFunc GL_ONE GL_ONE
+		clampmap gfx/env/splash.jpg
+		blendFunc GL_ONE GL_ONE_MINUS_SRC_ALPHA
 		rgbGen vertex
-				tcmod rotate 250
-				tcMod stretch sin .9 0.1 0 0.7
+		tcmod rotate 250
+		tcMod stretch sin .9 0.1 0 0.7
 		rgbGen wave sin .7 .3 .25 .5
-	}	
+	}
 	{
-		clampmap sprites/splash.tga
-		blendFunc GL_ONE GL_ONE
+		clampmap gfx/env/splash.jpg
+		blendFunc GL_ONE GL_ONE_MINUS_SRC_ALPHA
 		rgbGen vertex
-				tcmod rotate -230
-				tcMod stretch sin .9 0.05 0 0.9
+		tcmod rotate -230
+		tcMod stretch sin .9 0.05 0 0.9
 		rgbGen wave sin .7 .3 .25 .4
-	}	
+	}
 }
 
 waterBubble
@@ -560,12 +544,11 @@ waterBubble
 
 gfx/env/smokePuff
 {
-	nomipmaps
-	nopicmip
 	{
 		map gfx/env/smokepuff3.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-		rgbGen		vertex
+		rgbGen vertex
+		alphaGen vertex
 	}
 }
 

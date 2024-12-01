@@ -90,8 +90,9 @@ namespace TheNomad::SGame {
 
 					if ( gameTic - move_toggle >= lerpTime && m_EntityData.GetOrigin().z == 0.0f ) {
 						// we can mix in different surfaceparm sound effects for more complex environments
+						float volume = 1.0f;
 						if ( ( tile & SURFACEPARM_WATER ) != 0 ) {
-							switch ( TheNomad::Util::PRandom() & 2 ) {
+							switch ( TheNomad::Util::PRandom() & 1 ) {
 							case 0:
 								m_EntityData.EmitSound( moveWater0, 1.0f, 0xff );
 								break;
@@ -99,6 +100,17 @@ namespace TheNomad::SGame {
 								m_EntityData.EmitSound( moveWater1, 1.0f, 0xff );
 								break;
 							};
+
+							vec3 origin = m_EntityData.GetOrigin();
+							volume = 0.5f;
+
+//							if ( m_EntityData.GetFacing() == FACING_LEFT ) {
+//								origin.x += 0.15f;
+//							} else if ( m_EntityData.GetFacing() == FACING_RIGHT ) {
+//								origin.x -= 0.15f;
+//							}
+
+							GfxManager.AddWaterWake( origin, Util::VectorLength( accel ) );
 						}
 						if ( ( tile & SURFACEPARM_METAL ) != 0 ) {
 							switch ( TheNomad::Util::PRandom() & 3 ) {
@@ -115,34 +127,37 @@ namespace TheNomad::SGame {
 								m_EntityData.EmitSound( moveMetal3, 1.0f, 0xff );
 								break;
 							};
+							volume = 0.5f;
 						}
 						switch ( TheNomad::Util::PRandom() & 3 ) {
 						case 0:
-							m_EntityData.EmitSound( moveGravel0, 1.0f, 0xff );
+							m_EntityData.EmitSound( moveGravel0, volume, 0xff );
 							break;
 						case 2:
-							m_EntityData.EmitSound( moveGravel1, 1.0f, 0xff );
+							m_EntityData.EmitSound( moveGravel1, volume, 0xff );
 							break;
 						case 1:
-							m_EntityData.EmitSound( moveGravel2, 1.0f, 0xff );
+							m_EntityData.EmitSound( moveGravel2, volume, 0xff );
 							break;
 						case 3:
-							m_EntityData.EmitSound( moveGravel3, 1.0f, 0xff );
+							m_EntityData.EmitSound( moveGravel3, volume, 0xff );
 							break;
 						};
 						move_toggle = gameTic;
 
-						vec3 origin;
+						if ( m_EntityData.GetWaterLevel() == 0 ) {
+							// dont kick up much dust underwater
+							vec3 origin = m_EntityData.GetOrigin();
 
-						origin = m_EntityData.GetOrigin();
+							if ( m_EntityData.GetFacing() == FACING_LEFT ) {
+								origin.x += 0.15f;
+							} else if ( m_EntityData.GetFacing() == FACING_RIGHT ) {
+								origin.x -= 0.15f;
+							}
 
-						if ( m_EntityData.GetFacing() == FACING_LEFT ) {
-							origin.x += 0.15f;
-						} else if ( m_EntityData.GetFacing() == FACING_RIGHT ) {
-							origin.x -= 0.15f;
+							GfxManager.AddDustPoly( origin, vec3( 0.0f ), 1000,
+								TheNomad::Engine::ResourceCache.GetShader( "gfx/env/smokePuff" ) );
 						}
-
-						GfxManager.AddDustPoly( origin, vec3( 0.0f ), 1000, m_EntityData.m_hDustTrailShader );
 					}
 				}
 			}
@@ -202,11 +217,11 @@ namespace TheNomad::SGame {
 			if ( side > 0 ) {
 				m_EntityData.SetFacing( FACING_RIGHT );
 				m_EntityData.SetLegsFacing( FACING_RIGHT );
-//				m_EntityData.SetArmsFacing( FACING_RIGHT );
+				m_EntityData.SetArmsFacing( FACING_RIGHT );
 			} else if ( side < 0 ) {
 				m_EntityData.SetFacing( FACING_LEFT );
 				m_EntityData.SetLegsFacing( FACING_LEFT );
-//				m_EntityData.SetArmsFacing( FACING_LEFT );
+				m_EntityData.SetArmsFacing( FACING_LEFT );
 			}
 
 			//
@@ -223,18 +238,18 @@ namespace TheNomad::SGame {
 
 				if ( mousePos.x < screenWidth / 2 ) {
 					if ( @m_EntityData.GetLeftHandWeapon() !is null ) {
-//						m_EntityData.SetLeftArmFacing( FACING_LEFT );
+						m_EntityData.SetLeftArmFacing( FACING_LEFT );
 					}
 					if ( @m_EntityData.GetRightHandWeapon() !is null ) {
-//						m_EntityData.SetRightArmFacing( FACING_LEFT );
+						m_EntityData.SetRightArmFacing( FACING_LEFT );
 					}
 					m_nJoystickAngle = -m_nJoystickAngle;
 				} else if ( mousePos.x > screenWidth / 2 ) {
 					if ( @m_EntityData.GetLeftHandWeapon() !is null ) {
-//						m_EntityData.SetLeftArmFacing( FACING_RIGHT );
+						m_EntityData.SetLeftArmFacing( FACING_RIGHT );
 					}
 					if ( @m_EntityData.GetRightHandWeapon() !is null ) {
-//						m_EntityData.SetRightArmFacing( FACING_RIGHT );
+						m_EntityData.SetRightArmFacing( FACING_RIGHT );
 					}
 				}
 			}
@@ -312,6 +327,7 @@ namespace TheNomad::SGame {
 
 			SetMovementDir();
 
+			/*
 			TheNomad::Engine::UserInterface::SetActiveFont( TheNomad::Engine::UserInterface::Font_RobotoMono );
 
 			ImGui::Begin( "Debug Player Movement", null, ImGuiWindowFlags::AlwaysAutoResize );
@@ -347,6 +363,7 @@ namespace TheNomad::SGame {
 			ImGui::Separator();
 			ImGui::Text( "GameTic: " + gameTic );
 			ImGui::End();
+			*/
 
 			m_EntityData.key_MoveNorth.msec = 0;
 			m_EntityData.key_MoveSouth.msec = 0;
@@ -385,7 +402,7 @@ namespace TheNomad::SGame {
 			float base = 1.25f;
 
 			if ( m_EntityData.GetWaterLevel() > 0 ) {
-				base = 0.90f;
+				base = 1.05;
 			}
 
 			forward = 0.0f;

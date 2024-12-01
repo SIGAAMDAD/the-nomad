@@ -2228,7 +2228,7 @@ void SettingsMenu_Cache( void )
 	s_settingsMenu->hintLabel = NULL;
 	s_settingsMenu->hintMessage = NULL;
 	
-	s_settingsMenu->menu.track = Snd_RegisterSfx( "event:/music/main_theme" );
+	s_settingsMenu->menu.track = Snd_RegisterSfx( "event:/music/menu/main_theme" );
 	s_settingsMenu->menu.fullscreen = qtrue;
 	s_settingsMenu->menu.x = 0;
 	s_settingsMenu->menu.y = 0;
@@ -2293,6 +2293,8 @@ void SettingsMenu_Cache( void )
 
 	s_settingsMenu->reset_0 = re.RegisterShader( "menu/reset_0" );
 	s_settingsMenu->reset_1 = re.RegisterShader( "menu/reset_1" );
+
+	ui->menubackShader = re.RegisterShader( "menu/mainbackground_blur" );
 }
 
 void UI_SettingsMenu( void ) {

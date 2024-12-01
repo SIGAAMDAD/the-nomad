@@ -20,13 +20,9 @@ namespace TheNomad::SGame {
 			m_HealthBar.origin = vec2( 0.0f, 0.0f );
 			m_HealthBar.size.y = 64.0f * GameSystem::GameManager.GetUIScale();
 			m_HealthBar.color = vec4( 1.0f, 0.0f, 0.0f, 1.0f );
-			m_HealthBar.hShader = TheNomad::Engine::ResourceCache.GetShader( "gfx/hud/health_bar" );
 
 			m_RageBar.origin = vec2( 0.0f, m_HealthBar.size.y + 2.0f );
 			m_RageBar.size.y = m_HealthBar.size.y;
-			
-			m_HealthBarEmpty.origin = vec2( 0.0f, 0.0f );
-			m_HealthBarEmpty.hShader = TheNomad::Engine::ResourceCache.GetShader( "gfx/hud/health_empty" );
 		}
 		
 		private const vec4 GetRageColor( float rage ) const {
@@ -189,6 +185,8 @@ namespace TheNomad::SGame {
 			uint time;
 			const vec2 screenSize = vec2( TheNomad::GameSystem::GameManager.GetGPUConfig().screenWidth,
 				TheNomad::GameSystem::GameManager.GetGPUConfig().screenHeight );
+			
+			TheNomad::Engine::UserInterface::SetActiveFont( TheNomad::Engine::UserInterface::Font_RobotoMono );
 			
 			DrawStatusBars();
 			DrawMouseReticle();

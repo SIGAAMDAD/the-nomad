@@ -249,7 +249,7 @@ void DataBaseMenu_Cache( void )
 	s_dataBase->menu.height = gi.gpuConfig.vidHeight;
 	s_dataBase->menu.fullscreen = qtrue;
 	s_dataBase->menu.flags = MENU_DEFAULT_FLAGS;
-	s_dataBase->menu.track = Snd_RegisterSfx( "event:/music/main_theme" );
+	s_dataBase->menu.track = Snd_RegisterSfx( "event:/music/menu/main_theme" );
 
 	ui->menubackShader = re.RegisterShader( "menu/mainbackground" );
 }

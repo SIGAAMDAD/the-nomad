@@ -584,11 +584,6 @@ namespace TheNomad::SGame {
 			crouchUpSfx = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/cloth_foley_1" );
 		}
 
-		private void CacheGfx() {
-			m_hBloodFxShader = TheNomad::Engine::ResourceCache.GetShader( "gfx/bloodSplatter0" );
-			m_hDustTrailShader = TheNomad::Engine::ResourceCache.GetShader( "gfx/env/smokePuff" );
-		}
-
 		void Spawn( uint id, const vec3& in origin ) override {
 			uvec2 torsoSheetSize, torsoSpriteSize;
 			uvec2 armsSheetSize, armsSpriteSize;
@@ -606,15 +601,14 @@ namespace TheNomad::SGame {
 			m_Direction = Util::Angle2Dir( m_PhysicsObject.GetAngle() );
 			m_nHealMultDecay = LevelManager.GetDifficultyScale();
 
-			CacheGfx();
 			CacheSfx();
 			InitLoadout();
+
+			m_HudData.Init( @this );
 
 			if ( @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_SLIDE ) is null ) {
 				GameError( "Couldn't cache leg slide state!" );
 			}
-
-			m_HudData.Init( @this );
 
 			m_PhysicsObject.Init( cast<EntityObject>( @this ) );
 			m_PhysicsObject.SetAngle( Util::Dir2Angle( TheNomad::GameSystem::DirType::East ) );
@@ -806,6 +800,16 @@ namespace TheNomad::SGame {
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 
 			@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE );
+			
+			if ( m_Link.m_Origin.z > 0.0f ) {
+				TheNomad::Engine::Renderer::RenderEntity refEntity;
+
+				refEntity.origin = vec3( m_Link.m_Origin.x, m_Link.m_Origin.y, 0.0f );
+				refEntity.sheetNum = -1;
+				refEntity.spriteId = TheNomad::Engine::ResourceCache.GetShader( "markShadow" );
+				refEntity.scale = 2.0f;
+//				refEntity.Draw();
+			}
 
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.sheetNum = m_SpriteSheet.GetShader();
@@ -830,7 +834,7 @@ namespace TheNomad::SGame {
 			}
 
 			DrawLegs();
-			DrawArms();
+//			DrawArms();
 
 			if ( ( m_iFlags & PF_AFTER_IMAGE ) != 0 ) {
 				// draw the common silhouette after image for the player's last known position to the enemies

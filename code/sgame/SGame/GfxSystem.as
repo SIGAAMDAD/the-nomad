@@ -88,6 +88,8 @@ namespace TheNomad::SGame {
 			@m_ActiveLocalEnts.m_Next.m_Prev = @ent;
 			@m_ActiveLocalEnts.m_Next = @ent;
 
+			ent.m_nStartTime = TheNomad::GameSystem::GameManager.GetGameTic();
+
 			return @ent;
 		}
 		//
@@ -127,7 +129,6 @@ namespace TheNomad::SGame {
 			x = origin.x - ( 1.25f / ( randX == 0 ? 1 : randX ) );
 			y = origin.y - ( 1.25f / ( randY == 0 ? 1 : randY ) );
 
-			ent.m_nStartTime = TheNomad::GameSystem::GameManager.GetGameTic();
 			ent.m_nLifeTime = 1000;
 			ent.m_Velocity = vec3( 0.05f, -0.03f, 0.0f );
 
@@ -141,25 +142,22 @@ namespace TheNomad::SGame {
 		void SmokePuff( const vec3& in origin, const vec3& in vel ) {
 		}
 
+		void AddWaterWake( const vec3& in origin, float scale = 2.5f ) {
+			if ( !sgame_EnableParticles.GetBool() ) {
+				return;
+			}
+
+			TheNomad::Engine::Renderer::LocalEntity@ ent = AllocLocalEntity();
+			ent.Spawn( origin, vec3( 0.0f ), 1500, TheNomad::Engine::ResourceCache.GetShader( "wake" ), scale );
+		}
+
 		void AddDustPoly( const vec3& in origin, const vec3& in vel, uint lifeTime, int hShader ) {
-			TheNomad::Engine::Renderer::LocalEntity@ ent;
+			if ( !sgame_EnableParticles.GetBool() ) {
+				return;
+			}
 
-			@ent = AllocLocalEntity();
-
-			ent.m_nStartTime = TheNomad::GameSystem::GameManager.GetGameTic();
-			ent.m_nLifeTime = lifeTime;
-			ent.m_Velocity = vel;
-
-			ent.m_bGravity = false;
-			ent.m_Origin = origin;
-			ent.m_hShader = hShader;
-		}
-		
-		void AddMarkPoly() {
-		}
-		void AddSmokePoly() {
-		}
-		void AddFlarePoly() {
+			TheNomad::Engine::Renderer::LocalEntity@ ent = AllocLocalEntity();
+			ent.Spawn( origin, vel, lifeTime, TheNomad::Engine::ResourceCache.GetShader( "gfx/env/smokePuff" ) );
 		}
 
 		void AddExplosionGfx( const vec3& in origin ) {

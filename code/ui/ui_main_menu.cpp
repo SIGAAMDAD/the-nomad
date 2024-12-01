@@ -768,7 +768,7 @@ void MainMenu_Cache( void )
 	s_main->exitGame.color = color_white;
 
 	s_main->noSaves = Cvar_VariableInteger( "sgame_NumSaves" ) == 0;
-	s_main->menu.track = Snd_RegisterTrack( "event:/music/main_theme" );
+	s_main->menu.track = Snd_RegisterTrack( "event:/music/menu/main_theme" );
 	s_main->background = re.RegisterShader( "menu/mainbackground" );
 
 	s_main->noMenu = qfalse;
@@ -789,10 +789,14 @@ void MainMenu_Cache( void )
 	} else {
 		Cvar_Set( "r_clearColor", "0.1 0.1 0.1 1.0" );
 		UI_PushMenu( &s_main->menu );
+
+		Snd_ClearLoopingTracks();
+		Snd_AddLoopingTrack( s_main->menu.track );
 	}
 }
 
 void UI_MainMenu( void ) {
+	ui->setMusic = qfalse;
 	Snd_ClearLoopingTracks();
 	MainMenu_Cache();
 }

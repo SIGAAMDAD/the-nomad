@@ -3,12 +3,17 @@ namespace TheNomad::Engine::Renderer {
         LocalEntity() {
         }
 
-		void Spawn( const vec3& in origin, const vec3& in velocity, uint lifeTime, int hShader ) {
+		void Spawn( const vec3& in origin, const vec3& in velocity, uint lifeTime, int hShader, float scale = 1.5f,
+			bool bGravity = false )
+		{
 			m_Origin = origin;
 			m_Velocity = velocity;
 			m_nStartTime = TheNomad::GameSystem::GameManager.GetGameTic();
 			m_nLifeTime = lifeTime;
 			m_hShader = hShader;
+			m_nScale = scale;
+			m_bGravity = bGravity;
+			m_nRotation = 0.0f;
 		}
 
         void RunTic() {
@@ -26,7 +31,7 @@ namespace TheNomad::Engine::Renderer {
 			}
 
 			refEntity.origin = m_Origin;
-			refEntity.scale = 1.5f;
+			refEntity.scale = m_nScale;
 			refEntity.sheetNum = -1;
 			refEntity.spriteId = m_hShader;
 			refEntity.Draw();
@@ -40,6 +45,7 @@ namespace TheNomad::Engine::Renderer {
 		uint m_nLifeTime = 0;
 		float m_nRotation = 0.0f;
 		int m_hShader = FS_INVALID_HANDLE;
+		float m_nScale = 1.0f;
 		bool m_bGravity = false;
     };
 };

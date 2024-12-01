@@ -262,26 +262,34 @@ namespace TheNomad::Engine::Physics {
 			if ( origin.z < 0.0f ) {
 				origin.z = 0.0f;
 			}
-			if ( inAir && origin.z <= 0.0f && m_EntityData.GetType() == TheNomad::GameSystem::EntityType::Playr ) {
-				m_EntityData.EmitSound(
-					TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/land_" + formatUInt( Util::PRandom() & 4 ) ),
-					1.0f, 0xff );
-				
-				//
-				// add a little dust effect for that extra IMPACT
-				//
+			if ( inAir && origin.z <= 0.0f ) {
+				if ( m_EntityData.GetWaterLevel() > 0 ) {
+					m_EntityData.EmitSound(
+						TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/env/world/water_land_" + formatUInt( Util::PRandom() & 2 ) ),
+						1.0f, 0xff );
+					
+					TheNomad::SGame::GfxManager.AddWaterWake( origin, 8.75f );
+				} else {
+					m_EntityData.EmitSound(
+						TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/env/world/land_" + formatUInt( ( Util::PRandom() & 3 ) + 1 ) ),
+						1.0f, 0xff );
 
-				// left offset
-				TheNomad::SGame::GfxManager.AddDustPoly( vec3( origin.x - 1.5f, origin.y, origin.z ), vec3( -0.015f, 0.0f, 0.0f ), 500,
-					TheNomad::Engine::ResourceCache.GetShader( "gfx/env/smokePuff" ) );
-				
-				// center
-				TheNomad::SGame::GfxManager.AddDustPoly( origin, vec3( 0.0f ), 500,
-					TheNomad::Engine::ResourceCache.GetShader( "gfx/env/smokePuff" ) );
-				
-				// right offset
-				TheNomad::SGame::GfxManager.AddDustPoly( vec3( origin.x + 1.5f, origin.y, origin.z ), vec3( 0.015f, 0.0f, 0.0f ), 500,
-					TheNomad::Engine::ResourceCache.GetShader( "gfx/env/smokePuff" ) );
+					//
+					// add a little dust effect for that extra IMPACT
+					//
+
+					// left offset
+					TheNomad::SGame::GfxManager.AddDustPoly( vec3( origin.x - 1.5f, origin.y, origin.z ), vec3( -0.015f, 0.0f, 0.0f ), 500,
+						TheNomad::Engine::ResourceCache.GetShader( "gfx/env/smokePuff" ) );
+
+					// center
+					TheNomad::SGame::GfxManager.AddDustPoly( origin, vec3( 0.0f ), 500,
+						TheNomad::Engine::ResourceCache.GetShader( "gfx/env/smokePuff" ) );
+
+					// right offset
+					TheNomad::SGame::GfxManager.AddDustPoly( vec3( origin.x + 1.5f, origin.y, origin.z ), vec3( 0.015f, 0.0f, 0.0f ), 500,
+						TheNomad::Engine::ResourceCache.GetShader( "gfx/env/smokePuff" ) );
+				}
 			}
 			
 			m_EntityData.SetOrigin( origin );

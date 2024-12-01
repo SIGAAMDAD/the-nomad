@@ -432,7 +432,7 @@ void ModsMenu_Cache( void )
 	mods->menu.width = gi.gpuConfig.vidWidth;
 	mods->menu.height = 680 * ui->scale;
 	mods->menu.name = strManager->ValueForKey( "MOD_MENU_TITLE" )->value;
-	mods->menu.track = Snd_RegisterTrack( "event:/music/campfire" );
+	mods->menu.track = Snd_RegisterTrack( "event:/music/menu/campfire" );
 
 	ModsMenu_Load();
 
@@ -441,8 +441,6 @@ void ModsMenu_Cache( void )
 	ui->menubackShader = mods->backgroundShader;
 
 	Cmd_AddCommand( "ui.clear_load_list", ModsMenu_ClearLoadList_f );
-
-//    ModsMenu_SaveModList();
 }
 
 void UI_ModsMenu( void )

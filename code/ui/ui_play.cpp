@@ -34,7 +34,6 @@ typedef struct {
 	char name[ MAX_NPATH ];
 	gamedata_t gd;
 	qboolean valid;
-	nhandle_t levelShot;
 	qboolean *modsLoaded;
 } saveinfo_t;
 
@@ -44,6 +43,8 @@ typedef struct {
 	menutext_t continuePlay;
 	menutext_t deleteData;
 	menutext_t exit;
+
+	nhandle_t background;
 
 	uint32_t numSaveFiles;
 	uint32_t hoveredSaveSlot;
@@ -230,12 +231,12 @@ static void MissionMenu_Event( void *ptr, int event )
 
 		gi.state = GS_LEVEL;
 
-		Con_Printf( "Beginning new game on map \"%s\"...\n", *gi.mapCache.mapList );
+		Con_Printf( "Continuing game on map \"%s\"...\n", gi.mapCache.mapList[ slot->gd.mapIndex ] );
 
 		Cvar_SetIntegerValue( "g_paused", 0 );
 		Cvar_SetIntegerValue( "g_levelIndex", 0 );
 		Cvar_Set( "sgame_SaveName", va( "SLOT_%lu", slot - s_playMenu->saveSlots ) );
-		Cvar_Set( "mapname", *gi.mapCache.mapList );
+		Cvar_Set( "mapname", gi.mapCache.mapList[ slot->gd.mapIndex ] );
 
 		gi.playTimeStart = Sys_Milliseconds();
 
@@ -245,6 +246,7 @@ static void MissionMenu_Event( void *ptr, int event )
 		UI_ConfirmMenu( "", DeleteSlot_Draw, DeleteSlot_Event );
 		break;
 	case ID_EXIT:
+		ui->setMusic = qfalse;
 		UI_PopMenu();
 		break;
 	};
@@ -330,7 +332,6 @@ static void PlayMenu_Draw_SaveSlotSelect( void )
 	ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 2.25f ) * ui->scale );
 
 	s_playMenu->selectedSaveSlot = -1;
-	ui->menubackShader = re.RegisterShader( "menu/mainbackground" );
 
 	for ( i = 0; i < g_maxSaveSlots->i; i++ ) {
 		if ( s_playMenu->hoveredSaveSlot == i ) {
@@ -349,9 +350,10 @@ static void PlayMenu_Draw_SaveSlotSelect( void )
 			{
 				Snd_PlaySfx( ui->sfx_select );
 				s_playMenu->selectedSaveSlot = i;
-				ui->menubackShader = s_playMenu->saveSlots[ i ].levelShot;
+				ui->menubackShader = s_playMenu->background;
 			}
 		}
+		SfxFocused( &s_playMenu->saveSlots[ i ] );
 		if ( i <= g_maxSaveSlots->i - 1 ) {
 			ImGui::TableNextRow();
 		}
@@ -386,6 +388,8 @@ static void PlayMenu_Draw( void )
 	int i;
 	extern cvar_t *in_joystick;
 	const char *menuTitle;
+
+	ui->menubackShader = s_playMenu->background;
 
 	if ( s_playMenu->selectedSaveSlot != -1 ) {
 		if ( g_pArchiveHandler->SlotIsUsed( s_playMenu->selectedSaveSlot ) ) {
@@ -462,7 +466,6 @@ void UI_ReloadSaveFiles_f( void )
 
 		COM_StripExtension( gi.mapCache.mapList[ info->gd.mapIndex ], szMapName, sizeof( szMapName ) );
 		szMapName[ strlen( szMapName ) - 1 ] = '\0';
-		info->levelShot = re.RegisterShader( va( "levelshots/%s", COM_SkipPath( szMapName ) ) );
 	}
 }
 
@@ -523,7 +526,7 @@ void PlayMenu_Cache( void )
 	s_playMenu->menu.textFontScale = 1.75f;
 	s_playMenu->menu.x = 0;
 	s_playMenu->menu.y = 0;
-	s_playMenu->menu.track = Snd_RegisterSfx( "event:/music/main_theme" );
+	s_playMenu->menu.track = Snd_RegisterSfx( "event:/music/menu/main_theme" );
 
 	s_playMenu->continuePlay.generic.type = MTYPE_TEXT;
 	s_playMenu->continuePlay.generic.eventcallback = MissionMenu_Event;
@@ -565,7 +568,8 @@ void PlayMenu_Cache( void )
 	s_playMenu->selectedSaveSlot = -1;
 	s_playMenu->hoveredSaveSlot = 0;
 
-	ui->menubackShader = re.RegisterShader( "menu/playBackground" );
+	s_playMenu->background = re.RegisterShader( "menu/playBackground" );
+	ui->menubackShader = s_playMenu->background;
 
 	PlayMenu_InitSlots();
 

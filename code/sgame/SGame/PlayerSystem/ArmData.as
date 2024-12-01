@@ -77,8 +77,8 @@ namespace TheNomad::SGame {
 			SpriteSheet@ sheet = @CalcState();
 			
 			refEntity.origin = m_EntityData.GetOrigin();
-			refEntity.sheetNum = m_SpriteSheet[ m_nFacing ].GetShader();
-			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( @m_SpriteSheet[ m_nFacing ], @m_State );
+			refEntity.sheetNum = TheNomad::Engine::ResourceCache.GetShader( "sprites/raio_arms_1_0" );
+			refEntity.spriteId = 0;
 			refEntity.Draw();
 		}
 		

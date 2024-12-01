@@ -17,12 +17,5 @@ in vec2 v_TexCoords;
 #include "fxaa.glsl"
 
 void main() {
-//	if ( u_FinalPass ) {
-//		if ( u_AntiAliasing == AntiAlias_FXAA ) {
-//			a_Color = ApplyFXAA( u_DiffuseMap, v_TexCoords );
-//		}
-//		a_Color *= sharpenImage( u_DiffuseMap, v_TexCoords );
-//	} else {
-		a_Color = texture( u_DiffuseMap, v_TexCoords );
-//	}
+	a_Color = texture( u_DiffuseMap, v_TexCoords );
 }

@@ -33,7 +33,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <glm/gtc/matrix_transform.hpp>
 #include "g_threads.h"
 #include "../engine/n_steam.h"
-#include "snd_public.h"
+#include "../sound/snd_public.h"
 
 CModuleLib *g_pModuleLib;
 CModuleInfo *sgvm;
@@ -1563,7 +1563,7 @@ void G_GetSkinData(
 	VectorCopy2( legsSheetSize, skin->legsSheetSize );
 	VectorCopy2( legsSpriteSize, skin->legsSpriteSize );
 
-	Con_DPrintf( "SkinData: (torso)[ %u %u ][ %u %u ] (arms)[ %u %u ][ %u %u ] (legs)[ %u %u ][ %u %u ]\n",
+	Con_Printf( "SkinData: (torso)[ %u %u ][ %u %u ] (arms)[ %u %u ][ %u %u ] (legs)[ %u %u ][ %u %u ]\n",
 		torsoSheetSize[0], torsoSheetSize[1], torsoSpriteSize[0], torsoSpriteSize[1],
 		armsSheetSize[0], armsSheetSize[1], armsSpriteSize[0], armsSpriteSize[1],
 		legsSheetSize[0], legsSheetSize[0], legsSpriteSize[0], legsSpriteSize[1] );

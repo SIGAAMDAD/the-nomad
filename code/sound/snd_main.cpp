@@ -877,6 +877,9 @@ void Snd_SetWorldListener( const vec3_t origin )
 
 void Snd_ClearLoopingTracks( void )
 {
+	if ( !sndManager || !gi.soundStarted || !gi.soundRegistered ) {
+		return;
+	}
 	for ( auto& it : sndManager->m_szLoopingTracks ) {
 		it->Stop();
 	}

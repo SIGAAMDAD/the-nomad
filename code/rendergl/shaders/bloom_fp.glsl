@@ -26,22 +26,22 @@ void main() {
 
 	if ( u_AntiAliasing == AntiAlias_FXAA ) {
 		vec2 fragCoord = v_TexCoords * u_ScreenSize;
-		a_Color = ApplyFXAA( u_DiffuseMap, fragCoord );
+		color = ApplyFXAA( u_DiffuseMap, fragCoord ).rgb;
 	} else {
-		a_Color = texture( u_DiffuseMap, v_TexCoords );
+		color = texture( u_DiffuseMap, v_TexCoords ).rgb;
 	}
-	a_Color.rgb *= sharpenImage( u_DiffuseMap, v_TexCoords ).rgb;
+	color *= sharpenImage( u_DiffuseMap, v_TexCoords ).rgb;
 
 #if defined(USE_MULTIATTRIB)
 	if ( u_Bloom ) {
 		vec3 bloomColor = texture( u_BrightMap, v_TexCoords ).rgb;
-		a_Color.rgb += bloomColor;
+		color += bloomColor;
 	}
 #endif
 
 	// exposure tone mapping
-	a_Color.rgb = vec3( 1.0 ) - exp( -a_Color.rgb * u_CameraExposure );
+	vec3 final = vec3( 1.0 ) - exp( -color * u_CameraExposure );
 
 	// apply final gamma
-	a_Color = vec4( pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) ), 1.0 );
+	a_Color = vec4( pow( final, vec3( 1.0 / u_GammaAmount ) ), 1.0 );
 }
