@@ -371,7 +371,7 @@ namespace TheNomad::SGame {
 				TheNomad::GameSystem::GameSystems[i].OnRenderScene();
 			}
 			TheNomad::Engine::Renderer::RenderScene( scenePos.x, scenePos.y, sceneSize.x, sceneSize.y, flags, 
-				uint( TheNomad::GameSystem::GameManager.GetGameTic() * 0.1f ) );
+				TheNomad::GameSystem::GameManager.GetGameTic() );
 		}
 
 		uint GetPlayerIndex( PlayrObject@ obj ) {

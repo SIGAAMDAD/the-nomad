@@ -425,6 +425,7 @@ namespace TheNomad::SGame {
 					EmitSound( dieSfx2, 1.0f, 0xff );
 					break;
 				};
+				DebugPrint( "Killing player...\n" );
 				EntityManager.KillEntity( @attacker, @this );
 				
 				Util::HapticRumble( m_nControllerIndex, 0.80f, 4000 );
@@ -629,6 +630,9 @@ namespace TheNomad::SGame {
 			}
 			m_Facing = FACING_RIGHT;
 
+			@m_WetSpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/" + m_Skin + "raio_torso_wet",
+				torsoSheetSize.x, torsoSheetSize.y, torsoSpriteSize.x, torsoSpriteSize.y );
+
 			for ( uint i = 0; i < NUMFACING; i++ ) {
 				@m_LegSpriteSheet[i] = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/" +
 					m_Skin + "raio_legs_" + i, legsSheetSize.x, legsSheetSize.y, legsSpriteSize.x, legsSpriteSize.y );
@@ -651,8 +655,6 @@ namespace TheNomad::SGame {
 
 			m_nLegTicker = 0;
 			m_Name = "player";
-
-//			@GoreManager = cast<GoreSystem>( @TheNomad::GameSystem::AddSystem( GoreSystem() ) );
 		}
 
 		void Think() override {
@@ -668,23 +670,14 @@ namespace TheNomad::SGame {
 
 			m_Link.m_Bounds.m_nWidth = sgame_PlayerWidth.GetFloat();
 			m_Link.m_Bounds.m_nHeight = sgame_PlayerHeight.GetFloat();
-			m_Link.m_Bounds.MakeBounds( m_Link.m_Origin ); // breaks movement
+			m_Link.m_Bounds.MakeBounds( m_Link.m_Origin );
 			
 			// run a movement frame
 			Pmove.RunTic();
 
 			if ( m_nHealth <= 15.0f ) {
 				// if there's another haptic going on, we don't want to annihilate their hands
-				Util::HapticRumble( ScreenData.GetPlayerIndex( @this ), 0.50f, 1000 );
-			}
-
-			if ( m_nHealth < 30.0f && !m_bLowHealthLoop ) {
-				// only the player should be able to hear this
-				m_LowHealthLoop.Play();
-				m_bLowHealthLoop = true;
-			} else if ( m_nHealth >= 30.0f && m_bLowHealthLoop ) {
-				m_LowHealthLoop.Stop();
-				m_bLowHealthLoop = false;
+				Util::HapticRumble( m_nControllerIndex, 0.50f, 1000 );
 			}
 
 			if ( m_nHealth < 100.0f ) {
@@ -801,14 +794,25 @@ namespace TheNomad::SGame {
 
 			@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE );
 			
-			if ( m_Link.m_Origin.z > 0.0f ) {
+			if ( m_PhysicsObject.GetWaterLevel() > 0 && m_Link.m_Origin.z == 0.0f ) {
+			/*
 				TheNomad::Engine::Renderer::RenderEntity refEntity;
-
-				refEntity.origin = vec3( m_Link.m_Origin.x, m_Link.m_Origin.y, 0.0f );
+				
+				// draw a wake
+				refEntity.origin = vec3( m_Link.m_Origin.x, m_Link.m_Origin.y + sgame_PlayerHeight.GetFloat(), 0.0f );
 				refEntity.sheetNum = -1;
-				refEntity.spriteId = TheNomad::Engine::ResourceCache.GetShader( "markShadow" );
+				refEntity.spriteId = TheNomad::Engine::ResourceCache.GetShader( "wake" );
+				refEntity.scale = 2.5f;
+				refEntity.Draw();
+
+				// draw reflection
+				refEntity.origin = vec3( m_Link.m_Origin.x, m_Link.m_Origin.y + ( sgame_PlayerHeight.GetFloat() * 2 ), 0.0f );
+				refEntity.sheetNum = m_SpriteSheet.GetShader();
+				refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( @m_SpriteSheet, @m_State ) + m_Facing;
 				refEntity.scale = 2.0f;
-//				refEntity.Draw();
+				refEntity.rotation = -180.0f;
+				refEntity.Draw();
+			*/
 			}
 
 			refEntity.origin = m_Link.m_Origin;
@@ -834,7 +838,7 @@ namespace TheNomad::SGame {
 			}
 
 			DrawLegs();
-//			DrawArms();
+			DrawArms();
 
 			if ( ( m_iFlags & PF_AFTER_IMAGE ) != 0 ) {
 				// draw the common silhouette after image for the player's last known position to the enemies
@@ -907,8 +911,6 @@ namespace TheNomad::SGame {
 		private TheNomad::Engine::SoundSystem::SoundEffect dieSfx2;
 		private TheNomad::Engine::SoundSystem::SoundEffect m_LowHealthLoop;
 
-		private bool m_bLowHealthLoop = false;
-
 		// the amount of damage dealt in the frame
 		private float m_nFrameDamage = 0.0f;
 		
@@ -926,6 +928,8 @@ namespace TheNomad::SGame {
 		
 		private ArmData m_LeftArm;
 		private ArmData m_RightArm;
+
+		private SpriteSheet@ m_WetSpriteSheet = null;
 
 		private SpriteSheet@[] m_LegSpriteSheet( NUMFACING );
 		private EntityState@ m_LegState = null;

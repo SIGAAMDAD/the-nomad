@@ -1,44 +1,44 @@
 #include "SGame/PlayerSystem/BloodStain.as"
 
 namespace TheNomad::SGame {
-    class GoreSystem : TheNomad::GameSystem::GameObject {
-        GoreSystem() {
-        }
+	class GoreSystem : TheNomad::GameSystem::GameObject {
+		GoreSystem() {
+		}
 
-        void OnInit() {
-        }
-        void OnShutdown() {
-        }
-        void OnLevelStart() {
-            InitBloodStains();
-        }
-        void OnLevelEnd() {
-            m_BloodStains.Clear();
-        }
-        void OnRunTic() {
-        }
+		void OnInit() {
+		}
+		void OnShutdown() {
+		}
+		void OnLevelStart() {
+			InitBloodStains();
+		}
+		void OnLevelEnd() {
+			m_BloodStains.Clear();
+		}
+		void OnRunTic() {
+		}
 
-        void OnSave() const {
-        }
-        void OnLoad() {
-        }
-        void OnPlayerDeath( int ) {
-        }
-        void OnCheckpointPassed( uint ) {
-        }
-        const string& GetName() const {
-            return "GoreSystem";
-        }
+		void OnSave() const {
+		}
+		void OnLoad() {
+		}
+		void OnPlayerDeath( int ) {
+		}
+		void OnCheckpointPassed( uint ) {
+		}
+		const string& GetName() const {
+			return "GoreSystem";
+		}
 
-        void OnRenderScene() {
+		void OnRenderScene() {
 			BloodStain@ stain;
 			BloodStain@ next;
 
-            if ( sgame_Blood.GetInt() == 1 && m_BloodStains.Count() == 0 ) {
-                InitBloodStains();
-            } else if ( sgame_Blood.GetInt() == 0 && m_BloodStains.Count() > 0 ) {
-                m_BloodStains.Clear();
-            }
+			if ( sgame_Blood.GetInt() == 1 && m_BloodStains.Count() == 0 ) {
+				InitBloodStains();
+			} else if ( sgame_Blood.GetInt() == 0 && m_BloodStains.Count() > 0 ) {
+				m_BloodStains.Clear();
+			}
 
 			// walk the list backwards, so any new local entities generated
 			// (trails, marks, etc) will be present this frame
@@ -48,7 +48,7 @@ namespace TheNomad::SGame {
 				// still have it
 				@next = @stain.m_Prev;
 
-			    stain.Draw();
+				stain.Draw();
 			}
 		}
 
@@ -87,7 +87,7 @@ namespace TheNomad::SGame {
 			return @stain;
 		}
 
-        private void FreeBloodStain( BloodStain@ stain ) {
+		private void FreeBloodStain( BloodStain@ stain ) {
 			if ( @stain.m_Prev is null ) {
 				GameError( "GoreSystem::FreeBloodStain: not active" );
 			}
@@ -99,19 +99,20 @@ namespace TheNomad::SGame {
 			// the free list is only singly linked
 			@stain.m_Next = @m_FreeBloodStains;
 			@m_FreeBloodStains = @stain;
-        }
+		}
 
-        void AddBlood( const vec3& in origin ) {
-            BloodStain@ stain;
+		void AddBlood( const vec3& in origin ) {
+			BloodStain@ stain;
 
-            @stain = @AllocBloodStain();
+			@stain = @AllocBloodStain();
+			stain.m_Origin = origin;
 //            @stain = @GfxManager.Bleed( vec3( origin.x, origin.y, origin.z + 0.25f ) );
-        }
+		}
 
-        private array<BloodStain> m_BloodStains;
+		private array<BloodStain> m_BloodStains;
 		private BloodStain m_ActiveBloodStains;
 		private BloodStain@ m_FreeBloodStains = null;
-    };
+	};
 
-    GoreSystem@ GoreManager = null;
+	GoreSystem@ GoreManager = null;
 };

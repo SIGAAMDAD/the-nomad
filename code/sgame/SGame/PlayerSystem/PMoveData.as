@@ -100,17 +100,22 @@ namespace TheNomad::SGame {
 								m_EntityData.EmitSound( moveWater1, 1.0f, 0xff );
 								break;
 							};
-
-							vec3 origin = m_EntityData.GetOrigin();
 							volume = 0.5f;
 
-//							if ( m_EntityData.GetFacing() == FACING_LEFT ) {
-//								origin.x += 0.15f;
-//							} else if ( m_EntityData.GetFacing() == FACING_RIGHT ) {
-//								origin.x -= 0.15f;
-//							}
+							// it'll look weird if we're drawing ripples right as the player exits the water
+							// because it looks like the dirt is rippling
+							const vec3 origin = m_EntityData.GetOrigin();
+							const vec3 tmp = origin + accel;
+							TheNomad::GameSystem::BBox bounds;
+							bounds.m_nWidth = sgame_PlayerWidth.GetFloat();
+							bounds.m_nHeight = sgame_PlayerHeight.GetFloat();
+							bounds.MakeBounds( tmp );
 
-							GfxManager.AddWaterWake( origin, Util::VectorLength( accel ) );
+							const uint64 next = LevelManager.GetMapData().GetTile( tmp, bounds );
+							
+							if ( ( next & SURFACEPARM_WATER ) != 0 ) {
+								GfxManager.AddWaterWake( m_EntityData.GetOrigin(), 800, Util::VectorLength( accel ) );
+							}
 						}
 						if ( ( tile & SURFACEPARM_METAL ) != 0 ) {
 							switch ( TheNomad::Util::PRandom() & 3 ) {

@@ -438,7 +438,7 @@ bloodMark
 	nopicmip			// make sure a border remains
 	polygonOffset
 	{
-		clampmap gfx/damage/blood_stain.dds
+		clampmap gfx/env/blood_stain.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		rgbGen identityLighting
 		alphaGen vertex
@@ -501,10 +501,9 @@ gfx/damage/plasma_mrk
 // markShadow is a very cheap blurry blob underneath the player
 markShadow
 {
-	polygonOffset
 	{
 		map gfx/env/shadow.tga
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_COLOR
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		rgbGen vertex
 	}
 }
@@ -579,6 +578,51 @@ lightningBolt
 				rgbgen wave sin 1 0.8 0 8.1
 				tcmod scale  -1.3 -1
 		tcMod scroll -7.2 0
+	}
+}
+
+bulletExplosion
+{
+	cull disable
+	{
+		animmap 5 gfx/env/weaphits/bullet1.tga  gfx/env/weaphits/bullet2.tga  gfx/env/weaphits/bullet3.tga gfx/colors/black.tga
+		rgbGen wave inversesawtooth 0 1 0 5
+		blendfunc add
+	}
+	{
+		animmap 5 gfx/env/weaphits/bullet2.tga  gfx/env/weaphits/bullet3.tga  gfx/colors/black.tga gfx/colors/black.tga
+		rgbGen wave sawtooth 0 1 0 5
+		blendfunc add
+	}
+}
+
+rocketExplosion
+{
+	cull disable
+	{
+		animmap 8 gfx/env/weaphits/rlboom/rlboom_1.jpg  gfx/env/weaphits/rlboom/rlboom_2.jpg gfx/env/weaphits/rlboom/rlboom_3.jpg gfx/env/weaphits/rlboom/rlboom_4.jpg gfx/env/weaphits/rlboom/rlboom_5.jpg gfx/env/weaphits/rlboom/rlboom_6.jpg gfx/env/weaphits/rlboom/rlboom_7.jpg gfx/env/weaphits/rlboom/rlboom_8.jpg
+		rgbGen wave inversesawtooth 0 1 0 8
+		blendfunc add
+	}
+	{
+		animmap 8 gfx/env/weaphits/rlboom/rlboom_2.jpg gfx/env/weaphits/rlboom/rlboom_3.jpg gfx/env/weaphits/rlboom/rlboom_4.jpg gfx/env/weaphits/rlboom/rlboom_5.jpg gfx/env/weaphits/rlboom/rlboom_6.jpg gfx/env/weaphits/rlboom/rlboom_7.jpg gfx/env/weaphits/rlboom/rlboom_8.jpg gfx/colors/black.jpg
+		rgbGen wave sawtooth 0 1 0 8
+		blendfunc add
+	}
+}
+
+grenadeExplosion
+{
+	cull disable
+	{
+		animmap 5 gfx/env/weaphits/glboom/glboom_1.tga  gfx/env/weaphits/glboom/glboom_2.tga gfx/env/weaphits/glboom/glboom_3.tga
+		rgbGen wave inversesawtooth 0 1 0 5
+		blendfunc add
+	}
+	{
+		animmap 5 gfx/env/weaphits/glboom/glboom_2.tga  gfx/env/weaphits/glboom/glboom_3.tga gfx/colors/black.tga
+		rgbGen wave sawtooth 0 1 0 5
+		blendfunc add
 	}
 }
 

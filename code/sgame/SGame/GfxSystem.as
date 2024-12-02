@@ -129,8 +129,9 @@ namespace TheNomad::SGame {
 			x = origin.x - ( 1.25f / ( randX == 0 ? 1 : randX ) );
 			y = origin.y - ( 1.25f / ( randY == 0 ? 1 : randY ) );
 
-			ent.m_nLifeTime = 1000;
+			ent.m_nLifeTime = 1500;
 			ent.m_Velocity = vec3( 0.05f, -0.03f, 0.0f );
+			ent.m_nType = TheNomad::Engine::Renderer::EffectType::Effect_Blood;
 
 			ent.m_Origin = vec3( x, y - 0.2f, 0.0f );
 			ent.m_hShader = TheNomad::Engine::ResourceCache.GetShader( "gfx/bloodSplatter0" );
@@ -142,13 +143,13 @@ namespace TheNomad::SGame {
 		void SmokePuff( const vec3& in origin, const vec3& in vel ) {
 		}
 
-		void AddWaterWake( const vec3& in origin, float scale = 2.5f ) {
+		void AddWaterWake( const vec3& in origin, uint lifeTime = 1200, float scale = 2.5f, float grow = 0.05f ) {
 			if ( !sgame_EnableParticles.GetBool() ) {
 				return;
 			}
 
 			TheNomad::Engine::Renderer::LocalEntity@ ent = AllocLocalEntity();
-			ent.Spawn( origin, vec3( 0.0f ), 1500, TheNomad::Engine::ResourceCache.GetShader( "wake" ), scale );
+			ent.Spawn( origin, vec3( 0.0f ), lifeTime, TheNomad::Engine::ResourceCache.GetShader( "wake" ), scale, false, grow );
 		}
 
 		void AddDustPoly( const vec3& in origin, const vec3& in vel, uint lifeTime, int hShader ) {

@@ -262,13 +262,15 @@ namespace TheNomad::Engine::Physics {
 			if ( origin.z < 0.0f ) {
 				origin.z = 0.0f;
 			}
+			m_EntityData.SetOrigin( origin );
+
 			if ( inAir && origin.z <= 0.0f ) {
 				if ( m_EntityData.GetWaterLevel() > 0 ) {
 					m_EntityData.EmitSound(
 						TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/env/world/water_land_" + formatUInt( Util::PRandom() & 2 ) ),
 						1.0f, 0xff );
 					
-					TheNomad::SGame::GfxManager.AddWaterWake( origin, 8.75f );
+					TheNomad::SGame::GfxManager.AddWaterWake( origin, 800, 6.75f );
 				} else {
 					m_EntityData.EmitSound(
 						TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/env/world/land_" + formatUInt( ( Util::PRandom() & 3 ) + 1 ) ),
@@ -291,8 +293,6 @@ namespace TheNomad::Engine::Physics {
 						TheNomad::Engine::ResourceCache.GetShader( "gfx/env/smokePuff" ) );
 				}
 			}
-			
-			m_EntityData.SetOrigin( origin );
 			
 			// clip it
 			ClipBounds();

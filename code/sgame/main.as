@@ -197,6 +197,7 @@ int ModuleOnInit() {
 	@TheNomad::SGame::StateManager = cast<TheNomad::SGame::EntityStateSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::EntityStateSystem() ) );
 	@TheNomad::SGame::EntityManager = cast<TheNomad::SGame::EntitySystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::EntitySystem() ) );
 	@TheNomad::SGame::GfxManager = cast<TheNomad::SGame::GfxSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::GfxSystem() ) );
+//	@TheNomad::SGame::GoreManager = cast<TheNomad::SGame::GoreSystem>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::GoreSystem() ) );
 
 	TheNomad::SGame::InitCheatCodes();
 	TheNomad::SGame::ScreenData.Init();
@@ -224,6 +225,7 @@ int ModuleOnShutdown() {
 	@TheNomad::SGame::InfoSystem::InfoManager = null;
 	@TheNomad::Engine::FileSystem::FileManager = null;
 	@TheNomad::SGame::GfxManager = null;
+	@TheNomad::SGame::GoreManager = null;
 	TheNomad::GameSystem::GameSystems.Clear();
 
 	TheNomad::Engine::ResourceCache.ClearCache();
