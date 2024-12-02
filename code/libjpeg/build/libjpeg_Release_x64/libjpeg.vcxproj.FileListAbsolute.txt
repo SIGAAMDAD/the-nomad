@@ -1,0 +1,1 @@
+Z:\the-nomad\code\libjpeg\build\libjpeg_Release_x64\libjpeg.lib
