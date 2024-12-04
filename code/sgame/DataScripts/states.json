@@ -120,7 +120,7 @@
 			"NextState": "this",
 			"SpriteOffset": [ 0, 0 ],
 			"Animation": {
-				"TicRate": 0,
+				"TicRate": 100,
 				"FlipFlop": false,
 				"Frames": 0,
 				"Reverse": false

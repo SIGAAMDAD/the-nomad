@@ -832,7 +832,7 @@ static void R_Register( void )
 	ri.Cvar_SetDescription( r_arb_texture_float, "Enables HDR framebuffer." );
 
 	r_lightingQuality = ri.Cvar_Get( "r_lightingQuality", "1", CVAR_SAVE );
-	ri.Cvar_CheckRange( r_lightingQuality, "0", "2", CVT_INT );
+	ri.Cvar_CheckRange( r_lightingQuality, "0", "1", CVT_INT );
 	ri.Cvar_SetDescription( r_lightingQuality, "Sets desired lighting quality" );
 
 	r_picmip = ri.Cvar_Get( "r_picmip", "0", CVAR_SAVE | CVAR_LATCH );
@@ -881,7 +881,7 @@ static void R_Register( void )
 	ri.Cvar_SetDescription( r_parallaxMapOffset, "Set the parallax height offset." );
 	r_parallaxMapShadows = ri.Cvar_Get( "r_parallaxMapShadows", "0", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_parallaxMapShadows, "Enable self-shadowing on parallax map supported materials." );
-	r_deluxeSpecular = ri.Cvar_Get("r_deluxeSpecular", "0.3", CVAR_SAVE | CVAR_LATCH);
+	r_deluxeSpecular = ri.Cvar_Get( "r_deluxeSpecular", "0.3", CVAR_SAVE | CVAR_LATCH );
 	r_pbr = ri.Cvar_Get( "r_pbr", "0", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_pbr, "Enable physically based rendering." );
 	r_baseNormalX = ri.Cvar_Get( "r_baseNormalX", "1.0", CVAR_SAVE | CVAR_LATCH );
@@ -889,13 +889,13 @@ static void R_Register( void )
 	r_baseParallax = ri.Cvar_Get( "r_baseParallax", "0.05", CVAR_SAVE | CVAR_LATCH );
 	r_baseSpecular = ri.Cvar_Get( "r_baseSpecular", "0.04", CVAR_SAVE | CVAR_LATCH );
 	r_baseGloss = ri.Cvar_Get( "r_baseGloss", "0.3", CVAR_SAVE | CVAR_LATCH );
-	r_glossType = ri.Cvar_Get("r_glossType", "1", CVAR_SAVE | CVAR_LATCH);
+	r_glossType = ri.Cvar_Get( "r_glossType", "1", CVAR_SAVE | CVAR_LATCH );
 	r_imageUpsample = ri.Cvar_Get( "r_imageUpsample", "0", CVAR_SAVE | CVAR_LATCH );
 	r_imageUpsampleMaxSize = ri.Cvar_Get( "r_imageUpsampleMaxSize", "1024", CVAR_SAVE | CVAR_LATCH );
 	r_imageUpsampleType = ri.Cvar_Get( "r_imageUpsampleType", "1", CVAR_SAVE | CVAR_LATCH );
 	r_genNormalMaps = ri.Cvar_Get( "r_genNormalMaps", "0", CVAR_SAVE | CVAR_LATCH );
 
-	r_greyscale = ri.Cvar_Get("r_greyscale", "0", CVAR_SAVE | CVAR_LATCH);
+	r_greyscale = ri.Cvar_Get( "r_greyscale", "0", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_CheckRange( r_greyscale, "0", "1", CVT_INT );
 	ri.Cvar_SetDescription( r_greyscale, "Desaturates rendered frame." );
 
@@ -1076,12 +1076,7 @@ static void R_Register( void )
 	r_maxEntities = ri.Cvar_Get( "r_maxEntities", "1024", CVAR_LATCH | CVAR_PROTECTED );
 	ri.Cvar_SetDescription( r_maxEntities, "Sets the maximum amount of dynamic entities that can be processed per scene.\n"
 											"NOTE: there can be multiple scenes rendered in a single frame." );
-
-	if ( r_textureDetail->i >= 2 ) {
-		ri.Cvar_Set( "r_normalMapping", "1" );
-		ri.Cvar_Set( "r_specularMapping", "1" );
-	}
-
+	
 	// make sure all commands added here are also
 	// removed in R_Shutdown
 	ri.Cmd_AddCommand( "texturelist", R_ImageList_f );

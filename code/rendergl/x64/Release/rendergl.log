@@ -1,8 +1,8 @@
-﻿  rgl_texture.c
+﻿  rgl_program.c
      Creating library Z:\the-nomad\TheNomad.RenderLib-opengl.x64.lib and object Z:\the-nomad\TheNomad.RenderLib-opengl.x64.exp
   Generating code
-  39 of 455 functions ( 8.6%) were compiled, the rest were copied from previous compilation.
+  9 of 455 functions ( 2.0%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    55 functions had inline decision re-evaluated but remain unchanged
+    19 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   rendergl.vcxproj -> Z:\the-nomad\TheNomad.RenderLib-opengl.x64.dll

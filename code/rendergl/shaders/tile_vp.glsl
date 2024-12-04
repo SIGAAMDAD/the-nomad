@@ -1,11 +1,11 @@
 in vec2 a_Position;
 in vec2 a_TexCoords;
-in uvec2 a_WorldPos;
+in vec2 a_WorldPos;
 in vec4 a_Color;
 
 out vec2 v_TexCoords;
 out vec4 v_Color;
-out uvec2 v_WorldPos;
+out vec2 v_WorldPos;
 out vec3 v_LightingColor;
 
 uniform mat4 u_ModelViewProjection;
@@ -30,9 +30,15 @@ struct Light {
 	int type;
 };
 
+#if defined(EXPLICIT_BUFFER_LOCATIONS)
 layout( std140, binding = 0 ) readonly buffer u_LightBuffer {
 	Light u_LightData[];
 };
+#else
+layout( std140 ) uniform u_LightBuffer {
+	Light u_LightData[ MAX_LIGHTS ];
+};
+#endif
 
 vec3 CalcPointLight( Light light ) {
 	vec3 diffuse = v_LightingColor.rgb;

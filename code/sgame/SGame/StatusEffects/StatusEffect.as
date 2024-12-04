@@ -6,5 +6,11 @@ namespace TheNomad::SGame {
 		bool Active() const {
 			return false;
 		}
+		void Draw() {
+
+		}
+		
+		protected int m_hShader = FS_INVALID_HANDLE;
+		protected 
 	};
 };

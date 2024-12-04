@@ -156,7 +156,6 @@ sprites/players/raio_arms_1_0
 		texFilter nearest
 		map textures/sprites/players/raio_arms_1_0.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-		stage diffuseMap
 	}
 	/*
 	{

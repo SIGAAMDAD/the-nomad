@@ -90,7 +90,7 @@ static void BeginNewGame( void )
 
 	Cvar_SetIntegerValue( "g_paused", 0 );
 	Cvar_SetIntegerValue( "g_levelIndex", 0 );
-	Cvar_Set( "sgame_SaveName", va( "SLOT_%lu", slot - s_playMenu->saveSlots ) );
+	Cvar_SetIntegerValue( "sgame_SaveSlot", slot - s_playMenu->saveSlots );
 	Cvar_Set( "mapname", *gi.mapCache.mapList );
 
 	gi.playTimeStart = Sys_Milliseconds();
@@ -235,7 +235,7 @@ static void MissionMenu_Event( void *ptr, int event )
 
 		Cvar_SetIntegerValue( "g_paused", 0 );
 		Cvar_SetIntegerValue( "g_levelIndex", 0 );
-		Cvar_Set( "sgame_SaveName", va( "SLOT_%lu", slot - s_playMenu->saveSlots ) );
+		Cvar_SetIntegerValue( "sgame_SaveSlot", slot - s_playMenu->saveSlots );
 		Cvar_Set( "mapname", gi.mapCache.mapList[ slot->gd.mapIndex ] );
 
 		gi.playTimeStart = Sys_Milliseconds();
@@ -246,7 +246,6 @@ static void MissionMenu_Event( void *ptr, int event )
 		UI_ConfirmMenu( "", DeleteSlot_Draw, DeleteSlot_Event );
 		break;
 	case ID_EXIT:
-		ui->setMusic = qfalse;
 		UI_PopMenu();
 		break;
 	};
@@ -345,8 +344,7 @@ static void PlayMenu_Draw_SaveSlotSelect( void )
 				s_playMenu->selectedSaveSlot = i;
 			}
 		} else {
-			if ( ImGui::MenuItem( va( "SLOT %lu : %u:%02u##USEDSAVESLOT%lu", i, s_playMenu->saveSlots[ i ].gd.playTimeHours,
-				s_playMenu->saveSlots[ i ].gd.playTimeMinutes, i ) ) )
+			if ( ImGui::MenuItem( va( "Save Slot %lu##USEDSAVESLOT%lu", i, i ) ) )
 			{
 				Snd_PlaySfx( ui->sfx_select );
 				s_playMenu->selectedSaveSlot = i;
@@ -359,28 +357,6 @@ static void PlayMenu_Draw_SaveSlotSelect( void )
 		}
 	}
 	ImGui::EndTable();
-
-	/*
-
-	if ( Key_IsDown( KEY_DOWNARROW ) ) {
-		Snd_PlaySfx( ui->sfx_move );
-		s_playMenu->hoveredSaveSlot--;
-		if ( s_playMenu->hoveredSaveSlot < 0 ) {
-			s_playMenu->hoveredSaveSlot = s_playMenu->numSaveFiles - 1;
-		}
-	}
-	if ( Key_IsDown( KEY_UPARROW ) ) {
-		Snd_PlaySfx( ui->sfx_move );
-		s_playMenu->hoveredSaveSlot++;
-		if ( s_playMenu->hoveredSaveSlot >= s_playMenu->numSaveFiles ) {
-			s_playMenu->hoveredSaveSlot = 0;
-		}
-	}
-	if ( Key_IsDown( KEY_ENTER ) ) {
-		Snd_PlaySfx( ui->sfx_select );
-		s_playMenu->selectedSaveSlot = s_playMenu->hoveredSaveSlot;
-	}
-	*/
 }
 
 static void PlayMenu_Draw( void )
@@ -442,8 +418,6 @@ void UI_ReloadSaveFiles_f( void )
 	saveFiles = g_pArchiveHandler->GetSaveFiles( &numSaveFiles );
 	s_playMenu->numSaveFiles = numSaveFiles;
 
-	Cvar_Set( "sgame_NumSaves", va( "%li", (int64_t)s_playMenu->numSaveFiles ) );
-
 	s_playMenu->saveSlots = (saveinfo_t *)Z_Malloc( sizeof( saveinfo_t ) * s_playMenu->numSaveFiles, TAG_SAVEFILE );
 	memset( s_playMenu->saveSlots, 0, sizeof( saveinfo_t ) * s_playMenu->numSaveFiles );
 	info = s_playMenu->saveSlots;
@@ -457,9 +431,9 @@ void UI_ReloadSaveFiles_f( void )
 			continue;
 		}
 
-		Com_snprintf( info->name, sizeof( info->name ), "SLOT_%lu", i );
+		Com_snprintf( info->name, sizeof( info->name ), "%lu", i + 1 );
 
-		info->valid = g_pArchiveHandler->LoadPartial( va( "gamedata/SaveData/%s.ngd", info->name ), &info->gd );
+		info->valid = g_pArchiveHandler->LoadPartial( i, &info->gd );
 		if ( !info->valid ) {
 			Con_Printf( COLOR_YELLOW "WARNING: Failed to get valid header data from savefile '%s'\n", info->name );
 		}

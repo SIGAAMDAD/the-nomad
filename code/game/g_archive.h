@@ -120,6 +120,8 @@ typedef struct ngdsection_read_s {
 typedef struct {
 	char name[MAX_NPATH];
 	
+	gamedata_t gd;
+	
 	int64_t m_nSections;
 	uint64_t m_nMods;
 	ngdsection_read_t *m_pSectionList;
@@ -181,8 +183,8 @@ public:
 	void LoadArray( const char *pszName, CScriptArray *pData, nhandle_t hSection );
 
 	bool Load( uint64_t nSlot );
-	bool Save( const char *filename = Cvar_VariableString( "sgame_SaveName" ) );
-	bool LoadPartial( const char *filename, gamedata_t *gd );
+	bool Save( uint64_t nSlot );
+	bool LoadPartial( uint64_t nSlot, gamedata_t *gd );
 
 	nhandle_t GetSection( const char *name );
 

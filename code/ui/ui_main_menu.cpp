@@ -390,13 +390,22 @@ static void SplashScreen_Draw( void )
 	case SPLASH_SCREEN_LOGO: { // get attribution to 3rd party stuff done with
 		int cursorX = 80;
 
-		re.DrawImage( cursorX * ui->scale, 100 * ui->scale, 330 * ui->scale + ui->bias, 180 * ui->scale, 0, 0, 1, 1, s_splashScreen->companyLogoShader );
+		ImGui::Begin( "##SplashScreenLogos", NULL, MENU_DEFAULT_FLAGS );
+		ImGui::SetWindowPos( ImVec2( 0, 0 ) );
+		ImGui::SetWindowSize( ImVec2( gi.gpuConfig.vidWidth, gi.gpuConfig.vidHeight ) );
+		
+		ImGui::SetCursorScreenPos( ImVec2( cursorX * ui->scale, 100 * ui->scale ) );
+		ImGui::Image( (ImTextureID)(uintptr_t)s_splashScreen->companyLogoShader, ImVec2( 330 * ui->scale + ui->bias, 180 * ui->scale ) );
+
 		cursorX += 300 * ui->scale + ui->bias;
+		ImGui::SetCursorScreenPos( ImVec2( cursorX * ui->scale + ui->bias, 100 * ui->scale ) );
+		ImGui::Image( (ImTextureID)(uintptr_t)s_splashScreen->engineLogoShader, ImVec2( 340 * ui->scale + ui->bias, 220 * ui->scale ) );
 
-		re.DrawImage( cursorX * ui->scale + ui->bias, 100 * ui->scale, 340 * ui->scale + ui->bias, 220 * ui->scale, 0, 0, 1, 1, s_splashScreen->engineLogoShader );
 		cursorX = 200 * ui->scale + ui->bias;
+		ImGui::SetCursorScreenPos( ImVec2( cursorX * ui->scale + ui->bias, 300 * ui->scale ) );
+		ImGui::Image( (ImTextureID)(uintptr_t)s_splashScreen->fmodLogoShader, ImVec2( 356 * ui->scale + ui->bias, 126 * ui->scale ) );
 
-		re.DrawImage( cursorX * ui->scale + ui->bias, 300 * ui->scale, 356 * ui->scale + ui->bias, 126 * ui->scale, 0, 0, 1, 1, s_splashScreen->fmodLogoShader );
+		ImGui::End();
 
 		ImGui::Begin( "##SplashScreen", NULL, MENU_DEFAULT_FLAGS );
 		ImGui::SetWindowPos( ImVec2( s_splashScreen->menu.x,  472 * ui->scale ) );

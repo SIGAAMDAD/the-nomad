@@ -41,7 +41,7 @@ void InitCvars() {
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_LevelIndex, "g_levelIndex", "0", CVAR_LATCH | CVAR_TEMP, false );
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_MapName, "mapname", "", CVAR_TEMP, false );
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_MaxFps, "com_maxfps", "", CVAR_SAVE, false );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_SaveName, "sgame_SaveName", "nomadsv", CVAR_TEMP, false );
+	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_SaveSlot, "sgame_SaveSlot", "0", CVAR_TEMP, false );
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_LockShotMaxTargets, "sgame_LockShotMaxTargets", "20", CVAR_TEMP, false );
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_LockShotTime, "sgame_LockShotTime", "100", CVAR_TEMP, false );
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_LockShotMaxRange, "sgame_LockShotMaxRange", "40", CVAR_TEMP, false );
@@ -88,50 +88,50 @@ void InitResources() {
 	// load sound effects
 	//
 
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/death1" );
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/death2" );
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/death3" );
+	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/death1" );
+	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/death2" );
+	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/death3" );
 	
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/pain_scream_0" );
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/pain_scream_1" );
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/pain_scream_2" );
+	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_scream_0" );
+	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_scream_1" );
+	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_scream_2" );
 
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/slide_0" );
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/slide_1" );
+	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slide_0" );
+	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slide_1" );
 
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/dash" );
+	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/dash" );
 
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/melee" );
+	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/melee" );
 
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/weapon_change_hand" );
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/weapon_change_mode" );
+	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/weapon_change_hand" );
+	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/weapon_change_mode" );
 
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/cloth_foley_0" );
-	TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/cloth_foley_1" );
+	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/cloth_foley_0" );
+	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/cloth_foley_1" );
 
 
 	//
 	// load materials
 	//
 
-	TheNomad::Engine::ResourceCache.GetShader( "gfx/hud/blood_screen" );
+	TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/blood_screen" );
 
-	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "raio_torso" );
+	TheNomad::Engine::Renderer::RegisterShader( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "raio_torso" );
 	for ( int i = 0; i < TheNomad::SGame::NUMFACING; i++ ) {
-		TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "raio_arms_0_" + i );
-		TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "raio_arms_1_" + i );
-		TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "raio_legs_" + i );
+		TheNomad::Engine::Renderer::RegisterShader( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "raio_arms_0_" + i );
+		TheNomad::Engine::Renderer::RegisterShader( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "raio_arms_1_" + i );
+		TheNomad::Engine::Renderer::RegisterShader( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "raio_legs_" + i );
 	}
 
-	TheNomad::Engine::ResourceCache.GetShader( "gfx/effects/flame1" );
-	TheNomad::Engine::ResourceCache.GetShader( "gfx/effects/flame2" );
-	TheNomad::Engine::ResourceCache.GetShader( "gfx/effects/flame3" );
-	TheNomad::Engine::ResourceCache.GetShader( "gfx/effects/flame4" );
-	TheNomad::Engine::ResourceCache.GetShader( "gfx/effects/flame5" );
-	TheNomad::Engine::ResourceCache.GetShader( "gfx/effects/flame6" );
+	TheNomad::Engine::Renderer::RegisterShader( "gfx/effects/flame1" );
+	TheNomad::Engine::Renderer::RegisterShader( "gfx/effects/flame2" );
+	TheNomad::Engine::Renderer::RegisterShader( "gfx/effects/flame3" );
+	TheNomad::Engine::Renderer::RegisterShader( "gfx/effects/flame4" );
+	TheNomad::Engine::Renderer::RegisterShader( "gfx/effects/flame5" );
+	TheNomad::Engine::Renderer::RegisterShader( "gfx/effects/flame6" );
 
-	TheNomad::Engine::ResourceCache.GetShader( "gfx/bloodSplatter0" );
-	TheNomad::Engine::ResourceCache.GetShader( "gfx/env/smokePuff" );
+	TheNomad::Engine::Renderer::RegisterShader( "gfx/bloodSplatter0" );
+	TheNomad::Engine::Renderer::RegisterShader( "gfx/env/smokePuff" );
 
 	//
 	// register strings

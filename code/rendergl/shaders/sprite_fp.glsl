@@ -51,9 +51,15 @@ struct Light {
 	int type;
 };
 
+#if defined(EXPLICIT_BUFFER_LOCATIONS)
 layout( std140, binding = 0 ) readonly buffer u_LightBuffer {
 	Light u_LightData[];
 };
+#else
+layout( std140 ) uniform u_LightBuffer {
+	Light u_LightData[ MAX_LIGHTS ];
+};
+#endif
 
 uniform int u_NumLights;
 uniform vec3 u_AmbientColor;
@@ -97,7 +103,7 @@ vec3 CalcSpecular() {
 
 	return outColor;
 #else
-	return outColor;
+	return vec3( 0.0 );
 #endif
 }
 
@@ -117,23 +123,6 @@ vec3 CalcPointLight( Light light ) {
 	range = light.range * light.brightness;
 
 	attenuation = ( light.constant + light.linear + light.quadratic * ( light.range * light.range ) );
-#if !defined(USE_SWITCH)
-	if ( u_LightingQuality == QUALITY_NORMAL ) {
-		vec3 normal = CalcNormal();
-		return ( mix( diffuse, normal, 0.025 ) * attenuation );	
-	}
-#else
-	switch ( u_LightingQuality ) {
-	case QUALITY_NORMAL:
-		vec3 normal = CalcNormal();
-		return ( mix( diffuse, normal, 0.025 ) * attenuation );	
-	};
-#endif
-
-	vec3 specular = CalcSpecular();
-	vec3 normal = CalcNormal();
-	diffuse = mix( diffuse, specular, 0.025 );
-	diffuse = mix( diffuse, normal, 0.025 );
 
 	return ( diffuse * attenuation );
 }

@@ -775,13 +775,18 @@ namespace TheNomad::SGame {
 			refEntity.scale = 2.0f;
 			refEntity.Draw();
 		}
-
-		private void DrawArms() {
+		
+		private void DrawBackArm() {
 			if ( m_Facing == FACING_LEFT ) {
 				m_RightArm.Draw();
-				m_LeftArm.Draw();	
 			} else if ( m_Facing == FACING_RIGHT ) {
 				m_LeftArm.Draw();
+			}
+		}
+		private void DrawFrontArm() {
+			if ( m_Facing == FACING_LEFT ) {
+				m_LeftArm.Draw();
+			} else if ( m_Facing == FACING_RIGHT ) {
 				m_RightArm.Draw();
 			}
 		}
@@ -815,6 +820,8 @@ namespace TheNomad::SGame {
 			*/
 			}
 
+			DrawBackArm();
+
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.sheetNum = m_SpriteSheet.GetShader();
 			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( @m_SpriteSheet, @m_State ) + m_Facing;
@@ -838,7 +845,17 @@ namespace TheNomad::SGame {
 			}
 
 			DrawLegs();
-			DrawArms();
+			DrawFrontArm();
+
+//			refEntity.sheetNum = -1;
+//			refEntity.spriteId = TheNomad::Engine::Renderer::RegisterShader( "sprites/players/raio_arms_0_1" );
+//			refEntity.scale = 2.0f;
+//			refEntity.Draw();
+
+//			refEntity.sheetNum = m_LeftArm.GetSpriteSheet().GetShader();
+//			refEntity.spriteId = 0;
+//			refEntity.scale = 10.0f;
+//			refEntity.Draw();
 
 			if ( ( m_iFlags & PF_AFTER_IMAGE ) != 0 ) {
 				// draw the common silhouette after image for the player's last known position to the enemies

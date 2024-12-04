@@ -16,18 +16,18 @@ namespace TheNomad::SGame {
 		PMoveData( PlayrObject@ ent ) {
 			@m_EntityData = @ent;
 
-			moveGravel0 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/move_gravel_0" );
-			moveGravel1 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/move_gravel_1" );
-			moveGravel2 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/move_gravel_2" );
-			moveGravel3 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/move_gravel_3" );
+			moveGravel0 = TheNomad::Engine::SoundSystem::SoundEffect( "event:/sfx/player/move_gravel_0" );
+			moveGravel1 = TheNomad::Engine::SoundSystem::SoundEffect( "event:/sfx/player/move_gravel_1" );
+			moveGravel2 = TheNomad::Engine::SoundSystem::SoundEffect( "event:/sfx/player/move_gravel_2" );
+			moveGravel3 = TheNomad::Engine::SoundSystem::SoundEffect( "event:/sfx/player/move_gravel_3" );
 
-			moveWater0 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/move_water_0" );
-			moveWater1 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/move_water_1" );
+			moveWater0 = TheNomad::Engine::SoundSystem::SoundEffect( "event:/sfx/player/move_water_0" );
+			moveWater1 = TheNomad::Engine::SoundSystem::SoundEffect( "event:/sfx/player/move_water_1" );
 
-			moveMetal0 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/move_metal_0" );
-			moveMetal1 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/move_metal_1" );
-			moveMetal2 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/move_metal_2" );
-			moveMetal3 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/move_metal_3" );
+			moveMetal0 = TheNomad::Engine::SoundSystem::SoundEffect( "event:/sfx/player/move_metal_0" );
+			moveMetal1 = TheNomad::Engine::SoundSystem::SoundEffect( "event:/sfx/player/move_metal_1" );
+			moveMetal2 = TheNomad::Engine::SoundSystem::SoundEffect( "event:/sfx/player/move_metal_2" );
+			moveMetal3 = TheNomad::Engine::SoundSystem::SoundEffect( "event:/sfx/player/move_metal_3" );
 		}
 		PMoveData() {
 		}
@@ -161,7 +161,7 @@ namespace TheNomad::SGame {
 							}
 
 							GfxManager.AddDustPoly( origin, vec3( 0.0f ), 1000,
-								TheNomad::Engine::ResourceCache.GetShader( "gfx/env/smokePuff" ) );
+								TheNomad::Engine::Renderer::RegisterShader( "gfx/env/smokePuff" ) );
 						}
 					}
 				}
@@ -222,11 +222,11 @@ namespace TheNomad::SGame {
 			if ( side > 0 ) {
 				m_EntityData.SetFacing( FACING_RIGHT );
 				m_EntityData.SetLegsFacing( FACING_RIGHT );
-				m_EntityData.SetArmsFacing( FACING_RIGHT );
+//				m_EntityData.SetArmsFacing( FACING_RIGHT );
 			} else if ( side < 0 ) {
 				m_EntityData.SetFacing( FACING_LEFT );
 				m_EntityData.SetLegsFacing( FACING_LEFT );
-				m_EntityData.SetArmsFacing( FACING_LEFT );
+//				m_EntityData.SetArmsFacing( FACING_LEFT );
 			}
 
 			//
@@ -243,18 +243,18 @@ namespace TheNomad::SGame {
 
 				if ( mousePos.x < screenWidth / 2 ) {
 					if ( @m_EntityData.GetLeftHandWeapon() !is null ) {
-						m_EntityData.SetLeftArmFacing( FACING_LEFT );
+//						m_EntityData.SetLeftArmFacing( FACING_LEFT );
 					}
 					if ( @m_EntityData.GetRightHandWeapon() !is null ) {
-						m_EntityData.SetRightArmFacing( FACING_LEFT );
+//						m_EntityData.SetRightArmFacing( FACING_LEFT );
 					}
 					m_nJoystickAngle = -m_nJoystickAngle;
 				} else if ( mousePos.x > screenWidth / 2 ) {
 					if ( @m_EntityData.GetLeftHandWeapon() !is null ) {
-						m_EntityData.SetLeftArmFacing( FACING_RIGHT );
+//						m_EntityData.SetLeftArmFacing( FACING_RIGHT );
 					}
 					if ( @m_EntityData.GetRightHandWeapon() !is null ) {
-						m_EntityData.SetRightArmFacing( FACING_RIGHT );
+//						m_EntityData.SetRightArmFacing( FACING_RIGHT );
 					}
 				}
 			}

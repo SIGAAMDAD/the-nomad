@@ -438,7 +438,7 @@ typedef struct {
 } gpuDLight_t;
 
 typedef struct {
-	uint16_t		worldPos[2];
+	vec2_t			worldPos;
 	vec2_t			xyz;
 	vec2_t			uv;
 	color4ub_t		color;
@@ -951,7 +951,7 @@ typedef struct {
 	uint64_t frameCount;
 } viewData_t;
 
-typedef uint16_t worldPos_t[2];
+typedef vec_t worldPos_t[2];
 typedef uint16_t color_t[4];
 typedef int16_t tangent_t[4];
 typedef int16_t bitangent_t[4];

@@ -35,7 +35,7 @@ namespace TheNomad::SGame {
 	ConVar sgame_LevelIndex;
 	ConVar sgame_MapName;
 	ConVar sgame_MaxFps;
-	ConVar sgame_SaveName;
+	ConVar sgame_SaveSlot;
 
 	//
 	// game specific

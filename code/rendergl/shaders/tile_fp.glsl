@@ -7,7 +7,7 @@ out vec4 a_Color;
 
 in vec2 v_TexCoords;
 in vec4 v_Color;
-in flat uvec2 v_WorldPos;
+in vec2 v_WorldPos;
 in vec3 v_LightingColor;
 
 uniform float u_GammaAmount;
@@ -55,9 +55,15 @@ struct Light {
 	int type;
 };
 
+#if defined(EXPLICIT_BUFFER_LOCATIONS)
 layout( std140, binding = 0 ) readonly buffer u_LightBuffer {
 	Light u_LightData[];
 };
+#else
+layout( std140 ) uniform u_LightBuffer {
+	Light u_LightData[ MAX_LIGHTS ];
+};
+#endif
 
 uniform int u_NumLights;
 uniform vec3 u_AmbientColor;
@@ -101,7 +107,7 @@ vec3 CalcSpecular() {
 
 	return outColor;
 #else
-	return outColor;
+	return vec3( 0.0 );
 #endif
 }
 
@@ -121,23 +127,6 @@ vec3 CalcPointLight( Light light ) {
 	range = light.range * light.brightness;
 
 	attenuation = ( light.constant + light.linear + light.quadratic * ( light.range * light.range ) );
-#if !defined(USE_SWITCH)
-	if ( u_LightingQuality == QUALITY_NORMAL ) {
-		const vec3 normal = CalcNormal();
-		return ( mix( diffuse, normal, 0.025 ) * attenuation );	
-	}
-#else
-	switch ( u_LightingQuality ) {
-	case QUALITY_NORMAL:
-		const vec3 normal = CalcNormal();
-		return ( mix( diffuse, normal, 0.025 ) * attenuation );	
-	};
-#endif
-
-	const vec3 specular = CalcSpecular();
-	const vec3 normal = CalcNormal();
-	diffuse = mix( diffuse, specular, 0.025 );
-	diffuse = mix( diffuse, normal, 0.025 );
 
 	return ( diffuse * attenuation );
 }
@@ -176,7 +165,7 @@ void main() {
 		a_Color = texture( u_DiffuseMap, texCoord );
 	}
 
-	const float alpha = a_Color.a * v_Color.a;
+	float alpha = a_Color.a * v_Color.a;
 	if ( u_AlphaTest == 1 ) {
 		if ( alpha == 0.0 ) {
 			discard;

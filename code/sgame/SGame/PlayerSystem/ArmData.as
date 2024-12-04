@@ -17,7 +17,7 @@ namespace TheNomad::SGame {
 			@m_EntityData = @base;
 
 			for ( uint i = 0; i < NUMFACING; i++ ) {
-				@m_SpriteSheet[i] = TheNomad::Engine::ResourceCache.GetSpriteSheet(
+				@m_SpriteSheet[i] = @TheNomad::Engine::ResourceCache.GetSpriteSheet(
 					"sprites/players/" + base.GetSkin() + "raio_arms_" + nArmIndex + "_" + i,
 					sheetSize.x, sheetSize.y, spriteSize.x, spriteSize.y );
 				if ( @m_SpriteSheet is null ) {

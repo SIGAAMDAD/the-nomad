@@ -539,6 +539,9 @@ static void GLSL_PrepareHeader(GLenum shaderType, const GLchar *extra, char *des
 		N_strcat( dest, size, "#extension GL_ARB_explicit_attrib_location : enable\n" );
 		N_strcat( dest, size, "#define USE_MULTIATTRIB\n" );
 	}
+	if ( GLSL_VERSION_ATLEAST( 4, 2 ) ) {
+		N_strcat( dest, size, "#define EXPLICIT_BUFFER_LOCATIONS\n" );
+	}
 
 	//
 	// add any extensions
@@ -972,7 +975,7 @@ void GLSL_SetUniformTexture( shaderProgram_t *program, uint32_t uniformNum, text
 	if ( glContext.bindlessTextures ) {
 		nglUniformHandleui64ARB( uniforms[ uniformNum ], value->handle );
 	} else {
-		nglUniform1i( uniforms[ uniformNum ], value->id );
+		nglUniform1i( uniforms[ uniformNum ], 0 );
 	}
 }
 
@@ -1265,12 +1268,22 @@ void GLSL_ShaderBufferData( shaderProgram_t *shader, uint32_t uniformNum, unifor
 
 void GLSL_LinkUniformToShader( shaderProgram_t *program, uint32_t uniformNum, uniformBuffer_t *buffer, qboolean dynamicStorage, uint32_t binding )
 {
+	GLenum target;
+
+	target = GL_SHADER_STORAGE_BUFFER;
+	if ( !GLSL_VERSION_ATLEAST( 4, 2 ) ) {
+		target = GL_UNIFORM_BUFFER;
+	}
+
 	GLSL_UseProgram( program );
 
 	buffer->binding = binding;
 
-	nglBindBufferRange( GL_SHADER_STORAGE_BUFFER, 0, buffer->id, 0, buffer->size );
-	nglBindBufferBase( GL_SHADER_STORAGE_BUFFER, 0, buffer->id );
+	nglBindBufferRange( target, 0, buffer->id, 0, buffer->size );
+	nglBindBufferBase( target, 0, buffer->id );
+	if ( !GLSL_VERSION_ATLEAST( 4, 2 ) ) {
+		nglUniformBlockBinding( program->programId, 0, binding );
+	}
 	GL_CheckErrors();
 	
 	GLSL_UseProgram( NULL );

@@ -25,7 +25,6 @@ public:
 		m_StringCache.reserve( 2048 );
 	}
 	~CModuleStringFactory() {
-		m_StringCache.clear();
 	}
 	
 	const void *GetStringConstant( const char *pData, asUINT nLength ) {

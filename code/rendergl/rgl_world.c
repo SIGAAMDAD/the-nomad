@@ -442,6 +442,7 @@ static void R_ProcessLights( void )
 	}
 	N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define POINT_LIGHT %i\n", LIGHT_POINT ) );
 	N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define DIRECTION_LIGHT %i\n", LIGHT_DIRECTIONAL ) );
+	/*
 	if ( r_normalMapping->i ) {
 		N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_NORMALMAP\n" );
 	}
@@ -451,6 +452,8 @@ static void R_ProcessLights( void )
 	if ( r_parallaxMapping->i ) {
 		N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_PARALLAXMAP\n" );
 	}
+	*/
+	ri.Printf( PRINT_INFO, "Compiling tile shader...\n" );
 	if ( !GLSL_InitGPUShader( &rg.tileShader, "tile", attribs, qtrue, extradefines, qtrue, fallbackShader_tile_vp, fallbackShader_tile_fp ) ) {
 		ri.Error( ERR_FATAL, "Could not load tile shader!" );
 	}
@@ -460,6 +463,7 @@ static void R_ProcessLights( void )
 	GLSL_InitUniforms( &rg.tileShader );
 	GLSL_FinishGPUShader( &rg.tileShader );
 
+	ri.Printf( PRINT_INFO, "Compiling sprite shader...\n" );
 	if ( !GLSL_InitGPUShader( &rg.spriteShader, "sprite", attribs, qtrue, extradefines, qtrue, fallbackShader_sprite_vp, fallbackShader_sprite_fp ) ) {
 		ri.Error( ERR_FATAL, "Could not load sprite shader!" );
 	}
@@ -537,7 +541,7 @@ static void R_InitWorldBuffer( tile2d_header_t *theader )
 	attribs[ATTRIB_INDEX_POSITION].type			= GL_FLOAT;
 	attribs[ATTRIB_INDEX_TEXCOORD].type			= GL_FLOAT;
 	attribs[ATTRIB_INDEX_COLOR].type			= GL_UNSIGNED_BYTE;
-	attribs[ATTRIB_INDEX_WORLDPOS].type			= GL_UNSIGNED_SHORT;
+	attribs[ATTRIB_INDEX_WORLDPOS].type			= GL_FLOAT;
 	attribs[ATTRIB_INDEX_TANGENT].type			= GL_FLOAT;
 	attribs[ATTRIB_INDEX_BITANGENT].type		= GL_FLOAT;
 	attribs[ATTRIB_INDEX_NORMAL].type			= GL_FLOAT;
@@ -724,8 +728,6 @@ void RE_LoadWorldMap( const char *filename )
 	r_worldData.width = mheader->mapWidth;
 	r_worldData.height = mheader->mapHeight;
 	r_worldData.numTiles = r_worldData.width * r_worldData.height;
-
-	ri.Cmd_ExecuteCommand( "snd.startup_level" );
 
 	// load into heap
 	ri.G_GetMapData( &r_worldData.tiles, &r_worldData.numTiles );

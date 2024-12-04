@@ -156,12 +156,14 @@ typedef struct {
 	const char **onoff;
 	const char **qualityTypes;
 	const char **anisotropyAmounts;
+	const char **lightingTypes;
 
 	int numMultisampleTypes;
 	int numTextureDetails;
 	int numTextureFilters;
 	int numQualities;
 	int numAnisotropyAmounts;
+	int numLightingTypes;
 
 	select_t textureFilter;
 	select_t multisampleType;
@@ -452,7 +454,7 @@ static void SettingsMenu_InitPresets( void ) {
 	s_settingsMenu->presets[ PRESET_QUALITY ].basic.textureDetail = TexDetail_ExpensiveShitWeveGotHere;
 	s_settingsMenu->presets[ PRESET_QUALITY ].basic.textureFilter = TEXFILTER_LINEARNEAREST;
 	s_settingsMenu->presets[ PRESET_QUALITY ].basic.dynamicLighting = qtrue;
-	s_settingsMenu->presets[ PRESET_QUALITY ].basic.lightingQuality = 2;
+	s_settingsMenu->presets[ PRESET_QUALITY ].basic.lightingQuality = 1;
 	s_settingsMenu->presets[ PRESET_QUALITY ].basic.hdr = qtrue;
 	s_settingsMenu->presets[ PRESET_QUALITY ].basic.bloom = qtrue;
 	s_settingsMenu->presets[ PRESET_QUALITY ].basic.anisotropyAmount = ANISOTROPY_ANISOTROPY16;
@@ -2130,6 +2132,10 @@ void SettingsMenu_Cache( void )
 	static const char *s_windowSizes[ NUM_WINDOW_SIZES ];
 	static const char *s_vsync[ NUM_VSYNC_TYPES ];
 	static const char *difficulties[ NUMDIFS - 1 ];
+	static const char *s_lightingQualities[ 2 ] = {
+		"LOW",
+		"HIGH"
+	};
 	static const char *s_frameRates[] = {
 		"30",
 		"35",
@@ -2158,7 +2164,7 @@ void SettingsMenu_Cache( void )
 		"LOW",
 		"NORMAL",
 		"HIGH",
-		"VERY HIGH",
+		"VERY HIGH"
 	};
 	static const char *s_speakerModes[] = {
 		"Default",
@@ -2247,6 +2253,7 @@ void SettingsMenu_Cache( void )
 	s_settingsMenu->presetNames = s_presetLabels;
 	s_settingsMenu->performance.qualityTypes = s_qualityTypes;
 	s_settingsMenu->performance.anisotropyAmounts = s_anisotropyTypes;
+	s_settingsMenu->performance.lightingTypes = s_lightingQualities;
 
 	s_settingsMenu->audio.speakermodeTypes = s_speakerModes;
 
@@ -2269,6 +2276,7 @@ void SettingsMenu_Cache( void )
 	s_settingsMenu->performance.numTextureDetails = arraylen( s_textureDetail );
 	s_settingsMenu->performance.numTextureFilters = arraylen( s_textureFilters );
 	s_settingsMenu->performance.numAnisotropyAmounts = arraylen( s_anisotropyTypes );
+	s_settingsMenu->performance.numLightingTypes = arraylen( s_lightingQualities );
 
 	s_settingsMenu->gameplay.numDifficultyTypes = arraylen( difficulties );
 
