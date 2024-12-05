@@ -285,7 +285,7 @@ namespace TheNomad::SGame {
 			return @m_RightArm.GetSpriteSheet();
 		}
 		SpriteSheet@ GetLegsSpriteSheet() {
-			return @m_LegSpriteSheet[ m_LegsFacing ];
+			return @m_LegSpriteSheet;
 		}
 		const SpriteSheet@ GetLeftArmSpriteSheet() const {
 			return @m_LeftArm.GetSpriteSheet();
@@ -294,7 +294,7 @@ namespace TheNomad::SGame {
 			return @m_RightArm.GetSpriteSheet();
 		}
 		const SpriteSheet@ GetLegsSpriteSheet() const {
-			return @m_LegSpriteSheet[ m_LegsFacing ];
+			return @m_LegSpriteSheet;
 		}
 
 		void SetLegsFacing( int facing ) {
@@ -391,6 +391,10 @@ namespace TheNomad::SGame {
 				section.SaveUInt( "itemSlotCount_" + i, slots[i].Count() );
 				section.SaveUInt( "itemSlotType_" + i, slots[i].GetItemType().type );
 			}
+		}
+
+		float GetArmAngle() const {
+			return Pmove.m_nArmsAngle;
 		}
 		
 		float GetHealthMult() const {
@@ -620,7 +624,7 @@ namespace TheNomad::SGame {
 				armsSheetSize, armsSpriteSize, legsSheetSize, legsSpriteSize );
 
 			@m_SpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/" +
-				m_Skin + "raio_torso", torsoSheetSize.x, torsoSheetSize.y, torsoSpriteSize.x, torsoSpriteSize.y );
+				m_Skin + "/torso", torsoSheetSize.x, torsoSheetSize.y, torsoSpriteSize.x, torsoSpriteSize.y );
 			if ( @m_SpriteSheet is null ) {
 				GameError( "PlayrObject::Spawn: failed to load torso sprite sheet" );
 			}
@@ -630,15 +634,10 @@ namespace TheNomad::SGame {
 			}
 			m_Facing = FACING_RIGHT;
 
-			@m_WetSpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/" + m_Skin + "raio_torso_wet",
-				torsoSheetSize.x, torsoSheetSize.y, torsoSpriteSize.x, torsoSpriteSize.y );
-
-			for ( uint i = 0; i < NUMFACING; i++ ) {
-				@m_LegSpriteSheet[i] = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/" +
-					m_Skin + "raio_legs_" + i, legsSheetSize.x, legsSheetSize.y, legsSpriteSize.x, legsSpriteSize.y );
-				if ( @m_LegSpriteSheet[i] is null ) {
-					GameError( "PlayrObject::Spawn: failed to load leg sprite sheet" );
-				}
+			@m_LegSpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/" +
+				m_Skin + "/legs", legsSheetSize.x, legsSheetSize.y, legsSpriteSize.x, legsSpriteSize.y );
+			if ( @m_LegSpriteSheet is null ) {
+				GameError( "PlayrObject::Spawn: failed to load leg sprite sheet" );
 			}
 
 			m_LeftArm.Link( @this, FACING_LEFT, armsSheetSize, armsSpriteSize );
@@ -649,9 +648,6 @@ namespace TheNomad::SGame {
 				GameError( "PlayrObject::Spawn: failed to load idle leg state" );
 			}
 			m_LegsFacing = FACING_RIGHT;
-
-//			m_AfterImage.Create( @this );
-			m_iFlags |= PF_AFTER_IMAGE;
 
 			m_nLegTicker = 0;
 			m_Name = "player";
@@ -699,14 +695,6 @@ namespace TheNomad::SGame {
 			@m_LegState = @m_LegState.Run( m_nLegTicker );
 			m_LeftArm.Think();
 			m_RightArm.Think();
-		}
-
-		uint GetSpriteId( SpriteSheet@ sheet, EntityState@ state ) const {
-			if ( @state is null ) {
-				GameError( "GetSpriteID(): bad state!" );
-			}
-			const uint offset = state.GetSpriteOffset().y * sheet.GetSpriteCountX() + state.GetSpriteOffset().x;
-			return offset + state.GetAnimation().GetFrame();
 		}
 
 		private void DrawLegs() {
@@ -770,9 +758,9 @@ namespace TheNomad::SGame {
 			}
 
 			refEntity.origin = m_Link.m_Origin;
-			refEntity.sheetNum = m_LegSpriteSheet[ m_LegsFacing ].GetShader();
-			refEntity.spriteId = GetSpriteId( @m_LegSpriteSheet[ m_LegsFacing ], @m_LegState );
-			refEntity.scale = 2.0f;
+			refEntity.sheetNum = m_LegSpriteSheet.GetShader();
+			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( @m_LegSpriteSheet, @m_LegState );
+			refEntity.scale = TheNomad::Engine::Renderer::GetFacing( m_LegsFacing );
 			refEntity.Draw();
 		}
 		
@@ -824,8 +812,8 @@ namespace TheNomad::SGame {
 
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.sheetNum = m_SpriteSheet.GetShader();
-			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( @m_SpriteSheet, @m_State ) + m_Facing;
-			refEntity.scale = 2.0f;
+			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( @m_SpriteSheet, @m_State );
+			refEntity.scale = TheNomad::Engine::Renderer::GetFacing( m_Facing );
 			refEntity.Draw();
 
 			if ( IsDashing() ) {
@@ -847,16 +835,6 @@ namespace TheNomad::SGame {
 			DrawLegs();
 			DrawFrontArm();
 
-//			refEntity.sheetNum = -1;
-//			refEntity.spriteId = TheNomad::Engine::Renderer::RegisterShader( "sprites/players/raio_arms_0_1" );
-//			refEntity.scale = 2.0f;
-//			refEntity.Draw();
-
-//			refEntity.sheetNum = m_LeftArm.GetSpriteSheet().GetShader();
-//			refEntity.spriteId = 0;
-//			refEntity.scale = 10.0f;
-//			refEntity.Draw();
-
 			if ( ( m_iFlags & PF_AFTER_IMAGE ) != 0 ) {
 				// draw the common silhouette after image for the player's last known position to the enemies
 //				m_AfterImage.Draw();
@@ -864,8 +842,6 @@ namespace TheNomad::SGame {
 
 			m_HudData.Draw();
 		}
-
-		float m_Rotation = -45.0f;
 
 		KeyBind key_MoveNorth;
 		KeyBind key_MoveSouth;
@@ -948,7 +924,7 @@ namespace TheNomad::SGame {
 
 		private SpriteSheet@ m_WetSpriteSheet = null;
 
-		private SpriteSheet@[] m_LegSpriteSheet( NUMFACING );
+		private SpriteSheet@ m_LegSpriteSheet = null;
 		private EntityState@ m_LegState = null;
 		private uint m_nLegTicker = 0;
 		private uint m_LegsFacing = FACING_RIGHT;

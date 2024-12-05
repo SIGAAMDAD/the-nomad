@@ -251,6 +251,10 @@ void CModuleLib::RunModules( EModuleFuncId nCallId, uint32_t nArgs, ... )
 	int *args;
 	CTimer time;
 
+	if ( !m_pContext || !m_pEngine ) {
+		return;
+	}
+
 	if ( nCallId >= NumFuncs ) {
 		N_Error( ERR_FATAL, "CModuleLib::RunModules: invalid call id" );
 	}
@@ -285,6 +289,10 @@ int CModuleLib::ModuleCall( CModuleInfo *pModule, EModuleFuncId nCallId, uint32_
 	int *args;
 	const char *name;
 	CTimer time;
+
+	if ( !m_pContext || !m_pEngine ) {
+		return 0;
+	}
 
 	if ( !pModule ) {
 		N_Error( ERR_FATAL, "CModuleLib::ModuleCall: invalid module" );
@@ -1001,6 +1009,9 @@ void CModuleLib::Shutdown( qboolean quit )
 
 	m_pContext->Release();
 	m_pModule->Discard();
+
+	m_pContext = NULL;
+	m_pEngine = NULL;
 
 	asResetGlobalMemoryFunctions();
 

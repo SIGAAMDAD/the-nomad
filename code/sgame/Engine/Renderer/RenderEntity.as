@@ -11,7 +11,7 @@ namespace TheNomad::Engine::Renderer {
 				radius, rotation, scale );
 		}
 
-		vec3		origin = vec3( 0.0f );
+		vec3 origin = vec3( 0.0f );
 
 		// texturing
 		int sheetNum = 0;  // sprite sheet index
@@ -27,11 +27,21 @@ namespace TheNomad::Engine::Renderer {
 		// extra sprite information
 		float		radius = 0.0f;
 		float		rotation = 0.0f;
-		float		scale = 0.0f;
+		vec2		scale = vec2( 0.0f );
 	};
 
 	uint GetSpriteId( TheNomad::SGame::SpriteSheet@ sheet, TheNomad::SGame::EntityState@ state ) {
 		const uint offset = state.GetSpriteOffset().y * sheet.GetSpriteCountX() + state.GetSpriteOffset().x;
 		return offset + state.GetAnimation().GetFrame();
+	}
+	vec2 GetFacing( int facing ) {
+		switch ( facing ) {
+		case TheNomad::SGame::FACING_LEFT:	return vec2( -2.0f, 2.0f );
+		case TheNomad::SGame::FACING_RIGHT:	return vec2(  2.0f, 2.0f );
+		default:
+			break;
+		};
+		GameError( "GetFacing: bad facing " + facing );
+		return Vec2Origin;
 	}
 };

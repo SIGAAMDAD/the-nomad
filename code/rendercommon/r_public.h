@@ -87,7 +87,7 @@ typedef struct {
 
 	void (*GLM_MakeVPM)( const vec4_t ortho, float *zoom, float zNear, float zFar, vec3_t origin, mat4_t vpm,
 		mat4_t projection, mat4_t view, uint32_t orthoFlags );
-	void (*GLM_TransformToGL)( const vec3_t world, vec3_t *xyz, float scale, float rotation, mat4_t vpm );
+	void (*GLM_TransformToGL)( const vec3_t world, vec3_t *xyz, const vec2_t scale, float rotation, mat4_t vpm );
 
 	void (*Cmd_AddCommand)(const char* name, cmdfunc_t function);
 	void (*Cmd_RemoveCommand)(const char* name);

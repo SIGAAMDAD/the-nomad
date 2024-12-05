@@ -16,13 +16,11 @@ namespace TheNomad::SGame {
 		void Link( PlayrObject@ base, int nArmIndex, const uvec2& in sheetSize, const uvec2& in spriteSize ) {
 			@m_EntityData = @base;
 
-			for ( uint i = 0; i < NUMFACING; i++ ) {
-				@m_SpriteSheet[i] = @TheNomad::Engine::ResourceCache.GetSpriteSheet(
-					"sprites/players/" + base.GetSkin() + "raio_arms_" + nArmIndex + "_" + i,
-					sheetSize.x, sheetSize.y, spriteSize.x, spriteSize.y );
-				if ( @m_SpriteSheet is null ) {
-					GameError( "ArmData::Link: failed to load arms sprite sheet" );
-				}
+			@m_SpriteSheet = @TheNomad::Engine::ResourceCache.GetSpriteSheet(
+				"sprites/players/" + base.GetSkin() + "/arms_" + ( nArmIndex == 0 ? "right" : "left" ),
+				sheetSize.x, sheetSize.y, spriteSize.x, spriteSize.y );
+			if ( @m_SpriteSheet is null ) {
+				GameError( "ArmData::Link: failed to load arms sprite sheet" );
 			}
 
 			@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_IDLE );
@@ -38,7 +36,7 @@ namespace TheNomad::SGame {
 		private SpriteSheet@ CalcState() {
 			if ( @m_State is @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_MELEE ) ) {
 				// if we're in melee state, lock in
-				return @m_SpriteSheet[ m_nFacing ];
+				return @m_SpriteSheet;
 			}
 			
 			if ( @m_Equipped !is null ) {
@@ -60,11 +58,16 @@ namespace TheNomad::SGame {
 					}
 				}
 				else {
-					@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_MOVE );
+					const vec3 velocity = m_EntityData.GetVelocity();
+					if ( velocity.x != 0.0f || velocity.y != 0.0f ) {
+						@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_MOVE );
+					} else {
+						@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_IDLE );
+					}
 				}
 			}
 			
-			return @m_SpriteSheet[ m_nFacing ];
+			return @m_SpriteSheet;
 		}
 		void Think() {
 			@m_State = @m_State.Run( m_nTicker );
@@ -77,16 +80,18 @@ namespace TheNomad::SGame {
 			SpriteSheet@ sheet = @CalcState();
 			
 			refEntity.origin = m_EntityData.GetOrigin();
-			refEntity.sheetNum = TheNomad::Engine::ResourceCache.GetShader( "sprites/raio_arms_1_0" );
-			refEntity.spriteId = 0;
+			refEntity.sheetNum = sheet.GetShader();
+			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( @sheet, @m_State );
+			refEntity.scale = TheNomad::Engine::Renderer::GetFacing( m_nFacing );
+			refEntity.rotation = m_EntityData.GetArmAngle();
 			refEntity.Draw();
 		}
 		
 		SpriteSheet@ GetSpriteSheet() {
-			return @m_SpriteSheet[ m_nFacing ];
+			return @m_SpriteSheet;
 		}
 		const SpriteSheet@ GetSpriteSheet() const {
-			return @m_SpriteSheet[ m_nFacing ];
+			return @m_SpriteSheet;
 		}
 		WeaponObject@ GetEquippedWeapon() {
 			return @m_Equipped;
@@ -131,7 +136,7 @@ namespace TheNomad::SGame {
 		
 		private PlayrObject@ m_EntityData = null;
 		private WeaponObject@ m_Equipped = null;
-		private SpriteSheet@[] m_SpriteSheet( NUMFACING );
+		private SpriteSheet@ m_SpriteSheet = null;
 		private EntityState@ m_State = null;
 		private InfoSystem::WeaponProperty m_nMode = InfoSystem::WeaponProperty::None;
 		private int m_nFacing = FACING_RIGHT;

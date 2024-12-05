@@ -116,12 +116,10 @@ void InitResources() {
 
 	TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/blood_screen" );
 
-	TheNomad::Engine::Renderer::RegisterShader( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "raio_torso" );
-	for ( int i = 0; i < TheNomad::SGame::NUMFACING; i++ ) {
-		TheNomad::Engine::Renderer::RegisterShader( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "raio_arms_0_" + i );
-		TheNomad::Engine::Renderer::RegisterShader( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "raio_arms_1_" + i );
-		TheNomad::Engine::Renderer::RegisterShader( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "raio_legs_" + i );
-	}
+	TheNomad::Engine::Renderer::RegisterShader( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "/torso" );
+	TheNomad::Engine::Renderer::RegisterShader( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "/legs" );
+	TheNomad::Engine::Renderer::RegisterShader( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "/arms_left" );
+	TheNomad::Engine::Renderer::RegisterShader( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "/arms_right" );
 
 	TheNomad::Engine::Renderer::RegisterShader( "gfx/effects/flame1" );
 	TheNomad::Engine::Renderer::RegisterShader( "gfx/effects/flame2" );
@@ -132,6 +130,8 @@ void InitResources() {
 
 	TheNomad::Engine::Renderer::RegisterShader( "gfx/bloodSplatter0" );
 	TheNomad::Engine::Renderer::RegisterShader( "gfx/env/smokePuff" );
+
+	TheNomad::Engine::Renderer::RegisterShader( "wake" );
 
 	//
 	// register strings

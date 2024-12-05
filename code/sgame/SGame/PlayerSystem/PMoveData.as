@@ -222,11 +222,11 @@ namespace TheNomad::SGame {
 			if ( side > 0 ) {
 				m_EntityData.SetFacing( FACING_RIGHT );
 				m_EntityData.SetLegsFacing( FACING_RIGHT );
-//				m_EntityData.SetArmsFacing( FACING_RIGHT );
+				m_EntityData.SetArmsFacing( FACING_RIGHT );
 			} else if ( side < 0 ) {
 				m_EntityData.SetFacing( FACING_LEFT );
 				m_EntityData.SetLegsFacing( FACING_LEFT );
-//				m_EntityData.SetArmsFacing( FACING_LEFT );
+				m_EntityData.SetArmsFacing( FACING_LEFT );
 			}
 
 			//
@@ -239,27 +239,27 @@ namespace TheNomad::SGame {
 				const int screenWidth = TheNomad::GameSystem::GameManager.GetGPUConfig().screenWidth;
 				const int screenHeight = TheNomad::GameSystem::GameManager.GetGPUConfig().screenHeight;
 				
-				m_nJoystickAngle = atan2( ( screenHeight / 2 ) - float( mousePos.y ), ( screenWidth / 2 ) - float( mousePos.x ) );
+				m_nArmsAngle = atan2( ( screenHeight / 2 ) - float( mousePos.y ), ( screenWidth / 2 ) - float( mousePos.x ) );
 
 				if ( mousePos.x < screenWidth / 2 ) {
 					if ( @m_EntityData.GetLeftHandWeapon() !is null ) {
-//						m_EntityData.SetLeftArmFacing( FACING_LEFT );
+						m_EntityData.SetLeftArmFacing( FACING_LEFT );
 					}
 					if ( @m_EntityData.GetRightHandWeapon() !is null ) {
-//						m_EntityData.SetRightArmFacing( FACING_LEFT );
+						m_EntityData.SetRightArmFacing( FACING_LEFT );
 					}
-					m_nJoystickAngle = -m_nJoystickAngle;
+					m_nArmsAngle = -m_nArmsAngle;
 				} else if ( mousePos.x > screenWidth / 2 ) {
 					if ( @m_EntityData.GetLeftHandWeapon() !is null ) {
-//						m_EntityData.SetLeftArmFacing( FACING_RIGHT );
+						m_EntityData.SetLeftArmFacing( FACING_RIGHT );
 					}
 					if ( @m_EntityData.GetRightHandWeapon() !is null ) {
-//						m_EntityData.SetRightArmFacing( FACING_RIGHT );
+						m_EntityData.SetRightArmFacing( FACING_RIGHT );
 					}
 				}
 			}
 			else {
-				TheNomad::Engine::GetJoystickAngle( m_EntityData.GetPlayerIndex(), m_nJoystickAngle, m_JoystickPosition );
+				TheNomad::Engine::GetJoystickAngle( m_EntityData.GetPlayerIndex(), m_nArmsAngle, m_JoystickPosition );
 
 				if ( side > 0 ) {
 					m_EntityData.SetFacing( FACING_RIGHT );
@@ -444,7 +444,7 @@ namespace TheNomad::SGame {
 		
 		PlayrObject@ m_EntityData = null;
 
-		float m_nJoystickAngle = 0.0f;
+		float m_nArmsAngle = 0.0f;
 		
 		float forward = 0.0f;
 		float side = 0.0f;

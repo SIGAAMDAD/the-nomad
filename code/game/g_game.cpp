@@ -402,7 +402,7 @@ void RotateAroundPoint( float cx, float cy, float angleInRads, vec3_t p )
 	p[1] = ynew + cy;
 }
 
-static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, float scale, float rotation, mat4_t vpm )
+static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, const vec2_t scale, float rotation, mat4_t vpm )
 {
 	glm::mat4 mvp;
 	glm::mat4 model = glm::identity<glm::mat4>();
@@ -410,7 +410,7 @@ static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, float scale, flo
 
 	model = glm::translate( glm::mat4( 1.0f ), glm::vec3( world[0], world[1] + world[2], 0.0f ) )
 			* glm::rotate( glm::mat4( 1.0f ), glm::radians( rotation ), glm::vec3( 0, 0, 1 ) )
-			* glm::scale( glm::mat4( 1.0f ), glm::vec3( scale, scale, 0.0f ) );
+			* glm::scale( glm::mat4( 1.0f ), glm::vec3( scale[0], scale[1], 0.0f ) );
 	mvp = model;
 
 	const glm::vec4 positions[4] = {
@@ -2090,11 +2090,13 @@ void G_FlushMemory( void ) {
 }
 
 void G_ShutdownVMs( qboolean quit ) {
-	G_ShutdownSGame();
-	if ( g_pModuleLib ) {
-		g_pModuleLib->Shutdown( quit );
+	if ( !g_pModuleLib ) {
+		return;
 	}
+
+	G_ShutdownSGame();
 	G_ShutdownUI();
+	g_pModuleLib->Shutdown( quit );
 
 	gi.uiStarted = qfalse;
 	gi.sgameStarted = qfalse;

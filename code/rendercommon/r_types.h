@@ -40,15 +40,18 @@ typedef enum {
 } renderEntityType_t;
 
 typedef struct {
+	vec3_t lightingOrigin; // RF_LIGHTING_ORIGIN
+	vec3_t origin;
+	uint32_t frame;
+
 	// texturing
 	nhandle_t sheetNum;  // sprite sheet index
 	nhandle_t spriteId;  // sprite id
 
 	int renderfx;
 
-	vec3_t lightingOrigin; // RF_LIGHTING_ORIGIN
-	vec3_t origin;
-	uint64_t frame;
+	// subtracted from refdef time to control effect start times
+	floatint_t	shaderTime;			// -EC- set to union
 
 	uint32_t flags;
 
@@ -56,13 +59,10 @@ typedef struct {
 	color4ub_t	shader;
 	float		shaderTexCoord[2];	// texture coordinates used by tcMod entity modifiers
 
-	// subtracted from refdef time to control effect start times
-	floatint_t	shaderTime;			// -EC- set to union
-
 	// extra sprite information
 	float		radius;
 	float		rotation;
-	float		scale;
+	vec2_t		scale;
 } renderEntityRef_t;
 
 typedef struct {

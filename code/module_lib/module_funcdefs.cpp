@@ -892,7 +892,7 @@ static void AddEntityToScene( asIScriptGeneric *pGeneric ) {
 	float shaderTime = pGeneric->GetArgFloat( 9 );
 	float radius = pGeneric->GetArgFloat( 10 );
 	float rotation = pGeneric->GetArgFloat( 11 );
-	float scale = pGeneric->GetArgFloat( 12 );
+	const vec2& scale = *(const vec2 *)pGeneric->GetArgObject( 12 );
 
 	memset( &refEntity, 0, sizeof( refEntity ) );
 	VectorCopy( refEntity.origin, origin );
@@ -905,7 +905,7 @@ static void AddEntityToScene( asIScriptGeneric *pGeneric ) {
 	refEntity.flags = flags;
 	refEntity.radius = radius;
 	refEntity.rotation = rotation;
-	refEntity.scale = scale;
+	VectorCopy2( refEntity.scale, scale );
 	refEntity.shaderTime.f = shaderTime;
 
 	re.AddEntityToScene( &refEntity );
@@ -2798,7 +2798,7 @@ void ModuleLib_Register_Engine( void )
 			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::ClearScene()", asFUNCTION( ClearScene ) );
 			g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::Renderer::RenderScene( uint, uint, uint, uint, uint, uint )", asFUNCTION( ModuleLib_RenderScene ), asCALL_GENERIC );
 			g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::Renderer::AddEntityToScene( int, int, int, const vec3& in, const vec3& in, uint64,"
-				" uint32, uint32, const vec2& in, float, float, float, float )",
+				" uint32, uint32, const vec2& in, float, float, float, const vec2& in )",
 				asFUNCTION( AddEntityToScene ), asCALL_GENERIC );
 			g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::Renderer::AddDLightToScene( const vec3& in, float, const vec3& in )",
 				asFUNCTION( AddDLightToScene ), asCALL_GENERIC );

@@ -143,8 +143,11 @@ void R_WorldToGL( drawVert_t *verts, vec3_t pos )
 {
 	vec3_t xyz[4];
 	int i;
+	vec2_t scale;
 
-	ri.GLM_TransformToGL( pos, xyz, 1.0f, 0.0f, glState.viewData.camera.viewProjectionMatrix );
+	VectorSet2( scale, 1.0f, 1.0f );
+
+	ri.GLM_TransformToGL( pos, xyz, scale, 0.0f, glState.viewData.camera.viewProjectionMatrix );
 
 	for ( i = 0; i < 4; ++i ) {
 		VectorCopy( verts[i].xyz, xyz[i] );
@@ -155,8 +158,11 @@ void R_WorldToGL2( polyVert_t *verts, vec3_t pos, uint32_t numVerts )
 {
 	vec3_t xyz[4];
 	int i;
+	vec2_t scale;
 
-	ri.GLM_TransformToGL( pos, xyz, 1.0f, 0.0f, glState.viewData.camera.viewProjectionMatrix );
+	VectorSet2( scale, 1.0f, 1.0f );
+
+	ri.GLM_TransformToGL( pos, xyz, scale, 0.0f, glState.viewData.camera.viewProjectionMatrix );
 
 	for ( i = 0; i < numVerts; ++i ) {
 		VectorCopy( verts[i].xyz, xyz[i] );
@@ -168,11 +174,10 @@ void R_ScreenToGL( polyVert_t *verts )
 	vec3_t xyz[4];
 	vec3_t pos;
 	int i;
-	float scale;
+	vec2_t scale;
 
 	VectorCopy( pos, verts[3].xyz );
-
-	scale = verts[0].xyz[0] * verts[0].xyz[1];
+	VectorSet2( scale, 1, 1 );
 
 	ri.GLM_TransformToGL( pos, xyz, scale, 0.0f, glState.viewData.camera.viewProjectionMatrix );
 
