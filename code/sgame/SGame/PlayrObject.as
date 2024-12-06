@@ -567,26 +567,26 @@ namespace TheNomad::SGame {
 		}
 
 		private void CacheSfx() {
-			dieSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/death1" );
-			dieSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/death2" );
-			dieSfx2 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/death3" );
+			dieSfx0 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/death1" );
+			dieSfx1 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/death2" );
+			dieSfx2 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/death3" );
 
-			painSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/pain_scream_0" );
-			painSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/pain_scream_1" );
-			painSfx2 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/pain_scream_2" );
+			painSfx0 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_scream_0" );
+			painSfx1 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_scream_1" );
+			painSfx2 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_scream_2" );
 
-			slideSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/slide_0" );
-			slideSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/slide_1" );
+			slideSfx0 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slide_0" );
+			slideSfx1 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slide_1" );
 
-			dashSfx = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/use_jumpkit_0" );
+			dashSfx = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/use_jumpkit_0" );
 
-			meleeSfx = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/melee" );
+			meleeSfx = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/melee" );
 
-			weaponChangeHandSfx = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/weapon_change_hand" );
-			weaponChangeModeSfx = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/weapon_change_mode" );
+			weaponChangeHandSfx = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/weapon_change_hand" );
+			weaponChangeModeSfx = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/weapon_change_mode" );
 
-			crouchDownSfx = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/cloth_foley_0" );
-			crouchUpSfx = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/player/cloth_foley_1" );
+			crouchDownSfx = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/cloth_foley_0" );
+			crouchUpSfx = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/cloth_foley_1" );
 		}
 
 		void Spawn( uint id, const vec3& in origin ) override {
@@ -609,8 +609,6 @@ namespace TheNomad::SGame {
 			CacheSfx();
 			InitLoadout();
 
-			m_HudData.Init( @this );
-
 			if ( @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_SLIDE ) is null ) {
 				GameError( "Couldn't cache leg slide state!" );
 			}
@@ -623,7 +621,7 @@ namespace TheNomad::SGame {
 			TheNomad::GameSystem::GetSkinData( m_Skin, m_SkinDescription, m_SkinDisplayName, torsoSheetSize, torsoSpriteSize,
 				armsSheetSize, armsSpriteSize, legsSheetSize, legsSpriteSize );
 
-			@m_SpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/" +
+			@m_SpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "skins/" +
 				m_Skin + "/torso", torsoSheetSize.x, torsoSheetSize.y, torsoSpriteSize.x, torsoSpriteSize.y );
 			if ( @m_SpriteSheet is null ) {
 				GameError( "PlayrObject::Spawn: failed to load torso sprite sheet" );
@@ -634,7 +632,7 @@ namespace TheNomad::SGame {
 			}
 			m_Facing = FACING_RIGHT;
 
-			@m_LegSpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/" +
+			@m_LegSpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "skins/" +
 				m_Skin + "/legs", legsSheetSize.x, legsSheetSize.y, legsSpriteSize.x, legsSpriteSize.y );
 			if ( @m_LegSpriteSheet is null ) {
 				GameError( "PlayrObject::Spawn: failed to load leg sprite sheet" );
@@ -651,6 +649,13 @@ namespace TheNomad::SGame {
 
 			m_nLegTicker = 0;
 			m_Name = "player";
+
+			TheNomad::Engine::Renderer::RegisterShader( "gfx/env/smokePuff" );
+			TheNomad::Engine::Renderer::RegisterShader( "wake" );
+			TheNomad::Engine::Renderer::RegisterShader( "gfx/bloodSplatter0" );
+			TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/blood_screen" );
+
+			m_HudData.Init( @this );
 		}
 
 		void Think() override {

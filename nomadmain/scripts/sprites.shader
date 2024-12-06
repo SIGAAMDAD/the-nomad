@@ -1,46 +1,46 @@
-sprites/players/raio/torso
+skins/raio/torso
 {
 	nomipmaps
 	nopicmip
 	{
 		texFilter nearest
-		map textures/sprites/players/raio/torso.dds
+		map textures/sprites/players/raio/standard/torso.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		stage diffuseMap
 	}
 }
 
-sprites/players/raio/arms_right
+skins/raio/arms_right
 {
 	nomipmaps
 	nopicmip
 	{
 		texFilter nearest
-		map textures/sprites/players/raio/arms_right.dds
+		map textures/sprites/players/raio/standard/arms_right.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		stage diffuseMap
 	}
 }
 
-sprites/players/raio/arms_left
+skins/raio/arms_left
 {
 	nomipmaps
 	nopicmip
 	{
 		texFilter nearest
-		map textures/sprites/players/raio/arms_left.dds
+		map textures/sprites/players/raio/standard/arms_left.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		stage diffuseMap
 	}
 }
 
-sprites/players/raio/legs
+skins/raio/legs
 {
 	nomipmaps
 	nopicmip
 	{
 		texFilter nearest
-		map textures/sprites/players/raio/legs.dds
+		map textures/sprites/players/raio/standard/legs.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		stage diffuseMap
 	}

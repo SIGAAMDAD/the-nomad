@@ -17,7 +17,7 @@ namespace TheNomad::SGame {
 			@m_EntityData = @base;
 
 			@m_SpriteSheet = @TheNomad::Engine::ResourceCache.GetSpriteSheet(
-				"sprites/players/" + base.GetSkin() + "/arms_" + ( nArmIndex == 0 ? "right" : "left" ),
+				"skins/" + base.GetSkin() + "/arms_" + ( nArmIndex == 0 ? "right" : "left" ),
 				sheetSize.x, sheetSize.y, spriteSize.x, spriteSize.y );
 			if ( @m_SpriteSheet is null ) {
 				GameError( "ArmData::Link: failed to load arms sprite sheet" );
@@ -58,13 +58,11 @@ namespace TheNomad::SGame {
 					}
 				}
 				else {
-					const vec3 velocity = m_EntityData.GetVelocity();
-					if ( velocity.x != 0.0f || velocity.y != 0.0f ) {
-						@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_MOVE );
-					} else {
-						@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_IDLE );
-					}
+					@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_MOVE );
 				}
+			}
+			else {
+				@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_IDLE );
 			}
 			
 			return @m_SpriteSheet;

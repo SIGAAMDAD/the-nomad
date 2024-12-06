@@ -64,8 +64,6 @@ namespace TheNomad::SGame {
 			m_MFlags = m_Info.mobFlags;
 			m_hShader = m_Info.hShader;
 			@m_State = @StateManager.GetStateForNum( m_Info.type + StateNum::ST_MOB_IDLE );
-
-			m_DetectSfx = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/mobs/detect" );
 		}
 		
 		void Damage( EntityObject@ source, float nAmount ) {
@@ -136,8 +134,6 @@ namespace TheNomad::SGame {
 		protected EntityObject@ m_Target = null;
 		protected InfoSystem::MobInfo@ m_Info = null;
 		protected InfoSystem::MobFlags m_MFlags = InfoSystem::MobFlags( 0 );
-
-		protected TheNomad::Engine::SoundSystem::SoundEffect m_DetectSfx;
 		
 		// stealth tracking
 		protected uint m_nLastAlertTime = 0;

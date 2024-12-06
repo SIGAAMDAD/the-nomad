@@ -15,7 +15,7 @@ namespace TheNomad::SGame {
 			// init shaders
 			m_BloodScreenSplatter.origin = vec2( 0.0f, 0.0f );
 			m_BloodScreenSplatter.size = vec2( screenSize.x, screenSize.y );
-			m_BloodScreenSplatter.hShader = TheNomad::Engine::ResourceCache.GetShader( "gfx/hud/blood_screen" );
+			m_BloodScreenSplatter.hShader = TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/blood_screen" );
 			
 			m_HealthBar.origin = vec2( 0.0f, 0.0f );
 			m_HealthBar.size.y = 64.0f * GameSystem::GameManager.GetUIScale();

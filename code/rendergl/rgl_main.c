@@ -229,7 +229,7 @@ void R_DrawPolys( void )
 		backendData[ 0 ]->indices, sizeof( glIndex_t ) );
 
 	// sort the polys to be more efficient with our shaders
-	R_RadixSort( backend.refdef.polys, backend.refdef.numPolys );
+//	R_RadixSort( backend.refdef.polys, backend.refdef.numPolys );
 
 	poly = backend.refdef.polys;
 	oldShader = poly->hShader;

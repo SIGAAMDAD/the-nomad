@@ -50,7 +50,7 @@ namespace TheNomad::SGame {
 			string levelName;
 			string music;
 
-			m_PassedCheckpointSfx = TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/env/iteraction/complete_checkpoint" );
+			m_PassedCheckpointSfx = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/iteraction/complete_checkpoint" );
 
 			ConsolePrint( "Loading level infos...\n" );
 
@@ -92,13 +92,13 @@ namespace TheNomad::SGame {
 				}
 
 				if ( info.get( "SoundTrack_Ambient", music ) ) {
-					data.m_hAmbientTheme = TheNomad::Engine::ResourceCache.GetSfx( music );
+					data.m_hAmbientTheme = TheNomad::Engine::SoundSystem::RegisterTrack( music );
 					if ( data.m_hAmbientTheme == -1 ) {
 						ConsoleWarning( "SoundTrack_Ambient for LevelData \"" + data.m_Name + "\" not found.\n" );
 					}
 				}
 				if ( info.get( "SoundTrack_Combat", music ) ) {
-					data.m_hCombatTheme = TheNomad::Engine::ResourceCache.GetSfx( music );
+					data.m_hCombatTheme = TheNomad::Engine::SoundSystem::RegisterTrack( music );
 					if ( data.m_hCombatTheme == -1 ) {
 						ConsoleWarning( "SoundTrack_Combat for LevelData \"" + data.m_Name + "\" not found.\n" );
 					}

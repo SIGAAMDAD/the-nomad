@@ -218,7 +218,7 @@ namespace TheNomad::SGame {
 		void SwitchWeaponMode_f() {
 			PlayrObject@ obj = GetPlayerIndex();
 
-			obj.weaponChangeModeSfx.Play();
+			obj.EmitSound( obj.weaponChangeModeSfx, 1.0f, 0xff );
 			switch ( obj.GetHandsUsed() ) {
 			case 0:
 				obj.SwitchWeaponMode( @obj.GetLeftArm(), @obj.GetLeftHandWeapon() );
@@ -240,7 +240,7 @@ namespace TheNomad::SGame {
 		void SwitchHand_f() {
 			PlayrObject@ obj = GetPlayerIndex();
 			
-			obj.weaponChangeHandSfx.Play();
+			obj.EmitSound( obj.weaponChangeHandSfx, 1.0f, 0xff );
 			switch ( obj.GetHandsUsed() ) {
 			case 0:
 				obj.SetHandsUsed( 1 );
@@ -262,7 +262,7 @@ namespace TheNomad::SGame {
 					return;
 				}
 
-				obj.dashSfx.Play();
+				obj.EmitSound( obj.dashSfx, 1.0f, 0xff;
 				Util::HapticRumble( obj.GetPlayerIndex(), 0.40f, 700 );
 				obj.ResetDash();
 				obj.SetDashing( true );
@@ -285,9 +285,9 @@ namespace TheNomad::SGame {
 				obj.IsDashing() )
 			{
 				if ( ( Util::PRandom() & 1 ) == 1 ) {
-					obj.slideSfx0.Play();
+					obj.EmitSound( obj.slideSfx0, 1.0f, 0xff );
 				} else {
-					obj.slideSfx1.Play();
+					obj.EmitSound( obj.slideSfx1, 1.0f, 0xff );
 				}
 				
 				Util::HapticRumble( obj.GetPlayerIndex(), 0.40f, 500 );
@@ -299,11 +299,11 @@ namespace TheNomad::SGame {
 			PlayrObject@ obj = GetPlayerIndex();
 
 			if ( !obj.IsCrouching() ) {
-				obj.crouchDownSfx.Play();
+				obj.EmitSound( obj.crouchDownSfx, 1.0f, 0xff );
 				obj.SetCrouching( true );
 			}
 			else {
-				obj.crouchUpSfx.Play();
+				obj.EmitSound( obj.crouchUpSfx, 1.0f, 0xff );
 				obj.SetCrouching( false );
 				obj.SetState( @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE ) );
 			}
@@ -318,7 +318,7 @@ namespace TheNomad::SGame {
 				{
 					return;
 				}
-				obj.meleeSfx.Play();
+				obj.EmitSound( obj.meleeSfx, 1.0f, 0xff );
 				obj.SetParryBoxWidth( 0.0f );
 				obj.SetLeftArmState( StateNum::ST_PLAYR_ARMS_MELEE );
 			}

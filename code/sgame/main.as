@@ -109,17 +109,14 @@ void InitResources() {
 	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/cloth_foley_0" );
 	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/cloth_foley_1" );
 
-
 	//
 	// load materials
 	//
 
-	TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/blood_screen" );
-
-	TheNomad::Engine::Renderer::RegisterShader( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "/torso" );
-	TheNomad::Engine::Renderer::RegisterShader( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "/legs" );
-	TheNomad::Engine::Renderer::RegisterShader( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "/arms_left" );
-	TheNomad::Engine::Renderer::RegisterShader( "sprites/players/" + TheNomad::Engine::CvarVariableString( "skin" ) + "/arms_right" );
+	TheNomad::Engine::Renderer::RegisterShader( "skins/" + TheNomad::Engine::CvarVariableString( "skin" ) + "/torso" );
+	TheNomad::Engine::Renderer::RegisterShader( "skins/" + TheNomad::Engine::CvarVariableString( "skin" ) + "/legs" );
+	TheNomad::Engine::Renderer::RegisterShader( "skins/" + TheNomad::Engine::CvarVariableString( "skin" ) + "/arms_left" );
+	TheNomad::Engine::Renderer::RegisterShader( "skins/" + TheNomad::Engine::CvarVariableString( "skin" ) + "/arms_right" );
 
 	TheNomad::Engine::Renderer::RegisterShader( "gfx/effects/flame1" );
 	TheNomad::Engine::Renderer::RegisterShader( "gfx/effects/flame2" );
@@ -127,11 +124,6 @@ void InitResources() {
 	TheNomad::Engine::Renderer::RegisterShader( "gfx/effects/flame4" );
 	TheNomad::Engine::Renderer::RegisterShader( "gfx/effects/flame5" );
 	TheNomad::Engine::Renderer::RegisterShader( "gfx/effects/flame6" );
-
-	TheNomad::Engine::Renderer::RegisterShader( "gfx/bloodSplatter0" );
-	TheNomad::Engine::Renderer::RegisterShader( "gfx/env/smokePuff" );
-
-	TheNomad::Engine::Renderer::RegisterShader( "wake" );
 
 	//
 	// register strings
@@ -197,7 +189,6 @@ int ModuleOnInit() {
 	@TheNomad::SGame::StateManager = cast<TheNomad::SGame::EntityStateSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::EntityStateSystem() ) );
 	@TheNomad::SGame::EntityManager = cast<TheNomad::SGame::EntitySystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::EntitySystem() ) );
 	@TheNomad::SGame::GfxManager = cast<TheNomad::SGame::GfxSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::GfxSystem() ) );
-//	@TheNomad::SGame::GoreManager = cast<TheNomad::SGame::GoreSystem>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::GoreSystem() ) );
 
 	TheNomad::SGame::InitCheatCodes();
 	TheNomad::SGame::ScreenData.Init();
