@@ -424,7 +424,7 @@ nhandle_t RE_RegisterSpriteSheet( const char *npath, uint32_t sheetWidth, uint32
 	if ( !( ( (uint32_t)sheetWidth % 2 ) == 0 && ( (uint32_t)sheetHeight % 2 ) == 0 )
 		|| !( ( (uint32_t)spriteWidth % 2 ) == 0 && ( (uint32_t)spriteHeight % 2 ) == 0 ) )
 	{
-		ri.Error( ERR_DROP, "RE_RegisterSpriteSheet: please ensure your sprite dimensions and sheet dimensions are powers of two" );
+		ri.Printf( PRINT_WARNING, "RE_RegisterSpriteSheet: please ensure your sprite dimensions and sheet dimensions are powers of two\n" );
 	}
 	if ( len >= MAX_NPATH ) {
 		ri.Error( ERR_DROP, "RE_RegisterSpriteSheet: name '%s' too long", npath );

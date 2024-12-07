@@ -3,6 +3,10 @@ namespace TheNomad::SGame {
 		Animation() {
 			m_nOldTic = 0;
 			m_nTicker = 1;
+			m_bOscillate = false;
+			m_bReverse = false;
+			m_nTicRate = 0;
+			m_nCurrentFrame = 0;
 		}
 		
 		int GetFrame() const {
@@ -49,6 +53,13 @@ namespace TheNomad::SGame {
 					}
 				}
 			}
+		}
+
+		void Load( uint nTicRate, bool bOscillate, uint nFrames, bool bReverse ) {
+			m_nTicRate = nTicRate;
+			m_bOscillate = bOscillate;
+			m_nNumFrames = nFrames;
+			m_bReverse = bReverse;
 		}
 		
 		bool Load( json@ json ) {

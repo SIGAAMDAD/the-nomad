@@ -262,10 +262,23 @@ namespace TheNomad::SGame {
 					return;
 				}
 
-				obj.EmitSound( obj.dashSfx, 1.0f, 0xff;
+				obj.EmitSound( obj.dashSfx, 1.0f, 0xff );
 				Util::HapticRumble( obj.GetPlayerIndex(), 0.40f, 700 );
 				obj.ResetDash();
 				obj.SetDashing( true );
+				
+				vec3 origin = obj.GetOrigin();
+				origin.y -= 1.5f;
+				switch ( obj.GetFacing() ) {
+				case FACING_LEFT:
+					origin.x += 1.5f;
+					break;
+				case FACING_RIGHT:
+					origin.x -= 1.5f;
+					break;
+				};
+
+				GfxManager.AddDustTrail( origin, obj.GetFacing() );
 			}
 			else {
 				obj.SetDashing( false );
@@ -293,6 +306,19 @@ namespace TheNomad::SGame {
 				Util::HapticRumble( obj.GetPlayerIndex(), 0.40f, 500 );
 				obj.ResetSlide();
 				obj.SetSliding( true );
+
+				vec3 origin = obj.GetOrigin();
+				origin.y -= 1.5f;
+				switch ( obj.GetFacing() ) {
+				case FACING_LEFT:
+					origin.x += 1.5f;
+					break;
+				case FACING_RIGHT:
+					origin.x -= 1.5f;
+					break;
+				};
+
+				GfxManager.AddDustTrail( origin, obj.GetFacing() );
 			}
 		}
 		void Crouch_f() {

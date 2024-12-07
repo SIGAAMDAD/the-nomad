@@ -12,7 +12,7 @@ namespace TheNomad::SGame {
 			if ( !( ( uint( sheetSize.x ) % 2 ) == 0 && ( uint( sheetSize.y ) % 2 ) == 0 )
 				|| !( ( uint( spriteSize.x ) % 2 ) == 0 && ( uint( spriteSize.y ) % 2 ) == 0 ) )
 			{
-				GameError( "SpriteSheet::Load: please ensure that your sheetSize and spriteSize are powers of two" );
+				ConsoleWarning( "SpriteSheet::Load: please ensure that your sheetSize and spriteSize are powers of two\n" );
 			}
 
 			m_Name = fileName;

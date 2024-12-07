@@ -448,7 +448,7 @@ namespace TheNomad::SGame {
 				
 				Util::HapticRumble( m_nControllerIndex, 0.50f, 300 );
 
-				GfxManager.Bleed( m_Link.m_Origin );
+				GfxManager.AddBloodSplatter( m_Link.m_Origin, m_Facing );
 			}
 		}
 		
@@ -840,6 +840,19 @@ namespace TheNomad::SGame {
 			DrawLegs();
 			DrawFrontArm();
 
+		/*
+			refEntity.sheetNum = TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/smokeTrail", 750, 1200, 150, 150 ).GetShader();
+			refEntity.spriteId = m_nSmokeSpriteID;
+			refEntity.scale = 1.5f;
+			refEntity.Draw();
+
+			m_nSmokeSpriteID++;
+		*/
+
+			if ( m_nSmokeSpriteID == 40 ) {
+				m_nSmokeSpriteID = 0;
+			}
+
 			if ( ( m_iFlags & PF_AFTER_IMAGE ) != 0 ) {
 				// draw the common silhouette after image for the player's last known position to the enemies
 //				m_AfterImage.Draw();
@@ -847,6 +860,8 @@ namespace TheNomad::SGame {
 
 			m_HudData.Draw();
 		}
+
+		uint m_nSmokeSpriteID = 0;
 
 		KeyBind key_MoveNorth;
 		KeyBind key_MoveSouth;

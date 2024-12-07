@@ -267,13 +267,13 @@ namespace TheNomad::Engine::Physics {
 			if ( inAir && origin.z <= 0.0f ) {
 				if ( m_EntityData.GetWaterLevel() > 0 ) {
 					m_EntityData.EmitSound(
-						TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/env/world/water_land_" + formatUInt( Util::PRandom() & 2 ) ),
+						TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/water_land_" + formatUInt( Util::PRandom() & 2 ) ),
 						1.0f, 0xff );
 					
 					TheNomad::SGame::GfxManager.AddWaterWake( origin, 800, 6.75f );
 				} else {
 					m_EntityData.EmitSound(
-						TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/env/world/land_" + formatUInt( ( Util::PRandom() & 3 ) + 1 ) ),
+						TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/land_" + formatUInt( ( Util::PRandom() & 3 ) + 1 ) ),
 						1.0f, 0xff );
 
 					//
@@ -281,16 +281,22 @@ namespace TheNomad::Engine::Physics {
 					//
 
 					// left offset
+					/*
 					TheNomad::SGame::GfxManager.AddDustPoly( vec3( origin.x - 1.5f, origin.y, origin.z ), vec3( -0.015f, 0.0f, 0.0f ), 500,
 						TheNomad::Engine::ResourceCache.GetShader( "gfx/env/smokePuff" ) );
+					*/
+					TheNomad::SGame::GfxManager.AddDustPuff( vec3( origin.x - 1.5f, origin.y, origin.z ), TheNomad::SGame::FACING_RIGHT );
 
 					// center
-					TheNomad::SGame::GfxManager.AddDustPoly( origin, vec3( 0.0f ), 500,
-						TheNomad::Engine::ResourceCache.GetShader( "gfx/env/smokePuff" ) );
+//					TheNomad::SGame::GfxManager.AddDustPoly( origin, vec3( 0.0f ), 500,
+//						TheNomad::Engine::ResourceCache.GetShader( "gfx/env/smokePuff" ) );
 
 					// right offset
+					/*
 					TheNomad::SGame::GfxManager.AddDustPoly( vec3( origin.x + 1.5f, origin.y, origin.z ), vec3( 0.015f, 0.0f, 0.0f ), 500,
 						TheNomad::Engine::ResourceCache.GetShader( "gfx/env/smokePuff" ) );
+					*/
+					TheNomad::SGame::GfxManager.AddDustPuff( vec3( origin.x + 1.5f, origin.y, origin.z ), TheNomad::SGame::FACING_LEFT );
 				}
 			}
 			

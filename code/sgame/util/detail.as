@@ -7,7 +7,12 @@ void Assert( const bool condition, const string& in msg ) {
 	}
 }
 
+const uint PITCH = 0;
+const uint YAW = 2;
+const uint ROLL = 1;
+
 namespace TheNomad::Util {
+
 	json@ LoadJSonFile( const string& in fileName ) {
 		json@ data;
 
@@ -398,6 +403,75 @@ namespace TheNomad::Util {
 		}
 
 		return -1;
+	}
+
+	void VecToAngles( const vec3& in dir, vec3& out angles ) {
+		float forward = 0.0f;
+		float yaw, pitch;
+
+		if ( dir.z == 0.0f && dir.x == 0.0f ) {
+			yaw = 0.0f;
+			if ( dir.y > 0.0f ) {
+				pitch = 90.0f;
+			} else {
+				pitch = 270.0f;
+			}
+		}
+		else {
+			if ( dir.x > 0.0f ) {
+				yaw = ( atan2( dir.z, dir.x ) * 180.0f / M_PI );
+			}
+			else if ( dir.z > 0.0f ) {
+				yaw = 90.0f;
+			}
+			else {
+				yaw = 270.0f;
+			}
+			if ( yaw < 0.0f ) {
+				yaw += 360.0f;
+			}
+
+			forward = sqrt( dir.x * dir.x + dir.z * dir.z );
+			pitch = ( atan2( dir.y, forward ) * 180.0f / M_PI );
+			if ( pitch < 0.0f ) {
+				pitch += 360.0f;
+			}
+		}
+
+		angles[ PITCH ] = -pitch;
+		angles[ YAW ] = yaw;
+		angles[ ROLL ] = 0.0f;
+	}
+
+	void AngleVectors( const vec3& in angles, vec3& out forward, vec3& out right, vec3& out up ) {
+		float		angle = 0.0f;
+		float		sr, sp, sy, cr, cp, cy;
+
+		angle = angles[YAW] * ( M_PI * 2 / 360.0f );
+		sy = sin( angle );
+		cy = cos( angle );
+		angle = angles[PITCH] * ( M_PI * 2 / 360.0f );
+		sp = sin( angle );
+		cp = cos( angle );
+		angle = angles[ROLL] * ( M_PI * 2 / 360.0f );
+		sr = sin( angle );
+		cr = cos( angle );
+
+		if ( forward != vec3( 0.0f ) ) {
+			forward[0] = cp * cy;
+			forward[1] = cp * sy;
+			forward[2] = -sp;
+		}
+		if ( right != vec3( 0.0f ) ) {
+			right[0] = ( -1.0f * sr * sp * cy + -1 * cr * -sy );
+			right[1] = ( -1.0f * sr * sp * sy + -1 * cr * cy );
+			right[2] = -1.0f * sr * cp;
+		}
+		if ( up != vec3( 0.0f ) ) {
+			up[0] = ( cr * sp * cy + -sr * -sy );
+			up[1] = ( cr * sp * sy + -sr * cy );
+			up[2] = cr * cp;
+		}
 	}
 
 	int HexStringToInt( const string& in str ) {

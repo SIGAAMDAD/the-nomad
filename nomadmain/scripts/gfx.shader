@@ -63,6 +63,7 @@ console
 }
 */
 
+/*
 //
 // hud elements
 //
@@ -110,6 +111,7 @@ gfx/hud/blood_screen
 		rgbGen vertex
 	}
 }
+*/
 
 //
 // powerup icons
@@ -394,6 +396,39 @@ gfx/effects/flame
 */
 
 //
+// particle effects
+//
+
+gfx/env/smokeTrail
+{
+	{
+		map particle_effects/Spritesheets/Smoke2-Sheet.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+	}
+}
+
+gfx/spurt
+{
+	{
+		texFilter nearest
+		clampmap particle_effects/Spritesheets/blood_splatter.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+	}
+}
+
+gfx/splatter
+{
+	{
+		texFilter nearest
+		clampmap particle_effects/Spritesheets/Splatter-Sheet.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+	}
+}
+
+//
 // wall marks
 //
 gfx/bloodSplatter0
@@ -405,21 +440,6 @@ gfx/bloodSplatter0
 		rgbGen vertex
 		alphaGen vertex
 	}
-}
-
-gfx/bloodSplatter1
-{
-
-}
-
-gfx/bloodSplatter2
-{
-
-}
-
-gfx/bloodSplatter3
-{
-
 }
 
 gfx/bulletMarks
@@ -544,7 +564,7 @@ waterBubble
 gfx/env/smokePuff
 {
 	{
-		map gfx/env/smokepuff3.dds
+		map particle_effects/Spritesheets/dust_trail.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		rgbGen vertex
 		alphaGen vertex

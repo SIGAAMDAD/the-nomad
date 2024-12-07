@@ -3,14 +3,14 @@
 //#include "rgl_smaa_textures.h"
 
 static void *Image_Malloc( size_t size ) {
-	return ri.Malloc( size );
+	return malloc( size );
 }
 static void *Image_Realloc( void *ptr, size_t nsize ) {
-	return ri.Realloc( ptr, nsize );
+	return realloc( ptr, nsize );
 }
 static void Image_Free( void *ptr ) {
 	if ( ptr ) {
-		ri.Free( ptr );
+		free( ptr );
 	}
 }
 
@@ -2718,17 +2718,25 @@ static void R_LoadPNG2( const char *filename, unsigned char **pic, int *width, i
 		char *b;
 	} f;
 	uint64_t nLength;
+	byte *data;
 
 	nLength = ri.FS_LoadFile( filename, &f.v );
 	if ( !nLength || !f.v ) {
 		return;
 	}
 
-	*pic = stbi_load_from_memory( f.b, (int)nLength, width, height, channels, 3 );
+	*pic = stbi_load_from_memory( f.b, (int)nLength, width, height, channels, 4 );
 	if ( !*pic ) {
 		ri.Printf( PRINT_WARNING, "R_LoadPNG: stbi_load_from_memory(%s) failed, failure reason: %s\n", filename, stbi_failure_reason() );
 		return;
 	}
+
+	nLength = ( *width * *height ) * *channels;
+	data = ri.Malloc( nLength );
+	memcpy( data, *pic, nLength );
+	free( *pic );
+
+	*pic = data;
 
 	ri.FS_FreeFile( f.v );
 }

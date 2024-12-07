@@ -131,13 +131,45 @@ namespace TheNomad::SGame {
 
 			ent.m_nLifeTime = 1500;
 			ent.m_Velocity = vec3( 0.05f, -0.03f, 0.0f );
-			ent.m_nType = TheNomad::Engine::Renderer::EffectType::Effect_Blood;
 
 			ent.m_Origin = vec3( x, y - 0.2f, 0.0f );
-			ent.m_hShader = TheNomad::Engine::ResourceCache.GetShader( "gfx/bloodSplatter0" );
+			ent.m_hShader = TheNomad::Engine::Renderer::RegisterShader( "gfx/bloodSplatter0" );
 			ent.m_bGravity = true;
 
 			return @ent;
+		}
+
+		void AddBloodSplatter( const vec3& in origin, int facing ) {
+			if ( !sgame_EnableParticles.GetBool() ) {
+				return;
+			}
+
+			TheNomad::Engine::Renderer::LocalEntity@ ent = @AllocLocalEntity();
+
+			vec2 scale = vec2( 1.0f );
+			if ( facing == FACING_LEFT ) {
+				scale.x = -scale.x;
+			}
+			vec3 accel = vec3( 0.1f, 0.4f, 1.8f );
+
+			ent.Spawn( origin, accel, 180, TheNomad::Engine::Renderer::RegisterShader( "gfx/bloodSplatter0" ),
+				scale, true, 0.0f );
+
+			/*
+			ent.Spawn( origin, vec3( 0.0f ), 1200, FS_INVALID_HANDLE,
+				scale, false, 0.0f, @TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/splatter", 750, 900, 150, 150 ),
+				uvec2( 0 ) );
+			
+			ent.m_EffectAnimation.Load( 40, false, 30, false );
+			*/
+			/*
+			ent.Spawn( origin, vec3( 0.0f ), 800, FS_INVALID_HANDLE,
+				scale, false, 0.0f,
+				@TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/spurt", 1540, 837, 110, 93 ),
+				uvec2( 0, ( Util::PRandom() & 3 ) + 2 ) );
+			
+			ent.m_EffectAnimation.Load( 50, false, 14, false );
+			*/
 		}
 
 		void SmokePuff( const vec3& in origin, const vec3& in vel ) {
@@ -148,17 +180,79 @@ namespace TheNomad::SGame {
 				return;
 			}
 
-			TheNomad::Engine::Renderer::LocalEntity@ ent = AllocLocalEntity();
-			ent.Spawn( origin, vec3( 0.0f ), lifeTime, TheNomad::Engine::ResourceCache.GetShader( "wake" ), scale, false, grow );
+			AllocLocalEntity().Spawn( origin, vec3( 0.0f ), lifeTime, TheNomad::Engine::Renderer::RegisterShader( "wake" ),
+				scale, false, grow );
 		}
 
-		void AddDustPoly( const vec3& in origin, const vec3& in vel, uint lifeTime, int hShader ) {
+		void AddDustPuff( const vec3& in origin, int facing ) {
 			if ( !sgame_EnableParticles.GetBool() ) {
 				return;
 			}
 
-			TheNomad::Engine::Renderer::LocalEntity@ ent = AllocLocalEntity();
-			ent.Spawn( origin, vel, lifeTime, TheNomad::Engine::ResourceCache.GetShader( "gfx/env/smokePuff" ) );
+			TheNomad::Engine::Renderer::LocalEntity@ ent = @AllocLocalEntity();
+
+			vec2 scale = vec2( 2.5f );
+			if ( facing == FACING_LEFT ) {
+				scale.x = -scale.x;
+			}
+			
+			ent.Spawn( origin, vec3( 0.0f ), 400, FS_INVALID_HANDLE,
+				scale, false, 0.0f,
+				@TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/smokePuff", 576, 64, 64, 64 ) );
+			
+			ent.m_EffectAnimation.Load( 90, false, 9, false );
+		}
+
+		void AddDustTrail( const vec3& in origin, int facing ) {
+			if ( !sgame_EnableParticles.GetBool() ) {
+				return;
+			}
+
+			TheNomad::Engine::Renderer::LocalEntity@ ent = @AllocLocalEntity();
+
+			vec2 scale = vec2( 5.5f );
+			if ( facing == FACING_LEFT ) {
+				scale.x = -scale.x;
+			}
+			
+			ent.Spawn( origin, vec3( 0.0f ), 600, FS_INVALID_HANDLE,
+				scale, false, 0.0f,
+				@TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/smokeTrail", 750, 1200, 150, 150 ) );
+			
+			ent.m_EffectAnimation.Load( 20, false, 40, false );
+		}
+		
+		void AddDustCloud( const vec3& in origin, const vec3& in accel ) {
+			if ( !sgame_EnableParticles.GetBool() ) {
+				return;
+			}
+
+			for ( uint i = 0; i < 24; i++ ) {
+				float offsetX = 0.0f;
+				if ( ( Util::PRandom() & 1 ) == 0 ) {
+					const uint rand = Util::PRandom() & 3;
+					offsetX += 2.0f / ( rand == 0 ? 1.0f : float( rand ) );
+//					offsetX = -( accel.x * ( 1.0f / ( rand == 0 ? 1.0f : float( rand ) ) ) );
+				} else {
+					const uint rand = Util::PRandom() & 3;
+					offsetX += rand;
+//					offsetX = ( accel.x * ( 1.0f / ( rand == 0 ? 1.0f : float( rand ) ) ) );
+				}
+
+				float offsetY = 0.0f;
+				if ( ( Util::PRandom() & 1 ) == 0 ) {
+					const uint rand = Util::PRandom() & 3;
+					offsetY -= 2.0f / ( rand == 0 ? 1.0f : float( rand ) );
+//					offsetY = -accel.y + ( 1.0f / ( rand == 0 ? 1.0f : float( rand ) ) );
+				} else {
+					const uint rand = Util::PRandom() & 3;
+					offsetY += 2.0f / ( rand == 0 ? 1.0f : float( rand ) );
+//					offsetY = ( accel.y * ( 1.0f / ( rand == 0 ? 1.0f : float( rand ) ) ) );
+				}
+
+				AllocLocalEntity().Spawn( vec3( origin.x + offsetX, origin.y + offsetY, origin.z ), vec3( 0.0f ), 1600,
+					TheNomad::Engine::Renderer::RegisterShader( "gfx/env/smokePuff" ), 1.0f, true );
+			}
 		}
 
 		void AddExplosionGfx( const vec3& in origin ) {

@@ -125,6 +125,9 @@ void InitResources() {
 	TheNomad::Engine::Renderer::RegisterShader( "gfx/effects/flame5" );
 	TheNomad::Engine::Renderer::RegisterShader( "gfx/effects/flame6" );
 
+	TheNomad::Engine::Renderer::RegisterShader( "gfx/env/smokeTrail" );
+	TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/smokeTrail", 750, 1200, 150, 150 );
+
 	//
 	// register strings
 	//
