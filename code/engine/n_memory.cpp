@@ -1465,9 +1465,6 @@ Goals:
 */
 void Hunk_Clear( void )
 {
-	G_ShutdownUI();
-	G_ShutdownSGame();
-
 	// reset all of it
 	memset( hunkbase, 0, hunksize );
 

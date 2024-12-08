@@ -150,6 +150,7 @@ private:
 	void			FreePageReal( idHeap::page_s *p );
 };
 
+static idHeap *			mem_heap = NULL;
 
 /*
 ================
@@ -197,7 +198,9 @@ idHeap::~idHeap
 ================
 */
 idHeap::~idHeap( void ) {
-
+	if ( mem_heap == NULL ) {
+		return;
+	}
 	idHeap::page_s	*p;
 
 	if ( smallCurPage ) {
@@ -1021,7 +1024,6 @@ void idHeap::DrawEditorView( void )
 
 #undef new
 
-static idHeap *			mem_heap = NULL;
 static memoryStats_t	mem_total_allocs = { 0, 0x0fffffff, -1, 0 };
 static memoryStats_t	mem_frame_allocs = { 0, 0, 0, 0 };
 static memoryStats_t	mem_frame_frees = { 0, 0, 0, 0 };
@@ -1231,7 +1233,8 @@ void Mem_Init( void ) {
 	if ( mem_heap != NULL ) {
 		return;
 	}
-	mem_heap = new ( Hunk_Alloc( sizeof( *mem_heap ), h_high ) ) idHeap();
+	static idHeap heap;
+	mem_heap = &heap;
 	Mem_ClearFrameStats();
 }
 
@@ -1241,10 +1244,8 @@ Mem_Shutdown
 ==================
 */
 void Mem_Shutdown( void ) {
-	idHeap *m = mem_heap;
+	mem_heap->~idHeap();
 	mem_heap = NULL;
-	m->~idHeap();
-//	free( m );
 }
 
 /*
@@ -1758,7 +1759,9 @@ void Mem_Init( void ) {
 	if ( mem_heap != NULL ) {
 		return;
 	}
-	mem_heap = new ( Hunk_Alloc( sizeof( *mem_heap ), h_low ) ) idHeap();
+	static idHeap heap;
+	mem_heap = &heap;
+
 	Cmd_AddCommand( "memoryDumpCompressed", Mem_DumpCompressed_f );
 	Cmd_AddCommand( "memoryDump", Mem_Dump_f );
 
@@ -1785,8 +1788,7 @@ void Mem_Shutdown( void ) {
 		Mem_DumpCompressed( va( "%s_leak_location.txt", mem_leakName ), MEMSORT_LOCATION, 0 );
 	}
 
-	idHeap *m = mem_heap;
-	m->~idHeap();
+	mem_heap->~idHeap();
 	mem_heap = NULL;
 
 	Cmd_RemoveCommand( "memoryDumpCompressed" );

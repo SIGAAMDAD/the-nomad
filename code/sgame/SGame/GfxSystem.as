@@ -146,14 +146,20 @@ namespace TheNomad::SGame {
 
 			TheNomad::Engine::Renderer::LocalEntity@ ent = @AllocLocalEntity();
 
+			const uint row = ( Util::PRandom() & 3 ) + 2;
+
 			vec2 scale = vec2( 1.0f );
 			if ( facing == FACING_LEFT ) {
 				scale.x = -scale.x;
 			}
-			vec3 accel = vec3( 0.1f, 0.4f, 1.8f );
+//			vec3 accel = vec3( 0.1f, 0.4f, 1.8f );
 
-			ent.Spawn( origin, accel, 180, TheNomad::Engine::Renderer::RegisterShader( "gfx/bloodSplatter0" ),
-				scale, true, 0.0f );
+			ent.Spawn( origin, vec3( 0.0f ), 180, FS_INVALID_HANDLE,
+				scale, true, 0.0f,
+				@TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/spurt", 1540, 836, 110, 92 ),
+				uvec2( 0, row ) );
+			
+			ent.m_EffectAnimation.Load( 30, false, 14, false );
 
 			/*
 			ent.Spawn( origin, vec3( 0.0f ), 1200, FS_INVALID_HANDLE,

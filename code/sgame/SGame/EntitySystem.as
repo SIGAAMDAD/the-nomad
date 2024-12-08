@@ -7,6 +7,7 @@
 #include "SGame/WeaponObject.as"
 #include "SGame/MobObject.as"
 #include "SGame/PlayrObject.as"
+#include "SGame/WallObject.as"
 
 namespace TheNomad::SGame {
 	funcdef void ForEachEntityIterator( EntityObject@ ent );
@@ -233,12 +234,17 @@ namespace TheNomad::SGame {
 			@m_ActiveEnts.m_Prev =
 				@m_ActiveEnts;
 			
-			array<MapSpawn@>@ spawns = @LevelManager.GetMapData().GetCheckpoints()[ LevelManager.GetCheckpointIndex() ].m_Spawns;
+			array<MapCheckpoint>@ checkpoints = @LevelManager.GetMapData().GetCheckpoints();
+			array<MapSpawn@>@ spawns = @checkpoints[ LevelManager.GetCheckpointIndex() ].m_Spawns;
 
 			for ( uint i = 0; i < spawns.Count(); i++ ) {
 				EntityManager.Spawn( spawns[i].m_nEntityType, spawns[i].m_nEntityId,
 					vec3( float( spawns[i].m_Origin.x ), float( spawns[i].m_Origin.y ), float( spawns[i].m_Origin.z ) ),
 					vec2( 0.0f, 0.0f ) );
+			}
+			
+			for ( uint i = 0; i < checkpoints.Count(); i++ ) {
+				checkpoints[i].InitEntity();
 			}
 
 			DebugPrint( formatUInt( m_EntityList.Count() ) + " total entities.\n" );
@@ -301,6 +307,8 @@ namespace TheNomad::SGame {
 				break;
 			case TheNomad::GameSystem::EntityType::Wall:
 				// static geometry
+				@ent = WallObject();
+				cast<WallObject@>( @ent ).Spawn( id, origin );
 				break;
 			default:
 				GameError( "EntityManager::Spawn: invalid entity type " + id );

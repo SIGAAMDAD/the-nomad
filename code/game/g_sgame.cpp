@@ -11,6 +11,9 @@ void G_ShutdownSGame( void )
 		return;
 	}
 
+	if ( !g_pModuleLib ) {
+		return;
+	}
 	g_pModuleLib->ModuleCall( sgvm, ModuleShutdown, 0 );
 	g_pModuleLib->RunModules( ModuleShutdown, 0 );
 	

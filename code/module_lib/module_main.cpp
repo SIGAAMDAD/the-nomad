@@ -952,9 +952,7 @@ CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *
 	Cmd_AddCommand( "ml.garbage_collection_stats", ML_GarbageCollectionStats_f );
 	Cmd_AddCommand( "ml_debug.print_string_cache", ML_PrintStringCache_f );
 
-	Mem_Init();
-
-//	asSetGlobalMemoryFunctions( AS_Alloc, AS_Free );
+	asSetGlobalMemoryFunctions( AS_Alloc, AS_Free );
 
 	g_pModuleLib = new ( Hunk_Alloc( sizeof( *g_pModuleLib ), h_high ) ) CModuleLib();
 
@@ -1032,7 +1030,6 @@ void CModuleLib::Shutdown( qboolean quit )
 	g_pDebugger = NULL;
 
 	Z_FreeTags( TAG_MODULES );
-	Mem_Shutdown();
 }
 
 CDebugger *CModuleLib::GetDebugger( void ) {

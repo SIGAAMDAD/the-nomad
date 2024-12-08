@@ -1965,6 +1965,8 @@ void G_Init( void )
 		Cvar_ForceReset( "g_renderer" );
 	}
 
+	Mem_Init();
+
 	// init renderer
 	G_InitRenderer();
 	gi.rendererStarted = qtrue;
@@ -2047,7 +2049,6 @@ void G_Shutdown( qboolean quit )
 	SteamApp_Shutdown();
 
 	if ( quit ) {
-		remove( "nomad.pid" );
 		PROFILE_STOP_LISTEN
 	}
 
@@ -2073,6 +2074,8 @@ void G_Shutdown( qboolean quit )
 
 	Key_SetCatcher( 0 );
 	Con_Printf( "-------------------------------\n" );
+	
+	Mem_Shutdown();
 }
 
 void G_InitUI( void ) {
@@ -2094,7 +2097,6 @@ void G_ShutdownVMs( qboolean quit ) {
 		return;
 	}
 
-	G_ShutdownSGame();
 	G_ShutdownUI();
 	g_pModuleLib->Shutdown( quit );
 

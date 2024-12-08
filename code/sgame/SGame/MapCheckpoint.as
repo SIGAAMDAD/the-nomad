@@ -5,8 +5,6 @@ namespace TheNomad::SGame {
 		MapCheckpoint( const uvec3& in origin, const uvec2& in areaLock ) {
 			m_Origin = origin;
 			m_AreaLock = areaLock;
-			@m_Entity = @EntityManager.Spawn( TheNomad::GameSystem::EntityType::Wall, -1, vec3( origin.x, origin.y, origin.z, vec2( 0.0f ) ) );
-			m_Entity.EmitSound( TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/bonfire" ), 1.0f, 0xff );
 		}
 		MapCheckpoint() {
 		}
@@ -24,6 +22,13 @@ namespace TheNomad::SGame {
 			m_Spawns.Clear();
 			m_bPassed = true;
 			m_nTime = TheNomad::GameSystem::GameManager.GetGameTic() - nLevelTime;
+		}
+
+		void InitEntity() {
+			@m_Entity = @EntityManager.Spawn( TheNomad::GameSystem::EntityType::Wall, -1,
+				vec3( m_Origin.x, m_Origin.y, m_Origin.z ), vec2( 0.0f )
+			);
+			m_Entity.EmitSound( TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/bonfire" ), 1.0f, 0xff );
 		}
 
 		void Draw() {
