@@ -63,6 +63,13 @@ void InitCvars() {
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_CameraZoom, "sgame_CameraZoom", "0.07", CVAR_SAVE, false );
 }
 
+void LoadInfos() {
+	TheNomad::SGame::InfoSystem::InfoManager.LoadMobInfos();
+	TheNomad::SGame::InfoSystem::InfoManager.LoadItemInfos();
+	TheNomad::SGame::InfoSystem::InfoManager.LoadAmmoInfos();
+	TheNomad::SGame::InfoSystem::InfoManager.LoadWeaponInfos();
+}
+
 //
 // InitResources: caches all important SGame resources
 //
@@ -74,15 +81,6 @@ void InitResources() {
 	TheNomad::Engine::Timer timer;
 
 	timer.Start();
-
-	//
-	// load infos
-	//
-
-	TheNomad::SGame::InfoSystem::InfoManager.LoadMobInfos();
-	TheNomad::SGame::InfoSystem::InfoManager.LoadItemInfos();
-	TheNomad::SGame::InfoSystem::InfoManager.LoadAmmoInfos();
-	TheNomad::SGame::InfoSystem::InfoManager.LoadWeaponInfos();
 
 	//
 	// load sound effects
@@ -108,6 +106,8 @@ void InitResources() {
 
 	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/cloth_foley_0" );
 	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/cloth_foley_1" );
+
+	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/bonfire" );
 
 	//
 	// load materials
@@ -266,8 +266,7 @@ int ModuleOnSaveGame() {
 }
 
 int ModuleOnLoadGame() {
-	// load assets
-	InitResources();
+	LoadInfos();
 
 	TheNomad::GameSystem::GameManager.SetLoadGame( true );
 	TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::InLevel;
@@ -278,6 +277,9 @@ int ModuleOnLoadGame() {
 		TheNomad::GameSystem::GameSystems[i].OnLoad();
 	}
 
+	// load assets
+	InitResources();
+
 	TheNomad::SGame::LevelManager.CheckNewGamePlus();
 
 	TheNomad::SGame::ScreenData.InitPlayers();
@@ -287,13 +289,15 @@ int ModuleOnLoadGame() {
 }
 
 int ModuleOnLevelStart() {
-	// load assets
-	InitResources();
-
+	LoadInfos();
+	
 	TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::InLevel;
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnLevelStart();
 	}
+	// load assets
+	InitResources();
+
 	TheNomad::SGame::ScreenData.InitPlayers();
 	return 1;
 }

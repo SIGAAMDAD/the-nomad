@@ -115,25 +115,19 @@ namespace TheNomad::SGame {
 				}
 
 				switch ( ent.GetType() ) {
-				case TheNomad::GameSystem::EntityType::Playr: {
-					cast<PlayrObject@>( @ent ).Think();
-					break; }
-				case TheNomad::GameSystem::EntityType::Mob: {
-					cast<MobObject@>( @ent ).Think();
-					break; }
+				case TheNomad::GameSystem::EntityType::Playr:
+				case TheNomad::GameSystem::EntityType::Mob:
 				case TheNomad::GameSystem::EntityType::Bot:
-					break;
 				case TheNomad::GameSystem::EntityType::Item:
-					cast<ItemObject@>( @ent ).Think();
-					break;
 				case TheNomad::GameSystem::EntityType::Weapon:
-					cast<WeaponObject@>( @ent ).Think();
-					break;
 				case TheNomad::GameSystem::EntityType::Wall:
 					break;
 				default:
 					GameError( "EntityManager::OnRunTic: invalid entity type " + formatUInt( uint( ent.GetType() ) ) );
 				};
+
+				ent.SetSoundPosition();
+				ent.Think();
 
 				// update engine data
 				ent.GetLink().Update();
@@ -172,29 +166,28 @@ namespace TheNomad::SGame {
 				switch ( type ) {
 				case TheNomad::GameSystem::EntityType::Playr:
 					@ent = PlayrObject();
-					ent.Init( type, id, vec3( 0.0f ) );
-					cast<PlayrObject@>( @ent ).Spawn( id, vec3( 0.0f ) );
 					break;
 				case TheNomad::GameSystem::EntityType::Mob:
 					@ent = MobObject();
-					cast<MobObject@>( @ent ).Spawn( id, vec3( 0.0f ) );
 					break;
 				case TheNomad::GameSystem::EntityType::Bot:
 					break;
 				case TheNomad::GameSystem::EntityType::Item:
 					@ent = ItemObject();
-					cast<ItemObject@>( @ent ).Spawn( id, vec3( 0.0f ) );
 					break;
 				case TheNomad::GameSystem::EntityType::Weapon:
 					@ent = WeaponObject();
-					cast<WeaponObject@>( @ent ).Spawn( id, vec3( 0.0f ) );
 					break;
 				case TheNomad::GameSystem::EntityType::Wall:
 					// static geometry
+					@ent = WallObject();
 					break;
 				default:
 					GameError( "EntityManager::Spawn: invalid entity type " + id );
 				};
+
+				ent.Init( type, id, vec3( 0.0f ), m_EntityList.Count() );
+				ent.Spawn( id, vec3( 0.0f ) );
 
 				DebugPrint( "Spawned entity " + m_EntityList.Count() + "\n" );
 				m_EntityList.Add( @ent );
@@ -288,31 +281,28 @@ namespace TheNomad::SGame {
 			switch ( type ) {
 			case TheNomad::GameSystem::EntityType::Playr:
 				@ent = PlayrObject();
-				ent.Init( type, id, origin );
-				cast<PlayrObject@>( @ent ).Spawn( id, origin );
 				break;
 			case TheNomad::GameSystem::EntityType::Mob:
 				@ent = MobObject();
-				cast<MobObject@>( @ent ).Spawn( id, origin );
 				break;
 			case TheNomad::GameSystem::EntityType::Bot:
 				break;
 			case TheNomad::GameSystem::EntityType::Item:
 				@ent = ItemObject();
-				cast<ItemObject@>( @ent ).Spawn( id, origin );
 				break;
 			case TheNomad::GameSystem::EntityType::Weapon:
 				@ent = WeaponObject();
-				cast<WeaponObject@>( @ent ).Spawn( id, origin );
 				break;
 			case TheNomad::GameSystem::EntityType::Wall:
 				// static geometry
 				@ent = WallObject();
-				cast<WallObject@>( @ent ).Spawn( id, origin );
 				break;
 			default:
 				GameError( "EntityManager::Spawn: invalid entity type " + id );
 			};
+			
+			ent.Init( type, id, vec3( 0.0f ), m_EntityList.Count() );
+			ent.Spawn( id, vec3( 0.0f ) );
 
 			ent.GetBounds().m_nWidth = size.x;
 			ent.GetBounds().m_nHeight = size.y;

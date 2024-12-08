@@ -1,6 +1,33 @@
 #include "snd_local.h"
 #include "../game/g_world.h"
 
+void CSoundWorld::ListEmitters_f( void )
+{
+	const emitter_t *em;
+	int i;
+
+	Con_Printf( "\nEMITTERS:\n" );
+	for ( i = 0; i < s_SoundWorld->m_nEmitterCount; i++ ) {
+		em = &s_SoundWorld->m_pszEmitters[i];
+
+		Con_Printf( "%04u: %i (id) %i (type) 0x%x (mask)\n", em->link->entityNumber, em->link->id, em->link->type, em->listenerMask );
+	}
+}
+
+void CSoundWorld::ListListeners_f( void )
+{
+	const listener_t *l;
+	int i;
+
+	Con_Printf( "\nLISTENERS:\n" );
+	for ( i = 0; i < s_SoundWorld->m_nListenerCount; i++ ) {
+		l = &s_SoundWorld->m_szListeners[i];
+
+		Con_Printf( "%i: 0x%x (mask) %f %f %f (origin) %u (index)\n",
+			i, l->listenerMask, l->link->origin[0], l->link->origin[1], l->link->origin[2], l->link->entityNumber );
+	}
+}
+
 bool CSoundWorld::LoadOcclusionGeometry( void )
 {
 	union {
@@ -12,7 +39,7 @@ bool CSoundWorld::LoadOcclusionGeometry( void )
 
 	COM_StripExtension( Cvar_VariableString( "mapname" ), path, sizeof( path ) );
 
-	nLength = FS_LoadFile( va( "Cache/occlusion/%s.fsb.geom", COM_SkipPath( path ) ), &f.v );
+	nLength = FS_LoadFile( va( "Cache/occlusion/%sfsb.geom", COM_SkipPath( path ) ), &f.v );
 	if ( !nLength || !f.v ) {
 		return false;
 	}
@@ -86,12 +113,37 @@ void CSoundWorld::Shutdown( void )
 	}
 	memset( m_szChannels, 0, sizeof( m_szChannels ) );
 
+	if ( m_pszEmitters ) {
+		Mem_Free( m_pszEmitters );
+	}
+
 	m_pGeometryBuffer = NULL;
 	m_pszEmitters = NULL;
+
+	Cmd_RemoveCommand( "snd.show_listeners" );
+	Cmd_RemoveCommand( "snd.show_emitters" );
 }
 
-void CSoundWorld::Init( void )
+/*
+static void *IPL_Alloc( IPLsize size, IPLsize alignment )
 {
+	return Mem_ClearedAlloc( PAD( size, alignment ) );
+}
+
+static void IPL_Free( void *ptr )
+{
+	Mem_Free( ptr );
+}
+
+static float IPL_DistanceCallback( IPLfloat32 distance, void *userData )
+{
+	(void)userData;
+}
+*/
+
+void CSoundWorld::AllocateGeometry( void )
+{
+	/*
 	const maptile_t *tiles;
 	uint32_t y, x;
 	int i;
@@ -101,8 +153,119 @@ void CSoundWorld::Init( void )
 	void *savedGeometry;
 	FMOD_VECTOR vertices[ 4 ];
 	char path[ MAX_NPATH ];
+	int versionMajor, versionMinor;
+	IPLContextSettings settings;
+	IPLSimulationSettings simulation;
+	IPLDistanceAttenuationModel distanceModel;
 
-	m_pszEmitters = (emitter_t *)Hunk_Alloc( sizeof( *m_pszEmitters ) * MAX_ENTITIES, h_high );
+	distanceModel.minDistance = 0.25f;
+	distanceModel.type = IPL_DISTANCEATTENUATIONTYPE_DEFAULT;
+	distanceModel.callback = IPL_DistanceCallback;
+
+	settings.allocateCallback = IPL_Alloc;
+	settings.freeCallback = IPL_Free;
+
+	if ( SDL_HasSSE41() || SDL_HasSSE42() ) {
+		settings.simdLevel = IPL_SIMDLEVEL_SSE4;
+	} else if ( SDL_HasSSE2() ) {
+		settings.simdLevel = IPL_SIMDLEVEL_SSE2;
+	} else if ( SDL_HasAVX2() ) {
+		settings.simdLevel = IPL_SIMDLEVEL_AVX2;
+	} else if ( SDL_HasAVX512F() ) {
+		settings.simdLevel = IPL_SIMDLEVEL_AVX512;
+	} else if ( SDL_HasAVX() ) {
+		settings.simdLevel = IPL_SIMDLEVEL_AVX;
+	} else if ( SDL_HasNEON() ) {
+		settings.simdLevel = IPL_SIMDLEVEL_NEON;
+	}
+
+	settings.flags = IPL_CONTEXTFLAGS_VALIDATION;
+
+	iplContextCreate( &settings, &m_SteamAudio );
+	*/
+
+	/*
+	if ( LoadOcclusionGeometry() ) {
+		return;
+	}
+
+	wallCount = 0;
+	numVertices = 0;
+	numPolys = 0;
+
+	tiles = gi.mapCache.info.tiles;
+		
+	for ( y = 0; y < gi.mapCache.info.width; y++ ) {
+		for ( x = 0; x < gi.mapCache.info.height; x++ ) {
+			for ( i = 0; i < NUMDIRS; i++ ) {
+				if ( IsWall( i, tiles[ y * gi.mapCache.info.width + x ].flags ) ) {
+					wallCount++;
+					numPolys++;
+					numVertices += NUMDIRS * 2;
+				}
+			}
+		}
+	}
+
+	CSoundSystem::GetCoreSystem()->createGeometry( numPolys, numVertices, &m_pGeometryBuffer );
+
+	for ( y = 0; y < gi.mapCache.info.width; y++ ) {
+		for ( x = 0; x < gi.mapCache.info.height; x++ ) {
+			if ( IsWall( DIR_NORTH, tiles[ y * gi.mapCache.info.width + x ].flags ) ) {
+				vertices[0] = {  0.5f,  0.5f, 0.0f };
+				vertices[1] = {  0.5f, -0.5f, 0.0f };
+				vertices[2] = { -0.5f, -0.5f, 0.0f };
+				vertices[3] = { -0.5f,  0.5f, 0.0f };
+
+				ERRCHECK( m_pGeometryBuffer->addPolygon( 1.0f, 1.0f, IsDoubleSidedWall( DIR_NORTH, tiles[ y * gi.mapCache.info.width + x ].flags ),
+					4, vertices, &polyIndex ) );
+			}
+			if ( IsWall( DIR_EAST, tiles[ y * gi.mapCache.info.width + x ].flags ) ) {
+				memset( vertices, 0, sizeof( vertices ) );
+				vertices[0] = { -1.0f,  1.0f, 0.0f };
+				vertices[1] = {  1.0f,  0.0f, 0.0f };
+				vertices[2] = {  1.0f,  1.0f, 0.0f };
+				vertices[3] = { -1.0f, -1.0f, 0.0f };
+
+				ERRCHECK( m_pGeometryBuffer->addPolygon( 1.0f, 1.0f, IsDoubleSidedWall( DIR_EAST, tiles[ y * gi.mapCache.info.width + x ].flags ),
+					4, vertices, &polyIndex ) );
+			}
+			if ( IsWall( DIR_SOUTH, tiles[ y * gi.mapCache.info.width + x ].flags ) ) {
+				memset( vertices, 0, sizeof( vertices ) );
+				vertices[0] = { -1.0f,  1.0f, 0.0f };
+				vertices[1] = {  1.0f,  0.0f, 0.0f };
+				vertices[2] = {  1.0f,  1.0f, 0.0f };
+				vertices[3] = { -1.0f, -1.0f, 0.0f };
+
+				ERRCHECK( m_pGeometryBuffer->addPolygon( 1.0f, 1.0f, IsDoubleSidedWall( DIR_SOUTH, tiles[ y * gi.mapCache.info.width + x ].flags ),
+					4, vertices, &polyIndex ) );
+			}
+			if ( IsWall( DIR_WEST, tiles[ y * gi.mapCache.info.width + x ].flags ) ) {
+				memset( vertices, 0, sizeof( vertices ) );
+				vertices[0] = { -1.0f,  1.0f, 0.0f };
+				vertices[1] = {  1.0f,  0.0f, 0.0f };
+				vertices[2] = {  1.0f,  1.0f, 0.0f };
+				vertices[3] = { -1.0f, -1.0f, 0.0f };
+
+				ERRCHECK( m_pGeometryBuffer->addPolygon( 1.0f, 1.0f, IsDoubleSidedWall( DIR_WEST, tiles[ y * gi.mapCache.info.width + x ].flags ),
+					4, vertices, &polyIndex ) );
+			}
+		}
+	}
+
+	COM_StripExtension( Cvar_VariableString( "mapname" ), path, sizeof( path ) );
+
+	ERRCHECK( m_pGeometryBuffer->save( NULL, &savedGeometrySize ) );
+	savedGeometry = Hunk_AllocateTempMemory( savedGeometrySize );
+	ERRCHECK( m_pGeometryBuffer->save( savedGeometry, &savedGeometrySize ) );
+	FS_WriteFile( va( "Cache/occlusion/%sfsb.geom", COM_SkipPath( path ) ), savedGeometry, savedGeometrySize );
+	Hunk_FreeTempMemory( savedGeometry );
+	*/
+}
+
+void CSoundWorld::Init( void )
+{
+	m_pszEmitters = (emitter_t *)Mem_ClearedAlloc( sizeof( *m_pszEmitters ) * MAX_ENTITIES );
 	m_EmitterList.prev =
 	m_EmitterList.next =
 		&m_EmitterList;
@@ -111,83 +274,8 @@ void CSoundWorld::Init( void )
 
 	memset( m_szChannels, 0, sizeof( m_szChannels ) );
 
-	// unnecessary
-	/*
-	if ( !LoadOcclusionGeometry() ) {
-		wallCount = 0;
-		numVertices = 0;
-		numPolys = 0;
-
-		tiles = gi.mapCache.info.tiles;
-		
-		for ( y = 0; y < gi.mapCache.info.width; y++ ) {
-			for ( x = 0; x < gi.mapCache.info.height; x++ ) {
-				for ( i = 0; i < NUMDIRS; i++ ) {
-					if ( IsWall( i, tiles[ y * gi.mapCache.info.width + x ].flags ) ) {
-						wallCount++;
-						numPolys++;
-						numVertices += NUMDIRS * 2;
-					}
-				}
-			}
-		}
-
-		CSoundSystem::GetCoreSystem()->createGeometry( numPolys, numVertices, &m_pGeometryBuffer );
-
-		for ( y = 0; y < gi.mapCache.info.width; y++ ) {
-			for ( x = 0; x < gi.mapCache.info.height; x++ ) {
-				if ( IsWall( DIR_NORTH, tiles[ y * gi.mapCache.info.width + x ].flags ) ) {
-					memset( vertices, 0, sizeof( vertices ) );
-					vertices[0] = { -1.0f,  1.0f, 0.0f };
-					vertices[1] = {  1.0f,  0.0f, 0.0f };
-					vertices[2] = {  1.0f,  1.0f, 0.0f };
-					vertices[3] = { -1.0f, -1.0f, 0.0f };
-
-					ERRCHECK( m_pGeometryBuffer->addPolygon( 1.0f, 1.0f, IsDoubleSidedWall( DIR_NORTH, tiles[ y * gi.mapCache.info.width + x ].flags ),
-						4, vertices, &polyIndex ) );
-				}
-				if ( IsWall( DIR_EAST, tiles[ y * gi.mapCache.info.width + x ].flags ) ) {
-					memset( vertices, 0, sizeof( vertices ) );
-					vertices[0] = { -1.0f,  1.0f, 0.0f };
-					vertices[1] = {  1.0f,  0.0f, 0.0f };
-					vertices[2] = {  1.0f,  1.0f, 0.0f };
-					vertices[3] = { -1.0f, -1.0f, 0.0f };
-
-					ERRCHECK( m_pGeometryBuffer->addPolygon( 1.0f, 1.0f, IsDoubleSidedWall( DIR_EAST, tiles[ y * gi.mapCache.info.width + x ].flags ),
-						4, vertices, &polyIndex ) );
-				}
-				if ( IsWall( DIR_SOUTH, tiles[ y * gi.mapCache.info.width + x ].flags ) ) {
-					memset( vertices, 0, sizeof( vertices ) );
-					vertices[0] = { -1.0f,  1.0f, 0.0f };
-					vertices[1] = {  1.0f,  0.0f, 0.0f };
-					vertices[2] = {  1.0f,  1.0f, 0.0f };
-					vertices[3] = { -1.0f, -1.0f, 0.0f };
-
-					ERRCHECK( m_pGeometryBuffer->addPolygon( 1.0f, 1.0f, IsDoubleSidedWall( DIR_SOUTH, tiles[ y * gi.mapCache.info.width + x ].flags ),
-						4, vertices, &polyIndex ) );
-				}
-				if ( IsWall( DIR_WEST, tiles[ y * gi.mapCache.info.width + x ].flags ) ) {
-					memset( vertices, 0, sizeof( vertices ) );
-					vertices[0] = { -1.0f,  1.0f, 0.0f };
-					vertices[1] = {  1.0f,  0.0f, 0.0f };
-					vertices[2] = {  1.0f,  1.0f, 0.0f };
-					vertices[3] = { -1.0f, -1.0f, 0.0f };
-
-					ERRCHECK( m_pGeometryBuffer->addPolygon( 1.0f, 1.0f, IsDoubleSidedWall( DIR_WEST, tiles[ y * gi.mapCache.info.width + x ].flags ),
-						4, vertices, &polyIndex ) );
-				}
-			}
-		}
-
-		COM_StripExtension( Cvar_VariableString( "mapname" ), path, sizeof( path ) );
-
-		ERRCHECK( m_pGeometryBuffer->save( NULL, &savedGeometrySize ) );
-		savedGeometry = Hunk_AllocateTempMemory( savedGeometrySize );
-		ERRCHECK( m_pGeometryBuffer->save( savedGeometry, &savedGeometrySize ) );
-		FS_WriteFile( va( "Cache/occlusion/%s.fsb.geom", COM_SkipPath( path ) ), savedGeometry, savedGeometrySize );
-		Hunk_FreeTempMemory( savedGeometry );
-	}
-	*/
+	Cmd_AddCommand( "snd.show_listeners", CSoundWorld::ListListeners_f );
+	Cmd_AddCommand( "snd.show_emitters", CSoundWorld::ListEmitters_f );
 }
 
 void CSoundWorld::Update( void )
@@ -208,10 +296,15 @@ void CSoundWorld::Update( void )
 			memcpy( &attribs.position, em->link->origin, sizeof( vec3_t ) );
 		}
 
-		em->channel->event->set3DAttributes( &attribs );
+//		em->channel->event->set3DAttributes( &attribs );
 		em->channel->event->setListenerMask( em->listenerMask );
 		em->channel->event->getPlaybackState( &state );
-		em->channel->event->setVolume( em->volume );
+
+		for ( i = 0; i < m_nListenerCount; i++ ) {
+			if ( em->listenerMask & m_szListeners[i].listenerMask ) {
+				em->channel->event->setVolume( em->volume - ( disBetweenOBJ( em->link->origin, m_szListeners[0].link->origin ) ) );
+			}
+		}
 
 		if ( state == FMOD_STUDIO_PLAYBACK_STOPPED ) {
 			em->channel->event->release();
@@ -367,11 +460,11 @@ nhandle_t CSoundWorld::PushListener( uint32_t nEntityNumber )
 	}
 
 	for ( ent = g_world->GetEntities()->next; ent != g_world->GetEntities(); ent = ent->next ) {
-		if ( ent->id == nEntityNumber ) {
+		if ( ent->entityNumber == nEntityNumber ) {
 			break;
 		}
 	}
-	if ( ent == g_world->GetEntities() ) {
+	if ( ent == g_world->GetEntities() && g_world->NumEntities() > 1 ) {
 		N_Error( ERR_DROP, "CSoundWorld::PushListener: invalid entityNumber %u", nEntityNumber );
 	}
 

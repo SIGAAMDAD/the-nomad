@@ -600,11 +600,12 @@ namespace TheNomad::SGame {
 			m_Link.m_Origin = origin;
 			m_Link.m_nEntityType = TheNomad::GameSystem::EntityType::Playr;
 			m_Link.m_nEntityId = 0;
-			m_Link.m_nEntityNumber = m_nControllerIndex;
 			m_nHealth = 100.0f;
 			m_nRage = 100.0f; // he's always angry
 			m_Direction = Util::Angle2Dir( m_PhysicsObject.GetAngle() );
 			m_nHealMultDecay = LevelManager.GetDifficultyScale();
+
+			m_hListener = TheNomad::Engine::SoundSystem::PushListener( m_Link.m_nEntityNumber );
 
 			CacheSfx();
 			InitLoadout();
@@ -945,6 +946,8 @@ namespace TheNomad::SGame {
 		private uint m_iFlags = 0;
 
 		private InventoryManager m_Inventory;
+
+		private int m_hListener;
 
 		private string m_SkinDescription;
 		private string m_SkinDisplayName;

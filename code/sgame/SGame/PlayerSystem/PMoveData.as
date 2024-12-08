@@ -375,8 +375,6 @@ namespace TheNomad::SGame {
 			m_EntityData.key_MoveWest.msec = 0;
 			m_EntityData.key_Jump.msec = 0;
 
-			m_EntityData.SetSoundPosition( m_EntityData.GetOrigin() );
-
 			m_EntityData.GetPhysicsObject().OnRunTic();
 		}
 		

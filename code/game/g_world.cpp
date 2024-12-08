@@ -252,6 +252,16 @@ void G_MapInfo_f( void ) {
 	}
 }
 
+static void ListActiveEntities_f( void )
+{
+	const linkEntity_t *ent;
+
+	Con_Printf( "\n%u Active Entities:\n", g_world->NumEntities() );
+	for ( ent = g_world->GetEntities()->next; ent != g_world->GetEntities(); ent = ent->next ) {
+		Con_Printf( "%-4u: %i (id) %i (type)\n", ent->entityNumber, ent->id, ent->type );
+	}
+}
+
 void G_SetMap_f( void ) {
 	const char *mapname;
 	nhandle_t hMap;
@@ -268,6 +278,8 @@ void G_SetMap_f( void ) {
 
 		g_world = NULL;
 
+		Cmd_RemoveCommand( "list_active_ents" );
+
 		Hunk_ClearToMark();
 
 		Cbuf_ExecuteText( EXEC_APPEND, "vid_restart keep_context\n" );
@@ -280,6 +292,8 @@ void G_SetMap_f( void ) {
 		Con_Printf( "Invalid map given: Aborting.\n" );
 		return;
 	}
+
+	Cmd_AddCommand( "list_active_ents", ListActiveEntities_f );
 
 	gi.mapCache.currentMapLoaded = hMap;
 	gi.mapLoaded = qtrue;
@@ -401,7 +415,7 @@ void G_SetActiveMap( nhandle_t hMap, uint32_t *nCheckpoints, uint32_t *nSpawns, 
 }
 
 CGameWorld::CGameWorld( void ) {
-	memset( this, 0, sizeof(*this) );
+	memset( this, 0, sizeof( *this ) );
 }
 
 CGameWorld::~CGameWorld() {
@@ -420,21 +434,23 @@ void CGameWorld::Init( mapinfo_t *info )
 
 void CGameWorld::LinkEntity( linkEntity_t *ent )
 {
-	m_nEntities++;
-
 	m_ActiveEnts.prev->next = ent;
 	ent->prev = m_ActiveEnts.prev;
 	ent->next = &m_ActiveEnts;
 	m_ActiveEnts.prev = ent;
 
-	Con_DPrintf( "Allocated link entity %u\n", ent->entityNumber );
+	m_nEntities++;
+	
+	Con_Printf( "Allocated link entity %u (%u type, %u id)\n", ent->entityNumber, ent->type, ent->id );
 }
 
 void CGameWorld::UnlinkEntity( linkEntity_t *ent )
 {
 	ent->prev->next = ent->next;
 	ent->next->prev = ent->prev;
-	
+
+	Con_Printf( "Removing link entity %u\n", ent->entityNumber );
+
 	m_nEntities--;
 }
 

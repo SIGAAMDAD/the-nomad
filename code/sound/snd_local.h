@@ -107,16 +107,21 @@ public:
 
 	void SetListenerVolume( nhandle_t hListener, float nVolume );
 	void SetListenerAudioMask( nhandle_t hListener, uint32_t nMask );
-	
+
 	void SetEmitterPosition( nhandle_t hEmitter, const vec3_t origin, float forward, float up, float speed );
 	void SetEmitterAudioMask( nhandle_t hEmitter, uint32_t nMask );
 	void SetEmitterVolume( nhandle_t hEmitter, float nVolume );
+
+	static void ListListeners_f( void );
+	static void ListEmitters_f( void );
 	
 	nhandle_t PushListener( uint32_t nEntityNumber );
 	
 	nhandle_t RegisterEmitter( uint32_t nEntityNumber );
 	void RemoveEmitter( nhandle_t hEmitter );
 private:
+	void AllocateGeometry( void );
+
 	channel_t *AllocateChannel( CSoundSource *pSource );
 	void ReleaseChannel( channel_t *pChannel );
 	bool LoadOcclusionGeometry( void );

@@ -13,22 +13,21 @@ namespace TheNomad::SGame {
 
     class EntityObject {
 		EntityObject( TheNomad::GameSystem::EntityType type, uint id, const vec3& in origin ) {
-			Init( type, id, origin );
+			Init( type, id, origin, 0 );
 		}
 		EntityObject() {
 		}
 		
-		void Init( TheNomad::GameSystem::EntityType type, uint id, const vec3& in origin ) {
+		void Init( TheNomad::GameSystem::EntityType type, uint id, const vec3& in origin, uint nEntityNumber ) {
 			// just create a temporary bbox to link it in, we'll rebuild every frame anyway
 			TheNomad::GameSystem::BBox bounds( 1.0f, 1.0f, origin );
-			m_Link = TheNomad::GameSystem::LinkEntity( origin, bounds, id, uint( type ) );
-			m_Link.Update();
+			m_Link.Create( origin, bounds, id, uint( type ), nEntityNumber );
 			m_Emitter.Register( @this );
 		}
 		void EmitSound( const TheNomad::Engine::SoundSystem::SoundEffect hSfx, float nVolume, uint nListenerMask ) {
 			m_Emitter.PlaySound( hSfx, nVolume, nListenerMask );
 		}
-		void SetSoundPosition( const vec3& in origin ) {
+		void SetSoundPosition() {
 			m_Emitter.SetPosition( m_Link.m_Origin, 0.5f, 0.0f,
 				m_PhysicsObject.GetAcceleration().x + m_PhysicsObject.GetAcceleration().y );
 		}

@@ -7,6 +7,66 @@
 #include "../module_engine/module_gpuconfig.h"
 #include <glm/gtc/type_ptr.hpp>
 
+CModuleLinkEntity::CModuleLinkEntity( void ) {
+	memset( this, 0, sizeof( *this ) );
+	m_bLinked = qfalse;
+	ToLinkEntity( &handle );
+}
+
+CModuleLinkEntity::CModuleLinkEntity( const glm::vec3& origin, const CModuleBoundBox& bounds, uint32_t nEntityId, uint32_t nEntityType,
+	uint32_t nEntityNumber )
+{
+	memset( this, 0, sizeof( *this ) );
+	m_Origin = origin;
+	m_Bounds = bounds;
+	m_nEntityType = nEntityType;
+	m_nEntityId = nEntityId;
+	m_bLinked = qtrue;
+	m_nEntityNumber = nEntityNumber;
+	ToLinkEntity( &handle );
+	g_world->LinkEntity( &handle );
+}
+
+CModuleLinkEntity::~CModuleLinkEntity() {
+	if ( m_bLinked ) {
+		g_world->UnlinkEntity( &handle );
+	}
+}
+
+CModuleLinkEntity& CModuleLinkEntity::operator=( const CModuleLinkEntity& other ) {
+	memcpy( this, eastl::addressof( other ), sizeof( *this ) );
+	return *this;
+}
+
+void CModuleLinkEntity::Update( void ) {
+	ToLinkEntity( &handle );
+}
+
+void CModuleLinkEntity::SetOrigin( const glm::vec3& origin ) {
+	VectorCopy( m_Origin, origin );
+}
+
+void CModuleLinkEntity::SetBounds( const CModuleBoundBox& bounds ) {
+	m_Bounds = bounds;
+}
+
+const glm::vec3& CModuleLinkEntity::GetOrigin( void ) {
+	return m_Origin;
+}
+
+const CModuleBoundBox& CModuleLinkEntity::GetBounds( void ) {
+	return m_Bounds;
+}
+
+void CModuleLinkEntity::ToLinkEntity( linkEntity_t *ent ) {
+	VectorCopy( ent->origin, m_Origin );
+	VectorCopy( ent->bounds.mins, m_Bounds.mins );
+	VectorCopy( ent->bounds.maxs, m_Bounds.maxs );
+	ent->id = m_nEntityId;
+	ent->type = m_nEntityType;
+	ent->entityNumber = m_nEntityNumber;
+}
+
 CModuleBoundBox::CModuleBoundBox( void ) {
     memset( this, 0, sizeof( *this ) );
 }
@@ -216,8 +276,10 @@ static void BoundBoxDestruct( CModuleBoundBox& bounds )
 static CModuleLinkEntity LinkEntityConstruct( void )
 { return CModuleLinkEntity(); }
 
-static CModuleLinkEntity LinkEntityCopyConstruct( const glm::vec3& origin, const CModuleBoundBox& bounds, uint32_t nEntityId, uint32_t nEntityType )
-{ return CModuleLinkEntity( origin, bounds, nEntityId, nEntityType ); }
+static CModuleLinkEntity LinkEntityCopyConstruct(
+	const glm::vec3& origin, const CModuleBoundBox& bounds, uint32_t nEntityId, uint32_t nEntityType, uint32_t nEntityNumber
+)
+{ return CModuleLinkEntity( origin, bounds, nEntityId, nEntityType, nEntityNumber ); }
 static void LinkEntityDestruct( CModuleLinkEntity& entity )
 { entity.~CModuleLinkEntity(); }
 
@@ -371,15 +433,17 @@ void ScriptLib_Register_Game( void )
 
 	REGISTER_OBJECT_TYPE( "LinkEntity", CModuleLinkEntity, asOBJ_VALUE );
 	REGISTER_OBJECT_BEHAVIOUR( "TheNomad::GameSystem::LinkEntity", asBEHAVE_CONSTRUCT, "void f()", asFUNCTION( LinkEntityConstruct ), asCALL_CDECL_OBJFIRST );
-	REGISTER_OBJECT_BEHAVIOUR( "TheNomad::GameSystem::LinkEntity", asBEHAVE_CONSTRUCT, "void f( const vec3& in, const BBox& in, uint, uint )",
+	REGISTER_OBJECT_BEHAVIOUR( "TheNomad::GameSystem::LinkEntity", asBEHAVE_CONSTRUCT, "void f( const vec3& in, const BBox& in, uint, uint, uint )",
 		asFUNCTION( LinkEntityCopyConstruct ), asCALL_CDECL_OBJFIRST );
 	REGISTER_OBJECT_BEHAVIOUR( "TheNomad::GameSystem::LinkEntity", asBEHAVE_DESTRUCT, "void f()", asFUNCTION( LinkEntityDestruct ), asCALL_CDECL_OBJFIRST );
+	REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::LinkEntity", "BBox m_Bounds", offsetof( CModuleLinkEntity, m_Bounds ) );
 	REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::LinkEntity", "vec3 m_Origin", offsetof( CModuleLinkEntity, m_Origin ) );
 	REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::LinkEntity", "uint32 m_nEntityId", offsetof( CModuleLinkEntity, m_nEntityId ) );
 	REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::LinkEntity", "uint32 m_nEntityType", offsetof( CModuleLinkEntity, m_nEntityType ) );
 	REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::LinkEntity", "uint32 m_nEntityNumber", offsetof( CModuleLinkEntity, m_nEntityNumber ) );
-	REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::LinkEntity", "BBox m_Bounds", offsetof( CModuleLinkEntity, m_Bounds ) );
 	
+	REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::LinkEntity", "void Create( const vec3& in, const BBox& in, uint, uint, uint )",
+		asFUNCTION( LinkEntityCopyConstruct ), asCALL_CDECL_OBJFIRST );
 	REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::LinkEntity", "TheNomad::GameSystem::LinkEntity& opAssign( const TheNomad::GameSystem::LinkEntity& in )",
 		asMETHODPR( CModuleLinkEntity, operator=, ( const CModuleLinkEntity& ), CModuleLinkEntity& ), asCALL_THISCALL );
 	REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::LinkEntity", "void SetOrigin( const vec3& in )",
