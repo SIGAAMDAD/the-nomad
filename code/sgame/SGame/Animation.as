@@ -8,6 +8,17 @@ namespace TheNomad::SGame {
 			m_nTicRate = 0;
 			m_nCurrentFrame = 0;
 		}
+		Animation( uint nTicRate, bool bOscillate, uint nFrames, bool bReverse ) {
+			Load( nTicRate, bOscillate, nFrames, bReverse );
+		}
+
+		const Animation& opAssign( const Animation& in other ) {
+			m_nTicRate = other.m_nTicRate;
+			m_bOscillate = other.m_bOscillate;
+			m_nNumFrames = other.m_nNumFrames;
+			m_bReverse = other.m_bReverse;
+			return this;
+		}
 		
 		int GetFrame() const {
 			return m_nCurrentFrame;

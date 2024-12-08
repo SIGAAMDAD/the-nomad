@@ -395,6 +395,24 @@ gfx/effects/flame
 }
 */
 
+gfx/checkpoint
+{
+	{
+		map particle_effects/Spritesheets/campfire.png
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+	}
+}
+
+gfx/completed_checkpoint
+{
+	{
+		map particle_effects/Spritesheets/unlit.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+	}
+}
+
 //
 // particle effects
 //
@@ -403,6 +421,33 @@ gfx/env/smokeTrail
 {
 	{
 		map particle_effects/Spritesheets/Smoke2-Sheet.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+	}
+}
+
+gfx/env/smokePuff
+{
+	{
+		map particle_effects/Spritesheets/dust_trail.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+	}
+}
+
+gfx/env/jump
+{
+	{
+		map particle_effects/Spritesheets/jump.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+	}
+}
+
+gfx/env/land
+{
+	{
+		map particle_effects/Spritesheets/land.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		rgbGen vertex
 	}
@@ -558,16 +603,6 @@ waterBubble
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		rgbGen		vertex
 		alphaGen	vertex
-	}
-}
-
-gfx/env/smokePuff
-{
-	{
-		map particle_effects/Spritesheets/dust_trail.dds
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-		rgbGen vertex
-		alphaGen vertex
 	}
 }
 

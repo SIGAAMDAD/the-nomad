@@ -281,22 +281,10 @@ namespace TheNomad::Engine::Physics {
 					//
 
 					// left offset
-					/*
-					TheNomad::SGame::GfxManager.AddDustPoly( vec3( origin.x - 1.5f, origin.y, origin.z ), vec3( -0.015f, 0.0f, 0.0f ), 500,
-						TheNomad::Engine::ResourceCache.GetShader( "gfx/env/smokePuff" ) );
-					*/
-					TheNomad::SGame::GfxManager.AddDustPuff( vec3( origin.x - 1.5f, origin.y, origin.z ), TheNomad::SGame::FACING_RIGHT );
-
-					// center
-//					TheNomad::SGame::GfxManager.AddDustPoly( origin, vec3( 0.0f ), 500,
-//						TheNomad::Engine::ResourceCache.GetShader( "gfx/env/smokePuff" ) );
+					TheNomad::SGame::GfxManager.AddDustPuff( vec3( origin.x - 0.5f, origin.y, origin.z ), TheNomad::SGame::FACING_RIGHT );
 
 					// right offset
-					/*
-					TheNomad::SGame::GfxManager.AddDustPoly( vec3( origin.x + 1.5f, origin.y, origin.z ), vec3( 0.015f, 0.0f, 0.0f ), 500,
-						TheNomad::Engine::ResourceCache.GetShader( "gfx/env/smokePuff" ) );
-					*/
-					TheNomad::SGame::GfxManager.AddDustPuff( vec3( origin.x + 1.5f, origin.y, origin.z ), TheNomad::SGame::FACING_LEFT );
+					TheNomad::SGame::GfxManager.AddDustPuff( vec3( origin.x + 0.5f, origin.y, origin.z ), TheNomad::SGame::FACING_LEFT );
 				}
 			}
 			

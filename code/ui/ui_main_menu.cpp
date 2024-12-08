@@ -146,6 +146,10 @@ static void DrawNewsFeed( void )
 	int i;
 	const newslabel_t *label;
 
+	if ( !s_newsLabelList.size() ) {
+		return;
+	}
+
 	ImGui::Begin( "##MainMenuNewsFeed", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse );
 	ImGui::SetWindowPos( ImVec2( 728 * ui->scale + ui->bias, 72 * ui->scale ) );
 	ImGui::SetWindowSize( ImVec2( 290 * ui->scale + ui->bias, 460 * ui->scale ) );

@@ -188,6 +188,11 @@ namespace TheNomad::SGame {
 		void OnRenderScene() {
 			if ( GlobalState == GameState::StatsMenu ) {
 				m_RankData.Draw( true, m_nLevelTimer );
+				return;
+			}
+			array<MapCheckpoint>@ checkpoints = @m_MapData.GetCheckpoints();
+			for ( uint i = 0; i < checkpoints.Count(); i++ ) {
+				checkpoints[i].Draw();
 			}
 		}
 		void OnRunTic() {

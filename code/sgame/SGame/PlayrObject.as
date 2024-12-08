@@ -650,11 +650,6 @@ namespace TheNomad::SGame {
 			m_nLegTicker = 0;
 			m_Name = "player";
 
-			TheNomad::Engine::Renderer::RegisterShader( "gfx/env/smokePuff" );
-			TheNomad::Engine::Renderer::RegisterShader( "wake" );
-			TheNomad::Engine::Renderer::RegisterShader( "gfx/bloodSplatter0" );
-			TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/blood_screen" );
-
 			m_HudData.Init( @this );
 		}
 
@@ -840,19 +835,6 @@ namespace TheNomad::SGame {
 			DrawLegs();
 			DrawFrontArm();
 
-		/*
-			refEntity.sheetNum = TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/smokeTrail", 750, 1200, 150, 150 ).GetShader();
-			refEntity.spriteId = m_nSmokeSpriteID;
-			refEntity.scale = 1.5f;
-			refEntity.Draw();
-
-			m_nSmokeSpriteID++;
-		*/
-
-			if ( m_nSmokeSpriteID == 40 ) {
-				m_nSmokeSpriteID = 0;
-			}
-
 			if ( ( m_iFlags & PF_AFTER_IMAGE ) != 0 ) {
 				// draw the common silhouette after image for the player's last known position to the enemies
 //				m_AfterImage.Draw();
@@ -860,8 +842,6 @@ namespace TheNomad::SGame {
 
 			m_HudData.Draw();
 		}
-
-		uint m_nSmokeSpriteID = 0;
 
 		KeyBind key_MoveNorth;
 		KeyBind key_MoveSouth;

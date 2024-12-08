@@ -70,6 +70,7 @@ static void PauseMenu_EventCallback( void *ptr, int event )
 	switch ( ( (menucommon_t *)ptr )->id ) {
 	case ID_RESUME:
 		UI_SetActiveMenu( UI_MENU_NONE );
+		Key_SetCatcher( KEYCATCH_SGAME );
 		Snd_StopSfx( Snd_RegisterSfx( "snapshot:/PauseMenu" ) );
 		break;
 	case ID_CHECKPOINT:
