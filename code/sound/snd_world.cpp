@@ -10,7 +10,9 @@ void CSoundWorld::ListEmitters_f( void )
 	for ( i = 0; i < s_SoundWorld->m_nEmitterCount; i++ ) {
 		em = &s_SoundWorld->m_pszEmitters[i];
 
-		Con_Printf( "%04u: %i (id) %i (type) 0x%x (mask)\n", em->link->entityNumber, em->link->id, em->link->type, em->listenerMask );
+		Con_Printf( "%-4u: %i (id) %i (type) 0x%x (mask) %f %f %f (origin)\n",
+			em->link->entityNumber, em->link->id, em->link->type, em->listenerMask,
+			em->link->origin[0], em->link->origin[1], em->link->origin[2] );
 	}
 }
 
@@ -119,27 +121,12 @@ void CSoundWorld::Shutdown( void )
 
 	m_pGeometryBuffer = NULL;
 	m_pszEmitters = NULL;
+	m_nListenerCount = 0;
+	m_nEmitterCount = 0;
 
 	Cmd_RemoveCommand( "snd.show_listeners" );
 	Cmd_RemoveCommand( "snd.show_emitters" );
 }
-
-/*
-static void *IPL_Alloc( IPLsize size, IPLsize alignment )
-{
-	return Mem_ClearedAlloc( PAD( size, alignment ) );
-}
-
-static void IPL_Free( void *ptr )
-{
-	Mem_Free( ptr );
-}
-
-static float IPL_DistanceCallback( IPLfloat32 distance, void *userData )
-{
-	(void)userData;
-}
-*/
 
 void CSoundWorld::AllocateGeometry( void )
 {
@@ -282,6 +269,7 @@ void CSoundWorld::Update( void )
 {
 	emitter_t *em;
 	int i;
+	float volume;
 	FMOD_3D_ATTRIBUTES attribs;
 	FMOD_STUDIO_PLAYBACK_STATE state;
 	FMOD_VECTOR up, forward, vel, pos;
@@ -292,19 +280,16 @@ void CSoundWorld::Update( void )
 		if ( !em->channel ) {
 			continue;
 		}
-		if ( em->link ) {
-			memcpy( &attribs.position, em->link->origin, sizeof( vec3_t ) );
-		}
 
-//		em->channel->event->set3DAttributes( &attribs );
-		em->channel->event->setListenerMask( em->listenerMask );
-		em->channel->event->getPlaybackState( &state );
+		ERRCHECK( em->channel->event->setListenerMask( em->listenerMask ) );
+		ERRCHECK( em->channel->event->getPlaybackState( &state ) );
 
-		for ( i = 0; i < m_nListenerCount; i++ ) {
-			if ( em->listenerMask & m_szListeners[i].listenerMask ) {
-				em->channel->event->setVolume( em->volume - ( disBetweenOBJ( em->link->origin, m_szListeners[0].link->origin ) ) );
-			}
-		}
+//		for ( i = 0; i < m_nListenerCount; i++ ) {
+//			if ( em->listenerMask & m_szListeners[i].listenerMask ) {
+				volume = DotProduct( em->link->origin, m_szListeners[0].link->origin );
+				em->channel->event->setVolume( em->volume + volume );
+//			}
+//		}
 
 		if ( state == FMOD_STUDIO_PLAYBACK_STOPPED ) {
 			em->channel->event->release();
@@ -344,7 +329,7 @@ void CSoundWorld::PlayEmitterSound( nhandle_t hEmitter, float nVolume, uint32_t 
 
 	em->channel = AllocateChannel( pSource );
 	em->listenerMask = nListenerMask;
-	em->volume = snd_effectsVolume->f / 100.0f;
+	em->volume = nVolume * ( snd_effectsVolume->f / 100.0f );
 
 	memset( &attribs, 0, sizeof( attribs ) );
 	memcpy( &attribs.position, em->link->origin, sizeof( vec3_t ) );
@@ -392,6 +377,8 @@ void CSoundWorld::SetEmitterPosition( nhandle_t hEmitter, const vec3_t origin, f
 	}
 
 	em = &m_pszEmitters[ hEmitter ];
+	VectorCopy( em->link->origin, origin );
+
 	if ( !em->channel ) {
 		return;
 	}
@@ -442,7 +429,7 @@ void CSoundWorld::SetEmitterVolume( nhandle_t hEmitter, float nVolume )
 	em->volume = nVolume;
 
 	if ( em->channel ) {
-		em->channel->event->setVolume( nVolume );
+//		em->channel->event->setVolume( nVolume );
 	}
 }
 	
@@ -525,6 +512,9 @@ void CSoundWorld::RemoveEmitter( nhandle_t hEmitter )
 	}
 
 	em = &m_pszEmitters[ hEmitter ];
+	if ( em->channel ) {
+		em->channel->event->release();
+	}
 	em->prev->next = em->next;
 	em->next->prev = em->prev;
 	m_nEmitterCount--;

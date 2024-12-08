@@ -22,14 +22,14 @@ namespace TheNomad::Engine::SoundSystem {
 			SetEmitterVolume( m_hEmitter, nVolume );
 		}
 		void SetListenerGroup( uint nMask ) {
-			SetEmitterAudioMask( m_hEmitter, nMask );
+			SetEmitterAudioMask( m_hEmitter, 0xff );
 		}
 		void SetPosition( const vec3& in origin, float forward, float up, float velocity ) {
 			SetEmitterPosition( m_hEmitter, origin, forward, up, velocity );
 		}
 
 		void PlaySound( const TheNomad::Engine::SoundSystem::SoundEffect& in sfx, float nVolume, uint nListenerMask ) {
-			PlayEmitterSound( m_hEmitter, nVolume, nListenerMask, sfx );
+			PlayEmitterSound( m_hEmitter, nVolume, 0xff, sfx );
 		}
 
 		private int m_hEmitter = -1;

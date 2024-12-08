@@ -22,6 +22,7 @@ namespace TheNomad::SGame {
 			m_Spawns.Clear();
 			m_bPassed = true;
 			m_nTime = TheNomad::GameSystem::GameManager.GetGameTic() - nLevelTime;
+			@m_Entity = null;
 		}
 
 		void InitEntity() {
@@ -32,9 +33,15 @@ namespace TheNomad::SGame {
 		}
 
 		void Draw() {
+			const vec3 origin = vec3( m_Origin.x, m_Origin.y, m_Origin.z );
+
+			if ( @m_Entity !is null ) {
+				m_Entity.SetOrigin( origin );
+			}
+
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 
-			refEntity.origin = vec3( m_Origin.x, m_Origin.y, m_Origin.z );
+			refEntity.origin = origin;
 			refEntity.scale = vec2( 1.75f );
 			if ( !m_bPassed ) {
 				m_Animation.Run();

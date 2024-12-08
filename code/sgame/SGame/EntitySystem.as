@@ -126,11 +126,12 @@ namespace TheNomad::SGame {
 					GameError( "EntityManager::OnRunTic: invalid entity type " + formatUInt( uint( ent.GetType() ) ) );
 				};
 
-				ent.SetSoundPosition();
 				ent.Think();
 
 				// update engine data
 				ent.GetLink().Update();
+
+				ent.SetSoundPosition();
 			}
 		}
 

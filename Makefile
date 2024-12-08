@@ -174,7 +174,9 @@ LDLIBS= \
 		-Wl,-rpath='.' \
 		-ljpeg -lsteam_api \
 		-lfmodL -lfmodstudioL \
-		-lcurl
+		-lcurl \
+		-lphonon \
+		-lphonon_fmod
 
 ifndef release
 LDLIBS+=-leasy_profiler

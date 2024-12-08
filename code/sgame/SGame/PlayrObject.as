@@ -601,7 +601,15 @@ namespace TheNomad::SGame {
 			m_Link.m_nEntityType = TheNomad::GameSystem::EntityType::Playr;
 			m_Link.m_nEntityId = 0;
 			m_nHealth = 100.0f;
-			m_nRage = 100.0f; // he's always angry
+			m_nRage = 0.0f;
+
+			// give the player a little starting boost if they're playing on the easier modes
+			if ( sgame_Difficulty.GetInt() == int( TheNomad::GameSystem::GameDifficulty::Easy ) ) {
+				m_nRage = 50.0f;
+			} else if ( sgame_Difficulty.GetInt() == int( TheNomad::GameSystem::GameDifficulty::Normal ) ) {
+				m_nRage = 25.0f;
+			}
+
 			m_Direction = Util::Angle2Dir( m_PhysicsObject.GetAngle() );
 			m_nHealMultDecay = LevelManager.GetDifficultyScale();
 

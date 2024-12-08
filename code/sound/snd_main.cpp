@@ -428,6 +428,8 @@ FMOD::DSP *CSoundSystem::GetDSP( void )
 	return m_pDSP;
 }
 
+static unsigned int s_hSteamAudioPlugin;
+
 void CSoundSystem::Init( void )
 {
 	int ret;
@@ -446,8 +448,8 @@ void CSoundSystem::Init( void )
 			| FMOD_DEBUG_DISPLAY_THREAD, FMOD_DEBUG_MODE_CALLBACK, fmod_debug_callback, NULL ) );
 	}
 
-	flags = FMOD_INIT_CHANNEL_DISTANCEFILTER | FMOD_INIT_THREAD_UNSAFE | FMOD_INIT_VOL0_BECOMES_VIRTUAL
-		| FMOD_INIT_CHANNEL_LOWPASS;
+	flags = FMOD_INIT_CHANNEL_DISTANCEFILTER | FMOD_INIT_THREAD_UNSAFE
+		| FMOD_INIT_CHANNEL_LOWPASS | FMOD_INIT_VOL0_BECOMES_VIRTUAL;
 
 	ERRCHECK( FMOD::Studio::System::create( &s_pStudioSystem ) );
 	ERRCHECK( s_pStudioSystem->getCoreSystem( &s_pCoreSystem ) );
@@ -468,14 +470,16 @@ void CSoundSystem::Init( void )
 	Con_Printf( "FMOD Audio Driver Data: %i samplerate, %i speakermode, %i speakercount\n", m_AudioInfo.samplerate, m_AudioInfo.audioMode,
 		m_AudioInfo.speakerCount );
 
-	ERRCHECK( s_pCoreSystem->set3DSettings( 1.0f, DISTANCEFACTOR, 0.5f ) );
-#ifdef _NOMAD_DEBUG
+#ifdef _WIN32
+	ERRCHECK( s_pCoreSystem->loadPlugin( "phonon_fmod.dll", &s_hSteamAudioPlugin, FMOD_PLUGINTYPE_DSP ) );
+#else
+	ERRCHECK( s_pCoreSystem->loadPlugin( "./libphonon_fmod.so", &s_hSteamAudioPlugin, FMOD_PLUGINTYPE_DSP ) );
+#endif
+
 	ERRCHECK( s_pStudioSystem->initialize( snd_maxChannels->i, FMOD_STUDIO_INIT_LIVEUPDATE,
 		flags, NULL ) );
-#else
-	ERRCHECK( s_pStudioSystem->initialize( snd_maxChannels->i, FMOD_STUDIO_INIT_NORMAL,
-		flags, NULL ) );
-#endif
+	
+	ERRCHECK( s_pCoreSystem->set3DSettings( 1.0f, DISTANCEFACTOR, 0.5f ) );
 
 	m_pStudioSystem = s_pStudioSystem;
 	m_pSystem = s_pCoreSystem;
@@ -504,6 +508,8 @@ void CSoundSystem::Shutdown( void )
 	uint32_t i;
 
 	Snd_ClearLoopingTracks();
+
+	s_pCoreSystem->unloadPlugin( s_hSteamAudioPlugin );
 
 	ERRCHECK( m_pSFXBus->stopAllEvents( FMOD_STUDIO_STOP_IMMEDIATE ) );
 	ERRCHECK( m_pMusicBus->stopAllEvents( FMOD_STUDIO_STOP_IMMEDIATE ) );
