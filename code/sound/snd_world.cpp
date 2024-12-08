@@ -286,7 +286,7 @@ void CSoundWorld::Update( void )
 
 //		for ( i = 0; i < m_nListenerCount; i++ ) {
 //			if ( em->listenerMask & m_szListeners[i].listenerMask ) {
-				volume = DotProduct( em->link->origin, m_szListeners[0].link->origin );
+				volume = DotProduct( em->link->origin, m_szListeners[0].link->origin ) / 1000.0f;
 				em->channel->event->setVolume( em->volume + volume );
 //			}
 //		}
@@ -329,7 +329,7 @@ void CSoundWorld::PlayEmitterSound( nhandle_t hEmitter, float nVolume, uint32_t 
 
 	em->channel = AllocateChannel( pSource );
 	em->listenerMask = nListenerMask;
-	em->volume = nVolume * ( snd_effectsVolume->f / 100.0f );
+	em->volume = nVolume * ( snd_effectsVolume->f / 1000.0f );
 
 	memset( &attribs, 0, sizeof( attribs ) );
 	memcpy( &attribs.position, em->link->origin, sizeof( vec3_t ) );
