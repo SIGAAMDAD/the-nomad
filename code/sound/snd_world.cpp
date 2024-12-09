@@ -297,6 +297,7 @@ void CSoundWorld::Update( void )
 		}
 	}
 
+	/*
 	CSoundSystem::GetCoreSystem()->set3DNumListeners( m_nListenerCount );
 	for ( i = 0; i < m_nListenerCount; i++ ) {
 		memcpy( &pos, m_szListeners[ i ].link->origin, sizeof( vec3_t ) );
@@ -306,13 +307,13 @@ void CSoundWorld::Update( void )
 
 		CSoundSystem::GetCoreSystem()->set3DListenerAttributes( i, &pos, &vel, &forward, &up );
 	}
+	*/
 }
 
 void CSoundWorld::PlayEmitterSound( nhandle_t hEmitter, float nVolume, uint32_t nListenerMask, sfxHandle_t hSfx )
 {
 	emitter_t *em;
 	CSoundSource *pSource;
-	FMOD_3D_ATTRIBUTES attribs;
 	FMOD_STUDIO_PLAYBACK_STATE state;
 
 	if ( hEmitter >= m_nEmitterCount || hEmitter < 0 ) {
@@ -331,10 +332,6 @@ void CSoundWorld::PlayEmitterSound( nhandle_t hEmitter, float nVolume, uint32_t 
 	em->listenerMask = nListenerMask;
 	em->volume = nVolume * ( snd_effectsVolume->f / 1000.0f );
 
-	memset( &attribs, 0, sizeof( attribs ) );
-	memcpy( &attribs.position, em->link->origin, sizeof( vec3_t ) );
-
-	em->channel->event->set3DAttributes( &attribs );
 	em->channel->event->setListenerMask( nListenerMask );
 	em->channel->event->setVolume( em->volume );
 	em->channel->event->start();
@@ -382,6 +379,7 @@ void CSoundWorld::SetEmitterPosition( nhandle_t hEmitter, const vec3_t origin, f
 	if ( !em->channel ) {
 		return;
 	}
+	return;
 
 	memset( &attribs, 0, sizeof( attribs ) );
 	memcpy( &attribs.position, em->link->origin, sizeof( vec3_t ) );

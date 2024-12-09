@@ -110,8 +110,6 @@ namespace TheNomad::SGame {
 				if ( @ent.GetState() is null ) {
 					GameError( "EntitySystem::OnRunTic(): entity " + ent.GetName() + " state is null" );
 					continue;
-				} else {
-					ent.RunState();
 				}
 
 				switch ( ent.GetType() ) {
