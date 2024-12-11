@@ -1,13 +1,13 @@
 #include "SGame/InfoSystem/InfoDataManager.as"
 #include "SGame/InfoSystem/WeaponInfo.as"
 
-
 namespace TheNomad::SGame {
     class WeaponObject : EntityObject {
 		WeaponObject() {
 		}
 
 		void SetOwner( EntityObject@ ent ) {
+			SetState( @m_Info.equipState );
 			@m_Owner = @ent;
 		}
 		EntityObject@ GetOwner() {
@@ -40,10 +40,11 @@ namespace TheNomad::SGame {
 		//
 		// AreaOfEffect: does exactly what you think it does
 		//
-		private float AreaOfEffect( EntityObject@ ent, float damage ) const {
+		private float AreaOfEffect( float damage ) const {
 			TheNomad::GameSystem::BBox bounds;
-			array<EntityObject@>@ entList;
-			const float range = m_Info.range / 2;
+			EntityObject@ activeEnts = @EntityManager.GetActiveEnts();
+			EntityObject@ ent = @activeEnts.m_Next;
+			const float range = m_AmmoInfo.range / 2;
 			
 			// shit works like DOOM 1993 (box instead of circle)
 			// this weapon is a projectile or ordnance with its own entity
@@ -52,50 +53,50 @@ namespace TheNomad::SGame {
 			bounds.m_nWidth = range;
 			bounds.m_nHeight = range;
 			
-			@entList = EntityManager.GetEntities();
-			for ( uint i = 0; i < entList.Count(); i++ ) {
-				if ( Util::BoundsIntersectPoint( bounds, entList[i].GetOrigin() ) ) {
-					const float dist = Util::Distance( m_Link.m_Origin, entList[i].GetOrigin() );
+			for ( ; @ent !is @activeEnts; @ent = @ent.m_Next ) {
+				if ( Util::BoundsIntersectPoint( bounds, ent.GetOrigin() ) ) {
+					const float dist = Util::Distance( m_Link.m_Origin, ent.GetOrigin() );
 					if ( dist < 1.0f ) { // immediate impact range means death
-						EntityManager.KillEntity( @ent, @entList[i] );
+						EntityManager.KillEntity( @ent, cast<EntityObject@>( @this ) );
 						damage += m_Info.damage;
 					} else if ( dist <= m_Info.range ) {
-						EntityManager.DamageEntity( @ent, @entList[i], m_Info.damage + ( m_Info.range + ( dist * 0.1f ) ) );
+						EntityManager.DamageEntity( @ent, cast<EntityObject@>( @this ), m_Info.damage
+							+ ( m_AmmoInfo.range + ( dist * 0.1f ) ) );
 						damage += m_Info.damage;
 					}
 				}
 			}
 			// let's be real here, if the player is standing in the middle of an explosion,
 			// they should taking damage as well
-			return sgame_Difficulty.GetInt() < GameSystem::GameDifficulty::Hard ? damage : 0.0f;
+			return sgame_Difficulty.GetInt() < int( TheNomad::GameSystem::GameDifficulty::Hard ) ? damage : 0.0f;
 		}
 		
-		private float UseBlade( EntityObject@ ent, float damage, uint weaponMode ) const {
+		private float UseBlade( float damage, uint weaponMode ) const {
 			return 0.0f;
 		}
-		private float UseBlunt( EntityObject@ ent, float damage, uint weaponMode ) const {
-			const vec3 origin = ent.GetOrigin();
-			const float angle = ent.GetAngle();
+		private float UseBlunt( float damage, uint weaponMode ) const {
+			const vec3 origin = m_Owner.GetOrigin();
+			const float angle = m_Owner.GetAngle();
 			TheNomad::GameSystem::BBox bounds;
 			
 			return damage;
 		}
-		private float UsePolearm( EntityObject@ ent, float damage, uint weaponMode ) const {
-			const vec3 origin = ent.GetOrigin();
-			const float angle = ent.GetAngle();
-			vec3 end;
+		private float UsePolearm( float damage, uint weaponMode ) const {
+			const vec3 origin = m_Owner.GetOrigin();
+			const float angle = m_Owner.GetAngle();
+			vec3 end = vec3( 0.0f );
 			EntityObject@ active = @EntityManager.GetActiveEnts();
 			EntityObject@ it = null;
 			
 			end.x = origin.x + ( m_Info.range * cos( angle ) );
 			end.y = origin.y + ( m_Info.range * sin( angle ) );
-			end.z = m_Info.range * sin( angle );
+//			end.z = m_Info.range * sin( angle );
 			
 			for ( @it = @active.m_Next; @it.m_Next !is @active; @it = @it.m_Next ) {
 				if ( it.GetBounds().LineIntersection( origin, end ) ) {
-					EmitSound( m_Info.useSfx, 1.0f, 0xff );
+					EmitSound( m_Info.useSfx, 10.0f, 0xff );
 					// pike, bannerlord mode (you crouch to get a spear brace), high-risk, high-reward
-					if ( cast<PlayrObject@>( @ent ).IsCrouching() || cast<PlayrObject@>( @ent ).IsSliding() ) {
+					if ( cast<PlayrObject@>( @m_Owner ).IsCrouching() || cast<PlayrObject@>( @m_Owner ).IsSliding() ) {
 						return 1000.0f; // it's an insta-kill for most mobs
 					} else {
 						return m_Info.damage;
@@ -104,26 +105,37 @@ namespace TheNomad::SGame {
 			}
 			return 0.0f;
 		}
-		private float UseFireArm( EntityObject@ ent, float damage, uint weaponMode ) const {
+		private float UseFireArm( float damage, uint weaponMode ) const {
 			TheNomad::GameSystem::RayCast ray;
 			
-			ray.m_nLength = m_Info.range;
-			ray.m_Start = ent.GetOrigin();
-			ray.m_nAngle = ent.GetAngle();
+			ray.m_nLength = m_AmmoInfo.range;
+			ray.m_Start = m_Owner.GetOrigin();
+			ray.m_nAngle = m_Owner.GetAngle();
 			
 			ray.Cast();
-			if ( ray.m_nEntityNumber == ENTITYNUM_INVALID || ray.m_nEntityNumber == ENTITYNUM_WALL ) {
-				return 0.0f; // hit nothing or a wall
+			
+			if ( ray.m_nEntityNumber == ENTITYNUM_INVALID ) {
+				PlayrObject@ player = @EntityManager.GetActivePlayer();
+				
+				if ( Util::Distance( player.GetOrigin(), ray.m_Origin ) <= 3.90f ) {
+					// if we're close to the bullet, then simulate a near-hit
+					player.EmitSound( TheNomad::Engine::SoundSystem::RegisterSfx( "ricochet_" + ( Util::PRandom() & 3 ) ), 10.0f, 0xff );
+					// TODO: shake screen?
+				}
+				return 0.0f; // hit nothing
+			} else if ( ray.m_nEntityNumber == ENTITYNUM_WALL ) {
+				GfxManager.AddBulletHole( ray.m_Origin );
+				return 0.0f;
 			}
 			
-			EntityManager.DamageEntity( @ent, @ray );
+			EntityManager.DamageEntity( @EntityManager.GetEntityForNum( ray.m_nEntityNumber ), @m_Owner );
 			
 			// health mult doesn't matter on harder difficulties if the player is attacking with a firearm,
 			// that is, unless, the player is very close to the enemy
-			if ( sgame_Difficulty.GetInt() < TheNomad::GameSystem::GameDifficulty::Hard ) {
+			if ( sgame_Difficulty.GetInt() < int( TheNomad::GameSystem::GameDifficulty::Hard ) ) {
 				return damage;
 			} else {
-				if ( Util::Distance( ray.m_Origin, ent.GetOrigin() ) <= 2.75f ) {
+				if ( Util::Distance( ray.m_Origin, m_Owner.GetOrigin() ) <= 2.75f ) {
 					// close enough to the blood
 					return damage;
 				}
@@ -134,9 +146,17 @@ namespace TheNomad::SGame {
 		//
 		// WeaponObject::Use: returns the amount of damage dealt
 		//
-		float Use( EntityObject@ ent, const uint weaponMode ) {
+		float Use( const uint weaponMode ) {
 			float damage;
 			
+			if ( m_State.GetBaseNum() == StateNum::ST_WEAPON_USE ) {
+				// already in use
+				return 0.0f;
+			}
+			
+			m_nBulletsUsed += m_Info.fireRate;
+			
+			SetState( @m_Info.useState );
 			damage = m_Info.damage;
 			
 			// TODO: adaptive weapon animation & cooldowns
@@ -153,13 +173,13 @@ namespace TheNomad::SGame {
 			}
 			
 			if ( ( weaponMode & uint( InfoSystem::WeaponProperty::IsFirearm ) ) != 0 ) {
-				return UseFireArm( @ent, damage, weaponMode );
+				return UseFireArm( damage, weaponMode );
 			} else if ( ( weaponMode & uint( InfoSystem::WeaponProperty::IsPolearm ) ) != 0 ) {
-				return UsePolearm( @ent, damage, weaponMode );
+				return UsePolearm( damage, weaponMode );
 			} else if ( ( weaponMode & uint( InfoSystem::WeaponProperty::IsBladed ) ) != 0 ) {
-				return UseBlade( @ent, damage, weaponMode );
+				return UseBlade( damage, weaponMode );
 			} else if ( ( weaponMode & uint( InfoSystem::WeaponProperty::IsBlunt ) ) != 0 ) {
-				return UseBlunt( @ent, damage, weaponMode );
+				return UseBlunt( damage, weaponMode );
 			} else {
 				// not really an error because it could just be an empty slot, but warn anyway
 				DebugPrint( "WARNING: bad weapon state " + weaponMode + ".\n" );
@@ -169,18 +189,21 @@ namespace TheNomad::SGame {
 		}
 		float UseAlt( EntityObject@ ent, uint weaponMode ) {
 			float damage = 0.0f;
-
+			
 			return damage;
 		}
 
 		bool Load( const TheNomad::GameSystem::SaveSystem::LoadSection& in section ) {
 			if ( section.LoadBool( "hasOwner" ) ) {
-				m_Link.m_nEntityId = section.LoadUInt( "id" );
-				m_Link.m_nEntityType = TheNomad::GameSystem::EntityType( section.LoadUInt( "type" ) );
 				m_Flags = EntityFlags( section.LoadUInt( "flags" ) );
-
 				@m_Owner = @EntityManager.GetEntityForNum( section.LoadUInt( "owner" ) );
+				
+				m_Link.m_Origin = vec3( 0.0f );
+			} else {
+				section.LoadVec3( "origin", m_Link.m_Origin );
 			}
+			
+			m_Link.m_nEntityId = section.LoadUInt( "id" );
 
 			Spawn( m_Link.m_nEntityId, m_Link.m_Origin );
 
@@ -188,24 +211,35 @@ namespace TheNomad::SGame {
 		}
 		void Save( const TheNomad::GameSystem::SaveSystem::SaveSection& in section ) {
 			section.SaveBool( "hasOwner", @m_Owner !is null );
+			section.SaveUInt( "id",  m_Link.m_nEntityId );
 			if ( @m_Owner !is null ) {
-				section.SaveUInt( "id",  m_Link.m_nEntityId );
-				section.SaveUInt( "type", uint( m_Link.m_nEntityType ) );
 				section.SaveUInt( "flags", uint( m_Flags ) );
 				section.SaveUInt( "owner", m_Owner.GetEntityNum() );
+			} else {
+				seciton.SaveVec3( "origin", m_Link.m_Origin );
 			}
 		}
 		void Think() {
 			if ( @m_Owner !is null ) {
+				if ( m_State.GetBaseNum() == StateNum::ST_WEAPON_USE && m_State.Done() ) {
+					if ( m_nBulletsUsed >= m_Info.magSize ) {
+						SetState( @m_Info.reloadState );
+					} else {
+						SetState( @m_Info.idleState );
+					}
+				} else {
+					@m_State = @m_State.Run();
+				}
+				
 				return;
 			}
 
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
-
+			
 			refEntity.sheetNum = -1;
-			refEntity.spriteId = m_Info.iconShader;
+			refEntity.spriteId = m_Info.hIconShader;
 			refEntity.origin = m_Link.m_Origin;
-			refEntity.scale = 1.5f;
+			refEntity.scale = vec2( 1.5f );
 			refEntity.Draw();
 			
 			m_Link.m_Bounds.m_nWidth = m_Info.width;
@@ -230,8 +264,11 @@ namespace TheNomad::SGame {
 		const InfoSystem::ItemInfo@ GetItemInfo() const {
 			return @m_Info;
 		}
-
+		
+		private InfoSystem::AmmoInfo@ m_AmmoInfo = null;
 		private InfoSystem::WeaponInfo@ m_Info = null;
 		private EntityObject@ m_Owner = null;
+		
+		private uint m_nBulletsUsed = 0;
 	};
 };
