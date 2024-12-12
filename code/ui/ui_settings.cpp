@@ -67,23 +67,24 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define PRESET_CUSTOM			6
 #define NUM_PRESETS				7
 
-#define ID_MOVENORTH       0
-#define ID_MOVEWEST        1
-#define ID_MOVESOUTH       2
-#define ID_MOVEEAST        3
-#define ID_UPMOVE          4
-#define ID_WEAPONNEXT      5
-#define ID_WEAPONPREV      6
-#define ID_USEWEAPON       7
-#define ID_ALTUSEWEAPON    8
-#define ID_SWITCHWIELDING  9
-#define ID_SWITCHMODE      10
-#define ID_SWITCHHAND      11
-#define ID_DASH            12
-#define ID_MELEE           13
-#define ID_CROUCH          14
-#define ID_QUICKSHOT       15
-#define NUMKEYBINDS        16
+#define ID_MOVENORTH		0
+#define ID_MOVEWEST			1
+#define ID_MOVESOUTH		2
+#define ID_MOVEEAST			3
+#define ID_UPMOVE			4
+#define ID_WEAPONNEXT		5
+#define ID_WEAPONPREV		6
+#define ID_USEWEAPON		7
+#define ID_ALTUSEWEAPON		8
+#define ID_SWITCHWIELDING	9
+#define ID_SWITCHMODE		10
+#define ID_SWITCHHAND		11
+#define ID_DASH				12
+#define ID_MELEE			13
+#define ID_SLIDE			14
+#define ID_CROUCH			15
+#define ID_QUICKSHOT		16
+#define NUMKEYBINDS			17
 
 #define BINDGROUP_MOVEMENT 0
 #define BINDGROUP_COMBAT   1
@@ -228,6 +229,10 @@ typedef struct {
 	int mouseCursor;
 	int debugPrint;
 	int toggleHUD;
+	int difficulty;
+	int fieldOfView;
+	int blood;
+	int saveLastUsedWeaponMode;
 
 	int pauseUnfocused;
 } gameplaySettings_t;
@@ -297,7 +302,8 @@ static const bind_t s_defaultKeybinds[NUMKEYBINDS] = {
 	{ "+switchhand", "switch weapon hand", ID_SWITCHHAND, KEY_Q, -1, -1, -1, BINDGROUP_COMBAT },
 	{ "+dash", "dash", ID_DASH, KEY_SHIFT, -1, -1, -1, BINDGROUP_MOVEMENT },
 	{ "+melee", "melee", ID_MELEE, KEY_F, -1, -1, -1, BINDGROUP_COMBAT },
-	{ "+crouch", "crouch", ID_CROUCH, KEY_CTRL, -1, -1, -1, BINDGROUP_MOVEMENT },
+	{ "+slide", "slide", ID_SLIDE, KEY_CTRL, -1, -1, -1, BINDGROUP_MOVEMENT },
+	{ "+crouch", "crouch", ID_CROUCH, KEY_C, -1, -1, -1, BINDGROUP_MOVEMENT },
 	{ "+quickshot", "quickshot", ID_QUICKSHOT, KEY_Q, -1, -1, -1, BINDGROUP_COMBAT }
 };
 
@@ -1402,18 +1408,47 @@ static void GameplayMenu_Draw( void )
 		SettingsMenu_RadioButton( "TOGGLE HUD", "ToggleHUD",
 			"Toggles Heads-Up-Display (HUD). Turn this off if you want a more immersive experience",
 			&s_settingsMenu->gameplay.toggleHUD, true );
+		
+		ImGui::TableNextRow();
+
+		if ( Cvar_VariableInteger( "sgame_Difficulty" ) == DIF_MEME ) {
+			ImGui::TextUnformatted( "YOU CHOSE THIS! AIN'T NO PULLIN' OUT NOW! YOU'RE IN TOO DEEP!" );
+		} else {
+			SettingsMenu_MultiAdjustable( "DIFFICULTY", "GameDifficulty",
+				"Sets the game's difficulty",
+				s_settingsMenu->gameplay.difficultyNames, s_settingsMenu->gameplay.numDifficultyTypes,
+				&s_settingsMenu->gameplay.difficulty, true );
+		}
+		
+		ImGui::TableNextRow();
+
+		SettingsMenu_MultiSliderInt( "CAMERA ZOOM", "CameraZoom",
+			"Sets the in game field of view",
+			&s_settingsMenu->gameplay.fieldOfView, 25, 100, 1, true );
+		
+		ImGui::TableNextRow();
+
+		SettingsMenu_RadioButton( "BLOOD", "Blood",
+			"Enables blood",
+			&s_settingsMenu->gameplay.blood, s_settingsMenu->performance.particles );
 
 		ImGui::TableNextRow();
 
-		SettingsMenu_RadioButton( "DEBUG MODE", "DebugMode",
-			"Toggles debug messages from SGame",
-			&s_settingsMenu->gameplay.debugPrint, true );
-		
+		SettingsMenu_RadioButton( "SAVE LAST USED WEAPON MODE", "SaveLastUsedWeaponMode",
+			"Saves the most recently used weapon mode for the last used weapon",
+			&s_settingsMenu->gameplay.saveLastUsedWeaponMode, true );
+
 		ImGui::TableNextRow();
 
 		SettingsMenu_RadioButton( "STOP GAME ON FOCUS LOST", "StopGameOnFocusLost",
 			"If on the game will pause when the window is unfocused",
 			&s_settingsMenu->gameplay.pauseUnfocused, true );
+		
+		ImGui::TableNextRow();
+
+		SettingsMenu_RadioButton( "DEBUG MODE", "DebugMode",
+			"Toggles debug messages from SGame",
+			&s_settingsMenu->gameplay.debugPrint, true );
 	}
 	ImGui::EndTable();
 }
@@ -1692,6 +1727,10 @@ static void GameplayMenu_Save( void )
 	Cvar_SetIntegerValue( "sgame_CursorType", s_settingsMenu->gameplay.mouseCursor );
 	Cvar_SetIntegerValue( "sgame_DebugMode", s_settingsMenu->gameplay.debugPrint );
 	Cvar_SetIntegerValue( "sgame_ToggleHUD", s_settingsMenu->gameplay.toggleHUD );
+	Cvar_SetIntegerValue( "sgame_Difficulty", s_settingsMenu->gameplay.difficulty );
+	Cvar_SetIntegerValue( "sgame_CameraZoom", s_settingsMenu->gameplay.fieldOfView );
+	Cvar_SetIntegerValue( "sgame_Blood", s_settingsMenu->gameplay.blood );
+	Cvar_SetIntegerValue( "sgame_SaveLastUsedWeaponModes", s_settingsMenu->gameplay.saveLastUsedWeaponMode );
 }
 
 static void ModuleMenu_Save( void )
@@ -1864,6 +1903,10 @@ static void GameplayMenu_SetDefault( void )
 	s_settingsMenu->gameplay.debugPrint = Cvar_VariableInteger( "sgame_DebugMode" );
 	s_settingsMenu->gameplay.toggleHUD = Cvar_VariableInteger( "sgame_ToggleHUD" );
 	s_settingsMenu->gameplay.pauseUnfocused = Cvar_VariableInteger( "com_pauseUnfocused" );
+	s_settingsMenu->gameplay.difficulty = Cvar_VariableInteger( "sgame_Difficulty" );
+	s_settingsMenu->gameplay.fieldOfView = Cvar_VariableInteger( "sgame_CameraZoom" );
+	s_settingsMenu->gameplay.blood = Cvar_VariableInteger( "sgame_Blood" );
+	s_settingsMenu->gameplay.saveLastUsedWeaponMode = Cvar_VariableInteger( "sgame_SaveLastUsedWeaponModes" );
 }
 
 static qboolean SettingsMenu_PresetCustom( void )
@@ -2224,6 +2267,12 @@ void SettingsMenu_Cache( void )
 	s_windowModes[1] = strManager->ValueForKey( "GAMEUI_MODE_BORDERLESS_WINDOWED" )->value;
 	s_windowModes[2] = strManager->ValueForKey( "GAMEUI_MODE_FULLSCREEN" )->value;
 	s_windowModes[3] = strManager->ValueForKey( "GAMEUI_MODE_BORDERLESS_FULLSCREEN" )->value;
+
+	difficulties[ DIF_EASY ] = difficultyTable[ DIF_EASY ].name;
+	difficulties[ DIF_NORMAL ] = difficultyTable[ DIF_NORMAL ].name;
+	difficulties[ DIF_HARD ] = difficultyTable[ DIF_HARD ].name;
+	difficulties[ DIF_VERY_HARD ] = difficultyTable[ DIF_VERY_HARD ].name;
+	difficulties[ DIF_INSANE ] = difficultyTable[ DIF_INSANE ].name;
 
 	if ( !ui->uiAllocated ) {
 		static settingsMenu_t menu;

@@ -106,6 +106,9 @@ namespace TheNomad::SGame {
 		uint GetID() const {
 			return m_nStateNum + m_nStateOffset;
 		}
+		uint GetBaseNum() const {
+			return m_nStateNum;
+		}
 
 		void Reset( uint& out ticker ) {
 			ticker = TheNomad::GameSystem::GameManager.GetGameTic();

@@ -509,7 +509,7 @@ namespace TheNomad::SGame {
 					
 					// TODO: make dead mobs with ANY velocity flying corpses
 					EntityManager.DamageEntity( cast<EntityObject@>( @this ), @ent );
-					EmitSound( parrySfx, 1.0f, 0xff );
+					EmitSound( parrySfx, 10.0f, 0xff );
 				}
 			}
 			
@@ -618,10 +618,6 @@ namespace TheNomad::SGame {
 			CacheSfx();
 			InitLoadout();
 
-			if ( @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_SLIDE ) is null ) {
-				GameError( "Couldn't cache leg slide state!" );
-			}
-
 			m_PhysicsObject.Init( cast<EntityObject>( @this ) );
 			m_PhysicsObject.SetAngle( Util::Dir2Angle( TheNomad::GameSystem::DirType::East ) );
 
@@ -668,9 +664,9 @@ namespace TheNomad::SGame {
 			}
 
 			if ( ( m_iFlags & PF_USING_WEAPON ) != 0 && @GetCurrentWeapon() !is null ) {
-				m_nFrameDamage += GetCurrentWeapon().Use( cast<EntityObject>( @this ), GetCurrentWeaponMode() );
+				m_nFrameDamage += GetCurrentWeapon().Use( GetCurrentWeaponMode() );
 			} else if ( ( m_iFlags & PF_USING_WEAPON_ALT ) != 0 && @GetCurrentWeapon() !is null ) {
-				m_nFrameDamage += GetCurrentWeapon().UseAlt( cast<EntityObject>( @this ), GetCurrentWeaponMode() );
+				m_nFrameDamage += GetCurrentWeapon().UseAlt( GetCurrentWeaponMode() );
 			}
 
 			m_Link.m_Bounds.m_nWidth = sgame_PlayerWidth.GetFloat();
@@ -679,6 +675,8 @@ namespace TheNomad::SGame {
 			
 			// run a movement frame
 			Pmove.RunTic();
+
+			m_Emitter.SetPosition( m_Link.m_Origin, 0.0f, 0.0f, 0.0f );
 
 			if ( m_nHealth <= 15.0f ) {
 				// if there's another haptic going on, we don't want to annihilate their hands
@@ -795,27 +793,6 @@ namespace TheNomad::SGame {
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 
 			@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE );
-			
-			if ( m_PhysicsObject.GetWaterLevel() > 0 && m_Link.m_Origin.z == 0.0f ) {
-			/*
-				TheNomad::Engine::Renderer::RenderEntity refEntity;
-				
-				// draw a wake
-				refEntity.origin = vec3( m_Link.m_Origin.x, m_Link.m_Origin.y + sgame_PlayerHeight.GetFloat(), 0.0f );
-				refEntity.sheetNum = -1;
-				refEntity.spriteId = TheNomad::Engine::ResourceCache.GetShader( "wake" );
-				refEntity.scale = 2.5f;
-				refEntity.Draw();
-
-				// draw reflection
-				refEntity.origin = vec3( m_Link.m_Origin.x, m_Link.m_Origin.y + ( sgame_PlayerHeight.GetFloat() * 2 ), 0.0f );
-				refEntity.sheetNum = m_SpriteSheet.GetShader();
-				refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( @m_SpriteSheet, @m_State ) + m_Facing;
-				refEntity.scale = 2.0f;
-				refEntity.rotation = -180.0f;
-				refEntity.Draw();
-			*/
-			}
 
 			DrawBackArm();
 
@@ -839,6 +816,7 @@ namespace TheNomad::SGame {
 				origin.y += 0.5f;
 
 				TheNomad::Engine::Renderer::AddDLightToScene( origin, 6.15f, vec3( 1.0f, 0.0f, 0.0f ) );
+				GfxManager.SmokeCloud( m_Link.m_Origin );
 			}
 
 			DrawLegs();

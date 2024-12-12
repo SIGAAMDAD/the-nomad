@@ -178,7 +178,26 @@ namespace TheNomad::SGame {
 			*/
 		}
 
-		void SmokePuff( const vec3& in origin, const vec3& in vel ) {
+		void SmokeCloud( const vec3& in origin ) {
+			if ( !sgame_EnableParticles.GetBool() ) {
+				return;
+			}
+
+			AllocLocalEntity().Spawn( origin, vec3( 0.0f ), 5000, TheNomad::Engine::Renderer::RegisterShader( "gfx/env/dustScreen" ) );
+		}
+
+		void FlameBall( const vec3& in origin ) {
+			if ( !sgame_EnableParticles.GetBool() ) {
+				return;
+			}
+
+			TheNomad::Engine::Renderer::LocalEntity@ ent = @AllocLocalEntity();
+
+			ent.Spawn( origin, vec3( 0.0f ), 500, FS_INVALID_HANDLE,
+				vec2( 1.5f ), false, 0.0f,
+				@TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/flameBall", 288, 192, 96, 48 ) );
+			
+			ent.m_EffectAnimation.Load( 20, false, 10, false );
 		}
 
 		void AddWaterWake( const vec3& in origin, uint lifeTime = 1200, float scale = 2.5f, float grow = 0.05f ) {
@@ -188,6 +207,12 @@ namespace TheNomad::SGame {
 
 			AllocLocalEntity().Spawn( origin, vec3( 0.0f ), lifeTime, TheNomad::Engine::Renderer::RegisterShader( "wake" ),
 				scale, false, grow );
+		}
+
+		void AddBulletHole( const vec3& in origin ) {
+			if ( !sgame_EnableParticles.GetBool() ) {
+				return;
+			}
 		}
 
 		void AddDustPuff( const vec3& in origin, int facing ) {

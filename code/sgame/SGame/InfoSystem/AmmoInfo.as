@@ -89,6 +89,8 @@ namespace TheNomad::SGame::InfoSystem {
 
         string name;
         uint id = 0;
+        float range = 0.0f;
+        float damage = 0.0f;
         AmmoType baseType = AmmoType::Invalid;
         AmmoProperty bits;
     };

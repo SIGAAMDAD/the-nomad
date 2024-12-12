@@ -417,6 +417,24 @@ gfx/completed_checkpoint
 // particle effects
 //
 
+gfx/env/dustScreen
+{
+	{
+		map particle_effects/Spritesheets/dustcloud.png
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+	}
+}
+
+gfx/env/flameBall
+{
+	{
+		map particle_effects/Spritesheets/flameball.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+	}
+}
+
 gfx/env/smokeTrail
 {
 	{

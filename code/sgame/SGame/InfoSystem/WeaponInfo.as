@@ -36,10 +36,8 @@ namespace TheNomad::SGame::InfoSystem {
 			return true;
 		}
 		private bool LoadSoundsBlock( json@ json ) {
-			pickupSfx = TheNomad::Engine::SoundSystem::RegisterSfx( string( json[ "Pickup" ] ) );
 			reloadSfx = TheNomad::Engine::SoundSystem::RegisterSfx( string( json[ "Reload" ] ) );
 			useSfx = TheNomad::Engine::SoundSystem::RegisterSfx( string( json[ "Use" ] ) );
-			equipSfx = TheNomad::Engine::SoundSystem::RegisterSfx( string( json[ "Equip" ] ) );
 			
 			return true;
 		}
@@ -54,7 +52,12 @@ namespace TheNomad::SGame::InfoSystem {
 			if ( @type is null ) {
 				GameError( "invalid weapon info, Type \"" + id + "\" wasn't found" );
 			}
-			
+
+			LoadStatesBlock( @json[ "States" ] );
+			LoadSoundsBlock( @json[ "Sounds" ] );
+			LoadRenderDataBlock( @json[ "RenderData" ] );
+			LoadStatsBlock( @json[ "Stats" ] );
+
 			if ( !json.get( "WeaponProperties", props ) ) {
 				ConsoleWarning( "invalid weapon info, missing variable 'WeaponProperties' in \"" + name + "\"\n" );
 				return false;
@@ -80,7 +83,7 @@ namespace TheNomad::SGame::InfoSystem {
 				}
 			}
 			if ( weaponType == WeaponType::NumWeaponTypes ) {
-				ConsoleWarning( "invalid weapon info, WeaponType '" + type + "' not recognized\n" );
+				ConsoleWarning( "invalid weapon info, WeaponType '" + name + "' not recognized\n" );
 				return false;
 			}
 			
@@ -100,14 +103,13 @@ namespace TheNomad::SGame::InfoSystem {
 			return true;
 		}
 		
-		string name;
 		uint magSize = 0; // maximum shots before cooldown/reload
 		uint fireRate = 0;
 		vec2 size = vec2( 0.0f );
+		float range = 0.0f; // unused if this is a firearm
 		float weight = 0.0f;
 		float damage = 0.0f; // unused if this is a firearm
 		TheNomad::Engine::SoundSystem::SoundEffect reloadSfx;
-		TheNomad::Engine::SoundSystem::SoundEffect useSfx;
 		EntityState@ reloadState = null;
 		EntityState@ useState = null;
 		EntityState@ idleState = null;

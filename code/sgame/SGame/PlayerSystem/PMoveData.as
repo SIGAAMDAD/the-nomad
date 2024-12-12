@@ -90,17 +90,17 @@ namespace TheNomad::SGame {
 
 					if ( gameTic - move_toggle >= lerpTime && m_EntityData.GetOrigin().z == 0.0f ) {
 						// we can mix in different surfaceparm sound effects for more complex environments
-						float volume = 1.0f;
+						float volume = 10.0f;
 						if ( ( tile & SURFACEPARM_WATER ) != 0 ) {
 							switch ( TheNomad::Util::PRandom() & 1 ) {
 							case 0:
-								m_EntityData.EmitSound( moveWater0, 1.0f, 0xff );
+								m_EntityData.EmitSound( moveWater0, 10.0f, 0xff );
 								break;
 							case 1:
-								m_EntityData.EmitSound( moveWater1, 1.0f, 0xff );
+								m_EntityData.EmitSound( moveWater1, 10.0f, 0xff );
 								break;
 							};
-							volume = 0.5f;
+							volume = 4.5f;
 
 							// it'll look weird if we're drawing ripples right as the player exits the water
 							// because it looks like the dirt is rippling
@@ -120,19 +120,19 @@ namespace TheNomad::SGame {
 						if ( ( tile & SURFACEPARM_METAL ) != 0 ) {
 							switch ( TheNomad::Util::PRandom() & 3 ) {
 							case 0:
-								m_EntityData.EmitSound( moveMetal0, 1.0f, 0xff );
+								m_EntityData.EmitSound( moveMetal0, 10.0f, 0xff );
 								break;
 							case 1:
-								m_EntityData.EmitSound( moveMetal1, 1.0f, 0xff );
+								m_EntityData.EmitSound( moveMetal1, 10.0f, 0xff );
 								break;
 							case 2:
-								m_EntityData.EmitSound( moveMetal2, 1.0f, 0xff );
+								m_EntityData.EmitSound( moveMetal2, 10.0f, 0xff );
 								break;
 							case 3:
-								m_EntityData.EmitSound( moveMetal3, 1.0f, 0xff );
+								m_EntityData.EmitSound( moveMetal3, 10.0f, 0xff );
 								break;
 							};
-							volume = 0.5f;
+							volume = 4.5f;
 						}
 						switch ( TheNomad::Util::PRandom() & 3 ) {
 						case 0:

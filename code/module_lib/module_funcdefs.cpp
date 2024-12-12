@@ -165,7 +165,7 @@ DEFINE_CALLBACK( CvarUpdateGeneric ) {
 	asINT32 *modificationCount = (asINT32 *)pGeneric->GetArgAddress( 3 );
 	const cvarHandle_t cvarHandle = pGeneric->GetArgWord( 4 );
 
-	memset( &vmCvar, 0, sizeof(vmCvar) );
+	memset( &vmCvar, 0, sizeof( vmCvar ) );
 	N_strncpyz( vmCvar.s, value->c_str(), sizeof(vmCvar.s) );
 	vmCvar.i = *intValue;
 	vmCvar.f = *floatValue;

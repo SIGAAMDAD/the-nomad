@@ -40,7 +40,7 @@ namespace TheNomad::SGame {
 		//
 		// AreaOfEffect: does exactly what you think it does
 		//
-		private float AreaOfEffect( float damage ) const {
+		private float AreaOfEffect( float damage ) {
 			TheNomad::GameSystem::BBox bounds;
 			EntityObject@ activeEnts = @EntityManager.GetActiveEnts();
 			EntityObject@ ent = @activeEnts.m_Next;
@@ -57,10 +57,10 @@ namespace TheNomad::SGame {
 				if ( Util::BoundsIntersectPoint( bounds, ent.GetOrigin() ) ) {
 					const float dist = Util::Distance( m_Link.m_Origin, ent.GetOrigin() );
 					if ( dist < 1.0f ) { // immediate impact range means death
-						EntityManager.KillEntity( @ent, cast<EntityObject@>( @this ) );
+						EntityManager.KillEntity( @ent, @m_Owner );
 						damage += m_Info.damage;
 					} else if ( dist <= m_Info.range ) {
-						EntityManager.DamageEntity( @ent, cast<EntityObject@>( @this ), m_Info.damage
+						EntityManager.DamageEntity( @ent, @m_Owner, m_Info.damage
 							+ ( m_AmmoInfo.range + ( dist * 0.1f ) ) );
 						damage += m_Info.damage;
 					}
@@ -71,17 +71,17 @@ namespace TheNomad::SGame {
 			return sgame_Difficulty.GetInt() < int( TheNomad::GameSystem::GameDifficulty::Hard ) ? damage : 0.0f;
 		}
 		
-		private float UseBlade( float damage, uint weaponMode ) const {
+		private float UseBlade( float damage, uint weaponMode ) {
 			return 0.0f;
 		}
-		private float UseBlunt( float damage, uint weaponMode ) const {
+		private float UseBlunt( float damage, uint weaponMode ) {
 			const vec3 origin = m_Owner.GetOrigin();
 			const float angle = m_Owner.GetAngle();
 			TheNomad::GameSystem::BBox bounds;
 			
 			return damage;
 		}
-		private float UsePolearm( float damage, uint weaponMode ) const {
+		private float UsePolearm( float damage, uint weaponMode ) {
 			const vec3 origin = m_Owner.GetOrigin();
 			const float angle = m_Owner.GetAngle();
 			vec3 end = vec3( 0.0f );
@@ -105,7 +105,7 @@ namespace TheNomad::SGame {
 			}
 			return 0.0f;
 		}
-		private float UseFireArm( float damage, uint weaponMode ) const {
+		private float UseFireArm( float damage, uint weaponMode ) {
 			TheNomad::GameSystem::RayCast ray;
 			
 			ray.m_nLength = m_AmmoInfo.range;
@@ -187,7 +187,7 @@ namespace TheNomad::SGame {
 			
 			return 0.0f;
 		}
-		float UseAlt( EntityObject@ ent, uint weaponMode ) {
+		float UseAlt( uint weaponMode ) {
 			float damage = 0.0f;
 			
 			return damage;
@@ -200,7 +200,7 @@ namespace TheNomad::SGame {
 				
 				m_Link.m_Origin = vec3( 0.0f );
 			} else {
-				section.LoadVec3( "origin", m_Link.m_Origin );
+				m_Link.m_Origin = section.LoadVec3( "origin" );
 			}
 			
 			m_Link.m_nEntityId = section.LoadUInt( "id" );
@@ -216,19 +216,19 @@ namespace TheNomad::SGame {
 				section.SaveUInt( "flags", uint( m_Flags ) );
 				section.SaveUInt( "owner", m_Owner.GetEntityNum() );
 			} else {
-				seciton.SaveVec3( "origin", m_Link.m_Origin );
+				section.SaveVec3( "origin", m_Link.m_Origin );
 			}
 		}
 		void Think() {
 			if ( @m_Owner !is null ) {
-				if ( m_State.GetBaseNum() == StateNum::ST_WEAPON_USE && m_State.Done() ) {
+				if ( m_State.GetBaseNum() == StateNum::ST_WEAPON_USE && m_State.Done( m_nTicker ) ) {
 					if ( m_nBulletsUsed >= m_Info.magSize ) {
 						SetState( @m_Info.reloadState );
 					} else {
 						SetState( @m_Info.idleState );
 					}
 				} else {
-					@m_State = @m_State.Run();
+					@m_State = @m_State.Run( m_nTicker );
 				}
 				
 				return;

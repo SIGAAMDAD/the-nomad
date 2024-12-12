@@ -218,7 +218,7 @@ namespace TheNomad::SGame {
 		void SwitchWeaponMode_f() {
 			PlayrObject@ obj = GetPlayerIndex();
 
-			obj.EmitSound( obj.weaponChangeModeSfx, 1.0f, 0xff );
+			obj.EmitSound( obj.weaponChangeModeSfx, 10.0f, 0xff );
 			switch ( obj.GetHandsUsed() ) {
 			case 0:
 				obj.SwitchWeaponMode( @obj.GetLeftArm(), @obj.GetLeftHandWeapon() );
@@ -240,7 +240,7 @@ namespace TheNomad::SGame {
 		void SwitchHand_f() {
 			PlayrObject@ obj = GetPlayerIndex();
 			
-			obj.EmitSound( obj.weaponChangeHandSfx, 1.0f, 0xff );
+			obj.EmitSound( obj.weaponChangeHandSfx, 10.0f, 0xff );
 			switch ( obj.GetHandsUsed() ) {
 			case 0:
 				obj.SetHandsUsed( 1 );
@@ -262,7 +262,7 @@ namespace TheNomad::SGame {
 					return;
 				}
 
-				obj.EmitSound( obj.dashSfx, 1.0f, 0xff );
+				obj.EmitSound( obj.dashSfx, 10.0f, 0xff );
 				Util::HapticRumble( obj.GetPlayerIndex(), 0.40f, 700 );
 				obj.ResetDash();
 				obj.SetDashing( true );
@@ -279,6 +279,7 @@ namespace TheNomad::SGame {
 				};
 
 				GfxManager.AddDustTrail( origin, obj.GetFacing() );
+				GfxManager.FlameBall( origin );
 			}
 			else {
 				obj.SetDashing( false );
@@ -287,9 +288,9 @@ namespace TheNomad::SGame {
 		void Slide_f() {
 			PlayrObject@ obj = GetPlayerIndex();
 
-			if ( obj.IsCrouching() ) {
+			if ( obj.IsCrouching() || obj.GetTimeSinceLastSlide() < SLIDE_DURATION ) {
 				return;
-			} else if ( obj.GetTimeSinceLastSlide() < SLIDE_DURATION ) {
+			} else if ( TheNomad::Engine::CmdArgv( 0 )[0] != '+' ) {
 				return;
 			}
 
@@ -298,9 +299,9 @@ namespace TheNomad::SGame {
 				obj.IsDashing() )
 			{
 				if ( ( Util::PRandom() & 1 ) == 1 ) {
-					obj.EmitSound( obj.slideSfx0, 1.0f, 0xff );
+					obj.EmitSound( obj.slideSfx0, 10.0f, 0xff );
 				} else {
-					obj.EmitSound( obj.slideSfx1, 1.0f, 0xff );
+					obj.EmitSound( obj.slideSfx1, 10.0f, 0xff );
 				}
 				
 				Util::HapticRumble( obj.GetPlayerIndex(), 0.40f, 500 );
@@ -325,11 +326,11 @@ namespace TheNomad::SGame {
 			PlayrObject@ obj = GetPlayerIndex();
 
 			if ( !obj.IsCrouching() ) {
-				obj.EmitSound( obj.crouchDownSfx, 1.0f, 0xff );
+				obj.EmitSound( obj.crouchDownSfx, 10.0f, 0xff );
 				obj.SetCrouching( true );
 			}
 			else {
-				obj.EmitSound( obj.crouchUpSfx, 1.0f, 0xff );
+				obj.EmitSound( obj.crouchUpSfx, 10.0f, 0xff );
 				obj.SetCrouching( false );
 				obj.SetState( @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE ) );
 			}
@@ -344,7 +345,7 @@ namespace TheNomad::SGame {
 				{
 					return;
 				}
-				obj.EmitSound( obj.meleeSfx, 1.0f, 0xff );
+				obj.EmitSound( obj.meleeSfx, 10.0f, 0xff );
 				obj.SetParryBoxWidth( 0.0f );
 				obj.SetLeftArmState( StateNum::ST_PLAYR_ARMS_MELEE );
 			}
@@ -358,7 +359,7 @@ namespace TheNomad::SGame {
 			}
 			obj.EmitSound(
 				cast<const InfoSystem::WeaponInfo@>( @obj.m_WeaponSlots[ obj.GetCurrentWeaponIndex() ].GetData().GetInfo() ).equipSfx,
-				1.0f,
+				10.0f,
 				0xff
 			);
 		}
@@ -371,7 +372,7 @@ namespace TheNomad::SGame {
 			}
 			obj.EmitSound(
 				cast<const InfoSystem::WeaponInfo@>( @obj.m_WeaponSlots[ obj.GetCurrentWeaponIndex() ].GetData().GetInfo() ).equipSfx,
-				1.0f,
+				10.0f,
 				0xff
 			);
 		}
@@ -389,9 +390,13 @@ namespace TheNomad::SGame {
 			Game_CameraWorldPos.y = ( LevelManager.GetMapData().GetHeight() - ( origin.y + 0.812913357f ) ) * 10;
 			Game_PlayerPos = origin;
 			// technically no z coordinate because it's 2D
-//			Game_CameraZoom = sgame_CameraZoom.GetFloat();
-			Game_CameraZoom = 0.07f - ( 1.0 / ( LevelManager.GetMapData().GetHeight() / LevelManager.GetMapData().GetWidth() ) * 0.002f  );
-			
+			Game_CameraZoom = sgame_CameraZoom.GetInt() * 0.010f;
+//			Game_CameraZoom = 0.07f - ( 1.0 / ( LevelManager.GetMapData().GetHeight() / LevelManager.GetMapData().GetWidth() ) * 0.002f );
+
+			ImGui::Begin( "##Debug" );
+			ImGui::Text( "CameraZoom: " + Game_CameraZoom );
+			ImGui::End();
+
 			TheNomad::Engine::Renderer::ClearScene();
 			for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 				TheNomad::GameSystem::GameSystems[i].OnRenderScene();
