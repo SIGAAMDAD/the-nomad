@@ -29,7 +29,7 @@ namespace TheNomad::SGame {
 			@m_Entity = @EntityManager.Spawn( TheNomad::GameSystem::EntityType::Wall, -1,
 				vec3( m_Origin.x, m_Origin.y, m_Origin.z ), vec2( 0.0f )
 			);
-			m_Entity.EmitSound( TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/bonfire" ), 1.0f, 0xff );
+			m_Entity.EmitSound( TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/bonfire" ), 0.5f, 0xff );
 		}
 
 		void Draw() {

@@ -1051,11 +1051,7 @@ static void CScriptDictValue_FreeValue_Generic(asIScriptGeneric *gen)
 
 void RegisterScriptDictionary( asIScriptEngine *engine )
 {
-	if ( strstr( asGetLibraryOptions(), "AS_MAX_PORTABILITY" ) ) {
-		RegisterScriptDictionary_Generic( engine );
-	} else {
-		RegisterScriptDictionary_Native( engine );
-	}
+	RegisterScriptDictionary_Native( engine );
 }
 
 void RegisterScriptDictionary_Native( asIScriptEngine *engine )

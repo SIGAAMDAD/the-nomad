@@ -1070,9 +1070,5 @@ void RegisterStdString_Generic(asIScriptEngine *engine)
 
 void RegisterStdString(asIScriptEngine *engine)
 {
-	if ( strstr(asGetLibraryOptions(), "AS_MAX_PORTABILITY") ) {
-		RegisterStdString_Generic(engine);
-	} else {
-		RegisterStdString_Native(engine);
-	}
+	RegisterStdString_Native(engine);
 }

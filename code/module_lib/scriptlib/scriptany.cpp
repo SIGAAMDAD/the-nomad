@@ -279,11 +279,7 @@ void RegisterScriptAny_Generic( asIScriptEngine *engine )
 
 void RegisterScriptAny( asIScriptEngine *engine )
 {
-	if ( strstr( asGetLibraryOptions(), "AS_MAX_PORTABILITY" ) ) {
-		RegisterScriptAny_Generic( engine );
-	} else {
-		RegisterScriptAny_Native( engine );
-	}
+	RegisterScriptAny_Native( engine );
 }
 
 CScriptAny &CScriptAny::operator=( const CScriptAny& other )

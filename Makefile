@@ -173,7 +173,7 @@ LDLIBS= \
 		-lSDL2_image \
 		-Wl,-rpath='.' \
 		-ljpeg -lsteam_api \
-		-lfmodL -lfmodstudioL \
+		-lfmod -lfmodstudio \
 		-lcurl \
 		-lphonon \
 		-lphonon_fmod

@@ -118,6 +118,15 @@ sprites/mobs/grunt/fatal
 	}
 }
 
+sprites/weapons/double_barrel
+{
+	{
+		texFilter nearest
+		map textures/sprites/weapons/adb.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+	}
+}
+
 sprites/weapons/plasma_smg
 {
 	nomipmaps

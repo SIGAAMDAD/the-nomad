@@ -5,32 +5,24 @@
 			"Name": "Murstar Revolver",
 			"Type": "Sidearm",
 			"AmmoType": "Bullet",
-			"States": {
-				"Idle": "weapon_idle_murstar",
-				"Use": "weapon_use_murstar",
-				"Reload": "weapon_reload_murstar",
-				"Equip": "weapon_equip_murstar"
-			},
-			"RenderData": {
-				"Icon": "icons/iconw_murstar",
-				"SpriteSheet": "sprites/weapons/murstar",
-				"SheetWidth": 512,
-				"SheetHeight": 512,
-				"SpriteWidth": 64,
-				"SpriteHeight": 32
-			},
-			"Stats": {
-				"MagSize": 7,
-				"Range": 55.0,
-				"Damage": 78.0,
-				"Width": 0.9,
-				"Height": 0.9,
-				"FireRate": 1
-			},
-			"Sounds": {
-				"Use": "event:/sfx/weapons/murstar_shot",
-				"Reload": "event:/sfx/weapons/murstar_rld"
-			},
+			"States.Idle": "weapon_idle_murstar",
+			"States.Use": "weapon_use_murstar",
+			"States.Reload": "weapon_reload_murstar",
+			"States.Equip": "weapon_equip_murstar",
+			"RenderData.Icon": "icons/iconw_murstar",
+			"RenderData.SpriteSheet": "sprites/weapons/murstar",
+			"RenderData.SheetWidth": 512,
+			"RenderData.SheetHeight": 512,
+			"RenderData.SpriteWidth": 64,
+			"RenderData.SpriteHeight": 32,
+			"Stats.MagSize": 7,
+			"Stats.Range": 55.0,
+			"Stats.Damage": 78.0,
+			"Stats.Width": 0.9,
+			"Stats.Height": 0.9,
+			"Stats.FireRate": 1,
+			"Sounds.Use": "event:/sfx/weapons/murstar_shot",
+			"Sounds.Reload": "event:/sfx/weapons/murstar_rld",
 			"WeaponProperties": [
 				"OneHandedSidearmFirearm",
 				"OneHandedBlunt"
@@ -40,34 +32,25 @@
 			"Id": "primary_plasma_smg",
 			"Name": "Plasma SMG",
 			"Type": "Primary",
-			"Icon": "icons/iconw_plasma",
 			"AmmoType": "Bullet",
-			"States": {
-				"Idle": "weapon_idle_plasma_smg",
-				"Use": "weapon_use_plasma_smg",
-				"Reload": "weapon_reload_plasma_smg",
-				"Equip": "weapon_equip_plasma_smg"
-			},
-			"RenderData": {
-				"Icon": "icons/iconw_plasma_smg",
-				"SpriteSheet": "sprites/weapons/plasma_smg",
-				"SheetWidth": 512,
-				"SheetHeight": 512,
-				"SpriteWidth": 64,
-				"SpriteHeight": 32
-			},
-			"Stats": {
-				"MagSize": 40,
-				"Range": 42.0,
-				"Damage": 23.5,
-				"Width": 0.9,
-				"Height": 0.9,
-				"FireRate": 1
-			},
-			"Sounds": {
-				"Use": "event:/sfx/weapons/plasma_smg_use",
-				"Reload": "event:/sfx/weapons/plasma_smg_rld"
-			},
+			"States.Idle": "weapon_idle_plasma_smg",
+			"States.Use": "weapon_use_plasma_smg",
+			"States.Reload": "weapon_reload_plasma_smg",
+			"States.Equip": "weapon_equip_plasma_smg",
+			"RenderData.Icon": "icons/iconw_plasma_smg",
+			"RenderData.SheetWidth": 512,
+			"RenderData.SheetHeight": 512,
+			"RenderData.SpriteWidth": 64,
+			"RenderData.SpriteHeight": 32,
+			"RenderData.SpriteSheet": "sprites/weapons/plasma_smg",
+			"Stats.MagSize": 40,
+			"Stats.Range": 42.0,
+			"Stats.Damage": 23.5,
+			"Stats.Width": 0.9,
+			"Stats.Height": 0.9,
+			"Stats.FireRate": 1,
+			"Sounds.Use": "event:/sfx/weapons/plasma_smg_use",
+			"Sounds.Reload": "event:/sfx/weapons/plasma_smg_rld",
 			"WeaponProperties": [
 				"OneHandedPrimaryFirearm",
 				"OneHandedSidearmFirearm",
@@ -80,36 +63,15 @@
 			"Name": "Asturion Double-Barrel",
 			"Type": "Primary",
 			"AmmoType": "Shell",
-			"States": {
-				"Idle": "weapon_idle_doublebarrel",
-				"Use": "weapon_use_doublebarrel",
-				"Reload": "weapon_reload_doublebarrel",
-				"Equip": "weapon_equip_doublebarrel"
-			},
-			"RenderData": {
-				"Icon": "icons/iconw_adb",
-				"SpriteSheet": "sprites/weapons/doublebarrel",
-				"SheetWidth": 512,
-				"SheetHeight": 512,
-				"SpriteWidth": 64,
-				"SpriteHeight": 32
-			},
-			"Stats": {
-				"Range": 55.0,
-				"Damage": 81.9,
-				"Width": 0.9,
-				"Height": 0.9,
-				"MagSize": 2,
-				"FireRate": 2
-			},
-			"Sounds": {
-				"Use": "event:/sfx/weapons/adb_shot",
-				"Reload": "event:/sfx/weapons/adb_rld"
-			},
-			"WeaponProperties": [
-				"TwoHandedPrimaryFirearm",
-				"TwoHandedBlunt"
-			]
+			"States.Idle": "weapon_idle_adb",
+			"States.Use": "weapon_use_adb",
+			"States.Reload": "weapon_reload_adb",
+			"States.Equip": "weapon_equip_adb",
+			"RenderData.Icon": "icons/iconw_adb",
+			"RenderData.SheetWidth": 512,
+			"RenderData.SheetHeight": 512,
+			"RenderData.SpriteWidth": 64,
+			"RenderData.SpriteHeight": 32
 		}
 	]
 }

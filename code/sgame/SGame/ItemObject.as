@@ -41,7 +41,18 @@ namespace TheNomad::SGame {
             return true;
 		}
 
-		void Think() {
+		void Think() override {
+			if ( @m_Owner !is null ) {
+				return;
+			}
+
+			m_Link.m_Bounds.m_nWidth = m_Info.width;
+			m_Link.m_Bounds.m_nHeight = m_Info.height;
+			m_Link.m_Bounds.MakeBounds( m_Link.m_Origin );
+
+			@m_State = @StateManager.GetNullState();
+		}
+		void Draw() override {
 			if ( @m_Owner !is null ) {
 				return;
 			}
@@ -53,12 +64,6 @@ namespace TheNomad::SGame {
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.scale = 1.5f;
 			refEntity.Draw();
-
-			m_Link.m_Bounds.m_nWidth = m_Info.width;
-			m_Link.m_Bounds.m_nHeight = m_Info.height;
-			m_Link.m_Bounds.MakeBounds( m_Link.m_Origin );
-
-			@m_State = @StateManager.GetNullState();
 		}
 		void Spawn( uint id, const vec3& in origin ) override {
 			@m_Info = @InfoSystem::InfoManager.GetItemInfo( id );

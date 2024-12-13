@@ -794,7 +794,7 @@ namespace TheNomad::SGame {
 
 			@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE );
 
-			DrawBackArm();
+//			DrawBackArm();
 
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.sheetNum = m_SpriteSheet.GetShader();
@@ -820,12 +820,16 @@ namespace TheNomad::SGame {
 			}
 
 			DrawLegs();
-			DrawFrontArm();
+//			DrawFrontArm();
 
 			if ( ( m_iFlags & PF_AFTER_IMAGE ) != 0 ) {
 				// draw the common silhouette after image for the player's last known position to the enemies
 //				m_AfterImage.Draw();
 			}
+
+			refEntity.sheetNum = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/weapons/double_barrel", 512, 512, 64, 32 ).GetShader();
+			refEntity.spriteId = 0;
+			refEntity.Draw();
 
 			m_HudData.Draw();
 		}

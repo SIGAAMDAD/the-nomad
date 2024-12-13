@@ -143,20 +143,19 @@ void CScriptJson::Set( const jsonKey_t& key, const string_t& value )
 
 void CScriptJson::Set( const jsonKey_t& key, const CScriptArray& value )
 {
-	json js_temp = json::array( {} );
-
 	// make sure we're not just being handed a random array
 	if ( N_stricmp( g_pModuleLib->GetScriptEngine()->GetTypeInfoById( value.GetElementTypeId() )->GetName(), "json" ) != 0 ) {
 		asGetActiveContext()->SetException( "json opIndex( const array<json@>& in ) called on invalid array" );
 	}
 
+	js_info.clear();
+
 	for ( asUINT i = 0; i < value.GetSize(); i++ ) {
 		CScriptJson **node  = (CScriptJson **)value.At( i );
 		if ( node && *node ) {
-			js_temp += (*node)->js_info;
+			js_info += (*node)->js_info;
 		}
 	}
-	(js_info)[key] = eastl::move( js_temp );
 }
 
 void CScriptJson::Set(const jsonKey_t& key, const CScriptJson& value)
@@ -166,44 +165,48 @@ void CScriptJson::Set(const jsonKey_t& key, const CScriptJson& value)
 
 bool CScriptJson::Get( const jsonKey_t& key, bool *value ) const
 {
-	if ( js_info.contains( key ) ) {
-		*value = js_info.at( key );
-		return true;
+	try {
+		*value = js_info[ key ];
+	} catch ( const json::exception& e ) {
+		return false;
 	}
-	return false;
+	return true;
 }
 
 bool CScriptJson::Get( const jsonKey_t& key, asINT32 *value ) const
 {
-	if ( js_info.contains( key ) ) {
-		*value = js_info.at( key );
-		return true;
+	try {
+		*value = js_info[ key ];
+	} catch ( const json::exception& e ) {
+		return false;
 	}
-	return false;
+	return true;
 }
 
 bool CScriptJson::Get( const jsonKey_t& key, asDWORD *value ) const
 {
-	if ( js_info.contains( key ) ) {
-		*value = js_info.at( key );
-		return true;
+	try {
+		*value = js_info[ key ];
+	} catch ( const json::exception& e ) {
+		return false;
 	}
-	return false;
+	return true;
 }
 
 bool CScriptJson::Get( const jsonKey_t& key, float *value) const
 {
-	if ( js_info.contains( key ) ) {
-		*value = js_info.at( key );
-		return true;
+	try {
+		*value = js_info[ key ];
+	} catch ( const json::exception& e ) {
+		return false;
 	}
-	return false;
+	return true;
 }
 
 bool CScriptJson::Get(const jsonKey_t& key, string_t& value) const
 {
 	if ( js_info.contains( key ) ) {
-		value = js_info.at( key ).get<string_t>();
+		value = js_info[ key ].get<string_t>();
 		return true;
 	}
 	return false;
@@ -355,7 +358,6 @@ int CScriptJson::GetRefCount()
 
 CScriptJson::CScriptJson(asIScriptEngine *e)
 {
-//    js_info = new( asAllocMem( sizeof( js_info ) ) ) json();
 	// We start with one reference
 	refCount = 1;
 
@@ -365,7 +367,6 @@ CScriptJson::CScriptJson(asIScriptEngine *e)
 CScriptJson::~CScriptJson()
 {
 	Clear();
-//    asFreeMem( js_info );
 }
 
 void ScriptJsonFactory_Generic(asIScriptGeneric *gen)
@@ -662,7 +663,6 @@ static void CScriptJson_ParseFile( asIScriptGeneric *gen ) {
 		return;
 	}
 	CATCH_JSON_BLOCK( (newNode->js_info) = eastl::move( json::parse( f.b, f.b + nLength, NULL, true, true ) );, FS_FreeFile( f.v ); );
-//    CATCH_JSON_BLOCK( *(newNode->js_info) = json::parse( f.b, f.b + nLength );, FS_FreeFile( f.v ); );
 
 	FS_FreeFile( f.v );
 	*(bool *)gen->GetAddressOfReturnLocation() = true;
@@ -704,7 +704,6 @@ static CScriptJson* JsonParseFile(const string_t& fileName)
 
 	CScriptJson* newNode = CScriptJson::Create( g_pModuleLib->GetScriptEngine() );
 	CATCH_JSON_BLOCK( newNode->js_info = eastl::move( json::parse( f.b, f.b + nLength, NULL, true, true ) );, FS_FreeFile( f.v ); );
-//    CATCH_JSON_BLOCK( *(newNode->js_info) = json::parse( f.b, f.b + nLength );, FS_FreeFile( f.v ); );
 
 	FS_FreeFile( f.v );
 	return newNode;
@@ -720,7 +719,6 @@ static CScriptJson* JsonParse(const string_t& str)
 		{
 			CScriptJson* newNode = CScriptJson::Create(engine);
 			newNode->js_info = eastl::move( json::parse( str.c_str(), NULL, true, true ) );
-//            *(newNode->js_info) = json::parse(str.c_str());
 			return newNode;
 		}
 	}
@@ -729,7 +727,7 @@ static CScriptJson* JsonParse(const string_t& str)
 
 static void ScriptJson_ParseFile_Generic(asIScriptGeneric *gen)
 {
-	string_t *file = (string_t*)gen->GetArgObject(0);
+	string_t *file = (string_t*)gen->GetArgObject( 0 );
 
 	CScriptJson* ret = JsonParseFile(*file);
 	gen->SetReturnAddress( ret );
@@ -737,7 +735,7 @@ static void ScriptJson_ParseFile_Generic(asIScriptGeneric *gen)
 
 static void ScriptJson_Parse_Generic(asIScriptGeneric *gen)
 {
-	string_t *file = (string_t*)gen->GetArgObject(0);
+	string_t *file = (string_t*)gen->GetArgObject( 0 );
 
 	CScriptJson* ret = JsonParse(*file);
 	gen->SetReturnAddress( ret );
@@ -745,7 +743,7 @@ static void ScriptJson_Parse_Generic(asIScriptGeneric *gen)
 
 static void ScriptJson_WriteFile_Generic(asIScriptGeneric *gen)
 {
-	CScriptJson *json = (CScriptJson*)gen->GetArgObject(0);
+	CScriptJson *json = (CScriptJson*)gen->GetArgObject( 0 );
 	string_t *file = (string_t*)gen->GetArgObject(1);
 
 	bool ret = JsonWriteFile(*json, *file);
@@ -754,7 +752,7 @@ static void ScriptJson_WriteFile_Generic(asIScriptGeneric *gen)
 
 static void ScriptJson_Write_Generic(asIScriptGeneric *gen)
 {
-	CScriptJson *json = (CScriptJson*)gen->GetArgObject(0);
+	CScriptJson *json = (CScriptJson*)gen->GetArgObject( 0 );
 	string_t *content = (string_t*)gen->GetArgObject(1);
 
 	bool ret = JsonWrite(*json, *content);
@@ -963,11 +961,7 @@ void RegisterScriptJson_Generic( asIScriptEngine *engine )
 
 void RegisterScriptJson(asIScriptEngine *engine)
 {
-//	if ( strstr( asGetLibraryOptions(), "AS_MAX_PORTABILITY" ) ) {
-		RegisterScriptJson_Generic( engine );
-//	} else {
-//		RegisterScriptJson_Native( engine );
-//	}
+	RegisterScriptJson_Generic( engine );
 }
 
 END_AS_NAMESPACE

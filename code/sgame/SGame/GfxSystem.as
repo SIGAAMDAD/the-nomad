@@ -246,7 +246,7 @@ namespace TheNomad::SGame {
 				scale.x = -scale.x;
 			}
 			
-			ent.Spawn( origin, vec3( 0.0f ), 1250, FS_INVALID_HANDLE,
+			ent.Spawn( origin, vec3( 0.0f ), 1220, FS_INVALID_HANDLE,
 				scale, false, 0.0f,
 				@TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/smokeTrail", 750, 1200, 150, 150 ) );
 			

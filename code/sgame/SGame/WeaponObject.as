@@ -219,21 +219,26 @@ namespace TheNomad::SGame {
 				section.SaveVec3( "origin", m_Link.m_Origin );
 			}
 		}
-		void Think() {
-			if ( @m_Owner !is null ) {
-				if ( m_State.GetBaseNum() == StateNum::ST_WEAPON_USE && m_State.Done( m_nTicker ) ) {
-					if ( m_nBulletsUsed >= m_Info.magSize ) {
-						SetState( @m_Info.reloadState );
-					} else {
-						SetState( @m_Info.idleState );
-					}
-				} else {
-					@m_State = @m_State.Run( m_nTicker );
-				}
-				
+		void Think() override {
+			if ( @m_Owner is null ) {
 				return;
 			}
+			
+			m_Link.m_Bounds.m_nWidth = m_Info.width;
+			m_Link.m_Bounds.m_nHeight = m_Info.height;
+			m_Link.m_Bounds.MakeBounds( m_Link.m_Origin );
 
+			if ( m_State.GetBaseNum() == StateNum::ST_WEAPON_USE && m_State.Done( m_nTicker ) ) {
+				if ( m_nBulletsUsed >= m_Info.magSize ) {
+					SetState( @m_Info.reloadState );
+				} else {
+					SetState( @m_Info.idleState );
+				}
+			} else {
+				@m_State = @m_State.Run( m_nTicker );
+			}
+		}
+		void Draw() override {
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 			
 			refEntity.sheetNum = -1;
@@ -241,10 +246,6 @@ namespace TheNomad::SGame {
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.scale = vec2( 1.5f );
 			refEntity.Draw();
-			
-			m_Link.m_Bounds.m_nWidth = m_Info.width;
-			m_Link.m_Bounds.m_nHeight = m_Info.height;
-			m_Link.m_Bounds.MakeBounds( m_Link.m_Origin );
 		}
 		void Spawn( uint id, const vec3& in origin ) override {
 			@m_Info = @InfoSystem::InfoManager.GetWeaponInfo( id );

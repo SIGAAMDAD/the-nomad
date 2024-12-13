@@ -805,7 +805,7 @@ CModuleLib::CModuleLib( void )
 	CheckASCall( m_pEngine->SetEngineProperty( asEP_ALWAYS_IMPL_DEFAULT_CONSTRUCT, false ) );
 	CheckASCall( m_pEngine->SetEngineProperty( asEP_COMPILER_WARNINGS, true ) );
 	CheckASCall( m_pEngine->SetEngineProperty( asEP_OPTIMIZE_BYTECODE, true ) );
-	CheckASCall( m_pEngine->SetEngineProperty( asEP_INCLUDE_JIT_INSTRUCTIONS, ml_allowJIT->i ) );
+	CheckASCall( m_pEngine->SetEngineProperty( asEP_INCLUDE_JIT_INSTRUCTIONS, true ) );
 	CheckASCall( m_pEngine->SetEngineProperty( asEP_BUILD_WITHOUT_LINE_CUES, !ml_debugMode->i ) );
 	CheckASCall( m_pEngine->SetEngineProperty( asEP_REQUIRE_ENUM_SCOPE, true ) );
 	CheckASCall( m_pEngine->SetEngineProperty( asEP_USE_CHARACTER_LITERALS, true ) );
@@ -816,6 +816,10 @@ CModuleLib::CModuleLib( void )
 
 	m_pScriptBuilder = new ( Hunk_Alloc( sizeof( *m_pScriptBuilder ), h_high ) ) CScriptBuilder();
 	g_pDebugger = new ( Hunk_Alloc( sizeof( *g_pDebugger ), h_high ) ) CDebugger();
+
+	if ( ml_debugMode->i ) {
+		Cbuf_ExecuteText( EXEC_NOW, "ml_debug.set_active \"nomadmain\"" );
+	}
 
 	if ( ml_allowJIT->i ) {
 		m_pCompiler = new ( Hunk_Alloc( sizeof( *m_pCompiler ), h_high ) ) asCJITCompiler();
@@ -924,7 +928,7 @@ static void ML_PrintStringCache_f( void ) {
 
 	auto it = g_pStringFactory->m_StringCache.cbegin();
 	for ( i = 0; i < g_pStringFactory->m_StringCache.size(); i++, it++ ) {
-		Con_Printf( "%8lu: 0x%08lx (%i references)", i, (uintptr_t)(void *)it->first.c_str(), it->second );
+		Con_Printf( "%8lu: 0x%08lx (%li references)", i, (uintptr_t)(void *)it->first.c_str(), it->second );
 	}
 }
 

@@ -1,5 +1,3 @@
-#include "module_public.h"
-#include "module_alloc.h"
 #include "module_virtual_asm.h"
 #include <sys/mman.h>
 #include <unistd.h>
@@ -135,17 +133,23 @@ unsigned int CodePage::getMinimumPageSize() {
 }
 
 void CriticalSection::enter() {
-    m_Lock.Lock();
+	pthread_mutex_lock((pthread_mutex_t*)pLock);
 }
 
 void CriticalSection::leave() {
-    m_Lock.Unlock();
+	pthread_mutex_unlock((pthread_mutex_t*)pLock);
 }
 
 CriticalSection::CriticalSection() {
-}
+	pthread_mutex_t* mutex = new pthread_mutex_t();
+	pthread_mutex_init(mutex, 0);
 
+	pLock = mutex;
+}
 CriticalSection::~CriticalSection() {
+	pthread_mutex_t* mutex = (pthread_mutex_t*)pLock;
+	pthread_mutex_destroy(mutex);
+	delete mutex;
 }
 
 };

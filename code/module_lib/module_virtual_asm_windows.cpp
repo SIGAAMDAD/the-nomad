@@ -125,17 +125,21 @@ unsigned int CodePage::getMinimumPageSize() {
 
 
 void CriticalSection::enter() {
-    m_Lock.Lock();
+	EnterCriticalSection((CRITICAL_SECTION*)pLock);
 }
 
 void CriticalSection::leave() {
-    m_Lock.Unlock();
+	LeaveCriticalSection((CRITICAL_SECTION*)pLock);
 }
 
 CriticalSection::CriticalSection() {
+	auto* section = new CRITICAL_SECTION;
+	InitializeCriticalSection(section);
+	pLock = section;
 }
-
 CriticalSection::~CriticalSection() {
+	DeleteCriticalSection((CRITICAL_SECTION*)pLock);
+	delete (CRITICAL_SECTION*)pLock;
 }
 
 };

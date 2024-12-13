@@ -96,7 +96,7 @@ enum JumpType {
 
 //Handles thread safety for the JIT
 struct CriticalSection {
-    CThreadMutex m_Lock;
+	void* pLock;
 
 	void enter();
 	void leave();
@@ -574,7 +574,6 @@ Register as(Register reg) {
 	reg.bitMode = sizeof(T) * 8;
 	return reg;
 }
-
 };
 
 #endif

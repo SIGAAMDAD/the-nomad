@@ -309,9 +309,5 @@ void RegisterScriptHandle_Generic(asIScriptEngine *engine)
 
 void RegisterScriptHandle(asIScriptEngine *engine)
 {
-	if ( strstr( asGetLibraryOptions(), "AS_MAX_PORTABILITY" ) ) {
-		RegisterScriptHandle_Generic( engine );
-	} else {
-		RegisterScriptHandle_Native( engine );
-	}
+	RegisterScriptHandle_Native( engine );
 }

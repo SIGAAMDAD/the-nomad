@@ -236,11 +236,7 @@ static bool ScriptListTemplateCallback( asITypeInfo *ti, bool *dontGarbageCollec
 // Registers the template array type
 void RegisterScriptArray(asIScriptEngine *engine)
 {
-	if ( !strstr( asGetLibraryOptions(), "AS_MAX_PORTABILITY" ) ) {
-		RegisterScriptList_Native( engine );
-	} else {
-		RegisterScriptList_Generic( engine );
-	}
+	RegisterScriptList_Native( engine );
 	
 	engine->RegisterDefaultArrayType( "array<T>" );
 }

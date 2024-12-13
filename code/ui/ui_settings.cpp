@@ -1390,11 +1390,13 @@ static void VideoMenu_Draw( void )
 			"Sets the amount of sharpening applied to a rendered texture",
 			&s_settingsMenu->video.sharpening, 0.5f, 20.0f, 0.1f, true );
 		
+		/*
 		ImGui::TableNextRow();
 
 		SettingsMenu_MultiAdjustable( "FRAME LIMITER", "FrameLimiter",
 			"Sets the maximum amount of frames the game can render per second.",
 			s_settingsMenu->video.frameRates, s_settingsMenu->video.numFrameRates, &s_settingsMenu->video.maxFPS, true );
+		*/
 	}
 	ImGui::EndTable();
 }
