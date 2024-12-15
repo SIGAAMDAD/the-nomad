@@ -74,8 +74,8 @@ void Com_JoystickGetAngle( int joystickIndex, float *angle, ivec2_t joystickPosi
 	int16_t x, y;
 	int deltaX, deltaY;
 
-	x = SDL_JoystickGetAxis( sticks[ joystickIndex ], 0 );
-	y = SDL_JoystickGetAxis( sticks[ joystickIndex ], 1 );
+	x = SDL_JoystickGetAxis( sticks[ joystickIndex ], 1 );
+	y = SDL_JoystickGetAxis( sticks[ joystickIndex ], 0 );
 
 	deltaX = joystickPosition[0] - x;
 	deltaY = joystickPosition[1] - y;

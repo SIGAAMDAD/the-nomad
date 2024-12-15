@@ -18,4 +18,7 @@ in vec2 v_TexCoords;
 
 void main() {
 	a_Color = texture( u_DiffuseMap, v_TexCoords );
+
+	// apply final gamma
+//	a_Color = vec4( pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) ), 1.0 );
 }

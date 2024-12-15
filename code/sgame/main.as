@@ -63,13 +63,6 @@ void InitCvars() {
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_CameraZoom, "sgame_CameraZoom", "68", CVAR_SAVE, false );
 }
 
-void LoadInfos() {
-	TheNomad::SGame::InfoSystem::InfoManager.LoadMobInfos();
-	TheNomad::SGame::InfoSystem::InfoManager.LoadItemInfos();
-	TheNomad::SGame::InfoSystem::InfoManager.LoadAmmoInfos();
-	TheNomad::SGame::InfoSystem::InfoManager.LoadWeaponInfos();
-}
-
 //
 // InitResources: caches all important SGame resources
 //
@@ -214,9 +207,6 @@ int ModuleOnInit() {
 	@TheNomad::SGame::GfxManager = cast<TheNomad::SGame::GfxSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::GfxSystem() ) );
 	@TheNomad::SGame::EntityManager = cast<TheNomad::SGame::EntitySystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::EntitySystem() ) );
 
-	TheNomad::SGame::InitCheatCodes();
-	TheNomad::SGame::ScreenData.Init();
-
 	ConsolePrint( "--------------------\n" );
 
 	return 1;
@@ -237,7 +227,6 @@ int ModuleOnShutdown() {
 	@TheNomad::SGame::LevelManager = null;
 	@TheNomad::SGame::EntityManager = null;
 	@TheNomad::SGame::StateManager = null;
-	@TheNomad::SGame::InfoSystem::InfoManager = null;
 	@TheNomad::Engine::FileSystem::FileManager = null;
 	@TheNomad::SGame::GfxManager = null;
 	@TheNomad::SGame::GoreManager = null;
@@ -269,8 +258,21 @@ int ModuleOnSaveGame() {
 	return 1;
 }
 
+void StartupGameLevel() {
+	TheNomad::SGame::InitCheatCodes();
+	TheNomad::SGame::ScreenData.Init();
+
+	@TheNomad::SGame::InfoSystem::InfoManager = TheNomad::SGame::InfoSystem::InfoDataManager();
+
+	// load infos
+	TheNomad::SGame::InfoSystem::InfoManager.LoadMobInfos();
+	TheNomad::SGame::InfoSystem::InfoManager.LoadItemInfos();
+	TheNomad::SGame::InfoSystem::InfoManager.LoadAmmoInfos();
+	TheNomad::SGame::InfoSystem::InfoManager.LoadWeaponInfos();
+}
+
 int ModuleOnLoadGame() {
-	LoadInfos();
+	StartupGameLevel();
 
 	TheNomad::GameSystem::GameManager.SetLoadGame( true );
 	TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::InLevel;
@@ -293,7 +295,7 @@ int ModuleOnLoadGame() {
 }
 
 int ModuleOnLevelStart() {
-	LoadInfos();
+	StartupGameLevel();
 	
 	TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::InLevel;
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
@@ -312,6 +314,8 @@ int ModuleOnLevelEnd() {
 	}
 
 	TheNomad::SGame::InfoSystem::InfoManager.Clear();
+	@TheNomad::SGame::InfoSystem::InfoManager = null;
+
 	TheNomad::Engine::ResourceCache.ClearCache();
 	return 1;
 }

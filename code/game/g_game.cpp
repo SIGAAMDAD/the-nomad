@@ -160,9 +160,13 @@ static void G_RefFreeAll( void ) {
 	Z_FreeTags( TAG_RENDERER );
 }
 
+static void *G_RefImGuiMalloc( size_t nSize, void * ) {
+	return Mem_Alloc( nSize );
+}
+
 static void G_RefImGuiFree( void *ptr, void * ) {
 	if ( ptr != NULL ) {
-		Z_Free( ptr );
+		Mem_Free( ptr );
 	}
 }
 
@@ -239,10 +243,6 @@ static void G_SetScaling( float factor, uint32_t captureWidth, uint32_t captureH
 	// set custom capture resolution
 	gi.captureWidth = captureWidth;
 	gi.captureHeight = captureHeight;
-}
-
-static void *G_RefImGuiMalloc( size_t size ) {
-	return Z_Malloc( size, TAG_IMGUI );
 }
 
 static void G_RefImGuiDraw( void ) {

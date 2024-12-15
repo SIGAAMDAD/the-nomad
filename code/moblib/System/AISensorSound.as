@@ -12,7 +12,7 @@ namespace moblib {
 			
 			const float tolerance = info.soundTolerance;
 			
-			return mob.GetTarget().GetBounds().IntersectsSphere( mob.GetOrigin(), info.soundRadius );
+			return mob.GetTarget().GetBounds().IntersectsSphere( mob.GetOrigin(), info.soundRange );
 		}
 	};
 };

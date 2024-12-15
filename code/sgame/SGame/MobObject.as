@@ -7,13 +7,6 @@ namespace TheNomad::SGame {
 		MobObject() {
 		}
 
-		InfoSystem::AttackInfo@ GetCurrentAttack() {
-			return @m_CurrentAttack;
-		}
-		const InfoSystem::AttackInfo@ GetCurrentAttack() const{
-			return @m_CurrentAttack;
-		}
-		
 		const EntityObject@ GetTarget() const {
 			return m_Target;
 		}
@@ -27,7 +20,7 @@ namespace TheNomad::SGame {
 		
 		bool Load( const TheNomad::GameSystem::SaveSystem::LoadSection& in section ) {
 			m_nHealth = section.LoadFloat( "health" );
-			m_MFlags = InfoSystem::MobFlags( section.LoadUInt( "mobFlags" ) );
+//			m_MFlags = InfoSystem::MobFlags( section.LoadUInt( "mobFlags" ) );
 			if ( section.LoadBool( "hasTarget" ) ) {
 				@m_Target = @EntityManager.GetEntityForNum( section.LoadUInt( "target" ) );
 			}
@@ -37,7 +30,7 @@ namespace TheNomad::SGame {
 		
 		void Save( const TheNomad::GameSystem::SaveSystem::SaveSection& in section ) const {
 			section.SaveFloat( "health", m_nHealth );
-			section.SaveUInt( "mobFlags", uint( m_MFlags ) );
+//			section.SaveUInt( "mobFlags", uint( m_MFlags ) );
 			section.SaveBool( "hasTarget", @m_Target !is null );
 			if ( @m_Target !is null ) {
 				section.SaveUInt( "target", m_Target.GetEntityNum() );
@@ -60,9 +53,8 @@ namespace TheNomad::SGame {
 			
 			m_Name = m_Info.name;
 			m_nHealth = m_Info.health;
-			m_Flags = m_Info.flags;
+//			m_Flags = m_Info.flags;
 			m_MFlags = m_Info.mobFlags;
-			m_hShader = m_Info.hShader;
 			@m_State = @StateManager.GetStateForNum( m_Info.type + StateNum::ST_MOB_IDLE );
 		}
 		
@@ -73,13 +65,13 @@ namespace TheNomad::SGame {
 					// GIBS!
 //					EntityManager.GibbEntity( @this );
 				}
-				EmitSound( m_Info.dieSfx, 1.0f, 0xff );
+//				EmitSound( m_Info.dieSfx, 1.0f, 0xff );
 				EntityManager.KillEntity( @source, cast<EntityObject@>( @this ) );
 				
 				return;
 			}
 			
-			EmitSound( m_Info.painSfx, 1.0f, 0xff );
+//			EmitSound( m_Info.painSfx, 1.0f, 0xff );
 			
 			if ( @source !is @m_Target ) {
 				SetTarget( @source );
@@ -110,6 +102,13 @@ namespace TheNomad::SGame {
 				break;
 			};
 		}
+
+		bool CanParry() const {
+			return m_bParry;
+		}
+		void SetParry( bool bParry ) {
+			m_bParry = bParry;
+		}
 		
 		void SetTarget( EntityObject@ newTarget ) {
 			@m_Target = @newTarget;
@@ -129,8 +128,14 @@ namespace TheNomad::SGame {
 			}
 			m_State.Reset( m_nTicker );
 		}
+		void SetState( EntityState@ state ) {
+			@m_State = @state;
+			if ( @m_State is null ) {
+				ConsoleWarning( "MobObject::SetState: bad state" );
+			}
+			m_State.Reset( m_nTicker );
+		}
 
-		protected InfoSystem::AttackInfo@ m_CurrentAttack = null;
 		protected EntityObject@ m_Target = null;
 		protected InfoSystem::MobInfo@ m_Info = null;
 		protected InfoSystem::MobFlags m_MFlags = InfoSystem::MobFlags( 0 );
@@ -143,6 +148,8 @@ namespace TheNomad::SGame {
 		protected bool m_bIsAttacking = false;
 		protected uint m_nAttackTime = 0;
 		protected uint m_nLastAttackTime = 0;
+
+		private bool m_bParry = false;
 
 		private moblib::MobScript@ m_ScriptData = null;
 	};

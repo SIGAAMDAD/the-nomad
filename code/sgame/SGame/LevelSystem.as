@@ -43,33 +43,31 @@ namespace TheNomad::SGame {
 		}
 		
 		void OnInit() {
-			LevelInfoData@ data;
-			json@ rankS, rankA, rankB, rankC, rankD, rankF, rankU;
-			uint i;
-			string mapname;
 			string levelName;
+			string mapname;
 			string music;
+			array<json@> levelInfos;
 
 			m_PassedCheckpointSfx = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/iteraction/complete_checkpoint" );
 
 			ConsolePrint( "Loading level infos...\n" );
 
-			for ( i = 0; i < sgame_ModList.Count(); i++ ) {
-				LoadLevelsFromFile( sgame_ModList[i] );
+			for ( uint i = 0; i < sgame_ModList.Count(); i++ ) {
+				LoadLevelsFromFile( sgame_ModList[i], @levelInfos );
 			}
 
 			@m_Current = null;
 
 			ConsolePrint( formatUInt( NumLevels() ) + " levels parsed.\n" );
 
-			for ( i = 0; i < NumLevels(); i++ ) {
-				json@ info = @m_LevelInfos[ i ];
+			for ( uint i = 0; i < NumLevels(); i++ ) {
+				json@ info = @levelInfos[ i ];
 				if ( !info.get( "Name", levelName ) ) {
 					ConsoleWarning( "invalid level info, Name variable is missing.\n" );
 					continue;
 				}
 
-				@data = LevelInfoData( levelName );
+				LevelInfoData@ data = LevelInfoData( levelName );
 
 				ConsolePrint( "Loaded level '" + data.m_Name + "'...\n" );
 
@@ -109,13 +107,13 @@ namespace TheNomad::SGame {
 
 				data.m_nIndex = i;
 
-				@rankS = @info[ "RankS" ];
-				@rankA = @info[ "RankA" ];
-				@rankB = @info[ "RankB" ];
-				@rankC = @info[ "RankC" ];
-				@rankD = @info[ "RankD" ];
-				@rankF = @info[ "RankF" ];
-				@rankU = @info[ "RankU" ];
+				json@ rankS = @info[ "RankS" ];
+				json@ rankA = @info[ "RankA" ];
+				json@ rankB = @info[ "RankB" ];
+				json@ rankC = @info[ "RankC" ];
+				json@ rankD = @info[ "RankD" ];
+				json@ rankF = @info[ "RankF" ];
+				json@ rankU = @info[ "RankU" ];
 
 				//
 				// all rank infos must be present
@@ -153,26 +151,32 @@ namespace TheNomad::SGame {
 				if ( !LoadLevelRankData( "RankS", @data.m_RankS, rankS ) ) {
 					continue;
 				}
+				
 				data.m_RankA.rank = LevelRank::RankA;
 				if ( !LoadLevelRankData( "RankA", @data.m_RankA, rankA ) ) {
 					continue;
 				}
+
 				data.m_RankB.rank = LevelRank::RankB;
 				if ( !LoadLevelRankData( "RankB", @data.m_RankB, rankB ) ) {
 					continue;
 				}
+				
 				data.m_RankC.rank = LevelRank::RankC;
 				if ( !LoadLevelRankData( "RankC", @data.m_RankC, rankC ) ) {
 					continue;
 				}
+				
 				data.m_RankD.rank = LevelRank::RankD;
 				if ( !LoadLevelRankData( "RankD", @data.m_RankD, rankD ) ) {
 					continue;
 				}
+				
 				data.m_RankF.rank = LevelRank::RankF;
 				if ( !LoadLevelRankData( "RankF", @data.m_RankF, rankF ) ) {
 					continue;
 				}
+				
 				data.m_RankU.rank = LevelRank::RankWereUBotting;
 				if ( !LoadLevelRankData( "RankU", @data.m_RankU, rankU ) ) {
 					continue;
@@ -180,7 +184,6 @@ namespace TheNomad::SGame {
 
 				m_LevelInfoDatas.Add( @data );
 			}
-			m_LevelInfos.Clear();
 		}
 		void OnShutdown() {
 			m_LevelInfoDatas.Clear();
@@ -470,16 +473,16 @@ namespace TheNomad::SGame {
 		}
 		
 		const LevelInfoData@ GetLevelDataByIndex( uint nIndex ) const {
-			return m_LevelInfoDatas[ nIndex ];
+			return @m_LevelInfoDatas[ nIndex ];
 		}
 		LevelInfoData@ GetLevelDataByIndex( uint nIndex ) {
-			return m_LevelInfoDatas[ nIndex ];
+			return @m_LevelInfoDatas[ nIndex ];
 		}
 		
 		const LevelInfoData@ GetLevelInfoByMapName( const string& in mapname ) const {
 			for ( uint i = 0; i < m_LevelInfoDatas.Count(); i++ ) {
 				for ( uint a = 0; a < m_LevelInfoDatas[i].m_MapHandles.Count(); a++ ) {
-					if ( TheNomad::Util::StrICmp( m_LevelInfoDatas[i].m_MapHandles[a].m_Name, mapname ) == 0 ) {
+					if ( Util::StrICmp( m_LevelInfoDatas[i].m_MapHandles[a].m_Name, mapname ) == 0 ) {
 						return @m_LevelInfoDatas[i];
 					}
 				}
@@ -508,7 +511,7 @@ namespace TheNomad::SGame {
 			return @values;
 		}
 
-		private void LoadLevelsFromFile( const string& in modName ) {
+		private void LoadLevelsFromFile( const string& in modName, array<json@>@ levelInfos ) {
 			array<json@>@ levels;
 
 			@levels = @LoadJSonFile( modName );
@@ -518,8 +521,9 @@ namespace TheNomad::SGame {
 
 			ConsolePrint( "Got " + levels.Count() + " level infos from \"" + modName + "\"\n" );
 			m_nLevels += levels.Count();
+			levelInfos.Reserve( levels.Count() );
 			for ( uint i = 0; i < levels.Count(); i++ ) {
-				m_LevelInfos.Add( @levels[i] );
+				levelInfos.Add( @levels[i] );
 			}
 		}
 
@@ -655,7 +659,6 @@ namespace TheNomad::SGame {
 		private uint m_nPauseTimer = 0;
 		private int m_nLevelTimer = 0;
 		private uint m_CurrentCheckpoint = 0;
-		private array<json@> m_LevelInfos;
 		private array<LevelInfoData@> m_LevelInfoDatas;
 		private uint m_nIndex = 0;
 		private uint m_nLevels = 0;

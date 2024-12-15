@@ -483,7 +483,7 @@ namespace TheNomad::SGame {
 		//
 		// PlayrObject::CheckParry: called from DamageEntity mob v player
 		//
-		bool CheckParry( EntityObject@ ent, const InfoSystem::AttackInfo@ info ) {
+		bool CheckParry( EntityObject@ ent ) {
 			if ( Util::BoundsIntersect( ent.GetBounds(), m_ParryBox ) ) {
 				if ( ent.IsProjectile() ) {
 					// simply invert the direction and double the speed
@@ -497,7 +497,7 @@ namespace TheNomad::SGame {
 				// just a normal counter
 				MobObject@ mob = cast<MobObject@>( @ent );
 				
-				if ( info.canParry ) {
+				if ( !mob.CanParry() ) {
 					// unblockable, deal damage
 					return false;
 				}

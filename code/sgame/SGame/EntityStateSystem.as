@@ -131,25 +131,25 @@ namespace TheNomad::SGame {
 			return "EntityStateSystem";
 		}
 		void OnInit() {
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.ListStateCache_f ), "sgame.state_cache", false
-			);
 		}
 		void OnShutdown() {
 		}
+
 		void OnLevelStart() {
-			uint i;
-			array<json@> stateInfos;
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.ListStateCache_f ), "sgame.state_cache", false
+			);
 
 			InitBaseStateCache();
 
 			ConsolePrint( "Loading state data...\n" );
 			
-			for ( i = 0; i < sgame_ModList.Count(); i++ ) {
+			array<json@> stateInfos;
+			for ( uint i = 0; i < sgame_ModList.Count(); i++ ) {
 				LoadStatesFromFile( sgame_ModList[i], @stateInfos );
 			}
 			
-			for ( i = 0; i < stateInfos.Count(); i++ ) {
+			for ( uint i = 0; i < stateInfos.Count(); i++ ) {
 				EntityState@ state = EntityState();
 
 				if ( !state.Load( @stateInfos[i] ) ) {
@@ -162,7 +162,9 @@ namespace TheNomad::SGame {
 			}
 			stateInfos.Clear();
 
-			TheNomad::Engine::CmdExecuteCommand( "sgame.state_cache\n" );
+			if ( sgame_DebugMode.GetBool() ) {
+				TheNomad::Engine::CmdExecuteCommand( "sgame.state_cache\n" );
+			}
 		}
 		void OnLevelEnd() {
 			m_StateCache.Clear();

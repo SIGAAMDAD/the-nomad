@@ -1099,7 +1099,9 @@ static void R_InitGLContext( void )
 		ri.GLimp_Init( &glConfig );
 
 		ri.G_SetScaling( 1.0, glConfig.vidWidth, glConfig.vidHeight );
-		ri.GLimp_InitGamma( &glConfig );
+		if ( !r_ignorehwgamma->i ) {
+			ri.GLimp_InitGamma( &glConfig );
+		}
 	}
 
 	// GL function loader, based on https://gist.github.com/rygorous/16796a0c876cf8a5f542caddb55bce8a

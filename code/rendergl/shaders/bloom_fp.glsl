@@ -42,6 +42,5 @@ void main() {
 	// exposure tone mapping
 	vec3 final = vec3( 1.0 ) - exp( -color * u_CameraExposure );
 
-	// apply final gamma
 	a_Color = vec4( pow( final, vec3( 1.0 / u_GammaAmount ) ), 1.0 );
 }

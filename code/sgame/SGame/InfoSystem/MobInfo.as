@@ -5,13 +5,96 @@ namespace TheNomad::SGame::InfoSystem {
     class MobInfo : InfoLoader {
 		MobInfo() {
 		}
+
+		private bool LoadStatsBlock( json@ json ) {
+			if ( !json.get( "Stats.Health", health ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'Stats.Health' in \"" + name + "\"\n" );
+				return false;
+			}
+			health = float( json[ "Stats.Health" ] );
+
+			if ( !json.get( "Stats.Width", size.x ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'Stats.Width' in \"" + name + "\"\n" );
+				return false;
+			}
+			size.x = float( json[ "Stats.Width" ] );
+
+			if ( !json.get( "Stats.Height", size.y ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'Stats.Height' in \"" + name + "\"\n" );
+				return false;
+			}
+			size.y = float( json[ "Stats.Height" ] );
+
+			string armor;
+			if ( !json.get( "Stats.ArmorType", armor ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'Stats.ArmorType' in \"" + name + "\"\n" );
+				return false;
+			}
+
+			uint armorIndex = 0;
+			for ( armorIndex = 0; armorIndex < ArmorTypeStrings.Count(); armorIndex++ ) {
+				if ( Util::StrICmp( armor, ArmorTypeStrings[ armorIndex ] ) == 0 ) {
+					armorType = ArmorType( armorIndex );
+					break;
+				}
+			}
+			if ( armorIndex == ArmorTypeStrings.Count() ) {
+				ConsoleWarning( "invalid mob info, ArmorType value '" + armor + "' in \"" + name +  "\" not recognized.\n" );
+				return false;
+			}
+
+			if ( !json.get( "Stats.Speed.x", speed.x ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'Stats.Speed.x' in \"" + name + "\"\n" );
+				return false;
+			}
+			speed.x = float( json[ "Stats.Speed.x" ] );
+
+			if ( !json.get( "Stats.Speed.y", speed.y ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'Stats.Speed.y' in \"" + name + "\"\n" );
+				return false;
+			}
+			speed.y = float( json[ "Stats.Speed.y" ] );
+
+			if ( !json.get( "Stats.Speed.z", speed.z ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'Stats.Speed.z' in \"" + name + "\"\n" );
+				return false;
+			}
+			speed.z = float( json[ "Stats.Speed.z" ] );
+
+			return true;
+		}
+
+		private bool LoadDetectionBlock( json@ json ) {
+			if ( !json.get( "Detection.SightRange", sightRange ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'Detection.SightRange' in \"" + name + "\"\n" );
+				return false;
+			}
+			sightRadius = float( json[ "Detection.SightRange" ] );
+
+			if ( !json.get( "Detection.SightRadius", sightRadius ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'Detection.SightRadius' in \"" + name + "\"\n" );
+				return false;
+			}
+			sightRadius = float( json[ "Detection.SightRadius" ] );
+
+			if ( !json.get( "Detection.SoundRange", soundRange ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'Detection.SoundRange' in \"" + name + "\"\n" );
+				return false;
+			}
+			soundRange = float( json[ "Detection.SoundRange" ] );
+
+			if ( !json.get( "Detection.SoundTolerance", soundTolerance ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'Detection.SoundTolerance' in \"" + name + "\"\n" );
+				return false;
+			}
+			soundTolerance = float( json[ "Detection.SoundTolerance" ] );
+
+			return true;
+		}
 		
 		bool Load( json@ json ) {
-			string armor;
+			const EntityData@ entity = null;
 			string str;
-			array<json@> values;
-			uint i;
-			EntityData@ entity = null;
 			
 			if ( !json.get( "Name", name ) ) {
 				ConsoleWarning( "invalid mob info, missing variable 'Name'\n" );
@@ -20,152 +103,40 @@ namespace TheNomad::SGame::InfoSystem {
 			if ( !json.get( "Type", str ) ) {
 				ConsoleWarning( "invalid mob info, missing variable 'Type'\n" );
 				return false;
+			}
+			if ( ( @entity = @InfoManager.GetMobType( str ) ) !is null ) {
+				this.type = entity.GetID();
 			} else {
-				if ( ( @entity = @InfoManager.GetMobType( str ) ) !is null ) {
-					this.type = entity.GetID();
-				} else {
-					GameError( "invalid mob info, Type \"" + str + "\" wasn't found" );
-				}
-			}
-			if ( !json.get( "Health", health ) ) {
-				ConsoleWarning( "invalid mob info, missing variable 'Health'\n" );
+				ConsoleWarning( "invalid mob info, Type \"" + str + "\" wasn't found\n" );
 				return false;
-			}
-			if ( !json.get( "ArmorType", armor ) ) {
-				ConsoleWarning( "invalid mob info, missing variable 'ArmorType'\n" );
-				return false;
-			}
-			if ( !json.get( "Width", width ) ) {
-				ConsoleWarning( "invalid mob info, missing variable 'Width'\n" );
-				return false;
-			}
-			if ( !json.get( "Height", height ) ) {
-				ConsoleWarning( "invalid mob info, missing variable 'Height'\n" );
-				return false;
-			}
-			if ( !json.get( "SoundTolerance", soundTolerance ) ) {
-				ConsoleWarning( "invalid mob info, missing variable 'SoundTolerance'\n" );
-				return false;
-			}
-			if ( !json.get( "SightRadius", sightRadius ) ) {
-				ConsoleWarning( "invalid mob info, missing variable 'SightRadius'\n" );
-				return false;
-			}
-			if ( !json.get( "SightRange", sightRange ) ) {
-				ConsoleWarning( "invalid mob info, missing variable 'SightRange'\n" );
-				return false;
-			}
-			if ( !json.get( "DetectionRangeX", detectionRangeX ) ) {
-				ConsoleWarning( "invalid mob info, missing variable 'DetectionRangeX'\n" );
-				return false;
-			}
-			if ( !json.get( "DetectionRangeY", detectionRangeY ) ) {
-				ConsoleWarning( "invalid mob info, missing variable 'DetectionRangeY'\n" );
-				return false;
-			}
-			if ( !json.get( "WaitTics", waitTics ) ) {
-				ConsoleWarning( "invalid mob info, missing variable 'WaitTics'\n" );
-				return false;
-			}
-			if ( !json.get( "ScriptName", className ) ) {
-				ConsoleWarning( "invalid mob info, missing variable 'ScriptName'\n" );
-				return false;
-			}
-			if ( !json.get( "SpriteOffsetX", spriteOffsetX ) ) {
-				ConsoleWarning( "invalid mob info, missing variable 'SpriteOffsetX'\n" );
-				return false;
-			}
-			if ( !json.get( "SpriteOffsetY", spriteOffsetY ) ) {
-				ConsoleWarning( "invalid mob info, missing variable 'SpriteOffsetY'\n" );
-				return false;
-			}
-			if ( !json.get( "Sprite", str ) ) {
-				ConsoleWarning( "invalid mob info, missing variable 'Sprite'\n" );
-				return false;
-			} else {
-				hShader = Engine::Renderer::RegisterShader( str );
-			}
-			if ( !json.get( "WakeupSfx", str ) ) {
-				ConsoleWarning( "invalid mob info, missing variable 'WakeupSfx'\n" );
-				return false;
-			} else {
-				wakeupSfx.Set( str );
-			}
-			if ( !json.get( "MoveSfx", str ) ) {
-				ConsoleWarning( "invalid mob info, missing variable 'MoveSfx'\n" );
-				return false;
-			} else {
-				moveSfx.Set( str );
-			}
-			if ( !json.get( "PainSfx", str ) ) {
-				ConsoleWarning( "invalid mob info, missing variable 'PainSfx'\n" );
-				return false;
-			} else {
-				painSfx.Set( str );
-			}
-			if ( !json.get( "DieSfx", str ) ) {
-				ConsoleWarning( "invalid mob info, missing variable 'DieSfx'\n" );
-				return false;
-			} else {
-				dieSfx.Set( str );
 			}
 
-			if ( !json.get( "Flags", str ) ) {
-				ConsoleWarning( "invalid mob info, missing variable 'Flags'\n" );
+			if ( !json.get( "ScriptName", className ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'ScriptName' in \"" + name + "\"\n" );
+				return false;
+			}
+
+			string flags;
+			if ( !json.get( "Flags", flags ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'Flags' in \"" + name + "\"\n" );
 				return false;
 			}
 			
-			array<string>@ flagValues = TheNomad::Util::ParseCSV( str );
+			array<string>@ flagValues = @Util::ParseCSV( flags );
 			
 			ConsolePrint( "Processing MobFlags for '" + name + "'...\n" );
-			for ( i = 0; i < MobFlagStrings.Count(); i++ ) {
+			for ( uint i = 0; i < MobFlagStrings.Count(); i++ ) {
 				for ( uint a = 0; a < flagValues.Count(); a++ ) {
 					if ( Util::StrICmp( flagValues[a], MobFlagStrings[i] ) == 0 ) {
-						flags = EntityFlags( uint( flags ) | MobFlagBits[i] );
+						mobFlags = MobFlags( uint( mobFlags ) | MobFlagBits[i] );
 					}
 				}
 			}
-			
-			if ( !json.get( "Speed", values ) ) {
-				ConsoleWarning( "invalid mob info, missing variable 'Speed'\n" );
-				return false;
-			}
 
-			
-			if ( values.Count() != 3 ) {
-				ConsoleWarning( "invalid mob info, Speed value List is not exactly 3 values.\n" );
+			if ( !LoadStatsBlock( @json ) ) {
 				return false;
 			}
-			for ( i = 0; i < values.Count(); i++ ) {
-				json data = values[i];
-			}
-			
-			if ( !json.get( "AttackData", values ) ) {
-				ConsoleWarning( "invalid mob info, missing variable 'AttackData'\n" );
-				return false;
-			}
-			if ( values.Count() < 1 ) {
-				ConsoleWarning( "mob info has no attack data.\n" );
-				return false;
-			}
-			ConsolePrint( "Processing AttackData for MobInfo '" + name + "'...\n" );
-			for ( i = 0; i < values.Count(); i++ ) {
-				AttackInfo@ atk = AttackInfo();
-				if ( !atk.Load( @values[i] ) ) {
-					ConsoleWarning( "failed to load attack info.\n" );
-					return false;
-				}
-				attacks.Add( @atk );
-			}
-			
-			for ( i = 0; i < ArmorTypeStrings.Count(); i++ ) {
-				if ( Util::StrICmp( armor, ArmorTypeStrings[i] ) == 0 ) {
-					armorType = ArmorType( i );
-					break;
-				}
-			}
-			if ( i == ArmorTypeStrings.Count() ) {
-				ConsoleWarning( "invalid mob info, ArmorType value '" + armor + "' not recognized.\n" );
+			if ( !LoadDetectionBlock( @json ) ) {
 				return false;
 			}
 
@@ -173,30 +144,21 @@ namespace TheNomad::SGame::InfoSystem {
 		}
 		
 		string name;
+		string className;
+
+		vec3 speed = vec3( 1.0f );
+		vec2 size = vec2( 1.0f );
+
+		float soundTolerance = 0.0f;
+		float soundRange = 0.0f;
+
+		float sightRange = 0.0f;
+		float sightRadius = 0.0f;
+
 		float health = 0.0f;
 		uint type = 0;
+
 		ArmorType armorType = ArmorType::None;
-		float width = 0.0f;
-		float height = 0.0f;
-		vec3 speed = vec3( 0.0f );
-		float soundTolerance = 0.0f;
-		float soundRadius = 0.0f;
-		float smellTolerance = 0.0f;
-		float sightRadius = 0.0f;
-		int sightRange = 0;
-		int detectionRangeX = 0;
-		int detectionRangeY = 0;
 		MobFlags mobFlags = MobFlags::None;
-		uint waitTics = 0; // the duration until the mob has to rethink again
-		EntityFlags flags = EntityFlags::None;
-		uint spriteOffsetX = 0;
-		uint spriteOffsetY = 0;
-		int hShader = 0;
-		string className;
-		array<AttackInfo@> attacks;
-		TheNomad::Engine::SoundSystem::SoundEffect wakeupSfx;
-		TheNomad::Engine::SoundSystem::SoundEffect moveSfx;
-		TheNomad::Engine::SoundSystem::SoundEffect painSfx;
-		TheNomad::Engine::SoundSystem::SoundEffect dieSfx;
 	};
 };

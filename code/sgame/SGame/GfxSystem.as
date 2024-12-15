@@ -7,7 +7,6 @@ namespace TheNomad::SGame {
 		}
 
 		void OnInit() {
-			InitLocalEntities();
 		}
 		void OnShutdown() {
 		}
@@ -17,15 +16,17 @@ namespace TheNomad::SGame {
 		void OnSave() const {
 		}
 		void OnRunTic() {
+			InitLocalEntities();
 		}
 		void OnPlayerDeath( int ) {
 		}
 		void OnCheckpointPassed( uint ) {
 		}
 		void OnLevelStart() {
+			InitLocalEntities();
 		}
 		void OnLevelEnd() {
-			m_LocalEnts.Clear();
+			ClearLocalEntities();
 		}
 		const string& GetName() const override {
 			return "GfxManager";
@@ -38,11 +39,10 @@ namespace TheNomad::SGame {
 			TheNomad::Engine::ProfileBlock block( "GfxSystem::OnRenderScene" );
 
 			TheNomad::Engine::Renderer::LocalEntity@ next = null;
-			TheNomad::Engine::Renderer::LocalEntity@ ent = null;
 
 			// walk the list backwards, so any new local entities generated
 			// (trails, marks, etc) will be present this frame
-			@ent = @m_ActiveLocalEnts.m_Prev;
+			TheNomad::Engine::Renderer::LocalEntity@ ent = @m_ActiveLocalEnts.m_Prev;
 			for ( ; @ent !is @m_ActiveLocalEnts; @ent = @next ) {
 				// grab next now, so if the local entity is freed we
 				// still have it
@@ -57,12 +57,50 @@ namespace TheNomad::SGame {
 			}
 		}
 
-		private void InitLocalEntities() {
-			const uint numGfx = 512;
-			m_LocalEnts.Resize( numGfx );
+		private void ClearLocalEntities() {
+			@m_ActiveLocalEnts.m_Next =
+			@m_ActiveLocalEnts.m_Prev =
+				@m_ActiveLocalEnts;
+			@m_FreeLocalEnts = null;
 
-			@m_ActiveLocalEnts.m_Next = @m_ActiveLocalEnts;
-			@m_ActiveLocalEnts.m_Prev = @m_ActiveLocalEnts;
+			// clear all references
+			for ( uint i = 0; i < m_LocalEnts.Count(); i++ ) {
+				@m_LocalEnts[i].m_Next =
+				@m_LocalEnts[i].m_Prev =
+					null;
+			}
+			m_LocalEnts.Clear();
+		}
+
+		private void InitLocalEntities() {
+			uint maxGfx = 256;
+
+			switch ( sgame_GfxDetail.GetInt() ) {
+			case 0:
+				maxGfx = 128;
+				break;
+			case 1:
+				maxGfx = 256;
+				break;
+			case 2:
+				maxGfx = 512;
+				break;
+			default:
+				ConsoleWarning( "invalid sgame_GfxDetail '" + sgame_GfxDetail.GetInt() + "', setting to 1\n" );
+				TheNomad::Engine::CvarSet( "sgame_GfxDetail", "1" );
+				maxGfx = 256;
+				break;
+			};
+			// only resize if we're changing qualities
+			if ( maxGfx != m_LocalEnts.Count() ) {
+				m_LocalEnts.Resize( maxGfx );
+			} else {
+				return;
+			}
+
+			@m_ActiveLocalEnts.m_Next =
+			@m_ActiveLocalEnts.m_Prev =
+				@m_ActiveLocalEnts;
 			@m_FreeLocalEnts = @m_LocalEnts[0];
 
 			for ( uint i = 0; i < m_LocalEnts.Count() - 1; i++ ) {
@@ -71,15 +109,13 @@ namespace TheNomad::SGame {
 		}
 
 		private TheNomad::Engine::Renderer::LocalEntity@ AllocLocalEntity() {
-			TheNomad::Engine::Renderer::LocalEntity@ ent = null;
-
 			if ( @m_FreeLocalEnts is null ) {
 				// no free polys, so free the one at the end of the chain
 				// remove the oldest active entity
 				FreeLocalEntity( @m_ActiveLocalEnts.m_Prev );
 			}
 
-			@ent = @m_FreeLocalEnts;
+			TheNomad::Engine::Renderer::LocalEntity@ ent = @m_FreeLocalEnts;
 			@m_FreeLocalEnts = @m_FreeLocalEnts.m_Next;
 
 			// link into active list
@@ -107,36 +143,6 @@ namespace TheNomad::SGame {
 			// the free list is only singly linked
 			@ent.m_Next = @m_FreeLocalEnts;
 			@m_FreeLocalEnts = @ent;
-		}
-
-
-		//
-		// GfxSystem::Bleed: this is a spurt of blood when an entity gets hit
-		//
-		TheNomad::Engine::Renderer::LocalEntity@ Bleed( const vec3& in origin ) {
-			TheNomad::Engine::Renderer::LocalEntity@ ent = null;
-
-			if ( sgame_Blood.GetInt() == 0 ) {
-				return null;
-			}
-
-			float x, y;
-			const uint randX = Util::PRandom();
-			const uint randY = Util::PRandom();
-
-			@ent = AllocLocalEntity();
-
-			x = origin.x - ( 1.25f / ( randX == 0 ? 1 : randX ) );
-			y = origin.y - ( 1.25f / ( randY == 0 ? 1 : randY ) );
-
-			ent.m_nLifeTime = 1500;
-			ent.m_Velocity = vec3( 0.05f, -0.03f, 0.0f );
-
-			ent.m_Origin = vec3( x, y - 0.2f, 0.0f );
-			ent.m_hShader = TheNomad::Engine::Renderer::RegisterShader( "gfx/bloodSplatter0" );
-			ent.m_bGravity = true;
-
-			return @ent;
 		}
 
 		void AddBloodSplatter( const vec3& in origin, int facing ) {
@@ -292,8 +298,6 @@ namespace TheNomad::SGame {
 		private array<TheNomad::Engine::Renderer::LocalEntity> m_LocalEnts;
 		private TheNomad::Engine::Renderer::LocalEntity m_ActiveLocalEnts;
 		private TheNomad::Engine::Renderer::LocalEntity@ m_FreeLocalEnts = null;
-
-		private bool m_bAllowGfx = true;
 	};
 	
 	GfxSystem@ GfxManager = null;

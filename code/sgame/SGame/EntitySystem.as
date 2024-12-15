@@ -1,5 +1,4 @@
 #include "SGame/EntityObject.as"
-#include "SGame/InfoSystem/AttackInfo.as"
 #include "SGame/InfoSystem/MobInfo.as"
 #include "SGame/InfoSystem/ItemInfo.as"
 #include "SGame/InfoSystem/InfoDataManager.as"
@@ -365,12 +364,7 @@ namespace TheNomad::SGame {
 			return @m_ActiveEnts;
 		}
 
-		void SpawnProjectile( const vec3& in origin, float angle, InfoSystem::AttackInfo@ info, const vec2& in size ) {
-			EntityObject@ obj = @Spawn( TheNomad::GameSystem::EntityType::Weapon, info.projectileEntityType, origin, size );
-			obj.SetProjectile( true );
-		}
-
-		private void GenObituary( EntityObject@ attacker, EntityObject@ target, InfoSystem::AttackInfo@ info ) {
+		private void GenObituary( EntityObject@ attacker, EntityObject@ target ) {
 			if ( target.GetType() != TheNomad::GameSystem::EntityType::Playr ) {
 				// unless it's the player, we don't care about the death
 				return;
@@ -402,7 +396,7 @@ namespace TheNomad::SGame {
 		void KillEntity( EntityObject@ target, EntityObject@ attacker ) {
 			if ( attacker.GetType() == TheNomad::GameSystem::EntityType::Mob ) {
 				// write an obituary for the player
-				GenObituary( @attacker, @target, @cast<MobObject@>( @attacker ).GetCurrentAttack() );
+				GenObituary( @attacker, @target );
 			}
 			// TODO: make the enemies nearby declare the infighting individual a traitor
 			if ( target.GetType() == TheNomad::GameSystem::EntityType::Mob ) {
@@ -426,12 +420,11 @@ namespace TheNomad::SGame {
 		
 		//
 		// DamageEntity: entity v entity
-		// NOTE: damage is only ever used when calling from a WeaponObject
 		//
 		void DamageEntity( EntityObject@ target, EntityObject@ attacker, float damage = 1.0f ) {
 			switch ( attacker.GetType() ) {
 			case TheNomad::GameSystem::EntityType::Mob: {
-				target.Damage( @attacker, cast<MobObject@>( @attacker ).GetCurrentAttack().damage );
+				target.Damage( @attacker, damage );
 				break; }
 			case TheNomad::GameSystem::EntityType::Playr: {
 				target.Damage( @attacker, damage );
