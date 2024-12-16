@@ -330,11 +330,10 @@ void UI_PauseMenu( void )
 	if ( !ui_active->i ) {
 		Key_SetCatcher( Key_GetCatcher() | KEYCATCH_UI );
 		UI_PushMenu( &s_pauseMenu->menu );
-		Snd_PlaySfx( Snd_RegisterSfx( "snapshot:/PauseMenu" ) );
 		Key_SetCatcher( Key_GetCatcher() & ~KEYCATCH_SGAME );
 	} else {
-		Key_SetCatcher( Key_GetCatcher() | KEYCATCH_SGAME );
-		Snd_StopSfx( Snd_RegisterSfx( "snapshot:/PauseMenu" ) );
+		Key_ClearStates();
+		Key_SetCatcher( KEYCATCH_SGAME );
 	}
 	Snd_PlaySfx( ui->sfx_select );
 	Cvar_SetIntegerValue( "g_paused", !ui_active->i );

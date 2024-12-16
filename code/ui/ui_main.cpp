@@ -436,6 +436,9 @@ static void UI_PauseMenu_f( void ) {
 	if ( gi.state != GS_LEVEL || !gi.mapLoaded ) {
 		return;
 	}
+	if ( ui->menustate == UI_MENU_PAUSE ) {
+		Key_SetCatcher( Key_GetCatcher() | KEYCATCH_SGAME );
+	}
 	UI_SetActiveMenu( UI_MENU_PAUSE );
 }
 
