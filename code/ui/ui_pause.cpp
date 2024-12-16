@@ -61,6 +61,25 @@ typedef struct {
 // PAUSE. REWIND. PLAY.
 static pauseMenu_t *s_pauseMenu;
 
+static void PauseMenu_ExitCallback( qboolean result )
+{
+	if ( !result ) {
+		return;
+	}
+	g_pModuleLib->ModuleCall( sgvm, ModuleOnLevelEnd, 0 );
+	g_pModuleLib->RunModules( ModuleOnLevelEnd, 0 );
+	Cvar_SetIntegerValue( "g_paused", 0 );
+	Cbuf_ExecuteText( EXEC_APPEND, "setmap\n" ); // setting an empty mapname will unload the level
+}
+
+static void PauseMenu_QuitCallback( qboolean result )
+{
+	if ( !result ) {
+		return;
+	}
+	Cbuf_ExecuteText( EXEC_NOW, "quit Closed window\n" );
+}
+
 static void PauseMenu_EventCallback( void *ptr, int event )
 {
 	if ( event != EVENT_ACTIVATED ) {
@@ -70,8 +89,8 @@ static void PauseMenu_EventCallback( void *ptr, int event )
 	switch ( ( (menucommon_t *)ptr )->id ) {
 	case ID_RESUME:
 		UI_SetActiveMenu( UI_MENU_NONE );
+		Key_ClearStates();
 		Key_SetCatcher( KEYCATCH_SGAME );
-		Snd_StopSfx( Snd_RegisterSfx( "snapshot:/PauseMenu" ) );
 		break;
 	case ID_CHECKPOINT:
 		// rewind the checkpoint
@@ -86,12 +105,17 @@ static void PauseMenu_EventCallback( void *ptr, int event )
 		Cbuf_ExecuteText( EXEC_APPEND, "togglephotomode\n" );
 		break;
 	case ID_HELP:
+		gi.state = GS_MENU;
+		Cvar_SetIntegerValue( "g_paused", 0 );
+		Key_ClearStates();
+		Key_SetCatcher( KEYCATCH_UI );
 		UI_DataBaseMenu();
 		break;
 	case ID_SETTINGS:
 		gi.state = GS_MENU;
 		Cvar_SetIntegerValue( "g_paused", 0 );
-		Snd_StopSfx( Snd_RegisterSfx( "snapshot:/PauseMenu" ) );
+		Key_ClearStates();
+		Key_SetCatcher( KEYCATCH_UI );
 		UI_SettingsMenu();
 		break;
 	case ID_EXIT_LEVEL:
@@ -100,13 +124,10 @@ static void PauseMenu_EventCallback( void *ptr, int event )
 		gi.mapLoaded = qfalse;
 		gi.mapCache.currentMapLoaded = -1;
 		gi.state = GS_INACTIVE;
-		g_pModuleLib->ModuleCall( sgvm, ModuleOnLevelEnd, 0 );
-		g_pModuleLib->RunModules( ModuleOnLevelEnd, 0 );
-		Cvar_SetIntegerValue( "g_paused", 0 );
-		Cbuf_ExecuteText( EXEC_APPEND, "setmap\n" ); // setting an empty mapname will unload the level
+		UI_ConfirmMenu( "All progress after the most previous checkpoint will be lost, are you sure you want to quit?", NULL, PauseMenu_ExitCallback );
 		break;
 	case ID_EXIT_GAME:
-		Cbuf_ExecuteText( EXEC_NOW, "quit Closed window\n" );
+		UI_ConfirmMenu( "All progress after the most previous checkpoint will be lost, are you sure you want to quit?", NULL, PauseMenu_QuitCallback );
 		break;
 	default:
 		break;

@@ -5,6 +5,7 @@ in vec2 v_TexCoords;
 in vec4 v_Color;
 in vec2 v_WorldPos;
 in vec3 v_LightingColor;
+in vec2 v_Position;
 
 uniform float u_GammaAmount;
 uniform bool u_GamePaused;
@@ -25,6 +26,7 @@ uniform int u_AlphaTest;
 
 TEXTURE2D u_DiffuseMap;
 uniform vec3 u_ViewOrigin;
+uniform float u_ViewZoom;
 uniform vec4 u_SpecularScale;
 uniform vec4 u_NormalScale;
 
@@ -139,7 +141,7 @@ void ApplyLighting() {
 }
 
 void main() {
-	if ( distance( u_ViewOrigin.xy, v_WorldPos.xy ) >= 16.0 ) {
+	if ( distance( u_ViewOrigin.xy, v_Position.xy ) >= u_ViewZoom ) {
 		discard;
 	}
 

@@ -391,7 +391,6 @@ namespace TheNomad::SGame {
 			Game_PlayerPos = origin;
 			// technically no z coordinate because it's 2D
 			Game_CameraZoom = TheNomad::Engine::CvarVariableInteger( "sgame_CameraZoom" ) * 0.001f;
-//			Game_CameraZoom = 0.07f - ( 1.0 / ( LevelManager.GetMapData().GetHeight() / LevelManager.GetMapData().GetWidth() ) * 0.002f );
 
 			ImGui::Begin( "##Debug" );
 			ImGui::Text( "CameraZoom: " + Game_CameraZoom );

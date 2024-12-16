@@ -647,6 +647,7 @@ static void RB_StageIteratorGeneric( shader_t *shader )
 			}
 		}
 
+		GLSL_SetUniformFloat( sp, UNIFORM_VIEWZOOM, (float)ri.Cvar_VariableInteger( "sgame_CameraZoom" ) / 0.001f );
 		GLSL_SetUniformVec3( sp, UNIFORM_VIEWORIGIN, glState.viewData.camera.origin );
 
 		{

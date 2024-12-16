@@ -7,6 +7,7 @@ out vec2 v_TexCoords;
 out vec4 v_Color;
 out vec2 v_WorldPos;
 out vec3 v_LightingColor;
+out vec2 v_Position;
 
 uniform mat4 u_ModelViewProjection;
 uniform vec4 u_BaseColor;
@@ -146,5 +147,6 @@ void main() {
 		v_LightingColor *= u_AmbientColor;
 	}
 
-    gl_Position = u_ModelViewProjection * vec4( a_Position, 0.0, 1.0 );
+	gl_Position = u_ModelViewProjection * vec4( a_Position, 0.0, 1.0 );
+	v_Position.xy = gl_Position.xy;
 }

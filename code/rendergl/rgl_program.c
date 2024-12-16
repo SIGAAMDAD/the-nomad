@@ -68,6 +68,7 @@ static uniformInfo_t uniformsInfo[UNIFORM_COUNT] = {
 	{ "u_NormalScale",          GLSL_VEC4 },
 	{ "u_SpecularScale",        GLSL_VEC4 },
 	{ "u_ViewOrigin",           GLSL_VEC3 },
+	{ "u_ViewZoom",				GLSL_FLOAT },
 
 	{ "u_AlphaTest",            GLSL_INT },
 	{ "u_NumLights",            GLSL_INT },

@@ -285,7 +285,7 @@ void CSoundWorld::Update( void )
 		ERRCHECK( em->channel->event->setListenerMask( em->listenerMask ) );
 		ERRCHECK( em->channel->event->getPlaybackState( &state ) );
 
-		volume = DotProduct( em->link->origin, m_szListeners[0].link->origin ) / 100.0f;
+		volume = DotProduct( em->link->origin, m_szListeners[0].link->origin ) / 1000.0f;
 		em->channel->event->setVolume( em->volume + volume );
 
 		if ( state == FMOD_STUDIO_PLAYBACK_STOPPED ) {
@@ -327,7 +327,7 @@ void CSoundWorld::PlayEmitterSound( nhandle_t hEmitter, float nVolume, uint32_t 
 
 	em->channel = AllocateChannel( pSource );
 	em->listenerMask = nListenerMask;
-	em->volume = nVolume * ( snd_effectsVolume->f / 100.0f );
+	em->volume = ( snd_effectsVolume->f / 1000.0f ) * nVolume;
 
 	em->channel->event->setListenerMask( nListenerMask );
 	em->channel->event->setVolume( em->volume );

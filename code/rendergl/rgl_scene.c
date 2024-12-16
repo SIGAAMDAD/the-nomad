@@ -264,18 +264,18 @@ void RE_ProcessEntities( void )
 	verts = &backendData[ rg.smpFrame ]->polyVerts[ r_numPolyVerts ];
 	texIndex = 0.0f;
 
+	static const vec2_t texCoords[4] = {
+		{ 0.0f, 0.0f },
+		{ 1.0f, 0.0f },
+		{ 1.0f, 1.0f },
+		{ 0.0f, 1.0f }
+	};
+
 	for ( i = 0; i < backend.refdef.numEntities; i++ ) {
 		if ( r_numPolys >= r_maxPolys->i || r_numPolyVerts >= maxVerts ) {
 			ri.Printf( PRINT_DEVELOPER, "R_ProcessEntities: too many entities, dropping %lu entities\n", backend.refdef.numEntities - i );
 			break;
 		}
-
-/* breaks when rendering gfx
-		if ( disBetweenOBJ( glState.viewData.camera.origin, refEntity->e.origin ) >= 16.0f && refEntity->e.sheetNum != -1 ) {
-			// don't process entities that are out of view
-			continue;
-		}
-*/
 		
 		origin[0] = refEntity->e.origin[0];
 		origin[1] = rg.world->height - ( refEntity->e.origin[1] - refEntity->e.origin[2] );
@@ -294,6 +294,7 @@ void RE_ProcessEntities( void )
 		ri.GLM_TransformToGL( origin, xyz, refEntity->e.scale, refEntity->e.rotation, glState.viewData.camera.viewProjectionMatrix );
 
 		if ( refEntity->e.sheetNum == -1 ) {
+			*(double *)verts[0].uv = *(double *)texCoords[0];
 			VectorSet2( verts[0].uv, 0, 0 );
 			VectorSet2( verts[1].uv, 1, 0 );
 			VectorSet2( verts[2].uv, 1, 1 );
