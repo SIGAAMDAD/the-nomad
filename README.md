@@ -6,7 +6,6 @@ The currently release version of the game is a Demo Alpha Test, so expect lots o
 
 ## WIP Features
 Here's a complete list of things I plan to put into the game:
-- (Possibly in the first release) loading textures on demand
 - Desert Sea Shanties
 - Desert Brigs
 - Mercenaries
@@ -25,10 +24,11 @@ Here's a complete list of things I plan to put into the game:
 - Bladed Weapons
 - Counter parries
 
-
 ## Requirements
 ### Minimum
 Note that this engine is NOT multithreaded, it will be in the future however when I do a full-scale rewrite
+
+Also note that the minimum spec produced a result of roughly 80-120 fps. But that is only the minimum, on a 3060 it got roughly 800-900 fps.
 
 __CPU__ | __GPU__ | __RAM__ | __OS__
 --------|---------|---------|-------
