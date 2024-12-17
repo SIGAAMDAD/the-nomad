@@ -1,36 +1,57 @@
 skins/raio/torso
 {
-	nomipmaps
-	nopicmip
 	{
 		texFilter nearest
-		map textures/sprites/players/raio/standard/torso.dds
+		map textures/sprites/players/raio/low/torso.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-		stage diffuseMap
 	}
 }
 
 skins/raio/arms_right
 {
-	nomipmaps
-	nopicmip
-	{
+	if ( $r_textureDetail < 2 ) {
+		texFilter nearest
+		map textures/sprites/players/raio/low/arms_right.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+	}
+	elif ( $r_textureDetail == 2 ) {
 		texFilter nearest
 		map textures/sprites/players/raio/standard/arms_right.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-		stage diffuseMap
+	}
+	elif ( $r_textureDetail == 3 ) {
+		texFilter nearest
+		map textures/sprites/players/raio/high/arms_right.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+	}
+	elif ( $r_textureDetail > 3 ) {
+		texFilter nearest
+		map textures/sprites/players/raio/very_high/arms_right.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 	}
 }
 
 skins/raio/arms_left
 {
-	nomipmaps
-	nopicmip
-	{
+	if ( $r_textureDetail < 2 ) {
+		texFilter nearest
+		map textures/sprites/players/raio/low/arms_left.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+	}
+	elif ( $r_textureDetail == 2 ) {
 		texFilter nearest
 		map textures/sprites/players/raio/standard/arms_left.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-		stage diffuseMap
+	}
+	elif ( $r_textureDetail == 3 ) {
+		texFilter nearest
+		map textures/sprites/players/raio/high/arms_left.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+	}
+	elif ( $r_textureDetail > 3 ) {
+		texFilter nearest
+		map textures/sprites/players/raio/very_high/arms_left.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 	}
 }
 
@@ -40,9 +61,8 @@ skins/raio/legs
 	nopicmip
 	{
 		texFilter nearest
-		map textures/sprites/players/raio/standard/legs.dds
+		map textures/sprites/players/raio/low/legs.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-		stage diffuseMap
 	}
 }
 

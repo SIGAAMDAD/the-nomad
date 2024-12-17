@@ -181,7 +181,7 @@ namespace TheNomad::SGame::InfoSystem {
 			DebugPrint( "Processing WeaponProperties for WeaponInfo '" + id + "'...\n" );
 			for ( uint i = 0; i < WeaponPropertyStrings.Count(); i++ ) {
 				for ( uint a = 0; a < props.Count(); a++ ) {
-					if ( Util::StrICmp(  string( props[a] ), WeaponPropertyStrings[i] ) == 0 ) {
+					if ( Util::StrICmp( string( props[a] ), WeaponPropertyStrings[i] ) == 0 ) {
 						weaponProps = WeaponProperty( uint( weaponProps ) | WeaponPropertyBits[i] );
 					}
 				}

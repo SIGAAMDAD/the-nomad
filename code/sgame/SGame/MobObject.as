@@ -53,7 +53,6 @@ namespace TheNomad::SGame {
 			
 			m_Name = m_Info.name;
 			m_nHealth = m_Info.health;
-//			m_Flags = m_Info.flags;
 			m_MFlags = m_Info.mobFlags;
 			@m_State = @StateManager.GetStateForNum( m_Info.type + StateNum::ST_MOB_IDLE );
 		}
@@ -65,7 +64,7 @@ namespace TheNomad::SGame {
 					// GIBS!
 //					EntityManager.GibbEntity( @this );
 				}
-//				EmitSound( m_Info.dieSfx, 1.0f, 0xff );
+				m_ScriptData.OnDeath();
 				EntityManager.KillEntity( @source, cast<EntityObject@>( @this ) );
 				
 				return;

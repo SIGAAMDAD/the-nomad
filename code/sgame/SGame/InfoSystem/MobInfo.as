@@ -115,20 +115,29 @@ namespace TheNomad::SGame::InfoSystem {
 				ConsoleWarning( "invalid mob info, missing variable 'ScriptName' in \"" + name + "\"\n" );
 				return false;
 			}
-
-			string flags;
-			if ( !json.get( "Flags", flags ) ) {
-				ConsoleWarning( "invalid mob info, missing variable 'Flags' in \"" + name + "\"\n" );
-				return false;
-			}
 			
-			array<string>@ flagValues = @Util::ParseCSV( flags );
-			
-			ConsolePrint( "Processing MobFlags for '" + name + "'...\n" );
-			for ( uint i = 0; i < MobFlagStrings.Count(); i++ ) {
-				for ( uint a = 0; a < flagValues.Count(); a++ ) {
-					if ( Util::StrICmp( flagValues[a], MobFlagStrings[i] ) == 0 ) {
-						mobFlags = MobFlags( uint( mobFlags ) | MobFlagBits[i] );
+			array<json@> flagValues;
+			if ( json.get( "Flags", flagValues ) ) {
+				// not required, just special modifiers
+				DebugPrint( "Processing MobFlags for '" + name + "'...\n" );
+				for( uint i = 0; i < flagValues.Count(); ++i ) {
+					const string flag = string( flagValues[ i ] );
+					if ( flag == "Deaf" ) {
+						mobFlags = MobFlags( uint( mobFlags ) | uint( MobFlags::Deaf ) );
+					} else if ( flag == "Blind" ) {
+						mobFlags = MobFlags( uint( mobFlags ) | uint( MobFlags::Blind ) );
+					} else if ( flag == "Leader" ) {
+						mobFlags = MobFlags( uint( mobFlags ) | uint( MobFlags::Leader ) );
+					} else if ( flag == "Boss" ) {
+						mobFlags = MobFlags( uint( mobFlags ) | uint( MobFlags::Boss ) );
+					} else if ( flag == "PermaDead" ) {
+						mobFlags = MobFlags( uint( mobFlags ) | uint( MobFlags::PermaDead ) );
+					} else if ( flag == "Sentry" ) {
+						mobFlags = MobFlags( uint( mobFlags ) | uint( MobFlags::Sentry ) );
+					} else if ( flag == "Terrified" ) {
+						mobFlags = MobFlags( uint( mobFlags ) | uint( MobFlags::Terrified ) );
+					} else {
+						ConsoleWarning( "unrecognized MobFlag \"" + flag + "\", ignoring...\n" );
 					}
 				}
 			}
