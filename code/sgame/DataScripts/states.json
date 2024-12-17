@@ -146,7 +146,7 @@
 			"BaseNum": "ST_PLAYR_ARMS_MELEE",
 			"Entity": "player",
 			"NextState": "player_arms_idle",
-			"SpriteOffset": [ 3, 0 ],
+			"SpriteOffset": [ 4, 0 ],
 			"Animation": {
 				"TicRate": 250,
 				"FlipFlop": false,

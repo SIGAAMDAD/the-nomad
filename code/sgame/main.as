@@ -60,7 +60,7 @@ void InitCvars() {
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_AirSpeed, "sgame_AirSpeed", "2.5", CVAR_TEMP, false );
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_SaveLastUsedWeaponModes, "sgame_SaveLastUsedWeaponModes", "0", CVAR_SAVE, true );
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_Blood, "sgame_Blood", "1", CVAR_SAVE, false );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_CameraZoom, "sgame_CameraZoom", "68", CVAR_SAVE, false );
+	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_CameraZoom, "sgame_CameraZoom", "68", CVAR_SAVE, true );
 }
 
 //
@@ -90,7 +90,8 @@ void InitResources() {
 	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slide_0" );
 	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slide_1" );
 
-	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/dash" );
+	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/use_jumpkit_0" );
+	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/use_jumpkit_1" );
 
 	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/melee" );
 
@@ -114,33 +115,13 @@ void InitResources() {
 	//
 	// load particle effects
 	//
-	
-	TheNomad::Engine::Renderer::RegisterShader( "gfx/effects/flame1" );
-	TheNomad::Engine::Renderer::RegisterShader( "gfx/effects/flame2" );
-	TheNomad::Engine::Renderer::RegisterShader( "gfx/effects/flame3" );
-	TheNomad::Engine::Renderer::RegisterShader( "gfx/effects/flame4" );
-	TheNomad::Engine::Renderer::RegisterShader( "gfx/effects/flame5" );
-	TheNomad::Engine::Renderer::RegisterShader( "gfx/effects/flame6" );
 
 	TheNomad::Engine::Renderer::RegisterShader( "gfx/completed_checkpoint" );
 	TheNomad::Engine::Renderer::RegisterShader( "gfx/checkpoint" );
-	TheNomad::Engine::Renderer::RegisterShader( "gfx/env/smokeTrail" );
-	TheNomad::Engine::Renderer::RegisterShader( "gfx/env/smokePuff" );
-	TheNomad::Engine::Renderer::RegisterShader( "gfx/env/land" );
-	TheNomad::Engine::Renderer::RegisterShader( "gfx/env/jump" );
-
-	TheNomad::Engine::Renderer::RegisterShader( "gfx/env/dustScreen" );
-	TheNomad::Engine::Renderer::RegisterShader( "gfx/env/flameBall" );
-
-	TheNomad::Engine::Renderer::RegisterShader( "gfx/bloodSplatter0" );
-	TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/blood_screen" );
-
-	TheNomad::Engine::Renderer::RegisterShader( "wake" );
 
 	TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/checkpoint", 128, 32, 32, 32 );
-	TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/smokePuff", 576, 64, 64, 64 );
-	TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/smokeTrail", 750, 1200, 150, 150 );
-	TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/flameBall", 288, 192, 96, 48 );
+//	TheNomad::Engine::Renderer::RegisterShader( "gfx/bloodSplatter0" );
+	TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/blood_screen" );
 
 	//
 	// register strings
@@ -204,7 +185,6 @@ int ModuleOnInit() {
 	@TheNomad::SGame::LevelManager = cast<TheNomad::SGame::LevelSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::LevelSystem() ) );
 	@TheNomad::SGame::InfoSystem::InfoManager = TheNomad::SGame::InfoSystem::InfoDataManager();
 	@TheNomad::SGame::StateManager = cast<TheNomad::SGame::EntityStateSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::EntityStateSystem() ) );
-	@TheNomad::SGame::GfxManager = cast<TheNomad::SGame::GfxSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::GfxSystem() ) );
 	@TheNomad::SGame::EntityManager = cast<TheNomad::SGame::EntitySystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::EntitySystem() ) );
 
 	ConsolePrint( "--------------------\n" );
@@ -228,7 +208,6 @@ int ModuleOnShutdown() {
 	@TheNomad::SGame::EntityManager = null;
 	@TheNomad::SGame::StateManager = null;
 	@TheNomad::Engine::FileSystem::FileManager = null;
-	@TheNomad::SGame::GfxManager = null;
 	@TheNomad::SGame::GoreManager = null;
 	TheNomad::GameSystem::GameSystems.Clear();
 
@@ -264,11 +243,16 @@ void StartupGameLevel() {
 
 	@TheNomad::SGame::InfoSystem::InfoManager = TheNomad::SGame::InfoSystem::InfoDataManager();
 
+	// load assets
+	InitResources();
+
 	// load infos
 	TheNomad::SGame::InfoSystem::InfoManager.LoadMobInfos();
 	TheNomad::SGame::InfoSystem::InfoManager.LoadItemInfos();
 	TheNomad::SGame::InfoSystem::InfoManager.LoadAmmoInfos();
 	TheNomad::SGame::InfoSystem::InfoManager.LoadWeaponInfos();
+
+	@TheNomad::SGame::GfxManager = cast<TheNomad::SGame::GfxSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::GfxSystem() ) );
 }
 
 int ModuleOnLoadGame() {
@@ -276,15 +260,13 @@ int ModuleOnLoadGame() {
 
 	TheNomad::GameSystem::GameManager.SetLoadGame( true );
 	TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::InLevel;
+
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnLevelStart();
 	}
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnLoad();
 	}
-
-	// load assets
-	InitResources();
 
 	TheNomad::SGame::LevelManager.CheckNewGamePlus();
 
@@ -301,8 +283,6 @@ int ModuleOnLevelStart() {
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnLevelStart();
 	}
-	// load assets
-	InitResources();
 
 	TheNomad::SGame::ScreenData.InitPlayers();
 	return 1;
@@ -314,6 +294,7 @@ int ModuleOnLevelEnd() {
 	}
 
 	TheNomad::SGame::InfoSystem::InfoManager.Clear();
+	@TheNomad::SGame::GfxManager = null;
 	@TheNomad::SGame::InfoSystem::InfoManager = null;
 
 	TheNomad::Engine::ResourceCache.ClearCache();

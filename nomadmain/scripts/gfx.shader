@@ -63,7 +63,6 @@ console
 }
 */
 
-/*
 //
 // hud elements
 //
@@ -111,7 +110,6 @@ gfx/hud/blood_screen
 		rgbGen vertex
 	}
 }
-*/
 
 //
 // powerup icons
@@ -594,16 +592,49 @@ markShadow
 // wake is the mark on water surfaces for paddling players
 wake
 {
-	{
-		clampmap gfx/env/splash.jpg
+	if ( $r_textureDetail < 2 ) {
+		clampmap gfx/env/low/splash.jpg
 		blendFunc GL_ONE GL_ONE_MINUS_SRC_ALPHA
 		rgbGen vertex
 		tcmod rotate 250
 		tcMod stretch sin .9 0.1 0 0.7
 		rgbGen wave sin .7 .3 .25 .5
 	}
-	{
-		clampmap gfx/env/splash.jpg
+	elif ( $r_textureDetail == 2 ) {
+		clampmap gfx/env/standard/splash.jpg
+		blendFunc GL_ONE GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+		tcmod rotate 250
+		tcMod stretch sin .9 0.1 0 0.7
+		rgbGen wave sin .7 .3 .25 .5
+	}
+	elif ( $r_textureDetail > 2 ) {
+		clampmap gfx/env/high/splash.jpg
+		blendFunc GL_ONE GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+		tcmod rotate 250
+		tcMod stretch sin .9 0.1 0 0.7
+		rgbGen wave sin .7 .3 .25 .5
+	}
+
+	if ( $r_textureDetail < 2 ) {
+		clampmap gfx/env/low/splash.jpg
+		blendFunc GL_ONE GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+		tcmod rotate -230
+		tcMod stretch sin .9 0.05 0 0.9
+		rgbGen wave sin .7 .3 .25 .4
+	}
+	elif ( $r_textureDetail == 2 ) {
+		clampmap gfx/env/standard/splash.jpg
+		blendFunc GL_ONE GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+		tcmod rotate -230
+		tcMod stretch sin .9 0.05 0 0.9
+		rgbGen wave sin .7 .3 .25 .4
+	}
+	elif ( $r_textureDetail > 2 ) {
+		clampmap gfx/env/high/splash.jpg
 		blendFunc GL_ONE GL_ONE_MINUS_SRC_ALPHA
 		rgbGen vertex
 		tcmod rotate -230

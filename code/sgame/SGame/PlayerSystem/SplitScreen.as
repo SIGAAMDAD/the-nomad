@@ -340,14 +340,12 @@ namespace TheNomad::SGame {
 			PlayrObject@ obj = GetPlayerIndex();
 		
 			if ( TheNomad::Engine::CmdArgv( 0 )[0] == '+' ) {
-				if ( @obj.GetLeftArmState() is @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_MELEE )
-					&& !obj.GetLeftArmState().Done( obj.GetLegTicker() ) )
-				{
+				if ( @obj.GetLeftArmState() is @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_MELEE ) ) {
 					return;
 				}
 				obj.EmitSound( obj.meleeSfx, 10.0f, 0xff );
 				obj.SetParryBoxWidth( 0.0f );
-				obj.SetLeftArmState( StateNum::ST_PLAYR_ARMS_MELEE );
+				obj.SetArmsState( StateNum::ST_PLAYR_ARMS_MELEE );
 			}
 		}
 		void NextWeapon_f() {
@@ -383,14 +381,17 @@ namespace TheNomad::SGame {
 			if ( @LevelManager.GetMapData() is null ) {
 				return;
 			}
-			
+
+			// technically no z coordinate because it's 2D
+			Game_CameraZoom = TheNomad::Engine::CvarVariableInteger( "sgame_CameraZoom" ) * 0.001f;
+
 			// snap to the player's position
 			// if we're in photomode, ignore
 			Game_CameraWorldPos.x = ( origin.x - 0.812913357f ) * 10.0f;
-			Game_CameraWorldPos.y = ( LevelManager.GetMapData().GetHeight() - ( origin.y + 0.812913357f ) ) * 10;
+			Game_CameraWorldPos.y = ( LevelManager.GetMapData().GetHeight() - ( origin.y + 0.812913357f ) ) * 10.0f;
+//			Game_CameraWorldPos.x = ( origin.x - log( Game_CameraZoom ) ) * 10.0f;
+//			Game_CameraWorldPos.y = ( LevelManager.GetMapData().GetHeight() - ( origin.y + log( Game_CameraZoom ) ) ) * 10.0f;
 			Game_PlayerPos = origin;
-			// technically no z coordinate because it's 2D
-			Game_CameraZoom = TheNomad::Engine::CvarVariableInteger( "sgame_CameraZoom" ) * 0.001f;
 
 			ImGui::Begin( "##Debug" );
 			ImGui::Text( "CameraZoom: " + Game_CameraZoom );

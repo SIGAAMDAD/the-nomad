@@ -150,10 +150,10 @@ namespace TheNomad::SGame::InfoSystem {
 		"TwoHandedPolearm",
 		"OneHandedPolearm",
 
-		"OneHandedSideFirearm",
-		"TwoHandedSideFirearm",
-		"OneHandedPrimFirearm",
-		"TwoHandedPrimFirearm",
+		"OneHandedSidearmFirearm",
+		"TwoHandedSidearmFirearm",
+		"OneHandedPrimaryFirearm",
+		"TwoHandedPrimaryFirearm",
 
 		"SpawnsObject"
 	};

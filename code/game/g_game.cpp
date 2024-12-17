@@ -1610,7 +1610,7 @@ static void G_LoadSkins( void )
 	COM_BeginParseSession( LOG_DIR "/skins.cfg" );
 
 	while ( 1 ) {
-		tok = COM_ParseExt( text, qfalse );
+		tok = COM_ParseExt( text, qtrue );
 		if ( !tok[0] ) {
 			break;
 		}

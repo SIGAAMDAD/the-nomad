@@ -35,23 +35,37 @@ namespace TheNomad::SGame::InfoSystem {
 			return AmmoProperty::None;
 		}
 
+		private bool LoadStatsBlock( json@ json ) {
+			if ( !json.get( "Stats.Damage", damage ) ) {
+				ConsoleWarning( "invalid ammo info, missing variable 'Stats.Damage' in \"" + name + "\"\n" );
+				return false;
+			}
+			damage = float( json[ "Stats.Damage" ] );
+
+			if ( !json.get( "Stats.Range", range ) ) {
+				ConsoleWarning( "invalid ammo info, missing variable 'Stats.Range' in \"" + name + "\"\n" );
+				return false;
+			}
+			range = float( json[ "Stats.Range" ] );
+
+			return true;
+		}
+
 		bool Load( json@ json ) {
-			array<json@> values;
-			string type;
 			string str;
-			uint i, a;
-			EntityData@ entity = null;
+			string type;
+			const EntityData@ entity = null;
 
 			if ( !json.get( "Name", name ) ) {
 				ConsoleWarning( "invalid ammo info, missing variable 'Name'\n" );
 				return false;
 			}
 			if ( !json.get( "Type", type ) ) {
-				ConsoleWarning( "invalid ammo info, missing variable 'Type'\n" );
+				ConsoleWarning( "invalid ammo info, missing variable 'Type' in \"" + name + "\"\n" );
 				return false;
 			}
 			if ( !json.get( "Id", str ) ) {
-				ConsoleWarning( "invalid ammo info, missing variable 'Id'\n" );
+				ConsoleWarning( "invalid ammo info, missing variable 'Id' in \"" + name + "\"\n" );
 				return false;
 			} else {
 				if ( ( @entity = @InfoManager.GetAmmoType( str ) ) !is null ) {
@@ -61,25 +75,30 @@ namespace TheNomad::SGame::InfoSystem {
 				}
 			}
 
+			if ( !LoadStatsBlock( @json ) ) {
+				return false;
+			}
+
 			// not really required, but it does make things more entertaining
+			array<json@> values;
 			if ( !json.get( "Properties", values ) ) {
 				ConsoleWarning( "ammo info \"" + id + "\" has no extra properties.\n" );
 			}
 
-			ConsolePrint( "Processing Properties for AmmoInfo '" + name + "'...\n" );
-			for ( i = 0; i < AmmoPropertyStrings.Count(); i++ ) {
-				for ( a = 0; a < values.Count(); a++ ) {
+			DebugPrint( "Processing Properties for AmmoInfo '" + name + "'...\n" );
+			for ( uint i = 0; i < AmmoPropertyStrings.Count(); i++ ) {
+				for ( uint a = 0; a < values.Count(); a++ ) {
 					if ( Util::StrICmp( string( values[a] ), AmmoPropertyStrings[i] ) != 1 ) {
 						bits = AmmoProperty( uint( bits ) | PropertyIndexToBit( i ) );
 					}
 				}
 			}
 			if ( bits == AmmoProperty::None ) {
-				ConsolePrint( "ammo info \"" + id + "\" has no valid properties.\n" );
+				DebugPrint( "ammo info \"" + id + "\" has no valid properties.\n" );
 			}
 
-			ConsolePrint( "Processing Type for AmmoInfo '" + name + "'...\n" );
-			for ( i = 0; i < AmmoTypeStrings.Count(); i++ ) {
+			DebugPrint( "Processing Type for AmmoInfo '" + name + "'...\n" );
+			for ( uint i = 0; i < AmmoTypeStrings.Count(); i++ ) {
 				if ( Util::StrICmp( AmmoTypeStrings[i], type ) != 1 ) {
 					baseType = AmmoType( i );
 					break;

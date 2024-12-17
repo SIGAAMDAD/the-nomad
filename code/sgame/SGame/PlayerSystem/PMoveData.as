@@ -16,18 +16,18 @@ namespace TheNomad::SGame {
 		PMoveData( PlayrObject@ ent ) {
 			@m_EntityData = @ent;
 
-			moveGravel0 = TheNomad::Engine::SoundSystem::SoundEffect( "event:/sfx/player/move_gravel_0" );
-			moveGravel1 = TheNomad::Engine::SoundSystem::SoundEffect( "event:/sfx/player/move_gravel_1" );
-			moveGravel2 = TheNomad::Engine::SoundSystem::SoundEffect( "event:/sfx/player/move_gravel_2" );
-			moveGravel3 = TheNomad::Engine::SoundSystem::SoundEffect( "event:/sfx/player/move_gravel_3" );
+			moveGravel0 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/move_gravel_0" );
+			moveGravel1 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/move_gravel_1" );
+			moveGravel2 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/move_gravel_2" );
+			moveGravel3 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/move_gravel_3" );
 
-			moveWater0 = TheNomad::Engine::SoundSystem::SoundEffect( "event:/sfx/player/move_water_0" );
-			moveWater1 = TheNomad::Engine::SoundSystem::SoundEffect( "event:/sfx/player/move_water_1" );
+			moveWater0 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/move_water_0" );
+			moveWater1 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/move_water_1" );
 
-			moveMetal0 = TheNomad::Engine::SoundSystem::SoundEffect( "event:/sfx/player/move_metal_0" );
-			moveMetal1 = TheNomad::Engine::SoundSystem::SoundEffect( "event:/sfx/player/move_metal_1" );
-			moveMetal2 = TheNomad::Engine::SoundSystem::SoundEffect( "event:/sfx/player/move_metal_2" );
-			moveMetal3 = TheNomad::Engine::SoundSystem::SoundEffect( "event:/sfx/player/move_metal_3" );
+			moveMetal0 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/move_metal_0" );
+			moveMetal1 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/move_metal_1" );
+			moveMetal2 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/move_metal_2" );
+			moveMetal3 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/move_metal_3" );
 		}
 		PMoveData() {
 		}
@@ -215,8 +215,10 @@ namespace TheNomad::SGame {
 		}
 
 		void SetMovementDir() {
-			TheNomad::Engine::ProfileBlock block( "PMoveData::SetMovementDir" );
-			
+			if ( sgame_DebugMode.GetBool() ) {
+				TheNomad::Engine::ProfileBlock block( "PMoveData::SetMovementDir" );
+			}
+
 			// set movement direction
 			if ( side > 0 ) {
 				m_EntityData.SetFacing( FACING_RIGHT );
@@ -283,15 +285,15 @@ namespace TheNomad::SGame {
 		}
 		
 		void RunTic() {
-			float angle;
-			TheNomad::GameSystem::DirType dir;
 			const uint gameTic = TheNomad::GameSystem::GameManager.GetGameTic();
 
-			TheNomad::Engine::ProfileBlock block( "PMoveData::OnRunTic" );
+			if ( sgame_DebugMode.GetBool() ) {
+				TheNomad::Engine::ProfileBlock block( "PMoveData::OnRunTic" );
+			}
 			
 			frametime = uint( float( gameTic * 0.0001f ) );
 			
-			frame_msec = TheNomad::GameSystem::GameManager.GetGameTic() - old_frame_msec;
+			frame_msec = gameTic - old_frame_msec;
 			
 			// if running over 1000fps, act as if each frame is 1ms
 			// prevents divisions by zero

@@ -310,6 +310,14 @@ namespace TheNomad::SGame {
 			m_LeftArm.SetFacing( facing );
 			m_RightArm.SetFacing( facing );
 		}
+		void SetArmsState( StateNum nState ) {
+			m_LeftArm.SetState( nState );
+			m_RightArm.SetState( nState );
+		}
+		void SetArmsState( EntityState@ state ) {
+			m_LeftArm.SetState( @state );
+			m_RightArm.SetState( @state );
+		}
 		int GetLegsFacing() const {
 			return m_LegsFacing;
 		}
@@ -788,13 +796,15 @@ namespace TheNomad::SGame {
 		
 		// custom draw because of adaptive weapons and leg sprites
 		void Draw() override {
-			TheNomad::Engine::ProfileBlock block( "PlayrObject::Draw" );
+			if ( sgame_DebugMode.GetBool() ) {
+				TheNomad::Engine::ProfileBlock block( "PlayrObject::Draw" );
+			}
 
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 
 			@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE );
 
-//			DrawBackArm();
+			DrawBackArm();
 
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.sheetNum = m_SpriteSheet.GetShader();
@@ -820,16 +830,7 @@ namespace TheNomad::SGame {
 			}
 
 			DrawLegs();
-//			DrawFrontArm();
-
-			if ( ( m_iFlags & PF_AFTER_IMAGE ) != 0 ) {
-				// draw the common silhouette after image for the player's last known position to the enemies
-//				m_AfterImage.Draw();
-			}
-
-			refEntity.sheetNum = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/weapons/double_barrel", 512, 512, 64, 32 ).GetShader();
-			refEntity.spriteId = 0;
-			refEntity.Draw();
+			DrawFrontArm();
 
 			m_HudData.Draw();
 		}

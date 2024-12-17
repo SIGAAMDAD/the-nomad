@@ -24,6 +24,7 @@ namespace TheNomad::SGame {
 		}
 		void OnLevelStart() {
 			InitLocalEntities();
+			CacheGfx();
 		}
 		void OnLevelEnd() {
 			ClearLocalEntities();
@@ -153,35 +154,13 @@ namespace TheNomad::SGame {
 			TheNomad::Engine::Renderer::LocalEntity@ ent = @AllocLocalEntity();
 
 			const uint row = ( Util::PRandom() & 3 ) + 2;
-
 			vec2 scale = vec2( 1.0f );
 			if ( facing == FACING_LEFT ) {
 				scale.x = -scale.x;
 			}
-//			vec3 accel = vec3( 0.1f, 0.4f, 1.8f );
 
-			ent.Spawn( origin, vec3( 0.0f ), 180, FS_INVALID_HANDLE,
-				scale, true, 0.0f,
-				@TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/spurt", 1540, 836, 110, 92 ),
-				uvec2( 0, row ) );
-			
+			ent.Spawn( origin, vec3( 0.0f ), 180, FS_INVALID_HANDLE, scale, true, 0.0f, @m_BloodSpurt, uvec2( 0, row ) );
 			ent.m_EffectAnimation.Load( 30, false, 14, false );
-
-			/*
-			ent.Spawn( origin, vec3( 0.0f ), 1200, FS_INVALID_HANDLE,
-				scale, false, 0.0f, @TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/splatter", 750, 900, 150, 150 ),
-				uvec2( 0 ) );
-			
-			ent.m_EffectAnimation.Load( 40, false, 30, false );
-			*/
-			/*
-			ent.Spawn( origin, vec3( 0.0f ), 800, FS_INVALID_HANDLE,
-				scale, false, 0.0f,
-				@TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/spurt", 1540, 837, 110, 93 ),
-				uvec2( 0, ( Util::PRandom() & 3 ) + 2 ) );
-			
-			ent.m_EffectAnimation.Load( 50, false, 14, false );
-			*/
 		}
 
 		void SmokeCloud( const vec3& in origin ) {
@@ -189,20 +168,17 @@ namespace TheNomad::SGame {
 				return;
 			}
 
-			AllocLocalEntity().Spawn( origin, vec3( 0.0f ), 5000, TheNomad::Engine::Renderer::RegisterShader( "gfx/env/dustScreen" ) );
+			AllocLocalEntity().Spawn( origin, vec3( 0.0f ), 1800, m_hDustScreenShader );
 		}
 
 		void FlameBall( const vec3& in origin ) {
-			if ( !sgame_EnableParticles.GetBool() ) {
+			if ( !sgame_EnableParticles.GetBool() && false ) {
 				return;
 			}
 
 			TheNomad::Engine::Renderer::LocalEntity@ ent = @AllocLocalEntity();
 
-			ent.Spawn( origin, vec3( 0.0f ), 500, FS_INVALID_HANDLE,
-				vec2( 1.5f ), false, 0.0f,
-				@TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/flameBall", 288, 192, 96, 48 ) );
-			
+//			ent.Spawn( origin, vec3( 0.0f ), 500, FS_INVALID_HANDLE, vec2( 1.5f ), false, 0.0f, @m_FlameBall );
 			ent.m_EffectAnimation.Load( 20, false, 10, false );
 		}
 
@@ -211,8 +187,7 @@ namespace TheNomad::SGame {
 				return;
 			}
 
-			AllocLocalEntity().Spawn( origin, vec3( 0.0f ), lifeTime, TheNomad::Engine::Renderer::RegisterShader( "wake" ),
-				scale, false, grow );
+			AllocLocalEntity().Spawn( origin, vec3( 0.0f ), lifeTime, m_hWaterWakeShader, scale, false, grow );
 		}
 
 		void AddBulletHole( const vec3& in origin ) {
@@ -235,7 +210,7 @@ namespace TheNomad::SGame {
 			
 			ent.Spawn( origin, vec3( 0.0f ), 400, FS_INVALID_HANDLE,
 				scale, false, 0.0f,
-				@TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/smokePuff", 576, 64, 64, 64 ) );
+				@m_SmokePuff );
 			
 			ent.m_EffectAnimation.Load( 90, false, 9, false );
 		}
@@ -252,52 +227,34 @@ namespace TheNomad::SGame {
 				scale.x = -scale.x;
 			}
 			
-			ent.Spawn( origin, vec3( 0.0f ), 1220, FS_INVALID_HANDLE,
-				scale, false, 0.0f,
-				@TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/smokeTrail", 750, 1200, 150, 150 ) );
-			
+			ent.Spawn( origin, vec3( 0.0f ), 1200, FS_INVALID_HANDLE, scale, false, 0.0f, @m_SmokeTrail );
 			ent.m_EffectAnimation.Load( 20, false, 40, false );
-		}
-		
-		void AddDustCloud( const vec3& in origin, const vec3& in accel ) {
-			if ( !sgame_EnableParticles.GetBool() ) {
-				return;
-			}
-
-			for ( uint i = 0; i < 24; i++ ) {
-				float offsetX = 0.0f;
-				if ( ( Util::PRandom() & 1 ) == 0 ) {
-					const uint rand = Util::PRandom() & 3;
-					offsetX += 2.0f / ( rand == 0 ? 1.0f : float( rand ) );
-//					offsetX = -( accel.x * ( 1.0f / ( rand == 0 ? 1.0f : float( rand ) ) ) );
-				} else {
-					const uint rand = Util::PRandom() & 3;
-					offsetX += rand;
-//					offsetX = ( accel.x * ( 1.0f / ( rand == 0 ? 1.0f : float( rand ) ) ) );
-				}
-
-				float offsetY = 0.0f;
-				if ( ( Util::PRandom() & 1 ) == 0 ) {
-					const uint rand = Util::PRandom() & 3;
-					offsetY -= 2.0f / ( rand == 0 ? 1.0f : float( rand ) );
-//					offsetY = -accel.y + ( 1.0f / ( rand == 0 ? 1.0f : float( rand ) ) );
-				} else {
-					const uint rand = Util::PRandom() & 3;
-					offsetY += 2.0f / ( rand == 0 ? 1.0f : float( rand ) );
-//					offsetY = ( accel.y * ( 1.0f / ( rand == 0 ? 1.0f : float( rand ) ) ) );
-				}
-
-				AllocLocalEntity().Spawn( vec3( origin.x + offsetX, origin.y + offsetY, origin.z ), vec3( 0.0f ), 1600,
-					TheNomad::Engine::Renderer::RegisterShader( "gfx/env/smokePuff" ), 1.0f, true );
-			}
 		}
 
 		void AddExplosionGfx( const vec3& in origin ) {
 		}
 
+		private void CacheGfx() {
+			@m_SmokeTrail = @TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/smokeTrail", 750, 1200, 150, 150 );
+			@m_SmokePuff = @TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/smokePuff", 576, 64, 64, 64 );
+			@m_BloodSpurt = @TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/spurt", 1540, 836, 110, 92 );
+//			@m_FlameBall = @TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/flameBall", 288, 192, 96, 48 );
+			m_hDustScreenShader = TheNomad::Engine::Renderer::RegisterShader( "gfx/env/dustScreen" );
+//			m_hWaterWakeShader = TheNomad::Engine::Renderer::RegisterShader( "wake" );
+		}
+
+		// runtime cache
 		private array<TheNomad::Engine::Renderer::LocalEntity> m_LocalEnts;
 		private TheNomad::Engine::Renderer::LocalEntity m_ActiveLocalEnts;
 		private TheNomad::Engine::Renderer::LocalEntity@ m_FreeLocalEnts = null;
+
+		// data cache
+		private SpriteSheet@ m_SmokeTrail = null;
+		private SpriteSheet@ m_SmokePuff = null;
+		private SpriteSheet@ m_BloodSpurt = null;
+//		private SpriteSheet@ m_FlameBall = null;
+		private int m_hWaterWakeShader = FS_INVALID_HANDLE;
+		private int m_hDustScreenShader = FS_INVALID_HANDLE;
 	};
 	
 	GfxSystem@ GfxManager = null;

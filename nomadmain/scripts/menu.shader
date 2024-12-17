@@ -82,16 +82,9 @@ menu/mainbackground_blur
 		tcGen texture
 		rgbGen vertex
 	}
-	elif ( $r_textureDetail == 3 ) {
+	elif ( $r_textureDetail >= 3 ) {
 		texFilter bilinear
 		map textures/menu/high/fromeaglespeak_blur.jpg
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-		tcGen texture
-		rgbGen vertex
-	}
-	elif ( $r_textureDetail == 4 ) {
-		texFilter bilinear
-		map textures/menu/extreme/fromeaglespeak_blur.jpg
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		tcGen texture
 		rgbGen vertex
@@ -102,23 +95,16 @@ menu/playBackground
 {
 	nomipmaps
 	nopicmip
-	if ( $r_textureDetail < 2 ) {
+	if ( $r_textureDetail <= 2 ) {
 		texFilter bilinear
 		map textures/menu/standard/playBackground.jpg
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		tcGen texture
 		rgbGen vertex
 	}
-	elif ( $r_textureDetail == 2 ) {
-		texFilter bilinear
-		map textures/menu/high/playBackground.jpg
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-		tcGen texture
-		rgbGen vertex
-	}
 	elif ( $r_textureDetail > 2 ) {
 		texFilter bilinear
-		map textures/menu/extreme/playBackground.jpg
+		map textures/menu/high/playBackground.jpg
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		tcGen texture
 		rgbGen vertex

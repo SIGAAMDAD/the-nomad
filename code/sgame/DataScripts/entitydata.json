@@ -27,6 +27,7 @@
         { "Id": 0, "Name": "sidearm_murstar" },
         { "Id": 1, "Name": "sidearm_peashooter" },
         { "Id": 2, "Name": "primary_plasma_smg" },
-        { "Id": 3, "Name": "primary_double_barrel" }
+        { "Id": 3, "Name": "primary_double_barrel" },
+        { "Id": 4, "Name": "sidearm_quickshot" }
     ]
 }

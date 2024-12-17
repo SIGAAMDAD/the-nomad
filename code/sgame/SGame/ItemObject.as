@@ -16,10 +16,10 @@ namespace TheNomad::SGame {
 			DebugPrint( "Item " + m_Link.m_nEntityNumber + " now owned by " + ent.GetEntityNum() + ".\n" );
 
 			// TODO: in the future, mobs will be able to pick up items just like the player
-			m_Info.pickupSfx.Play();
+			EmitSound( TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/iteraction/pickup_item" ), 2.5f, 0xff );
 		}
 		void Use() {
-			m_Info.useSfx.Play();
+			EmitSound( m_Info.useSfx, 2.5f, 0xff );
 			if ( m_Info.effect.Length() > 0 ) {
 				Engine::CmdExecuteCommand( m_Info.effect + " " + m_Owner.GetEntityNum() );
 			}

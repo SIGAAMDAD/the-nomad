@@ -57,25 +57,25 @@ namespace TheNomad::SGame::InfoSystem {
 				ConsoleWarning( "invalid weapon info, missing variable 'Stats.MagSize' in \"" + name + "\"\n" );
 				return false;
 			}
-			magSize = json[ "Stats.MagSize" ];
+			magSize = uint( json[ "Stats.MagSize" ] );
 
 			if ( !json.get( "Stats.FireRate", fireRate ) ) {
 				ConsoleWarning( "invalid weapon info, missing variable 'Stats.FireRate' in \"" + name + "\"\n" );
 				return false;
 			}
-			fireRate = json[ "Stats.FireRate" ];
+			fireRate = uint( json[ "Stats.FireRate" ] );
 
 			if ( !json.get( "Stats.Width", width ) ) {
 				ConsoleWarning( "invalid weapon info, missing variable 'Stats.Width' in \"" + name + "\"\n" );
 				return false;
 			}
-			width = json[ "Stats.Width" ];
+			width = float( json[ "Stats.Width" ] );
 
 			if ( !json.get( "Stats.Height", height ) ) {
 				ConsoleWarning( "invalid weapon info, missing variable 'Stats.Height' in \"" + name + "\"\n" );
 				return false;
 			}
-			height = json[ "Stats.Height" ];
+			height = float( json[ "Stats.Height" ] );
 			
 			return true;
 		}
@@ -127,7 +127,6 @@ namespace TheNomad::SGame::InfoSystem {
 		}
 		
 		bool Load( json@ json ) {
-			array<json@> props;
 			string id;
 			string typeStr;
 
@@ -149,10 +148,6 @@ namespace TheNomad::SGame::InfoSystem {
 				GameError( "invalid weapon info, Type \"" + id + "\" wasn't found" );
 			}
 
-			if ( !json.get( "WeaponProperties", props ) ) {
-				ConsoleWarning( "invalid weapon info, missing variable 'WeaponProperties' in \"" + id + "\"\n" );
-				return false;
-			}
 			const string ammo = string( json[ "AmmoType" ] );
 			
 			DebugPrint( "Processing AmmoType for WeaponInfo '" + id + "'...\n" );
@@ -177,24 +172,30 @@ namespace TheNomad::SGame::InfoSystem {
 				ConsoleWarning( "invalid weapon info, WeaponType '" + typeStr + "' not recognized\n" );
 				return false;
 			}
-			
-			DebugPrint( "Processing WeaponProperties for WeaponInfo '" + id + "'...\n" );
-			for ( uint i = 0; i < WeaponPropertyStrings.Count(); i++ ) {
-				for ( uint a = 0; a < props.Count(); a++ ) {
-					if ( Util::StrICmp( string( props[a] ), WeaponPropertyStrings[i] ) == 0 ) {
-						weaponProps = WeaponProperty( uint( weaponProps ) | WeaponPropertyBits[i] );
-					}
-				}
+
+			if ( !LoadStatesBlock( @json ) ) {
+				return false;
 			}
-			if ( weaponProps == WeaponProperty::None ) {
-				ConsoleWarning( "invalid weapon info, WeaponProperties are invalid ( None, abide by physics pls ;) )\n" );
+			if ( !LoadRenderDataBlock( @json ) ) {
+				return false;
+			}
+			if ( !LoadStatsBlock( @json ) ) {
+				return false;
+			}
+			if ( !LoadSoundsBlock( @json ) ) {
 				return false;
 			}
 
-			LoadStatesBlock( @json );
-			LoadRenderDataBlock( @json );
-			LoadStatsBlock( @json );
-			LoadSoundsBlock( @json );
+			uint props = 0;
+			if ( !json.get( "Properties", props ) ) {
+				ConsoleWarning( "invalid weapon info, missing variable 'Properties' in \"" + name + "\"\n" );
+				return false;
+			}
+			weaponProps = WeaponProperty( uint( json[ "Properties" ] ) );
+			if ( weaponProps == WeaponProperty::None ) {
+				ConsoleWarning( "invalid weapon info, WeaponProperties '" + uint( weaponProps ) + "'' are invalid ( None, abide by physics pls ;) )\n" );
+				return false;
+			}
 			
 			return true;
 		}

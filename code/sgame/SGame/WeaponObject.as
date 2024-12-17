@@ -244,7 +244,7 @@ namespace TheNomad::SGame {
 			refEntity.sheetNum = -1;
 			refEntity.spriteId = m_Info.hIconShader;
 			refEntity.origin = m_Link.m_Origin;
-			refEntity.scale = vec2( 1.5f );
+			refEntity.scale = m_Info.size;
 			refEntity.Draw();
 		}
 		void Spawn( uint id, const vec3& in origin ) override {

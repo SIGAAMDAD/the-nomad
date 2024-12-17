@@ -23,10 +23,7 @@
 			"Stats.FireRate": 1,
 			"Sounds.Use": "event:/sfx/weapons/murstar_shot",
 			"Sounds.Reload": "event:/sfx/weapons/murstar_rld",
-			"WeaponProperties": [
-				"OneHandedSidearmFirearm",
-				"OneHandedBlunt"
-			]
+			"Properties": 1052678
 		},
 		{
 			"Id": "primary_plasma_smg",
@@ -37,41 +34,46 @@
 			"States.Use": "weapon_use_plasma_smg",
 			"States.Reload": "weapon_reload_plasma_smg",
 			"States.Equip": "weapon_equip_plasma_smg",
-			"RenderData.Icon": "icons/iconw_plasma_smg",
-			"RenderData.SheetWidth": 512,
-			"RenderData.SheetHeight": 512,
-			"RenderData.SpriteWidth": 64,
-			"RenderData.SpriteHeight": 32,
-			"RenderData.SpriteSheet": "sprites/weapons/plasma_smg",
 			"Stats.MagSize": 40,
 			"Stats.Range": 42.0,
 			"Stats.Damage": 23.5,
 			"Stats.Width": 0.9,
 			"Stats.Height": 0.9,
 			"Stats.FireRate": 1,
+			"RenderData.Icon": "icons/iconw_plasma_smg",
+			"RenderData.SheetWidth": 512,
+			"RenderData.SheetHeight": 512,
+			"RenderData.SpriteWidth": 64,
+			"RenderData.SpriteHeight": 32,
+			"RenderData.SpriteSheet": "sprites/weapons/plasma_smg",
 			"Sounds.Use": "event:/sfx/weapons/plasma_smg_use",
 			"Sounds.Reload": "event:/sfx/weapons/plasma_smg_rld",
-			"WeaponProperties": [
-				"OneHandedPrimaryFirearm",
-				"OneHandedSidearmFirearm",
-				"TwoHandedBlunt",
-				"OneHandedBlunt"
-			]
+			"Properties": 1052711
 		},
 		{
 			"Id": "primary_double_barrel",
 			"Name": "Asturion Double-Barrel",
 			"Type": "Primary",
-			"AmmoType": "Shell",
+			"AmmoType": "Bullet",
 			"States.Idle": "weapon_idle_adb",
 			"States.Use": "weapon_use_adb",
 			"States.Reload": "weapon_reload_adb",
 			"States.Equip": "weapon_equip_adb",
+			"Stats.MagSize": 2,
+			"Stats.Range": 2.75,
+			"Stats.Damage": 10.0,
+			"Stats.FireRate": 2,
+			"Stats.Width": 2.5,
+			"Stats.Height": 1.0,
 			"RenderData.Icon": "icons/iconw_adb",
 			"RenderData.SheetWidth": 512,
 			"RenderData.SheetHeight": 512,
 			"RenderData.SpriteWidth": 64,
-			"RenderData.SpriteHeight": 32
+			"RenderData.SpriteHeight": 32,
+			"RenderData.SpriteSheet": "sprites/weapons/double_barrel",
+			"Sounds.Use": "event:/sfx/weapons/double_barrel_use",
+			"Sounds.Reload": "event:/sfx/weapons/double_barrel_rld",
+			"Properties": 1052784
 		}
 	]
 }
