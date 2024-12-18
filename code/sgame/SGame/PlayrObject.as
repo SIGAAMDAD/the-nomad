@@ -10,6 +10,7 @@ namespace TheNomad::SGame {
 	const uint PF_DASHING			= 0x00000008;
 	const uint PF_BULLET_TIME		= 0x00000010;
 	const uint PF_DEMON_RAGE		= 0x00000020;
+	const uint PF_INVUL				= 0x00000040;
 	const uint PF_USING_WEAPON		= 0x00000100;
 	const uint PF_USING_WEAPON_ALT	= 0x00000200;
 	const uint PF_AFTER_IMAGE		= 0x10000000;
@@ -414,11 +415,20 @@ namespace TheNomad::SGame {
 		float GetRage() const {
 			return m_nRage;
 		}
+
+		void InvulOn() {
+			m_iFlags |= PF_INVUL;
+		}
+		void InvulOff() {
+			m_iFlags &= ~PF_INVUL;
+		}
 		
 		void Damage( EntityObject@ attacker, float nAmount ) {
 			if ( m_bEmoting ) {
 				return; // god has blessed thy soul...
 			}
+
+			m_HudData.ShowStatusBars();
 			
 			m_nHealth -= nAmount;
 
@@ -492,6 +502,9 @@ namespace TheNomad::SGame {
 		// PlayrObject::CheckParry: called from DamageEntity mob v player
 		//
 		bool CheckParry( EntityObject@ ent ) {
+			if ( ( m_iFlags & PF_INVUL ) != 0 ) {
+				return true;
+			}
 			if ( Util::BoundsIntersect( ent.GetBounds(), m_ParryBox ) ) {
 				if ( ent.IsProjectile() ) {
 					// simply invert the direction and double the speed
@@ -542,8 +555,10 @@ namespace TheNomad::SGame {
 			if ( m_nParryBoxWidth >= 1.5f ) {
 				return; // maximum
 			}
-			
+
 			m_nParryBoxWidth += 0.5f;
+
+			m_HudData.ShowStatusBars();
 		}
 
 		//
@@ -680,6 +695,12 @@ namespace TheNomad::SGame {
 			m_Link.m_Bounds.m_nWidth = sgame_PlayerWidth.GetFloat();
 			m_Link.m_Bounds.m_nHeight = sgame_PlayerHeight.GetFloat();
 			m_Link.m_Bounds.MakeBounds( m_Link.m_Origin );
+
+			InfoSystem::MobInfo@ info = @InfoSystem::InfoManager.GetMobInfo( "mob_merc_shotty" );
+			if ( @info is null ) {
+//				GameError( "C'MON!" );
+			}
+
 			
 			// run a movement frame
 			Pmove.RunTic();

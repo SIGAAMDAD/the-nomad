@@ -11,6 +11,6 @@ namespace TheNomad::SGame {
 		}
 		
 		protected int m_hShader = FS_INVALID_HANDLE;
-		protected 
+		protected bool m_bActive = false;
 	};
 };

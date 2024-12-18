@@ -10,6 +10,9 @@ namespace TheNomad::SGame {
 	ConVar sgame_Difficulty;
 	ConVar sgame_DebugMode;
 	ConVar sgame_EnableParticles;
+	ConVar sgame_FastMobs;
+	ConVar sgame_EnableHaptic;
+	ConVar sgame_HapticStrength;
 
 	//
 	// sound system

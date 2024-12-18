@@ -85,10 +85,20 @@ namespace TheNomad::SGame {
 			m_PhysicsObject.SetAngle( atan2( m_Link.m_Origin.x - m_Target.GetOrigin().x, m_Link.m_Origin.y - m_Target.GetOrigin().y ) );
 			m_Direction = Util::Angle2Dir( m_PhysicsObject.GetAngle() );
 		}
-		
-		void Think() {
+
+		void Draw() override {
+			TheNomad::Engine::Renderer::RenderEntity refEntity;
+
+			refEntity.origin = m_Link.m_Origin;
+			refEntity.scale = m_Info.size;
+//			refEntity.sheetNum = m_Info.spriteSheet.GetShader();
+
+			refEntity.Draw();
+		}
+		void Think() override {
 			switch ( m_State.GetID() - m_Info.type ) {
 			case StateNum::ST_MOB_IDLE:
+				m_ScriptData.IdleThink();
 				break;
 			case StateNum::ST_MOB_FIGHT_MELEE:
 			case StateNum::ST_MOB_FIGHT_MISSILE:

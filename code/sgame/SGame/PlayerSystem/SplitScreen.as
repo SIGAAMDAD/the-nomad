@@ -30,23 +30,6 @@ namespace TheNomad::SGame {
 				TheNomad::GameSystem::GameManager.GetGPUConfig().screenHeight );
 			
 			@m_PlayerData[0] = cast<PlayrObject@>( @EntityManager.GetEntityForNum( 0 ) );
-			/*
-			if ( m_nPlayerCount > 1 ) {
-				ModifyOrigin( m_PlayerData[0].GetBounds().m_Maxs, pos, vec2( 0.5f, 0.0f ) );
-				@m_PlayerData[1] = cast<PlayrObject@>( @EntityManager.Spawn( TheNomad::GameSystem::EntityType::Playr, 0, pos,
-					vec2( sgame_PlayerWidth.GetFloat(), sgame_PlayerHeight.GetFloat() ) ) );
-			}
-			if ( m_nPlayerCount > 2 ) {
-				ModifyOrigin( m_PlayerData[1].GetBounds().m_Maxs, pos, vec2( 0.5f, 0.5f ) );
-				@m_PlayerData[2] = cast<PlayrObject@>( @EntityManager.Spawn( TheNomad::GameSystem::EntityType::Playr, 0, pos,
-					vec2( sgame_PlayerWidth.GetFloat(), sgame_PlayerHeight.GetFloat() ) ) );
-			}
-			if ( m_nPlayerCount > 3 ) {
-				ModifyOrigin( m_PlayerData[2].GetBounds().m_Maxs, pos, vec2( 0.0f, 0.5f ) );
-				@m_PlayerData[3] = cast<PlayrObject@>( @EntityManager.Spawn( TheNomad::GameSystem::EntityType::Playr, 0, pos,
-					vec2( sgame_PlayerWidth.GetFloat(), sgame_PlayerHeight.GetFloat() ) ) );
-			}
-			*/
 
 			for ( uint i = 0; i < m_nPlayerCount; i++ ) {
 				m_PlayerData[i].SetPlayerIndex( i );
@@ -208,6 +191,7 @@ namespace TheNomad::SGame {
 			};
 
 			GfxManager.AddDustTrail( origin, obj.GetFacing() );
+			Util::HapticRumble( 0, 0.80f, 400 );
 		}
 		void Dash_Up_f() {
 			m_PlayerData[0].SetDashing( false );
@@ -246,6 +230,7 @@ namespace TheNomad::SGame {
 				};
 
 				GfxManager.AddDustTrail( origin, obj.GetFacing() );
+				Util::HapticRumble( 0, 0.40f, 200 );
 			}
 		}
 		void Slide_Up_f() {
