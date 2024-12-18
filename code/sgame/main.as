@@ -61,6 +61,7 @@ void InitCvars() {
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_SaveLastUsedWeaponModes, "sgame_SaveLastUsedWeaponModes", "0", CVAR_SAVE, true );
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_Blood, "sgame_Blood", "1", CVAR_SAVE, false );
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_CameraZoom, "sgame_CameraZoom", "68", CVAR_SAVE, true );
+	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_SpeedPhysics, "sgame_SpeedPhysics", "0", CVAR_SAVE, true );
 }
 
 //
@@ -159,6 +160,9 @@ void InitResources() {
 	ConsolePrint( "InitResources: " + timer.ElapsedMilliseconds() + "ms\n" );
 }
 
+float AccumulatedTics = 0.0f;
+int LastTime = 0;
+
 
 int ModuleOnInit() {
 	ConsolePrint( "----- SG_Init -----\n" );
@@ -189,6 +193,9 @@ int ModuleOnInit() {
 	@TheNomad::SGame::EntityManager = cast<TheNomad::SGame::EntitySystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::EntitySystem() ) );
 
 	ConsolePrint( "--------------------\n" );
+
+	LastTime = TheNomad::Engine::System::Milliseconds();
+	AccumulatedTics = 0.0f;
 
 	return 1;
 }
@@ -323,14 +330,21 @@ int ModuleOnRunTic( int msec ) {
 			return 0;
 		}
 
-		TheNomad::GameSystem::GameManager.SetMousePos( TheNomad::Engine::GetMousePosition() );
 		TheNomad::GameSystem::GameManager.SetMsec( TheNomad::Engine::System::Milliseconds() );
+		TheNomad::GameSystem::GameManager.SetMousePos( TheNomad::Engine::GetMousePosition() );
 
-		TheNomad::SGame::LevelManager.Resume();
-		TheNomad::SGame::EntityManager.SetActivePlayer( @TheNomad::SGame::ScreenData.GetPlayerAt( 0 ) );
-		for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
-			TheNomad::GameSystem::GameSystems[i].OnRunTic();
-		}
+//		AccumulatedTics += ( msec - LastTime ) / float( 60.0f );
+
+//		while ( AccumulatedTics > TheNomad::GameSystem::TIMESTEP ) {
+			TheNomad::SGame::LevelManager.Resume();
+			TheNomad::SGame::EntityManager.SetActivePlayer( @TheNomad::SGame::ScreenData.GetPlayerAt( 0 ) );
+			for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
+				TheNomad::GameSystem::GameSystems[i].OnRunTic();
+			}
+//			AccumulatedTics -= TheNomad::GameSystem::TIMESTEP;
+//		}
+
+//		LastTime = msec;
 
 		TheNomad::SGame::ScreenData.Draw();
 		return 0;

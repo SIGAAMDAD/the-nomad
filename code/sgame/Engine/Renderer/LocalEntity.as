@@ -35,8 +35,6 @@ namespace TheNomad::Engine::Renderer {
 			m_nLastFrameTime = TheNomad::GameSystem::GameManager.GetGameTic();
 
 			m_Origin += m_Velocity;
-			m_nScale += m_nGrowAmount * Util::Clamp( float( TheNomad::GameSystem::GameManager.GetGameTic() ) / float( frame_msec ),
-				float( 0 ), float( 1 ) );
 
 			if ( m_bGravity ) {
 				m_Velocity.y = 0.01f;

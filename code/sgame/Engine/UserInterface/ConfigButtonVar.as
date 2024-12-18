@@ -1,16 +1,22 @@
 namespace TheNomad::Engine::UserInterface {
-    class ConfigButtonVar : ConfigVar {
-        ConfigButtonVar() {
-        }
-        ConfigButtonVar( const string& in name, bool bValue, uint flags ) {
+	class ConfigButtonVar : ConfigVar {
+		ConfigButtonVar() {
+		}
+		ConfigButtonVar( const string& in name, const string& in id, bool bValue ) {
+			m_bValue = bValue;
 
-        }
+			super( name, id );
+		}
 
-        void Draw() {
-        }
-        void Save() {
-        }
+		void Draw() {
+			ImGui::Text( m_Name );
+			ImGui::SameLine();
 
-        private bool m_bValue = false;
-    };
+			ImGui::TableNextRow();
+		}
+		void Save() {
+		}
+
+		private bool m_bValue = false;
+	};
 };

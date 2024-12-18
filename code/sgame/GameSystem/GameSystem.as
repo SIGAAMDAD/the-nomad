@@ -19,15 +19,17 @@ namespace TheNomad::GameSystem {
 		MaxJoystickAxis
 	};
 
+	const float TIMESTEP = 1.0f / 60.0f;
+	const uint SKIP_TICS = 1000.0f / 60.0f;
+	const uint MAX_FRAMESKIP = 10;
+
     class CampaignManager : GameObject {
 		CampaignManager() {
 		}
 
 		void OnInit() {
 			m_nGameTic = 0;
-			m_nDeltaTics = 0;
-			m_nLastFrameTime = 0.0f;
-			m_nDeltaTime = 0.0f;
+			m_nDeltaTic = 0.0f;
 
 			// cache redundant calculations
 			GetGPUGameConfig( m_GPUConfig );
@@ -73,6 +75,9 @@ namespace TheNomad::GameSystem {
 		uint GetGameTic() const {
 			return m_nGameTic;
 		}
+		float GetDeltaTic() const {
+			return m_nDeltaTic;
+		}
 		float GetUIScale() const {
 			return m_nUIScale;
 		}
@@ -80,7 +85,11 @@ namespace TheNomad::GameSystem {
 			return m_nUIBias;
 		}
 		void SetMsec( uint msec ) {
+			m_nDeltaTic = ( msec - m_nGameTic ) * TIMESTEP;
 			m_nGameTic = msec;
+
+			// if we want framerate dependant physics simply replace the time-step code above with the stuff under this comment
+//			m_nDeltaTic = msec;
 		}
 
 		TheNomad::Engine::Renderer::GPUConfig& GetGPUConfig() {
@@ -89,7 +98,6 @@ namespace TheNomad::GameSystem {
 
 		void SetJoystickAxis( int side, int forward, int up, int roll, int yaw, int pitch ) {
 			m_JoystickSide = side;
-
 		}
 		int GetJoystickAxis( JoystickAxis axis ) const {
 			switch ( axis ) {
@@ -136,11 +144,11 @@ namespace TheNomad::GameSystem {
 		private int m_JoystichPitch = 0;
 
 		// timing
-		private float m_nDeltaTics = 0;
+		private float m_nDeltaTic = 0.0f;
+		private uint m_nGameTime = 0;
 		private uint m_nGameTic = 0;
-		private float m_nLastFrameTime = 0.0f;
-		private float m_nDeltaTime = 0.0f;
-		private float m_nLimitFPS = 0.0f;
+		private uint m_nNextTic = TheNomad::Engine::System::Milliseconds();
+		private float m_nDeltaAccum = 0.0f;
 
 		// rendering
 		private float m_nUIBias = 0;

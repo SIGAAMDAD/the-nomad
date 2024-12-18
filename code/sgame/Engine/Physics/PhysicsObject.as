@@ -193,7 +193,7 @@ namespace TheNomad::Engine::Physics {
 			TheNomad::GameSystem::BBox bounds;
 			bounds.m_nWidth = m_EntityData.GetBounds().m_nWidth;
 			bounds.m_nHeight = m_EntityData.GetBounds().m_nHeight;
-			bounds.MakeBounds( origin + m_Velocity );
+			bounds.MakeBounds( origin + ( m_Velocity * TheNomad::GameSystem::GameManager.GetDeltaTic() ) );
 			
 			TheNomad::SGame::EntityObject@ active = @TheNomad::SGame::EntityManager.GetActiveEnts();
 			TheNomad::SGame::EntityObject@ ent = null;
@@ -255,9 +255,9 @@ namespace TheNomad::Engine::Physics {
 				return;
 			}
 			
-			origin.x += m_Velocity.x;
-			origin.y += m_Velocity.y;
-			origin.z += m_Velocity.z;
+			origin.x += ( m_Velocity.x * TheNomad::GameSystem::GameManager.GetDeltaTic() );
+			origin.y += ( m_Velocity.y * TheNomad::GameSystem::GameManager.GetDeltaTic() );
+			origin.z += ( m_Velocity.z * TheNomad::GameSystem::GameManager.GetDeltaTic() );
 			// apply gravity
 			if ( origin.z < 0.0f ) {
 				origin.z = 0.0f;

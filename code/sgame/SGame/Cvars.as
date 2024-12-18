@@ -13,6 +13,7 @@ namespace TheNomad::SGame {
 	ConVar sgame_FastMobs;
 	ConVar sgame_EnableHaptic;
 	ConVar sgame_HapticStrength;
+	ConVar sgame_SpeedPhysics;
 
 	//
 	// sound system

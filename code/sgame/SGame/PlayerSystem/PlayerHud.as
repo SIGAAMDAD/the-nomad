@@ -7,8 +7,6 @@ namespace TheNomad::SGame {
 		}
 		
 		void Init( PlayrObject@ parent ) {
-			const ivec2 screenSize = TheNomad::GameSystem::GameManager.GetScreenSize();
-
 			@m_Parent = @parent;
 			
 			CacheUI();
@@ -21,10 +19,17 @@ namespace TheNomad::SGame {
 			m_nStatusBarFontScale = 2.0f * m_nUIScale;
 			m_nStatusBarStretchAmount = 256.0f * m_nUIScale;
 			
-			// init shaders
+			//
+			// create overlays
+			//
+
 			m_BloodScreenSplatter.origin = vec2( 0.0f, 0.0f );
 			m_BloodScreenSplatter.size = vec2( m_ScreenSize.x, m_ScreenSize.y );
 			m_BloodScreenSplatter.hShader = TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/blood_screen" );
+
+			m_ParryScreenFlash.origin = vec2( 0.0f, 0.0f );
+			m_ParryScreenFlash.size = vec2( m_ScreenSize.x, m_ScreenSize.y );
+			m_ParryScreenFlash.hShader = TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/parry_screen" );
 		}
 		
 		private const vec4 GetRageColor( float rage ) const {
@@ -50,11 +55,27 @@ namespace TheNomad::SGame {
 		}
 
 		private void DrawJumpKitStatus() const {
+			ImGui::Begin( "##JumpKitStatusFilled", null, ImGui::MakeWindowFlags( ImGuiWindowFlags::NoResize | ImGuiWindowFlags::NoMove
+				| ImGuiWindowFlags::NoCollapse | ImGuiWindowFlags::NoBackground | ImGuiWindowFlags::NoTitleBar | ImGuiWindowFlags::NoScrollbar ) );
+			
+			ImGui::SetWindowPos( vec2() );
+			ImGui::SetWindowSize( vec2() );
+
+			ImGui::PushStyleColor( ImGuiCol::Text, vec4( 0.0f ) );
+			ImGui::DragFloat( "JUMPKITFILLED", 0.0f );
+			ImGui::PopStyleColor();
+
+			ImGui::End();
+
 			ImGui::Begin( "##JumpKitStatus", null, ImGui::MakeWindowFlags( ImGuiWindowFlags::NoResize | ImGuiWindowFlags::NoMove
 				| ImGuiWindowFlags::NoCollapse | ImGuiWindowFlags::NoBackground | ImGuiWindowFlags::NoTitleBar | ImGuiWindowFlags::NoScrollbar ) );
 			
 			ImGui::SetWindowPos( vec2() );
 			ImGui::SetWindowSize( vec2() );
+
+			ImGui::PushStyleColor( ImGuiCol::Text, vec4( 0.0f ) );
+			ImGui::DragFloat( "JUMPKITSTATUS", 0.0f );
+			ImGui::PopStyleColor();
 
 			ImGui::End();
 		}
@@ -186,6 +207,9 @@ namespace TheNomad::SGame {
 			if ( m_nWeaponStatusStartTime != 0 ) {
 				DrawWeaponStatus();
 			}
+			if ( m_nJumpKitStatusStartTime != 0 ) {
+				DrawJumpKitStatus();
+			}
 			DrawMouseReticle();
 
 			m_Shake.OnRunTic();
@@ -193,10 +217,18 @@ namespace TheNomad::SGame {
 		
 		void ShowStatusBars() {
 			if ( !sgame_ToggleHUD.GetBool() ) {
+				m_nStatusBarStartTime = 0;
 				return;
 			}
-			
 			m_nStatusBarStartTime = TheNomad::GameSystem::GameManager.GetGameTic();
+		}
+
+		void ShowJumpKitStatus() {
+			if ( !sgame_ToggleHUD.GetBool() ) {
+				m_nJumpKitStatusStartTime = 0;
+				return;
+			}
+			m_nJumpKitStatusStartTime = TheNomad::GameSystem::GameManager.GetGameTic();
 		}
 		
 		private PlayrObject@ m_Parent = null;
@@ -211,7 +243,9 @@ namespace TheNomad::SGame {
 		
 		private uint m_nStatusBarStartTime = 0;
 		private uint m_nWeaponStatusStartTime = 0;
+		private uint m_nJumpKitStatusStartTime = 0;
 		
+		private HudOverlay m_ParryScreenFlash;
 		private HudOverlay m_BloodScreenSplatter;
 		private ScreenShake m_Shake;
 	};

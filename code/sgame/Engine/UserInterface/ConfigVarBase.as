@@ -1,6 +1,6 @@
 namespace TheNomad::Engine::UserInterface {
-    interface ConfigVarBase {
-        void Draw();
-        void Save();
-    };
+	interface ConfigVarBase {
+		void Draw();
+		void Save();
+	};
 };

@@ -58,13 +58,13 @@
 		},
 		{
 			"Id": "player_air_idle",
-			"Tics": 0,
+			"Tics": 900,
 			"BaseNum": "ST_PLAYR_LEGS_IDLE_AIR",
 			"Entity": "player",
 			"NextState": "this",
 			"SpriteOffset": [ 0, 1 ],
 			"Animation": {
-				"TicRate": 1,
+				"TicRate": 900,
 				"FlipFlop": false,
 				"Frames": 1,
 				"Reverse": false
@@ -72,13 +72,13 @@
 		},
 		{
 			"Id": "player_air_move",
-			"Tics": 5,
+			"Tics": 500,
 			"BaseNum": "ST_PLAYR_LEGS_MOVE_AIR",
 			"Entity": "player",
 			"NextState": "player_air_idle",
 			"SpriteOffset": [ 2, 1 ],
 			"Animation": {
-				"TicRate": 1,
+				"TicRate": 100,
 				"FlipFlop": false,
 				"Frames": 1,
 				"Reverse": false

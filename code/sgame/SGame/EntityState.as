@@ -111,18 +111,18 @@ namespace TheNomad::SGame {
 		}
 
 		void Reset( uint& out ticker ) {
-			ticker = TheNomad::GameSystem::GameManager.GetGameTic();
+			ticker = ( TheNomad::GameSystem::GameManager.GetGameTic() * TheNomad::GameSystem::GameManager.GetDeltaTic() );
 		}
 		
 		const uvec2& GetSpriteOffset() const {
 			return m_SpriteOffset;
 		}
 		bool Done( uint ticker ) const {
-			return TheNomad::GameSystem::GameManager.GetGameTic() - ticker >= m_nTics;
+			return ( TheNomad::GameSystem::GameManager.GetGameTic() - ticker ) * TheNomad::GameSystem::GameManager.GetDeltaTic() >= m_nTics;
 		}
 		EntityState@ Run( uint& out ticker ) {
 			m_Animation.Run();
-			if ( TheNomad::GameSystem::GameManager.GetGameTic() - ticker > m_nTics ) {
+			if ( Done( ticker ) ) {
 				Reset( ticker );
 				return @m_NextState;
 			}

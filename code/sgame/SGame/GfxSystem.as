@@ -182,7 +182,7 @@ namespace TheNomad::SGame {
 			ent.m_EffectAnimation.Load( 20, false, 10, false );
 		}
 
-		void AddWaterWake( const vec3& in origin, uint lifeTime = 1200, float scale = 2.5f, float grow = 0.05f ) {
+		void AddWaterWake( const vec3& in origin, uint lifeTime = 200, float scale = 2.5f, float grow = 0.05f ) {
 			if ( !sgame_EnableParticles.GetBool() ) {
 				return;
 			}
@@ -227,7 +227,7 @@ namespace TheNomad::SGame {
 				scale.x = -scale.x;
 			}
 			
-			ent.Spawn( origin, vec3( 0.0f ), 1200, FS_INVALID_HANDLE, scale, false, 0.0f, @m_SmokeTrail );
+			ent.Spawn( origin, vec3( 0.0f ), 1100, FS_INVALID_HANDLE, scale, false, 0.0f, @m_SmokeTrail );
 			ent.m_EffectAnimation.Load( 20, false, 40, false );
 		}
 
