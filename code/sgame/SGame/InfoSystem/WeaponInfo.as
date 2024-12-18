@@ -65,17 +65,17 @@ namespace TheNomad::SGame::InfoSystem {
 			}
 			fireRate = uint( json[ "Stats.FireRate" ] );
 
-			if ( !json.get( "Stats.Width", width ) ) {
+			if ( !json.get( "Stats.Width", size.x ) ) {
 				ConsoleWarning( "invalid weapon info, missing variable 'Stats.Width' in \"" + name + "\"\n" );
 				return false;
 			}
-			width = float( json[ "Stats.Width" ] );
+			size.x = float( json[ "Stats.Width" ] );
 
-			if ( !json.get( "Stats.Height", height ) ) {
+			if ( !json.get( "Stats.Height", size.y ) ) {
 				ConsoleWarning( "invalid weapon info, missing variable 'Stats.Height' in \"" + name + "\"\n" );
 				return false;
 			}
-			height = float( json[ "Stats.Height" ] );
+			size.y = float( json[ "Stats.Height" ] );
 			
 			return true;
 		}

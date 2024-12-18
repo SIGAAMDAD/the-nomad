@@ -20,9 +20,6 @@ namespace TheNomad::SGame {
 		}
 		void Use() {
 			EmitSound( m_Info.useSfx, 2.5f, 0xff );
-			if ( m_Info.effect.Length() > 0 ) {
-				Engine::CmdExecuteCommand( m_Info.effect + " " + m_Owner.GetEntityNum() );
-			}
 		}
 
 		void Save( const TheNomad::GameSystem::SaveSystem::SaveSection& in section ) const {
@@ -46,8 +43,8 @@ namespace TheNomad::SGame {
 				return;
 			}
 
-			m_Link.m_Bounds.m_nWidth = m_Info.width;
-			m_Link.m_Bounds.m_nHeight = m_Info.height;
+			m_Link.m_Bounds.m_nWidth = m_Info.size.x;
+			m_Link.m_Bounds.m_nHeight = m_Info.size.y;
 			m_Link.m_Bounds.MakeBounds( m_Link.m_Origin );
 
 			@m_State = @StateManager.GetNullState();
@@ -62,7 +59,7 @@ namespace TheNomad::SGame {
 			refEntity.sheetNum = -1;
 			refEntity.spriteId = m_Info.iconShader;
 			refEntity.origin = m_Link.m_Origin;
-			refEntity.scale = 1.5f;
+			refEntity.scale = m_Info.size;
 			refEntity.Draw();
 		}
 		void Spawn( uint id, const vec3& in origin ) override {
@@ -74,8 +71,8 @@ namespace TheNomad::SGame {
 			m_hShader = m_Info.iconShader;
 			m_Link.m_nEntityId = id;
 			m_Link.m_Origin = origin;
-			m_Link.m_Bounds.m_nWidth = m_Info.width;
-			m_Link.m_Bounds.m_nHeight = m_Info.height;
+			m_Link.m_Bounds.m_nWidth = m_Info.size.x;
+			m_Link.m_Bounds.m_nHeight = m_Info.size.y;
 			m_Link.m_Bounds.MakeBounds( origin );
 
 			@m_State = @StateManager.GetNullState();

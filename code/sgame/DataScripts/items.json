@@ -4,80 +4,62 @@
 			"Type": "Powerup",
 			"Id": "powerup_a",
 			"Name": "Trigger Happy",
-			"Duration": 50,
-			"Icon": "icons/iconpw_pewpew",
-			"SpriteOffsetX": 0,
-			"SpriteOffsetY": 0,
-			"Width": 0.9,
-			"Height": 0.9,
-			"PickupSfx": "sfx/misc/getpw.wav"
+			"RenderData.Icon": "icons/iconpw_pewpew",
+			"Stats.Width": 0.9,
+			"Stats.Height": 0.9,
+			"Sounds.PickupSfx": "sfx/misc/getpw.wav"
 		},
 		{
 			"Type": "Powerup",
 			"Id": "powerup_b",
 			"Name": "Endless Anger",
-			"Duration": 5,
-			"PowerupData": {
-			},
-			"Icon": "icons/iconpw_angry",
-			"SpriteOffsetX": 0,
-			"SpriteOffsetY": 0,
-			"Width": 0.9,
-			"Height": 0.9,
-			"PickupSfx": "sfx/misc/getpw.wav"
+			"RenderData.Icon": "icons/iconpw_angry",
+			"Stats.Width": 0.9,
+			"Stats.Height": 0.9,
+			"Sounds.PickupSfx": "sfx/misc/getpw.wav"
 		},
 		{
 			"Type": "Consumable",
 			"Id": "item_stimpack",
 			"Name": "Stim Pack",
-			"Icon": "icons/icon_healthpack",
-			"SpriteOffsetX": 0,
-			"SpriteOffsetY": 0,
-			"Width": 0.9,
-			"Height": 0.9,
-			"PickupSfx": "sfx/misc/getitem.ogg",
-			"UseSfx": "sfx/players/StimPack_Activate1.wav",
-			"EquipSfx": "sfx/misc/getitem.ogg"
+			"RenderData.Icon": "icons/icon_healthpack",
+			"Stats.Width": 0.9,
+			"Stats.Height": 0.9,
+			"Sounds.PickupSfx": "sfx/misc/getitem.ogg",
+			"Sounds.UseSfx": "sfx/players/StimPack_Activate1.wav",
+			"Sounds.EquipSfx": "sfx/misc/getitem.ogg"
 		},
 		{
 			"Type": "Consumable",
 			"Id": "item",
 			"Name": "Bullets",
-			"SpriteOffsetX": 0,
-			"SpriteOffsetY": 0,
-			"Width": 0.9,
-			"Height": 0.9,
-			"PickupSfx": "sfx/misc/getitem.ogg"
+			"Stats.Width": 0.9,
+			"Stats.Height": 0.9,
+			"Sounds.PickupSfx": "sfx/misc/getitem.ogg"
 		},
 		{
 			"Type": "Consumable",
 			"Id": "item",
 			"Name": "Shells",
-			"SpriteOffsetX": 0,
-			"SpriteOffsetY": 0,
-			"Width": 0.9,
-			"Height": 0.9,
-			"PickupSfx": "sfx/misc/getitem.ogg"
+			"Stats.Width": 0.9,
+			"Stats.Height": 0.9,
+			"Sounds.PickupSfx": "sfx/misc/getitem.ogg"
 		},
 		{
 			"Type": "Consumable",
 			"Id": "item",
 			"Name": "Rockets",
-			"SpriteOffsetX": 0,
-			"SpriteOffsetY": 0,
-			"Width": 0.9,
-			"Height": 0.9,
-			"PickupSfx": "sfx/misc/getitem.ogg"
+			"Stats.Width": 0.9,
+			"Stats.Height": 0.9,
+			"Sounds.PickupSfx": "sfx/misc/getitem.ogg"
 		},
 		{
 			"Type": "Consumable",
 			"Id": "item",
 			"Name": "Grenades",
-			"SpriteOffsetX": 0,
-			"SpriteOffsetY": 0,
-			"Width": 0.9,
-			"Height": 0.9,
-			"PickupSfx": "sfx/misc/getitem.ogg"
+			"Stats.Width": 0.9,
+			"Stats.Height": 0.9,
+			"Sounds.PickupSfx": "sfx/misc/getitem.ogg"
 		}
 	]
 }

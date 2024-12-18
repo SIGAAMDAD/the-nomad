@@ -224,8 +224,8 @@ namespace TheNomad::SGame {
 				return;
 			}
 			
-			m_Link.m_Bounds.m_nWidth = m_Info.width;
-			m_Link.m_Bounds.m_nHeight = m_Info.height;
+			m_Link.m_Bounds.m_nWidth = m_Info.size.x;
+			m_Link.m_Bounds.m_nHeight = m_Info.size.y;
 			m_Link.m_Bounds.MakeBounds( m_Link.m_Origin );
 
 			if ( m_State.GetBaseNum() == StateNum::ST_WEAPON_USE && m_State.Done( m_nTicker ) ) {
@@ -239,6 +239,10 @@ namespace TheNomad::SGame {
 			}
 		}
 		void Draw() override {
+			if ( @m_Owner is null ) {
+				return;
+			}
+			
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 			
 			refEntity.sheetNum = -1;
@@ -254,8 +258,8 @@ namespace TheNomad::SGame {
 			}
 
 			m_Link.m_Origin = origin;
-			m_Link.m_Bounds.m_nWidth = m_Info.width;
-			m_Link.m_Bounds.m_nHeight = m_Info.height;
+			m_Link.m_Bounds.m_nWidth = m_Info.size.x;
+			m_Link.m_Bounds.m_nHeight = m_Info.size.y;
 			m_Link.m_Bounds.MakeBounds( origin );
 		}
 

@@ -15,7 +15,7 @@ namespace TheNomad::SGame::InfoSystem {
 				return false;
 			}
 			if ( !json.get( "Id", str ) ) {
-				ConsoleWarning( "invalid item info, missing variable 'Id'\n" );
+				ConsoleWarning( "invalid item info, missing variable 'Id' in \"" + name + "\"\n" );
 				return false;
 			} else {
 				if ( ( @entity = @InfoManager.GetItemType( type ) ) !is null ) {
@@ -24,53 +24,51 @@ namespace TheNomad::SGame::InfoSystem {
 					GameError( "invalid item info, Type \"" + str + "\" wasn't found" );
 				}
 			}
-			if ( !json.get( "PickupSfx", str ) ) {
-				ConsoleWarning( "invalid item info, missing variable 'PickupSfx'\n" );
+			if ( !json.get( "Sounds.PickupSfx", str ) ) {
+				ConsoleWarning( "invalid item info, missing variable 'Sounds.PickupSfx' in \"" + name + "\"\n" );
 				return false;
 			} else {
-				pickupSfx = TheNomad::Engine::ResourceCache.GetSfx( str );
+				pickupSfx = TheNomad::Engine::SoundSystem::RegisterSfx( string( json[ "Sounds.PickupSfx" ] ) );
 			}
-			if ( !json.get( "UseSfx", str ) ) {
-				ConsoleWarning( "invalid item info, missing variable 'UseSfx'\n" );
+			if ( !json.get( "Sounds.UseSfx", str ) ) {
+				ConsoleWarning( "invalid item info, missing variable 'Sounds.UseSfx' in \"" + name + "\"\n" );
 				return false;
 			} else {
-				useSfx = TheNomad::Engine::ResourceCache.GetSfx( str );
+				useSfx = TheNomad::Engine::SoundSystem::RegisterSfx( string( json[ "Sounds.UseSfx" ] ) );
 			}
-			if ( !json.get( "EquipSfx", str ) ) {
-				ConsoleWarning( "invalid item info, missing variable 'EquipSfx'\n" );
+			if ( !json.get( "Sounds.EquipSfx", str ) ) {
+				ConsoleWarning( "invalid item info, missing variable 'Sounds.EquipSfx' in \"" + name + "\"\n" );
 				return false;
 			} else {
-				equipSfx = TheNomad::Engine::ResourceCache.GetSfx( str );
+				equipSfx = TheNomad::Engine::SoundSystem::RegisterSfx( string( json[ "Sounds.EquipSfx" ] ) );
 			}
-			if ( !json.get( "Width", width ) ) {
-				ConsoleWarning( "invalid item info, missing variable 'Width'\n" );
+			if ( !json.get( "Stats.Width", size.x ) ) {
+				ConsoleWarning( "invalid item info, missing variable 'Stats.Width' in \"" + name + "\"\n" );
 				return false;
 			}
-			if ( !json.get( "Height", height ) ) {
-				ConsoleWarning( "invalid item info, missing variable 'Height'\n" );
-				return false;
-			}
-			if ( !json.get( "Icon", str ) ) {
-				ConsoleWarning( "invalid item info, missing variable 'Icon'\n" );
-				return false;
-			} else {
-				iconShader = TheNomad::Engine::ResourceCache.GetShader( str );
-			}
+			size.x = float( json[ "Stats.Width" ] );
 
-			ConsolePrint( "Loaded WeaponInfo for \"" + entity.GetName() + "\", " + entity.GetID() + "\n" );
+			if ( !json.get( "Stats.Height", size.y ) ) {
+				ConsoleWarning( "invalid item info, missing variable 'Stats.Height' in \"" + name + "\"\n" );
+				return false;
+			}
+			size.y = float( json[ "Stats.Height" ] );
+
+			if ( !json.get( "RenderData.Icon", str ) ) {
+				ConsoleWarning( "invalid item info, missing variable 'RenderData.Icon'\n" );
+				return false;
+			} else {
+				iconShader = TheNomad::Engine::Renderer::RegisterShader( string( json[ "RenderData.Icon" ] ) );
+			}
 
 			return true;
 		}
 
 		string name;
-		string description;
-		string effect;
 		int iconShader = FS_INVALID_HANDLE;
 		uint type = 0;
-		int cost = 0;
 		uint maxStackSize = 0;
-		float width = 0.0f;
-		float height = 0.0f;
+		vec2 size = vec2( 0.0f );
 
 		TheNomad::Engine::SoundSystem::SoundEffect pickupSfx;
 		TheNomad::Engine::SoundSystem::SoundEffect useSfx;

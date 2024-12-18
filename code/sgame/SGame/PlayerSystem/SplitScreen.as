@@ -21,12 +21,16 @@ namespace TheNomad::SGame {
 
 			m_nPlayerCount = int( TheNomad::Engine::CvarVariableInteger( "in_numInputDevices" ) );
 			vec3 pos = EntityManager.GetEntityForNum( 0 ).GetOrigin(); // the first entity will always be the player
-			
+
 			if ( m_nPlayerCount > 4 || m_nPlayerCount < 0 ) {
 				GameError( "SplitScreen::Init: in_numInputDevices is greater than 4 or less than 0" );
 			}
+
+			m_ScreenSize = uvec2( TheNomad::GameSystem::GameManager.GetGPUConfig().screenWidth,
+				TheNomad::GameSystem::GameManager.GetGPUConfig().screenHeight );
 			
 			@m_PlayerData[0] = cast<PlayrObject@>( @EntityManager.GetEntityForNum( 0 ) );
+			/*
 			if ( m_nPlayerCount > 1 ) {
 				ModifyOrigin( m_PlayerData[0].GetBounds().m_Maxs, pos, vec2( 0.5f, 0.0f ) );
 				@m_PlayerData[1] = cast<PlayrObject@>( @EntityManager.Spawn( TheNomad::GameSystem::EntityType::Playr, 0, pos,
@@ -42,6 +46,7 @@ namespace TheNomad::SGame {
 				@m_PlayerData[3] = cast<PlayrObject@>( @EntityManager.Spawn( TheNomad::GameSystem::EntityType::Playr, 0, pos,
 					vec2( sgame_PlayerWidth.GetFloat(), sgame_PlayerHeight.GetFloat() ) ) );
 			}
+			*/
 
 			for ( uint i = 0; i < m_nPlayerCount; i++ ) {
 				m_PlayerData[i].SetPlayerIndex( i );
@@ -54,70 +59,66 @@ namespace TheNomad::SGame {
 			
 			// these specific movement commands MUST NOT CHANGE as they are hardcoded into the engine
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_f ), "+north", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_Down_f ), "+north", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_f ), "-north", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveSouth_f ), "+south", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveSouth_f ), "-south", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveWest_f ), "+west", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveWest_f ), "-west", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveEast_f ), "+east", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveEast_f ), "-east", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Jump_f ), "+jump", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Jump_f ), "-jump", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_Up_f ), "-north", true );
 			
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Crouch_f ), "+crouch", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveSouth_Down_f ), "+south", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Crouch_f ), "-crouch", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveSouth_Up_f ), "-south", true );
+			
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Slide_f ), "+slide", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveWest_Down_f ), "+west", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Slide_f ), "-slide", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveWest_Up_f ), "-west", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Dash_f ), "+dash", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveEast_Down_f ), "+east", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Dash_f ), "-dash", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveEast_Up_f ), "-east", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Melee_f ), "+melee", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Jump_Down_f ), "+jump", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Melee_f ), "-melee", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Jump_Up_f ), "-jump", true );
+			
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.UseWeapon_f ), "+useweap", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Crouch_Down_f ), "+crouch", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.UseWeapon_f ), "-useweap", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Crouch_Up_f ), "-crouch", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.AltUseWeapon_f ), "+altuseweap", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Slide_Down_f ), "+slide", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.AltUseWeapon_f ), "-altuseweap", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Slide_Up_f ), "-slide", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Quickshot_f ), "+quickshot", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Dash_Down_f ), "+dash", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Quickshot_f ), "-quickshot", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Dash_Up_f ), "-dash", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.SwitchWeaponWielding_f ), "+switchwielding", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Melee_Down_f ), "+melee", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.DummyFn_Up_f ), "-switchwielding", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Melee_Up_f ), "-melee", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.SwitchWeaponMode_f ), "+switchmode", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.UseWeapon_Down_f ), "+useweap", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.DummyFn_Up_f ), "-switchmode", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.UseWeapon_Down_f ), "-useweap", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.SwitchHand_f ), "+switchhand", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.AltUseWeapon_Down_f ), "+altuseweap", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.DummyFn_Up_f ), "-switchhand", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.AltUseWeapon_Up_f ), "-altuseweap", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.NextWeapon_f ), "+weapnext", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Quickshot_Down_f ), "+quickshot", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.PrevWeapon_f ), "+weapprev", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Quickshot_Up_f ), "-quickshot", true );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.SwitchWeaponWielding_f ), "switchwielding", true );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.SwitchWeaponMode_f ), "switchmode", true );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.SwitchHand_f ), "switchhand", true );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.NextWeapon_f ), "weapnext", true );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.PrevWeapon_f ), "weapprev", true );
 		}
 		void Shutdown() {
 		}
@@ -135,73 +136,136 @@ namespace TheNomad::SGame {
 			return @m_PlayerData[ 0 ];
 		}
 
-
-		void MoveNorth_f() {
-			PlayrObject@ obj = @GetPlayerIndex();
-			if ( TheNomad::Engine::CmdArgv( 0 )[0] == '+' ) {
-				obj.key_MoveNorth.Down();
-			} else {
-				obj.key_MoveNorth.Up();
-			}
+		void MoveNorth_Down_f() {
+			m_PlayerData[0].key_MoveNorth.Down();
 		}
-		void MoveSouth_f() {
-			PlayrObject@ obj = @GetPlayerIndex();
-			if ( TheNomad::Engine::CmdArgv( 0 )[0] == '+' ) {
-				obj.key_MoveSouth.Down();
-			} else {
-				obj.key_MoveSouth.Up();
-			}
+		void MoveNorth_Up_f() {
+			m_PlayerData[0].key_MoveNorth.Up();
 		}
-		void MoveEast_f() {
-			PlayrObject@ obj = @GetPlayerIndex();
-			if ( TheNomad::Engine::CmdArgv( 0 )[0] == '+' ) {
-				obj.key_MoveEast.Down();
-			} else {
-				obj.key_MoveEast.Up();
-			}
+		void MoveSouth_Down_f() {
+			m_PlayerData[0].key_MoveSouth.Down();
 		}
-		void MoveWest_f() {
-			PlayrObject@ obj = @GetPlayerIndex();
-			if ( TheNomad::Engine::CmdArgv( 0 )[0] == '+' ) {
-				obj.key_MoveWest.Down();
-			} else {
-				obj.key_MoveWest.Up();
-			}
+		void MoveSouth_Up_f() {
+			m_PlayerData[0].key_MoveSouth.Up();
 		}
-		void Jump_f() {
-			PlayrObject@ obj = @GetPlayerIndex();
-			if ( TheNomad::Engine::CmdArgv( 0 )[0] == '+' ) {
-				obj.key_Jump.Down();
-			} else {
-				obj.key_Jump.Up();
-			}
+		void MoveEast_Down_f() {
+			m_PlayerData[0].key_MoveEast.Down();
+		}
+		void MoveEast_Up_f() {
+			m_PlayerData[0].key_MoveEast.Up();
+		}
+		void MoveWest_Down_f() {
+			m_PlayerData[0].key_MoveWest.Down();
+		}
+		void MoveWest_Up_f() {
+			m_PlayerData[0].key_MoveWest.Up();
+		}
+		void Jump_Down_f() {
+			m_PlayerData[0].key_Jump.Down();
+		}
+		void Jump_Up_f() {
+			m_PlayerData[0].key_Jump.Up();
 		}
 
-		void UseWeapon_f() {
-			GetPlayerIndex().SetUsingWeapon( ( TheNomad::Engine::CmdArgv( 0 )[0] == '+' ) );
+		void UseWeapon_Down_f() {
+			m_PlayerData[0].SetUsingWeapon( true );
 		}
-		void AltUseWeapon_f() {
-			GetPlayerIndex().SetUsingWeaponAlt( ( TheNomad::Engine::CmdArgv( 0 )[0] == '+' ) );
+		void UseWeapon_Up_f() {
+			m_PlayerData[0].SetUsingWeapon( false );
 		}
-		void Quickshot_f() {
-			PlayrObject@ obj = GetPlayerIndex();
-			
-			if ( TheNomad::Engine::CmdArgv( 0 )[0] == '+' ) {
-				obj.SetState( @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE ) );
-				obj.beginQuickshotSfx.Play();
-			} else {
-				obj.SetState( @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE ) );
-				obj.endQuickshotSfx.Play();
+		void AltUseWeapon_Down_f() {
+			m_PlayerData[0].SetUsingWeaponAlt( true );
+		}
+		void AltUseWeapon_Up_f() {
+			m_PlayerData[0].SetUsingWeaponAlt( false );
+		}
+		void Quickshot_Down_f() {
+		}
+		void Quickshot_Up_f() {
+		}
+		void Dash_Down_f() {
+			PlayrObject@ obj = @m_PlayerData[0];
+
+			// wait at little bit before launching another dash
+			if ( obj.GetTimeSinceLastDash() < 1000 ) {
+				return;
+			}
+
+			obj.EmitSound( obj.dashSfx, 10.0f, 0xff );
+			//Util::HapticRumble( obj.GetPlayerIndex(), 0.40f, 700 );
+			obj.ResetDash();
+			obj.SetDashing( true );
+				
+			vec3 origin = obj.GetOrigin();
+			origin.y -= 1.5f;
+			switch ( obj.GetFacing() ) {
+			case FACING_LEFT:
+				origin.x += 1.5f;
+				break;
+			case FACING_RIGHT:
+				origin.x -= 1.5f;
+				break;
+			};
+
+			GfxManager.AddDustTrail( origin, obj.GetFacing() );
+		}
+		void Dash_Up_f() {
+			m_PlayerData[0].SetDashing( false );
+		}
+
+		void Slide_Down_f() {
+			PlayrObject@ obj = @m_PlayerData[0];
+
+			if ( obj.IsCrouching() || obj.GetTimeSinceLastSlide() < SLIDE_DURATION ) {
+				return;
+			}
+
+			// we need a little bit of momentum to engage in a slide
+			if ( ( obj.key_MoveNorth.active || obj.key_MoveSouth.active || obj.key_MoveEast.active || obj.key_MoveWest.active ) ||
+				obj.IsDashing() )
+			{
+				if ( ( Util::PRandom() & 1 ) == 1 ) {
+					obj.EmitSound( obj.slideSfx0, 10.0f, 0xff );
+				} else {
+					obj.EmitSound( obj.slideSfx1, 10.0f, 0xff );
+				}
+				
+				//Util::HapticRumble( obj.GetPlayerIndex(), 0.40f, 500 );
+				obj.ResetSlide();
+				obj.SetSliding( true );
+
+				vec3 origin = obj.GetOrigin();
+				origin.y -= 1.5f;
+				switch ( obj.GetFacing() ) {
+				case FACING_LEFT:
+					origin.x += 1.5f;
+					break;
+				case FACING_RIGHT:
+					origin.x -= 1.5f;
+					break;
+				};
+
+				GfxManager.AddDustTrail( origin, obj.GetFacing() );
 			}
 		}
-		
-		void DummyFn_Up_f() {
-			// we use a dummy function for key ups when we don't want
-			// a key to just infinitely repeat
+		void Slide_Up_f() {
+			m_PlayerData[0].SetSliding( false );
+		}
+		void Melee_Down_f() {
+			PlayrObject@ obj = @m_PlayerData[0];
+	
+			if ( @obj.GetLeftArmState() is @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_MELEE ) ) {
+				return;
+			}
+			obj.EmitSound( obj.meleeSfx, 10.0f, 0xff );
+			obj.SetParryBoxWidth( 0.0f );
+			obj.SetArmsState( StateNum::ST_PLAYR_ARMS_MELEE );
+		}
+		void Melee_Up_f() {
 		}
 		
 		void SwitchWeaponWielding_f() {
-			PlayrObject@ obj = GetPlayerIndex();
+			PlayrObject@ obj = @m_PlayerData[0];
 
 			switch ( obj.GetHandsUsed() ) {
 			case 0:
@@ -216,7 +280,7 @@ namespace TheNomad::SGame {
 			};
 		}
 		void SwitchWeaponMode_f() {
-			PlayrObject@ obj = GetPlayerIndex();
+			PlayrObject@ obj = @m_PlayerData[0];
 
 			obj.EmitSound( obj.weaponChangeModeSfx, 10.0f, 0xff );
 			switch ( obj.GetHandsUsed() ) {
@@ -238,7 +302,7 @@ namespace TheNomad::SGame {
 			};
 		}
 		void SwitchHand_f() {
-			PlayrObject@ obj = GetPlayerIndex();
+			PlayrObject@ obj = @m_PlayerData[0];
 			
 			obj.EmitSound( obj.weaponChangeHandSfx, 10.0f, 0xff );
 			switch ( obj.GetHandsUsed() ) {
@@ -253,101 +317,27 @@ namespace TheNomad::SGame {
 				break; // can't switch if we're using both hands for one weapon
 			};
 		}
-		void Dash_f() {
-			PlayrObject@ obj = GetPlayerIndex();
+		void Crouch_Down_f() {
+			PlayrObject@ obj = @m_PlayerData[0];
 
-			if ( TheNomad::Engine::CmdArgv( 0 )[0] == '+' ) {
-				// wait at little bit before launching another dash
-				if ( obj.GetTimeSinceLastDash() < 1000 ) {
-					return;
-				}
-
-				obj.EmitSound( obj.dashSfx, 10.0f, 0xff );
-				Util::HapticRumble( obj.GetPlayerIndex(), 0.40f, 700 );
-				obj.ResetDash();
-				obj.SetDashing( true );
-				
-				vec3 origin = obj.GetOrigin();
-				origin.y -= 1.5f;
-				switch ( obj.GetFacing() ) {
-				case FACING_LEFT:
-					origin.x += 1.5f;
-					break;
-				case FACING_RIGHT:
-					origin.x -= 1.5f;
-					break;
-				};
-
-				GfxManager.AddDustTrail( origin, obj.GetFacing() );
-				GfxManager.FlameBall( origin );
-			}
-			else {
-				obj.SetDashing( false );
-			}
-		}
-		void Slide_f() {
-			PlayrObject@ obj = GetPlayerIndex();
-
-			if ( obj.IsCrouching() || obj.GetTimeSinceLastSlide() < SLIDE_DURATION ) {
-				return;
-			} else if ( TheNomad::Engine::CmdArgv( 0 )[0] != '+' ) {
+			if ( obj.IsCrouching() ) {
 				return;
 			}
 
-			// we need a little bit of momentum to engage in a slide
-			if ( ( obj.key_MoveNorth.active || obj.key_MoveSouth.active || obj.key_MoveEast.active || obj.key_MoveWest.active ) ||
-				obj.IsDashing() )
-			{
-				if ( ( Util::PRandom() & 1 ) == 1 ) {
-					obj.EmitSound( obj.slideSfx0, 10.0f, 0xff );
-				} else {
-					obj.EmitSound( obj.slideSfx1, 10.0f, 0xff );
-				}
-				
-				Util::HapticRumble( obj.GetPlayerIndex(), 0.40f, 500 );
-				obj.ResetSlide();
-				obj.SetSliding( true );
-
-				vec3 origin = obj.GetOrigin();
-				origin.y -= 1.5f;
-				switch ( obj.GetFacing() ) {
-				case FACING_LEFT:
-					origin.x += 1.5f;
-					break;
-				case FACING_RIGHT:
-					origin.x -= 1.5f;
-					break;
-				};
-
-				GfxManager.AddDustTrail( origin, obj.GetFacing() );
-			}
+			obj.EmitSound( obj.crouchDownSfx, 10.0f, 0xff );
+			obj.SetCrouching( true );
 		}
-		void Crouch_f() {
-			PlayrObject@ obj = GetPlayerIndex();
+		void Crouch_Up_f() {
+			PlayrObject@ obj = @m_PlayerData[0];
 
 			if ( !obj.IsCrouching() ) {
-				obj.EmitSound( obj.crouchDownSfx, 10.0f, 0xff );
-				obj.SetCrouching( true );
+				return;
 			}
-			else {
-				obj.EmitSound( obj.crouchUpSfx, 10.0f, 0xff );
-				obj.SetCrouching( false );
-				obj.SetState( @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE ) );
-			}
+			obj.EmitSound( obj.crouchUpSfx, 10.0f, 0xff );
+			obj.SetCrouching( false );
+			obj.SetState( @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE ) );
 		}
-		
-		void Melee_f() {
-			PlayrObject@ obj = GetPlayerIndex();
-		
-			if ( TheNomad::Engine::CmdArgv( 0 )[0] == '+' ) {
-				if ( @obj.GetLeftArmState() is @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_MELEE ) ) {
-					return;
-				}
-				obj.EmitSound( obj.meleeSfx, 10.0f, 0xff );
-				obj.SetParryBoxWidth( 0.0f );
-				obj.SetArmsState( StateNum::ST_PLAYR_ARMS_MELEE );
-			}
-		}
+
 		void NextWeapon_f() {
 			PlayrObject@ obj = GetPlayerIndex();
 			
@@ -374,7 +364,7 @@ namespace TheNomad::SGame {
 				0xff
 			);
 		}
-		
+
 		private void RenderScene( const uvec2& in scenePos, const uvec2& in sceneSize, const vec3& in origin ) {
 			const uint flags = RSF_ORTHO_TYPE_WORLD;
 
@@ -393,16 +383,14 @@ namespace TheNomad::SGame {
 //			Game_CameraWorldPos.y = ( LevelManager.GetMapData().GetHeight() - ( origin.y + log( Game_CameraZoom ) ) ) * 10.0f;
 			Game_PlayerPos = origin;
 
-			ImGui::Begin( "##Debug" );
-			ImGui::Text( "CameraZoom: " + Game_CameraZoom );
-			ImGui::End();
-
 			TheNomad::Engine::Renderer::ClearScene();
 			for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 				TheNomad::GameSystem::GameSystems[i].OnRenderScene();
 			}
 			TheNomad::Engine::Renderer::RenderScene( scenePos.x, scenePos.y, sceneSize.x, sceneSize.y, flags, 
 				TheNomad::GameSystem::GameManager.GetGameTic() );
+			
+			m_bCommandReset = true;
 		}
 
 		uint GetPlayerIndex( PlayrObject@ obj ) {
@@ -414,12 +402,14 @@ namespace TheNomad::SGame {
 		}
 		
 		void Draw() {
+			RenderScene( m_ScreenPosition, m_ScreenSize, m_PlayerData[0].GetOrigin() );
+			/*
 			uvec2 pos, size;
 			
 			pos = uvec2( 0, 0 );
 			size = uvec2( TheNomad::GameSystem::GameManager.GetGPUConfig().screenWidth,
 				TheNomad::GameSystem::GameManager.GetGPUConfig().screenHeight );
-			
+
 			switch ( m_nPlayerCount ) {
 			case 0:
 			case 1:
@@ -463,6 +453,7 @@ namespace TheNomad::SGame {
 			default:
 				GameError( "SplitScreen::Init: in_numInputDevices is greater than 4 or less than 0" );
 			};
+			*/
 		}
 
 		uint GetPlayerCount() const {
@@ -474,7 +465,13 @@ namespace TheNomad::SGame {
 		const PlayrObject@ GetPlayerAt( uint nIndex ) const {
 			return @m_PlayerData[ nIndex ];
 		}
+
+		private uvec2 m_ScreenPosition = uvec2( 0, 0 );
+		private uvec2 m_ScreenSize = uvec2( 0, 0 );
 		
+		private bool m_bCommandReset = true;
+		private string m_CommandBuffer;
+
 		private PlayrObject@[] m_PlayerData( 4 );
 		private uint m_nPlayerCount = 0;
 		private uint m_nLastJumpTime = 0;
