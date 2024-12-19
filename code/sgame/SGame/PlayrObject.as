@@ -695,12 +695,6 @@ namespace TheNomad::SGame {
 			m_Link.m_Bounds.m_nWidth = sgame_PlayerWidth.GetFloat();
 			m_Link.m_Bounds.m_nHeight = sgame_PlayerHeight.GetFloat();
 			m_Link.m_Bounds.MakeBounds( m_Link.m_Origin );
-
-			InfoSystem::MobInfo@ info = @InfoSystem::InfoManager.GetMobInfo( "mob_merc_shotty" );
-			if ( @info is null ) {
-//				GameError( "C'MON!" );
-			}
-
 			
 			// run a movement frame
 			Pmove.RunTic();
@@ -848,6 +842,8 @@ namespace TheNomad::SGame {
 
 				TheNomad::Engine::Renderer::AddDLightToScene( origin, 6.15f, vec3( 1.0f, 0.0f, 0.0f ) );
 				GfxManager.SmokeCloud( m_Link.m_Origin );
+
+				m_HudData.ShowDashMarks();
 			}
 
 			DrawLegs();

@@ -145,7 +145,7 @@ void ApplyLighting() {
 }
 
 void main() {
-	if ( distance( v_Position.xy, u_ViewOrigin.xy ) >= u_ViewZoom ) {
+	if ( distance( v_WorldPos.xy, u_ViewOrigin.xy ) >= 16.0 ) {
 		discard;
 	}
 

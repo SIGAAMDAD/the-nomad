@@ -100,14 +100,14 @@ namespace TheNomad::SGame::InfoSystem {
 				ConsoleWarning( "invalid mob info, missing variable 'Name'\n" );
 				return false;
 			}
-			if ( !json.get( "Type", str ) ) {
-				ConsoleWarning( "invalid mob info, missing variable 'Type'\n" );
+			if ( !json.get( "Id", str ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'Id' in \"" + name + "\"\n" );
 				return false;
 			}
 			if ( ( @entity = @InfoManager.GetMobType( str ) ) !is null ) {
 				this.type = entity.GetID();
 			} else {
-				ConsoleWarning( "invalid mob info, Type \"" + str + "\" wasn't found\n" );
+				ConsoleWarning( "invalid mob info, Id \"" + str + "\" wasn't found\n" );
 				return false;
 			}
 

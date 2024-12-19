@@ -64,8 +64,8 @@ namespace TheNomad::SGame {
 			}
 
 			if ( m_EntityData.IsDashing() ) {
-				accel.y += 0.50f * forward;
-				accel.x += 0.50f * side;
+				accel.y += 2.50f * forward;
+				accel.x += 2.50f * side;
 
 				if ( m_EntityData.GetTimeSinceLastDash() > DASH_DURATION ) {
 					m_EntityData.SetDashing( false );

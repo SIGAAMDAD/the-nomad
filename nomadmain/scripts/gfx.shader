@@ -66,6 +66,18 @@ console
 //
 // hud elements
 //
+gfx/hud/dash_screen
+{
+	nopicmip
+	nomipmaps
+	{
+		texFilter nearest
+		map gfx/hud/dash.png
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+	}
+}
+
 gfx/hud/blood_screen
 {
 	nopicmip

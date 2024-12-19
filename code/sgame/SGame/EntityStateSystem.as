@@ -50,8 +50,11 @@ namespace TheNomad::SGame {
 		NumStates
 	};
 
-	class EntityStateSystem : TheNomad::GameSystem::GameObject {
+	class EntityStateSystem {
 		EntityStateSystem() {
+		}
+		~EntityStateSystem() {
+			ClearStateCache();
 		}
 		
 		private array<json@>@ LoadJSonFile( const string& in modName, const string& in fileName, const string& in name ) {
@@ -126,16 +129,8 @@ namespace TheNomad::SGame {
 			m_BaseStateCache.Add( "ST_WEAPON_USE", StateNum::ST_WEAPON_USE );
 			m_BaseStateCache.Add( "ST_WEAPON_EQUIP", StateNum::ST_WEAPON_EQUIP );
 		}
-		
-		const string& GetName() const {
-			return "EntityStateSystem";
-		}
-		void OnInit() {
-		}
-		void OnShutdown() {
-		}
 
-		void OnLevelStart() {
+		void InitStateCache() {
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.ListStateCache_f ), "sgame.state_cache", false
 			);
@@ -166,22 +161,10 @@ namespace TheNomad::SGame {
 				TheNomad::Engine::CmdExecuteCommand( "sgame.state_cache\n" );
 			}
 		}
-		void OnLevelEnd() {
+		void ClearStateCache() {
 			m_StateCache.Clear();
 			m_States.Clear();
 			m_BaseStateCache.Clear();
-		}
-		void OnSave() const {
-		}
-		void OnLoad() {
-		}
-		void OnRenderScene() {
-		}
-		void OnRunTic() {
-		}
-		void OnPlayerDeath( int ) {
-		}
-		void OnCheckpointPassed( uint ) {
 		}
 
 		private void ListStateCache_f() {

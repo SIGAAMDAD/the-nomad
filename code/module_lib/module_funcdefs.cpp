@@ -1545,15 +1545,15 @@ static void AllocateExternalScriptObject( asIScriptGeneric *pGeneric )
 	const string_t& name = *(const string_t *)pGeneric->GetArgObject( 1 );
 
 	memset( szFactoryName, 0, sizeof( szFactoryName ) );
-	snprintf( szFactoryName, sizeof( szFactoryName ) - 1, "%s::%s@ %s()", nameSpace.c_str(), name.c_str(), name.c_str() );
+	snprintf( szFactoryName, sizeof( szFactoryName ) - 1, "moblib::Script::%s@ %s()", /*nameSpace.c_str(),*/ name.c_str(), name.c_str() );
 
-	pTypeInfo = g_pModuleLib->GetScriptModule()->GetTypeInfoByDecl( va( "%s::%s", nameSpace.c_str(), name.c_str() ) );
+	pTypeInfo = g_pModuleLib->GetScriptModule()->GetTypeInfoByDecl( va( "moblib::Script::%s", /*nameSpace.c_str(),*/ name.c_str() ) );
 	if ( !pTypeInfo ) {
-		Con_Printf( COLOR_RED "ERROR: invalid script class type \"%s::%s\"!\n", nameSpace.c_str(), name.c_str() );
+		Con_Printf( COLOR_RED "ERROR: invalid script class type \"moblib::Script::%s\"!\n", /*nameSpace.c_str(),*/ name.c_str() );
 		return;
 	}
 
-	pFactory = g_pModuleLib->GetScriptModule()->GetFunctionByDecl( szFactoryName );
+	pFactory = pTypeInfo->GetFactoryByDecl( szFactoryName );
 	if ( !pFactory ) {
 		Con_Printf( COLOR_RED "ERROR: script class \"%s::%s\" has no default factory!\n", nameSpace.c_str(), name.c_str() );
 		return;

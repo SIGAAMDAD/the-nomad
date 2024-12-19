@@ -38,7 +38,9 @@ namespace TheNomad::Engine {
 		void OnPlayerDeath( int ) {
 		}
 		void OnRunTic() override {
-			ProfileBlock block( "CvarSystem::OnRunTic" );
+			if ( TheNomad::SGame::sgame_DebugMode.GetBool() ) {
+				ProfileBlock block( "CvarSystem::OnRunTic" );
+			}
 
 			// update all cvars
 			for ( uint i = 0; i < m_CvarCache.Count(); i++ ) {

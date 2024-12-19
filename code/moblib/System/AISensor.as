@@ -21,6 +21,12 @@ namespace moblib::System {
 			}
 			return false;
 		}
+		bool CheckSight() {
+			return m_Eyes.DoCheck( @m_EntityData );
+		}
+		bool CheckSound() {
+			return m_Ears.DoCheck( @m_EntityData );
+		}
 		void Stimulate( SensorType nType ) {
 		}
 		

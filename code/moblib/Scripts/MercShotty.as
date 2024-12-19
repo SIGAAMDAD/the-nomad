@@ -1,6 +1,6 @@
 #include "moblib/MobScript.as"
 
-namespace moblib {
+namespace moblib::Script {
 	const uint MERC_AIM_TIME = 2500;
 	
 	class MercShotty : MobScript {
@@ -8,7 +8,7 @@ namespace moblib {
 		}
 		
 		private float CalcMissChance() const {
-			const TheNomad::SGame::EntityObject@ target = @m_Entity.GetTarget();
+			const TheNomad::SGame::EntityObject@ target = @m_EntityData.GetTarget();
 			const float missChance = TheNomad::Util::Distance( target.GetOrigin(), m_EntityData.GetOrigin() );
 			
 			return missChance * m_nAimScale;
@@ -46,63 +46,68 @@ namespace moblib {
 			if ( !m_Sensor.CheckSight() ) {
 				// they don't see their target, let them take a breather
 				m_EntityData.EmitSound(
-					TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/mobs/barks/relief_" + ( TheNomad::Util::PRandom() & 2 ) ),
+					TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/mobs/barks/relief_" + ( TheNomad::Util::PRandom() & 2 ) ),
 					1.0f,
 					0xff
 				);
 			}
 			else {
 				m_EntityData.EmitSound(
-					TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/mobs/barks/get_away_" + ( TheNomad::Util::PRandom() & 2 ) ) );
+					TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/mobs/barks/get_away_" + ( TheNomad::Util::PRandom() & 2 ) ),
+					1.0f,
+					0xff
+				);
 			}
 		}
 		void IdleThink() override {
-			if ( @m_
-			
 			if ( m_Sensor.CheckSight() ) {
 				m_EntityData.SetState( @m_FightState );
 			}
 			else if ( m_Sensor.CheckSound() ) {
+				/*
 				if ( m_Sensor.GetSoundLevel() >= m_EntityData.GetInfo().soundTolerance ) {
 					m_EntityData.SetState( @m_FightState );
 				} else {
 					m_EntityData.SetState( @m_SearchState );
 				}
+				*/
 			}
 		}
 		void DeadThink() override {
 		}
 		void FightThink() override {
+			/*
 			if ( TheNomad::Util::Distance( m_EntityData.GetOrigin(), m_EntityData.GetTarget().GetOrigin() )
-				<= m_EntityData.GetInfo().meleeRange )
+				<= cast<TheNomad::SGame::InfoSystem::MobInfo@>( @m_EntityData.GetInfo() ).meleeRange )
 			{
 				m_EntityData.SetState( @m_FightMeleeState );
 			}
 			else if ( TheNomad::Util::Distance( m_EntityData.GetOrigin(), m_EntityData.GetTarget().GetOrigin() )
-				<= m_EntityData.GetInfo().missileRange )
+				<= cast<TheNomad::SGame::InfoSystem::MobInfo@>( @m_EntityData.GetInfo() ).missileRange )
 			{
 				m_EntityData.SetState( @m_FightMissileState );
 			}
+			*/
 		}
 		void FightMissile() override {
 			if ( TheNomad::GameSystem::GameManager.GetGameTic() - m_EntityData.GetTicker() < MERC_AIM_TIME ) {
-				m_EntityData.SetParryable( true );
+				m_EntityData.SetParry( true );
 				return;
 			}
 			
-			m_EntityData.SetParryable( false );
-			m_EntityData.EmitSound( TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/mobs/shotgunner_attack" ), 1.0f, 0xff );
+			m_EntityData.SetParry( false );
+			m_EntityData.EmitSound( TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/mobs/shotgunner_attack" ), 1.0f, 0xff );
 			
-			const vec3& origin = m_EntityData.GetOrigin();
-			const vec3& target = m_EntityData.GetTarget().GetOrigin();
+			const vec3 origin = m_EntityData.GetOrigin();
+			const vec3 target = m_EntityData.GetTarget().GetOrigin();
 			
 			TheNomad::GameSystem::RayCast ray;
 			
 			ray.m_Start = origin;
-			ray.m_nLength = m_EntityData.GetInfo().missileRange;
-			if ( sgame_Difficulty.GetInt() > uint( TheNomad::GameSystem::Difficulty::Medium ) ) {
+//			ray.m_nLength = cast<TheNomad::SGame::InfoSystem::MobInfo@>( @m_EntityData.GetInfo() ).missileRange;
+			if ( TheNomad::SGame::sgame_Difficulty.GetInt() > uint( TheNomad::GameSystem::GameDifficulty::Normal ) ) {
 				for ( uint i = 0; i < 12; i++ ) {
-					ray.m_nAngle = ;
+					ray.m_nAngle = 0.0f;
 					ray.Cast();
 				}
 			} else {
@@ -131,22 +136,22 @@ namespace moblib {
 			//
 			// also give the player a lot of leeway
 			switch ( TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" ) ) {
-			case TheNomad::GameSystem::Difficulty::Easy:
+			case TheNomad::GameSystem::GameDifficulty::Easy:
 				m_nAggressionScale = 1;
 				m_nAimScale = 0.25f;
 				break;
-			case TheNomad::GameSystem::Difficulty::Medium:
+			case TheNomad::GameSystem::GameDifficulty::Normal:
 				m_nAggressionScale = 2;
 				m_nAimScale = 0.60f;
 				break;
-			case TheNomad::GameSystem::Difficulty::Hard:
+			case TheNomad::GameSystem::GameDifficulty::Hard:
 				m_nAggressionScale = 3;
 				m_nAimScale = 1.0f;
 				break;
-			case TheNomad::GameSystem::Difficulty::VeryHard:
+			case TheNomad::GameSystem::GameDifficulty::VeryHard:
 				m_nAimScale = 1.25f;
 				break;
-			case TheNomad::GameSystem::Difficulty::Insane:
+			case TheNomad::GameSystem::GameDifficulty::Insane:
 				// the elite
 				m_nAimScale = 1.75f;
 				break;

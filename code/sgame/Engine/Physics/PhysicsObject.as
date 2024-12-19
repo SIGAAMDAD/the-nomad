@@ -71,20 +71,23 @@ namespace TheNomad::Engine::Physics {
 		}
 		
 		void ApplyFriction() {
+			const float friction = TheNomad::SGame::sgame_Friction.GetFloat() * TheNomad::GameSystem::GameManager.GetDeltaTic();
 			if ( m_Velocity[0] < 0.0f ) {
-				m_Velocity[0] = TheNomad::Util::Clamp( m_Velocity[0] + TheNomad::SGame::sgame_Friction.GetFloat(), m_Velocity[0], 100.0f );
+				m_Velocity[0] = TheNomad::Util::Clamp( m_Velocity[0] + friction, m_Velocity[0], 100.0f );
 			} else if ( m_Velocity[0] > 0.0f ) {
-				m_Velocity[0] = TheNomad::Util::Clamp( m_Velocity[0] - TheNomad::SGame::sgame_Friction.GetFloat(), -100.0f, m_Velocity[0] );
+				m_Velocity[0] = TheNomad::Util::Clamp( m_Velocity[0] - friction, -100.0f, m_Velocity[0] );
 			}
 			if ( m_Velocity[1] < 0.0f ) {
-				m_Velocity[1] = TheNomad::Util::Clamp( m_Velocity[1] + TheNomad::SGame::sgame_Friction.GetFloat(), m_Velocity[1], 100.0f );
+				m_Velocity[1] = TheNomad::Util::Clamp( m_Velocity[1] + friction, m_Velocity[1], 100.0f );
 			} else if ( m_Velocity[1] > 0.0f ) {
-				m_Velocity[1] = TheNomad::Util::Clamp( m_Velocity[1] - TheNomad::SGame::sgame_Friction.GetFloat(), -100.0f, m_Velocity[1] );
+				m_Velocity[1] = TheNomad::Util::Clamp( m_Velocity[1] - friction, -100.0f, m_Velocity[1] );
 			}
 			if ( m_Velocity[2] < 0.0f && m_EntityData.GetOrigin().z <= 0.0f ) {
 				m_Velocity[2] = 0.0f;
-			} else if ( m_Velocity[2] > 0.0f && m_EntityData.GetOrigin().z >= MAX_JUMP_HEIGHT ) {
-				m_Velocity[2] = TheNomad::Util::Clamp( m_Velocity[2] - TheNomad::SGame::sgame_Gravity.GetFloat(), -0.2f, m_Velocity[2] );
+			} else if ( m_EntityData.GetOrigin().z >= MAX_JUMP_HEIGHT ) {
+				m_Velocity[2] = TheNomad::Util::Clamp(
+					m_Velocity[2] - ( TheNomad::SGame::sgame_Gravity.GetFloat() * TheNomad::GameSystem::GameManager.GetDeltaTic() ),
+					-TheNomad::SGame::sgame_Gravity.GetFloat(), m_Velocity[2] );
 			}
 		}
 		

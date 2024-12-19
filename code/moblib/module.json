@@ -11,7 +11,8 @@
         "gamedata/modules/nomadmain/"
 	],
 	"SubModules": [
-		"moblib.as"
+		"moblib.as",
+		"Scripts/MercShotty.as"
 	],
 	"Version": {
 		"GameVersionMajor": 1,

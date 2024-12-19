@@ -18,7 +18,7 @@
 		},
 		{
 			"Name": "Mercenary Shotgunner",
-			"Id": "mob_merc_shotty",
+			"Id": "mob_merc_shotgunner",
 			"ScriptName": "MercShotty",
 			"Stats.Health": 50,
 			"Stats.ArmorType": "Light",

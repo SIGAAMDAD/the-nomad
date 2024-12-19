@@ -34,10 +34,10 @@ namespace TheNomad::Engine::Renderer {
 		const uint offset = state.GetSpriteOffset().y * sheet.GetSpriteCountX() + state.GetSpriteOffset().x;
 		return offset + state.GetAnimation().GetFrame();
 	}
-	vec2 GetFacing( int facing ) {
+	vec2 GetFacing( int facing, const vec2& in size = vec2( 2.0f ) ) {
 		switch ( facing ) {
-		case TheNomad::SGame::FACING_LEFT:	return vec2( -2.0f, 2.0f );
-		case TheNomad::SGame::FACING_RIGHT:	return vec2(  2.0f, 2.0f );
+		case TheNomad::SGame::FACING_LEFT:	return vec2( -size.x, size.y );
+		case TheNomad::SGame::FACING_RIGHT:	return vec2(  size.x, size.y );
 		default:
 			break;
 		};
