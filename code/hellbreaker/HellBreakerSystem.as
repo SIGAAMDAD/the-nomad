@@ -26,7 +26,7 @@ namespace hellbreaker {
 		void OnCheckpointPassed( uint ) {
 		}
 		void OnPlayerDeath( int ) {
-			m_nMessageStartTime = TheNomad::GameSystem::GameManager.GetGameTic();
+			m_nMessageStartTime = TheNomad::GameSystem::GameTic;
 			m_nCurrentMessage = 0;
 
 			ConsolePrint( "=================\n" );
@@ -55,7 +55,7 @@ namespace hellbreaker {
 		}
 
 		private void NextMessage( uint nDuration ) {
-			if ( TheNomad::GameSystem::GameManager.GetGameTic() - m_nMessageStartTime >= nDuration ) {
+			if ( TheNomad::GameSystem::GameTic - m_nMessageStartTime >= nDuration ) {
 				m_nCurrentMessage++;
 			}
 		}

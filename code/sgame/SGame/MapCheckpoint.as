@@ -21,7 +21,7 @@ namespace TheNomad::SGame {
 			}
 			m_Spawns.Clear();
 			m_bPassed = true;
-			m_nTime = TheNomad::GameSystem::GameManager.GetGameTic() - nLevelTime;
+			m_nTime = TheNomad::GameSystem::GameTic - nLevelTime;
 			@m_Entity = null;
 		}
 
@@ -34,6 +34,10 @@ namespace TheNomad::SGame {
 
 		void Draw() {
 			const vec3 origin = vec3( m_Origin.x, m_Origin.y, m_Origin.z );
+
+			if ( Util::Distance( EntityManager.GetActivePlayer().GetOrigin(), origin ) > 16.0f ) {
+				return;
+			}
 
 			if ( @m_Entity !is null ) {
 				m_Entity.SetOrigin( origin );

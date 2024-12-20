@@ -60,7 +60,7 @@ namespace TheNomad::SGame {
 			if ( uptime > 0 ) {
 				msec += uptime - downtime;
 			} else {
-				msec += TheNomad::GameSystem::GameManager.GetGameTic() / 2;
+				msec += TheNomad::GameSystem::GameTic * 0.5f;
 			}
 			active = false;
 		}

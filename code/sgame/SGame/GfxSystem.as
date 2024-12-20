@@ -2,6 +2,10 @@
 #include "Engine/Renderer/Particle.as"
 
 namespace TheNomad::SGame {
+	const uint GFX_LOW_AMOUNT = 128;
+	const uint GFX_MEDIUM_AMOUNT = 256;
+	const uint GFX_HIGH_AMOUNT = 512;
+
 	class GfxSystem : TheNomad::GameSystem::GameObject {
 		GfxSystem() {
 		}
@@ -10,6 +14,10 @@ namespace TheNomad::SGame {
 		}
 		void OnShutdown() {
 		}
+		void OnPlayerDeath( int ) {
+		}
+		void OnCheckpointPassed( uint ) {
+		}
 
 		void OnLoad() {
 		}
@@ -17,10 +25,6 @@ namespace TheNomad::SGame {
 		}
 		void OnRunTic() {
 			InitLocalEntities();
-		}
-		void OnPlayerDeath( int ) {
-		}
-		void OnCheckpointPassed( uint ) {
 		}
 		void OnLevelStart() {
 			InitLocalEntities();
@@ -37,7 +41,9 @@ namespace TheNomad::SGame {
 				return;
 			}
 
-			TheNomad::Engine::ProfileBlock block( "GfxSystem::OnRenderScene" );
+			if ( sgame_DebugMode.GetBool() ) {
+				TheNomad::Engine::ProfileBlock block( "GfxSystem::OnRenderScene" );
+			}
 
 			TheNomad::Engine::Renderer::LocalEntity@ next = null;
 
@@ -49,7 +55,7 @@ namespace TheNomad::SGame {
 				// still have it
 				@next = @ent.m_Prev;
 
-				if ( TheNomad::GameSystem::GameManager.GetGameTic() - ent.m_nStartTime >= ent.m_nLifeTime ) {
+				if ( TheNomad::GameSystem::GameTic - ent.m_nStartTime >= ent.m_nLifeTime ) {
 					FreeLocalEntity( @ent );
 					continue;
 				}
@@ -74,26 +80,27 @@ namespace TheNomad::SGame {
 		}
 
 		private void InitLocalEntities() {
-			uint maxGfx = 256;
+			uint maxGfx = GFX_MEDIUM_AMOUNT;
 
-			switch ( sgame_GfxDetail.GetInt() ) {
+			switch ( TheNomad::Engine::CvarVariableInteger( "sgame_GfxDetail" ) ) {
 			case 0:
-				maxGfx = 128;
+				maxGfx = GFX_LOW_AMOUNT;
 				break;
 			case 1:
-				maxGfx = 256;
+				maxGfx = GFX_MEDIUM_AMOUNT;
 				break;
 			case 2:
-				maxGfx = 512;
+				maxGfx = GFX_HIGH_AMOUNT;
 				break;
 			default:
-				ConsoleWarning( "invalid sgame_GfxDetail '" + sgame_GfxDetail.GetInt() + "', setting to 1\n" );
+				ConsoleWarning( "invalid sgame_GfxDetail '" + TheNomad::Engine::CvarVariableInteger( "sgame_GfxDetail" ) + "', setting to 1\n" );
 				TheNomad::Engine::CvarSet( "sgame_GfxDetail", "1" );
-				maxGfx = 256;
+				maxGfx = GFX_MEDIUM_AMOUNT;
 				break;
 			};
 			// only resize if we're changing qualities
 			if ( maxGfx != m_LocalEnts.Count() ) {
+				ConsolePrint( "Initializing LocalEntity list...\n" );
 				m_LocalEnts.Resize( maxGfx );
 			} else {
 				return;
@@ -125,7 +132,7 @@ namespace TheNomad::SGame {
 			@m_ActiveLocalEnts.m_Next.m_Prev = @ent;
 			@m_ActiveLocalEnts.m_Next = @ent;
 
-			ent.m_nStartTime = TheNomad::GameSystem::GameManager.GetGameTic();
+			ent.m_nStartTime = TheNomad::GameSystem::GameTic;
 
 			return @ent;
 		}
@@ -147,7 +154,7 @@ namespace TheNomad::SGame {
 		}
 
 		void AddBloodSplatter( const vec3& in origin, int facing ) {
-			if ( !sgame_EnableParticles.GetBool() ) {
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 ) {
 				return;
 			}
 
@@ -159,12 +166,12 @@ namespace TheNomad::SGame {
 				scale.x = -scale.x;
 			}
 
-			ent.Spawn( origin, vec3( 0.0f ), 180, FS_INVALID_HANDLE, scale, true, 0.0f, @m_BloodSpurt, uvec2( 0, row ) );
+			ent.Spawn( origin, vec3( 0.0f ), 180, FS_INVALID_HANDLE, scale, true, @m_BloodSpurt, uvec2( 0, row ) );
 			ent.m_EffectAnimation.Load( 30, false, 14, false );
 		}
 
 		void SmokeCloud( const vec3& in origin ) {
-			if ( !sgame_EnableParticles.GetBool() ) {
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 ) {
 				return;
 			}
 
@@ -172,7 +179,7 @@ namespace TheNomad::SGame {
 		}
 
 		void FlameBall( const vec3& in origin ) {
-			if ( !sgame_EnableParticles.GetBool() && false ) {
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 && false ) {
 				return;
 			}
 
@@ -182,22 +189,22 @@ namespace TheNomad::SGame {
 			ent.m_EffectAnimation.Load( 20, false, 10, false );
 		}
 
-		void AddWaterWake( const vec3& in origin, uint lifeTime = 200, float scale = 2.5f, float grow = 0.05f ) {
-			if ( !sgame_EnableParticles.GetBool() ) {
+		void AddWaterWake( const vec3& in origin, uint lifeTime = 200, float scale = 2.5f ) {
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 ) {
 				return;
 			}
 
-			AllocLocalEntity().Spawn( origin, vec3( 0.0f ), lifeTime, m_hWaterWakeShader, scale, false, grow );
+			AllocLocalEntity().Spawn( origin, vec3( 0.0f ), lifeTime, m_hWaterWakeShader, scale, false );
 		}
 
 		void AddBulletHole( const vec3& in origin ) {
-			if ( !sgame_EnableParticles.GetBool() ) {
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 ) {
 				return;
 			}
 		}
 
 		void AddDustPuff( const vec3& in origin, int facing ) {
-			if ( !sgame_EnableParticles.GetBool() ) {
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 ) {
 				return;
 			}
 
@@ -209,14 +216,14 @@ namespace TheNomad::SGame {
 			}
 			
 			ent.Spawn( origin, vec3( 0.0f ), 400, FS_INVALID_HANDLE,
-				scale, false, 0.0f,
+				scale, false,
 				@m_SmokePuff );
 			
 			ent.m_EffectAnimation.Load( 90, false, 9, false );
 		}
 
 		void AddDustTrail( const vec3& in origin, int facing ) {
-			if ( !sgame_EnableParticles.GetBool() ) {
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 ) {
 				return;
 			}
 
@@ -227,7 +234,7 @@ namespace TheNomad::SGame {
 				scale.x = -scale.x;
 			}
 			
-			ent.Spawn( origin, vec3( 0.0f ), 1100, FS_INVALID_HANDLE, scale, false, 0.0f, @m_SmokeTrail );
+			ent.Spawn( origin, vec3( 0.0f ), 800, FS_INVALID_HANDLE, scale, false, @m_SmokeTrail );
 			ent.m_EffectAnimation.Load( 20, false, 40, false );
 		}
 

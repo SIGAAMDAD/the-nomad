@@ -32,7 +32,7 @@ namespace TheNomad::SGame {
 		}
 		
 		bool Draw() {
-			m_nLifeTime += TheNomad::GameSystem::GameManager.GetGameTic();
+			m_nLifeTime += TheNomad::GameSystem::GameTic;
 			if ( m_nLifeTime >= m_nEndTime ) {
 				Shutdown();
 				return false;

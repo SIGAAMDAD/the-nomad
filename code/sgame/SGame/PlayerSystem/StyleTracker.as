@@ -63,7 +63,7 @@ namespace TheNomad::SGame {
 			
 			m_StyleStack.Add( type );
 			@m_LastUsedWeapon = @EntityManager.GetActivePlayer().GetCurrentWeapon();
-			m_nTimeSinceLastPush = TheNomad::GameSystem::GameManager.GetGameTic();
+			m_nTimeSinceLastPush = TheNomad::GameSystem::GameTic;
 			
 			if ( m_nMultiplier >= 1.0f ) {
 				m_nTotalStyle += uint( ceil( float( m_StyleTitles[ uint( type ) ].m_nStyleScore ) * m_nMultiplier ) );
@@ -72,9 +72,9 @@ namespace TheNomad::SGame {
 			}
 		}
 		void PushKill( CauseOfDeath cause ) {
-			if ( TheNomad::GameSystem::GameManager.GetGameTic() - m_nTimeSinceLastKill < 5000 ) {
+			if ( TheNomad::GameSystem::GameTic - m_nTimeSinceLastKill < 5000 ) {
 				// 5 seconds between kills to count as a multikill
-				m_nTimeSinceLastKill = TheNomad::GameSystem::GameManager.GetGameTic();
+				m_nTimeSinceLastKill = TheNomad::GameSystem::GameTic;
 				m_nKillCounter++;
 			} else {
 				m_nKillCounter = 1;
@@ -120,7 +120,7 @@ namespace TheNomad::SGame {
 			ImGui::SetWindowSize( vec2( 128 * scale, 256 * scale ) );
 			ImGui::SetWindowPos( vec2( 728 * scale, 16 * scale ) );
 			
-			if ( TheNomad::GameSystem::GameManager.GetGameTic() - m_nTimeSinceLastPush > 8000 ) {
+			if ( TheNomad::GameSystem::GameTic - m_nTimeSinceLastPush > 8000 ) {
 				PopAction();
 			}
 			

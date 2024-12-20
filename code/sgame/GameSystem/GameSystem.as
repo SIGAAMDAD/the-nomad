@@ -28,9 +28,6 @@ namespace TheNomad::GameSystem {
 		}
 
 		void OnInit() {
-			m_nGameTic = 0;
-			m_nDeltaTic = 0.0f;
-
 			// cache redundant calculations
 			GetGPUGameConfig( m_GPUConfig );
 
@@ -43,6 +40,9 @@ namespace TheNomad::GameSystem {
 				// no wide screen
 				m_nUIBias = 0.0f;
 			}
+
+			m_nHalfScreenX = m_GPUConfig.screenWidth * 0.5f;
+			m_nHalfScreenY = m_GPUConfig.screenHeight * 0.5f;
 		}
 		void OnShutdown() {
 		}
@@ -72,11 +72,11 @@ namespace TheNomad::GameSystem {
 			return ivec2( m_GPUConfig.screenWidth, m_GPUConfig.screenHeight );
 		}
 
-		uint GetGameTic() const {
-			return m_nGameTic;
+		int GetHalfScreenWidth() const {
+			return m_nHalfScreenX;
 		}
-		float GetDeltaTic() const {
-			return m_nDeltaTic;
+		int GetHalfScreenHeight() const {
+			return m_nHalfScreenY;
 		}
 		float GetUIScale() const {
 			return m_nUIScale;
@@ -85,11 +85,11 @@ namespace TheNomad::GameSystem {
 			return m_nUIBias;
 		}
 		void SetMsec( uint msec ) {
-			m_nDeltaTic = ( msec - m_nGameTic ) * TIMESTEP;
-			m_nGameTic = msec;
+			DeltaTic = ( msec - GameTic ) * TIMESTEP;
+			GameTic = msec;
 
 			// if we want framerate dependant physics simply replace the time-step code above with the stuff under this comment
-//			m_nDeltaTic = msec;
+//			DeltaTic = msec;
 		}
 
 		TheNomad::Engine::Renderer::GPUConfig& GetGPUConfig() {
@@ -143,16 +143,12 @@ namespace TheNomad::GameSystem {
 		private int m_JoystickYaw = 0;
 		private int m_JoystichPitch = 0;
 
-		// timing
-		private float m_nDeltaTic = 0.0f;
-		private uint m_nGameTime = 0;
-		private uint m_nGameTic = 0;
-		private uint m_nNextTic = TheNomad::Engine::System::Milliseconds();
-		private float m_nDeltaAccum = 0.0f;
-
 		// rendering
 		private float m_nUIBias = 0;
 		private float m_nUIScale = 0;
+
+		private int m_nHalfScreenX = 0;
+		private int m_nHalfScreenY = 0;
 	};
 
     array<GameObject@> GameSystems;
@@ -181,4 +177,6 @@ namespace TheNomad::GameSystem {
 	};
 
 	CampaignManager@ GameManager = null;
+	uint GameTic = 0;
+	float DeltaTic = 0.0f;
 };

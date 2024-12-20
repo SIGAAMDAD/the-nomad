@@ -90,7 +90,7 @@ namespace moblib::Script {
 			*/
 		}
 		void FightMissile() override {
-			if ( TheNomad::GameSystem::GameManager.GetGameTic() - m_EntityData.GetTicker() < MERC_AIM_TIME ) {
+			if ( TheNomad::GameSystem::GameTic - m_EntityData.GetTicker() < MERC_AIM_TIME ) {
 				m_EntityData.SetParry( true );
 				return;
 			}

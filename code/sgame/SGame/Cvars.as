@@ -13,7 +13,7 @@ namespace TheNomad::SGame {
 	ConVar sgame_FastMobs;
 	ConVar sgame_EnableHaptic;
 	ConVar sgame_HapticStrength;
-	ConVar sgame_SpeedPhysics;
+	ConVar sgame_ScreenShakeStrength;
 
 	//
 	// sound system
@@ -36,9 +36,7 @@ namespace TheNomad::SGame {
 	//
 	// cvars that are used by the engine
 	//
-	ConVar sgame_LevelIndex;
-	ConVar sgame_MapName;
-	ConVar sgame_MaxFps;
+	ConVar sgame_InputMode;
 	ConVar sgame_SaveSlot;
 
 	//
@@ -54,11 +52,12 @@ namespace TheNomad::SGame {
 	ConVar sgame_AirFriction;
 	ConVar sgame_MaxSpeed;
 	ConVar sgame_Friction;
-	ConVar sgame_PlayerHeight;
-	ConVar sgame_PlayerWidth;
 	ConVar sgame_Gravity;
 	ConVar sgame_SwimSpeed;
 	ConVar sgame_AirSpeed;
+	ConVar sgame_PlayerHeight;
+	ConVar sgame_PlayerWidth;
+	ConVar sgame_PlayerWeight;
 
 	// settings
 	ConVar sgame_ToggleHUD;

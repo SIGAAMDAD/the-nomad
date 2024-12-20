@@ -78,6 +78,9 @@ namespace TheNomad::SGame {
 
 			for ( @ent = @m_ActiveEnts.m_Next; @ent !is @m_ActiveEnts; @ent = @ent.m_Next ) {
 				// draw
+				if ( Util::Distance( m_ActivePlayer.GetOrigin(), ent.GetOrigin() ) >= 16.0f ) {
+					continue;
+				}
 				ent.Draw();
 			}
 		}
@@ -90,7 +93,7 @@ namespace TheNomad::SGame {
 			
 			for ( @ent = @m_ActiveEnts.m_Next; @ent !is @m_ActiveEnts; @ent = @ent.m_Next ) {
 				if ( ent.CheckFlags( EntityFlags::Dead ) ) {
-					if ( ( sgame_Difficulty.GetInt() > TheNomad::GameSystem::GameDifficulty::Hard
+					if ( ( TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" ) > TheNomad::GameSystem::GameDifficulty::Hard
 						&& ent.GetType() == TheNomad::GameSystem::EntityType::Mob )
 						|| ent.GetType() == TheNomad::GameSystem::EntityType::Playr )
 					{
@@ -105,9 +108,9 @@ namespace TheNomad::SGame {
 
 				if ( @ent.GetState() is null ) {
 					GameError( "EntitySystem::OnRunTic(): entity " + ent.GetName() + " state is null" );
-					continue;
 				}
 
+				/*
 				switch ( ent.GetType() ) {
 				case TheNomad::GameSystem::EntityType::Playr:
 				case TheNomad::GameSystem::EntityType::Mob:
@@ -119,6 +122,7 @@ namespace TheNomad::SGame {
 				default:
 					GameError( "EntityManager::OnRunTic: invalid entity type " + formatUInt( uint( ent.GetType() ) ) );
 				};
+				*/
 
 				ent.Think();
 
@@ -271,7 +275,7 @@ namespace TheNomad::SGame {
 			@m_FreeEnts = @ent;
 		}
 		private EntityObject@ AllocEntity( TheNomad::GameSystem::EntityType type, uint id, const vec3& in origin, const vec2& in size ) {
-			EntityObject@ ent;
+			EntityObject@ ent = null;
 
 			switch ( type ) {
 			case TheNomad::GameSystem::EntityType::Playr:

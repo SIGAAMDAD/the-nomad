@@ -40,27 +40,29 @@ namespace TheNomad::SGame {
 		}
 		
 		void Run() {
-			if ( TheNomad::GameSystem::GameManager.GetGameTic() - m_nOldTic > m_nTicRate ) {
-				m_nOldTic = TheNomad::GameSystem::GameManager.GetGameTic();
+			if ( TheNomad::GameSystem::GameTic - m_nOldTic < m_nTicRate ) {
+				return;
+			}
 
-				if ( m_bReverse ) {
-					m_nCurrentFrame--;
-					if ( m_nCurrentFrame < 0 ) {
-						m_nCurrentFrame = m_nNumFrames - 1;
+			m_nOldTic = TheNomad::GameSystem::GameTic;
+
+			if ( m_bReverse ) {
+				m_nCurrentFrame--;
+				if ( m_nCurrentFrame < 0 ) {
+					m_nCurrentFrame = m_nNumFrames - 1;
+				}
+			} else {
+				m_nCurrentFrame += m_nTicker;
+				if ( m_bOscillate ) {
+					if ( m_nCurrentFrame >= m_nNumFrames ) {
+						m_nTicker = -1;
+					} else if ( m_nCurrentFrame < 0 ) {
+						m_nCurrentFrame = 0;
+						m_nTicker = 1;
 					}
 				} else {
-					m_nCurrentFrame += m_nTicker;
-					if ( m_bOscillate ) {
-						if ( m_nCurrentFrame >= m_nNumFrames ) {
-							m_nTicker = -1;
-						} else if ( m_nCurrentFrame < 0 ) {
-							m_nCurrentFrame = 0;
-							m_nTicker = 1;
-						}
-					} else {
-						if ( m_nCurrentFrame >= m_nNumFrames ) {
-							m_nCurrentFrame = 0;
-						}
+					if ( m_nCurrentFrame >= m_nNumFrames ) {
+						m_nCurrentFrame = 0;
 					}
 				}
 			}

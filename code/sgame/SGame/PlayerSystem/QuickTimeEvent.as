@@ -44,7 +44,7 @@ namespace TheNomad::SGame {
 		}
 
 		void Activate( PlayrObject@ ent ) {
-			m_nStartTime = TheNomad::GameSystem::GameManager.GetGameTic();
+			m_nStartTime = TheNomad::GameSystem::GameTic;
 			m_nClickCounter = 0;
 			m_bActive = true;
 		}

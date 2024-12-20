@@ -53,8 +53,7 @@ namespace TheNomad {
 			if ( m_nCvarHandle == FS_INVALID_HANDLE ) {
 				TheNomad::Engine::CvarRegister( m_Name, m_Value, m_Flags, intValue, m_FloatValue, m_nModificationCount, m_nCvarHandle );
 			}
-			TheNomad::Engine::CvarUpdate( m_Value, intValue, m_FloatValue, m_nModificationCount, m_nCvarHandle );
-			m_IntValue = intValue;
+			TheNomad::Engine::CvarUpdate( m_Value, m_IntValue, m_FloatValue, m_nModificationCount, m_nCvarHandle );
 		}
 		
 		private string m_Name = "";

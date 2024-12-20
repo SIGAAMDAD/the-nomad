@@ -194,7 +194,7 @@ namespace TheNomad::SGame {
 				return;
 			}
 			array<MapCheckpoint>@ checkpoints = @m_MapData.GetCheckpoints();
-			for ( uint i = 0; i < checkpoints.Count(); i++ ) {
+			for ( uint i = 0; i < checkpoints.Count(); ++i ) {
 				checkpoints[i].Draw();
 			}
 		}
@@ -442,7 +442,7 @@ namespace TheNomad::SGame {
 			m_RankData = LevelStats();
 			m_CurrentCheckpoint = 0;
 			m_nIndex = 0;
-			m_nLevelTimer = TheNomad::GameSystem::GameManager.GetGameTic();
+			m_nLevelTimer = TheNomad::GameSystem::GameTic;
 
 			if ( !TheNomad::GameSystem::GameManager.IsLoadActive() ) {
 				LoadMap();
@@ -595,7 +595,7 @@ namespace TheNomad::SGame {
 				return;
 			}
 			m_bPaused = true;
-			m_nPauseTimer = TheNomad::GameSystem::GameManager.GetGameTic();
+			m_nPauseTimer = TheNomad::GameSystem::GameTic;
 		}
 		void Resume() {
 			if ( !m_bPaused ) {
@@ -607,7 +607,7 @@ namespace TheNomad::SGame {
 			* ===========] pause [================================
 			* level time | delta | level time = level time + delta
 			*/
-			const uint delta = TheNomad::GameSystem::GameManager.GetGameTic() - m_nPauseTimer;
+			const uint delta = TheNomad::GameSystem::GameTic - m_nPauseTimer;
 			m_nLevelTimer += delta;
 		}
 

@@ -169,10 +169,10 @@ namespace TheNomad::SGame {
 			}
 		}
 		uint GetTimeSinceLastSlide() const {
-			return TheNomad::GameSystem::GameManager.GetGameTic() - m_nTimeSinceSlide;
+			return TheNomad::GameSystem::GameTic - m_nTimeSinceSlide;
 		}
 		void ResetSlide() {
-			m_nTimeSinceSlide = TheNomad::GameSystem::GameManager.GetGameTic();
+			m_nTimeSinceSlide = TheNomad::GameSystem::GameTic;
 		}
 		
 		bool IsCrouching() const {
@@ -201,13 +201,13 @@ namespace TheNomad::SGame {
 			}
 		}
 		uint GetTimeSinceLastDash() const {
-			return TheNomad::GameSystem::GameManager.GetGameTic() - m_nTimeSinceDash;
+			return TheNomad::GameSystem::GameTic - m_nTimeSinceDash;
 		}
 		void SetTimeSinceLastDash( uint time ) {
 			m_nTimeSinceDash = time;
 		}
 		void ResetDash() {
-			m_nTimeSinceDash = TheNomad::GameSystem::GameManager.GetGameTic();
+			m_nTimeSinceDash = TheNomad::GameSystem::GameTic;
 		}
 
 		void SetUsingWeapon( bool bUseWeapon ) {
@@ -643,6 +643,7 @@ namespace TheNomad::SGame {
 
 			m_PhysicsObject.Init( cast<EntityObject>( @this ) );
 			m_PhysicsObject.SetAngle( Util::Dir2Angle( TheNomad::GameSystem::DirType::East ) );
+			m_PhysicsObject.SetWeight( sgame_PlayerWeight.GetFloat() );
 
 			// fetch the current skin's data
 			m_Skin = TheNomad::Engine::CvarVariableString( "skin" );
@@ -650,21 +651,24 @@ namespace TheNomad::SGame {
 				armsSheetSize, armsSpriteSize, legsSheetSize, legsSpriteSize );
 
 			@m_SpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "skins/" +
-				m_Skin + "/torso", torsoSheetSize.x, torsoSheetSize.y, torsoSpriteSize.x, torsoSpriteSize.y );
+				m_Skin, 1024, 1024, 32, 32 );
 			if ( @m_SpriteSheet is null ) {
 				GameError( "PlayrObject::Spawn: failed to load torso sprite sheet" );
 			}
+
 			@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE );
 			if ( @m_State is null ) {
 				GameError( "PlayrObject::Spawn: failed to load idle torso state" );
 			}
 			m_Facing = FACING_RIGHT;
 
+			/*
 			@m_LegSpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "skins/" +
 				m_Skin + "/legs", legsSheetSize.x, legsSheetSize.y, legsSpriteSize.x, legsSpriteSize.y );
 			if ( @m_LegSpriteSheet is null ) {
 				GameError( "PlayrObject::Spawn: failed to load leg sprite sheet" );
 			}
+			*/
 
 			m_LeftArm.Link( @this, FACING_LEFT, armsSheetSize, armsSpriteSize );
 			m_RightArm.Link( @this, FACING_RIGHT, armsSheetSize, armsSpriteSize );
@@ -679,6 +683,14 @@ namespace TheNomad::SGame {
 			m_Name = "player";
 
 			m_HudData.Init( @this );
+
+			@m_LegIdleState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_GROUND );
+			@m_LegSlideState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_SLIDE );
+			@m_LegMoveState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_MOVE_GROUND );
+			@m_LegAirIdleState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_AIR );
+			@m_LegAirMoveState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_GROUND );
+
+			@m_IdleState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE );
 		}
 
 		void Think() override {
@@ -730,66 +742,27 @@ namespace TheNomad::SGame {
 		private void DrawLegs() {
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 
-			//
-			// draw the legs
-			//
-			/*
-			if ( m_PhysicsObject.GetVelocity() == Vec3Origin ) {
-				// not moving at all, just draw idle legs
-				if ( !Pmove.groundPlane ) {
-					// static air legs
-					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_AIR );
-				} else {
-					// idle ground legs
-					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_GROUND );
-				}
-			}
-			else if ( !Pmove.groundPlane ) {
-				// we're in the air, modify the legs to show a bit of momentum control
-				if ( m_PhysicsObject.GetVelocity().z < 0.0f ) {
-					// falling down
-					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_FALL_AIR );
-				}
-				else if ( m_Debuff == AttackEffect::Stunned ) {
-					// player is literally flying through the air
-					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_STUN_AIR );
-				}
-				else {
-					// ascending
-					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_AIR );
-				}
-			}
-			else {
-				// moving on the ground
-				if ( m_Debuff == AttackEffect::Stunned ) {
-					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_STUN_GROUND );
-				} else {
-					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_MOVE_GROUND );
-				}
-			}
-			*/
-
 			const vec3 velocity = m_PhysicsObject.GetVelocity();
-			if ( velocity.z > 0.0f ) {
+			if ( m_Link.m_Origin.z > 0.0f ) {
 				// airborne, special sprites
 				if ( velocity.x == 0.0f && velocity.y == 0.0f ) {
-					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_AIR );
+					@m_LegState = @m_LegIdleState;
 				} else {
-					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_MOVE_AIR );
+					@m_LegState = @m_LegMoveState;
 				}
 			} else {
 				if ( velocity.x == 0.0f && velocity.y == 0.0f ) {
-					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_GROUND );
+					@m_LegState = @m_LegIdleState;
 				} else if ( IsSliding() ) {
-					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_SLIDE );
+					@m_LegState = @m_LegSlideState;
 				} else {
-					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_MOVE_GROUND );
+					@m_LegState = @m_LegMoveState;
 				}
 			}
 
 			refEntity.origin = m_Link.m_Origin;
-			refEntity.sheetNum = m_LegSpriteSheet.GetShader();
-			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( @m_LegSpriteSheet, @m_LegState );
+			refEntity.sheetNum = m_SpriteSheet.GetShader();
+			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( @m_SpriteSheet, @m_LegState );
 			refEntity.scale = TheNomad::Engine::Renderer::GetFacing( m_LegsFacing );
 			refEntity.Draw();
 		}
@@ -817,7 +790,7 @@ namespace TheNomad::SGame {
 
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 
-			@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE );
+			@m_State = @m_IdleState;
 
 			DrawBackArm();
 
@@ -885,10 +858,6 @@ namespace TheNomad::SGame {
 		private uint m_nControllerIndex = 0;
 		
 		private LockShot m_QuickShot;
-
-		int m_hDustTrailShader = FS_INVALID_HANDLE;
-		int m_hDashTrailShader = FS_INVALID_HANDLE;
-		int m_hBloodFxShader = FS_INVALID_HANDLE;
 		
 		//
 		// sound effects
@@ -931,7 +900,13 @@ namespace TheNomad::SGame {
 		private ArmData m_LeftArm;
 		private ArmData m_RightArm;
 
-		private SpriteSheet@ m_WetSpriteSheet = null;
+		private EntityState@ m_IdleState = null;
+
+		private EntityState@ m_LegSlideState = null;
+		private EntityState@ m_LegIdleState = null;
+		private EntityState@ m_LegMoveState = null;
+		private EntityState@ m_LegAirIdleState = null;
+		private EntityState@ m_LegAirMoveState = null;
 
 		private SpriteSheet@ m_LegSpriteSheet = null;
 		private EntityState@ m_LegState = null;

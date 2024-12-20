@@ -5,7 +5,7 @@ namespace TheNomad::SGame {
 		
 		void Start( uint64 nDuration, float nStrengthX, float nStrengthY ) {
 			m_nDuration = nDuration;
-			m_nStart = TheNomad::GameSystem::GameManager.GetGameTic();
+			m_nStart = TheNomad::GameSystem::GameTic;
 			m_Strength = vec2( nStrengthX, nStrengthY );
 			m_nAngle = atan2( nStrengthX, nStrengthY );
 			m_bDone = false;
@@ -15,7 +15,7 @@ namespace TheNomad::SGame {
 		}
 		
 		void OnRunTic() {
-			if ( TheNomad::GameSystem::GameManager.GetGameTic() - m_nStart >= m_nDuration ) {
+			if ( TheNomad::GameSystem::GameTic - m_nStart >= m_nDuration ) {
 				if ( !m_bDone ) {
 					Game_CameraPos = m_CameraPos;
 				}

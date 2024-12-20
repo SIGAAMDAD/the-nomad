@@ -175,7 +175,7 @@ namespace TheNomad::SGame {
 			
 			ImGui::End();
 			
-			if ( TheNomad::GameSystem::GameManager.GetGameTic() - m_nStatusBarStartTime >= 5000 ) {
+			if ( TheNomad::GameSystem::GameTic - m_nStatusBarStartTime >= 5000 ) {
 				m_nStatusBarStartTime = 0;
 			}
 		}
@@ -195,7 +195,7 @@ namespace TheNomad::SGame {
 			}
 			if ( m_nDashStartTime != 0 )	{
 				m_DashScreen.Draw();
-				if ( TheNomad::GameSystem::GameManager.GetGameTic() - m_nDashStartTime <= 1500 ) {
+				if ( TheNomad::GameSystem::GameTic - m_nDashStartTime <= 1500 ) {
 					m_nDashStartTime = 0;
 				}
 			}
@@ -209,14 +209,14 @@ namespace TheNomad::SGame {
 				m_nStatusBarStartTime = 0;
 				return;
 			}
-			m_nStatusBarStartTime = TheNomad::GameSystem::GameManager.GetGameTic();
+			m_nStatusBarStartTime = TheNomad::GameSystem::GameTic;
 		}
 		void ShowDashMarks() {
 			if ( !sgame_ToggleHUD.GetBool() ) {
 				m_nDashStartTime = 0;
 				return;
 			}
-			m_nDashStartTime = TheNomad::GameSystem::GameManager.GetGameTic();
+			m_nDashStartTime = TheNomad::GameSystem::GameTic;
 		}
 		
 		private PlayrObject@ m_Parent = null;

@@ -2,16 +2,13 @@
 #include "Engine/CvarTableEntry.as"
 
 namespace TheNomad::Engine {
-    class CvarSystem : TheNomad::GameSystem::GameObject {
+    class CvarSystem {
 		CvarSystem() {
-		}
-
-		void OnInit() {
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
 				TheNomad::Engine::CommandSystem::CommandFunc( @ListVars_f ), "sgame.list_cvars", false
 			);
 		}
-		void OnShutdown() {
+		~CvarSystem() {
 			for ( uint i = 0; i < m_CvarCache.Count(); i++ ) {
 				@m_CvarCache[i].m_Handle = null;
 			}
@@ -23,27 +20,13 @@ namespace TheNomad::Engine {
 			var.m_Handle.Register( name, value, flags, bTrackChanges );
 			m_CvarCache.Add( var );
 		}
-
-		bool OnConsoleCommand( const string& in cmd ) {
-			return false;
-		}
-		void OnLoad() {
-		}
-		void OnSave() const {
-		}
-		void OnRenderScene() {
-		}
-		void OnCheckpointPassed( uint ) {
-		}
-		void OnPlayerDeath( int ) {
-		}
-		void OnRunTic() override {
+		void UpdateCvars() {
 			if ( TheNomad::SGame::sgame_DebugMode.GetBool() ) {
-				ProfileBlock block( "CvarSystem::OnRunTic" );
+				ProfileBlock block( "CvarSystem::UpdateCvars" );
 			}
 
 			// update all cvars
-			for ( uint i = 0; i < m_CvarCache.Count(); i++ ) {
+			for ( uint i = 0; i < m_CvarCache.Count(); ++i ) {
 				m_CvarCache[i].m_Handle.Update();
 				if ( m_CvarCache[i].m_nModificationCount != m_CvarCache[i].m_Handle.GetModificationCount()
 					&& m_CvarCache[i].m_Handle.Track() )
@@ -53,13 +36,6 @@ namespace TheNomad::Engine {
 						+ m_CvarCache[i].m_Handle.GetValue() + "\"\n" );
 				}
 			}
-		}
-		void OnLevelStart() {
-		}
-		void OnLevelEnd() {
-		}
-		const string& GetName() const {
-			return "CvarSystem";
 		}
 		
 		void ListVars_f() {

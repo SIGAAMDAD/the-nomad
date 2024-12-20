@@ -16,12 +16,15 @@ namespace TheNomad::SGame {
 		void Link( PlayrObject@ base, int nArmIndex, const uvec2& in sheetSize, const uvec2& in spriteSize ) {
 			@m_EntityData = @base;
 
+			/*
 			@m_SpriteSheet = @TheNomad::Engine::ResourceCache.GetSpriteSheet(
 				"skins/" + base.GetSkin() + "/arms_" + ( nArmIndex == 0 ? "right" : "left" ),
 				sheetSize.x, sheetSize.y, spriteSize.x, spriteSize.y );
 			if ( @m_SpriteSheet is null ) {
 				GameError( "ArmData::Link: failed to load arms sprite sheet" );
 			}
+			*/
+			@m_SpriteSheet = @TheNomad::Engine::ResourceCache.GetSpriteSheet( "skins/" + base.GetSkin(), 1024, 1024, 32, 32 );
 
 			@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_IDLE );
 			if ( @m_State is null ) {
@@ -31,6 +34,14 @@ namespace TheNomad::SGame {
 			m_nArmIndex = nArmIndex;
 			m_nFacing = FACING_RIGHT;
 			m_nTicker = 0;
+
+			const string id = ( nArmIndex == 0 ? "right" : "left" );
+			@m_IdleState = @StateManager.GetStateById( "player_arms_idle_" + id );
+			@m_MeleeState = @StateManager.GetStateById( "player_arms_melee_" + id );
+			@m_MoveState = @StateManager.GetStateById( "player_arms_move_" + id );
+			@m_SlideState = @StateManager.GetStateById( "player_arms_slide_" + id );
+			@m_StealthCrawlState = @StateManager.GetStateById( "player_arms_stealth_crawl_" + id );
+			@m_StealthReadyState = @StateManager.GetStateById( "player_arms_stealth_ready_" + id );
 		}
 		
 		private SpriteSheet@ CalcState() {
@@ -47,22 +58,22 @@ namespace TheNomad::SGame {
 			}
 			else if ( m_EntityData.GetPhysicsObject().GetVelocity() != Vec3Origin ) {
 				if ( m_EntityData.IsSliding() ) {
-					@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_SLIDE );
+					@m_State = @m_SlideState;
 				}
 				else if ( m_EntityData.IsCrouching() ) {
 					// get a specific stealth state
 					if ( m_EntityData.GetFacing() == m_nArmIndex ) {
-						@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_STEALTH_CRAWL );
+						@m_State = @m_StealthCrawlState;
 					} else {
-						@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_STEALTH_READY );
+						@m_State = @m_StealthReadyState;
 					}
 				}
 				else {
-					@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_MOVE );
+					@m_State = @m_MoveState;
 				}
 			}
 			else {
-				@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_IDLE );
+				@m_State = @m_IdleState;
 			}
 			
 			return @m_SpriteSheet;
@@ -71,16 +82,19 @@ namespace TheNomad::SGame {
 			@m_State = @m_State.Run( m_nTicker );
 		}
 		void Draw() {
-			TheNomad::Engine::Renderer::RenderEntity refEntity;
-			
-			// TODO: calculate sprite direction here
+			vec2 scale = TheNomad::Engine::Renderer::GetFacing( m_nFacing );
+
+			if ( m_EntityData.IsSliding() ) {
+				scale.x = -scale.x;
+			}
 			
 			SpriteSheet@ sheet = @CalcState();
 			
+			TheNomad::Engine::Renderer::RenderEntity refEntity;
 			refEntity.origin = m_EntityData.GetOrigin();
 			refEntity.sheetNum = sheet.GetShader();
 			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( @sheet, @m_State );
-			refEntity.scale = TheNomad::Engine::Renderer::GetFacing( m_nFacing );
+			refEntity.scale = scale;
 			refEntity.rotation = m_EntityData.GetArmAngle();
 			refEntity.Draw();
 		}
@@ -131,6 +145,13 @@ namespace TheNomad::SGame {
 		void SetFacing( int nFacing ) {
 			m_nFacing = nFacing;
 		}
+
+		private EntityState@ m_IdleState = null;
+		private EntityState@ m_MeleeState = null;
+		private EntityState@ m_MoveState = null;
+		private EntityState@ m_SlideState = null;
+		private EntityState@ m_StealthCrawlState = null;
+		private EntityState@ m_StealthReadyState = null;
 		
 		private PlayrObject@ m_EntityData = null;
 		private WeaponObject@ m_Equipped = null;

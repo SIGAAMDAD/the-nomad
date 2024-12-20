@@ -200,7 +200,8 @@ namespace TheNomad::SGame {
 		void Slide_Down_f() {
 			PlayrObject@ obj = @m_PlayerData[0];
 
-			if ( obj.IsCrouching() || obj.GetTimeSinceLastSlide() < SLIDE_DURATION ) {
+			// TODO: ground slam?
+			if ( obj.IsCrouching() || obj.GetOrigin().z > 0.0f || obj.GetTimeSinceLastSlide() < SLIDE_DURATION ) {
 				return;
 			}
 
@@ -373,7 +374,7 @@ namespace TheNomad::SGame {
 				TheNomad::GameSystem::GameSystems[i].OnRenderScene();
 			}
 			TheNomad::Engine::Renderer::RenderScene( scenePos.x, scenePos.y, sceneSize.x, sceneSize.y, flags, 
-				TheNomad::GameSystem::GameManager.GetGameTic() );
+				TheNomad::GameSystem::GameTic );
 			
 			m_bCommandReset = true;
 		}

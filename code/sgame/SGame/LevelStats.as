@@ -284,7 +284,7 @@ namespace TheNomad::SGame {
 			}
 
 			if ( !endOfLevel ) {
-				m_TimeMilliseconds = TheNomad::GameSystem::GameManager.GetGameTic() - timer;
+				m_TimeMilliseconds = TheNomad::GameSystem::GameTic - timer;
 			} else {
 				m_TimeMilliseconds = timer;
 			}

@@ -2,8 +2,8 @@ namespace TheNomad::SGame {
 	const uint PMF_JUMP_HELD      = 0x01;
 	const uint PMF_BACKWARDS_JUMP = 0x02;
 
-	const uint DASH_DURATION = 70;
-	const uint SLIDE_DURATION = 300;
+	const uint DASH_DURATION = 800;
+	const uint SLIDE_DURATION = 500;
 	
 	const float JUMP_VELOCITY = 3.5f;
 	const float OVERCLIP = 1.5f;
@@ -34,7 +34,7 @@ namespace TheNomad::SGame {
 		
 		private void AirMove() {
 			vec3 vel, wishvel, wishdir;
-			const uint gameTic = TheNomad::GameSystem::GameManager.GetGameTic();
+			const uint gameTic = TheNomad::GameSystem::GameTic;
 			float smove, fmove;
 			float velocity;
 			float wishspeed;
@@ -46,7 +46,7 @@ namespace TheNomad::SGame {
 		}
 		
 		private void WalkMove() {
-			const uint gameTic = TheNomad::GameSystem::GameManager.GetGameTic();
+			const uint gameTic = TheNomad::GameSystem::GameTic;
 			vec3 accel = m_EntityData.GetPhysicsObject().GetAcceleration();
 
 			const bool isSliding = m_EntityData.IsSliding();
@@ -64,8 +64,8 @@ namespace TheNomad::SGame {
 			}
 
 			if ( m_EntityData.IsDashing() ) {
-				accel.y += 2.50f * forward;
-				accel.x += 2.50f * side;
+				accel.y += 4.50f * forward;
+				accel.x += 4.50f * side;
 
 				if ( m_EntityData.GetTimeSinceLastDash() > DASH_DURATION ) {
 					m_EntityData.SetDashing( false );
@@ -203,7 +203,7 @@ namespace TheNomad::SGame {
 			if ( addspeed <= 0.0f ) {
 				return;
 			}
-			float accelspeed = accel * TheNomad::GameSystem::GameManager.GetGameTic() * wishspeed;
+			float accelspeed = accel * TheNomad::GameSystem::GameTic * wishspeed;
 			if ( accelspeed > addspeed ) {
 				accelspeed = addspeed;
 			}
@@ -233,16 +233,16 @@ namespace TheNomad::SGame {
 			//
 			// set torso direction
 			//
-			if ( TheNomad::Engine::CvarVariableInteger( "in_mode" ) == 0 ) {
+			if ( sgame_InputMode.GetInt() == 0 ) {
 				// mouse & keyboard
 				// position torso facing wherever the mouse is
 				const ivec2 mousePos = TheNomad::GameSystem::GameManager.GetMousePos();
-				const int screenWidth = TheNomad::GameSystem::GameManager.GetGPUConfig().screenWidth;
-				const int screenHeight = TheNomad::GameSystem::GameManager.GetGPUConfig().screenHeight;
+				const int halfWidth = TheNomad::GameSystem::GameManager.GetHalfScreenWidth();
+				const int halfHeight = TheNomad::GameSystem::GameManager.GetHalfScreenHeight();
 				
-				m_nArmsAngle = atan2( ( screenHeight / 2 ) - float( mousePos.y ), ( screenWidth / 2 ) - float( mousePos.x ) );
+				m_nArmsAngle = atan2( halfHeight - float( mousePos.y ), halfWidth - float( mousePos.x ) );
 
-				if ( mousePos.x < screenWidth / 2 ) {
+				if ( mousePos.x < halfWidth ) {
 					if ( @m_EntityData.GetLeftHandWeapon() !is null ) {
 						m_EntityData.SetLeftArmFacing( FACING_LEFT );
 					}
@@ -250,7 +250,7 @@ namespace TheNomad::SGame {
 						m_EntityData.SetRightArmFacing( FACING_LEFT );
 					}
 					m_nArmsAngle = -m_nArmsAngle;
-				} else if ( mousePos.x > screenWidth / 2 ) {
+				} else if ( mousePos.x > halfHeight ) {
 					if ( @m_EntityData.GetLeftHandWeapon() !is null ) {
 						m_EntityData.SetLeftArmFacing( FACING_RIGHT );
 					}
@@ -285,13 +285,11 @@ namespace TheNomad::SGame {
 		}
 		
 		void RunTic() {
-			const uint gameTic = TheNomad::GameSystem::GameManager.GetGameTic();
+			const uint gameTic = TheNomad::GameSystem::GameTic;
 
 			if ( sgame_DebugMode.GetBool() ) {
 				TheNomad::Engine::ProfileBlock block( "PMoveData::OnRunTic" );
 			}
-			
-			frametime = uint( float( gameTic * 0.0001f ) );
 			
 			frame_msec = gameTic - old_frame_msec;
 			
@@ -306,19 +304,8 @@ namespace TheNomad::SGame {
 			if ( frame_msec > 200 ) {
 				frame_msec = 200;
 			}
-			old_frame_msec = TheNomad::GameSystem::GameManager.GetGameTic();
+			old_frame_msec = TheNomad::GameSystem::GameTic;
 
-			if ( m_EntityData.GetDebuff() == AttackEffect::Knockback ) {
-				m_EntityData.GetPhysicsObject().SetAcceleration( m_EntityData.GetVelocity() );
-				m_EntityData.GetPhysicsObject().OnRunTic();
-
-				if ( m_EntityData.GetVelocity() == Vec3Origin ) {
-					m_EntityData.SetDebuff( AttackEffect::None );
-				}
-
-				return;
-			}
-			
 			if ( up < 1.0f ) {
 				// not holding jump
 				flags &= ~PMF_JUMP_HELD;
@@ -383,25 +370,20 @@ namespace TheNomad::SGame {
 		}
 		
 		private float KeyState( KeyBind& in key ) {
-			int msec;
-			float val;
-
-			msec = key.msec;
+			int msec = key.msec;
 			key.msec = 0;
 			
 			if ( key.active ) {
 				// still down
 				if ( key.downtime <= 0 ) {
-					msec = TheNomad::GameSystem::GameManager.GetGameTic();
+					msec = TheNomad::GameSystem::GameTic;
 				} else {
-					msec += TheNomad::GameSystem::GameManager.GetGameTic() - key.downtime;
+					msec += TheNomad::GameSystem::GameTic - key.downtime;
 				}
-				key.downtime = TheNomad::GameSystem::GameManager.GetGameTic();
+				key.downtime = TheNomad::GameSystem::GameTic;
 			}
 
-			val = Util::Clamp( float( msec ) / float( frame_msec ), float( 0 ), float( 1 ) );
-
-			return val;
+			return Util::Clamp( float( msec ) / float( frame_msec ), float( 0 ), float( 1 ) );
 		}
 
 		void KeyMove() {
@@ -425,20 +407,6 @@ namespace TheNomad::SGame {
 			
 			forward -= base * KeyState( m_EntityData.key_MoveNorth );
 			forward += base * KeyState( m_EntityData.key_MoveSouth );
-
-			northmove = southmove = 0.0f;
-			if ( forward > 0 ) {
-				northmove = Util::Clamp( forward * KeyState( m_EntityData.key_MoveNorth ), -sgame_MaxSpeed.GetFloat(), sgame_MaxSpeed.GetFloat() );
-			} else if ( forward < 0 ) {
-				southmove = Util::Clamp( forward * KeyState( m_EntityData.key_MoveSouth ), -sgame_MaxSpeed.GetFloat(), sgame_MaxSpeed.GetFloat() );
-			}
-
-			eastmove = westmove = 0.0f;
-			if ( side > 0 ) {
-				eastmove = Util::Clamp( side * KeyState( m_EntityData.key_MoveEast ), -sgame_MaxSpeed.GetFloat(), sgame_MaxSpeed.GetFloat() );
-			} else if ( side < 0 ) {
-				westmove = Util::Clamp( side * KeyState( m_EntityData.key_MoveWest ), -sgame_MaxSpeed.GetFloat(), sgame_MaxSpeed.GetFloat() );
-			}
 		}
 
 		ivec2 m_JoystickPosition = ivec2( 0 );
@@ -451,10 +419,6 @@ namespace TheNomad::SGame {
 		float side = 0.0f;
 		float up = 0.0f;
 		float upmove = 0.0f;
-		float northmove = 0.0f;
-		float southmove = 0.0f;
-		float eastmove = 0.0f;
-		float westmove = 0.0f;
 		
 		uint flags = 0;
 		uint frametime = 0;

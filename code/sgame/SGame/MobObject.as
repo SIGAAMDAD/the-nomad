@@ -150,8 +150,9 @@ namespace TheNomad::SGame {
 		protected InfoSystem::MobFlags m_MFlags = InfoSystem::MobFlags( 0 );
 		
 		// stealth tracking
-		protected uint m_nLastAlertTime = 0;
-		protected uint m_nAlertLevel = 0;
+		private uint m_nLastAlertTime = 0;
+		private float m_nAlertAmount = 0.0f;
+		private uint m_nAlertLevel = 0;
 		
 		// attack data
 		protected bool m_bIsAttacking = false;

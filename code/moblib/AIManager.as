@@ -1,5 +1,6 @@
 #include "nomadmain/SGame/InfoSystem/InfoDataManager.as"
 #include "moblib/MobScript.as"
+#include "moblib/Scripts/ScriptData.as"
 
 namespace moblib {
 	class AISystem : TheNomad::GameSystem::GameObject {
@@ -10,8 +11,7 @@ namespace moblib {
 			return uint( TheNomad::SGame::StateNum::ST_MOB_IDLE ) + nType;
 		}
 		void AllocScript( TheNomad::SGame::MobObject@ mob ) {
-			MobScript@ script = cast<MobScript@>( @TheNomad::Util::AllocateExternalScriptClass( "moblib",
-				cast<TheNomad::SGame::InfoSystem::MobInfo@>( mob.GetInfo() ).className ) );
+			MobScript@ script = Script::AllocateScriptEntity( cast<TheNomad::SGame::InfoSystem::MobInfo@>( @mob.GetInfo() ).type );
 			mob.LinkScript( @script );
 			m_ScriptFactory.Add( @script );
 		}

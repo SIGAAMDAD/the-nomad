@@ -21,6 +21,12 @@ namespace TheNomad::Engine::Physics {
         float GetAngle() const {
             return m_nAngle;
         }
+		float GetWeight() const {
+			return m_nWeight;
+		}
+		void SetWeight( float nWeight ) {
+			m_nWeight = nWeight;
+		}
         void SetAngle( float nAngle ) {
             m_nAngle = nAngle;
         }
@@ -50,7 +56,7 @@ namespace TheNomad::Engine::Physics {
         }
 
         private void ClipBounds() {
-			if ( SGame::sgame_NoClip.GetInt() == 1 ) {
+			if ( SGame::sgame_NoClip.GetBool() ) {
 				return;
 			}
 
@@ -71,7 +77,19 @@ namespace TheNomad::Engine::Physics {
 		}
 		
 		void ApplyFriction() {
-			const float friction = TheNomad::SGame::sgame_Friction.GetFloat() * TheNomad::GameSystem::GameManager.GetDeltaTic();
+			const float friction = TheNomad::SGame::sgame_Friction.GetFloat() * TheNomad::GameSystem::DeltaTic;
+
+			if ( m_Velocity.x > 0.0f ) {
+				m_Velocity.x -= friction;
+			} else if ( m_Velocity.x < 0.0f ) {
+				m_Velocity.x += friction;
+			}
+			if ( m_Velocity.y > 0.0f ) {
+				m_Velocity.y -= friction;
+			} else if ( m_Velocity.y < 0.0f ) {
+				m_Velocity.y += friction;
+			}
+			/*
 			if ( m_Velocity[0] < 0.0f ) {
 				m_Velocity[0] = TheNomad::Util::Clamp( m_Velocity[0] + friction, m_Velocity[0], 100.0f );
 			} else if ( m_Velocity[0] > 0.0f ) {
@@ -82,11 +100,12 @@ namespace TheNomad::Engine::Physics {
 			} else if ( m_Velocity[1] > 0.0f ) {
 				m_Velocity[1] = TheNomad::Util::Clamp( m_Velocity[1] - friction, -100.0f, m_Velocity[1] );
 			}
+			*/
 			if ( m_Velocity[2] < 0.0f && m_EntityData.GetOrigin().z <= 0.0f ) {
 				m_Velocity[2] = 0.0f;
 			} else if ( m_EntityData.GetOrigin().z >= MAX_JUMP_HEIGHT ) {
 				m_Velocity[2] = TheNomad::Util::Clamp(
-					m_Velocity[2] - ( TheNomad::SGame::sgame_Gravity.GetFloat() * TheNomad::GameSystem::GameManager.GetDeltaTic() ),
+					m_Velocity[2] - ( TheNomad::SGame::sgame_Gravity.GetFloat() * TheNomad::GameSystem::DeltaTic ),
 					-TheNomad::SGame::sgame_Gravity.GetFloat(), m_Velocity[2] );
 			}
 		}
@@ -196,7 +215,7 @@ namespace TheNomad::Engine::Physics {
 			TheNomad::GameSystem::BBox bounds;
 			bounds.m_nWidth = m_EntityData.GetBounds().m_nWidth;
 			bounds.m_nHeight = m_EntityData.GetBounds().m_nHeight;
-			bounds.MakeBounds( origin + ( m_Velocity * TheNomad::GameSystem::GameManager.GetDeltaTic() ) );
+			bounds.MakeBounds( origin + ( m_Velocity * TheNomad::GameSystem::DeltaTic ) );
 			
 			TheNomad::SGame::EntityObject@ active = @TheNomad::SGame::EntityManager.GetActiveEnts();
 			TheNomad::SGame::EntityObject@ ent = null;
@@ -248,19 +267,20 @@ namespace TheNomad::Engine::Physics {
 			};
 
 			if ( TheNomad::GameSystem::CheckWallHit( tmp, dir ) ) {
-				m_Acceleration = 0.0f;
+				m_Acceleration = vec3( 0.0f );
 
 				const float z = m_Velocity.z;
 				m_Velocity = 0.0f;
 				if ( origin.z > 0.0f ) {
 					m_Velocity.z = z;
+					origin.z += ( m_Velocity.z * TheNomad::GameSystem::DeltaTic );
 				}
 				return;
 			}
 			
-			origin.x += ( m_Velocity.x * TheNomad::GameSystem::GameManager.GetDeltaTic() );
-			origin.y += ( m_Velocity.y * TheNomad::GameSystem::GameManager.GetDeltaTic() );
-			origin.z += ( m_Velocity.z * TheNomad::GameSystem::GameManager.GetDeltaTic() );
+			origin.x += ( m_Velocity.x * TheNomad::GameSystem::DeltaTic );
+			origin.y += ( m_Velocity.y * TheNomad::GameSystem::DeltaTic );
+			origin.z += ( m_Velocity.z * TheNomad::GameSystem::DeltaTic );
 			// apply gravity
 			if ( origin.z < 0.0f ) {
 				origin.z = 0.0f;
@@ -271,13 +291,13 @@ namespace TheNomad::Engine::Physics {
 				if ( m_EntityData.GetWaterLevel() > 0 ) {
 					m_EntityData.EmitSound(
 						TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/water_land_" + formatUInt( Util::PRandom() & 2 ) ),
-						1.0f, 0xff );
+						10.0f, 0xff );
 					
-					TheNomad::SGame::GfxManager.AddWaterWake( origin, 800, 6.75f );
+					TheNomad::SGame::GfxManager.AddWaterWake( origin, 800 );
 				} else {
 					m_EntityData.EmitSound(
 						TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/land_" + formatUInt( ( Util::PRandom() & 3 ) + 1 ) ),
-						1.0f, 0xff );
+						10.0f, 0xff );
 
 					//
 					// add a little dust effect for that extra IMPACT
@@ -293,14 +313,15 @@ namespace TheNomad::Engine::Physics {
 			
 			// clip it
 			ClipBounds();
-			
-			m_Acceleration = 0.0f;
+
+			m_Acceleration = vec3( 0.0f );
         }
         
         private TheNomad::SGame::EntityObject@ m_EntityData = null;
         private vec3 m_Velocity = vec3( 0.0f );
         private vec3 m_Acceleration = vec3( 0.0f );
         private float m_nAngle = 0.0f;
+		private float m_nWeight = 0.0f;
         private int m_nWaterLevel = 0;
 		private WaterType m_nWaterType = WaterType::None;
     };

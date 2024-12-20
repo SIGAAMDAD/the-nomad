@@ -1,5 +1,5 @@
 #include "util/detail.as"
-#include "Engine/CvarSystem.as"
+#include "Engine/ConVar.as"
 #include "GameSystem/GameSystem.as"
 #include "SGame/InfoSystem/InfoDataManager.as"
 #include "SGame/LevelSystem.as"
@@ -20,28 +20,18 @@ namespace nomadmain {
 void InitCvars() {
 	ConsolePrint( "Registering SGame Cvars...\n" );
 
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_MaxEntities, "sgame_MaxEntities", "500", CVAR_SAVE, true );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_NoRespawningMobs, "sgame_NoRespawningMobs", "0", CVAR_SAVE, false );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_HellbreakerActive, "sgame_HellbreakerActive", "0", CVAR_TEMP, true );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_HellbreakerOn, "sgame_HellbreakerOn", "0", CVAR_TEMP, true );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_GfxDetail, "sgame_GfxDetail", "10", CVAR_SAVE, false );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_EnableParticles, "sgame_EnableParticles", "1", CVAR_SAVE, true );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_Difficulty, "sgame_Difficulty", "2", CVAR_TEMP, false );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_DebugMode, "sgame_DebugMode", "1", CVAR_TEMP, true );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_MusicChangeDelta, "sgame_MusicChangeDelta", "500", CVAR_TEMP, false );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_AdaptiveSoundtrack, "sgame_AdaptiveSoundtrack", "1", CVAR_SAVE, false );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_cheat_BlindMobs, "sgame_cheat_BlindMobs", "0", CVAR_CHEAT | CVAR_SAVE, false );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_cheat_DeafMobs, "sgame_cheat_DeafMobs", "0", CVAR_CHEAT | CVAR_SAVE, false );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_cheat_InfiniteAmmo, "sgame_cheat_InfiniteAmmo", "0", CVAR_CHEAT | CVAR_SAVE, false );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_cheat_InfiniteHealth, "sgame_cheat_InfiniteHealth", "0", CVAR_CHEAT | CVAR_SAVE, false );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_cheat_InfiniteRage, "sgame_cheat_InfiniteRage", "0", CVAR_CHEAT | CVAR_SAVE, false );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_cheat_GodMode, "sgame_cheat_GodMode", "0", CVAR_CHEAT | CVAR_SAVE, false );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_cheats_enabled, "sgame_cheats_enabled", "0", CVAR_CHEAT | CVAR_SAVE, false );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_cheats_enabled, "sgame_NoClip", "0", CVAR_CHEAT, true );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_LevelIndex, "g_levelIndex", "0", CVAR_LATCH | CVAR_TEMP, false );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_MapName, "mapname", "", CVAR_TEMP, false );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_MaxFps, "com_maxfps", "", CVAR_SAVE, false );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_SaveSlot, "sgame_SaveSlot", "0", CVAR_TEMP, false );
+	TheNomad::SGame::sgame_HellbreakerOn.Register( "sgame_HellbreakerOn", "0", CVAR_TEMP, true );
+	TheNomad::SGame::sgame_EnableParticles.Register( "sgame_EnableParticles", "1", CVAR_SAVE, true );
+	TheNomad::SGame::sgame_DebugMode.Register( "sgame_DebugMode", "1", CVAR_TEMP, true );
+	TheNomad::SGame::sgame_cheat_BlindMobs.Register( "sgame_cheat_BlindMobs", "0", CVAR_CHEAT | CVAR_SAVE, false );
+	TheNomad::SGame::sgame_cheat_DeafMobs.Register( "sgame_cheat_DeafMobs", "0", CVAR_CHEAT | CVAR_SAVE, false );
+	TheNomad::SGame::sgame_cheat_InfiniteAmmo.Register( "sgame_cheat_InfiniteAmmo", "0", CVAR_CHEAT | CVAR_SAVE, false );
+	TheNomad::SGame::sgame_cheat_InfiniteHealth.Register( "sgame_cheat_InfiniteHealth", "0", CVAR_CHEAT | CVAR_SAVE, false );
+	TheNomad::SGame::sgame_cheat_InfiniteRage.Register( "sgame_cheat_InfiniteRage", "0", CVAR_CHEAT | CVAR_SAVE, false );
+	TheNomad::SGame::sgame_cheat_GodMode.Register( "sgame_cheat_GodMode", "0", CVAR_CHEAT | CVAR_SAVE, false );
+	TheNomad::SGame::sgame_cheats_enabled.Register( "sgame_cheats_enabled", "0", CVAR_CHEAT | CVAR_SAVE, false );
+	TheNomad::SGame::sgame_cheats_enabled.Register( "sgame_NoClip", "0", CVAR_CHEAT, true );
+	/*
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_LockShotMaxTargets, "sgame_LockShotMaxTargets", "20", CVAR_TEMP, false );
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_LockShotTime, "sgame_LockShotTime", "100", CVAR_TEMP, false );
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_LockShotMaxRange, "sgame_LockShotMaxRange", "40", CVAR_TEMP, false );
@@ -51,17 +41,22 @@ void InitCvars() {
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_GroundFriction, "sgame_WaterFriction", "2.5", CVAR_SAVE, true );
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_AirFriction, "sgame_AirFriction", "0.5", CVAR_SAVE, true );
 	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_MaxSpeed, "sgame_MaxSpeed", "0.2", CVAR_TEMP, false );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_ToggleHUD, "sgame_ToggleHUD", "1", CVAR_SAVE, true );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_Friction, "sgame_Friction", "0.5", CVAR_TEMP, true );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_Gravity, "sgame_Gravity", "0.2", CVAR_TEMP, true );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_PlayerWidth, "sgame_PlayerWidth", "0.5", CVAR_TEMP, false );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_PlayerHeight, "sgame_PlayerHeight", "2.0", CVAR_TEMP, false );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_SwimSpeed, "sgame_SwimSpeed", "1.0", CVAR_TEMP, false );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_AirSpeed, "sgame_AirSpeed", "2.5", CVAR_TEMP, false );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_SaveLastUsedWeaponModes, "sgame_SaveLastUsedWeaponModes", "0", CVAR_SAVE, true );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_Blood, "sgame_Blood", "1", CVAR_SAVE, false );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_CameraZoom, "sgame_CameraZoom", "68", CVAR_SAVE, true );
-	TheNomad::Engine::CvarManager.AddCvar( @TheNomad::SGame::sgame_SpeedPhysics, "sgame_SpeedPhysics", "0", CVAR_SAVE, true );
+	*/
+	TheNomad::SGame::sgame_ToggleHUD.Register( "sgame_ToggleHUD", "1", CVAR_SAVE, true );
+	TheNomad::SGame::sgame_SaveLastUsedWeaponModes.Register( "sgame_SaveLastUsedWeaponModes", "0", CVAR_SAVE, true );
+	TheNomad::SGame::sgame_Blood.Register( "sgame_Blood", "1", CVAR_SAVE, false );
+	TheNomad::SGame::sgame_InputMode.Register( "in_mode", "0", CVAR_SAVE, false );
+
+	TheNomad::SGame::sgame_MaxEntities.Register( "sgame_MaxEntities", "500", CVAR_TEMP, false );
+	TheNomad::SGame::sgame_GfxDetail.Register( "sgame_GfxDetail", "1", CVAR_TEMP, false );
+	TheNomad::SGame::sgame_PlayerWidth.Register( "sgame_PlayerWidth", "0.5", CVAR_TEMP, false );
+	TheNomad::SGame::sgame_PlayerHeight.Register( "sgame_PlayerHeight", "2.0", CVAR_TEMP, false );
+	TheNomad::SGame::sgame_PlayerWeight.Register( "sgame_PlayerWeight", "5.0", CVAR_TEMP, false );
+	TheNomad::SGame::sgame_Difficulty.Register( "sgame_Difficulty", "2", CVAR_TEMP, false );
+	TheNomad::SGame::sgame_Friction.Register( "sgame_Friction", "0.5", CVAR_TEMP, true );
+	TheNomad::SGame::sgame_CameraZoom.Register( "sgame_CameraZoom", "68", CVAR_SAVE, true );
+	TheNomad::SGame::sgame_Gravity.Register( "sgame_Gravity", "0.2", CVAR_TEMP, true );
+	TheNomad::SGame::sgame_SaveSlot.Register( "sgame_SaveSlot", "0", CVAR_TEMP, false );
 }
 
 //
@@ -80,38 +75,79 @@ void InitResources() {
 	// load sound effects
 	//
 
-	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/death1" );
-	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/death2" );
-	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/death3" );
+	// player specific
+	{
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/death1" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/death2" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/death3" );
 	
-	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_scream_0" );
-	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_scream_1" );
-	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_scream_2" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_scream_0" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_scream_1" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_scream_2" );
 
-	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slide_0" );
-	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slide_1" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slide_0" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slide_1" );
 
-	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/use_jumpkit_0" );
-	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/use_jumpkit_1" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/use_jumpkit_0" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/use_jumpkit_1" );
 
-	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/melee" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/melee" );
 
-	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/weapon_change_hand" );
-	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/weapon_change_mode" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/weapon_change_hand" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/weapon_change_mode" );
 
-	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/cloth_foley_0" );
-	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/cloth_foley_1" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/cloth_foley_0" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/cloth_foley_1" );
+	}
 
-	TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/bonfire" );
+	// environmental sounds
+	{
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/bonfire" );
 
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/land_1" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/land_2" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/land_3" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/land_4" );
+
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/move_gravel_0" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/move_gravel_1" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/move_gravel_2" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/move_gravel_3" );
+
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/move_metal_0" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/move_metal_1" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/move_metal_2" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/move_metal_3" );
+
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/move_water_0" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/move_water_1" );
+
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/water_jump" );
+
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/water_land_0" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/water_land_1" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/water_land_2" );
+
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/bullet_impact/hit_metal_0" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/bullet_impact/hit_metal_1" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/bullet_impact/hit_metal_2" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/bullet_impact/hit_metal_3" );
+
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/bullet_impact/hit_rock_0" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/bullet_impact/hit_rock_1" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/bullet_impact/hit_rock_2" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/bullet_impact/hit_rock_3" );
+
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/bullet_impact/richochet_0" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/bullet_impact/richochet_1" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/bullet_impact/richochet_2" );
+	}
+	
 	//
 	// load materials
 	//
 
-	TheNomad::Engine::Renderer::RegisterShader( "skins/" + TheNomad::Engine::CvarVariableString( "skin" ) + "/torso" );
-	TheNomad::Engine::Renderer::RegisterShader( "skins/" + TheNomad::Engine::CvarVariableString( "skin" ) + "/legs" );
-	TheNomad::Engine::Renderer::RegisterShader( "skins/" + TheNomad::Engine::CvarVariableString( "skin" ) + "/arms_left" );
-	TheNomad::Engine::Renderer::RegisterShader( "skins/" + TheNomad::Engine::CvarVariableString( "skin" ) + "/arms_right" );
+	TheNomad::Engine::Renderer::RegisterShader( "skins/" + TheNomad::Engine::CvarVariableString( "skin" ) );
 
 	//
 	// load particle effects
@@ -163,10 +199,6 @@ void InitResources() {
 	ConsolePrint( "InitResources: " + timer.ElapsedMilliseconds() + "ms\n" );
 }
 
-float AccumulatedTics = 0.0f;
-int LastTime = 0;
-
-
 int ModuleOnInit() {
 	ConsolePrint( "----- SG_Init -----\n" );
 	ConsolePrint( "GameName: " + GAME_NAME + "\n" );
@@ -175,8 +207,6 @@ int ModuleOnInit() {
 	//
 	// register cvars
 	//
-
-	@TheNomad::Engine::CvarManager = cast<TheNomad::Engine::CvarSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::Engine::CvarSystem() ) );
 
 	InitCvars();
 
@@ -189,6 +219,7 @@ int ModuleOnInit() {
 
 	@TheNomad::Engine::FileSystem::FileManager = TheNomad::Engine::FileSystem::FileSystemManager();
 	@TheNomad::GameSystem::GameManager = TheNomad::GameSystem::CampaignManager();
+
 	@TheNomad::SGame::LevelManager = cast<TheNomad::SGame::LevelSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::LevelSystem() ) );
 	@TheNomad::SGame::GfxManager = cast<TheNomad::SGame::GfxSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::GfxSystem() ) );
 	@TheNomad::SGame::EntityManager = cast<TheNomad::SGame::EntitySystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::EntitySystem() ) );
@@ -196,9 +227,6 @@ int ModuleOnInit() {
 	TheNomad::GameSystem::GameManager.OnInit();
 
 	ConsolePrint( "--------------------\n" );
-
-	LastTime = TheNomad::Engine::System::Milliseconds();
-	AccumulatedTics = 0.0f;
 
 	return 1;
 }
@@ -213,15 +241,14 @@ int ModuleOnShutdown() {
 
 	TheNomad::SGame::InfoSystem::InfoManager.Clear();
 
-	@TheNomad::Engine::CvarManager = null;
 	@TheNomad::GameSystem::GameManager = null;
 	@TheNomad::SGame::LevelManager = null;
 	@TheNomad::SGame::EntityManager = null;
 	@TheNomad::Engine::FileSystem::FileManager = null;
 	@TheNomad::SGame::GoreManager = null;
-	TheNomad::GameSystem::GameSystems.Clear();
 	@TheNomad::SGame::GfxManager = null;
 
+	TheNomad::GameSystem::GameSystems.Clear();
 	TheNomad::Engine::ResourceCache.ClearCache();
 
 	return 1;
@@ -272,10 +299,10 @@ int ModuleOnLoadGame() {
 	TheNomad::GameSystem::GameManager.SetLoadGame( true );
 	TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::InLevel;
 
-	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
+	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); ++i ) {
 		TheNomad::GameSystem::GameSystems[i].OnLevelStart();
 	}
-	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
+	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); ++i ) {
 		TheNomad::GameSystem::GameSystems[i].OnLoad();
 	}
 
@@ -291,7 +318,7 @@ int ModuleOnLevelStart() {
 	StartupGameLevel();
 	
 	TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::InLevel;
-	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
+	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); ++i ) {
 		TheNomad::GameSystem::GameSystems[i].OnLevelStart();
 	}
 
@@ -301,20 +328,19 @@ int ModuleOnLevelStart() {
 }
 
 int ModuleOnLevelEnd() {
-	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
+	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); ++i ) {
 		TheNomad::GameSystem::GameSystems[i].OnLevelEnd();
 	}
 
-//	TheNomad::SGame::InfoSystem::InfoManager.Clear();
 	@TheNomad::SGame::InfoSystem::InfoManager = null;
 	@TheNomad::SGame::StateManager = null;
 
 	TheNomad::Engine::ResourceCache.ClearCache();
+
 	return 1;
 }
 
 int ModuleOnJoystickEvent( int side, int forward, int up, int roll, int yaw, int pitch ) {
-	TheNomad::GameSystem::GameManager.SetJoystickAxis( side, forward, up, roll, yaw, pitch );
 	return 0;
 }
 
@@ -325,34 +351,27 @@ int ModuleOnKeyEvent( int key, int down ) {
 int ModuleOnMouseEvent( int dx, int dy ) {
 	return 0;
 }
-
 int ModuleOnRunTic( int msec ) {
 	switch ( TheNomad::SGame::GlobalState ) {
 	case TheNomad::SGame::GameState::InLevel:
 	{
 		// if we're paused, then just draw the stuff, don't run anything else
-		if ( TheNomad::Engine::CvarVariableInteger( "g_paused" ) == 1 ) {
+		if ( TheNomad::Engine::CvarVariableInteger( "g_paused" ) == 1  ) {
 			TheNomad::SGame::LevelManager.Pause();
 			return 0;
 		}
 
-		TheNomad::GameSystem::GameManager.SetMsec( TheNomad::Engine::System::Milliseconds() );
+		TheNomad::GameSystem::GameManager.SetMsec( msec );
 		TheNomad::GameSystem::GameManager.SetMousePos( TheNomad::Engine::GetMousePosition() );
 
-//		AccumulatedTics += ( msec - LastTime ) / float( 60.0f );
-
-//		while ( AccumulatedTics > TheNomad::GameSystem::TIMESTEP ) {
-			TheNomad::SGame::LevelManager.Resume();
-			TheNomad::SGame::EntityManager.SetActivePlayer( @TheNomad::SGame::ScreenData.GetPlayerAt( 0 ) );
-			for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
-				TheNomad::GameSystem::GameSystems[i].OnRunTic();
-			}
-//			AccumulatedTics -= TheNomad::GameSystem::TIMESTEP;
-//		}
-
-//		LastTime = msec;
+		TheNomad::SGame::LevelManager.Resume();
+		TheNomad::SGame::EntityManager.SetActivePlayer( @TheNomad::SGame::ScreenData.GetPlayerAt( 0 ) );
+		for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); ++i ) {
+			TheNomad::GameSystem::GameSystems[i].OnRunTic();
+		}
 
 		TheNomad::SGame::ScreenData.Draw();
+		
 		return 0;
 	}
 	case TheNomad::SGame::GameState::StatsMenu:
