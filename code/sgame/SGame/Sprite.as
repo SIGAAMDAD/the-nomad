@@ -5,7 +5,7 @@ namespace TheNomad::SGame {
 	// DrawRect: quick and easy utility function
 	//
 	void DrawRect( const vec3& in origin, const vec2& in size, int hShader ) {
-		const float scale = TheNomad::GameSystem::GameManager.GetUIScale();
+		const float scale = TheNomad::GameSystem::UIScale;
 		ImGui::Image( hShader, vec2( origin.x * scale, origin.y * scale ), vec2( size.x * scale, size.y * scale ) );
 	}
 

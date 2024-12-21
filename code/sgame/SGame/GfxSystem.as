@@ -55,7 +55,7 @@ namespace TheNomad::SGame {
 				// still have it
 				@next = @ent.m_Prev;
 
-				if ( TheNomad::GameSystem::GameTic - ent.m_nStartTime >= ent.m_nLifeTime ) {
+				if ( ( TheNomad::GameSystem::GameTic * TheNomad::GameSystem::DeltaTic ) > ent.m_nEndTime ) {
 					FreeLocalEntity( @ent );
 					continue;
 				}
@@ -132,8 +132,6 @@ namespace TheNomad::SGame {
 			@m_ActiveLocalEnts.m_Next.m_Prev = @ent;
 			@m_ActiveLocalEnts.m_Next = @ent;
 
-			ent.m_nStartTime = TheNomad::GameSystem::GameTic;
-
 			return @ent;
 		}
 		//
@@ -176,17 +174,6 @@ namespace TheNomad::SGame {
 			}
 
 			AllocLocalEntity().Spawn( origin, vec3( 0.0f ), 1800, m_hDustScreenShader );
-		}
-
-		void FlameBall( const vec3& in origin ) {
-			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 && false ) {
-				return;
-			}
-
-			TheNomad::Engine::Renderer::LocalEntity@ ent = @AllocLocalEntity();
-
-//			ent.Spawn( origin, vec3( 0.0f ), 500, FS_INVALID_HANDLE, vec2( 1.5f ), false, 0.0f, @m_FlameBall );
-			ent.m_EffectAnimation.Load( 20, false, 10, false );
 		}
 
 		void AddWaterWake( const vec3& in origin, uint lifeTime = 200, float scale = 2.5f ) {
@@ -234,7 +221,7 @@ namespace TheNomad::SGame {
 				scale.x = -scale.x;
 			}
 			
-			ent.Spawn( origin, vec3( 0.0f ), 800, FS_INVALID_HANDLE, scale, false, @m_SmokeTrail );
+			ent.Spawn( origin, vec3( 0.0f ), 720, FS_INVALID_HANDLE, scale, false, @m_SmokeTrail );
 			ent.m_EffectAnimation.Load( 20, false, 40, false );
 		}
 

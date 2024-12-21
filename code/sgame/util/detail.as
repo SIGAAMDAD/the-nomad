@@ -458,19 +458,19 @@ namespace TheNomad::Util {
 		cr = cos( angle );
 
 		if ( forward != vec3( 0.0f ) ) {
-			forward[0] = cp * cy;
-			forward[1] = cp * sy;
-			forward[2] = -sp;
+			forward.x = cp * cy;
+			forward.y = cp * sy;
+			forward.z = -sp;
 		}
 		if ( right != vec3( 0.0f ) ) {
-			right[0] = ( -1.0f * sr * sp * cy + -1 * cr * -sy );
-			right[1] = ( -1.0f * sr * sp * sy + -1 * cr * cy );
-			right[2] = -1.0f * sr * cp;
+			right.x = ( -1.0f * sr * sp * cy + -1 * cr * -sy );
+			right.y = ( -1.0f * sr * sp * sy + -1 * cr * cy );
+			right.z = -1.0f * sr * cp;
 		}
 		if ( up != vec3( 0.0f ) ) {
-			up[0] = ( cr * sp * cy + -sr * -sy );
-			up[1] = ( cr * sp * sy + -sr * cy );
-			up[2] = cr * cp;
+			up.x = ( cr * sp * cy + -sr * -sy );
+			up.y = ( cr * sp * sy + -sr * cy );
+			up.z = cr * cp;
 		}
 	}
 
@@ -542,20 +542,19 @@ namespace TheNomad::Util {
 	}
 
 	void CrossProduct( const vec3& in v1, const vec3& in v2, vec3& out cross ) {
-		cross[0] = v1[1]*v2[2] - v1[2]*v2[1];
-		cross[1] = v1[2]*v2[0] - v1[0]*v2[2];
-		cross[2] = v1[0]*v2[1] - v1[1]*v2[0];
+		cross.x = v1.y * v2.z - v1.z * v2.y;
+		cross.y = v1.z * v2.x - v1.x * v2.z;
+		cross.z = v1.x * v2.y - v1.y * v2.x;
 	}
 
 	float RadiusFromBounds( const TheNomad::GameSystem::BBox& in bounds ) {
-		int		i;
 		vec3	corner;
 
 		// quiet down compiler
-		float	a = 0.0f;
-		float	b = 0.0f;
+		float a = 0.0f;
+		float b = 0.0f;
 
-		for ( i = 0; i < 3; i++ ) {
+		for ( int i = 0; i < 3; i++ ) {
 			a = abs( bounds.m_Mins[i] );
 			b = abs( bounds.m_Maxs[i] );
 			corner[i] = a > b ? a : b;
@@ -564,32 +563,43 @@ namespace TheNomad::Util {
 		return VectorLength( corner );
 	}
 
-	void VectorScale( const vec3& in src, float scale, vec3& out dst ) {
-		dst[0] = src[0]*scale;
-		dst[1] = src[1]*scale;
-		dst[2] = src[2]*scale;
+	void VectorScale( const vec2& in src, float scale, vec2& out dst ) {
+		dst.x = src.x * scale;
+		dst.y = src.y * scale;
 	}
 
+	void VectorScale( const vec3& in src, float scale, vec3& out dst ) {
+		dst.x = src.x * scale;
+		dst.y = src.y * scale;
+		dst.z = src.z * scale;
+	}
+
+	float DotProduct( const vec2& in a, const vec2& in b ) {
+		return ( a.x * b.x + a.y * b.y );
+	}
 	float DotProduct( const vec3& in a, const vec3& in b ) {
-		return ( a[0]*b[0] + a[1]*b[1] + a[2]*b[2] );
+		return ( a.x * b.x + a.y * b.y + a.z * b.z );
 	}
 
 	float VectorLength( const vec3& in v ) {
+		return sqrt( DotProduct( v, v ) );
+	}
+	float VectorLength( const vec2& in v ) {
 		return sqrt( DotProduct( v, v ) );
 	}
 
 	float VectorNormalize( vec3& out v ) {
 		float length, ilength;
 
-		length = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
+		length = v.x * v.x + v.y * v.y + v.z * v.z;
 
 		if ( length > 0.0f ) {
-			ilength = 1.0f / float( sqrt( length ) );
+			ilength = 1.0f / sqrt( length );
 			/* sqrt(length) = length * (1 / sqrt(length)) */
 			length *= ilength;
-			v[0] *= ilength;
-			v[1] *= ilength;
-			v[2] *= ilength;
+			v.x *= ilength;
+			v.y *= ilength;
+			v.z *= ilength;
 		}
 		
 		return length;
@@ -605,17 +615,6 @@ namespace TheNomad::Util {
 		}
 		return i;
 	}
-
-	int8 ClampCharMove( int8 i ) {
-		if ( i < -127 ) {
-			return -127;
-		}
-		if ( i > 127 ) {
-			return 127;
-		}
-		return i;
-	}
-
 	int16 ClampShort( int16 i ) {
 		if ( i < -32768 ) {
 			return -32768;

@@ -50,7 +50,7 @@ namespace TheNomad::SGame {
 			@m_State = @StateManager.GetNullState();
 		}
 		void Draw() override {
-			if ( @m_Owner !is null ) {
+			if ( @m_Owner !is null || Util::Distance( EntityManager.GetActivePlayer().GetOrigin(), m_Link.m_Origin ) > 16.0f ) {
 				return;
 			}
 

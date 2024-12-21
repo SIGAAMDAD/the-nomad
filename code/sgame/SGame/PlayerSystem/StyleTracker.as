@@ -102,7 +102,7 @@ namespace TheNomad::SGame {
 		}
 		
 		void Draw() {
-			const float scale = TheNomad::GameSystem::GameManager.GetUIScale();
+			const float scale = TheNomad::GameSystem::UIScale;
 			
 			// add up to the mult
 			if ( EntityManager.GetActivePlayer().IsSliding() ) {

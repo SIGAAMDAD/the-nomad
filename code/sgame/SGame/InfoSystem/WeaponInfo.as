@@ -45,7 +45,7 @@ namespace TheNomad::SGame::InfoSystem {
 				return false;
 			}
 
-			ConsolePrint( "Allocating sprite sheet for weapon \"" + name + "\", [ " + sheetSize.x + ", " + sheetSize.y + " ]:[ " + spriteSize.x + ", "
+			DebugPrint( "Allocating sprite sheet for weapon \"" + name + "\", [ " + sheetSize.x + ", " + sheetSize.y + " ]:[ " + spriteSize.x + ", "
 				+ spriteSize.y + " ]\n" );
 			@spriteSheet = @TheNomad::Engine::ResourceCache.GetSpriteSheet( npath, sheetSize.x, sheetSize.y,
 				spriteSize.x, spriteSize.y );

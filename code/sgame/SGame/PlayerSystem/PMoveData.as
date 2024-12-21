@@ -16,18 +16,18 @@ namespace TheNomad::SGame {
 		PMoveData( PlayrObject@ ent ) {
 			@m_EntityData = @ent;
 
-			moveGravel0 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/move_gravel_0" );
-			moveGravel1 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/move_gravel_1" );
-			moveGravel2 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/move_gravel_2" );
-			moveGravel3 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/move_gravel_3" );
+			moveGravel0 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/move_gravel_0" );
+			moveGravel1 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/move_gravel_1" );
+			moveGravel2 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/move_gravel_2" );
+			moveGravel3 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/move_gravel_3" );
 
-			moveWater0 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/move_water_0" );
-			moveWater1 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/move_water_1" );
+			moveWater0 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/move_water_0" );
+			moveWater1 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/move_water_1" );
 
-			moveMetal0 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/move_metal_0" );
-			moveMetal1 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/move_metal_1" );
-			moveMetal2 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/move_metal_2" );
-			moveMetal3 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/move_metal_3" );
+			moveMetal0 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/move_metal_0" );
+			moveMetal1 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/move_metal_1" );
+			moveMetal2 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/move_metal_2" );
+			moveMetal3 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/move_metal_3" );
 		}
 		PMoveData() {
 		}
@@ -88,7 +88,7 @@ namespace TheNomad::SGame {
 						lerpTime *= 2;
 					}
 
-					if ( gameTic - move_toggle >= lerpTime && m_EntityData.GetOrigin().z == 0.0f ) {
+					if ( ( gameTic - move_toggle ) * TheNomad::GameSystem::DeltaTic >= lerpTime && m_EntityData.GetOrigin().z == 0.0f ) {
 						// we can mix in different surfaceparm sound effects for more complex environments
 						float volume = 10.0f;
 						if ( ( tile & SURFACEPARM_WATER ) != 0 ) {
@@ -195,25 +195,6 @@ namespace TheNomad::SGame {
 			return true;
 		}
 		
-		void Accelerate( const vec3& in wishdir, float wishspeed, float accel ) {
-			vec3 vel = m_EntityData.GetPhysicsObject().GetAcceleration();
-			
-			float currentspeed = Util::DotProduct( vel, vel );
-			float addspeed = wishspeed - currentspeed;
-			if ( addspeed <= 0.0f ) {
-				return;
-			}
-			float accelspeed = accel * TheNomad::GameSystem::GameTic * wishspeed;
-			if ( accelspeed > addspeed ) {
-				accelspeed = addspeed;
-			}
-			
-			for ( int i = 0; i < 3; i++ ) {
-				vel[i] += accelspeed * wishdir[i];
-			}
-			m_EntityData.GetPhysicsObject().SetAcceleration( vel );
-		}
-
 		void SetMovementDir() {
 			if ( sgame_DebugMode.GetBool() ) {
 				TheNomad::Engine::ProfileBlock block( "PMoveData::SetMovementDir" );
@@ -236,13 +217,10 @@ namespace TheNomad::SGame {
 			if ( sgame_InputMode.GetInt() == 0 ) {
 				// mouse & keyboard
 				// position torso facing wherever the mouse is
-				const ivec2 mousePos = TheNomad::GameSystem::GameManager.GetMousePos();
-				const int halfWidth = TheNomad::GameSystem::GameManager.GetHalfScreenWidth();
-				const int halfHeight = TheNomad::GameSystem::GameManager.GetHalfScreenHeight();
-				
-				m_nArmsAngle = atan2( halfHeight - float( mousePos.y ), halfWidth - float( mousePos.x ) );
+				m_nArmsAngle = atan2( TheNomad::GameSystem::HalfScreenHeight - float( TheNomad::GameSystem::MousePosition.y ),
+					TheNomad::GameSystem::HalfScreenWidth - float( TheNomad::GameSystem::MousePosition.x ) );
 
-				if ( mousePos.x < halfWidth ) {
+				if ( TheNomad::GameSystem::MousePosition.x < TheNomad::GameSystem::HalfScreenWidth ) {
 					if ( @m_EntityData.GetLeftHandWeapon() !is null ) {
 						m_EntityData.SetLeftArmFacing( FACING_LEFT );
 					}
@@ -250,7 +228,7 @@ namespace TheNomad::SGame {
 						m_EntityData.SetRightArmFacing( FACING_LEFT );
 					}
 					m_nArmsAngle = -m_nArmsAngle;
-				} else if ( mousePos.x > halfHeight ) {
+				} else if ( TheNomad::GameSystem::MousePosition.x > TheNomad::GameSystem::HalfScreenWidth ) {
 					if ( @m_EntityData.GetLeftHandWeapon() !is null ) {
 						m_EntityData.SetLeftArmFacing( FACING_RIGHT );
 					}
@@ -261,26 +239,6 @@ namespace TheNomad::SGame {
 			}
 			else {
 				TheNomad::Engine::GetJoystickAngle( m_EntityData.GetPlayerIndex(), m_nArmsAngle, m_JoystickPosition );
-
-				if ( side > 0 ) {
-					m_EntityData.SetFacing( FACING_RIGHT );
-				} else if ( side < 0 ) {
-					m_EntityData.SetFacing( FACING_LEFT );
-				}
-
-				if ( side > forward ) {
-					if ( side > 0 ) {
-						m_EntityData.SetDirection( GameSystem::DirType::East );
-					} else if ( side < 0 ) {
-						m_EntityData.SetDirection( GameSystem::DirType::West );
-					}
-				} else if ( forward > side ) {
-					if ( forward > 0 ) {
-						m_EntityData.SetDirection( GameSystem::DirType::North );
-					} else if ( forward < 0 ) {
-						m_EntityData.SetDirection( GameSystem::DirType::South );
-					}
-				}
 			}
 		}
 		

@@ -145,7 +145,7 @@ namespace TheNomad::SGame {
 
 		private void DrawEndOfLevelStats() const {
 			const float fontScale = ImGui::GetFontScale();
-			const float scale = TheNomad::GameSystem::GameManager.GetUIScale();
+			const float scale = TheNomad::GameSystem::UIScale;
 			ImGuiWindowFlags windowFlags = ImGui::MakeWindowFlags( ImGuiWindowFlags::NoTitleBar | ImGuiWindowFlags::NoMove
 				| ImGuiWindowFlags::NoResize | ImGuiWindowFlags::NoBringToFrontOnFocus );
 			
@@ -273,7 +273,7 @@ namespace TheNomad::SGame {
 		void Draw( bool endOfLevel, uint64 timer ) {
 			ImGuiWindowFlags windowFlags = ImGui::MakeWindowFlags( ImGuiWindowFlags::NoTitleBar | ImGuiWindowFlags::NoMove
 				| ImGuiWindowFlags::NoResize );
-			const float scale = TheNomad::GameSystem::GameManager.GetUIScale();
+			const float scale = TheNomad::GameSystem::UIScale;
 
 			if ( GlobalState != GameState::StatsMenu ) {
 				if ( !TheNomad::Engine::IsKeyDown( TheNomad::Engine::KeyNum::Tab )

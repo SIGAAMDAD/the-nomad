@@ -7,31 +7,35 @@ namespace TheNomad::SGame {
 		}
 		
 		void Init( PlayrObject@ parent ) {
-			const ivec2 screenSize = TheNomad::GameSystem::GameManager.GetScreenSize();
-
 			@m_Parent = @parent;
 			
 			CacheUI();
 		}
 		
 		private void CacheUI() {
-			m_nStatusBarWidth = 350.0f * m_nUIScale;
-			m_nStatusBarHeight = float( m_ScreenSize.y );
+			const vec2 screenSize = vec2( TheNomad::GameSystem::GPUConfig.screenWidth, TheNomad::GameSystem::GPUConfig.screenHeight );
+
+			m_nStatusBarWidth = 350.0f * TheNomad::GameSystem::UIScale;
+			m_nStatusBarHeight = float( screenSize.y );
 			
-			m_nStatusBarFontScale = 2.0f * m_nUIScale;
-			m_nStatusBarStretchAmount = 256.0f * m_nUIScale;
+			m_nStatusBarFontScale = 2.0f * TheNomad::GameSystem::UIScale;
+			m_nStatusBarStretchAmount = 256.0f * TheNomad::GameSystem::UIScale;
 			
 			//
 			// create overlays
 			//
 
 			m_DashScreen.origin = vec2( 0.0f, 0.0f );
-			m_DashScreen.size = vec2( m_ScreenSize.x, m_ScreenSize.y );
+			m_DashScreen.size = screenSize;
 			m_DashScreen.hShader = TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/dash_screen" );
 
 			m_BloodScreenSplatter.origin = vec2( 0.0f, 0.0f );
-			m_BloodScreenSplatter.size = vec2( m_ScreenSize.x, m_ScreenSize.y );
+			m_BloodScreenSplatter.size = screenSize;
 			m_BloodScreenSplatter.hShader = TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/blood_screen" );
+
+			m_BulletTimeBlurScreen.origin = vec2( 0.0f, 0.0f );
+			m_BulletTimeBlurScreen.size = screenSize;
+			m_BulletTimeBlurScreen.hShader = TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/bullet_time_blur" );
 		}
 		
 		private const vec4 GetRageColor( float rage ) const {
@@ -121,7 +125,7 @@ namespace TheNomad::SGame {
 				| ImGuiWindowFlags::NoCollapse | ImGuiWindowFlags::NoBackground | ImGuiWindowFlags::NoTitleBar
 				| ImGuiWindowFlags::NoScrollbar ) );
 			ImGui::SetWindowPos( vec2( 0.0f, 0.0f ) );
-			ImGui::SetWindowSize( vec2( ( float( ( 350.0f * ( health * 0.01f ) ) * m_nUIScale ) ), m_nStatusBarHeight ) );
+			ImGui::SetWindowSize( vec2( ( float( ( 350.0f * ( health * 0.01f ) ) * TheNomad::GameSystem::UIScale ) ), m_nStatusBarHeight ) );
 			
 			{
 				if ( health < 30.0f ) {
@@ -154,8 +158,8 @@ namespace TheNomad::SGame {
 			ImGui::Begin( "##RageBar", null, ImGui::MakeWindowFlags( ImGuiWindowFlags::NoResize | ImGuiWindowFlags::NoMove
 				| ImGuiWindowFlags::NoCollapse | ImGuiWindowFlags::NoBackground | ImGuiWindowFlags::NoTitleBar
 				| ImGuiWindowFlags::NoScrollbar ) );
-			ImGui::SetWindowPos( vec2( 0.0f, 42.0f * m_nUIScale ) );
-			ImGui::SetWindowSize( vec2( ( float( ( 350 * ( rage * 0.01f ) ) * m_nUIScale ) ), m_nStatusBarHeight ) );
+			ImGui::SetWindowPos( vec2( 0.0f, 42.0f * TheNomad::GameSystem::UIScale ) );
+			ImGui::SetWindowSize( vec2( ( float( ( 350 * ( rage * 0.01f ) ) * TheNomad::GameSystem::UIScale ) ), m_nStatusBarHeight ) );
 			
 			{
 				ImGui::PushStyleColor( ImGuiCol::FrameBg, vec4( 1.0f, 0.0f, 0.0f, 1.0f ) );
@@ -174,30 +178,33 @@ namespace TheNomad::SGame {
 			}
 			
 			ImGui::End();
-			
-			if ( TheNomad::GameSystem::GameTic - m_nStatusBarStartTime >= 5000 ) {
-				m_nStatusBarStartTime = 0;
+
+			if ( TheNomad::GameSystem::GameTic > m_nStatusBarEndTime ) {
+				m_nStatusBarEndTime = 0;
 			}
 		}
 		
 		void Draw() {
+			if ( m_nDashEndTime != 0 )	{
+				m_DashScreen.Draw();
+				if ( TheNomad::GameSystem::GameTic > m_nDashEndTime ) {
+					m_nDashEndTime = 0;
+				}
+			}
+			if ( m_bReflexMode ) {
+				m_BulletTimeBlurScreen.Draw();
+			}
 			if ( !sgame_ToggleHUD.GetBool() ) {
 				return; // don't draw it
 			}
 			
 			TheNomad::Engine::UserInterface::SetActiveFont( TheNomad::Engine::UserInterface::Font_RobotoMono );
 			
-			if ( m_nStatusBarStartTime != 0 ) {
+			if ( m_nStatusBarEndTime != 0 ) {
 				DrawStatusBars();
 			}
-			if ( m_nWeaponStatusStartTime != 0 ) {
+			if ( m_nWeaponStatusEndTime != 0 ) {
 				DrawWeaponStatus();
-			}
-			if ( m_nDashStartTime != 0 )	{
-				m_DashScreen.Draw();
-				if ( TheNomad::GameSystem::GameTic - m_nDashStartTime <= 1500 ) {
-					m_nDashStartTime = 0;
-				}
 			}
 			DrawMouseReticle();
 
@@ -205,37 +212,39 @@ namespace TheNomad::SGame {
 		}
 		
 		void ShowStatusBars() {
-			if ( !sgame_ToggleHUD.GetBool() ) {
-				m_nStatusBarStartTime = 0;
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_ToggleHUD" ) == 0 ) {
+				m_nStatusBarEndTime = 0;
 				return;
 			}
-			m_nStatusBarStartTime = TheNomad::GameSystem::GameTic;
+			m_nStatusBarEndTime = TheNomad::GameSystem::GameTic + 5000;
 		}
 		void ShowDashMarks() {
-			if ( !sgame_ToggleHUD.GetBool() ) {
-				m_nDashStartTime = 0;
-				return;
-			}
-			m_nDashStartTime = TheNomad::GameSystem::GameTic;
+			m_nDashEndTime = TheNomad::GameSystem::GameTic + DASH_DURATION;
+		}
+		void SetReflexMode( bool bReflex ) {
+			m_bReflexMode = bReflex;
+		}
+		bool IsReflexActive() const {
+			return m_bReflexMode;
 		}
 		
 		private PlayrObject@ m_Parent = null;
 		
 		// cached ui values
-		private ivec2 m_ScreenSize = TheNomad::GameSystem::GameManager.GetScreenSize();
-		private float m_nUIScale = TheNomad::GameSystem::GameManager.GetUIScale();
 		private float m_nStatusBarWidth = 0.0f;
 		private float m_nStatusBarHeight = 0.0f;
 		private float m_nStatusBarFontScale = 0.0f;
 		private float m_nStatusBarStretchAmount = 0.0f;
 		
-		private uint m_nStatusBarStartTime = 0;
-		private uint m_nWeaponStatusStartTime = 0;
-		private uint m_nDashStartTime = 0;
+		private uint m_nStatusBarEndTime = 0;
+		private uint m_nWeaponStatusEndTime = 0;
+		private uint m_nDashEndTime = 0;
+		private bool m_bReflexMode = false;
 		
 		private HudOverlay m_BloodScreenSplatter;
 		private HudOverlay m_ParryScreenFlash;
 		private HudOverlay m_DashScreen;
+		private HudOverlay m_BulletTimeBlurScreen;
 
 		private ScreenShake m_Shake;
 	};

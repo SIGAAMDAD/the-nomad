@@ -39,8 +39,12 @@ namespace TheNomad::SGame {
 			ConsolePrint( "FlipFlop: " + m_bOscillate + "\n" );
 		}
 		
+		bool NextFrame() const {
+			return ( TheNomad::GameSystem::GameTic - m_nOldTic ) * TheNomad::GameSystem::DeltaTic > m_nTicRate;
+		}
+		
 		void Run() {
-			if ( TheNomad::GameSystem::GameTic - m_nOldTic < m_nTicRate ) {
+			if ( !NextFrame() ) {
 				return;
 			}
 

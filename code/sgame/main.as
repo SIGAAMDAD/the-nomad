@@ -160,6 +160,7 @@ void InitResources() {
 
 	TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/dash_screen" );
 	TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/parry_screen" );
+	TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/bullet_time_blur" );
 
 	//
 	// register strings
@@ -218,13 +219,12 @@ int ModuleOnInit() {
 	TheNomad::SGame::ScreenData.Init();
 
 	@TheNomad::Engine::FileSystem::FileManager = TheNomad::Engine::FileSystem::FileSystemManager();
-	@TheNomad::GameSystem::GameManager = TheNomad::GameSystem::CampaignManager();
 
 	@TheNomad::SGame::LevelManager = cast<TheNomad::SGame::LevelSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::LevelSystem() ) );
 	@TheNomad::SGame::GfxManager = cast<TheNomad::SGame::GfxSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::GfxSystem() ) );
 	@TheNomad::SGame::EntityManager = cast<TheNomad::SGame::EntitySystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::EntitySystem() ) );
 
-	TheNomad::GameSystem::GameManager.OnInit();
+	TheNomad::GameSystem::Init();
 
 	ConsolePrint( "--------------------\n" );
 
@@ -241,7 +241,6 @@ int ModuleOnShutdown() {
 
 	TheNomad::SGame::InfoSystem::InfoManager.Clear();
 
-	@TheNomad::GameSystem::GameManager = null;
 	@TheNomad::SGame::LevelManager = null;
 	@TheNomad::SGame::EntityManager = null;
 	@TheNomad::Engine::FileSystem::FileManager = null;
@@ -296,7 +295,7 @@ void StartupGameLevel() {
 int ModuleOnLoadGame() {
 	StartupGameLevel();
 
-	TheNomad::GameSystem::GameManager.SetLoadGame( true );
+	TheNomad::GameSystem::IsLoadGameActive = true;
 	TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::InLevel;
 
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); ++i ) {
@@ -309,7 +308,7 @@ int ModuleOnLoadGame() {
 	TheNomad::SGame::LevelManager.CheckNewGamePlus();
 
 	TheNomad::SGame::ScreenData.InitPlayers();
-	TheNomad::GameSystem::GameManager.SetLoadGame( false );
+	TheNomad::GameSystem::IsLoadGameActive = false;
 
 	return 1;
 }
@@ -361,8 +360,9 @@ int ModuleOnRunTic( int msec ) {
 			return 0;
 		}
 
-		TheNomad::GameSystem::GameManager.SetMsec( msec );
-		TheNomad::GameSystem::GameManager.SetMousePos( TheNomad::Engine::GetMousePosition() );
+		TheNomad::GameSystem::DeltaTic = ( msec - TheNomad::GameSystem::GameTic ) * TheNomad::GameSystem::TIMESTEP;
+		TheNomad::GameSystem::GameTic = msec;
+		TheNomad::GameSystem::MousePosition = TheNomad::Engine::GetMousePosition();
 
 		TheNomad::SGame::LevelManager.Resume();
 		TheNomad::SGame::EntityManager.SetActivePlayer( @TheNomad::SGame::ScreenData.GetPlayerAt( 0 ) );

@@ -18,8 +18,7 @@ namespace TheNomad::Engine::Renderer {
 		{
 			m_Origin = origin;
 			m_Velocity = velocity;
-			m_nStartTime = TheNomad::GameSystem::GameTic;
-			m_nLifeTime = lifeTime;
+			m_nEndTime = TheNomad::GameSystem::GameTic + lifeTime;
 			m_hShader = hShader;
 			@m_SpriteSheet = @SpriteSheet;
 			m_nScale = scale;
@@ -30,6 +29,10 @@ namespace TheNomad::Engine::Renderer {
 		}
 
 		void RunTic() {
+			if ( Util::Distance( TheNomad::SGame::EntityManager.GetActivePlayer().GetOrigin(), m_Origin ) > 16.0f ) {
+				return;
+			}
+
 			m_Origin.x += ( m_Velocity.x * TheNomad::GameSystem::DeltaTic );
 			m_Origin.y += ( m_Velocity.y * TheNomad::GameSystem::DeltaTic );
 			m_Origin.z += ( m_Velocity.z * TheNomad::GameSystem::DeltaTic );
@@ -71,8 +74,7 @@ namespace TheNomad::Engine::Renderer {
 		
 		TheNomad::SGame::Animation m_EffectAnimation;
 
-		uint m_nStartTime = 0;
-		uint m_nLifeTime = 0;
+		uint m_nEndTime = 0;
 
 		float m_nRotation = 0.0f;
 		int m_hShader = FS_INVALID_HANDLE;

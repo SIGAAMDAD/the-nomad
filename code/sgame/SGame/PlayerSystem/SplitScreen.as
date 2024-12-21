@@ -26,8 +26,7 @@ namespace TheNomad::SGame {
 				GameError( "SplitScreen::Init: in_numInputDevices is greater than 4 or less than 0" );
 			}
 
-			m_ScreenSize = uvec2( TheNomad::GameSystem::GameManager.GetGPUConfig().screenWidth,
-				TheNomad::GameSystem::GameManager.GetGPUConfig().screenHeight );
+			m_ScreenSize = uvec2( TheNomad::GameSystem::GPUConfig.screenWidth, TheNomad::GameSystem::GPUConfig.screenHeight );
 			
 			@m_PlayerData[0] = cast<PlayrObject@>( @EntityManager.GetEntityForNum( 0 ) );
 
@@ -89,9 +88,7 @@ namespace TheNomad::SGame {
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.AltUseWeapon_Up_f ), "-altuseweap", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Quickshot_Down_f ), "+quickshot", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Quickshot_Up_f ), "-quickshot", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Quickshot_f ), "quickshot", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.SwitchWeaponWielding_f ), "switchwielding", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
@@ -162,9 +159,18 @@ namespace TheNomad::SGame {
 		void AltUseWeapon_Up_f() {
 			m_PlayerData[0].SetUsingWeaponAlt( false );
 		}
-		void Quickshot_Down_f() {
-		}
-		void Quickshot_Up_f() {
+		void Quickshot_f() {
+			PlayrObject@ obj = @m_PlayerData[0];
+
+			if ( obj.InReflex() ) {
+				obj.SetReflexMode( false );
+				obj.EmitSound( TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slowmo_off" ), 10.0f, 0xff );
+				TheNomad::GameSystem::TIMESTEP = 1.0f / 60.0f;
+			} else {
+				obj.SetReflexMode( true );
+				obj.EmitSound( TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slowmo_on" ), 10.0f, 0xff );
+				TheNomad::GameSystem::TIMESTEP = 1.0f / 1000.0f;
+			}
 		}
 		void Dash_Down_f() {
 			PlayrObject@ obj = @m_PlayerData[0];

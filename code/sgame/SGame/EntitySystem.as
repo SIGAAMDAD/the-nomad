@@ -216,7 +216,7 @@ namespace TheNomad::SGame {
 			}
 		}
 		void OnLevelStart() {
-			if ( TheNomad::GameSystem::GameManager.IsLoadActive() ) {
+			if ( TheNomad::GameSystem::IsLoadGameActive ) {
 				return;
 			}
 

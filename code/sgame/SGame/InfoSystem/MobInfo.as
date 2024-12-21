@@ -6,6 +6,48 @@ namespace TheNomad::SGame::InfoSystem {
 		MobInfo() {
 		}
 
+		private bool LoadRenderDataBlock( json@ json ) {
+			uvec2 sheetSize = uvec2( 0 );
+			uvec2 spriteSize = uvec2( 0 );
+			string npath;
+
+			if ( !json.get( "RenderData.SheetWidth", sheetSize.x ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'RenderData.SheetWidth' in \"" + name + "\"\n" );
+				return false;
+			}
+			sheetSize.x = uint( json[ "RenderData.SheetWidth" ] );
+
+			if ( !json.get( "RenderData.SheetHeight", sheetSize.y ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'RenderData.SheetHeight' in \"" + name + "\"\n" );
+				return false;
+			}
+			sheetSize.y = uint( json[ "RenderData.SheetHeight" ] );
+
+			if ( !json.get( "RenderData.SpriteWidth", spriteSize.x ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'RenderData.SpriteWidth' in \"" + name + "\"\n" );
+				return false;
+			}
+			spriteSize.x = uint( json[ "RenderData.SpriteWidth" ] );
+
+			if ( !json.get( "RenderData.SpriteHeight", spriteSize.y ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'RenderData.SpriteHeight' in \"" + name + "\"\n" );
+				return false;
+			}
+			spriteSize.y = uint( json[ "RenderData.SpriteHeight" ] );
+
+			if ( !json.get( "RenderData.SpriteSheet", npath ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'RenderData.SpriteSheet' in \"" + name + "\"\n" );
+				return false;
+			}
+
+			DebugPrint( "Allocating sprite sheet for mob \"" + name + "\", [ " + sheetSize.x + ", " + sheetSize.y + " ]:[ " + spriteSize.x + ", "
+				+ spriteSize.y + " ]\n" );
+			@spriteSheet = @TheNomad::Engine::ResourceCache.GetSpriteSheet( npath, sheetSize.x, sheetSize.y,
+				spriteSize.x, spriteSize.y );
+			
+			return true;
+		}
+
 		private bool LoadStatsBlock( json@ json ) {
 			if ( !json.get( "Stats.Health", health ) ) {
 				ConsoleWarning( "invalid mob info, missing variable 'Stats.Health' in \"" + name + "\"\n" );
@@ -157,6 +199,8 @@ namespace TheNomad::SGame::InfoSystem {
 
 		vec3 speed = vec3( 1.0f );
 		vec2 size = vec2( 1.0f );
+		
+		SpriteSheet@ spriteSheet = null;
 
 		float soundTolerance = 0.0f;
 		float soundRange = 0.0f;

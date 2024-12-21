@@ -357,7 +357,7 @@ namespace TheNomad::SGame {
 			//
 			// in the case we're in a split-screen co-op situation, then all the players after the
 			// first will be spawned around them
-			if ( !TheNomad::GameSystem::GameManager.IsLoadActive() ) {
+			if ( !TheNomad::GameSystem::IsLoadGameActive ) {
 				if ( m_MapData.GetSpawns().Count() < 1 || m_MapData.GetCheckpoints().Count() < 1 ) {
 					ForcePlayerSpawn();
 				} else {
@@ -444,7 +444,7 @@ namespace TheNomad::SGame {
 			m_nIndex = 0;
 			m_nLevelTimer = TheNomad::GameSystem::GameTic;
 
-			if ( !TheNomad::GameSystem::GameManager.IsLoadActive() ) {
+			if ( !TheNomad::GameSystem::IsLoadGameActive ) {
 				LoadMap();
 			}
 		}

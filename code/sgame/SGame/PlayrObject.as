@@ -279,6 +279,13 @@ namespace TheNomad::SGame {
 			return m_CurrentWeapon;
 		}
 
+		void SetReflexMode( bool bReflex ) {
+			m_HudData.SetReflexMode( bReflex );
+		}
+		bool InReflex() const {
+			return m_HudData.IsReflexActive();
+		}
+
 		SpriteSheet@ GetLeftArmSpriteSheet() {
 			return @m_LeftArm.GetSpriteSheet();
 		}

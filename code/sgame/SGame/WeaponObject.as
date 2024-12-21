@@ -239,7 +239,7 @@ namespace TheNomad::SGame {
 			}
 		}
 		void Draw() override {
-			if ( @m_Owner is null ) {
+			if ( Util::Distance( EntityManager.GetActivePlayer().GetOrigin(), m_Link.m_Origin ) > 16.0f || @m_Owner !is null ) {
 				return;
 			}
 			

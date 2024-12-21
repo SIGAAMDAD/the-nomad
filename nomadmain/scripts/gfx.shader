@@ -66,6 +66,18 @@ console
 //
 // hud elements
 //
+gfx/hud/bullet_time_blur
+{
+	nopicmip
+	nomipmaps
+	{
+		texFilter bilinear
+		map gfx/hud/motion_blur.png
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+	}
+}
+
 gfx/hud/dash_screen
 {
 	nopicmip
