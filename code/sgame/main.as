@@ -141,9 +141,9 @@ void InitResources() {
 		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/bullet_impact/hit_rock_2" );
 		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/bullet_impact/hit_rock_3" );
 
-		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/bullet_impact/richochet_0" );
-		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/bullet_impact/richochet_1" );
-		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/bullet_impact/richochet_2" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/bullet_impact/ricochet_0" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/bullet_impact/ricochet_1" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/bullet_impact/ricochet_2" );
 	}
 	
 	//

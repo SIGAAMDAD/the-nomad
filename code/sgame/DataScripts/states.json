@@ -22,7 +22,7 @@
 			"NextState": "this",
 			"SpriteOffset": [ 0, 16 ],
 			"Animation": {
-				"TicRate": 80,
+				"TicRate": 200,
 				"FlipFlop": false,
 				"Frames": 3,
 				"Reverse": false
