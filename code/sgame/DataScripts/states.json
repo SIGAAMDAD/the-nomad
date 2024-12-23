@@ -22,7 +22,7 @@
 				"NextState": "this",
 				"SpriteOffset": [ 0, 16 ],
 				"Animation": {
-					"TicRate": 20,
+					"TicRate": 80,
 					"FlipFlop": false,
 					"Frames": 3,
 					"Reverse": false
@@ -36,7 +36,7 @@
 				"NextState": "player_ground_idle",
 				"SpriteOffset": [ 3, 16 ],
 				"Animation": {
-					"TicRate": 2,
+					"TicRate": 30,
 					"FlipFlop": false,
 					"Frames": 3,
 					"Reverse": false
@@ -134,7 +134,7 @@
 				"NextState": "player_arms_idle_left",
 				"SpriteOffset": [ 1, 0 ],
 				"Animation": {
-					"TicRate": 13,
+					"TicRate": 28,
 					"FlipFlop": false,
 					"Frames": 2,
 					"Reverse": false
@@ -190,7 +190,7 @@
 				"NextState": "player_arms_idle_right",
 				"SpriteOffset": [ 17, 0 ],
 				"Animation": {
-					"TicRate": 8,
+					"TicRate": 20,
 					"FlipFlop": false,
 					"Frames": 2,
 					"Reverse": false

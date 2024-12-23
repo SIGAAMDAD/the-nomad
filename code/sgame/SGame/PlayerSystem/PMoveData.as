@@ -84,7 +84,9 @@ namespace TheNomad::SGame {
 						lerpTime *= 2;
 					}
 
-					if ( ( gameTic - move_toggle ) * TheNomad::GameSystem::DeltaTic >= lerpTime && m_EntityData.GetOrigin().z == 0.0f ) {
+					if ( ( TheNomad::GameSystem::GameTic - move_toggle ) * TheNomad::GameSystem::DeltaTic >= lerpTime
+						&& m_EntityData.GetOrigin().z == 0.0f )
+					{
 						// we can mix in different surfaceparm sound effects for more complex environments
 						float volume = 10.0f;
 						if ( ( tile & SURFACEPARM_WATER ) != 0 ) {
@@ -144,7 +146,7 @@ namespace TheNomad::SGame {
 							m_EntityData.EmitSound( moveGravel3, volume, 0xff );
 							break;
 						};
-						move_toggle = gameTic;
+						move_toggle = TheNomad::GameSystem::GameTic;
 
 						if ( m_EntityData.GetWaterLevel() == 0 ) {
 							// dont kick up much dust underwater
@@ -281,7 +283,6 @@ namespace TheNomad::SGame {
 			AirMove();
 
 			SetMovementDir();
-
 			/*
 			if ( sgame_DebugMode.GetBool() ) {
 				TheNomad::Engine::UserInterface::SetActiveFont( TheNomad::Engine::UserInterface::Font_RobotoMono );
@@ -322,16 +323,10 @@ namespace TheNomad::SGame {
 			}
 			*/
 
-			m_EntityData.key_MoveNorth.msec = 0;
-			m_EntityData.key_MoveSouth.msec = 0;
-			m_EntityData.key_MoveEast.msec = 0;
-			m_EntityData.key_MoveWest.msec = 0;
-			m_EntityData.key_Jump.msec = 0;
-
 			m_EntityData.GetPhysicsObject().OnRunTic();
 		}
 		
-		private float KeyState( KeyBind& in key ) {
+		private float KeyState( KeyBind@ key ) {
 			int msec = key.msec;
 			key.msec = 0;
 			
@@ -359,16 +354,16 @@ namespace TheNomad::SGame {
 			side = 0.0f;
 			up = 0.0f;
 			
-			side += base * KeyState( m_EntityData.key_MoveEast );
-			side -= base * KeyState( m_EntityData.key_MoveWest );
+			side += base * KeyState( @m_EntityData.key_MoveEast );
+			side -= base * KeyState( @m_EntityData.key_MoveWest );
 
-			const float jump = KeyState( m_EntityData.key_Jump );
+			const float jump = KeyState( @m_EntityData.key_Jump );
 			if ( m_EntityData.GetOrigin().z == 0.0f ) {
 				up += base * jump;
 			}
 			
-			forward -= base * KeyState( m_EntityData.key_MoveNorth );
-			forward += base * KeyState( m_EntityData.key_MoveSouth );
+			forward -= base * KeyState( @m_EntityData.key_MoveNorth );
+			forward += base * KeyState( @m_EntityData.key_MoveSouth );
 		}
 
 		ivec2 m_JoystickPosition = ivec2( 0 );

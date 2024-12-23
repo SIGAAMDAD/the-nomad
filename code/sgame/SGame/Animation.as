@@ -1,7 +1,7 @@
 namespace TheNomad::SGame {
 	class Animation {
 		Animation() {
-			m_nEndTic = 0;
+			m_nOldTic = 0;
 			m_nTicker = 1;
 			m_bOscillate = false;
 			m_bReverse = false;
@@ -43,7 +43,7 @@ namespace TheNomad::SGame {
 		}
 		
 		bool NextFrame() const {
-			return TheNomad::GameSystem::GameTic * TheNomad::GameSystem::DeltaTic > m_nEndTic;
+			return ( TheNomad::GameSystem::GameTic - m_nOldTic ) * TheNomad::GameSystem::DeltaTic >= m_nTicRate;
 		}
 		
 		void Run() {
@@ -51,7 +51,7 @@ namespace TheNomad::SGame {
 				return;
 			}
 
-			m_nEndTic = ( TheNomad::GameSystem::GameTic + m_nTicRate ) * TheNomad::GameSystem::DeltaTic;
+			m_nOldTic = TheNomad::GameSystem::GameTic;
 
 			if ( m_bReverse ) {
 				m_nCurrentFrame--;
@@ -110,7 +110,7 @@ namespace TheNomad::SGame {
 		private EntityState@ m_State = null;
 		
 		private uint m_nLerpTime = 0;
-		private uint m_nEndTic = 0;
+		private uint m_nOldTic = 0;
 		private uint m_nNumFrames = 1;
 		private uint m_nTicRate = 1;
 		private int m_nTicker = 0;
