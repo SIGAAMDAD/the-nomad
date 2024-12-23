@@ -55,7 +55,7 @@ namespace TheNomad::SGame {
 				// still have it
 				@next = @ent.m_Prev;
 
-				if ( TheNomad::GameSystem::GameTic > ent.m_nEndTime ) {
+				if ( TheNomad::GameSystem::GameDeltaTic > ent.m_nEndTime ) {
 					FreeLocalEntity( @ent );
 					continue;
 				}

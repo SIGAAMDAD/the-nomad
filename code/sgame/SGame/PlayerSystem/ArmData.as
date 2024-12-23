@@ -29,11 +29,34 @@ namespace TheNomad::SGame {
 
 			const string id = ( nArmIndex == 0 ? "right" : "left" );
 			@m_IdleState = @StateManager.GetStateById( "player_arms_idle_" + id );
+			if ( @m_IdleState is null ) {
+				GameError( "ArmData::Link: couldn't find state \"player_arms_idle_" + id + "\"" );
+			}
+
 			@m_MeleeState = @StateManager.GetStateById( "player_arms_melee_" + id );
+			if ( @m_MeleeState is null ) {
+				GameError( "ArmData::Link: couldn't find state \"player_arms_melee_" + id + "\"" );
+			}
+
 			@m_MoveState = @StateManager.GetStateById( "player_arms_move_" + id );
+			if ( @m_MoveState is null ) {
+				GameError( "ArmData::Link: couldn't find state \"player_arms_move_" + id + "\"" );
+			}
+
 			@m_SlideState = @StateManager.GetStateById( "player_arms_slide_" + id );
+			if ( @m_SlideState is null ) {
+				GameError( "ArmData::Link: couldn't find state \"player_arms_slide_" + id + "\"" );
+			}
+
 			@m_StealthCrawlState = @StateManager.GetStateById( "player_arms_stealth_crawl_" + id );
+			if ( @m_StealthCrawlState is null ) {
+				GameError( "ArmData::Link: couldn't find state \"player_arms_stealth_crawl_" + id + "\"" );
+			}
+
 			@m_StealthReadyState = @StateManager.GetStateById( "player_arms_stealth_ready_" + id );
+			if ( @m_StealthReadyState is null ) {
+				GameError( "ArmData::Link: couldn't find state \"player_arms_stealth_ready_" + id + "\"" );
+			}
 		}
 		
 		private SpriteSheet@ CalcState() {
