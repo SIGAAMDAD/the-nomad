@@ -16,45 +16,48 @@ namespace TheNomad::Engine::Renderer {
 			bool bGravity = false, TheNomad::SGame::SpriteSheet@ SpriteSheet = null,
 			const uvec2& in nSpriteOffset = uvec2( 0 ) )
 		{
-			m_Origin = origin;
-			m_Velocity = velocity;
+			m_Origin = vec2( origin.x, origin.y + origin.z );
+			m_Velocity = vec2( velocity.x, velocity.y + velocity.z );
 			m_nEndTime = TheNomad::GameSystem::GameTic + lifeTime;
 			m_hShader = hShader;
 			@m_SpriteSheet = @SpriteSheet;
 			m_nScale = scale;
 			m_bGravity = bGravity;
 			m_nRotation = 0.0f;
-			m_nSpriteOffset = nSpriteOffset;
+			if ( @m_SpriteSheet !is null ) {
+				m_nSpriteOffset = nSpriteOffset.y * m_SpriteSheet.GetSpriteCountX() + nSpriteOffset.x;
+			}
 			m_EffectAnimation = TheNomad::SGame::Animation();
 		}
 
 		void RunTic() {
-			if ( Util::Distance( TheNomad::SGame::EntityManager.GetActivePlayer().GetOrigin(), m_Origin ) > 16.0f ) {
+			const vec3 origin = vec3( m_Origin.x, m_Origin.y, 0.0f );
+			if ( Util::Distance( TheNomad::SGame::EntityManager.GetActivePlayer().GetOrigin(), origin ) > 16.0f ) {
 				return;
 			}
 
-			m_Origin.x += ( m_Velocity.x * TheNomad::GameSystem::DeltaTic );
-			m_Origin.y += ( m_Velocity.y * TheNomad::GameSystem::DeltaTic );
-			m_Origin.z += ( m_Velocity.z * TheNomad::GameSystem::DeltaTic );
-
+			if ( m_Velocity != Vec2Origin ) {
+				m_Origin.x += ( m_Velocity.x * TheNomad::GameSystem::DeltaTic );
+				m_Origin.y += ( m_Velocity.y * TheNomad::GameSystem::DeltaTic );
+			}
 			if ( m_bGravity ) {
-				m_Velocity.y = 0.01f;
-				m_Velocity.z = Util::Clamp( m_Velocity.z - TheNomad::SGame::sgame_Gravity.GetFloat(), -0.4f, m_Velocity.z );
-				if ( m_Origin.z < 0.0f ) {
-					m_Velocity.z = 0.0f;
-					m_Origin.z = 0.0f;
+				m_Velocity.y = Util::Clamp( m_Velocity.y - TheNomad::SGame::sgame_Gravity.GetFloat(), -0.4f, m_Velocity.y );
+				if ( m_Origin.y < 0.0f ) {
+					m_Velocity.y = 0.0f;
+					m_Origin.y = 0.0f;
 				}
 			}
 
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
+
 			refEntity.rotation = m_nRotation;
-			refEntity.origin = m_Origin;
+			refEntity.origin = origin;
 			refEntity.scale = m_nScale;
 			if ( @m_SpriteSheet !is null ) {
 				m_EffectAnimation.Run();
 
 				refEntity.sheetNum = m_SpriteSheet.GetShader();
-				refEntity.spriteId = m_nSpriteOffset.y * m_SpriteSheet.GetSpriteCountX() + m_nSpriteOffset.x + m_EffectAnimation.GetFrame();
+				refEntity.spriteId = m_nSpriteOffset + m_EffectAnimation.GetFrame();
 			} else {
 				refEntity.sheetNum = -1;
 				refEntity.spriteId = m_hShader;
@@ -62,11 +65,10 @@ namespace TheNomad::Engine::Renderer {
 			refEntity.Draw();
 		}
 
-		vec3 m_Origin = vec3( 0.0f );
-		vec3 m_Velocity = vec3( 0.0f );
+		vec2 m_Origin = vec2( 0.0f );
+		vec2 m_Velocity = vec2( 0.0f );
 
 		vec2 m_nScale = vec2( 1.0f );
-		uvec2 m_nSpriteOffset = uvec2( 0 );
 
 		TheNomad::SGame::SpriteSheet@ m_SpriteSheet = null;
 		LocalEntity@ m_Next = null;
@@ -75,6 +77,7 @@ namespace TheNomad::Engine::Renderer {
 		TheNomad::SGame::Animation m_EffectAnimation;
 
 		uint m_nEndTime = 0;
+		uint m_nSpriteOffset = 0;
 
 		float m_nRotation = 0.0f;
 		int m_hShader = FS_INVALID_HANDLE;

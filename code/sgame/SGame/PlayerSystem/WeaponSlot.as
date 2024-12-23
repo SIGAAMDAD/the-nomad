@@ -6,6 +6,11 @@ namespace TheNomad::SGame {
 	class WeaponSlot {
 		WeaponSlot() {
 		}
+		WeaponSlot( uint nSlot ) {
+			@m_Base = null;
+			m_nMode = InfoSystem::WeaponProperty::None;
+			m_nIndex = nSlot;
+		}
 
 		WeaponSlot& opAssign( WeaponObject@ obj ) {
 			@m_Base = @obj;
@@ -24,6 +29,10 @@ namespace TheNomad::SGame {
 			return @m_Base;
 		}
 
+		uint GetSlot() const {
+			return m_nIndex;
+		}
+
 		bool IsUsed() const {
 			return @m_Base !is null;
 		}
@@ -37,6 +46,9 @@ namespace TheNomad::SGame {
 			@m_Base = @obj;
 		}
 
+		void SetMode( InfoSystem::WeaponProperty nMode ) {
+			m_nMode = nMode;
+		}
 		void AddMode( InfoSystem::WeaponProperty nMode ) {
 			m_nMode = InfoSystem::WeaponProperty( uint( m_nMode ) | uint( nMode ) );
 		}

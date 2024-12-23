@@ -39,6 +39,7 @@ namespace TheNomad::GameSystem {
 	float TIMESTEP = 1.0f / 60.0f;
 	bool IsLoadGameActive = false;
  	uint GameTic = 0;
+	float GameDeltaTic = 0.0f;
  	float DeltaTic = 0.0f;
 	int HalfScreenWidth = 0;
 	int HalfScreenHeight = 0;

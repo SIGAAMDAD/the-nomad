@@ -55,7 +55,7 @@ namespace TheNomad::SGame {
 				// still have it
 				@next = @ent.m_Prev;
 
-				if ( ( TheNomad::GameSystem::GameTic * TheNomad::GameSystem::DeltaTic ) > ent.m_nEndTime ) {
+				if ( TheNomad::GameSystem::GameTic > ent.m_nEndTime ) {
 					FreeLocalEntity( @ent );
 					continue;
 				}
@@ -172,7 +172,6 @@ namespace TheNomad::SGame {
 			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 ) {
 				return;
 			}
-
 			AllocLocalEntity().Spawn( origin, vec3( 0.0f ), 1800, m_hDustScreenShader );
 		}
 
@@ -202,10 +201,7 @@ namespace TheNomad::SGame {
 				scale.x = -scale.x;
 			}
 			
-			ent.Spawn( origin, vec3( 0.0f ), 400, FS_INVALID_HANDLE,
-				scale, false,
-				@m_SmokePuff );
-			
+			ent.Spawn( origin, vec3( 0.0f ), 400, FS_INVALID_HANDLE, scale, false, @m_SmokePuff );
 			ent.m_EffectAnimation.Load( 90, false, 9, false );
 		}
 

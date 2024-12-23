@@ -16,14 +16,6 @@ namespace TheNomad::SGame {
 		void Link( PlayrObject@ base, int nArmIndex, const uvec2& in sheetSize, const uvec2& in spriteSize ) {
 			@m_EntityData = @base;
 
-			/*
-			@m_SpriteSheet = @TheNomad::Engine::ResourceCache.GetSpriteSheet(
-				"skins/" + base.GetSkin() + "/arms_" + ( nArmIndex == 0 ? "right" : "left" ),
-				sheetSize.x, sheetSize.y, spriteSize.x, spriteSize.y );
-			if ( @m_SpriteSheet is null ) {
-				GameError( "ArmData::Link: failed to load arms sprite sheet" );
-			}
-			*/
 			@m_SpriteSheet = @TheNomad::Engine::ResourceCache.GetSpriteSheet( "skins/" + base.GetSkin(), 1024, 1024, 32, 32 );
 
 			@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_IDLE );
@@ -50,11 +42,13 @@ namespace TheNomad::SGame {
 				return @m_SpriteSheet;
 			}
 			
-			if ( @m_Equipped !is null ) {
+			if ( m_nWeaponSlot != uint( -1 ) ) {
 				// assign a weapon specific state
-				@m_State = @m_Equipped.GetState();
+				WeaponObject@ weapon = @m_EntityData.GetInventory().GetSlot( m_nWeaponSlot ).GetData();
+
+				@m_State = @weapon.GetState();
 				
-				return @m_Equipped.GetSpriteSheet();
+				return @weapon.GetSpriteSheet();
 			}
 			else if ( m_EntityData.GetPhysicsObject().GetVelocity() != Vec3Origin ) {
 				if ( m_EntityData.IsSliding() ) {
@@ -105,14 +99,8 @@ namespace TheNomad::SGame {
 		const SpriteSheet@ GetSpriteSheet() const {
 			return @m_SpriteSheet;
 		}
-		WeaponObject@ GetEquippedWeapon() {
-			return @m_Equipped;
-		}
-		const WeaponObject@ GetEquippedWeapon() const {
-			return @m_Equipped;
-		}
-		InfoSystem::WeaponProperty GetMode() const {
-			return m_nMode;
+		uint GetEquippedWeapon() const {
+			return m_nWeaponSlot;
 		}
 		EntityState@ GetState() {
 			return @m_State;
@@ -130,11 +118,8 @@ namespace TheNomad::SGame {
 			return m_nTicker;
 		}
 		
-		void SetEquippedWeapon( WeaponObject@ weapon ) {
-			@m_Equipped = @weapon;
-		}
-		void SetMode( InfoSystem::WeaponProperty nMode ) {
-			m_nMode = nMode;
+		void SetEquippedSlot( uint nSlot ) {
+			m_nWeaponSlot = nSlot;
 		}
 		void SetState( EntityState@ state ) {
 			@m_State = @state;
@@ -154,10 +139,9 @@ namespace TheNomad::SGame {
 		private EntityState@ m_StealthReadyState = null;
 		
 		private PlayrObject@ m_EntityData = null;
-		private WeaponObject@ m_Equipped = null;
 		private SpriteSheet@ m_SpriteSheet = null;
 		private EntityState@ m_State = null;
-		private InfoSystem::WeaponProperty m_nMode = InfoSystem::WeaponProperty::None;
+		private uint m_nWeaponSlot = uint( -1 );
 		private int m_nFacing = FACING_RIGHT;
 		private int m_nArmIndex = 0;
 		private uint m_nTicker = 0;

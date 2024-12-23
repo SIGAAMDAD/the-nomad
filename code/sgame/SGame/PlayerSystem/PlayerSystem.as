@@ -13,12 +13,11 @@
 #include "SGame/PlayerSystem/AfterImage.as"
 
 // misc
+#include "SGame/PlayerSystem/ArmData.as"
 #include "SGame/PlayerSystem/PMoveData.as"
 #include "SGame/PlayerSystem/HudOverlay.as"
-#include "SGame/PlayerSystem/InventoryStack.as"
 #include "SGame/PlayerSystem/InventoryManager.as"
 #include "SGame/PlayerSystem/PlayerHud.as"
 #include "SGame/PlayerSystem/StyleTracker.as"
 #include "SGame/PlayerSystem/SplitScreen.as"
 #include "SGame/PlayerSystem/WeaponSlot.as"
-#include "SGame/PlayerSystem/ArmData.as"

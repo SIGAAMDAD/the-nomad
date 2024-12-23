@@ -16,8 +16,36 @@ namespace TheNomad::SGame {
 			origin.y += ( bounds.y / 2.0f ) + offset.y;
 		}
 
+		private void CacheSfx() {
+			m_SlowMoOff = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slowmo_off" );
+			m_SlowMoOn = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slowmo_on" );
+
+			m_DieSfx0 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/death1" );
+			m_DieSfx1 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/death2" );
+			m_DieSfx2 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/death3" );
+
+			m_PainSfx0 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_scream_0" );
+			m_PainSfx1 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_scream_1" );
+			m_PainSfx2 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_scream_2" );
+
+			m_SlideSfx0 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slide_0" );
+			m_SlideSfx1 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slide_1" );
+
+			m_DashSfx0 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/use_jumpkit_0" );
+			m_DashSfx1 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/use_jumpkit_1" );
+
+			m_MeleeSfx = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/melee" );
+
+			m_WeaponChangeHandSfx = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/weapon_change_hand" );
+			m_WeaponChangeModeSfx = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/weapon_change_mode" );
+
+			m_CrouchDownSfx = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/cloth_foley_0" );
+			m_CrouchUpSfx = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/cloth_foley_1" );
+		}
+
 		void InitPlayers() {
 			ConsolePrint( "Initializing screen data...\n" );
+			/*
 
 			m_nPlayerCount = int( TheNomad::Engine::CvarVariableInteger( "in_numInputDevices" ) );
 			vec3 pos = EntityManager.GetEntityForNum( 0 ).GetOrigin(); // the first entity will always be the player
@@ -28,11 +56,19 @@ namespace TheNomad::SGame {
 
 			m_ScreenSize = uvec2( TheNomad::GameSystem::GPUConfig.screenWidth, TheNomad::GameSystem::GPUConfig.screenHeight );
 			
-			@m_PlayerData[0] = cast<PlayrObject@>( @EntityManager.GetEntityForNum( 0 ) );
+			@m_PlayerData = cast<PlayrObject@>( @EntityManager.GetEntityForNum( 0 ) );
 
 			for ( uint i = 0; i < m_nPlayerCount; i++ ) {
 				m_PlayerData[i].SetPlayerIndex( i );
 			}
+			*/
+
+			m_ScreenSize = uvec2( TheNomad::GameSystem::GPUConfig.screenWidth, TheNomad::GameSystem::GPUConfig.screenHeight );
+
+			@m_PlayerData = cast<PlayrObject@>( @EntityManager.GetEntityForNum( 0 ) );
+			m_PlayerData.SetPlayerIndex( 0 );
+
+			CacheSfx();
 		}
 		void Init() {
 			//
@@ -44,12 +80,10 @@ namespace TheNomad::SGame {
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_Down_f ), "+north", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_Up_f ), "-north", true );
-			
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveSouth_Down_f ), "+south", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveSouth_Up_f ), "-south", true );
-			
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveWest_Down_f ), "+west", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
@@ -102,7 +136,8 @@ namespace TheNomad::SGame {
 		}
 		void Shutdown() {
 		}
-		
+
+		/*
 		private PlayrObject@ GetPlayerIndex() const {
 			if ( TheNomad::Engine::CmdArgc() == 4 ) {
 				// its a co-op input, get the player index
@@ -115,79 +150,78 @@ namespace TheNomad::SGame {
 			}
 			return @m_PlayerData[ 0 ];
 		}
+		*/
 
 		void MoveNorth_Down_f() {
-			m_PlayerData[0].key_MoveNorth.Down();
+			m_PlayerData.key_MoveNorth.Down();
 		}
 		void MoveNorth_Up_f() {
-			m_PlayerData[0].key_MoveNorth.Up();
+			m_PlayerData.key_MoveNorth.Up();
 		}
 		void MoveSouth_Down_f() {
-			m_PlayerData[0].key_MoveSouth.Down();
+			m_PlayerData.key_MoveSouth.Down();
 		}
 		void MoveSouth_Up_f() {
-			m_PlayerData[0].key_MoveSouth.Up();
+			m_PlayerData.key_MoveSouth.Up();
 		}
 		void MoveEast_Down_f() {
-			m_PlayerData[0].key_MoveEast.Down();
+			m_PlayerData.key_MoveEast.Down();
 		}
 		void MoveEast_Up_f() {
-			m_PlayerData[0].key_MoveEast.Up();
+			m_PlayerData.key_MoveEast.Up();
 		}
 		void MoveWest_Down_f() {
-			m_PlayerData[0].key_MoveWest.Down();
+			m_PlayerData.key_MoveWest.Down();
 		}
 		void MoveWest_Up_f() {
-			m_PlayerData[0].key_MoveWest.Up();
+			m_PlayerData.key_MoveWest.Up();
 		}
 		void Jump_Down_f() {
-			m_PlayerData[0].key_Jump.Down();
+			m_PlayerData.key_Jump.Down();
 		}
 		void Jump_Up_f() {
-			m_PlayerData[0].key_Jump.Up();
+			m_PlayerData.key_Jump.Up();
 		}
-
 		void UseWeapon_Down_f() {
-			m_PlayerData[0].SetUsingWeapon( true );
+			m_PlayerData.SetUsingWeapon( true );
 		}
 		void UseWeapon_Up_f() {
-			m_PlayerData[0].SetUsingWeapon( false );
+			m_PlayerData.SetUsingWeapon( false );
 		}
 		void AltUseWeapon_Down_f() {
-			m_PlayerData[0].SetUsingWeaponAlt( true );
+			m_PlayerData.SetUsingWeaponAlt( true );
 		}
 		void AltUseWeapon_Up_f() {
-			m_PlayerData[0].SetUsingWeaponAlt( false );
+			m_PlayerData.SetUsingWeaponAlt( false );
 		}
 		void Quickshot_f() {
-			PlayrObject@ obj = @m_PlayerData[0];
-
-			if ( obj.InReflex() ) {
-				obj.SetReflexMode( false );
-				obj.EmitSound( TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slowmo_off" ), 10.0f, 0xff );
+			if ( m_PlayerData.InReflex() ) {
+				m_PlayerData.SetReflexMode( false );
+				m_PlayerData.EmitSound( m_SlowMoOff, 10.0f, 0xff );
 				TheNomad::GameSystem::TIMESTEP = 1.0f / 60.0f;
 			} else {
-				obj.SetReflexMode( true );
-				obj.EmitSound( TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slowmo_on" ), 10.0f, 0xff );
-				TheNomad::GameSystem::TIMESTEP = 1.0f / 1000.0f;
+				m_PlayerData.SetReflexMode( true );
+				m_PlayerData.EmitSound( m_SlowMoOn, 10.0f, 0xff );
+				TheNomad::GameSystem::TIMESTEP = 1.0f / 800.0f;
 			}
 		}
 		void Dash_Down_f() {
-			PlayrObject@ obj = @m_PlayerData[0];
-
 			// wait at little bit before launching another dash
-			if ( obj.GetTimeSinceLastDash() < 1000 ) {
-				return;
+			if ( TheNomad::GameSystem::GameTic > m_PlayerData.GetDashTime() ) {
+//				return;
 			}
 
-			obj.EmitSound( obj.dashSfx, 10.0f, 0xff );
-			//Util::HapticRumble( obj.GetPlayerIndex(), 0.40f, 700 );
-			obj.ResetDash();
-			obj.SetDashing( true );
+			if ( ( Util::PRandom() & 1 ) == 1 ) {
+				m_PlayerData.EmitSound( m_DashSfx0, 10.0f, 0xff );
+			} else {
+				m_PlayerData.EmitSound( m_DashSfx1, 10.0f, 0xff );
+			}
+			m_PlayerData.ResetDash();
+			m_PlayerData.SetDashing( true );
 				
-			vec3 origin = obj.GetOrigin();
+			vec3 origin = m_PlayerData.GetOrigin();
 			origin.y -= 1.5f;
-			switch ( obj.GetFacing() ) {
+			switch ( m_PlayerData.GetFacing() ) {
 			case FACING_LEFT:
 				origin.x += 1.5f;
 				break;
@@ -196,38 +230,37 @@ namespace TheNomad::SGame {
 				break;
 			};
 
-			GfxManager.AddDustTrail( origin, obj.GetFacing() );
+			GfxManager.AddDustTrail( origin, m_PlayerData.GetFacing() );
 			Util::HapticRumble( 0, 0.80f, 400 );
 		}
 		void Dash_Up_f() {
-			m_PlayerData[0].SetDashing( false );
+			m_PlayerData.SetDashing( false );
 		}
 
 		void Slide_Down_f() {
-			PlayrObject@ obj = @m_PlayerData[0];
-
 			// TODO: ground slam?
-			if ( obj.IsCrouching() || obj.GetOrigin().z > 0.0f || obj.GetTimeSinceLastSlide() < SLIDE_DURATION ) {
+			if ( m_PlayerData.IsCrouching() || m_PlayerData.GetOrigin().z > 0.0f
+				|| TheNomad::GameSystem::GameTic > m_PlayerData.GetSlideTime() )
+			{
 				return;
 			}
 
 			// we need a little bit of momentum to engage in a slide
-			if ( ( obj.key_MoveNorth.active || obj.key_MoveSouth.active || obj.key_MoveEast.active || obj.key_MoveWest.active ) ||
-				obj.IsDashing() )
+			if ( ( m_PlayerData.key_MoveNorth.active || m_PlayerData.key_MoveSouth.active || m_PlayerData.key_MoveEast.active
+				|| m_PlayerData.key_MoveWest.active ) || m_PlayerData.IsDashing() )
 			{
 				if ( ( Util::PRandom() & 1 ) == 1 ) {
-					obj.EmitSound( obj.slideSfx0, 10.0f, 0xff );
+					m_PlayerData.EmitSound( m_SlideSfx0, 10.0f, 0xff );
 				} else {
-					obj.EmitSound( obj.slideSfx1, 10.0f, 0xff );
+					m_PlayerData.EmitSound( m_SlideSfx1, 10.0f, 0xff );
 				}
 				
-				//Util::HapticRumble( obj.GetPlayerIndex(), 0.40f, 500 );
-				obj.ResetSlide();
-				obj.SetSliding( true );
+				m_PlayerData.ResetSlide();
+				m_PlayerData.SetSliding( true );
 
-				vec3 origin = obj.GetOrigin();
+				vec3 origin = m_PlayerData.GetOrigin();
 				origin.y -= 1.5f;
-				switch ( obj.GetFacing() ) {
+				switch ( m_PlayerData.GetFacing() ) {
 				case FACING_LEFT:
 					origin.x += 1.5f;
 					break;
@@ -236,130 +269,75 @@ namespace TheNomad::SGame {
 					break;
 				};
 
-				GfxManager.AddDustTrail( origin, obj.GetFacing() );
+				GfxManager.AddDustTrail( origin, m_PlayerData.GetFacing() );
 				Util::HapticRumble( 0, 0.40f, 200 );
 			}
 		}
 		void Slide_Up_f() {
-			m_PlayerData[0].SetSliding( false );
+			m_PlayerData.SetSliding( false );
 		}
-		void Melee_Down_f() {
-			PlayrObject@ obj = @m_PlayerData[0];
-	
-			if ( @obj.GetLeftArmState() is @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_MELEE ) ) {
+		void Melee_Down_f() {	
+			if ( @m_PlayerData.GetLeftArmState() is @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_MELEE ) ) {
 				return;
 			}
-			obj.EmitSound( obj.meleeSfx, 10.0f, 0xff );
-			obj.SetParryBoxWidth( 0.0f );
-			obj.SetArmsState( StateNum::ST_PLAYR_ARMS_MELEE );
+			m_PlayerData.EmitSound( m_MeleeSfx, 10.0f, 0xff );
+			m_PlayerData.SetParryBoxWidth( 0.0f );
+			m_PlayerData.SetArmsState( StateNum::ST_PLAYR_ARMS_MELEE );
 		}
 		void Melee_Up_f() {
 		}
 		
 		void SwitchWeaponWielding_f() {
-			PlayrObject@ obj = @m_PlayerData[0];
-
-			switch ( obj.GetHandsUsed() ) {
-			case 0:
-				obj.SwitchWeaponWielding( @obj.GetLeftArm(), @obj.GetRightArm(),
-					@obj.GetLeftHandWeapon(), @obj.GetRightHandWeapon() );
-				break;
-			case 1:
-			case 2:
-				obj.SwitchWeaponWielding( @obj.GetRightArm(), @obj.GetLeftArm(),
-					@obj.GetRightHandWeapon(), @obj.GetLeftHandWeapon() );
-				break;
-			};
+			m_PlayerData.SwitchWeaponWielding();
 		}
 		void SwitchWeaponMode_f() {
-			PlayrObject@ obj = @m_PlayerData[0];
-
-			obj.EmitSound( obj.weaponChangeModeSfx, 10.0f, 0xff );
-			switch ( obj.GetHandsUsed() ) {
-			case 0:
-				obj.SwitchWeaponMode( @obj.GetLeftArm(), @obj.GetLeftHandWeapon() );
-				break;
-			case 1:
-				obj.SwitchWeaponMode( @obj.GetRightArm(), @obj.GetRightHandWeapon() );
-				break;
-			case 2: {
-				const InfoSystem::WeaponProperty bits = obj.GetLeftHandMode();
-				obj.SwitchWeaponMode( @obj.GetLeftArm(), @obj.GetLeftHandWeapon() );
-				if ( bits == obj.GetLeftHandMode() ) {
-					obj.SwitchWeaponMode( @obj.GetRightArm(), @obj.GetRightHandWeapon() );
-				}
-				break; }
-			default:
-				break;
-			};
+			m_PlayerData.EmitSound( m_WeaponChangeModeSfx, 10.0f, 0xff );
+			m_PlayerData.SwitchWeaponMode();
 		}
 		void SwitchHand_f() {
-			PlayrObject@ obj = @m_PlayerData[0];
-			
-			obj.EmitSound( obj.weaponChangeHandSfx, 10.0f, 0xff );
-			switch ( obj.GetHandsUsed() ) {
-			case 0:
-				obj.SetHandsUsed( 1 );
-				break;
-			case 1:
-				obj.SetHandsUsed( 0 );
-				break;
-			case 2:
-			default:
-				break; // can't switch if we're using both hands for one weapon
-			};
+			m_PlayerData.EmitSound( m_WeaponChangeHandSfx, 10.0f, 0xff );
+			m_PlayerData.SwitchUsedHand();
 		}
 		void Crouch_Down_f() {
-			PlayrObject@ obj = @m_PlayerData[0];
-
-			if ( obj.IsCrouching() ) {
+			if ( m_PlayerData.IsCrouching() ) {
 				return;
 			}
-
-			obj.EmitSound( obj.crouchDownSfx, 10.0f, 0xff );
-			obj.SetCrouching( true );
+			m_PlayerData.EmitSound( m_CrouchDownSfx, 10.0f, 0xff );
+			m_PlayerData.SetCrouching( true );
 		}
 		void Crouch_Up_f() {
-			PlayrObject@ obj = @m_PlayerData[0];
-
-			if ( !obj.IsCrouching() ) {
+			if ( !m_PlayerData.IsCrouching() ) {
 				return;
 			}
-			obj.EmitSound( obj.crouchUpSfx, 10.0f, 0xff );
-			obj.SetCrouching( false );
-			obj.SetState( @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE ) );
+			m_PlayerData.EmitSound( m_CrouchUpSfx, 10.0f, 0xff );
+			m_PlayerData.SetCrouching( false );
+			m_PlayerData.SetState( @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE ) );
 		}
 
 		void NextWeapon_f() {
-			PlayrObject@ obj = GetPlayerIndex();
-			
-			obj.SetCurrentWeapon( obj.GetCurrentWeaponIndex() + 1 );
-			if ( obj.GetCurrentWeaponIndex() >= int( obj.m_WeaponSlots.Count() ) ) {
-				obj.SetCurrentWeapon( 0 );
+			m_PlayerData.SetCurrentWeapon( m_PlayerData.GetCurrentWeaponIndex() + 1 );
+			if ( m_PlayerData.GetCurrentWeaponIndex() >= NUM_WEAPON_SLOTS ) {
+				m_PlayerData.SetCurrentWeapon( 0 );
 			}
-			obj.EmitSound(
-				cast<const InfoSystem::WeaponInfo@>( @obj.m_WeaponSlots[ obj.GetCurrentWeaponIndex() ].GetData().GetInfo() ).equipSfx,
+			m_PlayerData.EmitSound(
+				cast<const InfoSystem::WeaponInfo@>( @m_PlayerData.GetCurrentWeapon().GetInfo() ).equipSfx,
 				10.0f,
 				0xff
 			);
 		}
 		void PrevWeapon_f() {
-			PlayrObject@ obj = GetPlayerIndex();
-			
-			obj.SetCurrentWeapon( obj.GetCurrentWeaponIndex() - 1 );
-			if ( obj.GetCurrentWeaponIndex() < 0 ) {
-				obj.SetCurrentWeapon( obj.m_WeaponSlots.Count() - 1 );
+			m_PlayerData.SetCurrentWeapon( NUM_WEAPON_SLOTS - 1 );
+			if ( m_PlayerData.GetCurrentWeaponIndex() < 0 ) {
+				m_PlayerData.SetCurrentWeapon( NUM_WEAPON_SLOTS - 1 );
 			}
-			obj.EmitSound(
-				cast<const InfoSystem::WeaponInfo@>( @obj.m_WeaponSlots[ obj.GetCurrentWeaponIndex() ].GetData().GetInfo() ).equipSfx,
+			m_PlayerData.EmitSound(
+				cast<const InfoSystem::WeaponInfo@>( @m_PlayerData.GetCurrentWeapon().GetInfo() ).equipSfx,
 				10.0f,
 				0xff
 			);
 		}
 
 		private void RenderScene( const uvec2& in scenePos, const uvec2& in sceneSize, const vec3& in origin ) {
-			const uint flags = RSF_ORTHO_TYPE_WORLD;
-
 			if ( @LevelManager.GetMapData() is null ) {
 				return;
 			}
@@ -371,20 +349,17 @@ namespace TheNomad::SGame {
 			// if we're in photomode, ignore
 			Game_CameraWorldPos.x = ( origin.x - 0.812913357f ) * 10.0f;
 			Game_CameraWorldPos.y = ( LevelManager.GetMapData().GetHeight() - ( origin.y + 0.812913357f ) ) * 10.0f;
-//			Game_CameraWorldPos.x = ( origin.x - log( Game_CameraZoom ) ) * 10.0f;
-//			Game_CameraWorldPos.y = ( LevelManager.GetMapData().GetHeight() - ( origin.y + log( Game_CameraZoom ) ) ) * 10.0f;
 			Game_PlayerPos = origin;
 
 			TheNomad::Engine::Renderer::ClearScene();
-			for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
+			for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); ++i ) {
 				TheNomad::GameSystem::GameSystems[i].OnRenderScene();
 			}
-			TheNomad::Engine::Renderer::RenderScene( scenePos.x, scenePos.y, sceneSize.x, sceneSize.y, flags, 
+			TheNomad::Engine::Renderer::RenderScene( scenePos.x, scenePos.y, sceneSize.x, sceneSize.y, RSF_ORTHO_TYPE_WORLD, 
 				TheNomad::GameSystem::GameTic );
-			
-			m_bCommandReset = true;
 		}
 
+		/*
 		uint GetPlayerIndex( PlayrObject@ obj ) {
 			int index = m_PlayerData.Find( @obj );
 			if ( index == -1 ) {
@@ -392,9 +367,10 @@ namespace TheNomad::SGame {
 			}
 			return uint( index );
 		}
+		*/
 		
 		void Draw() {
-			RenderScene( m_ScreenPosition, m_ScreenSize, m_PlayerData[0].GetOrigin() );
+			RenderScene( m_ScreenPosition, m_ScreenSize, m_PlayerData.GetOrigin() );
 			/*
 			uvec2 pos, size;
 			
@@ -405,11 +381,11 @@ namespace TheNomad::SGame {
 			switch ( m_nPlayerCount ) {
 			case 0:
 			case 1:
-				RenderScene( pos, size, m_PlayerData[0].GetOrigin() );
+				RenderScene( pos, size, m_PlayerData.GetOrigin() );
 				break;
 			case 2:
 				size.x /= 2;
-				RenderScene( pos, size, m_PlayerData[0].GetOrigin() );
+				RenderScene( pos, size, m_PlayerData.GetOrigin() );
 				
 				pos.x += size.x;
 				RenderScene( pos, size, m_PlayerData[1].GetOrigin() );
@@ -417,7 +393,7 @@ namespace TheNomad::SGame {
 			case 3:
 				size.x /= 2;
 				size.y /= 2;
-				RenderScene( pos, size, m_PlayerData[0].GetOrigin() );
+				RenderScene( pos, size, m_PlayerData.GetOrigin() );
 				
 				pos.x += size.x;
 				RenderScene( pos, size, m_PlayerData[1].GetOrigin() );
@@ -430,7 +406,7 @@ namespace TheNomad::SGame {
 			case 4:
 				size.x /= 2;
 				size.y /= 2;
-				RenderScene( pos, size, m_PlayerData[0].GetOrigin() );
+				RenderScene( pos, size, m_PlayerData.GetOrigin() );
 				
 				pos.x += size.x;
 				RenderScene( pos, size, m_PlayerData[1].GetOrigin() );
@@ -448,6 +424,7 @@ namespace TheNomad::SGame {
 			*/
 		}
 
+		/*
 		uint GetPlayerCount() const {
 			return m_nPlayerCount;
 		}
@@ -457,16 +434,39 @@ namespace TheNomad::SGame {
 		const PlayrObject@ GetPlayerAt( uint nIndex ) const {
 			return @m_PlayerData[ nIndex ];
 		}
+		*/
+		const PlayrObject@ GetPlayer() const {
+			return @m_PlayerData;
+		}
+		PlayrObject@ GetPlayer() {
+			return @m_PlayerData;
+		}
 
 		private uvec2 m_ScreenPosition = uvec2( 0, 0 );
 		private uvec2 m_ScreenSize = uvec2( 0, 0 );
 		
-		private bool m_bCommandReset = true;
-		private string m_CommandBuffer;
+		private PlayrObject@ m_PlayerData = null;
+//		private PlayrObject@[] m_PlayerData( 4 );
+//		private uint m_nPlayerCount = 0;
 
-		private PlayrObject@[] m_PlayerData( 4 );
-		private uint m_nPlayerCount = 0;
-		private uint m_nLastJumpTime = 0;
+		private TheNomad::Engine::SoundSystem::SoundEffect m_CrouchDownSfx;
+		private TheNomad::Engine::SoundSystem::SoundEffect m_CrouchUpSfx;
+		private TheNomad::Engine::SoundSystem::SoundEffect m_DashSfx0;
+		private TheNomad::Engine::SoundSystem::SoundEffect m_DashSfx1;
+		private TheNomad::Engine::SoundSystem::SoundEffect m_SlideSfx0;
+		private TheNomad::Engine::SoundSystem::SoundEffect m_SlideSfx1;
+		private TheNomad::Engine::SoundSystem::SoundEffect m_SlowMoOn;
+		private TheNomad::Engine::SoundSystem::SoundEffect m_SlowMoOff;
+		TheNomad::Engine::SoundSystem::SoundEffect m_DieSfx0;
+		TheNomad::Engine::SoundSystem::SoundEffect m_DieSfx1;
+		TheNomad::Engine::SoundSystem::SoundEffect m_DieSfx2;
+		TheNomad::Engine::SoundSystem::SoundEffect m_PainSfx0;
+		TheNomad::Engine::SoundSystem::SoundEffect m_PainSfx1;
+		TheNomad::Engine::SoundSystem::SoundEffect m_PainSfx2;
+		TheNomad::Engine::SoundSystem::SoundEffect m_ParrySfx;
+		private TheNomad::Engine::SoundSystem::SoundEffect m_WeaponChangeHandSfx;
+		private TheNomad::Engine::SoundSystem::SoundEffect m_WeaponChangeModeSfx;
+		private TheNomad::Engine::SoundSystem::SoundEffect m_MeleeSfx;
 	};
 	
 	SplitScreen ScreenData;

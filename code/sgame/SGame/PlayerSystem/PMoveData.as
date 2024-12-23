@@ -3,7 +3,7 @@ namespace TheNomad::SGame {
 	const uint PMF_BACKWARDS_JUMP = 0x02;
 
 	const uint DASH_DURATION = 800;
-	const uint SLIDE_DURATION = 500;
+	const uint SLIDE_DURATION = 700;
 	
 	const float JUMP_VELOCITY = 3.5f;
 	const float OVERCLIP = 1.5f;
@@ -63,20 +63,16 @@ namespace TheNomad::SGame {
 				accel.z += up;
 			}
 
-			if ( m_EntityData.IsDashing() ) {
+			if ( isDashing ) {
 				accel.y += 4.50f * forward;
 				accel.x += 4.50f * side;
 
-				if ( m_EntityData.GetTimeSinceLastDash() > DASH_DURATION ) {
-					m_EntityData.SetDashing( false );
-				}
+				m_EntityData.SetDashing( TheNomad::GameSystem::GameDeltaTic > m_EntityData.GetDashTime() );
 			}
-			if ( m_EntityData.IsSliding() ) {
+			if ( isSliding ) {
 				accel.y += 0.15f * forward;
 				accel.x += 0.15f * side;
-				if ( m_EntityData.GetTimeSinceLastSlide() > SLIDE_DURATION ) {
-					m_EntityData.SetSliding( false );
-				}
+				m_EntityData.SetSliding( TheNomad::GameSystem::GameDeltaTic > m_EntityData.GetSlideTime() );
 			} else {
 				const uint64 tile = LevelManager.GetMapData().GetTile( m_EntityData.GetOrigin(), m_EntityData.GetBounds() );
 				if ( accel.x != 0.0f || accel.y != 0.0f ) {
@@ -196,9 +192,11 @@ namespace TheNomad::SGame {
 		}
 		
 		void SetMovementDir() {
-			if ( sgame_DebugMode.GetBool() ) {
+		#if _NOMAD_DEBUG
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_DebugMode" ) ) {
 				TheNomad::Engine::ProfileBlock block( "PMoveData::SetMovementDir" );
 			}
+		#endif
 
 			// set movement direction
 			if ( side > 0 ) {
@@ -214,27 +212,31 @@ namespace TheNomad::SGame {
 			//
 			// set torso direction
 			//
-			if ( sgame_InputMode.GetInt() == 0 ) {
+			if ( TheNomad::Engine::CvarVariableInteger( "in_mode" ) == 0 ) {
 				// mouse & keyboard
 				// position torso facing wherever the mouse is
 				m_nArmsAngle = atan2( TheNomad::GameSystem::HalfScreenHeight - float( TheNomad::GameSystem::MousePosition.y ),
 					TheNomad::GameSystem::HalfScreenWidth - float( TheNomad::GameSystem::MousePosition.x ) );
 
 				if ( TheNomad::GameSystem::MousePosition.x < TheNomad::GameSystem::HalfScreenWidth ) {
+					/*
 					if ( @m_EntityData.GetLeftHandWeapon() !is null ) {
 						m_EntityData.SetLeftArmFacing( FACING_LEFT );
 					}
 					if ( @m_EntityData.GetRightHandWeapon() !is null ) {
 						m_EntityData.SetRightArmFacing( FACING_LEFT );
 					}
+					*/
 					m_nArmsAngle = -m_nArmsAngle;
 				} else if ( TheNomad::GameSystem::MousePosition.x > TheNomad::GameSystem::HalfScreenWidth ) {
+					/*
 					if ( @m_EntityData.GetLeftHandWeapon() !is null ) {
 						m_EntityData.SetLeftArmFacing( FACING_RIGHT );
 					}
 					if ( @m_EntityData.GetRightHandWeapon() !is null ) {
 						m_EntityData.SetRightArmFacing( FACING_RIGHT );
 					}
+					*/
 				}
 			}
 			else {
@@ -245,9 +247,11 @@ namespace TheNomad::SGame {
 		void RunTic() {
 			const uint gameTic = TheNomad::GameSystem::GameTic;
 
+		#if _NOMAD_DEBUG
 			if ( sgame_DebugMode.GetBool() ) {
 				TheNomad::Engine::ProfileBlock block( "PMoveData::OnRunTic" );
 			}
+		#endif
 			
 			frame_msec = gameTic - old_frame_msec;
 			
@@ -379,7 +383,6 @@ namespace TheNomad::SGame {
 		float upmove = 0.0f;
 		
 		uint flags = 0;
-		uint frametime = 0;
 
 		uint frame_msec = 0;
 		int old_frame_msec = 0;

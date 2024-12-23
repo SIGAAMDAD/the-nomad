@@ -98,6 +98,9 @@ void InitResources() {
 
 		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/cloth_foley_0" );
 		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/cloth_foley_1" );
+
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slowmo_on" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slowmo_off" );
 	}
 
 	// environmental sounds
@@ -362,10 +365,11 @@ int ModuleOnRunTic( int msec ) {
 
 		TheNomad::GameSystem::DeltaTic = ( msec - TheNomad::GameSystem::GameTic ) * TheNomad::GameSystem::TIMESTEP;
 		TheNomad::GameSystem::GameTic = msec;
+		TheNomad::GameSystem::GameDeltaTic = TheNomad::GameSystem::GameTic * TheNomad::GameSystem::DeltaTic;
 		TheNomad::GameSystem::MousePosition = TheNomad::Engine::GetMousePosition();
 
 		TheNomad::SGame::LevelManager.Resume();
-		TheNomad::SGame::EntityManager.SetActivePlayer( @TheNomad::SGame::ScreenData.GetPlayerAt( 0 ) );
+		TheNomad::SGame::EntityManager.SetActivePlayer( @TheNomad::SGame::ScreenData.GetPlayer() );
 		for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); ++i ) {
 			TheNomad::GameSystem::GameSystems[i].OnRunTic();
 		}

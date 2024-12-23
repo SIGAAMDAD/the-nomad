@@ -9,7 +9,7 @@ namespace TheNomad::SGame {
 			m_nTorsoStateFrame = target.GetState().GetSpriteOffset().y * target.GetSpriteSheet().GetSpriteCountX()
 				+ target.GetState().GetSpriteOffset().x;
 
-			m_nLegsStateFrame = target.GetLegState().GetSpriteOffset().y * target.GetLegsSpriteSheet().GetSpriteCountX()
+			m_nLegsStateFrame = target.GetLegState().GetSpriteOffset().y * target.GetSpriteSheet().GetSpriteCountX()
 				+ target.GetLegState().GetSpriteOffset().x;
 
 			m_nLeftArmStateFrame = target.GetLeftArmState().GetSpriteOffset().y * target.GetLeftArmSpriteSheet().GetSpriteCountX()
@@ -17,12 +17,12 @@ namespace TheNomad::SGame {
 			m_nRightArmStateFrame = target.GetRightArmState().GetSpriteOffset().y * target.GetRightArmSpriteSheet().GetSpriteCountX()
 				+ target.GetRightArmState().GetSpriteOffset().x;
 
-			m_nTorsoShader = target.GetSpriteSheet().GetShader();
-			m_nLegsShader = target.GetLegsSpriteSheet().GetShader();
-			m_nLeftArmShader = target.GetLeftArmSpriteSheet().GetShader();
-			m_nRightArmShader = target.GetRightArmSpriteSheet().GetShader();
+			m_hShader = target.GetSpriteSheet().GetShader();
 
 			m_nFacing = target.GetFacing();
+			m_nLegsFacing = target.GetLegsFacing();
+			m_nLeftArmFacing = target.GetLeftArmFacing();
+			m_nRightArmFacing = target.GetRightArmFacing();
 
 			m_bActive = true;
 		}
@@ -31,42 +31,43 @@ namespace TheNomad::SGame {
 		}
 
 		void Draw() const {
-			if ( !m_bActive ) {
+			if ( !m_bActive || Util::Distance( EntityManager.GetActivePlayer().GetOrigin(), m_Origin ) > 16.0f ) {
 				return;
 			}
 
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 
 			refEntity.origin = m_Origin;
-			refEntity.scale = 2.0f;
+			refEntity.sheetNum = m_hShader;
+			refEntity.rotation = 0.0f;
 
-			refEntity.sheetNum = m_nTorsoShader;
+			refEntity.scale = TheNomad::Engine::Renderer::GetFacing( m_nFacing );
 			refEntity.spriteId = m_nTorsoStateFrame;
 			refEntity.Draw();
 
-			refEntity.sheetNum = m_nLegsShader;
+			refEntity.scale = TheNomad::Engine::Renderer::GetFacing( m_nLegsFacing );
 			refEntity.spriteId = m_nLegsStateFrame;
 			refEntity.Draw();
 
-			if ( m_nFacing == FACING_LEFT ) {
-				refEntity.sheetNum = m_nLeftArmShader;
-				refEntity.spriteId = m_nLeftArmStateFrame;
-				refEntity.Draw();
-			} else if ( m_nFacing == FACING_RIGHT ) {
-				refEntity.sheetNum = m_nRightArmShader;
-				refEntity.spriteId = m_nRightArmStateFrame;
-				refEntity.Draw();
-			}
+			refEntity.scale = TheNomad::Engine::Renderer::GetFacing( m_nLeftArmFacing );
+			refEntity.spriteId = m_nLeftArmStateFrame;
+			refEntity.Draw();
+
+			refEntity.scale = TheNomad::Engine::Renderer::GetFacing( m_nRightArmFacing );
+			refEntity.spriteId = m_nRightArmStateFrame;
+			refEntity.Draw();
 		}
 
 		private vec3 m_Origin = vec3( 0.0f );
 
 		private uint m_nFacing = FACING_RIGHT;
+		private uint m_nLegsFacing = FACING_RIGHT;
+		private uint m_nRightArmFacing = FACING_RIGHT;
+		private uint m_nLeftArmFacing = FACING_LEFT;
 
-		private int m_nLeftArmShader = FS_INVALID_HANDLE;
-		private int m_nRightArmShader = FS_INVALID_HANDLE;
-		private int m_nLegsShader = FS_INVALID_HANDLE;
-		private int m_nTorsoShader = FS_INVALID_HANDLE;
+		private float m_nArmsAngle = 0.0f;
+
+		private int m_hShader = FS_INVALID_HANDLE;
 
 		private uint m_nTorsoStateFrame = 0;
 		private uint m_nLeftArmStateFrame = 0;

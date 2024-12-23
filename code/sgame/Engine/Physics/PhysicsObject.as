@@ -56,7 +56,7 @@ namespace TheNomad::Engine::Physics {
         }
 
         private void ClipBounds() {
-			if ( SGame::sgame_NoClip.GetBool() ) {
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_NoClip" ) == 1 ) {
 				return;
 			}
 
@@ -77,7 +77,15 @@ namespace TheNomad::Engine::Physics {
 		}
 		
 		void ApplyFriction() {
-			const float friction = TheNomad::SGame::sgame_Friction.GetFloat() * TheNomad::GameSystem::DeltaTic;
+			float frictionConstant = TheNomad::Engine::CvarVariableFloat( "sgame_Friction" );
+			if ( m_EntityData.GetOrigin().z > 0.0f ) {
+				frictionConstant = TheNomad::Engine::CvarVariableFloat( "sgame_AirFriction" );
+			}
+			if ( m_nWaterLevel > 0 ) {
+				frictionConstant += TheNomad::Engine::CvarVariableFloat( "sgame_WaterFriction" );
+			}
+
+			const float friction = frictionConstant * TheNomad::GameSystem::DeltaTic;
 
 			if ( m_Velocity.x > 0.0f ) {
 				m_Velocity.x -= friction;
@@ -219,8 +227,13 @@ namespace TheNomad::Engine::Physics {
 			
 			TheNomad::SGame::EntityObject@ active = @TheNomad::SGame::EntityManager.GetActiveEnts();
 			TheNomad::SGame::EntityObject@ ent = null;
+			/*
 			for ( @ent = @active.m_Next; @ent.m_Next !is @active; @ent = @ent.m_Next ) {
 				if ( bounds.IntersectsBounds( ent.GetBounds() ) && @m_EntityData !is @ent ) {
+					if ( ent.GetType() == TheNomad::GameSystem::EntityType::Weapon || ent.GetType() == TheNomad::GameSystem::EntityType::Item ) {
+						m_EntityData.PickupItem( @ent );
+						break;
+					}
 					m_Velocity = 0.0f;
 					m_Acceleration = 0.0f;
 					if ( ent.GetType() == TheNomad::GameSystem::EntityType::Mob &&
@@ -232,6 +245,7 @@ namespace TheNomad::Engine::Physics {
 					return; // clip
 				}
 			}
+			*/
 
 			vec3 tmp = origin;
 			const TheNomad::GameSystem::DirType dir = CalcMoveDir();

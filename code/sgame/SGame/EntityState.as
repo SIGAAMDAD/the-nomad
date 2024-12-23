@@ -111,14 +111,14 @@ namespace TheNomad::SGame {
 		}
 
 		void Reset( uint& out ticker ) {
-			ticker = ( TheNomad::GameSystem::GameTic * TheNomad::GameSystem::DeltaTic );
+			ticker = TheNomad::GameSystem::GameTic;
 		}
 		
 		const uvec2& GetSpriteOffset() const {
 			return m_SpriteOffset;
 		}
 		bool Done( uint ticker ) const {
-			return ( TheNomad::GameSystem::GameTic - ticker ) * TheNomad::GameSystem::DeltaTic >= m_nTics;
+			return ( TheNomad::GameSystem::GameTic - ticker ) * TheNomad::GameSystem::DeltaTic > m_nTics;
 		}
 		EntityState@ Run( uint& out ticker ) {
 			m_Animation.Run();

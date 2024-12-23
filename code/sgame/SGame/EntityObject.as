@@ -181,6 +181,9 @@ namespace TheNomad::SGame {
 		//
 		// functions that should be implemented by the derived class
 		//
+
+		void PickupItem( EntityObject@ item ) {
+		}
 		
 		//
 		// EntityObject::Load: should only return false if we're missing something

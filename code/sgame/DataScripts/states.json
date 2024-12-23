@@ -36,7 +36,7 @@
 				"NextState": "player_ground_idle",
 				"SpriteOffset": [ 3, 16 ],
 				"Animation": {
-					"TicRate": 4,
+					"TicRate": 2,
 					"FlipFlop": false,
 					"Frames": 3,
 					"Reverse": false
@@ -100,13 +100,13 @@
 			},
 			{
 				"Id": "player_legs_slide",
-				"Tics": 500,
+				"Tics": 1500,
 				"BaseNum": "ST_PLAYR_LEGS_SLIDE",
 				"Entity": "player",
 				"NextState": "player_ground_idle",
 				"SpriteOffset": [ 7, 16 ],
 				"Animation": {
-					"TicRate": 500,
+					"TicRate": 10,
 					"FlipFlop": false,
 					"Frames": 0,
 					"Reverse": false
@@ -134,7 +134,7 @@
 				"NextState": "player_arms_idle_left",
 				"SpriteOffset": [ 1, 0 ],
 				"Animation": {
-					"TicRate": 200,
+					"TicRate": 13,
 					"FlipFlop": false,
 					"Frames": 2,
 					"Reverse": false
@@ -190,7 +190,7 @@
 				"NextState": "player_arms_idle_right",
 				"SpriteOffset": [ 17, 0 ],
 				"Animation": {
-					"TicRate": 200,
+					"TicRate": 8,
 					"FlipFlop": false,
 					"Frames": 2,
 					"Reverse": false

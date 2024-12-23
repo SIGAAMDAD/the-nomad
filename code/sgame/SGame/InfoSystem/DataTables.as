@@ -34,13 +34,6 @@ namespace TheNomad::SGame::InfoSystem {
 
 		NumAmmoTypes,
 	};
-
-	enum AttackType {
-		Melee,
-		Missile,
-
-		NumAttackTypes
-	};
 	
 	enum WeaponType {
 		Sidearm,
