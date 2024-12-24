@@ -3,7 +3,7 @@ namespace TheNomad::SGame {
 		ScreenShake() {
 		}
 		
-		void Start( uint64 nDuration, float nStrengthX, float nStrengthY ) {
+		void Start( uint nDuration, float nStrengthX, float nStrengthY ) {
 			m_nDuration = nDuration;
 			m_nStart = TheNomad::GameSystem::GameTic;
 			m_Strength = vec2( nStrengthX, nStrengthY );
@@ -15,7 +15,7 @@ namespace TheNomad::SGame {
 		}
 		
 		void OnRunTic() {
-			if ( TheNomad::GameSystem::GameTic - m_nStart >= m_nDuration ) {
+			if ( ( TheNomad::GameSystem::GameTic - m_nStart ) * TheNomad::GameSystem::DeltaTic >= m_nDuration ) {
 				if ( !m_bDone ) {
 					Game_CameraPos = m_CameraPos;
 				}
@@ -23,7 +23,6 @@ namespace TheNomad::SGame {
 				return;
 			}
 			
-//			const float noise = Util::PerlinNoise( m_Strength.x, m_Strength.y );
 			float noise = Util::PRandom();
 			if ( noise <= 0.0f ) {
 				noise = 1.0f;
@@ -42,8 +41,8 @@ namespace TheNomad::SGame {
 		
 		private vec3 m_CameraPos;
 		private vec2 m_Strength = vec2( 0.0f );
-		private uint64 m_nStart = 0;
-		private uint64 m_nDuration = 0;
+		private uint m_nStart = 0;
+		private uint m_nDuration = 0;
 		private float m_nAngle = 0.0f;
 		private bool m_bDone = false;
 	};

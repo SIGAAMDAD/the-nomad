@@ -55,7 +55,11 @@ namespace TheNomad::SGame {
 				// still have it
 				@next = @ent.m_Prev;
 
-				if ( TheNomad::GameSystem::GameDeltaTic > ent.m_nEndTime ) {
+				uint endTime = ent.m_nEndTime;
+				if ( !EntityManager.GetActivePlayer().InReflex() ) {
+					endTime *= TheNomad::GameSystem::DeltaTic;
+				}
+				if ( TheNomad::GameSystem::GameDeltaTic > endTime ) {
 					FreeLocalEntity( @ent );
 					continue;
 				}

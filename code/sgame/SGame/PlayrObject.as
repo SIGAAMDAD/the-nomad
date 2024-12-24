@@ -19,8 +19,8 @@ namespace TheNomad::SGame {
 	const uint RIGHT_ARM			= 1;
 	const uint BOTH_ARMS			= 2;
 
-	const uint RAW_REFLEX_TIME		= 2500;
-	const uint REFLEX_TIME			= 9000;
+	const uint RAW_REFLEX_TIME		= 2000;
+	const uint REFLEX_TIME			= 8000;
 
 	const uint[] sgame_WeaponModeList = {
 		uint( InfoSystem::WeaponProperty::OneHandedBlade | InfoSystem::WeaponProperty::TwoHandedBlade ),
@@ -224,7 +224,7 @@ namespace TheNomad::SGame {
 			return m_nSlideEndTime;
 		}
 		void ResetSlide() {
-			m_nSlideEndTime = ( TheNomad::GameSystem::GameTic + SLIDE_DURATION ) * TheNomad::GameSystem::DeltaTic;
+			m_nSlideEndTime = TheNomad::GameSystem::GameTic + SLIDE_DURATION;
 		}
 		
 		bool IsCrouching() const {
@@ -654,8 +654,6 @@ namespace TheNomad::SGame {
 				m_nFrameDamage += GetCurrentWeapon().UseAlt( GetCurrentWeaponMode() );
 			}
 
-			TheNomad::Engine::SoundSystem::SoundEffect( "event:/sfx/player/death0" ).Play();
-
 			m_Link.m_Bounds.m_nWidth = sgame_PlayerWidth.GetFloat();
 			m_Link.m_Bounds.m_nHeight = sgame_PlayerHeight.GetFloat();
 			m_Link.m_Bounds.MakeBounds( m_Link.m_Origin );
@@ -664,27 +662,29 @@ namespace TheNomad::SGame {
 			//
 			// check reflex mode
 			//
-			/*
 			if ( m_HudData.IsReflexActive() ) {
-				if ( ( ( TheNomad::GameSystem::GameTic - m_nRawReflexStartTime ) * TheNomad::GameSystem::DeltaTic >
-					( RAW_REFLEX_TIME * TheNomad::GameSystem::DeltaTic ) ) )
-				{
+				if ( TheNomad::GameSystem::GameTic - m_nRawReflexStartTime > RAW_REFLEX_TIME ) {
 					// raw reflex time is done
-					m_nReflexStartTime = TheNomad::GameSystem::GameTic;
-				}
-				else if ( ( TheNomad::GameSystem::GameTic - m_nReflexStartTime ) * TheNomad::GameSystem::DeltaTic >
-					( REFLEX_TIME * TheNomad::GameSystem::DeltaTic ) )
-				{
-					m_nReflexStartTime = 0;
 					m_nRawReflexStartTime = 0;
-					m_HudData.SetReflexTime( 0.0f );
+					ScreenData.m_SlowMoOff.Play();
+					TheNomad::GameSystem::TIMESTEP = 1.0f / 60.0f;
 					m_HudData.SetReflexMode( false );
 				}
-				else {
-					m_HudData.SetReflexTime( float( ( TheNomad::GameSystem::GameTic - m_nReflexStartTime ) * TheNomad::GameSystem::DeltaTic ) * 0.01f );
+				
+				/*
+				if ( m_nRawReflexStartTime == 0 ) {
+					if ( TheNomad::GameSystem::GameTic >= m_nReflexEndTime ) {
+						m_nReflexEndTime = 0;
+						m_nRawReflexStartTime = 0;
+						m_HudData.SetReflexTime( 0.0f );
+						m_HudData.SetReflexMode( false );
+					}
+					else {
+						m_HudData.SetReflexTime( float( ( m_nReflexEndTime - TheNomad::GameSystem::GameTic ) ) * 0.01f );
+					}
 				}
+				*/
 			}
-			*/
 
 			// run a movement frame
 			Pmove.RunTic();
@@ -795,14 +795,16 @@ namespace TheNomad::SGame {
 
 				TheNomad::Engine::Renderer::AddDLightToScene( origin, 6.15f, vec3( 1.0f, 0.0f, 0.0f ) );
 				GfxManager.SmokeCloud( m_Link.m_Origin );
-
-				m_HudData.ShowDashMarks();
 			}
 
 			DrawLegs();
 			DrawFrontArm();
 
 			m_HudData.Draw();
+		}
+
+		PlayerDisplayUI@ GetUI() {
+			return @m_HudData;
 		}
 
 		KeyBind key_MoveNorth;
@@ -862,7 +864,6 @@ namespace TheNomad::SGame {
 		private uint m_nSlideEndTime = 0;
 
 		private uint m_nRawReflexStartTime = 0;
-		private uint m_nReflexStartTime = 0;
 
 		private bool m_bEmoting = false;
 		

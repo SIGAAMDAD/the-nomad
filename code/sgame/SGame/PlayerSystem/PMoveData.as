@@ -67,26 +67,23 @@ namespace TheNomad::SGame {
 				accel.y += 4.50f * forward;
 				accel.x += 4.50f * side;
 
-				m_EntityData.SetDashing( TheNomad::GameSystem::GameDeltaTic > m_EntityData.GetDashTime() );
+				m_EntityData.SetDashing( TheNomad::GameSystem::GameDeltaTic < m_EntityData.GetDashTime() );
 			}
 			if ( isSliding ) {
 				accel.y += 0.15f * forward;
 				accel.x += 0.15f * side;
-				m_EntityData.SetSliding( TheNomad::GameSystem::GameDeltaTic > m_EntityData.GetSlideTime() );
+				m_EntityData.SetSliding( TheNomad::GameSystem::GameDeltaTic < m_EntityData.GetSlideTime() );
 			} else {
 				const uint64 tile = LevelManager.GetMapData().GetTile( m_EntityData.GetOrigin(), m_EntityData.GetBounds() );
 				if ( accel.x != 0.0f || accel.y != 0.0f ) {
 					// sync the extra particles and sounds with the actual animation
-					uint lerpTime = m_EntityData.GetLegState().GetAnimation().GetTicRate() * m_EntityData.GetLegState().GetAnimation().NumFrames();
-					if ( m_EntityData.GetLegState().GetAnimation().IsFlipFlop() ) {
-						// with a flip-flop animation we're more likely to have a much faster
-						// ticrate
-						lerpTime *= 2;
-					}
+					const uint lerpTime = m_EntityData.GetLegState().GetAnimation().GetLerpTime();
 
-					if ( ( TheNomad::GameSystem::GameTic - move_toggle ) * TheNomad::GameSystem::DeltaTic >= lerpTime
-						&& m_EntityData.GetOrigin().z == 0.0f )
-					{
+					uint moveTime = TheNomad::GameSystem::GameTic - move_toggle;
+					if ( EntityManager.GetActivePlayer().InReflex() ) {
+						moveTime *= TheNomad::GameSystem::DeltaTic;
+					}
+					if ( moveTime >= lerpTime && m_EntityData.GetOrigin().z == 0.0f ) {
 						// we can mix in different surfaceparm sound effects for more complex environments
 						float volume = 10.0f;
 						if ( ( tile & SURFACEPARM_WATER ) != 0 ) {

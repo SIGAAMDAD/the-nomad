@@ -73,7 +73,7 @@ namespace TheNomad::SGame {
 				
 				return @weapon.GetSpriteSheet();
 			}
-			else if ( m_EntityData.GetPhysicsObject().GetVelocity() != Vec3Origin ) {
+			else if ( m_EntityData.GetPhysicsObject().GetVelocity() != Vec3Origin && m_EntityData.GetOrigin().z == 0.0f ) {
 				if ( m_EntityData.IsSliding() ) {
 					@m_State = @m_SlideState;
 				}

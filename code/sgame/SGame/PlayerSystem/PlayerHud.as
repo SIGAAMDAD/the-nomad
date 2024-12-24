@@ -131,7 +131,7 @@ namespace TheNomad::SGame {
 				| ImGuiWindowFlags::NoCollapse | ImGuiWindowFlags::NoBackground | ImGuiWindowFlags::NoTitleBar
 				| ImGuiWindowFlags::NoScrollbar ) );
 			ImGui::SetWindowPos( vec2( 0.0f, 600 * TheNomad::GameSystem::UIScale ) );
-			ImGui::SetWindowSize( vec2( ( float( ( 350.0f * ( m_nReflexAmount * 0.01f ) ) * TheNomad::GameSystem::UIScale ) ), m_nStatusBarHeight ) );
+			ImGui::SetWindowSize( vec2( ( float( ( 350.0f * m_nReflexAmount ) * TheNomad::GameSystem::UIScale ) ), m_nStatusBarHeight ) );
 			
 			{
 				ImGui::PushStyleColor( ImGuiCol::FrameBg, colorWhite );
@@ -225,7 +225,7 @@ namespace TheNomad::SGame {
 		void Draw() {
 			if ( m_nDashEndTime != 0 )	{
 				m_DashScreen.Draw();
-				if ( TheNomad::GameSystem::GameTic > m_nDashEndTime ) {
+				if ( TheNomad::GameSystem::GameDeltaTic > m_nDashEndTime ) {
 					m_nDashEndTime = 0;
 				}
 			}
@@ -258,7 +258,7 @@ namespace TheNomad::SGame {
 			m_nStatusBarEndTime = TheNomad::GameSystem::GameTic + 5000;
 		}
 		void ShowDashMarks() {
-			m_nDashEndTime = TheNomad::GameSystem::GameTic + DASH_DURATION;
+			m_nDashEndTime = ( TheNomad::GameSystem::GameTic + DASH_DURATION ) * TheNomad::GameSystem::DeltaTic;
 		}
 		void SetReflexTime( float nAmount ) {
 			m_nReflexAmount = nAmount;
@@ -290,6 +290,6 @@ namespace TheNomad::SGame {
 		private HudOverlay m_DashScreen;
 		private HudOverlay m_BulletTimeBlurScreen;
 
-		private ScreenShake m_Shake;
+		ScreenShake m_Shake;
 	};
 };

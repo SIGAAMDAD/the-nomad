@@ -92,7 +92,11 @@ namespace TheNomad::SGame {
 			m_bReverse = bool( json[ "Reverse" ] );
 
 			m_nLerpTime = m_nTicRate * m_nNumFrames;
-
+			if ( m_bOscillate ) {
+				// with a flip-flop animation we're more likely to have a much faster
+				// ticrate
+				m_nLerpTime *= 2;
+			}
 			if ( m_bReverse ) {
 				m_nTicker = -1;
 			}

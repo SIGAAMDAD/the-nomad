@@ -197,18 +197,18 @@ namespace TheNomad::SGame {
 		void Quickshot_f() {
 			if ( m_PlayerData.InReflex() ) {
 				m_PlayerData.SetReflexMode( false );
-				m_PlayerData.EmitSound( m_SlowMoOff, 10.0f, 0xff );
+				m_SlowMoOff.Play();
 				TheNomad::GameSystem::TIMESTEP = 1.0f / 60.0f;
 			} else {
 				m_PlayerData.SetReflexMode( true );
-				m_PlayerData.EmitSound( m_SlowMoOn, 10.0f, 0xff );
+				m_SlowMoOn.Play();
 				TheNomad::GameSystem::TIMESTEP = 1.0f / 800.0f;
 			}
 		}
 		void Dash_Down_f() {
 			// wait at little bit before launching another dash
-			if ( TheNomad::GameSystem::GameTic > m_PlayerData.GetDashTime() ) {
-//				return;
+			if ( TheNomad::GameSystem::GameDeltaTic <= m_PlayerData.GetDashTime() ) {
+				return;
 			}
 
 			if ( ( Util::PRandom() & 1 ) == 1 ) {
@@ -216,9 +216,11 @@ namespace TheNomad::SGame {
 			} else {
 				m_PlayerData.EmitSound( m_DashSfx1, 10.0f, 0xff );
 			}
+
 			m_PlayerData.ResetDash();
 			m_PlayerData.SetDashing( true );
-				
+			m_PlayerData.GetUI().ShowDashMarks();
+			
 			vec3 origin = m_PlayerData.GetOrigin();
 			origin.y -= 1.5f;
 			switch ( m_PlayerData.GetFacing() ) {
@@ -240,7 +242,7 @@ namespace TheNomad::SGame {
 		void Slide_Down_f() {
 			// TODO: ground slam?
 			if ( m_PlayerData.IsCrouching() || m_PlayerData.GetOrigin().z > 0.0f
-				|| TheNomad::GameSystem::GameTic > m_PlayerData.GetSlideTime() )
+				|| TheNomad::GameSystem::GameDeltaTic <= m_PlayerData.GetSlideTime() )
 			{
 				return;
 			}
@@ -456,7 +458,7 @@ namespace TheNomad::SGame {
 		private TheNomad::Engine::SoundSystem::SoundEffect m_SlideSfx0;
 		private TheNomad::Engine::SoundSystem::SoundEffect m_SlideSfx1;
 		private TheNomad::Engine::SoundSystem::SoundEffect m_SlowMoOn;
-		private TheNomad::Engine::SoundSystem::SoundEffect m_SlowMoOff;
+		TheNomad::Engine::SoundSystem::SoundEffect m_SlowMoOff;
 		TheNomad::Engine::SoundSystem::SoundEffect m_DieSfx0;
 		TheNomad::Engine::SoundSystem::SoundEffect m_DieSfx1;
 		TheNomad::Engine::SoundSystem::SoundEffect m_DieSfx2;
