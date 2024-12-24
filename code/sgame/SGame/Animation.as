@@ -43,6 +43,9 @@ namespace TheNomad::SGame {
 		}
 		
 		bool NextFrame() const {
+			if ( EntityManager.GetActivePlayer().InReflex() ) {
+				return ( TheNomad::GameSystem::GameTic - m_nOldTic ) * TheNomad::GameSystem::DeltaTic >= m_nTicRate;
+			}
 			return ( TheNomad::GameSystem::GameTic - m_nOldTic ) * TheNomad::GameSystem::DeltaTic >= m_nTicRate * TheNomad::GameSystem::DeltaTic;
 		}
 		

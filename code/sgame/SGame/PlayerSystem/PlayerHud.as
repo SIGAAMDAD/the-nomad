@@ -107,6 +107,44 @@ namespace TheNomad::SGame {
 
 			ImGui::PopStyleColor( 3 );
 		}
+
+		private void DrawReflexBar() {
+			ImGui::Begin( "##ReflexModeFilled", null, ImGui::MakeWindowFlags( ImGuiWindowFlags::NoResize | ImGuiWindowFlags::NoMove
+				| ImGuiWindowFlags::NoCollapse | ImGuiWindowFlags::NoBackground | ImGuiWindowFlags::NoTitleBar
+				| ImGuiWindowFlags::NoScrollbar ) );
+			ImGui::SetWindowPos( vec2( 0.0f, 600 * TheNomad::GameSystem::UIScale ) );
+			ImGui::SetWindowSize( vec2( m_nStatusBarWidth, m_nStatusBarHeight ) );
+
+			{
+				ImGui::PushStyleColor( ImGuiCol::FrameBg, colorBlack );
+				ImGui::PushStyleColor( ImGuiCol::FrameBgActive, colorBlack );
+				ImGui::PushStyleColor( ImGuiCol::FrameBgHovered, colorBlack );
+
+				ImGui::DragFloat( "REFLEXMODEFILLED", 0.0f );
+
+				ImGui::PopStyleColor( 3 );
+			}
+
+			ImGui::End();
+
+			ImGui::Begin( "##ReflexBar", null, ImGui::MakeWindowFlags( ImGuiWindowFlags::NoResize | ImGuiWindowFlags::NoMove
+				| ImGuiWindowFlags::NoCollapse | ImGuiWindowFlags::NoBackground | ImGuiWindowFlags::NoTitleBar
+				| ImGuiWindowFlags::NoScrollbar ) );
+			ImGui::SetWindowPos( vec2( 0.0f, 600 * TheNomad::GameSystem::UIScale ) );
+			ImGui::SetWindowSize( vec2( ( float( ( 350.0f * ( m_nReflexAmount * 0.01f ) ) * TheNomad::GameSystem::UIScale ) ), m_nStatusBarHeight ) );
+			
+			{
+				ImGui::PushStyleColor( ImGuiCol::FrameBg, colorWhite );
+				ImGui::PushStyleColor( ImGuiCol::FrameBgActive, colorWhite );
+				ImGui::PushStyleColor( ImGuiCol::FrameBgHovered, colorWhite );
+
+				ImGui::DragFloat( "REFLEX", 0.0f );
+
+				ImGui::PopStyleColor( 3 );
+			}
+			
+			ImGui::End();
+		}
 		
 		private void DrawStatusBars() {	
 			const float rage = m_Parent.GetRage();
@@ -193,6 +231,7 @@ namespace TheNomad::SGame {
 			}
 			if ( m_bReflexMode ) {
 				m_BulletTimeBlurScreen.Draw();
+				DrawReflexBar();
 			}
 			if ( !sgame_ToggleHUD.GetBool() ) {
 				return; // don't draw it
@@ -221,6 +260,9 @@ namespace TheNomad::SGame {
 		void ShowDashMarks() {
 			m_nDashEndTime = TheNomad::GameSystem::GameTic + DASH_DURATION;
 		}
+		void SetReflexTime( float nAmount ) {
+			m_nReflexAmount = nAmount;
+		}
 		void SetReflexMode( bool bReflex ) {
 			m_bReflexMode = bReflex;
 		}
@@ -236,6 +278,8 @@ namespace TheNomad::SGame {
 		private float m_nStatusBarFontScale = 0.0f;
 		private float m_nStatusBarStretchAmount = 0.0f;
 		
+		private float m_nReflexAmount = 0.0f;
+
 		private uint m_nStatusBarEndTime = 0;
 		private uint m_nWeaponStatusEndTime = 0;
 		private uint m_nDashEndTime = 0;

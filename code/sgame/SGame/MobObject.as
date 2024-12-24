@@ -95,7 +95,7 @@ namespace TheNomad::SGame {
 
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.scale = m_Info.size;
-//			refEntity.sheetNum = m_Info.spriteSheet.GetShader();
+			refEntity.sheetNum = m_Info.spriteSheet.GetShader();
 
 			refEntity.Draw();
 		}
