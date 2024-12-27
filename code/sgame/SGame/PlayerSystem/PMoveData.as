@@ -49,8 +49,8 @@ namespace TheNomad::SGame {
 			const uint gameTic = TheNomad::GameSystem::GameTic;
 			vec3 accel = m_EntityData.GetPhysicsObject().GetAcceleration();
 
-			const bool isSliding = m_EntityData.IsSliding();
-			const bool isDashing = m_EntityData.IsDashing();
+			const bool isSliding = ( m_EntityData.Flags & PF_SLIDING ) != 0;
+			const bool isDashing = ( m_EntityData.Flags & PF_DASHING ) != 0;
 
 			if ( !( isSliding || isDashing ) ) {
 				// if we're dashing or sliding, we won't really have
@@ -67,12 +67,16 @@ namespace TheNomad::SGame {
 				accel.y += 4.50f * forward;
 				accel.x += 4.50f * side;
 
-				m_EntityData.SetDashing( TheNomad::GameSystem::GameDeltaTic <= m_EntityData.GetDashTime() );
+				if ( TheNomad::GameSystem::GameDeltaTic > m_EntityData.GetDashTime() ) {
+					m_EntityData.Flags &= ~PF_DASHING;
+				}
 			}
 			if ( isSliding ) {
 				accel.y += 0.15f * forward;
 				accel.x += 0.15f * side;
-				m_EntityData.SetSliding( TheNomad::GameSystem::GameDeltaTic <= m_EntityData.GetSlideTime() );
+				if ( TheNomad::GameSystem::GameDeltaTic > m_EntityData.GetSlideTime() ) {
+					m_EntityData.Flags &= ~PF_SLIDING;
+				}
 			} else {
 				const uint64 tile = LevelManager.GetMapData().GetTile( m_EntityData.GetOrigin(), m_EntityData.GetBounds() );
 				if ( accel.x != 0.0f || accel.y != 0.0f ) {
@@ -201,45 +205,43 @@ namespace TheNomad::SGame {
 			if ( side > 0 ) {
 				m_EntityData.SetFacing( FACING_RIGHT );
 				m_EntityData.SetLegsFacing( FACING_RIGHT );
-				m_EntityData.SetArmsFacing( FACING_RIGHT );
+				m_EntityData.LeftArm.Facing = FACING_RIGHT;
+				m_EntityData.RightArm.Facing = FACING_RIGHT;
 			} else if ( side < 0 ) {
 				m_EntityData.SetFacing( FACING_LEFT );
 				m_EntityData.SetLegsFacing( FACING_LEFT );
-				m_EntityData.SetArmsFacing( FACING_LEFT );
+				m_EntityData.LeftArm.Facing = FACING_LEFT;
+				m_EntityData.RightArm.Facing = FACING_LEFT;
 			}
 
 			//
 			// set torso direction
 			//
-			if ( TheNomad::Engine::CvarVariableInteger( "in_mode" ) == 0 ) {
-				// mouse & keyboard
-				// position torso facing wherever the mouse is
-				m_nArmsAngle = atan2( TheNomad::GameSystem::HalfScreenHeight - float( TheNomad::GameSystem::MousePosition.y ),
-					TheNomad::GameSystem::HalfScreenWidth - float( TheNomad::GameSystem::MousePosition.x ) );
-
-				if ( TheNomad::GameSystem::MousePosition.x < TheNomad::GameSystem::HalfScreenWidth ) {
-					/*
-					if ( @m_EntityData.GetLeftHandWeapon() !is null ) {
-						m_EntityData.SetLeftArmFacing( FACING_LEFT );
-					}
-					if ( @m_EntityData.GetRightHandWeapon() !is null ) {
-						m_EntityData.SetRightArmFacing( FACING_LEFT );
-					}
-					*/
-					m_nArmsAngle = -m_nArmsAngle;
-				} else if ( TheNomad::GameSystem::MousePosition.x > TheNomad::GameSystem::HalfScreenWidth ) {
-					/*
-					if ( @m_EntityData.GetLeftHandWeapon() !is null ) {
-						m_EntityData.SetLeftArmFacing( FACING_RIGHT );
-					}
-					if ( @m_EntityData.GetRightHandWeapon() !is null ) {
-						m_EntityData.SetRightArmFacing( FACING_RIGHT );
-					}
-					*/
+			
+			// mouse & keyboard
+			// position torso facing wherever the mouse is
+			m_nArmsAngle = atan2( TheNomad::GameSystem::HalfScreenHeight - float( TheNomad::GameSystem::MousePosition.y ),
+				TheNomad::GameSystem::HalfScreenWidth - float( TheNomad::GameSystem::MousePosition.x ) );
+			
+			if ( TheNomad::GameSystem::MousePosition.x < TheNomad::GameSystem::HalfScreenWidth ) {
+				/*
+				if ( @m_EntityData.GetLeftHandWeapon() !is null ) {
+					m_EntityData.SetLeftArmFacing( FACING_LEFT );
 				}
-			}
-			else {
-				TheNomad::Engine::GetJoystickAngle( m_EntityData.GetPlayerIndex(), m_nArmsAngle, m_JoystickPosition );
+				if ( @m_EntityData.GetRightHandWeapon() !is null ) {
+					m_EntityData.SetRightArmFacing( FACING_LEFT );
+				}
+				*/
+				m_nArmsAngle = -m_nArmsAngle;
+			} else if ( TheNomad::GameSystem::MousePosition.x > TheNomad::GameSystem::HalfScreenWidth ) {
+				/*
+				if ( @m_EntityData.GetLeftHandWeapon() !is null ) {
+					m_EntityData.SetLeftArmFacing( FACING_RIGHT );
+				}
+				if ( @m_EntityData.GetRightHandWeapon() !is null ) {
+					m_EntityData.SetRightArmFacing( FACING_RIGHT );
+				}
+				*/
 			}
 		}
 		

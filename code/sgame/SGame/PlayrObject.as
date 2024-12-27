@@ -46,17 +46,17 @@ namespace TheNomad::SGame {
 		}
 		
 		private WeaponObject@ GetEmptyHand() {
-			if ( TryOneHanded( m_LeftHandMode, @m_LeftArm, @m_RightArm ) ) {
+			if ( TryOneHanded( m_LeftHandMode, @LeftArm, @RightArm ) ) {
 				m_LeftHandMode = HandMode::OneHanded;
 				m_RightHandMode = HandMode::Empty;
-				@m_RightArm = @m_RightArm;
-				return @m_RightArm;
+				@RightArm = @RightArm;
+				return @RightArm;
 			}
-			else if ( TryOneHanded( m_RightHandMode, @m_RightArm, @m_LeftArm ) ) {
+			else if ( TryOneHanded( m_RightHandMode, @RightArm, @LeftArm ) ) {
 				m_RightHandMode = HandMode::OneHanded;
 				m_LeftHandMode = HandMode::Empty;
-				@m_LeftArm = @m_LeftArm;
-				return @m_LeftArm;
+				@LeftArm = @LeftArm;
+				return @LeftArm;
 			}
 		}
 		*/
@@ -75,12 +75,12 @@ namespace TheNomad::SGame {
 			switch ( m_nHandsUsed ) {
 			case LEFT_ARM:
 			case BOTH_ARMS:
-				@src = @m_LeftArm;
-				@dst = @m_RightArm;
+				@src = @LeftArm;
+				@dst = @RightArm;
 				break;
 			case RIGHT_ARM:
-				@src = @m_RightArm;
-				@dst = @m_LeftArm;
+				@src = @RightArm;
+				@dst = @LeftArm;
 				break;
 			};
 
@@ -117,10 +117,10 @@ namespace TheNomad::SGame {
 
 			switch ( m_nHandsUsed ) {
 			case LEFT_ARM:
-				@slot = @m_Inventory.GetSlot( m_LeftArm.GetEquippedWeapon() );
+				@slot = @m_Inventory.GetSlot( LeftArm.GetEquippedWeapon() );
 				break;
 			case RIGHT_ARM:
-				@slot = @m_Inventory.GetSlot( m_RightArm.GetEquippedWeapon() );
+				@slot = @m_Inventory.GetSlot( RightArm.GetEquippedWeapon() );
 				break;
 			case BOTH_ARMS:
 				@slot = @m_Inventory.GetEquippedWeapon();
@@ -161,9 +161,9 @@ namespace TheNomad::SGame {
 		InfoSystem::WeaponProperty GetCurrentWeaponMode() {
 			switch ( m_nHandsUsed ) {
 			case LEFT_ARM:
-				return m_Inventory.GetSlot( m_LeftArm.GetEquippedWeapon() ).GetMode();
+				return m_Inventory.GetSlot( LeftArm.GetEquippedWeapon() ).GetMode();
 			case RIGHT_ARM:
-				return m_Inventory.GetSlot( m_RightArm.GetEquippedWeapon() ).GetMode();
+				return m_Inventory.GetSlot( RightArm.GetEquippedWeapon() ).GetMode();
 			case BOTH_ARMS:
 				return m_Inventory.GetEquippedWeapon().GetMode();
 			default:
@@ -211,13 +211,13 @@ namespace TheNomad::SGame {
 		}
 
 		bool IsSliding() const {
-			return ( m_iFlags & PF_SLIDING ) != 0;
+			return ( Flags & PF_SLIDING ) != 0;
 		}
 		void SetSliding( bool bSliding ) {
 			if ( bSliding ) {
-				m_iFlags |= PF_SLIDING;
+				Flags |= PF_SLIDING;
 			} else {
-				m_iFlags &= ~PF_SLIDING;
+				Flags &= ~PF_SLIDING;
 			}
 		}
 		uint GetSlideTime() const {
@@ -228,13 +228,13 @@ namespace TheNomad::SGame {
 		}
 		
 		bool IsCrouching() const {
-			return ( m_iFlags & PF_CROUCHING ) != 0;
+			return ( Flags & PF_CROUCHING ) != 0;
 		}
 		void SetCrouching( bool bCrouching ) {
 			if ( bCrouching ) {
-				m_iFlags |= PF_CROUCHING;
+				Flags |= PF_CROUCHING;
 			} else {
-				m_iFlags &= ~PF_CROUCHING;
+				Flags &= ~PF_CROUCHING;
 			}
 		}
 
@@ -243,13 +243,13 @@ namespace TheNomad::SGame {
 		}
 
 		bool IsDashing() const {
-			return ( m_iFlags & PF_DASHING ) != 0;
+			return ( Flags & PF_DASHING ) != 0;
 		}
 		void SetDashing( bool bDashing ) {
 			if ( bDashing ) {
-				m_iFlags |= PF_DASHING;
+				Flags |= PF_DASHING;
 			} else {
-				m_iFlags &= ~PF_DASHING;
+				Flags &= ~PF_DASHING;
 			}
 		}
 		uint GetDashTime() const {
@@ -260,10 +260,10 @@ namespace TheNomad::SGame {
 		}
 
 		void SetUsingWeapon( bool bUseWeapon ) {
-			m_iFlags |= bUseWeapon ? PF_USING_WEAPON : 0;
+			Flags |= bUseWeapon ? PF_USING_WEAPON : 0;
 		}
 		void SetUsingWeaponAlt( bool bUseAltWeapon ) {
-			m_iFlags |= bUseAltWeapon ? PF_USING_WEAPON_ALT : 0;
+			Flags |= bUseAltWeapon ? PF_USING_WEAPON_ALT : 0;
 		}
 		void SetWeaponMode( InfoSystem::WeaponProperty nMode ) {
 			m_Inventory.GetEquippedWeapon().SetMode( nMode );
@@ -279,17 +279,17 @@ namespace TheNomad::SGame {
 		}
 
 		bool UsingWeapon() const {
-			return ( m_iFlags & PF_USING_WEAPON ) != 0;
+			return ( Flags & PF_USING_WEAPON ) != 0;
 		}
 		bool UsingWeaponAlt() const {
-			return ( m_iFlags & PF_USING_WEAPON_ALT ) != 0;
+			return ( Flags & PF_USING_WEAPON_ALT ) != 0;
 		}
 
 		ArmData@ GetLeftArm() {
-			return @m_LeftArm;
+			return @LeftArm;
 		}
 		ArmData@ GetRightArm() {
-			return @m_RightArm;
+			return @RightArm;
 		}
 		int GetHandsUsed() const {
 			return m_nHandsUsed;
@@ -310,63 +310,63 @@ namespace TheNomad::SGame {
 		}
 
 		SpriteSheet@ GetLeftArmSpriteSheet() {
-			return @m_LeftArm.GetSpriteSheet();
+			return @LeftArm.GetSpriteSheet();
 		}
 		SpriteSheet@ GetRightArmSpriteSheet() {
-			return @m_RightArm.GetSpriteSheet();
+			return @RightArm.GetSpriteSheet();
 		}
 		const SpriteSheet@ GetLeftArmSpriteSheet() const {
-			return @m_LeftArm.GetSpriteSheet();
+			return @LeftArm.GetSpriteSheet();
 		}
 		const SpriteSheet@ GetRightArmSpriteSheet() const {
-			return @m_RightArm.GetSpriteSheet();
+			return @RightArm.GetSpriteSheet();
 		}
 
 		void SetLegsFacing( int facing ) {
 			m_LegsFacing = facing;
 		}
 		void SetLeftArmFacing( int facing ) {
-			m_LeftArm.SetFacing( facing );
+			LeftArm.SetFacing( facing );
 		}
 		void SetRightArmFacing( int facing ) {
-			m_RightArm.SetFacing( facing );
+			RightArm.SetFacing( facing );
 		}
 		void SetArmsFacing( int facing ) {
-			m_LeftArm.SetFacing( facing );
-			m_RightArm.SetFacing( facing );
+			LeftArm.SetFacing( facing );
+			RightArm.SetFacing( facing );
 		}
 		void SetArmsState( StateNum nState ) {
-			m_LeftArm.SetState( nState );
-			m_RightArm.SetState( nState );
+			LeftArm.SetState( nState );
+			RightArm.SetState( nState );
 		}
 		void SetArmsState( EntityState@ state ) {
-			m_LeftArm.SetState( @state );
-			m_RightArm.SetState( @state );
+			LeftArm.SetState( @state );
+			RightArm.SetState( @state );
 		}
 		int GetLegsFacing() const {
 			return m_LegsFacing;
 		}
 		int GetLeftArmFacing() const {
-			return m_LeftArm.GetFacing();
+			return LeftArm.GetFacing();
 		}
 		int GetRightArmFacing() const {
-			return m_RightArm.GetFacing();
+			return RightArm.GetFacing();
 		}
 
 		EntityState@ GetLegState() {
 			return @m_LegState;
 		}
 		EntityState@ GetLeftArmState() {
-			return @m_LeftArm.GetState();
+			return @LeftArm.GetState();
 		}
 		const EntityState@ GetLegState() const {
 			return @m_LegState;
 		}
 		const EntityState@ GetLeftArmState() const {
-			return @m_LeftArm.GetState();
+			return @LeftArm.GetState();
 		}
 		const EntityState@ GetRightArmState() const {
-			return @m_RightArm.GetState();
+			return @RightArm.GetState();
 		}
 
 		bool Load( const TheNomad::GameSystem::SaveSystem::LoadSection& in section ) {
@@ -411,10 +411,10 @@ namespace TheNomad::SGame {
 		}
 
 		void InvulOn() {
-			m_iFlags |= PF_INVUL;
+			Flags |= PF_INVUL;
 		}
 		void InvulOff() {
-			m_iFlags &= ~PF_INVUL;
+			Flags &= ~PF_INVUL;
 		}
 		
 		void Damage( EntityObject@ attacker, float nAmount ) {
@@ -479,10 +479,10 @@ namespace TheNomad::SGame {
 		}
 
 		void SetLeftArmState( StateNum num ) {
-			m_LeftArm.SetState( num );
+			LeftArm.SetState( num );
 		}
 		void SetRightArmState( StateNum num ) {
-			m_RightArm.SetState( num );
+			RightArm.SetState( num );
 		}
 		
 		private float GetGfxDirection() const {
@@ -496,7 +496,7 @@ namespace TheNomad::SGame {
 		// PlayrObject::CheckParry: called from DamageEntity mob v player
 		//
 		bool CheckParry( EntityObject@ ent ) {
-			if ( ( m_iFlags & PF_INVUL ) != 0 ) {
+			if ( ( Flags & PF_INVUL ) != 0 ) {
 				return true;
 			}
 			if ( Util::BoundsIntersect( ent.GetBounds(), m_ParryBox ) ) {
@@ -620,8 +620,8 @@ namespace TheNomad::SGame {
 			}
 			m_Facing = FACING_RIGHT;
 
-			m_LeftArm.Link( @this, FACING_LEFT, armsSheetSize, armsSpriteSize );
-			m_RightArm.Link( @this, FACING_RIGHT, armsSheetSize, armsSpriteSize );
+			LeftArm.Link( @this, FACING_LEFT, armsSheetSize, armsSpriteSize );
+			RightArm.Link( @this, FACING_RIGHT, armsSheetSize, armsSpriteSize );
 
 			@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_GROUND );
 			if ( @m_LegState is null ) {
@@ -648,9 +648,9 @@ namespace TheNomad::SGame {
 				m_QuickShot.Think();
 			}
 
-			if ( ( m_iFlags & PF_USING_WEAPON ) != 0 && @GetCurrentWeapon() !is null ) {
+			if ( ( Flags & PF_USING_WEAPON ) != 0 && @GetCurrentWeapon() !is null ) {
 				m_nFrameDamage += GetCurrentWeapon().Use( GetCurrentWeaponMode() );
-			} else if ( ( m_iFlags & PF_USING_WEAPON_ALT ) != 0 && @GetCurrentWeapon() !is null ) {
+			} else if ( ( Flags & PF_USING_WEAPON_ALT ) != 0 && @GetCurrentWeapon() !is null ) {
 				m_nFrameDamage += GetCurrentWeapon().UseAlt( GetCurrentWeaponMode() );
 			}
 
@@ -713,8 +713,8 @@ namespace TheNomad::SGame {
 			m_nRage = Util::Clamp( m_nRage, 0.0f, m_nRage );
 
 			@m_LegState = @m_LegState.Run( m_nLegTicker );
-			m_LeftArm.Think();
-			m_RightArm.Think();
+			LeftArm.Think();
+			RightArm.Think();
 		}
 
 		private void DrawLegs() {
@@ -762,12 +762,12 @@ namespace TheNomad::SGame {
 
 			switch ( m_Facing ) {
 			case FACING_LEFT:
-				@back = @m_RightArm;
-				@front = @m_LeftArm;
+				@back = @RightArm;
+				@front = @LeftArm;
 				break;
 			case FACING_RIGHT:
-				@back = @m_LeftArm;
-				@front = @m_RightArm;
+				@back = @LeftArm;
+				@front = @RightArm;
 				break;
 			};
 
@@ -779,7 +779,7 @@ namespace TheNomad::SGame {
 			refEntity.scale = TheNomad::Engine::Renderer::GetFacing( m_Facing );
 			refEntity.Draw();
 
-			if ( ( m_iFlags & PF_DASHING ) != 0 ) {
+			if ( ( Flags & PF_DASHING ) != 0 ) {
 				vec3 origin = m_Link.m_Origin;
 
 				switch ( m_LegsFacing ) {
@@ -797,7 +797,8 @@ namespace TheNomad::SGame {
 			}
 
 			DrawLegs();
-			back.Draw();
+			
+			front.Draw();
 
 			m_HudData.Draw();
 		}
@@ -841,8 +842,8 @@ namespace TheNomad::SGame {
 		private float m_nHealMult = HEAL_MULT_BASE;
 		private float m_nHealMultDecay = HEAL_MULT_BASE;
 		
-		private ArmData m_LeftArm;
-		private ArmData m_RightArm;
+		ArmData LeftArm;
+		ArmData RightArm;
 
 		private EntityState@ m_IdleState = null;
 
@@ -869,9 +870,9 @@ namespace TheNomad::SGame {
 		private PlayerDisplayUI m_HudData;
 		PMoveData Pmove( @this );
 
-		private uint m_iFlags = 0;
+		uint Flags = 0;
 
-		private InventoryManager m_Inventory( @this, @m_LeftArm, @m_RightArm );
+		private InventoryManager m_Inventory( @this, @LeftArm, @RightArm );
 
 		private int m_hListener;
 

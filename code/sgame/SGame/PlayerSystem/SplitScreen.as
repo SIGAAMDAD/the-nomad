@@ -219,7 +219,7 @@ namespace TheNomad::SGame {
 			}
 
 			m_PlayerData.ResetDash();
-			m_PlayerData.SetDashing( true );
+			m_PlayerData.Flags |= PF_DASHING;
 			m_PlayerData.GetUI().ShowDashMarks();
 			
 			vec3 origin = m_PlayerData.GetOrigin();
@@ -237,12 +237,11 @@ namespace TheNomad::SGame {
 			Util::HapticRumble( 0, 0.80f, 400 );
 		}
 		void Dash_Up_f() {
-			m_PlayerData.SetDashing( false );
 		}
 
 		void Slide_Down_f() {
 			// TODO: ground slam?
-			if ( m_PlayerData.IsCrouching() || m_PlayerData.GetOrigin().z > 0.0f
+			if ( ( m_PlayerData.Flags & PF_CROUCHING ) != 0 || m_PlayerData.GetOrigin().z > 0.0f
 				|| TheNomad::GameSystem::GameDeltaTic <= m_PlayerData.GetSlideTime() )
 			{
 				return;
@@ -250,7 +249,7 @@ namespace TheNomad::SGame {
 
 			// we need a little bit of momentum to engage in a slide
 			if ( ( m_PlayerData.key_MoveNorth.active || m_PlayerData.key_MoveSouth.active || m_PlayerData.key_MoveEast.active
-				|| m_PlayerData.key_MoveWest.active ) || m_PlayerData.IsDashing() )
+				|| m_PlayerData.key_MoveWest.active ) || ( m_PlayerData.Flags & PF_DASHING ) != 0 )
 			{
 				if ( ( Util::PRandom() & 1 ) == 1 ) {
 					m_PlayerData.EmitSound( m_SlideSfx0, 10.0f, 0xff );
@@ -259,7 +258,7 @@ namespace TheNomad::SGame {
 				}
 				
 				m_PlayerData.ResetSlide();
-				m_PlayerData.SetSliding( true );
+				m_PlayerData.Flags |= PF_SLIDING;
 
 				vec3 origin = m_PlayerData.GetOrigin();
 				origin.y -= 1.5f;
@@ -277,7 +276,6 @@ namespace TheNomad::SGame {
 			}
 		}
 		void Slide_Up_f() {
-			m_PlayerData.SetSliding( false );
 		}
 		void Melee_Down_f() {	
 			if ( @m_PlayerData.GetLeftArmState() is @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_MELEE ) ) {

@@ -219,8 +219,6 @@ int ModuleOnInit() {
 	TheNomad::Util::GetModuleList( TheNomad::SGame::sgame_ModList );
 	ConsolePrint( TheNomad::SGame::sgame_ModList.Count() + " total mods registered.\n" );
 
-	TheNomad::SGame::ScreenData.Init();
-
 	@TheNomad::Engine::FileSystem::FileManager = TheNomad::Engine::FileSystem::FileSystemManager();
 
 	@TheNomad::SGame::LevelManager = cast<TheNomad::SGame::LevelSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::LevelSystem() ) );
@@ -283,6 +281,8 @@ void StartupGameLevel() {
 	@TheNomad::SGame::InfoSystem::InfoManager = TheNomad::SGame::InfoSystem::InfoDataManager();
 	@TheNomad::SGame::StateManager = TheNomad::SGame::EntityStateSystem();
 
+	TheNomad::SGame::ScreenData.Init();
+
 	TheNomad::SGame::StateManager.InitStateCache();
 
 	// load infos
@@ -336,6 +336,8 @@ int ModuleOnLevelEnd() {
 
 	@TheNomad::SGame::InfoSystem::InfoManager = null;
 	@TheNomad::SGame::StateManager = null;
+
+	TheNomad::Engine::CommandSystem::CmdManager.ClearCommands();
 
 	TheNomad::Engine::ResourceCache.ClearCache();
 

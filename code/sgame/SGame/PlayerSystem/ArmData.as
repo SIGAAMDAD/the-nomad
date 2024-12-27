@@ -24,7 +24,7 @@ namespace TheNomad::SGame {
 			}
 
 			m_nArmIndex = nArmIndex;
-			m_nFacing = FACING_RIGHT;
+			Facing = FACING_RIGHT;
 			m_nTicker = 0;
 
 			const string id = ( nArmIndex == 0 ? "right" : "left" );
@@ -60,7 +60,7 @@ namespace TheNomad::SGame {
 		}
 		
 		private SpriteSheet@ CalcState() {
-			if ( @m_State is @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_MELEE ) ) {
+			if ( @m_State is @m_MeleeState ) {
 				// if we're in melee state, lock in
 				return @m_SpriteSheet;
 			}
@@ -74,10 +74,10 @@ namespace TheNomad::SGame {
 				return @weapon.GetSpriteSheet();
 			}
 			else if ( m_EntityData.GetPhysicsObject().GetVelocity() != Vec3Origin && m_EntityData.GetOrigin().z == 0.0f ) {
-				if ( m_EntityData.IsSliding() ) {
+				if ( ( m_EntityData.Flags & PF_SLIDING ) != 0 ) {
 					@m_State = @m_SlideState;
 				}
-				else if ( m_EntityData.IsCrouching() ) {
+				else if ( ( m_EntityData.Flags & PF_CROUCHING ) != 0 ) {
 					// get a specific stealth state
 					if ( m_EntityData.GetFacing() == m_nArmIndex ) {
 						@m_State = @m_StealthCrawlState;
@@ -99,9 +99,9 @@ namespace TheNomad::SGame {
 			@m_State = @m_State.Run( m_nTicker );
 		}
 		void Draw() {
-			vec2 scale = TheNomad::Engine::Renderer::GetFacing( m_nFacing );
+			vec2 scale = TheNomad::Engine::Renderer::GetFacing( Facing );
 
-			if ( m_EntityData.IsSliding() ) {
+			if ( ( m_EntityData.Flags & PF_SLIDING ) != 0 ) {
 				scale.x = -scale.x;
 			}
 			
@@ -132,7 +132,7 @@ namespace TheNomad::SGame {
 			return @m_State;
 		}
 		int GetFacing() const {
-			return m_nFacing;
+			return Facing;
 		}
 		uint& GetTicker() {
 			return m_nTicker;
@@ -151,7 +151,7 @@ namespace TheNomad::SGame {
 			@m_State = @StateManager.GetStateForNum( state );
 		}
 		void SetFacing( int nFacing ) {
-			m_nFacing = nFacing;
+			Facing = nFacing;
 		}
 
 		private EntityState@ m_IdleState = null;
@@ -165,7 +165,7 @@ namespace TheNomad::SGame {
 		private SpriteSheet@ m_SpriteSheet = null;
 		private EntityState@ m_State = null;
 		private uint m_nWeaponSlot = uint( -1 );
-		private int m_nFacing = FACING_RIGHT;
+		int Facing = FACING_RIGHT;
 		private int m_nArmIndex = 0;
 		private uint m_nTicker = 0;
 	};
