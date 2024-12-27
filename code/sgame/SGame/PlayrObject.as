@@ -22,6 +22,8 @@ namespace TheNomad::SGame {
 	const uint RAW_REFLEX_TIME		= 2000;
 	const uint REFLEX_TIME			= 8000;
 
+	const uint DASH_COOLDOWN		= 200;
+
 	const uint[] sgame_WeaponModeList = {
 		uint( InfoSystem::WeaponProperty::OneHandedBlade | InfoSystem::WeaponProperty::TwoHandedBlade ),
 		uint( InfoSystem::WeaponProperty::OneHandedBlunt | InfoSystem::WeaponProperty::TwoHandedBlunt ),
@@ -224,7 +226,7 @@ namespace TheNomad::SGame {
 			return m_nSlideEndTime;
 		}
 		void ResetSlide() {
-			m_nSlideEndTime = TheNomad::GameSystem::GameTic + SLIDE_DURATION;
+			m_nSlideEndTime = ( TheNomad::GameSystem::GameTic + SLIDE_DURATION ) * TheNomad::GameSystem::DeltaTic;
 		}
 		
 		bool IsCrouching() const {
@@ -253,10 +255,10 @@ namespace TheNomad::SGame {
 			}
 		}
 		uint GetDashTime() const {
-			return m_nDashEndTime;
+			return DashEndTime;
 		}
 		void ResetDash() {
-			m_nDashEndTime = ( TheNomad::GameSystem::GameTic + DASH_DURATION ) * TheNomad::GameSystem::DeltaTic;
+			DashEndTime = ( TheNomad::GameSystem::GameTic + DASH_DURATION ) * TheNomad::GameSystem::DeltaTic;
 		}
 
 		void SetUsingWeapon( bool bUseWeapon ) {
@@ -780,6 +782,7 @@ namespace TheNomad::SGame {
 			refEntity.Draw();
 
 			if ( ( Flags & PF_DASHING ) != 0 ) {
+				ConsolePrint( "DRAWING DASH\n" );
 				vec3 origin = m_Link.m_Origin;
 
 				switch ( m_LegsFacing ) {
@@ -794,6 +797,7 @@ namespace TheNomad::SGame {
 
 				TheNomad::Engine::Renderer::AddDLightToScene( origin, 6.15f, vec3( 1.0f, 0.0f, 0.0f ) );
 				GfxManager.SmokeCloud( m_Link.m_Origin );
+				m_HudData.ShowDashMarks();
 			}
 
 			DrawLegs();
@@ -859,8 +863,9 @@ namespace TheNomad::SGame {
 
 		private AfterImage m_AfterImage;
 
-		private uint m_nDashEndTime = 0;
-		private uint m_nDashCounter = 0;
+		uint DashEndTime = 0;
+		uint DashCounter = 2;
+		private uint DashCounterRegenTime = 0;
 		private uint m_nSlideEndTime = 0;
 
 		private uint m_nRawReflexStartTime = 0;

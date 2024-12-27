@@ -184,16 +184,16 @@ namespace TheNomad::SGame {
 			m_PlayerData.key_Jump.Up();
 		}
 		void UseWeapon_Down_f() {
-			m_PlayerData.SetUsingWeapon( true );
+			m_PlayerData.Flags |= PF_USING_WEAPON;
 		}
 		void UseWeapon_Up_f() {
-			m_PlayerData.SetUsingWeapon( false );
+			m_PlayerData.Flags &= ~PF_USING_WEAPON;
 		}
 		void AltUseWeapon_Down_f() {
-			m_PlayerData.SetUsingWeaponAlt( true );
+			m_PlayerData.Flags |= PF_USING_WEAPON_ALT;
 		}
 		void AltUseWeapon_Up_f() {
-			m_PlayerData.SetUsingWeaponAlt( false );
+			m_PlayerData.Flags &= ~PF_USING_WEAPON_ALT;
 		}
 		void Quickshot_f() {
 			if ( m_PlayerData.InReflex() ) {
@@ -208,9 +208,11 @@ namespace TheNomad::SGame {
 		}
 		void Dash_Down_f() {
 			// wait at little bit before launching another dash
-			if ( TheNomad::GameSystem::GameDeltaTic <= m_PlayerData.GetDashTime() ) {
+			if ( ( TheNomad::GameSystem::GameTic - m_PlayerData.DashEndTime ) * TheNomad::GameSystem::DeltaTic < DASH_DURATION ) {
 				return;
 			}
+
+			ConsolePrint( "DASHING\n" );
 
 			if ( ( Util::PRandom() & 1 ) == 1 ) {
 				m_PlayerData.EmitSound( m_DashSfx0, 10.0f, 0xff );
@@ -218,9 +220,8 @@ namespace TheNomad::SGame {
 				m_PlayerData.EmitSound( m_DashSfx1, 10.0f, 0xff );
 			}
 
-			m_PlayerData.ResetDash();
+			m_PlayerData.DashEndTime = TheNomad::GameSystem::GameTic;
 			m_PlayerData.Flags |= PF_DASHING;
-			m_PlayerData.GetUI().ShowDashMarks();
 			
 			vec3 origin = m_PlayerData.GetOrigin();
 			origin.y -= 1.5f;
@@ -242,7 +243,7 @@ namespace TheNomad::SGame {
 		void Slide_Down_f() {
 			// TODO: ground slam?
 			if ( ( m_PlayerData.Flags & PF_CROUCHING ) != 0 || m_PlayerData.GetOrigin().z > 0.0f
-				|| TheNomad::GameSystem::GameDeltaTic <= m_PlayerData.GetSlideTime() )
+				|| TheNomad::GameSystem::GameDeltaTic < m_PlayerData.GetSlideTime() )
 			{
 				return;
 			}
@@ -276,6 +277,7 @@ namespace TheNomad::SGame {
 			}
 		}
 		void Slide_Up_f() {
+			m_PlayerData.Flags &= ~PF_SLIDING;
 		}
 		void Melee_Down_f() {	
 			if ( @m_PlayerData.GetLeftArmState() is @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_MELEE ) ) {

@@ -3,6 +3,18 @@
 namespace TheNomad::Engine::CommandSystem {
 	funcdef void CommandFunc();
 
+	class Command {
+		Command() {
+		}
+		Command( const string& in name, CommandFunc@ fn ) {
+			Name = name;
+			@Function = @fn;
+		}
+
+		string Name;
+		CommandFunc@ Function = null;
+	};
+
 	class CommandManager {
 		CommandManager() {
 		}
@@ -11,11 +23,9 @@ namespace TheNomad::Engine::CommandSystem {
 
 		void ClearCommands() {
 			for ( uint i = 0; i < m_CommandList.Count(); ++i ) {
-				TheNomad::Engine::CmdRemoveCommand( m_CommandList[i] );
+				TheNomad::Engine::CmdRemoveCommand( m_CommandList[i].Name );
 			}
 			m_CommandList.Clear();
-			m_Commands.Clear();
-			m_KeyBinds.Clear();
 		}
 
 		bool CheckCommand( const string& in name ) const {
@@ -23,33 +33,33 @@ namespace TheNomad::Engine::CommandSystem {
 			TheNomad::Engine::ProfileBlock block( "CheckCommand" );
 		#endif
 
-			if ( m_KeyBinds.Contains( name ) ) {
-				cast<CommandFunc>( @m_KeyBinds[ name ] )();
-				return true;
-			}
-			if ( m_Commands.Contains( name ) ) {
-				cast<CommandFunc>( @m_Commands[ name ] )();
-				return true;
+			for ( uint i = 0; i < m_CommandList.Count(); ++i ) {
+				if ( m_CommandList[i].Name == name ) {
+					if ( @m_CommandList[i].Function is null ) {
+						ConsoleWarning( "Command callback for \"" + name + "\" is null! (" + m_CommandList[i].Name + ")\n" );
+						return false;
+					}
+					m_CommandList[i].Function();
+					return true;
+				}
 			}
 
 			return false;
 		}
 
 		void AddKeyBind( CommandFunc@ fn, const string& in name ) {
-			m_KeyBinds.Add( name, @fn );
-			m_CommandList.Add( name );
+			m_CommandList.Add( Command( name, @fn ) );
 			TheNomad::Engine::CmdAddCommand( name );
 		}
 
 		void AddCommand( CommandFunc@ fn, const string& in name ) {
-			m_Commands.Add( name, @fn );
-			m_CommandList.Add( name );
+			m_CommandList.Add( Command( name, @fn ) );
 			TheNomad::Engine::CmdAddCommand( name );
 		}
 
 		private dictionary m_Commands;
 		private dictionary m_KeyBinds;
-		private array<string> m_CommandList;
+		private array<Command> m_CommandList;
 	};
 
 	CommandManager CmdManager;

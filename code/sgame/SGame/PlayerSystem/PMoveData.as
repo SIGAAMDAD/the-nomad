@@ -2,7 +2,7 @@ namespace TheNomad::SGame {
 	const uint PMF_JUMP_HELD      = 0x01;
 	const uint PMF_BACKWARDS_JUMP = 0x02;
 
-	const uint DASH_DURATION = 800;
+	const uint DASH_DURATION = 50;
 	const uint SLIDE_DURATION = 700;
 	
 	const float JUMP_VELOCITY = 3.5f;
@@ -66,16 +66,18 @@ namespace TheNomad::SGame {
 			if ( isDashing ) {
 				accel.y += 4.50f * forward;
 				accel.x += 4.50f * side;
-
-				if ( TheNomad::GameSystem::GameDeltaTic > m_EntityData.GetDashTime() ) {
-					m_EntityData.Flags &= ~PF_DASHING;
-				}
+				m_EntityData.SetDashing( ( TheNomad::GameSystem::GameTic - m_EntityData.DashEndTime ) * TheNomad::GameSystem::DeltaTic
+					< DASH_DURATION );
+			} else {
+				m_EntityData.DashEndTime = 0;
 			}
 			if ( isSliding ) {
 				accel.y += 0.15f * forward;
 				accel.x += 0.15f * side;
 				if ( TheNomad::GameSystem::GameDeltaTic > m_EntityData.GetSlideTime() ) {
 					m_EntityData.Flags &= ~PF_SLIDING;
+				} else {
+					m_EntityData.Flags |= PF_SLIDING;
 				}
 			} else {
 				const uint64 tile = LevelManager.GetMapData().GetTile( m_EntityData.GetOrigin(), m_EntityData.GetBounds() );
@@ -273,45 +275,43 @@ namespace TheNomad::SGame {
 			AirMove();
 
 			SetMovementDir();
-			/*
-			if ( sgame_DebugMode.GetBool() ) {
-				TheNomad::Engine::UserInterface::SetActiveFont( TheNomad::Engine::UserInterface::Font_RobotoMono );
 
-				ImGui::Begin( "Debug Player Movement", null, ImGuiWindowFlags::AlwaysAutoResize );
-				ImGui::SetWindowPos( vec2( 16, 128 ) );
-				ImGui::Text( "Origin: [ " + m_EntityData.GetOrigin().x + ", " + m_EntityData.GetOrigin().y + ", " + m_EntityData.GetOrigin().z + " ]" );
-				ImGui::Text( "Velocity: [ " + m_EntityData.GetVelocity().x + ", " + m_EntityData.GetVelocity().y + ", " + m_EntityData.GetVelocity().z + " ]" );
-				ImGui::Text( "CameraPos: [ " + Game_CameraWorldPos.x + ", " + Game_CameraWorldPos.y + " ]" );
-				ImGui::Text( "Forward: " + forward );
-				ImGui::Text( "Side: " + side );
-				ImGui::Separator();
-				ImGui::Text( "North MSec: " + m_EntityData.key_MoveNorth.msec );
-				ImGui::Text( "South MSec: " + m_EntityData.key_MoveSouth.msec );
-				ImGui::Text( "East MSec: " + m_EntityData.key_MoveEast.msec );
-				ImGui::Text( "West MSec: " + m_EntityData.key_MoveWest.msec );
-				ImGui::Separator();
-				ImGui::Text( "Bounding Box" );
-				{
-					const vec3 mins = m_EntityData.GetBounds().m_Mins;
-					const vec3 maxs = m_EntityData.GetBounds().m_Maxs;
+			TheNomad::Engine::UserInterface::SetActiveFont( TheNomad::Engine::UserInterface::Font_RobotoMono );
 
-					ImGui::Text( "mins[0]: " + mins.x );
-					ImGui::Text( "mins[1]: " + mins.y );
-					ImGui::Text( "maxs[0]: " + maxs.x );
-					ImGui::Text( "maxs[1]: " + maxs.y );
-				}
-				ImGui::Separator();
-				ImGui::Text( "Arm Angle: " + m_nArmsAngle );
-				ImGui::Separator();
-				ImGui::Text( "LegState: " + m_EntityData.GetLegState().GetName() );
-				ImGui::Text( "LegAnimation:" );
-				ImGui::Text( "  Frame: " + m_EntityData.GetLegState().GetAnimation().GetFrame() );
-				ImGui::Text( "  NumFrames: " + m_EntityData.GetLegState().GetAnimation().NumFrames() );
-				ImGui::Separator();
-				ImGui::Text( "GameTic: " + gameTic );
-				ImGui::End();
+			ImGui::Begin( "Debug Player Movement", null, ImGuiWindowFlags::AlwaysAutoResize );
+			ImGui::SetWindowPos( vec2( 16, 128 ) );
+			ImGui::Text( "Origin: [ " + m_EntityData.GetOrigin().x + ", " + m_EntityData.GetOrigin().y + ", " + m_EntityData.GetOrigin().z + " ]" );
+			ImGui::Text( "Velocity: [ " + m_EntityData.GetVelocity().x + ", " + m_EntityData.GetVelocity().y + ", " + m_EntityData.GetVelocity().z + " ]" );
+			ImGui::Text( "CameraPos: [ " + Game_CameraWorldPos.x + ", " + Game_CameraWorldPos.y + " ]" );
+			ImGui::Text( "Forward: " + forward );
+			ImGui::Text( "Side: " + side );
+			ImGui::Separator();
+			ImGui::Text( "DashTime: " + m_EntityData.DashEndTime );
+			ImGui::Text( "DashCounter: " + m_EntityData.DashCounter );
+			ImGui::Separator();
+			ImGui::Text( "North MSec: " + m_EntityData.key_MoveNorth.msec );
+			ImGui::Text( "South MSec: " + m_EntityData.key_MoveSouth.msec );
+			ImGui::Text( "East MSec: " + m_EntityData.key_MoveEast.msec );
+			ImGui::Text( "West MSec: " + m_EntityData.key_MoveWest.msec );
+			ImGui::Separator();
+			ImGui::Text( "Bounding Box" );
+			{
+				const vec3 mins = m_EntityData.GetBounds().m_Mins;
+				const vec3 maxs = m_EntityData.GetBounds().m_Maxs;
+				
+				ImGui::Text( "mins[0]: " + mins.x );
+				ImGui::Text( "mins[1]: " + mins.y );
+				ImGui::Text( "maxs[0]: " + maxs.x );
+				ImGui::Text( "maxs[1]: " + maxs.y );
 			}
-			*/
+			ImGui::Separator();
+			ImGui::Text( "Arm Angle: " + m_nArmsAngle );
+			ImGui::Separator();
+			ImGui::Text( "LegState: " + m_EntityData.GetLegState().GetName() );
+			ImGui::Text( "LegAnimation:" );
+			ImGui::Text( "  Frame: " + m_EntityData.GetLegState().GetAnimation().GetFrame() );
+			ImGui::Text( "  NumFrames: " + m_EntityData.GetLegState().GetAnimation().NumFrames() );
+			ImGui::End();
 
 			m_EntityData.GetPhysicsObject().OnRunTic();
 		}
