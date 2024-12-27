@@ -190,6 +190,9 @@ namespace TheNomad::SGame::InfoSystem {
 			if ( !LoadDetectionBlock( @json ) ) {
 				return false;
 			}
+			if ( !LoadRenderDataBlock( @json ) ) {
+				return false;
+			}
 
 			return true;
 		}

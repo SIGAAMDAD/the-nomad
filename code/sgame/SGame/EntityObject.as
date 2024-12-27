@@ -229,7 +229,7 @@ namespace TheNomad::SGame {
 
 		// the entity's current state
 		protected EntityState@ m_State = null;
-				
+		
 		// current effect the entity's suffereing from
 		protected AttackEffect m_Debuff = AttackEffect::None;
 		

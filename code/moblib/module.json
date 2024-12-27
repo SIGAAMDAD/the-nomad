@@ -1,5 +1,5 @@
 {
-	"Name": "MobLib",
+	"Name": "moblib",
 	"Id": "moblib",
 	"Description": "AI management system kept separate from the main VM for extra moddability",
 	"DependedModules": [

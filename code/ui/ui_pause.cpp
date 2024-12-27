@@ -91,6 +91,7 @@ static void PauseMenu_EventCallback( void *ptr, int event )
 		UI_SetActiveMenu( UI_MENU_NONE );
 		Key_ClearStates();
 		Key_SetCatcher( KEYCATCH_SGAME );
+		Cvar_Set( "g_paused", "0" );
 		break;
 	case ID_CHECKPOINT:
 		// rewind the checkpoint
@@ -106,14 +107,12 @@ static void PauseMenu_EventCallback( void *ptr, int event )
 		break;
 	case ID_HELP:
 		gi.state = GS_MENU;
-		Cvar_SetIntegerValue( "g_paused", 0 );
 		Key_ClearStates();
 		Key_SetCatcher( KEYCATCH_UI );
 		UI_DataBaseMenu();
 		break;
 	case ID_SETTINGS:
 		gi.state = GS_MENU;
-		Cvar_SetIntegerValue( "g_paused", 0 );
 		Key_ClearStates();
 		Key_SetCatcher( KEYCATCH_UI );
 		UI_SettingsMenu();
@@ -124,10 +123,10 @@ static void PauseMenu_EventCallback( void *ptr, int event )
 		gi.mapLoaded = qfalse;
 		gi.mapCache.currentMapLoaded = -1;
 		gi.state = GS_INACTIVE;
-		UI_ConfirmMenu( "All progress after the most previous checkpoint will be lost, are you sure you want to quit?", NULL, PauseMenu_ExitCallback );
+		UI_ConfirmMenu( strManager->ValueForKey( "PAUSE_MENU_EXIT" )->value, NULL, PauseMenu_ExitCallback );
 		break;
 	case ID_EXIT_GAME:
-		UI_ConfirmMenu( "All progress after the most previous checkpoint will be lost, are you sure you want to quit?", NULL, PauseMenu_QuitCallback );
+		UI_ConfirmMenu( strManager->ValueForKey( "PAUSE_MENU_EXIT" )->value, NULL, PauseMenu_QuitCallback );
 		break;
 	default:
 		break;

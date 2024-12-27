@@ -9,7 +9,7 @@ namespace moblib {
 		}
 		
 		void Link( TheNomad::SGame::MobObject@ mob ) {
-			TheNomad::SGame::InfoSystem::MobInfo@ info = cast<TheNomad::SGame::InfoSystem::MobInfo@>( @mob.GetInfo() );
+			TheNomad::SGame::InfoSystem::MobInfo@ info = @mob.GetMobInfo();
 			const uint id = info.type;
 			
 			@m_IdleState = @TheNomad::SGame::StateManager.GetStateForNum( uint( TheNomad::SGame::StateNum::ST_MOB_IDLE ) + id );
@@ -22,7 +22,7 @@ namespace moblib {
 			@m_DeathState = @TheNomad::SGame::StateManager.GetStateForNum( uint( TheNomad::SGame::StateNum::ST_MOB_DEAD ) + id );
 			
 			@m_EntityData = @mob;
-			m_Sensor.Init( @info, @mob );
+			m_Sensor.Init( @mob );
 		}
 		
 		void FleeThink() {

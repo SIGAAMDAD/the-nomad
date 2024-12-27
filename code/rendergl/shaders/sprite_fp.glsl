@@ -141,7 +141,7 @@ void ApplyLighting() {
 }
 
 void main() {
-	if ( distance( v_WorldPos.xy, u_ViewOrigin.xy ) >= 16.0 ) {
+	if ( distance( v_WorldPos.xy, u_ViewOrigin.xy ) >= 14.0 ) {
 		discard;
 	}
 
@@ -164,21 +164,23 @@ void main() {
 	}
 
 	float alpha = a_Color.a * v_Color.a;
-	if ( u_AlphaTest == 1 ) {
+	switch ( u_AlphaTest ) {
+	case 1:
 		if ( alpha == 0.0 ) {
 			discard;
 		}
-	}
-	else if ( u_AlphaTest == 2 ) {
+		break;
+	case 2:
 		if ( alpha >= 0.5 ) {
 			discard;
 		}
-	}
-	else if ( u_AlphaTest == 3 ) {
+		break;
+	case 3:
 		if ( alpha < 0.5 ) {
 			discard;
 		}
-	}
+		break;
+	};
 	a_Color.a = alpha;
 
 	ApplyLighting();
@@ -191,8 +193,6 @@ void main() {
 		} else {
 			a_BrightColor = vec4( 0.0, 0.0, 0.0, 1.0 );
 		}
-	} else {
-		a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
 	}
 	if ( u_GamePaused ) {
 		a_Color.rgb = vec3( a_Color.rg * 0.5, 0.5 );

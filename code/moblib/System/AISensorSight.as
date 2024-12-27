@@ -4,27 +4,41 @@ namespace moblib {
 		}
 		
 		bool DoCheck( TheNomad::SGame::MobObject@ mob ) const {
-			TheNomad::GameSystem::RayCast ray;
-			vec3 delta, pos, p;
+			vec3 delta, pos, p, target;
 			TheNomad::SGame::EntityObject@ ent = null;
-			const TheNomad::SGame::InfoSystem::MobInfo@ info = cast<TheNomad::SGame::InfoSystem::MobInfo@>( @mob.GetInfo() );
+			const TheNomad::SGame::InfoSystem::MobInfo@ info = @mob.GetMobInfo();
 
-			delta.x = cos( mob.GetAngle() );
-			delta.y = sin( mob.GetAngle() );
+			const float angle = mob.GetAngle();
+			const float cosine = cos( info.sightRadius );
+			const vec3 origin = mob.GetOrigin();
+			delta.x = cos( angle );
+			delta.y = sin( angle );
 			delta.z = 0.0f;
-			
-			pos = mob.GetTarget().GetOrigin() - mob.GetOrigin();
-			
-			p = TheNomad::Util::VectorNormalize( pos );
-			if ( TheNomad::Util::DotProduct( pos, delta ) > cos( info.sightRadius ) ) {
+
+			TheNomad::SGame::EntityObject@ activeEnts = @TheNomad::SGame::EntityManager.GetActiveEnts();
+			for ( @ent = @activeEnts.m_Next; @ent !is @activeEnts; @ent = @ent.m_Next ) {
+				target = ent.GetOrigin();
+				if ( ent.GetType() == TheNomad::GameSystem::EntityType::Playr
+					&& TheNomad::Util::Distance( target, origin ) < info.sightRange )
+				{
+					pos = target - origin;
+					p = TheNomad::Util::VectorNormalize( pos );
+					if ( TheNomad::Util::DotProduct( pos, delta ) > cosine ) {
+						continue;
+					}
+				}
+			}
+			if ( @ent is @activeEnts ) {
 				return false;
 			}
 			
 			//
 			// make sure that the line of sight isn't obstructed
 			//
+			TheNomad::GameSystem::RayCast ray;
+
 			ray.m_nLength = info.sightRange;
-			ray.m_Start = mob.GetOrigin();
+			ray.m_Start = origin;
 			ray.m_nEntityNumber = ENTITYNUM_INVALID;
 			ray.m_nAngle = mob.GetAngle();
 

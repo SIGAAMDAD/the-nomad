@@ -511,6 +511,7 @@ static void *LoadNewsThread( void *mutex )
 
 void MainMenu_LoadNews( void )
 {
+#ifdef _NOMAD_EXPERIMENTAL
 	int ret;
 
 	if ( ( ret = pthread_create( &s_newsThread, NULL, LoadNewsThread, NULL ) ) != 0 ) {
@@ -518,6 +519,7 @@ void MainMenu_LoadNews( void )
 	} else {
 		return;
 	}
+#endif
 
 	// if we can't create a separate thread to load the newsfeed, then just block the main thread
 	CURL *curl;
@@ -562,7 +564,9 @@ void MainMenu_LoadNews( void )
 
 static void MainMenu_ParseNews( void )
 {
+#ifdef _NOMAD_EXPERIMENTAL
 	pthread_join( s_newsThread, (void **)NULL );
+#endif
 
 	newslabel_t tmp;
 	uint64_t i;

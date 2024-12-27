@@ -17,6 +17,10 @@ namespace TheNomad::SGame {
 		uint GetMobType() const {
 			return m_Info.type;
 		}
+
+		InfoSystem::MobInfo@ GetMobInfo() {
+			return @m_Info;
+		}
 		
 		bool Load( const TheNomad::GameSystem::SaveSystem::LoadSection& in section ) {
 			m_nHealth = section.LoadFloat( "health" );
@@ -43,6 +47,7 @@ namespace TheNomad::SGame {
 		
 		void LinkScript( moblib::MobScript@ script ) {
 			@m_ScriptData = @script;
+			DebugPrint( "Linked mob script for \"" + m_Info.name + "\" at entity '" + m_Link.m_nEntityNumber + "''\n" );
 		}
 
 		void Spawn( uint id, const vec3& in origin ) {
@@ -55,6 +60,7 @@ namespace TheNomad::SGame {
 			m_nHealth = m_Info.health;
 			m_MFlags = m_Info.mobFlags;
 			@m_State = @StateManager.GetStateForNum( m_Info.type + StateNum::ST_MOB_IDLE );
+			moblib::AIManager.AllocScript( @this );
 		}
 		
 		void Damage( EntityObject@ source, float nAmount ) {
@@ -100,7 +106,7 @@ namespace TheNomad::SGame {
 			refEntity.Draw();
 		}
 		void Think() override {
-			switch ( m_State.GetID() - m_Info.type ) {
+			switch ( m_State.GetBaseNum() ) {
 			case StateNum::ST_MOB_IDLE:
 				m_ScriptData.IdleThink();
 				break;

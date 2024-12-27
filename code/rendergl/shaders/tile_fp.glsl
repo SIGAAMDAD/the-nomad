@@ -145,50 +145,53 @@ void ApplyLighting() {
 }
 
 void main() {
-	if ( distance( v_WorldPos.xy, u_ViewOrigin.xy ) >= 16.0 ) {
+	if ( distance( v_WorldPos.xy, u_ViewOrigin.xy ) >= 14.0 ) {
 		discard;
 	}
 
 	// calculate a slight x offset, otherwise we get some black line bleeding
 	// going on
+	/*
 	ivec2 texSize = textureSize( u_DiffuseMap, 0 );
 	float sOffset = ( 1.0 / ( float( texSize.x ) ) * 0.75 );
 	float tOffset = ( 1.0 / ( float( texSize.y ) ) * 0.75 );
 	vec2 texCoord = vec2( v_TexCoords.x + sOffset, v_TexCoords.y + tOffset );
+	*/
 
 	if ( !u_PostProcess ) {
 		if ( u_AntiAliasing == AntiAlias_FXAA ) {
-			vec2 fragCoord = texCoord * u_ScreenSize;
+			vec2 fragCoord = v_TexCoords * u_ScreenSize;
 			a_Color = ApplyFXAA( u_DiffuseMap, fragCoord );
 		} else {
-			a_Color = sharpenImage( u_DiffuseMap, texCoord );
+			a_Color = sharpenImage( u_DiffuseMap, v_TexCoords );
 		}
 	} else {
-		a_Color = texture( u_DiffuseMap, texCoord );
+		a_Color = texture( u_DiffuseMap, v_TexCoords );
 	}
 
 	float alpha = a_Color.a * v_Color.a;
-	if ( u_AlphaTest == 1 ) {
+	switch ( u_AlphaTest ) {
+	case 1:
 		if ( alpha == 0.0 ) {
 			discard;
 		}
-	}
-	else if ( u_AlphaTest == 2 ) {
+		break;
+	case 2:
 		if ( alpha >= 0.5 ) {
 			discard;
 		}
-	}
-	else if ( u_AlphaTest == 3 ) {
+		break;
+	case 3:
 		if ( alpha < 0.5 ) {
 			discard;
 		}
-	}
+		break;
+	};
 	a_Color.a = alpha;
 
 	ApplyLighting();
 
 	// if we have post processing active, don't calculate gamma until the final pass
-#if defined(USE_MULTIATTRIB)
 	if ( u_Bloom && u_HDR ) {
 		// check whether fragment output is higher than threshold, if so output as brightness color
 		float brightness = dot( a_Color.rgb, vec3( 0.1, 0.1, 0.1 ) );
@@ -197,11 +200,6 @@ void main() {
 		} else {
 			a_BrightColor = vec4( 0.0, 0.0, 0.0, 1.0 );
 		}
-	}
-	else
-#endif
-	{
-		a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
 	}
 	if ( u_GamePaused ) {
 		a_Color.rgb = vec3( a_Color.rg * 0.5, 0.5 );

@@ -1,14 +1,14 @@
 namespace moblib::System {
 	enum SensorType {
-		Sensor_Sight,
-		Sensor_Sound
+		Sight,
+		Sound
 	};
 	
 	class AISensor {
 		AISensor() {
 		}
 
-		void Init( TheNomad::SGame::InfoSystem::MobInfo@ info, TheNomad::SGame::MobObject@ mob ) {
+		void Init( TheNomad::SGame::MobObject@ mob ) {
 			@m_EntityData = @mob;	
 		}
 		

@@ -37,10 +37,10 @@ namespace TheNomad::SGame::InfoSystem {
 			LoadEntityIds();
 			
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.DumpCache_f ), "sgame.print_entity_cache", true
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.DumpCache_f ), "sgame.print_entity_cache"
 			);
 
-			if ( sgame_DebugMode.GetInt() == 1 ) {
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_DebugMode" ) == 1 ) {
 				DumpCache_f();
 			}
 		}

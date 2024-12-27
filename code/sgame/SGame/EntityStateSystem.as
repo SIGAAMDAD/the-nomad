@@ -87,7 +87,8 @@ namespace TheNomad::SGame {
 			}
 
 			ConsolePrint( "Got " + states.Count() + " state infos from \"" + modName + "\"\n" );
-			for ( uint i = 0; i < states.Count(); i++ ) {
+			stateInfos.Reserve( states.Count() );
+			for ( uint i = 0; i < states.Count(); ++i ) {
 				stateInfos.Add( @states[i] );
 			}
 		}
@@ -132,7 +133,7 @@ namespace TheNomad::SGame {
 
 		void InitStateCache() {
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.ListStateCache_f ), "sgame.state_cache", false
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.ListStateCache_f ), "sgame.state_cache"
 			);
 
 			InitBaseStateCache();
@@ -144,6 +145,7 @@ namespace TheNomad::SGame {
 				LoadStatesFromFile( sgame_ModList[i], @stateInfos );
 			}
 			
+			m_States.Reserve( stateInfos.Count() );
 			for ( uint i = 0; i < stateInfos.Count(); i++ ) {
 				EntityState@ state = EntityState();
 
@@ -157,7 +159,7 @@ namespace TheNomad::SGame {
 			}
 			stateInfos.Clear();
 
-			if ( sgame_DebugMode.GetBool() ) {
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_DebugMode" ) == 1 ) {
 				TheNomad::Engine::CmdExecuteCommand( "sgame.state_cache\n" );
 			}
 		}

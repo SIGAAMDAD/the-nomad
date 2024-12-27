@@ -50,19 +50,19 @@ namespace TheNomad::SGame {
     class EntitySystem : TheNomad::GameSystem::GameObject {
 		EntitySystem() {
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.SetPlayerPosition_f ), "sgame.set_player_position", true
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.SetPlayerPosition_f ), "sgame.set_player_position"
 			);
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.DamagePlayer_f ), "sgame.damage_player", true
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.DamagePlayer_f ), "sgame.damage_player"
 			);
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.PrintPlayerState_f ), "sgame.player_state", true
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.PrintPlayerState_f ), "sgame.player_state"
 			);
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.GivePlayerWeapon_f ), "sgame.give_player_weapon", true
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.GivePlayerWeapon_f ), "sgame.give_player_weapon"
 			);
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.GivePlayerItem_f ), "sgame.give_player_item", true
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.GivePlayerItem_f ), "sgame.give_player_item"
 			);
 		}
 		
@@ -74,11 +74,13 @@ namespace TheNomad::SGame {
 			return "EntityManager";
 		}
 		void OnRenderScene() {
-			EntityObject@ ent;
+			EntityObject@ ent = null;
+
+			const vec3 origin = m_ActivePlayer.GetOrigin();
 
 			for ( @ent = @m_ActiveEnts.m_Next; @ent !is @m_ActiveEnts; @ent = @ent.m_Next ) {
 				// draw
-				if ( Util::Distance( m_ActivePlayer.GetOrigin(), ent.GetOrigin() ) >= 16.0f ) {
+				if ( Util::Distance( origin, ent.GetOrigin() ) >= 16.0f ) {
 					continue;
 				}
 				ent.Draw();

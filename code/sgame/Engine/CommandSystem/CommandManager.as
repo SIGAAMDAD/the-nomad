@@ -1,62 +1,61 @@
 #include "Engine/Profiler.as"
 
 namespace TheNomad::Engine::CommandSystem {
-    funcdef void CommandFunc();
+	funcdef void CommandFunc();
 
-    class GameObjectCommand {
-        GameObjectCommand() {
-        }
-    };
-    class Command {
-        Command() {
-        }
-        Command( const string& in name, CommandFunc@ fn, bool isLevelCommand ) {
-            m_Name = name;
-            @m_Function = @fn;
-            m_bLevelCommand = isLevelCommand;
-        }
+	class CommandManager {
+		CommandManager() {
+		}
+		~CommandManager() {
+//			TheNomad::Engine::CmdRemoveCommand( m_CommandList[i].m_Name );
+			m_CommandList.Clear();
+		}
 
-        string m_Name;
-        CommandFunc@ m_Function = null;
-        bool m_bLevelCommand = false;
-    };
+		bool CheckCommand( const string& in name ) const {
+		#if _NOMAD_DEBUG
+			TheNomad::Engine::ProfileBlock block( "CheckCommand" );
+		#endif
 
-    class CommandManager {
-        CommandManager() {
-        }
-        ~CommandManager() {
-            for ( uint i = 0; i < m_CommandList.Count(); i++ ) {
-                @m_CommandList[i].m_Function = null;
-                TheNomad::Engine::CmdRemoveCommand( m_CommandList[i].m_Name );
-            }
-            m_CommandList.Clear();
-        }
+			if ( m_KeyBinds.Contains( name ) ) {
+				cast<CommandFunc>( @m_KeyBinds[ name ] )();
+				return true;
+			}
+			if ( m_CommandList.Contains( name ) ) {
+				cast<CommandFunc>( @m_CommandList[ name ] )();
+				return true;
+			}
 
-        bool CheckCommand( const string& in name ) const {
-            TheNomad::Engine::ProfileBlock block( "CheckCommand" );
-            
-            for ( uint i = 0; i < m_CommandList.Count(); i++ ) {
-                if ( m_CommandList[i].m_Name == name ) {
-                    if ( @m_CommandList[i].m_Function is null ) {
-                        ConsoleWarning( "Command callback for \"" + name + "\" is null! (" + m_CommandList[i].m_Name + ")\n" );
-                        return false;
-                    } else if ( m_CommandList[i].m_bLevelCommand && TheNomad::SGame::GlobalState != TheNomad::SGame::GameState::InLevel ) {
-                        return false;
-                    }
-                    m_CommandList[i].m_Function();
-                    return true;
-                }
-            }
-            return false;
-        }
+/*			
+			for ( uint i = 0; i < m_CommandList.Count(); i++ ) {
+				if ( m_CommandList[i].m_Name == name ) {
+					if ( @m_CommandList[i].m_Function is null ) {
+						ConsoleWarning( "Command callback for \"" + name + "\" is null! (" + m_CommandList[i].m_Name + ")\n" );
+						return false;
+					} else if ( m_CommandList[i].m_bLevelCommand && TheNomad::SGame::GlobalState != TheNomad::SGame::GameState::InLevel ) {
+						return false;
+					}
+					m_CommandList[i].m_Function();
+					return true;
+				}
+			}
+*/
+			return false;
+		}
 
-        void AddCommand( CommandFunc@ fn, const string& in name, bool levelCommand ) {
-            m_CommandList.Add( Command( name, @fn, levelCommand ) );
-            TheNomad::Engine::CmdAddCommand( name );
-        }
+		void AddKeyBind( CommandFunc@ fn, const string& in name ) {
+			m_KeyBinds.Add( name, @fn );
+			TheNomad::Engine::CmdAddCommand( name );
+		}
 
-        private array<Command> m_CommandList;
-    };
+		void AddCommand( CommandFunc@ fn, const string& in name ) {
+			m_CommandList.Add( name, @fn );
+			TheNomad::Engine::CmdAddCommand( name );
+		}
 
-    CommandManager CmdManager;
+		private dictionary m_CommandList;
+		private dictionary m_KeyBinds;
+//		private array<Command> m_CommandList;
+	};
+
+	CommandManager CmdManager;
 };

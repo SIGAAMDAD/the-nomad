@@ -46,7 +46,7 @@
 			"RenderData.SpriteWidth": 64,
 			"RenderData.SpriteHeight": 32,
 			"RenderData.SpriteSheet": "sprites/weapons/plasma_smg",
-			"Sounds.Use": "event:/sfx/weapons/plasma_smg_use",
+			"Sounds.Use": "event:/sfx/weapons/plasma_smg_shot",
 			"Sounds.Reload": "event:/sfx/weapons/plasma_smg_rld",
 			"Properties": 1052711
 		},
@@ -71,8 +71,8 @@
 			"RenderData.SpriteWidth": 64,
 			"RenderData.SpriteHeight": 32,
 			"RenderData.SpriteSheet": "sprites/weapons/double_barrel",
-			"Sounds.Use": "event:/sfx/weapons/double_barrel_use",
-			"Sounds.Reload": "event:/sfx/weapons/double_barrel_rld",
+			"Sounds.Use": "event:/sfx/weapons/adb_shot",
+			"Sounds.Reload": "event:/sfx/weapons/adb_rld",
 			"Properties": 1052784
 		}
 	]

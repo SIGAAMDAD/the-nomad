@@ -46,7 +46,7 @@ namespace TheNomad::SGame {
 				TheNomad::GameSystem::GetSpawnData( xyz, type, id, i, checkpoint );
 				spawn = MapSpawn( xyz, id, TheNomad::GameSystem::EntityType( type ) );
 
-				DebugPrint( "Spawn " + i + " linked to checkpoint " + checkpoint + "\n" );
+				DebugPrint( "Spawn " + i + " at [ " + xyz.x + ", " + xyz.y + " ] linked to checkpoint " + checkpoint + "\n" );
 				@spawn.m_Checkpoint = @m_Checkpoints[ checkpoint ];
 				spawn.m_Checkpoint.m_Spawns.Add( @spawn );
 				

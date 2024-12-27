@@ -169,24 +169,24 @@ namespace TheNomad::SGame {
 
     void InitCheatCodes() {
         TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @TheNomad::Engine::CommandSystem::CommandFunc( @Cheats.ToggleAllOff_f ),
-            "iamnotapussy", true );
+            "iamnotapussy" );
 
         TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @TheNomad::Engine::CommandSystem::CommandFunc( @Cheats.ToggleAllOn_f ),
-            "iamapussy", true );
+            "iamapussy" );
 
         TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @TheNomad::Engine::CommandSystem::CommandFunc( @Cheats.InfiniteAmmo_f ),
-            "tgdnec", true );
+            "tgdnec" );
 
         TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @TheNomad::Engine::CommandSystem::CommandFunc( @Cheats.InfiniteRage_f ),
-            "ltfatd", true );
+            "ltfatd" );
 
         TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @TheNomad::Engine::CommandSystem::CommandFunc( @Cheats.InfiniteHealth_f ),
-            "ggsham", true );
+            "ggsham" );
 
         TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @TheNomad::Engine::CommandSystem::CommandFunc( @Cheats.DeafMobs_f ),
-            "deafmobs", true );
+            "deafmobs" );
         
         TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @TheNomad::Engine::CommandSystem::CommandFunc( @Cheats.BlindMobs_f ),
-            "blindmobs", true );
+            "blindmobs" );
     }
 };

@@ -244,15 +244,13 @@ namespace TheNomad::SGame {
 		}
 		
 		void RunTic() {
-			const uint gameTic = TheNomad::GameSystem::GameTic;
-
 		#if _NOMAD_DEBUG
 			if ( sgame_DebugMode.GetBool() ) {
 				TheNomad::Engine::ProfileBlock block( "PMoveData::OnRunTic" );
 			}
 		#endif
 			
-			frame_msec = gameTic - old_frame_msec;
+			frame_msec = TheNomad::GameSystem::GameTic - old_frame_msec;
 			
 			// if running over 1000fps, act as if each frame is 1ms
 			// prevents divisions by zero
@@ -266,13 +264,6 @@ namespace TheNomad::SGame {
 				frame_msec = 200;
 			}
 			old_frame_msec = TheNomad::GameSystem::GameTic;
-
-			if ( up < 1.0f ) {
-				// not holding jump
-				flags &= ~PMF_JUMP_HELD;
-			} else {
-				flags |= PMF_JUMP_HELD;
-			}
 			
 			groundPlane = m_EntityData.GetWaterLevel() < 1;
 

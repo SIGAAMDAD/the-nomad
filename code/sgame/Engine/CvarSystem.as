@@ -5,7 +5,7 @@ namespace TheNomad::Engine {
     class CvarSystem {
 		CvarSystem() {
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @ListVars_f ), "sgame.list_cvars", false
+				TheNomad::Engine::CommandSystem::CommandFunc( @ListVars_f ), "sgame.list_cvars"
 			);
 		}
 		~CvarSystem() {
@@ -21,10 +21,6 @@ namespace TheNomad::Engine {
 			m_CvarCache.Add( var );
 		}
 		void UpdateCvars() {
-			if ( TheNomad::SGame::sgame_DebugMode.GetBool() ) {
-				ProfileBlock block( "CvarSystem::UpdateCvars" );
-			}
-
 			// update all cvars
 			for ( uint i = 0; i < m_CvarCache.Count(); ++i ) {
 				m_CvarCache[i].m_Handle.Update();

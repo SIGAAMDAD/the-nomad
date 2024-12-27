@@ -11,8 +11,9 @@ namespace moblib {
 			return uint( TheNomad::SGame::StateNum::ST_MOB_IDLE ) + nType;
 		}
 		void AllocScript( TheNomad::SGame::MobObject@ mob ) {
-			MobScript@ script = Script::AllocateScriptEntity( cast<TheNomad::SGame::InfoSystem::MobInfo@>( @mob.GetInfo() ).type );
+			MobScript@ script = Script::AllocateScriptEntity( mob.GetMobInfo().type );
 			mob.LinkScript( @script );
+			script.Link( @mob );
 			m_ScriptFactory.Add( @script );
 		}
 		

@@ -251,32 +251,32 @@ namespace TheNomad::Engine::Physics {
 			const TheNomad::GameSystem::DirType dir = CalcMoveDir();
 			switch ( dir ) {
 			case TheNomad::GameSystem::DirType::North:
-				tmp.y -= m_EntityData.GetBounds().m_nHeight;
+				tmp.y -= m_EntityData.GetBounds().m_nHeight * 0.5f;
 				break;
 			case TheNomad::GameSystem::DirType::NorthEast:
-				tmp.y -= m_EntityData.GetBounds().m_nHeight;
-				tmp.x += m_EntityData.GetBounds().m_nWidth;
+				tmp.y -= m_EntityData.GetBounds().m_nHeight * 0.5f;
+				tmp.x += m_EntityData.GetBounds().m_nWidth * 0.5f;
 				break;
 			case TheNomad::GameSystem::DirType::East:
-				tmp.x += m_EntityData.GetBounds().m_nWidth;
+				tmp.x += m_EntityData.GetBounds().m_nWidth * 0.5f;
 				break;
 			case TheNomad::GameSystem::DirType::SouthEast:
-				tmp.y += m_EntityData.GetBounds().m_nHeight;
-				tmp.x += m_EntityData.GetBounds().m_nWidth;
+				tmp.y += m_EntityData.GetBounds().m_nHeight * 0.5f;
+				tmp.x += m_EntityData.GetBounds().m_nWidth * 0.5f;
 				break;
 			case TheNomad::GameSystem::DirType::South:
-				tmp.y += m_EntityData.GetBounds().m_nHeight;
+				tmp.y += m_EntityData.GetBounds().m_nHeight * 0.5f;
 				break;
 			case TheNomad::GameSystem::DirType::SouthWest:
-				tmp.y += m_EntityData.GetBounds().m_nHeight;
-				tmp.x -= m_EntityData.GetBounds().m_nWidth;
+				tmp.y += m_EntityData.GetBounds().m_nHeight * 0.5f;
+				tmp.x -= m_EntityData.GetBounds().m_nWidth * 0.5f;
 				break;
 			case TheNomad::GameSystem::DirType::West:
-				tmp.x -= m_EntityData.GetBounds().m_nWidth;
+				tmp.x -= m_EntityData.GetBounds().m_nWidth * 0.5f;
 				break;
 			case TheNomad::GameSystem::DirType::NorthWest:
-				tmp.y -= m_EntityData.GetBounds().m_nHeight;
-				tmp.x -= m_EntityData.GetBounds().m_nWidth;
+				tmp.y -= m_EntityData.GetBounds().m_nHeight * 0.5f;
+				tmp.x -= m_EntityData.GetBounds().m_nWidth * 0.5f;
 				break;
 			};
 

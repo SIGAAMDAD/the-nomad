@@ -2358,10 +2358,10 @@ static const void *const dispatch_table[256] = {
 
 			volatile asBYTE *ptr = (asBYTE*)(l_fp - asBC_SWORDARG0(l_bc));
 			asBYTE val = (ptr[0] == 0) ? VALUE_OF_BOOLEAN_TRUE : 0;
+
+			// Make sure the rest of the DWORD is 0
+			*(asDWORD *)ptr = 0;
 			ptr[0] = val; // The result is stored in the lower byte
-			ptr[1] = 0;   // Make sure the rest of the DWORD is 0
-			ptr[2] = 0;
-			ptr[3] = 0;
 		}
 #else
 		*(l_fp - asBC_SWORDARG0(l_bc)) = (*(l_fp - asBC_SWORDARG0(l_bc)) == 0 ? VALUE_OF_BOOLEAN_TRUE : 0);
@@ -2510,14 +2510,10 @@ static const void *const dispatch_table[256] = {
 			volatile int    *regPtr  = (int*)&m_regs.valueRegister;
 			volatile asBYTE *regBptr = (asBYTE*)&m_regs.valueRegister;
 			asBYTE val = (regPtr[0] == 0) ? VALUE_OF_BOOLEAN_TRUE : 0;
+
+			// Make sure the rest of the register is 0
+			*(asQWORD *)regBptr = 0;
 			regBptr[0] = val; // The result is stored in the lower byte
-			regBptr[1] = 0;   // Make sure the rest of the register is 0
-			regBptr[2] = 0;
-			regBptr[3] = 0;
-			regBptr[4] = 0;
-			regBptr[5] = 0;
-			regBptr[6] = 0;
-			regBptr[7] = 0;
 		}
 #else
 		*(int*)&m_regs.valueRegister = (*(int*)&m_regs.valueRegister == 0 ? VALUE_OF_BOOLEAN_TRUE : 0);
@@ -2537,14 +2533,10 @@ static const void *const dispatch_table[256] = {
 			volatile int    *regPtr  = (int*)&m_regs.valueRegister;
 			volatile asBYTE *regBptr = (asBYTE*)&m_regs.valueRegister;
 			asBYTE val = (regPtr[0] == 0) ? 0 : VALUE_OF_BOOLEAN_TRUE;
+
+			// Make sure the rest of the register is 0
+			*(asQWORD *)regBptr = 0;
 			regBptr[0] = val; // The result is stored in the lower byte
-			regBptr[1] = 0;   // Make sure the rest of the register is 0
-			regBptr[2] = 0;
-			regBptr[3] = 0;
-			regBptr[4] = 0;
-			regBptr[5] = 0;
-			regBptr[6] = 0;
-			regBptr[7] = 0;
 		}
 #else
 		*(int*)&m_regs.valueRegister = (*(int*)&m_regs.valueRegister == 0 ? 0 : VALUE_OF_BOOLEAN_TRUE);
@@ -2564,14 +2556,10 @@ static const void *const dispatch_table[256] = {
 			volatile int    *regPtr  = (int*)&m_regs.valueRegister;
 			volatile asBYTE *regBptr = (asBYTE*)&m_regs.valueRegister;
 			asBYTE val = (regPtr[0] < 0) ? VALUE_OF_BOOLEAN_TRUE : 0;
+
+			// Make sure the rest of the register is 0
+			*(asQWORD *)regBptr = 0;
 			regBptr[0] = val; // The result is stored in the lower byte
-			regBptr[1] = 0;   // Make sure the rest of the register is 0
-			regBptr[2] = 0;
-			regBptr[3] = 0;
-			regBptr[4] = 0;
-			regBptr[5] = 0;
-			regBptr[6] = 0;
-			regBptr[7] = 0;
 		}
 #else
 		*(int*)&m_regs.valueRegister = (*(int*)&m_regs.valueRegister < 0 ? VALUE_OF_BOOLEAN_TRUE : 0);
@@ -2591,14 +2579,10 @@ static const void *const dispatch_table[256] = {
 			volatile int    *regPtr  = (int*)&m_regs.valueRegister;
 			volatile asBYTE *regBptr = (asBYTE*)&m_regs.valueRegister;
 			asBYTE val = (regPtr[0] >= 0) ? VALUE_OF_BOOLEAN_TRUE : 0;
+
+			// Make sure the rest of the register is 0
+			*(asQWORD *)regBptr = 0;
 			regBptr[0] = val; // The result is stored in the lower byte
-			regBptr[1] = 0;   // Make sure the rest of the register is 0
-			regBptr[2] = 0;
-			regBptr[3] = 0;
-			regBptr[4] = 0;
-			regBptr[5] = 0;
-			regBptr[6] = 0;
-			regBptr[7] = 0;
 		}
 #else
 		*(int*)&m_regs.valueRegister = (*(int*)&m_regs.valueRegister < 0 ? 0 : VALUE_OF_BOOLEAN_TRUE);
@@ -2618,14 +2602,10 @@ static const void *const dispatch_table[256] = {
 			volatile int    *regPtr  = (int*)&m_regs.valueRegister;
 			volatile asBYTE *regBptr = (asBYTE*)&m_regs.valueRegister;
 			asBYTE val = (regPtr[0] > 0) ? VALUE_OF_BOOLEAN_TRUE : 0;
+
+			// Make sure the rest of the register is 0
+			*(asQWORD *)regBptr = 0;
 			regBptr[0] = val; // The result is stored in the lower byte
-			regBptr[1] = 0;   // Make sure the rest of the register is 0
-			regBptr[2] = 0;
-			regBptr[3] = 0;
-			regBptr[4] = 0;
-			regBptr[5] = 0;
-			regBptr[6] = 0;
-			regBptr[7] = 0;
 		}
 #else
 		*(int*)&m_regs.valueRegister = (*(int*)&m_regs.valueRegister > 0 ? VALUE_OF_BOOLEAN_TRUE : 0);
@@ -2645,14 +2625,10 @@ static const void *const dispatch_table[256] = {
 			volatile int    *regPtr  = (int*)&m_regs.valueRegister;
 			volatile asBYTE *regBptr = (asBYTE*)&m_regs.valueRegister;
 			asBYTE val = (regPtr[0] <= 0) ? VALUE_OF_BOOLEAN_TRUE : 0;
+			
+			// Make sure the rest of the register is 0
+			*(asQWORD *)regBptr = 0;
 			regBptr[0] = val; // The result is stored in the lower byte
-			regBptr[1] = 0;   // Make sure the rest of the register is 0
-			regBptr[2] = 0;
-			regBptr[3] = 0;
-			regBptr[4] = 0;
-			regBptr[5] = 0;
-			regBptr[6] = 0;
-			regBptr[7] = 0;
 		}
 #else
 		*(int*)&m_regs.valueRegister = (*(int*)&m_regs.valueRegister > 0 ? 0 : VALUE_OF_BOOLEAN_TRUE);
@@ -3462,10 +3438,8 @@ static const void *const dispatch_table[256] = {
 		{
 			// The pointer in the register points to a byte, and *(l_fp - offset) will also point to a byte
 			asBYTE *bPtr = (asBYTE*)(l_fp - asBC_SWORDARG0(l_bc));
+			*(asDWORD *)bPtr = 0;
 			bPtr[0] = **(asBYTE**)&m_regs.valueRegister; // read the byte
-			bPtr[1] = 0;                      // 0 the rest of the DWORD
-			bPtr[2] = 0;
-			bPtr[3] = 0;
 		}
 		l_bc++;
 		NEXT_INSTRUCTION();
@@ -4311,13 +4285,12 @@ static const void *const dispatch_table[256] = {
 			}
 			else
 			{
-				if (func->funcType == asFUNC_SCRIPT)
-				{
+				switch ( func->funcType ) {
+				case asFUNC_SCRIPT: {
 					m_regs.programPointer++;
 					CallScriptFunction(func);
-				}
-				else if (func->funcType == asFUNC_DELEGATE)
-				{
+					break; }
+				case asFUNC_DELEGATE: {
 					// Push the object pointer on the stack. There is always a reserved space for this so
 					// we don't don't need to worry about overflowing the allocated memory buffer
 					asASSERT(m_regs.stackPointer - AS_PTR_SIZE >= m_stackBlocks[m_stackIndex]);
@@ -4340,34 +4313,31 @@ static const void *const dispatch_table[256] = {
 						// TODO: run-time optimize: The true method could be figured out when creating the delegate
 						CallInterfaceMethod(func->funcForDelegate);
 					}
-				}
-				else if (func->funcType == asFUNC_SYSTEM)
-				{
+					break; }
+				case asFUNC_SYSTEM: {
 					m_regs.stackPointer += CallSystemFunction(func->id, this);
 
 					// Update program position after the call so the line number
 					// is correct in case the system function queries it
 					m_regs.programPointer++;
-				}
-				else if (func->funcType == asFUNC_IMPORTED)
-				{
+					break; }
+				case asFUNC_IMPORTED: {
 					m_regs.programPointer++;
 					int funcId = m_engine->importedFunctions[func->id & ~FUNC_IMPORTED]->boundFunctionId;
-					if (funcId > 0)
+					if (funcId > 0) {
 						CallScriptFunction(m_engine->scriptFunctions[funcId]);
-					else
-					{
+					} else {
 						// Tell the exception handler to clean up the arguments to this method
 						m_needToCleanupArgs = true;
 
 						SetInternalException(TXT_UNBOUND_FUNCTION);
 					}
-				}
-				else
-				{
+					break; }
+				default:
 					// Should not get here
 					asASSERT(false);
-				}
+					break;
+				};
 			}
 
 			// Extract the values from the context again
@@ -5315,30 +5285,31 @@ void asCContext::CleanArgsOnStack()
 	// Determine what function was being called
 	asCScriptFunction *func = 0;
 	asBYTE bc = *(asBYTE*)prevInstr;
-	if( bc == asBC_CALL || bc == asBC_CALLSYS || bc == asBC_CALLINTF )
-	{
+
+	switch ( bc ) {
+	case asBC_CALL:
+	case asBC_CALLSYS:
+	case asBC_CALLINTF: {
 		int funcId = asBC_INTARG(prevInstr);
 		func = m_engine->scriptFunctions[funcId];
-	}
-	else if( bc == asBC_CALLBND )
-	{
+		break; }
+	case asBC_CALLBND: {
 		int funcId = asBC_INTARG(prevInstr);
 		func = m_engine->importedFunctions[funcId & ~FUNC_IMPORTED]->importedFunctionSignature;
-	}
-	else if( bc == asBC_CallPtr )
-	{
+		break; }
+	case asBC_CallPtr: {
 		asUINT v;
 		int var = asBC_SWORDARG0(prevInstr);
 
 		// Find the funcdef from the local variable
-		for( v = 0; v < m_currentFunction->scriptData->variables.GetLength(); v++ )
+		for( v = 0; v < m_currentFunction->scriptData->variables.GetLength(); v++ ) {
 			if( m_currentFunction->scriptData->variables[v]->stackOffset == var )
 			{
 				asASSERT(m_currentFunction->scriptData->variables[v]->type.GetTypeInfo());
 				func = CastToFuncdefType(m_currentFunction->scriptData->variables[v]->type.GetTypeInfo())->funcdef;
 				break;
 			}
-
+		}
 		if( func == 0 )
 		{
 			// Look in parameters
@@ -5358,9 +5329,11 @@ void asCContext::CleanArgsOnStack()
 				paramPos -= m_currentFunction->parameterTypes[v].GetSizeOnStackDWords();
 			}
 		}
-	}
-	else
+		break; }
+	default:
 		asASSERT( false );
+		break;
+	};
 
 	asASSERT( func );
 
@@ -5420,9 +5393,11 @@ bool asCContext::FindExceptionTryCatch()
 		asUINT currPos = asUINT(m_regs.programPointer - m_currentFunction->scriptData->byteCode.AddressOf());
 		for (asUINT n = 0; n < m_currentFunction->scriptData->tryCatchInfo.GetLength(); n++)
 		{
-			if (currPos >= m_currentFunction->scriptData->tryCatchInfo[n].tryPos &&
-				currPos < m_currentFunction->scriptData->tryCatchInfo[n].catchPos)
+			if ( currPos >= m_currentFunction->scriptData->tryCatchInfo[n].tryPos &&
+				currPos < m_currentFunction->scriptData->tryCatchInfo[n].catchPos )
+			{
 				return true;
+			}
 		}
 	}
 
@@ -5436,9 +5411,11 @@ bool asCContext::FindExceptionTryCatch()
 			asUINT currPos = asUINT((asDWORD*)s[2] - func->scriptData->byteCode.AddressOf());
 			for (asUINT n = 0; n < func->scriptData->tryCatchInfo.GetLength(); n++)
 			{
-				if (currPos >= func->scriptData->tryCatchInfo[n].tryPos &&
-					currPos < func->scriptData->tryCatchInfo[n].catchPos)
+				if ( currPos >= func->scriptData->tryCatchInfo[n].tryPos &&
+					currPos < func->scriptData->tryCatchInfo[n].catchPos )
+				{
 					return true;
+				}
 			}
 		}
 	}

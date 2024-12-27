@@ -1,4 +1,5 @@
 #include "SGame/PlayerSystem/PMoveData.as"
+#include "Engine/CommandSystem/CommandSystem.as"
 
 namespace TheNomad::SGame {
 	//
@@ -76,63 +77,63 @@ namespace TheNomad::SGame {
 			//
 			
 			// these specific movement commands MUST NOT CHANGE as they are hardcoded into the engine
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_Down_f ), "+north", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_Up_f ), "-north", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveSouth_Down_f ), "+south", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveSouth_Up_f ), "-south", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveWest_Down_f ), "+west", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveWest_Up_f ), "-west", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveEast_Down_f ), "+east", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveEast_Up_f ), "-east", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Jump_Down_f ), "+jump", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Jump_Up_f ), "-jump", true );
+			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_Down_f ), "+north" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_Up_f ), "-north" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveSouth_Down_f ), "+south" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveSouth_Up_f ), "-south" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveWest_Down_f ), "+west" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveWest_Up_f ), "-west" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveEast_Down_f ), "+east" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveEast_Up_f ), "-east" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Jump_Down_f ), "+jump" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Jump_Up_f ), "-jump" );
 			
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Crouch_Down_f ), "+crouch", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Crouch_Up_f ), "-crouch", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Slide_Down_f ), "+slide", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Slide_Up_f ), "-slide", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Dash_Down_f ), "+dash", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Dash_Up_f ), "-dash", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Melee_Down_f ), "+melee", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Melee_Up_f ), "-melee", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.UseWeapon_Down_f ), "+useweap", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.UseWeapon_Down_f ), "-useweap", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.AltUseWeapon_Down_f ), "+altuseweap", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.AltUseWeapon_Up_f ), "-altuseweap", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Quickshot_f ), "quickshot", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.SwitchWeaponWielding_f ), "switchwielding", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.SwitchWeaponMode_f ), "switchmode", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.SwitchHand_f ), "switchhand", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.NextWeapon_f ), "weapnext", true );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.PrevWeapon_f ), "weapprev", true );
+			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Crouch_Down_f ), "+crouch" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Crouch_Up_f ), "-crouch" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Slide_Down_f ), "+slide" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Slide_Up_f ), "-slide" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Dash_Down_f ), "+dash" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Dash_Up_f ), "-dash" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Melee_Down_f ), "+melee" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Melee_Up_f ), "-melee" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.UseWeapon_Down_f ), "+useweap" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.UseWeapon_Down_f ), "-useweap" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.AltUseWeapon_Down_f ), "+altuseweap" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.AltUseWeapon_Up_f ), "-altuseweap" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Quickshot_f ), "quickshot" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.SwitchWeaponWielding_f ), "switchwielding" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.SwitchWeaponMode_f ), "switchmode" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.SwitchHand_f ), "switchhand" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.NextWeapon_f ), "weapnext" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.PrevWeapon_f ), "weapprev" );
 		}
 		void Shutdown() {
 		}
