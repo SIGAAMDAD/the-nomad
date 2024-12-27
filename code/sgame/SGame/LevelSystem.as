@@ -459,10 +459,10 @@ namespace TheNomad::SGame {
 				ConsoleWarning( "LevelSystem::OnLevelStart: at least one checkpoint is required per level\n" );
 				ConsolePrint( "Forcing mandatory checkpoint...\n" );
 
-				MapCheckpoint cp = MapCheckpoint( uvec3( 0, 0, 0 ), uvec2( 0, 0 ) );
+				MapCheckpoint cp = MapCheckpoint( uvec3( 0, 0, 0 ), uvec2( 0, 0 ), 0 );
 				m_MapData.GetCheckpoints().InsertAt( 0, cp );
 			}
-			m_MapData.GetCheckpoints()[0].m_Spawns.InsertAt( 0, @spawn );
+			m_MapData.GetCheckpoints()[0].m_Spawns.Add( @spawn );
 		}
 		
 		//
@@ -580,11 +580,13 @@ namespace TheNomad::SGame {
 			const vec3 origin = EntityManager.GetActivePlayer().GetOrigin();
 			array<MapCheckpoint>@ checkpoints = @m_MapData.GetCheckpoints();
 			const uvec3 pos = uvec3( uint( origin.x ), uint( origin.y ), uint( origin.z ) );
+			MapCheckpoint@ cp = null;
 
-			for ( uint i = 0; i < checkpoints.Count(); i++ ) {
-				if ( checkpoints[i].m_Origin == pos && !checkpoints[i].m_bPassed ) {
+			for ( uint i = 0; i < checkpoints.Count(); ++i ) {
+				@cp = @checkpoints[i];
+				if ( cp.m_Origin == pos && !cp.m_bPassed ) {
 					nCheckpointIndex = i;
-					return @checkpoints[i];
+					return @cp;
 				}
 			}
 			return null;

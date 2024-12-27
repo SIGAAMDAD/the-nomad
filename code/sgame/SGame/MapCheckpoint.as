@@ -2,9 +2,10 @@
 
 namespace TheNomad::SGame {
     class MapCheckpoint {
-		MapCheckpoint( const uvec3& in origin, const uvec2& in areaLock ) {
+		MapCheckpoint( const uvec3& in origin, const uvec2& in areaLock, uint nIndex ) {
 			m_Origin = origin;
 			m_AreaLock = areaLock;
+			m_nIndex = nIndex;
 		}
 		MapCheckpoint() {
 		}
@@ -68,6 +69,7 @@ namespace TheNomad::SGame {
 		uvec3 m_Origin = uvec3( 0 );
 		uvec2 m_AreaLock = uvec2( 0 );
 		uint m_nTime = 0;
+		uint m_nIndex = 0;
 		bool m_bPassed = false;
 	};
 };

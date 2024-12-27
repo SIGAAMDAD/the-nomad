@@ -67,12 +67,12 @@ namespace TheNomad::SGame {
 				accel.y += 4.50f * forward;
 				accel.x += 4.50f * side;
 
-				m_EntityData.SetDashing( TheNomad::GameSystem::GameDeltaTic < m_EntityData.GetDashTime() );
+				m_EntityData.SetDashing( TheNomad::GameSystem::GameDeltaTic <= m_EntityData.GetDashTime() );
 			}
 			if ( isSliding ) {
 				accel.y += 0.15f * forward;
 				accel.x += 0.15f * side;
-				m_EntityData.SetSliding( TheNomad::GameSystem::GameDeltaTic < m_EntityData.GetSlideTime() );
+				m_EntityData.SetSliding( TheNomad::GameSystem::GameDeltaTic <= m_EntityData.GetSlideTime() );
 			} else {
 				const uint64 tile = LevelManager.GetMapData().GetTile( m_EntityData.GetOrigin(), m_EntityData.GetBounds() );
 				if ( accel.x != 0.0f || accel.y != 0.0f ) {

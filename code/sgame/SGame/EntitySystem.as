@@ -229,21 +229,14 @@ namespace TheNomad::SGame {
 				@m_ActiveEnts;
 			
 			array<MapCheckpoint>@ checkpoints = @LevelManager.GetMapData().GetCheckpoints();
-			array<MapSpawn@>@ spawns = @checkpoints[ LevelManager.GetCheckpointIndex() ].m_Spawns;
 
-			for ( uint i = 0; i < spawns.Count(); i++ ) {
-				EntityManager.Spawn( spawns[i].m_nEntityType, spawns[i].m_nEntityId,
-					vec3( float( spawns[i].m_Origin.x ), float( spawns[i].m_Origin.y ), float( spawns[i].m_Origin.z ) ),
-					vec2( 0.0f, 0.0f ) );
-			}
+			checkpoints[ LevelManager.GetCheckpointIndex() ].Activate( 0 );
 			
 			for ( uint i = 0; i < checkpoints.Count(); i++ ) {
 				checkpoints[i].InitEntity();
 			}
 
 			DebugPrint( formatUInt( m_EntityList.Count() ) + " total entities.\n" );
-
-			LevelManager.GetMapData().GetCheckpoints()[ LevelManager.GetCheckpointIndex() ].m_bPassed = true;
 		}
 		void OnLevelEnd() {
 			// clear all level locals

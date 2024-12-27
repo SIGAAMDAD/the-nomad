@@ -234,8 +234,8 @@ namespace TheNomad::SGame {
 			@m_SmokeTrail = @TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/smokeTrail", 750, 1200, 150, 150 );
 			@m_SmokePuff = @TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/smokePuff", 576, 64, 64, 64 );
 //			@m_FlameBall = @TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/flameBall", 288, 192, 96, 48 );
-			m_hWaterWakeShader = TheNomad::Engine::Renderer::RegisterShader( "wake" );
 			@m_BloodSpurt = @TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/spurt", 1540, 836, 110, 92 );
+			m_hWaterWakeShader = TheNomad::Engine::Renderer::RegisterShader( "wake" );
 		}
 
 		// runtime cache

@@ -745,21 +745,6 @@ namespace TheNomad::SGame {
 			refEntity.Draw();
 		}
 		
-		private void DrawBackArm() {
-			if ( m_Facing == FACING_LEFT ) {
-				m_RightArm.Draw();
-			} else if ( m_Facing == FACING_RIGHT ) {
-				m_LeftArm.Draw();
-			}
-		}
-		private void DrawFrontArm() {
-			if ( m_Facing == FACING_LEFT ) {
-				m_LeftArm.Draw();
-			} else if ( m_Facing == FACING_RIGHT ) {
-				m_RightArm.Draw();
-			}
-		}
-		
 		// custom draw because of adaptive weapons and leg sprites
 		void Draw() override {
 		#if _NOMAD_DEBUG
@@ -772,7 +757,21 @@ namespace TheNomad::SGame {
 
 			@m_State = @m_IdleState;
 
-			DrawBackArm();
+			ArmData@ back = null;
+			ArmData@ front = null;
+
+			switch ( m_Facing ) {
+			case FACING_LEFT:
+				@back = @m_RightArm;
+				@front = @m_LeftArm;
+				break;
+			case FACING_RIGHT:
+				@back = @m_LeftArm;
+				@front = @m_RightArm;
+				break;
+			};
+
+			back.Draw();
 
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.sheetNum = m_SpriteSheet.GetShader();
@@ -780,7 +779,7 @@ namespace TheNomad::SGame {
 			refEntity.scale = TheNomad::Engine::Renderer::GetFacing( m_Facing );
 			refEntity.Draw();
 
-			if ( IsDashing() ) {
+			if ( ( m_iFlags & PF_DASHING ) != 0 ) {
 				vec3 origin = m_Link.m_Origin;
 
 				switch ( m_LegsFacing ) {
@@ -798,7 +797,7 @@ namespace TheNomad::SGame {
 			}
 
 			DrawLegs();
-			DrawFrontArm();
+			back.Draw();
 
 			m_HudData.Draw();
 		}

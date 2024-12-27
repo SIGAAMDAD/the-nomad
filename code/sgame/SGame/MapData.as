@@ -29,16 +29,18 @@ namespace TheNomad::SGame {
 			//
 			// load the checkpoints
 			//
+			m_Checkpoints.Reserve( nCheckpoints );
 			for ( i = 0; i < nCheckpoints; i++ ) {
 				uvec2 areaLock;
 
 				TheNomad::GameSystem::GetCheckpointData( xyz, areaLock, i );
-				m_Checkpoints.Add( MapCheckpoint( xyz, areaLock ) );
+				m_Checkpoints.Add( MapCheckpoint( xyz, areaLock, i ) );
 			}
 			
 			//
 			// load in spawns
 			//
+			m_Spawns.Reserve( nSpawns );
 			for ( i = 0; i < nSpawns; i++ ) {
 				MapSpawn spawn;
 				uint id, type, checkpoint;
@@ -49,7 +51,7 @@ namespace TheNomad::SGame {
 				DebugPrint( "Spawn " + i + " at [ " + xyz.x + ", " + xyz.y + " ] linked to checkpoint " + checkpoint + "\n" );
 				@spawn.m_Checkpoint = @m_Checkpoints[ checkpoint ];
 				spawn.m_Checkpoint.m_Spawns.Add( @spawn );
-				
+
 				m_Spawns.Add( spawn );
 			}
 

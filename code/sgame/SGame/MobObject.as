@@ -93,10 +93,6 @@ namespace TheNomad::SGame {
 		}
 
 		void Draw() override {
-			if ( Util::Distance( EntityManager.GetActivePlayer().GetOrigin(), m_Link.m_Origin ) > 16.0f ) {
-				return;
-			}
-
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 
 			refEntity.origin = m_Link.m_Origin;

@@ -20,12 +20,15 @@ namespace TheNomad::Engine::Renderer {
 			m_Velocity = vec2( velocity.x, velocity.y + velocity.z );
 			m_nEndTime = TheNomad::GameSystem::GameTic + lifeTime;
 			m_hShader = hShader;
-			@m_SpriteSheet = @SpriteSheet;
 			m_nScale = scale;
 			m_bGravity = bGravity;
 			m_nRotation = 0.0f;
-			if ( @m_SpriteSheet !is null ) {
-				m_nSpriteOffset = nSpriteOffset.y * m_SpriteSheet.GetSpriteCountX() + nSpriteOffset.x;
+			if ( @SpriteSheet !is null ) {
+				m_bSpriteSheet = true;
+				m_hShader = SpriteSheet.GetShader();
+				m_nSpriteOffset = nSpriteOffset.y * SpriteSheet.GetSpriteCountX() + nSpriteOffset.x;
+			} else {
+				m_bSpriteSheet = false;
 			}
 			m_EffectAnimation = TheNomad::SGame::Animation();
 		}
@@ -53,10 +56,10 @@ namespace TheNomad::Engine::Renderer {
 			refEntity.rotation = m_nRotation;
 			refEntity.origin = origin;
 			refEntity.scale = m_nScale;
-			if ( @m_SpriteSheet !is null ) {
+			if ( m_bSpriteSheet ) {
 				m_EffectAnimation.Run();
 
-				refEntity.sheetNum = m_SpriteSheet.GetShader();
+				refEntity.sheetNum = m_hShader;
 				refEntity.spriteId = m_nSpriteOffset + m_EffectAnimation.GetFrame();
 			} else {
 				refEntity.sheetNum = -1;
@@ -70,7 +73,6 @@ namespace TheNomad::Engine::Renderer {
 
 		vec2 m_nScale = vec2( 1.0f );
 
-		TheNomad::SGame::SpriteSheet@ m_SpriteSheet = null;
 		LocalEntity@ m_Next = null;
 		LocalEntity@ m_Prev = null;
 		
@@ -81,6 +83,7 @@ namespace TheNomad::Engine::Renderer {
 
 		float m_nRotation = 0.0f;
 		int m_hShader = FS_INVALID_HANDLE;
+		bool m_bSpriteSheet = false;
 		bool m_bGravity = false;
 	};
 };
