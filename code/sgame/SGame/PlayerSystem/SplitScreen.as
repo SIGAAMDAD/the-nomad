@@ -212,8 +212,6 @@ namespace TheNomad::SGame {
 				return;
 			}
 
-			ConsolePrint( "DASHING\n" );
-
 			if ( ( Util::PRandom() & 1 ) == 1 ) {
 				m_PlayerData.EmitSound( m_DashSfx0, 10.0f, 0xff );
 			} else {
@@ -243,7 +241,7 @@ namespace TheNomad::SGame {
 		void Slide_Down_f() {
 			// TODO: ground slam?
 			if ( ( m_PlayerData.Flags & PF_CROUCHING ) != 0 || m_PlayerData.GetOrigin().z > 0.0f
-				|| TheNomad::GameSystem::GameDeltaTic < m_PlayerData.GetSlideTime() )
+				|| ( TheNomad::GameSystem::GameTic - m_PlayerData.SlideEndTime ) * TheNomad::GameSystem::DeltaTic < SLIDE_DURATION  )
 			{
 				return;
 			}
@@ -258,7 +256,7 @@ namespace TheNomad::SGame {
 					m_PlayerData.EmitSound( m_SlideSfx1, 10.0f, 0xff );
 				}
 				
-				m_PlayerData.ResetSlide();
+				m_PlayerData.SlideEndTime = TheNomad::GameSystem::GameTic;
 				m_PlayerData.Flags |= PF_SLIDING;
 
 				vec3 origin = m_PlayerData.GetOrigin();

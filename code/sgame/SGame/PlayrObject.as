@@ -223,10 +223,10 @@ namespace TheNomad::SGame {
 			}
 		}
 		uint GetSlideTime() const {
-			return m_nSlideEndTime;
+			return SlideEndTime;
 		}
 		void ResetSlide() {
-			m_nSlideEndTime = ( TheNomad::GameSystem::GameTic + SLIDE_DURATION ) * TheNomad::GameSystem::DeltaTic;
+			SlideEndTime = ( TheNomad::GameSystem::GameTic + SLIDE_DURATION ) * TheNomad::GameSystem::DeltaTic;
 		}
 		
 		bool IsCrouching() const {
@@ -782,7 +782,6 @@ namespace TheNomad::SGame {
 			refEntity.Draw();
 
 			if ( ( Flags & PF_DASHING ) != 0 ) {
-				ConsolePrint( "DRAWING DASH\n" );
 				vec3 origin = m_Link.m_Origin;
 
 				switch ( m_LegsFacing ) {
@@ -864,9 +863,7 @@ namespace TheNomad::SGame {
 		private AfterImage m_AfterImage;
 
 		uint DashEndTime = 0;
-		uint DashCounter = 2;
-		private uint DashCounterRegenTime = 0;
-		private uint m_nSlideEndTime = 0;
+		uint SlideEndTime = 0;
 
 		private uint m_nRawReflexStartTime = 0;
 

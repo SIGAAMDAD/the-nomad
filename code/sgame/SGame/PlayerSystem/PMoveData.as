@@ -66,20 +66,23 @@ namespace TheNomad::SGame {
 			if ( isDashing ) {
 				accel.y += 4.50f * forward;
 				accel.x += 4.50f * side;
-				m_EntityData.SetDashing( ( TheNomad::GameSystem::GameTic - m_EntityData.DashEndTime ) * TheNomad::GameSystem::DeltaTic
-					< DASH_DURATION );
+				m_EntityData.SetDashing(
+					( TheNomad::GameSystem::GameTic - m_EntityData.DashEndTime ) * TheNomad::GameSystem::DeltaTic < DASH_DURATION
+				);
 			} else {
 				m_EntityData.DashEndTime = 0;
 			}
 			if ( isSliding ) {
 				accel.y += 0.15f * forward;
 				accel.x += 0.15f * side;
-				if ( TheNomad::GameSystem::GameDeltaTic > m_EntityData.GetSlideTime() ) {
-					m_EntityData.Flags &= ~PF_SLIDING;
-				} else {
-					m_EntityData.Flags |= PF_SLIDING;
-				}
+				m_EntityData.SetSliding(
+					( TheNomad::GameSystem::GameTic - m_EntityData.SlideEndTime ) * TheNomad::GameSystem::DeltaTic < SLIDE_DURATION
+				);
 			} else {
+				m_EntityData.SlideEndTime = 0;
+			}
+			
+			if ( !isSliding ) {
 				const uint64 tile = LevelManager.GetMapData().GetTile( m_EntityData.GetOrigin(), m_EntityData.GetBounds() );
 				if ( accel.x != 0.0f || accel.y != 0.0f ) {
 					// sync the extra particles and sounds with the actual animation
@@ -155,11 +158,14 @@ namespace TheNomad::SGame {
 							// dont kick up much dust underwater
 							vec3 origin = m_EntityData.GetOrigin();
 
-							if ( m_EntityData.GetFacing() == FACING_LEFT ) {
+							switch ( m_EntityData.GetFacing() ) {
+							case FACING_LEFT:
 								origin.x += 0.15f;
-							} else if ( m_EntityData.GetFacing() == FACING_RIGHT ) {
+								break;
+							case FACING_RIGHT:
 								origin.x -= 0.15f;
-							}
+								break;
+							};
 
 							GfxManager.AddDustPuff( origin, m_EntityData.GetFacing() );
 						}
