@@ -58,10 +58,6 @@ namespace TheNomad::SGame {
 				return;
 			}
 
-			m_Link.m_Bounds.m_nWidth = m_Info.size.x;
-			m_Link.m_Bounds.m_nHeight = m_Info.size.y;
-			m_Link.m_Bounds.MakeBounds( m_Link.m_Origin );
-
 			@m_State = @StateManager.GetNullState();
 		}
 		void Draw() override {
@@ -86,9 +82,9 @@ namespace TheNomad::SGame {
 			m_hShader = m_Info.iconShader;
 			m_Link.m_nEntityId = id;
 			m_Link.m_Origin = origin;
-			m_Link.m_Bounds.m_nWidth = m_Info.size.x;
-			m_Link.m_Bounds.m_nHeight = m_Info.size.y;
-			m_Link.m_Bounds.MakeBounds( origin );
+			m_Bounds.m_nWidth = m_Info.size.x;
+			m_Bounds.m_nHeight = m_Info.size.y;
+			m_Bounds.MakeBounds( origin );
 
 			@m_State = @StateManager.GetNullState();
 

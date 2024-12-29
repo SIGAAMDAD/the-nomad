@@ -33,8 +33,6 @@ namespace TheNomad::SGame {
 			m_Entity.GetBounds().m_nWidth = 1.0f;
 			m_Entity.GetBounds().m_nHeight = 1.0f;
 			m_Entity.GetBounds().MakeBounds( m_Entity.GetOrigin() );
-			m_Entity.GetBounds().m_nMins.z = 0.0f;
-			m_Entity.GetBounds().m_nMaxs.z = 0.0f;
 			m_Entity.EmitSound( TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/bonfire" ), 0.01f, 0xff );
 			cast<WallObject@>( @m_Entity ).SetData( @this );
 		}

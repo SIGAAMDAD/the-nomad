@@ -144,7 +144,7 @@ namespace TheNomad::SGame {
 				if ( !load.Found() ) {
 					GameError( "EntitySystem::OnLoad: save file corruption, section '" + GetName() + "' not found!" );
 				}
-				numEntities = load.LoadUInt( "NumEntities" );
+				m_nActiveEnts = load.LoadUInt( "NumEntities" );
 				m_EntityList.Reserve( numEntities );
 			}
 			
@@ -207,14 +207,14 @@ namespace TheNomad::SGame {
 		void OnSave() const {
 			{
 				TheNomad::GameSystem::SaveSystem::SaveSection section( GetName() );
-				section.SaveUInt( "NumEntities", m_EntityList.Count() );
+				section.SaveUInt( "NumEntities", m_nActiveEnts );
 			}
-
-			for ( uint i = 0; i < m_EntityList.Count(); i++ ) {
-				TheNomad::GameSystem::SaveSystem::SaveSection section( "EntityData_" + i );
-				section.SaveUInt( "Type", uint( m_EntityList[i].GetType() ) );
-				section.SaveUInt( "Id", m_EntityList[i].GetId() );
-				m_EntityList[i].Save( section );
+			
+			for ( EntityObject@ ent = @m_ActiveEnts.m_Next; @ent !is @m_ActiveEnts; @ent = @ent.m_Next ) {
+				TheNomad::GameSystem::SaveSystem::SaveSection section( "EntityData_" + ent.GetEntityNum() );
+				section.SaveUInt( "Type", uint( ent.GetType() ) );
+				section.SaveUInt( "Id", ent.GetId() );
+				ent.Save( section );
 			}
 		}
 		void OnLevelStart() {
@@ -326,6 +326,8 @@ namespace TheNomad::SGame {
 			@ent.m_Next = @m_ActiveEnts;
 			@ent.m_Prev = @m_ActiveEnts.m_Prev;
 			@m_ActiveEnts.m_Prev = @ent;
+
+			m_nActiveEnts++;
 			
 			return @ent;
 		}
@@ -471,7 +473,7 @@ namespace TheNomad::SGame {
 		
 		private array<EntityObject@> m_EntityList;
 		private EntityObject m_ActiveEnts;
-		private EntityObject@ m_FreeEnts = null;
+		private uint m_nActiveEnts = 0;
 		private PlayrObject@ m_ActivePlayer = null;
 
 		//==============================================================================
