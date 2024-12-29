@@ -6,11 +6,11 @@ namespace TheNomad::SGame {
 	uint NumLevels() {
 		return MapTileData.Count();
 	}
-	uint GetLevel( const TheNomad::GameSystem::BBox& in bounds ) {
-		const uint level = uint( floor( bounds.m_Mins.z + bounds.m_Maxs.z ) );
+	uint GetLevel( const TheNomad::Engine::Physics::Bounds& in bounds ) {
+		const uint level = uint( floor( bounds.m_nMins.z + bounds.m_nMaxs.z ) );
 		return 0;
 	}
-	uint64 GetTile( const vec3& in origin, const TheNomad::GameSystem::BBox& in bounds ) {
+	uint64 GetTile( const vec3& in origin, const TheNomad::Engine::Physics::Bounds& in bounds ) {
 		const uint level = GetLevel( bounds );
 		const int x = int( ceil( origin.x ) );
 		const int y = int( ceil( origin.y ) );

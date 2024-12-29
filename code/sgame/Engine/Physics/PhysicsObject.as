@@ -1,3 +1,5 @@
+#include "Engine/Physics/Bounds.as"
+
 namespace TheNomad::Engine::Physics {
 	enum WaterType {
 		None,
@@ -114,7 +116,7 @@ namespace TheNomad::Engine::Physics {
 			m_nWaterType = WaterType::None;
 			
 			const vec3 point = m_EntityData.GetOrigin();
-			TheNomad::GameSystem::BBox bounds = m_EntityData.GetBounds();
+			TheNomad::Engine::Physics::Bounds bounds = m_EntityData.GetBounds();
 			uint64 tile = TheNomad::SGame::GetTile( point, bounds );
 			
 			if ( ( tile & SURFACEPARM_WATER ) != 0 || ( tile & SURFACEPARM_LAVA ) != 0 ) {
@@ -122,15 +124,15 @@ namespace TheNomad::Engine::Physics {
 				m_nWaterLevel = 1; // just walking in a puddle
 				
 				// check the level below us
-				bounds.m_Mins.z--;
-				bounds.m_Maxs.z--;
+				bounds.m_nMins.z--;
+				bounds.m_nMaxs.z--;
 				tile = TheNomad::SGame::GetTile( point, bounds );
 				if ( ( tile & SURFACEPARM_WATER ) != 0 || ( tile & SURFACEPARM_LAVA ) != 0 ) {
 					m_nWaterLevel = 2; // swimming now
 					
 					// check the level above us
-					bounds.m_Mins.z += 2;
-					bounds.m_Maxs.z += 2;
+					bounds.m_nMins.z += 2;
+					bounds.m_nMaxs.z += 2;
 					tile = TheNomad::SGame::GetTile( point, bounds );
 					if ( ( tile & SURFACEPARM_WATER ) != 0 || ( tile & SURFACEPARM_LAVA ) != 0 ) {
 						m_nWaterLevel = 3; // fully submerged
@@ -198,31 +200,6 @@ namespace TheNomad::Engine::Physics {
 			
 			ApplyFriction();
 
-			TheNomad::GameSystem::BBox bounds;
-			bounds.m_nWidth = m_EntityData.GetBounds().m_nWidth;
-			bounds.m_nHeight = m_EntityData.GetBounds().m_nHeight;
-			bounds.MakeBounds( origin + ( m_Velocity * TheNomad::GameSystem::DeltaTic ) );
-			
-			TheNomad::SGame::EntityObject@ active = @TheNomad::SGame::EntityManager.GetActiveEnts();
-			TheNomad::SGame::EntityObject@ ent = null;
-			for ( @ent = @active.m_Next; @ent.m_Next !is @active; @ent = @ent.m_Next ) {
-				if ( bounds.IntersectsBounds( ent.GetBounds() ) && @m_EntityData !is @ent ) {
-					if ( ent.GetType() == TheNomad::GameSystem::EntityType::Weapon || ent.GetType() == TheNomad::GameSystem::EntityType::Item ) {
-						m_EntityData.PickupItem( @ent );
-						break;
-					}
-					m_Velocity = 0.0f;
-					m_Acceleration = 0.0f;
-					if ( ent.GetType() == TheNomad::GameSystem::EntityType::Mob &&
-						( m_Velocity.x > 2.25f && m_Velocity.y > 2.25f ) )
-					{
-						// damage
-						TheNomad::SGame::EntityManager.DamageEntity( @m_EntityData, @ent );
-					}
-					return; // clip
-				}
-			}
-
 			vec3 tmp = origin;
 			const TheNomad::GameSystem::DirType dir = CalcMoveDir();
 			switch ( dir ) {
@@ -255,6 +232,37 @@ namespace TheNomad::Engine::Physics {
 				tmp.x -= m_EntityData.GetHalfWidth();
 				break;
 			};
+
+			TheNomad::Engine::Physics::Bounds bounds;
+			bounds.m_nWidth = m_EntityData.GetBounds().m_nWidth;
+			bounds.m_nHeight = m_EntityData.GetBounds().m_nHeight;
+			bounds.MakeBounds( tmp );
+
+			TheNomad::SGame::EntityObject@ active = @TheNomad::SGame::EntityManager.GetActiveEnts();
+			TheNomad::SGame::EntityObject@ ent = null;
+			for ( @ent = @active.m_Next; @ent !is @active; @ent = @ent.m_Next ) {
+				if ( bounds.IntersectsBounds( ent.GetBounds() ) && @m_EntityData !is @ent ) {
+					if ( ent.GetType() == TheNomad::GameSystem::EntityType::Weapon || ent.GetType() == TheNomad::GameSystem::EntityType::Item ) {
+						m_EntityData.PickupItem( @ent );
+						break;
+					}
+					else if ( ent.GetType() == TheNomad::GameSystem::EntityType::Wall ) {
+						if ( m_EntityData.GetType() == TheNomad::GameSystem::EntityType::Playr ) {
+							cast<TheNomad::SGame::PlayrObject@>( @m_EntityData ).PassCheckpoint( @ent );
+						}
+						break;
+					}
+					m_Velocity = 0.0f;
+					m_Acceleration = 0.0f;
+					if ( ent.GetType() == TheNomad::GameSystem::EntityType::Mob &&
+						( m_Velocity.x > 2.25f && m_Velocity.y > 2.25f ) )
+					{
+						// damage
+						TheNomad::SGame::EntityManager.DamageEntity( @m_EntityData, @ent );
+					}
+					return; // clip
+				}
+			}
 
 			if ( TheNomad::GameSystem::CheckWallHit( tmp, dir ) ) {
 				m_Acceleration = vec3( 0.0f );

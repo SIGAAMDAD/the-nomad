@@ -22,7 +22,49 @@ namespace TheNomad::GameSystem {
 		}
 
 		void Cast() {
-			CastRay( m_Start, m_Origin, m_nEntityNumber, m_nLength, m_nAngle, 0 );
+			vec3 end;
+			end.x = m_Start.x + m_nLength * cos( m_nAngle );
+			end.y = m_Start.y + m_nLength * sin( m_nAngle );
+			end.z = m_Start.z * sin( m_nAngle );
+
+			const float dx = abs( end.x - m_Start.x );
+			const float dy = abs( end.y - m_Start.y );
+			const float sx = m_Start.x < end.x ? 1.0f : -1.0f;
+			const float sy = m_Start.y < end.y ? 1.0f : -1.0f;
+			float err = ( dx > dy ? dx : -dy ) / 2.0f;
+			
+			m_Origin = m_Start;
+
+			TheNomad::SGame::EntityObject@ activeEnts = @TheNomad::SGame::EntityManager.GetActiveEnts();
+			TheNomad::SGame::EntityObject@ ent = null;
+			for ( ;; ) {
+				for ( @ent = @activeEnts.m_Next; @ent !is @activeEnts; @ent = @ent.m_Next ) {
+					if ( ent.GetBounds().IntersectsPoint( m_Origin ) ) {
+						m_nEntityNumber = ent.GetEntityNum();
+						return;
+					}
+				}
+				if ( m_Origin.x > end.x || m_Origin.y > end.y ) {
+					m_nEntityNumber = ENTITYNUM_INVALID;
+					return;
+				}
+
+				const TheNomad::GameSystem::DirType rayDir = InverseDirs[ Util::Angle2Dir( m_nAngle ) ];
+				if ( TheNomad::GameSystem::CheckWallHit( m_Origin, rayDir ) ) {
+					m_nEntityNumber = ENTITYNUM_WALL;
+					return;
+				}
+
+				const float e2 = err;
+				if ( e2 > -dx ) {
+					err -= dy;
+					m_Origin.x += sx;
+				}
+				if ( e2 < dy ) {
+					err += dx;
+					m_Origin.x += sy;
+				}
+			}
 		}
 
 		vec3 m_Start = vec3( 0.0f );

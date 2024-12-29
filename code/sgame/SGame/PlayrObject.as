@@ -194,6 +194,31 @@ namespace TheNomad::SGame {
 			
 		}
 
+		void PassCheckpoint( EntityObject@ cp ) {
+			MapCheckpoint@ data = cast<MapCheckpoint@>( @cast<WallObject@>( @cp ).GetData() );
+			if ( data.m_bPassed ) {
+				return;
+			}
+
+			EmitSound( TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/interaction/complete_checkpoint" ), 10.0f, 0xff );
+			data.Activate( LevelManager.GetLevelTimer() );
+
+			DebugPrint( "Setting checkpoint " + LevelManager.GetCheckpointIndex() + " to completed.\n" );
+			
+			TheNomad::Engine::CmdExecuteCommand( "sgame.save_game " + sgame_SaveSlot.GetInt() + "\n" );
+
+			for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); ++i ) {
+				TheNomad::GameSystem::GameSystems[i].OnCheckpointPassed( i );
+			}
+
+			// done with the level?
+			if ( @data is @MapCheckpoints[ MapCheckpoints.Count() - 1 ] ) {
+				LevelManager.CalcLevelStats();
+				GlobalState = GameState::LevelFinish;
+				return;
+			}
+		}
+
 		void PickupItem( EntityObject@ item ) {
 			ItemObject@ data = cast<ItemObject@>( @item );
 			data.SetOwner( @this );
@@ -502,9 +527,9 @@ namespace TheNomad::SGame {
 		
 		private float GetGfxDirection() const {
 			if ( m_Facing == 1 ) {
-				return -( m_Link.m_Bounds.m_nWidth / 2 );
+				return -( m_Bounds.m_nWidth / 2 );
 			}
-			return ( m_Link.m_Bounds.m_nWidth / 2 );
+			return ( m_Bounds.m_nWidth / 2 );
 		}
 		
 		//
@@ -514,7 +539,7 @@ namespace TheNomad::SGame {
 			if ( ( Flags & PF_INVUL ) != 0 ) {
 				return true;
 			}
-			if ( Util::BoundsIntersect( ent.GetBounds(), m_ParryBox ) ) {
+			if ( m_ParryBox.IntersectsBounds( ent.GetBounds() ) ) {
 				if ( ent.IsProjectile() ) {
 					// simply invert the direction and double the speed
 					const vec3 v = ent.GetVelocity();
@@ -558,7 +583,7 @@ namespace TheNomad::SGame {
 		private void ParryThink() {
 			m_ParryBox.m_nWidth = 2.5f + m_nParryBoxWidth;
 			m_ParryBox.m_nHeight = 1.0f;
-			m_ParryBox.MakeBounds( vec3( m_Link.m_Origin.x + ( m_Link.m_Bounds.m_nWidth / 2.0f ),
+			m_ParryBox.MakeBounds( vec3( m_Link.m_Origin.x + ( m_Bounds.m_nWidth / 2.0f ),
 				m_Link.m_Origin.y, m_Link.m_Origin.z ) );
 
 			if ( m_nParryBoxWidth >= 1.5f ) {
@@ -672,9 +697,9 @@ namespace TheNomad::SGame {
 				m_nFrameDamage += GetCurrentWeapon().UseAlt( GetCurrentWeaponMode() );
 			}
 
-			m_Link.m_Bounds.m_nWidth = sgame_PlayerWidth.GetFloat();
-			m_Link.m_Bounds.m_nHeight = sgame_PlayerHeight.GetFloat();
-			m_Link.m_Bounds.MakeBounds( m_Link.m_Origin );
+			m_Bounds.m_nWidth = sgame_PlayerWidth.GetFloat();
+			m_Bounds.m_nHeight = sgame_PlayerHeight.GetFloat();
+			m_Bounds.MakeBounds( m_Link.m_Origin );
 
 			
 			//
@@ -846,7 +871,7 @@ namespace TheNomad::SGame {
 		KeyBind key_Jump;
 		KeyBind key_Melee;
 
-		private TheNomad::GameSystem::BBox m_ParryBox;
+		private TheNomad::Engine::Physics::Bounds m_ParryBox;
 		private float m_nParryBoxWidth = 0.0f;
 
 		InfoSystem::WeaponInfo m_EmptyInfo;

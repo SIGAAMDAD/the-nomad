@@ -27,40 +27,16 @@ namespace TheNomad::SGame {
 		}
 
 		void InitEntity() {
-			@m_Entity = @EntityManager.Spawn( TheNomad::GameSystem::EntityType::Wall, -1,
+			@m_Entity = @EntityManager.Spawn( TheNomad::GameSystem::EntityType::Wall, WALL_CHECKPOINT_ID,
 				vec3( m_Origin.x, m_Origin.y, m_Origin.z ), vec2( 0.0f )
 			);
+			m_Entity.GetBounds().m_nWidth = 1.0f;
+			m_Entity.GetBounds().m_nHeight = 1.0f;
+			m_Entity.GetBounds().MakeBounds( m_Entity.GetOrigin() );
+			m_Entity.GetBounds().m_nMins.z = 0.0f;
+			m_Entity.GetBounds().m_nMaxs.z = 0.0f;
 			m_Entity.EmitSound( TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/bonfire" ), 0.01f, 0xff );
-		}
-
-		void Draw() {
-			const vec3 origin = vec3( m_Origin.x, m_Origin.y, m_Origin.z );
-
-			if ( Util::Distance( EntityManager.GetActivePlayer().GetOrigin(), origin ) > 16.0f ) {
-				return;
-			}
-
-			if ( @m_Entity !is null ) {
-				m_Entity.SetOrigin( origin );
-			}
-
-			TheNomad::Engine::Renderer::RenderEntity refEntity;
-
-			refEntity.origin = origin;
-			refEntity.scale = vec2( 1.75f );
-			if ( !m_bPassed ) {
-				m_Animation.Run();
-				refEntity.sheetNum = TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/checkpoint", 128, 32, 32, 32 ).GetShader();
-				refEntity.spriteId = m_Animation.GetFrame();
-			} else {
-				refEntity.sheetNum = -1;
-				refEntity.spriteId = TheNomad::Engine::Renderer::RegisterShader( "gfx/completed_checkpoint" );
-			}
-
-			refEntity.Draw();
-		}
-
-		void Load( json@ data ) {
+			cast<WallObject@>( @m_Entity ).SetData( @this );
 		}
 
 		array<MapSpawn@> m_Spawns;

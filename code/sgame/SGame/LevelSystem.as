@@ -47,8 +47,6 @@ namespace TheNomad::SGame {
 			string music;
 			array<json@> levelInfos;
 
-			m_PassedCheckpointSfx = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/iteraction/complete_checkpoint" );
-
 			ConsolePrint( "Loading level infos...\n" );
 
 			for ( uint i = 0; i < sgame_ModList.Count(); i++ ) {
@@ -191,43 +189,9 @@ namespace TheNomad::SGame {
 		void OnRenderScene() {
 			if ( GlobalState == GameState::StatsMenu ) {
 				m_RankData.Draw( true, m_nLevelTimer );
-				return;
-			}
-			array<MapCheckpoint>@ checkpoints = @MapCheckpoints;
-			for ( uint i = 0; i < checkpoints.Count(); ++i ) {
-				checkpoints[i].Draw();
 			}
 		}
 		void OnRunTic() {
-			MapCheckpoint@ cp = null;
-			uint checkpointIndex = 0;
-			
-			//
-			// checkpoint updates
-			//
-			
-			// check if we are passing it
-			if ( ( @cp = @PlayerPassedCheckpoint( checkpointIndex ) ) !is null ) {
-				EntityManager.GetActivePlayer().EmitSound( m_PassedCheckpointSfx, 10.0f, 0xff );
-				cp.Activate( m_nLevelTimer );
-
-				DebugPrint( "Setting checkpoint " + m_CurrentCheckpoint + " to completed.\n" );
-				
-				TheNomad::Engine::CmdExecuteCommand( "sgame.save_game " + sgame_SaveSlot.GetInt() + "\n" );
-
-				for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
-					TheNomad::GameSystem::GameSystems[i].OnCheckpointPassed( i );
-				}
-
-				// done with the level?
-				if ( @cp is @MapCheckpoints[ MapCheckpoints.Count() - 1 ] ) {
-					CalcTotalLevelTime();
-					m_RankData.CalcTotalLevelStats();
-					GlobalState = GameState::LevelFinish;
-					return;
-				}
-			}
-			
 			m_RankData.Draw( false, m_nLevelTimer );
 		}
 		void OnPlayerDeath( int ) {
@@ -244,6 +208,15 @@ namespace TheNomad::SGame {
 					TheNomad::Engine::CmdExecuteCommand( script );
 				}
 			}
+
+			MapCheckpoints.Clear();
+			MapSpawns.Clear();
+			MapSecrets.Clear();
+
+			for ( uint i = 0; i < MapTileData.Count(); ++i ) {
+				MapTileData[i].Clear();
+			}
+			MapTileData.Clear();
 		}
 
 		private void SaveLevelStats() const {
@@ -574,6 +547,10 @@ namespace TheNomad::SGame {
 
 			m_nLevelTimer = total;
 		}
+		void CalcLevelStats() {
+			CalcTotalLevelTime();
+			m_RankData.CalcTotalLevelStats();
+		}
 
 		private MapCheckpoint@ PlayerPassedCheckpoint( uint& out nCheckpointIndex ) {
 			const vec3 origin = EntityManager.GetActivePlayer().GetOrigin();
@@ -628,6 +605,9 @@ namespace TheNomad::SGame {
 		}
 		uint GetCheckpointIndex() const {
 			return m_CurrentCheckpoint;
+		}
+		uint GetLevelTimer() const {
+			return m_nLevelTimer;
 		}
 
 		const LevelInfoData@ GetCurrentData() const {

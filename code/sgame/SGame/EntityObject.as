@@ -11,6 +11,8 @@ namespace TheNomad::SGame {
 	const int FACING_DOWN = 3;
 	const int NUMFACING = 2;
 
+	const uint WALL_CHECKPOINT_ID = 0;
+
     class EntityObject {
 		EntityObject( TheNomad::GameSystem::EntityType type, uint id, const vec3& in origin ) {
 			Init( type, id, origin, 0 );
@@ -83,8 +85,8 @@ namespace TheNomad::SGame {
 		uint GetEntityNum() const {
 			return m_Link.m_nEntityNumber;
 		}
-		TheNomad::GameSystem::BBox& GetBounds() {
-			return m_Link.m_Bounds;
+		TheNomad::Engine::Physics::Bounds& GetBounds() {
+			return m_Bounds;
 		}
 		const TheNomad::GameSystem::LinkEntity& GetLink() const {
 			return m_Link;
@@ -226,6 +228,7 @@ namespace TheNomad::SGame {
 
 		// used for physics in the modules
 		protected TheNomad::Engine::Physics::PhysicsObject m_PhysicsObject;
+		protected TheNomad::Engine::Physics::Bounds m_Bounds;
 
 		// engine data, for physics
 		protected TheNomad::GameSystem::LinkEntity m_Link;

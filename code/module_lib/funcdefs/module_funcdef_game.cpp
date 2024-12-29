@@ -184,8 +184,8 @@ bool CModuleBoundBox::ContainsPoint( const glm::vec3& p ) const
 }
 
 bool CModuleBoundBox::IntersectsBounds( const CModuleBoundBox& bounds ) const {
-	if ( bounds.maxs[0] < mins[0] || bounds.maxs[1] < mins[1] || bounds.maxs[2] < mins[2]
-		|| bounds.mins[0] > maxs[0] || bounds.mins[1] > maxs[1] || bounds.mins[2] > maxs[2] )
+	if ( bounds.maxs[0] < mins[0] || bounds.maxs[1] < mins[1]
+		|| bounds.mins[0] > maxs[0] || bounds.mins[1] > maxs[1] )
 	{
 		return false;
 	}

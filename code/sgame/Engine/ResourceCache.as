@@ -8,7 +8,9 @@ namespace TheNomad::Engine {
 		}
 		
 		int GetShader( const string& in shader ) {
+		#if _NOMAD_DEBUG
 			ProfileBlock block( "ResourceManager::GetShader" );
+		#endif
 
 			int64 ret;
 			if ( !m_ShaderCache.TryGetValue( shader, ret ) ) {
@@ -21,7 +23,9 @@ namespace TheNomad::Engine {
 			return int( ret );
 		}
 		TheNomad::Engine::SoundSystem::SoundEffect GetSfx( const string& in sfx ) {
+		#if _NOMAD_DEBUG
 			ProfileBlock block( "ResourceManager::GetSfx" );
+		#endif
 
 			int64 ret;
 			if ( !m_SfxCache.TryGetValue( sfx, ret ) ) {

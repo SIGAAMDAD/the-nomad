@@ -266,7 +266,6 @@ namespace TheNomad::SGame {
 
 			TheNomad::Engine::UserInterface::SetActiveFont( TheNomad::Engine::UserInterface::Font_RobotoMono );
 
-			/*
 			ImGui::Begin( "Debug Player Movement", null, ImGuiWindowFlags::AlwaysAutoResize );
 			ImGui::SetWindowPos( vec2( 16, 128 ) );
 			ImGui::Text( "Origin: [ " + m_EntityData.GetOrigin().x + ", " + m_EntityData.GetOrigin().y + ", " + m_EntityData.GetOrigin().z + " ]" );
@@ -284,8 +283,8 @@ namespace TheNomad::SGame {
 			ImGui::Separator();
 			ImGui::Text( "Bounding Box" );
 			{
-				const vec3 mins = m_EntityData.GetBounds().m_Mins;
-				const vec3 maxs = m_EntityData.GetBounds().m_Maxs;
+				const vec3 mins = m_EntityData.GetBounds().m_nMins;
+				const vec3 maxs = m_EntityData.GetBounds().m_nMaxs;
 				
 				ImGui::Text( "mins[0]: " + mins.x );
 				ImGui::Text( "mins[1]: " + mins.y );
@@ -300,7 +299,6 @@ namespace TheNomad::SGame {
 			ImGui::Text( "  Frame: " + m_EntityData.GetLegState().GetAnimation().GetFrame() );
 			ImGui::Text( "  NumFrames: " + m_EntityData.GetLegState().GetAnimation().NumFrames() );
 			ImGui::End();
-			*/
 
 			m_EntityData.GetPhysicsObject().OnRunTic();
 		}
