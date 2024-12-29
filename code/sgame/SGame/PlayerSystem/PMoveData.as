@@ -2,8 +2,8 @@ namespace TheNomad::SGame {
 	const uint PMF_JUMP_HELD      = 0x01;
 	const uint PMF_BACKWARDS_JUMP = 0x02;
 
-	const uint DASH_DURATION = 50;
-	const uint SLIDE_DURATION = 700;
+	const uint DASH_DURATION = 8;
+	const uint SLIDE_DURATION = 12;
 	
 	const float JUMP_VELOCITY = 3.5f;
 	const float OVERCLIP = 1.5f;
@@ -46,7 +46,6 @@ namespace TheNomad::SGame {
 		}
 		
 		private void WalkMove() {
-			const uint gameTic = TheNomad::GameSystem::GameTic;
 			vec3 accel = m_EntityData.GetPhysicsObject().GetAcceleration();
 
 			const bool isSliding = ( m_EntityData.Flags & PF_SLIDING ) != 0;
@@ -64,25 +63,21 @@ namespace TheNomad::SGame {
 			}
 
 			if ( isDashing ) {
-				accel.y += 4.50f * forward;
-				accel.x += 4.50f * side;
-				m_EntityData.SetDashing(
-					( TheNomad::GameSystem::GameTic - m_EntityData.DashEndTime ) * TheNomad::GameSystem::DeltaTic < DASH_DURATION
-				);
-			} else {
-				m_EntityData.DashEndTime = 0;
+				accel.y += 3.50f * forward;
+				accel.x += 3.50f * side;
+				if ( ( TheNomad::GameSystem::GameTic - m_EntityData.DashStartTime ) * TheNomad::GameSystem::DeltaTic > DASH_DURATION ) {
+					m_EntityData.Flags &= ~PF_DASHING;
+					m_EntityData.DashStartTime = 0;
+				}
 			}
 			if ( isSliding ) {
 				accel.y += 0.15f * forward;
 				accel.x += 0.15f * side;
-				m_EntityData.SetSliding(
-					( TheNomad::GameSystem::GameTic - m_EntityData.SlideEndTime ) * TheNomad::GameSystem::DeltaTic < SLIDE_DURATION
-				);
+				if ( ( TheNomad::GameSystem::GameTic - m_EntityData.SlideStartTime ) * TheNomad::GameSystem::DeltaTic > SLIDE_DURATION ) {
+					m_EntityData.Flags &= ~PF_SLIDING;
+					m_EntityData.SlideStartTime = 0;
+				}
 			} else {
-				m_EntityData.SlideEndTime = 0;
-			}
-			
-			if ( !isSliding ) {
 				const uint64 tile = LevelManager.GetMapData().GetTile( m_EntityData.GetOrigin(), m_EntityData.GetBounds() );
 				if ( accel.x != 0.0f || accel.y != 0.0f ) {
 					// sync the extra particles and sounds with the actual animation
@@ -106,20 +101,7 @@ namespace TheNomad::SGame {
 							};
 							volume = 4.5f;
 
-							// it'll look weird if we're drawing ripples right as the player exits the water
-							// because it looks like the dirt is rippling
-							const vec3 origin = m_EntityData.GetOrigin();
-							const vec3 tmp = origin + accel;
-							TheNomad::GameSystem::BBox bounds;
-							bounds.m_nWidth = sgame_PlayerWidth.GetFloat();
-							bounds.m_nHeight = sgame_PlayerHeight.GetFloat();
-							bounds.MakeBounds( tmp );
-
-							const uint64 next = LevelManager.GetMapData().GetTile( tmp, bounds );
-							
-							if ( ( next & SURFACEPARM_WATER ) != 0 ) {
-								GfxManager.AddWaterWake( m_EntityData.GetOrigin(), 800, Util::VectorLength( accel ) );
-							}
+							GfxManager.AddWaterWake( m_EntityData.GetOrigin(), 800, Util::VectorLength( accel ) );
 						}
 						if ( ( tile & SURFACEPARM_METAL ) != 0 ) {
 							switch ( TheNomad::Util::PRandom() & 3 ) {
@@ -213,13 +195,13 @@ namespace TheNomad::SGame {
 			if ( side > 0 ) {
 				m_EntityData.SetFacing( FACING_RIGHT );
 				m_EntityData.SetLegsFacing( FACING_RIGHT );
-				m_EntityData.LeftArm.Facing = FACING_RIGHT;
-				m_EntityData.RightArm.Facing = FACING_RIGHT;
+				m_EntityData.LeftArm.SetFacing( FACING_RIGHT );
+				m_EntityData.RightArm.SetFacing( FACING_RIGHT );
 			} else if ( side < 0 ) {
 				m_EntityData.SetFacing( FACING_LEFT );
 				m_EntityData.SetLegsFacing( FACING_LEFT );
-				m_EntityData.LeftArm.Facing = FACING_LEFT;
-				m_EntityData.RightArm.Facing = FACING_LEFT;
+				m_EntityData.LeftArm.SetFacing( FACING_LEFT );
+				m_EntityData.RightArm.SetFacing( FACING_LEFT );
 			}
 
 			//
@@ -284,6 +266,7 @@ namespace TheNomad::SGame {
 
 			TheNomad::Engine::UserInterface::SetActiveFont( TheNomad::Engine::UserInterface::Font_RobotoMono );
 
+			/*
 			ImGui::Begin( "Debug Player Movement", null, ImGuiWindowFlags::AlwaysAutoResize );
 			ImGui::SetWindowPos( vec2( 16, 128 ) );
 			ImGui::Text( "Origin: [ " + m_EntityData.GetOrigin().x + ", " + m_EntityData.GetOrigin().y + ", " + m_EntityData.GetOrigin().z + " ]" );
@@ -292,8 +275,7 @@ namespace TheNomad::SGame {
 			ImGui::Text( "Forward: " + forward );
 			ImGui::Text( "Side: " + side );
 			ImGui::Separator();
-			ImGui::Text( "DashTime: " + m_EntityData.DashEndTime );
-			ImGui::Text( "DashCounter: " + m_EntityData.DashCounter );
+			ImGui::Text( "DashTime: " + m_EntityData.DashStartTime );
 			ImGui::Separator();
 			ImGui::Text( "North MSec: " + m_EntityData.key_MoveNorth.msec );
 			ImGui::Text( "South MSec: " + m_EntityData.key_MoveSouth.msec );
@@ -318,6 +300,7 @@ namespace TheNomad::SGame {
 			ImGui::Text( "  Frame: " + m_EntityData.GetLegState().GetAnimation().GetFrame() );
 			ImGui::Text( "  NumFrames: " + m_EntityData.GetLegState().GetAnimation().NumFrames() );
 			ImGui::End();
+			*/
 
 			m_EntityData.GetPhysicsObject().OnRunTic();
 		}

@@ -2,6 +2,16 @@ namespace TheNomad::SGame {
     class ItemObject : EntityObject {
 		ItemObject() {
 		}
+		~ItemObject() {
+			@m_ScriptData = null;
+		}
+
+		void SetOwner( EntityObject@ ent ) {
+			@m_Owner = @ent;
+		}
+		EntityObject@ GetOwner() {
+			return @m_Owner;
+		}
 
 		void Pickup( EntityObject@ ent ) {
 			switch ( ent.GetType() ) {
@@ -36,6 +46,11 @@ namespace TheNomad::SGame {
 			Spawn( m_Link.m_nEntityId, m_Link.m_Origin );
 
             return true;
+		}
+
+		void LinkScript( itemlib::ItemScript@ script ) {
+			@m_ScriptData = @script;
+			DebugPrint( "Linked item script for \"" + m_Info.name + "\" at entity '" + m_Link.m_nEntityNumber + "''\n" );
 		}
 
 		void Think() override {
@@ -78,16 +93,23 @@ namespace TheNomad::SGame {
 			@m_State = @StateManager.GetNullState();
 
 			m_Name = m_Info.name;
+
+			itemlib::AllocScript( @this );
 		}
 
-		InfoSystem::ItemInfo@ GetItemInfo() {
+		itemlib::ItemScript@ GetScript() {
+			return @m_ScriptData;
+		}
+
+		const InfoSystem::ItemInfo@ GetItemInfo() const {
 			return @m_Info;
 		}
-		const InfoSystem::ItemInfo@ GetItemInfo() const {
+		InfoSystem::ItemInfo@ GetItemInfo() {
 			return @m_Info;
 		}
 
 		private InfoSystem::ItemInfo@ m_Info = null;
-		private EntityObject@ m_Owner = null; // for applying effects
+		protected itemlib::ItemScript@ m_ScriptData = null;
+		protected EntityObject@ m_Owner = null; // for applying effects
 	};
 };

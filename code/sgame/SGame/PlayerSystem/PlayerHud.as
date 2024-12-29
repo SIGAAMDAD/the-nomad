@@ -16,7 +16,7 @@ namespace TheNomad::SGame {
 			const vec2 screenSize = vec2( TheNomad::GameSystem::GPUConfig.screenWidth, TheNomad::GameSystem::GPUConfig.screenHeight );
 
 			m_nStatusBarWidth = 350.0f * TheNomad::GameSystem::UIScale;
-			m_nStatusBarHeight = float( screenSize.y );
+			m_nStatusBarHeight = 40.0f * TheNomad::GameSystem::UIScale;
 			
 			m_nStatusBarFontScale = 2.0f * TheNomad::GameSystem::UIScale;
 			m_nStatusBarStretchAmount = 256.0f * TheNomad::GameSystem::UIScale;
@@ -25,33 +25,9 @@ namespace TheNomad::SGame {
 			// create overlays
 			//
 
-			m_DashScreen.origin = vec2( 0.0f, 0.0f );
-			m_DashScreen.size = screenSize;
-			m_DashScreen.hShader = TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/dash_screen" );
-
-			m_BloodScreenSplatter.origin = vec2( 0.0f, 0.0f );
-			m_BloodScreenSplatter.size = screenSize;
-			m_BloodScreenSplatter.hShader = TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/blood_screen" );
-
-			m_BulletTimeBlurScreen.origin = vec2( 0.0f, 0.0f );
-			m_BulletTimeBlurScreen.size = screenSize;
-			m_BulletTimeBlurScreen.hShader = TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/bullet_time_blur" );
-		}
-		
-		private const vec4 GetRageColor( float rage ) const {
-			return ( rage >= 70.0f ) ? colorMagenta : colorRed;
-		}
-		
-		private const vec4 GetHealthColor( float health ) const {
-			if ( health < 60.0f && health > 35.0f ) {
-				return colorYellow;
-			} else if ( health >= 10.0f && health <= 35.0f ) {
-				return colorRed;	
-			} else if ( health < 10.0f ) {
-				return vec4( 0.5f, 0.35f, 0.05f, 1.0f ); // brown
-			} else {
-				return colorGreen;
-			}
+			m_DashScreen.Init( "gfx/hud/dash_screen", vec2( 0.0f ), screenSize );
+			m_BloodScreenSplatter.Init( "gfx/hud/blood_screen", vec2( 0.0f ), screenSize );
+			m_BulletTimeBlurScreen.Init( "gfx/hud/bullet_time_blur", vec2( 0.0f ), screenSize );
 		}
 		
 		private void DrawWeaponStatus() {
@@ -70,204 +46,132 @@ namespace TheNomad::SGame {
 			ImGui::End();
 		}
 
-		private void DrawHealthBarFilled() const {
-			ImGui::PushStyleColor( ImGuiCol::FrameBg, colorBlack );
-			ImGui::PushStyleColor( ImGuiCol::FrameBgActive, colorBlack );
-			ImGui::PushStyleColor( ImGuiCol::FrameBgHovered, colorBlack );
+		private void DrawHealthStatus() {
+			const float health = m_Parent.GetHealth();
 
 			ImGui::SetWindowFontScale( m_nStatusBarFontScale );
 
-			ImGui::PushStyleColor( ImGuiCol::Text, vec4( 0.0f ) );
-			ImGui::DragFloat( "HEALTHFILLED", 0.0f );
-			ImGui::PopStyleColor();
-
+			ImGui::Begin( "##HealthBarFilled", null, ImGui::MakeWindowFlags( ImGuiWindowFlags::NoResize | ImGuiWindowFlags::NoMove
+				| ImGuiWindowFlags::NoCollapse | ImGuiWindowFlags::NoBackground | ImGuiWindowFlags::NoTitleBar
+				| ImGuiWindowFlags::NoScrollbar ) );
+			ImGui::SetWindowPos( vec2( 0.0f, 0.0f ) );
+			ImGui::SetWindowSize( vec2( m_nStatusBarWidth, m_nStatusBarHeight ) );
 			ImGui::SameLine( m_nStatusBarStretchAmount );
 			ImGui::Text( "HEALTH" );
-
-			ImGui::SetWindowFontScale( 1.0f );
-
-			ImGui::PopStyleColor( 3 );
-		}
-
-		private void DrawRageBarFilled() const {
-			ImGui::PushStyleColor( ImGuiCol::FrameBg, colorBlack );
-			ImGui::PushStyleColor( ImGuiCol::FrameBgActive, colorBlack );
-			ImGui::PushStyleColor( ImGuiCol::FrameBgHovered, colorBlack );
-
-			ImGui::SetWindowFontScale( m_nStatusBarFontScale );
-
-			ImGui::PushStyleColor( ImGuiCol::Text, vec4( 0.0f ) );
-			ImGui::DragFloat( "RAGEFILLED", 0.0f );
-			ImGui::PopStyleColor();
-
-			ImGui::SameLine( m_nStatusBarStretchAmount );
-			ImGui::Text( "RAGE" );
-
-			ImGui::SetWindowFontScale( 1.0f );
-
-			ImGui::PopStyleColor( 3 );
-		}
-
-		private void DrawReflexBar() {
-			ImGui::Begin( "##ReflexModeFilled", null, ImGui::MakeWindowFlags( ImGuiWindowFlags::NoResize | ImGuiWindowFlags::NoMove
-				| ImGuiWindowFlags::NoCollapse | ImGuiWindowFlags::NoBackground | ImGuiWindowFlags::NoTitleBar
-				| ImGuiWindowFlags::NoScrollbar ) );
-			ImGui::SetWindowPos( vec2( 0.0f, 600 * TheNomad::GameSystem::UIScale ) );
-			ImGui::SetWindowSize( vec2( m_nStatusBarWidth, m_nStatusBarHeight ) );
-
-			{
-				ImGui::PushStyleColor( ImGuiCol::FrameBg, colorBlack );
-				ImGui::PushStyleColor( ImGuiCol::FrameBgActive, colorBlack );
-				ImGui::PushStyleColor( ImGuiCol::FrameBgHovered, colorBlack );
-
-				ImGui::DragFloat( "REFLEXMODEFILLED", 0.0f );
-
-				ImGui::PopStyleColor( 3 );
-			}
-
 			ImGui::End();
-
-			ImGui::Begin( "##ReflexBar", null, ImGui::MakeWindowFlags( ImGuiWindowFlags::NoResize | ImGuiWindowFlags::NoMove
-				| ImGuiWindowFlags::NoCollapse | ImGuiWindowFlags::NoBackground | ImGuiWindowFlags::NoTitleBar
-				| ImGuiWindowFlags::NoScrollbar ) );
-			ImGui::SetWindowPos( vec2( 0.0f, 600 * TheNomad::GameSystem::UIScale ) );
-			ImGui::SetWindowSize( vec2( ( float( ( 350.0f * m_nReflexAmount ) * TheNomad::GameSystem::UIScale ) ), m_nStatusBarHeight ) );
 			
 			{
-				ImGui::PushStyleColor( ImGuiCol::FrameBg, colorWhite );
-				ImGui::PushStyleColor( ImGuiCol::FrameBgActive, colorWhite );
-				ImGui::PushStyleColor( ImGuiCol::FrameBgHovered, colorWhite );
+				vec4 healthColor;
+				if ( health < 60.0f && health > 35.0f ) {
+					healthColor =  colorYellow;
+				} else if ( health >= 10.0f && health <= 35.0f ) {
+					healthColor = colorRed;	
+				} else if ( health < 10.0f ) {
+					healthColor = vec4( 0.5f, 0.35f, 0.05f, 1.0f ); // brown
+				} else {
+					healthColor = colorGreen;
+				}
 
-				ImGui::DragFloat( "REFLEX", 0.0f );
-
-				ImGui::PopStyleColor( 3 );
-			}
-			
-			ImGui::End();
-		}
-		
-		private void DrawStatusBars() {	
-			const float rage = m_Parent.GetRage();
-			const float health = m_Parent.GetHealth();
-			
-			ImGui::Begin( "##StatusBarsFilled", null, ImGui::MakeWindowFlags( ImGuiWindowFlags::NoResize | ImGuiWindowFlags::NoMove
-				| ImGuiWindowFlags::NoCollapse | ImGuiWindowFlags::NoBackground | ImGuiWindowFlags::NoTitleBar
-				| ImGuiWindowFlags::NoScrollbar ) );
-			ImGui::SetWindowPos( vec2( 0.0f, 0.0f ) );
-			ImGui::SetWindowSize( vec2( m_nStatusBarWidth, m_nStatusBarHeight ) );
-			DrawHealthBarFilled();
-			DrawRageBarFilled();
-			ImGui::End();
-
-			ImGui::Begin( "##HealthBar", null, ImGui::MakeWindowFlags( ImGuiWindowFlags::NoResize | ImGuiWindowFlags::NoMove
-				| ImGuiWindowFlags::NoCollapse | ImGuiWindowFlags::NoBackground | ImGuiWindowFlags::NoTitleBar
-				| ImGuiWindowFlags::NoScrollbar ) );
-			ImGui::SetWindowPos( vec2( 0.0f, 0.0f ) );
-			ImGui::SetWindowSize( vec2( ( float( ( 350.0f * ( health * 0.01f ) ) * TheNomad::GameSystem::UIScale ) ), m_nStatusBarHeight ) );
-			
-			{
+				ImGui::PushStyleColor( ImGuiCol::WindowBg, healthColor );
+				ImGui::Begin( "##HealthBar", null, ImGui::MakeWindowFlags( ImGuiWindowFlags::NoResize | ImGuiWindowFlags::NoMove
+					| ImGuiWindowFlags::NoCollapse | ImGuiWindowFlags::NoBackground | ImGuiWindowFlags::NoTitleBar
+					| ImGuiWindowFlags::NoScrollbar ) );
+				ImGui::SetWindowPos( vec2( 0.0f, 0.0f ) );
+				ImGui::SetWindowSize( vec2( ( float( ( 250.0f * ( health * 0.01f ) ) * TheNomad::GameSystem::UIScale ) ), m_nStatusBarHeight ) );
 				if ( health < 30.0f ) {
 					m_Shake.Start( 2000, 20.5f, 20.5f );
-					Util::HapticRumble( m_Parent.GetPlayerIndex(), 0.20f, 100 );
+					Util::HapticRumble( 0, 0.20f, 100 );
 					
 					// draw a red overlay if we're really low on health
 					m_BloodScreenSplatter.Draw();
 				}
-
-				const vec4 healthColor = GetHealthColor( health );
-
-				ImGui::PushStyleColor( ImGuiCol::FrameBg, healthColor );
-				ImGui::PushStyleColor( ImGuiCol::FrameBgActive, healthColor );
-				ImGui::PushStyleColor( ImGuiCol::FrameBgHovered, healthColor );
-
-				ImGui::SetWindowFontScale( m_nStatusBarFontScale );
-
-				ImGui::PushStyleColor( ImGuiCol::Text, vec4( 0.0f ) );
-				ImGui::DragFloat( "HEALTH", 0.0f );
-				ImGui::PopStyleColor();
-
-				ImGui::SetWindowFontScale( 1.0f );
-
-				ImGui::PopStyleColor( 3 );
+				ImGui::End();
 			}
-			
-			ImGui::End();
 
-			ImGui::Begin( "##RageBar", null, ImGui::MakeWindowFlags( ImGuiWindowFlags::NoResize | ImGuiWindowFlags::NoMove
+			if ( TheNomad::GameSystem::GameTic > m_nHealthBarEndTime ) {
+				m_nHealthBarEndTime = 0;
+			}
+		}
+
+		private void DrawRageStatus() {
+			const float rage = m_Parent.GetRage();
+
+			ImGui::Begin( "##RageBarFilled", null, ImGui::MakeWindowFlags( ImGuiWindowFlags::NoResize | ImGuiWindowFlags::NoMove
 				| ImGuiWindowFlags::NoCollapse | ImGuiWindowFlags::NoBackground | ImGuiWindowFlags::NoTitleBar
 				| ImGuiWindowFlags::NoScrollbar ) );
-			ImGui::SetWindowPos( vec2( 0.0f, 42.0f * TheNomad::GameSystem::UIScale ) );
-			ImGui::SetWindowSize( vec2( ( float( ( 350 * ( rage * 0.01f ) ) * TheNomad::GameSystem::UIScale ) ), m_nStatusBarHeight ) );
-			
-			{
-				ImGui::PushStyleColor( ImGuiCol::FrameBg, vec4( 1.0f, 0.0f, 0.0f, 1.0f ) );
-				ImGui::PushStyleColor( ImGuiCol::FrameBgActive, vec4( 1.0f, 0.0f, 0.0f, 1.0f ) );
-				ImGui::PushStyleColor( ImGuiCol::FrameBgHovered, vec4( 1.0f, 0.0f, 0.0f, 1.0f ) );
-
-				ImGui::SetWindowFontScale( m_nStatusBarFontScale );
-
-				ImGui::PushStyleColor( ImGuiCol::Text, vec4( 0.0f ) );
-				ImGui::DragFloat( "RAGE", 0.0f );
-				ImGui::PopStyleColor();
-
-				ImGui::SetWindowFontScale( 1.0f );
-
-				ImGui::PopStyleColor( 3 );
-			}
-			
+			ImGui::SetWindowPos( vec2( 0.0f, 44.0f * TheNomad::GameSystem::UIScale ) );
+			ImGui::SetWindowSize( vec2( m_nStatusBarWidth, m_nStatusBarHeight ) );
+			ImGui::SetWindowFontScale( m_nStatusBarFontScale );
+			ImGui::SameLine( m_nStatusBarStretchAmount );
+			ImGui::Text( "RAGE" );
+			ImGui::SetWindowFontScale( 1.0f );
 			ImGui::End();
 
-			if ( TheNomad::GameSystem::GameTic > m_nStatusBarEndTime ) {
-				m_nStatusBarEndTime = 0;
+			{
+				ImGui::PushStyleColor( ImGuiCol::WindowBg, vec4( 1.0f, 0.0f, 0.0f, 1.0f ) );
+				ImGui::Begin( "##RageBar", null, ImGui::MakeWindowFlags( ImGuiWindowFlags::NoResize | ImGuiWindowFlags::NoMove
+					| ImGuiWindowFlags::NoCollapse | ImGuiWindowFlags::NoTitleBar
+					| ImGuiWindowFlags::NoScrollbar ) );
+				ImGui::SetWindowPos( vec2( 0.0f, 44.0f * TheNomad::GameSystem::UIScale ) );
+				ImGui::SetWindowSize( vec2( ( float( ( 250 * ( rage * 0.01f ) ) * TheNomad::GameSystem::UIScale ) ), m_nStatusBarHeight ) );
+				ImGui::End();
+				ImGui::PopStyleColor( 1 );
+			}
+
+			if ( TheNomad::GameSystem::GameTic > m_nRageBarEndTime ) {
+				m_nRageBarEndTime = 0;
 			}
 		}
 		
 		void Draw() {
-			if ( m_nDashEndTime != 0 )	{
+			m_Shake.OnRunTic();
+
+			if ( ( m_Parent.Flags & PF_DASHING ) != 0 )	{
 				m_DashScreen.Draw();
-				if ( TheNomad::GameSystem::GameDeltaTic > m_nDashEndTime ) {
-					m_nDashEndTime = 0;
-				}
 			}
-			if ( m_bReflexMode ) {
+			if ( ( m_Parent.Flags & PF_REFLEX ) != 0 ) {
 				m_BulletTimeBlurScreen.Draw();
-				DrawReflexBar();
 			}
-			if ( !sgame_ToggleHUD.GetBool() ) {
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_ToggleHUD" ) == 0 ) {
 				return; // don't draw it
 			}
 			
 			TheNomad::Engine::UserInterface::SetActiveFont( TheNomad::Engine::UserInterface::Font_RobotoMono );
 			
-			if ( m_nStatusBarEndTime != 0 ) {
-				DrawStatusBars();
+			if ( m_nHealthBarEndTime != 0 ) {
+				DrawHealthStatus();
+			}
+			if ( m_nRageBarEndTime != 0 ) {
+				DrawRageStatus();
 			}
 			if ( m_nWeaponStatusEndTime != 0 ) {
 				DrawWeaponStatus();
 			}
 			DrawMouseReticle();
-
-			m_Shake.OnRunTic();
 		}
 		
 		void ShowStatusBars() {
 			if ( TheNomad::Engine::CvarVariableInteger( "sgame_ToggleHUD" ) == 0 ) {
-				m_nStatusBarEndTime = 0;
+				m_nHealthBarEndTime = 0;
+				m_nRageBarEndTime = 0;
 				return;
 			}
-			m_nStatusBarEndTime = TheNomad::GameSystem::GameTic + 5000;
+			m_nHealthBarEndTime = TheNomad::GameSystem::GameTic + 5000;
+			m_nRageBarEndTime = TheNomad::GameSystem::GameTic + 5000;
 		}
-		void ShowDashMarks() {
-			m_nDashEndTime = ( TheNomad::GameSystem::GameTic + DASH_DURATION ) * TheNomad::GameSystem::DeltaTic;
+		void ShowRageBar() {
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_ToggleHUD" ) == 0 ) {
+				m_nRageBarEndTime = 0;
+				return;
+			}
+			m_nRageBarEndTime = TheNomad::GameSystem::GameTic + 5000;
 		}
-		void SetReflexTime( float nAmount ) {
-			m_nReflexAmount = nAmount;
-		}
-		void SetReflexMode( bool bReflex ) {
-			m_bReflexMode = bReflex;
-		}
-		bool IsReflexActive() const {
-			return m_bReflexMode;
+		void ShowHealthBar() {
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_ToggleHUD" ) == 0 ) {
+				m_nHealthBarEndTime = 0;
+				return;
+			}
+			m_nHealthBarEndTime = TheNomad::GameSystem::GameTic + 5000;
 		}
 		
 		private PlayrObject@ m_Parent = null;
@@ -280,10 +184,9 @@ namespace TheNomad::SGame {
 		
 		private float m_nReflexAmount = 0.0f;
 
-		private uint m_nStatusBarEndTime = 0;
+		private uint m_nHealthBarEndTime = 0;
+		private uint m_nRageBarEndTime = 0;
 		private uint m_nWeaponStatusEndTime = 0;
-		private uint m_nDashEndTime = 0;
-		private bool m_bReflexMode = false;
 		
 		private HudOverlay m_BloodScreenSplatter;
 		private HudOverlay m_ParryScreenFlash;

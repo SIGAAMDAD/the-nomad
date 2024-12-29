@@ -4,7 +4,6 @@ namespace TheNomad::SGame {
 		}
 		
 		KeyBind& opAssign( const KeyBind& in other ) {
-			down = other.down;
 			downtime = other.downtime;
 			msec = other.msec;
 			active = other.active;
@@ -12,51 +11,23 @@ namespace TheNomad::SGame {
 		}
 
 		void Down() {
-			uint k;
-			string c;
-
-			c = TheNomad::Engine::CmdArgv( 1 );
-			if ( c.Length() > 0 ) {
-				k = Convert().ToUInt( c );
-			}
-			
-			/*
-			if ( down[0] == 0 ) {
-				down[0] = k;
-			} else if ( down[1] == 0 ) {
-				down[1] = k;
-			} else {
-				ConsolePrint( "Three keys down for a button!\n" );
-				return;
-			}
-			*/
-			
 			if ( active ) {
 				return; // still down
 			}
 
 			// save the timestamp for partial frame summing
-			c = TheNomad::Engine::CmdArgv( 2 );
-			downtime = Convert().ToInt( c );
+			downtime = Convert().ToUInt( TheNomad::Engine::CmdArgv( 2 ) );
 			
 			active = true;
 		}
 		
 		void Up() {
-			int uptime;
-			uint k;
-			string c;
-
-			c = TheNomad::Engine::CmdArgv( 1 );
-			if ( c.Length() > 0 ) {
-				k = Convert().ToUInt( c );
-			} else {
+			if ( TheNomad::Engine::CmdArgv( 1 ).Length() < 0 ) {
 				return;
 			}
 
 			// save timestamp for partial frame summing
-			c = TheNomad::Engine::CmdArgv( 2 );
-			uptime = Convert().ToInt( c );
+			const uint uptime = Convert().ToUInt( TheNomad::Engine::CmdArgv( 2 ) );
 			if ( uptime > 0 ) {
 				msec += uptime - downtime;
 			} else {
@@ -65,9 +36,8 @@ namespace TheNomad::SGame {
 			active = false;
 		}
 		
-		uvec2 down = uvec2( 0 );
-		int downtime = 0;
-		int msec = 0;
+		uint downtime = 0;
+		uint msec = 0;
 		bool active = false;
 	};
 };

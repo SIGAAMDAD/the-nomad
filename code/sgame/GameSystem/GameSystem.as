@@ -41,6 +41,7 @@ namespace TheNomad::GameSystem {
  	uint GameTic = 0;
 	float GameDeltaTic = 0.0f;
  	float DeltaTic = 0.0f;
+	float ReflexTic = 0.0f;
 	int HalfScreenWidth = 0;
 	int HalfScreenHeight = 0;
 	float UIScale = 0.0f;

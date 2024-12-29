@@ -22,15 +22,21 @@ namespace TheNomad::SGame {
 			// just create a temporary bbox to link it in, we'll rebuild every frame anyway
 			TheNomad::GameSystem::BBox bounds( 1.0f, 1.0f, origin );
 			m_Link.Create( origin, bounds, id, uint( type ), nEntityNumber );
-			m_Emitter.Register( @this );
+
+			// create emitter
+			m_hEmitter = TheNomad::Engine::SoundSystem::RegisterEmitter( m_Link.m_nEntityNumber );
 		}
 		void EmitSound( const TheNomad::Engine::SoundSystem::SoundEffect hSfx, float nVolume, uint nListenerMask ) {
-			m_Emitter.PlaySound( hSfx, nVolume, nListenerMask );
+			TheNomad::Engine::SoundSystem::PlayEmitterSound( m_hEmitter, nVolume, nListenerMask, hSfx );
 		}
 		void SetSoundPosition() {
-			m_Emitter.SetPosition( m_Link.m_Origin, 0.5f, 0.0f,
+			TheNomad::Engine::SoundSystem::SetEmitterPosition( m_hEmitter, m_Link.m_Origin, 0.5f, 0.0f,
 				m_PhysicsObject.GetAcceleration().x + m_PhysicsObject.GetAcceleration().y );
 		}
+		void SetVolume( float nVolume ) {
+			TheNomad::Engine::SoundSystem::SetEmitterVolume( m_hEmitter, nVolume );
+		}
+
 		void RunState() {
 			@m_State = @m_State.Run( m_nTicker );
 		}
@@ -76,9 +82,6 @@ namespace TheNomad::SGame {
 		}
 		uint GetEntityNum() const {
 			return m_Link.m_nEntityNumber;
-		}
-		AttackEffect GetDebuff() const {
-			return m_Debuff;
 		}
 		TheNomad::GameSystem::BBox& GetBounds() {
 			return m_Link.m_Bounds;
@@ -134,13 +137,16 @@ namespace TheNomad::SGame {
 		const SpriteSheet@ GetSpriteSheet() const {
 			return @m_SpriteSheet;
 		}
+		float GetHalfWidth() const {
+			return m_nHalfWidth;
+		}
+		float GetHalfHeight() const {
+			return m_nHalfHeight;
+		}
 
 		//
 		// setters
 		//
-		void SetDebuff( AttackEffect effect ) {
-			m_Debuff = effect;
-		}
 		void SetHealth( float nHealth ) {
 			m_nHealth = nHealth;
 		}
@@ -230,14 +236,17 @@ namespace TheNomad::SGame {
 		// the entity's current state
 		protected EntityState@ m_State = null;
 		
-		// current effect the entity's suffereing from
-		protected AttackEffect m_Debuff = AttackEffect::None;
-		
 		// DUH.
 		protected float m_nHealth = 0.0f;
 		
 		// flags, some are specific
 		protected EntityFlags m_Flags = EntityFlags::None;
+		
+		// sound emitter
+		protected int m_hEmitter = FS_INVALID_HANDLE;
+
+		protected float m_nHalfWidth = 1.0f;
+		protected float m_nHalfHeight = 1.0f;
 		
 		protected TheNomad::GameSystem::DirType m_Direction = TheNomad::GameSystem::DirType::North;
 		
@@ -258,7 +267,5 @@ namespace TheNomad::SGame {
 		EntityObject@ m_Prev = null;
 
 		protected uint m_nTicker = 0;
-
-		protected TheNomad::Engine::SoundSystem::SoundEmitter m_Emitter;
 	};
 };

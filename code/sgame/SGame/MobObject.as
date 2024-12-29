@@ -60,7 +60,7 @@ namespace TheNomad::SGame {
 			m_nHealth = m_Info.health;
 			m_MFlags = m_Info.mobFlags;
 			@m_State = @StateManager.GetStateForNum( m_Info.type + StateNum::ST_MOB_IDLE );
-			moblib::AIManager.AllocScript( @this );
+			moblib::AllocScript( @this );
 		}
 		
 		void Damage( EntityObject@ source, float nAmount ) {

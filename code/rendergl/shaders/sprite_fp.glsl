@@ -5,7 +5,6 @@ in vec2 v_TexCoords;
 in vec4 v_Color;
 in vec2 v_WorldPos;
 in vec3 v_LightingColor;
-in vec2 v_Position;
 
 uniform float u_GammaAmount;
 uniform bool u_GamePaused;

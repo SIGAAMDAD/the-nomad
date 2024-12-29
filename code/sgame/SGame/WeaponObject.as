@@ -1,40 +1,51 @@
 #include "SGame/InfoSystem/InfoDataManager.as"
 #include "SGame/InfoSystem/WeaponInfo.as"
+#include "itemlib/ItemScript.as"
 
 namespace TheNomad::SGame {
-    class WeaponObject : EntityObject {
+    class WeaponObject : ItemObject {
 		WeaponObject() {
 		}
 
-		void SetOwner( EntityObject@ ent ) {
-			SetState( @m_Info.equipState );
-			@m_Owner = @ent;
-		}
-		EntityObject@ GetOwner() {
-			return @m_Owner;
+		InfoSystem::WeaponProperty GetProperties() const {
+			return m_WeaponInfo.weaponProps;
 		}
 
-		InfoSystem::WeaponProperty GetProperties() const {
-			return m_Info.weaponProps;
+		void SetOwner( EntityObject@ ent ) override {
+			SetState( @m_WeaponInfo.equipState );
+			@m_Owner = @ent;
+		}
+
+		const InfoSystem::WeaponInfo@ GetWeaponInfo() const {
+			return @m_WeaponInfo;
+		}
+		InfoSystem::WeaponInfo@ GetWeaponInfo() {
+			return @m_WeaponInfo;
+		}
+		InfoSystem::ItemInfo@ GetItemInfo() {
+			return @m_WeaponInfo;
+		}
+		const InfoSystem::ItemInfo@ GetItemInfo() const {
+			return @m_WeaponInfo;
 		}
 		
 		bool IsOneHanded() const {
-			return ( m_Info.weaponProps & InfoSystem::WeaponProperty::IsOneHanded ) == 1;
+			return ( m_WeaponInfo.weaponProps & InfoSystem::WeaponProperty::IsOneHanded ) == 1;
 		}
 		bool IsTwoHanded() const {
-			return ( m_Info.weaponProps & InfoSystem::WeaponProperty::IsTwoHanded ) == 1;
+			return ( m_WeaponInfo.weaponProps & InfoSystem::WeaponProperty::IsTwoHanded ) == 1;
 		}
 		bool IsBladed() const {
-			return ( m_Info.weaponProps & InfoSystem::WeaponProperty::IsBladed ) == 1;
+			return ( m_WeaponInfo.weaponProps & InfoSystem::WeaponProperty::IsBladed ) == 1;
 		}
 		bool IsPolearm() const {
-			return ( m_Info.weaponProps & InfoSystem::WeaponProperty::IsPolearm ) == 1;
+			return ( m_WeaponInfo.weaponProps & InfoSystem::WeaponProperty::IsPolearm ) == 1;
 		}
 		bool IsFirearm() const {
-			return ( m_Info.weaponProps & InfoSystem::WeaponProperty::IsFirearm ) == 1;
+			return ( m_WeaponInfo.weaponProps & InfoSystem::WeaponProperty::IsFirearm ) == 1;
 		}
 		bool IsBlunt() const {
-			return ( m_Info.weaponProps & InfoSystem::WeaponProperty::IsBlunt ) == 1;
+			return ( m_WeaponInfo.weaponProps & InfoSystem::WeaponProperty::IsBlunt ) == 1;
 		}
 		
 		//
@@ -58,17 +69,18 @@ namespace TheNomad::SGame {
 					const float dist = Util::Distance( m_Link.m_Origin, ent.GetOrigin() );
 					if ( dist < 1.0f ) { // immediate impact range means death
 						EntityManager.KillEntity( @ent, @m_Owner );
-						damage += m_Info.damage;
-					} else if ( dist <= m_Info.range ) {
-						EntityManager.DamageEntity( @ent, @m_Owner, m_Info.damage
+						damage += m_WeaponInfo.damage;
+					} else if ( dist <= m_WeaponInfo.range ) {
+						EntityManager.DamageEntity( @ent, @m_Owner, m_WeaponInfo.damage
 							+ ( m_AmmoInfo.range + ( dist * 0.1f ) ) );
-						damage += m_Info.damage;
+						damage += m_WeaponInfo.damage;
 					}
 				}
 			}
 			// let's be real here, if the player is standing in the middle of an explosion,
 			// they should taking damage as well
-			return sgame_Difficulty.GetInt() < int( TheNomad::GameSystem::GameDifficulty::Hard ) ? damage : 0.0f;
+			return TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" )
+				< int( TheNomad::GameSystem::GameDifficulty::Hard ) ? damage : 0.0f;
 		}
 		
 		private float UseBlade( float damage, uint weaponMode ) {
@@ -88,18 +100,18 @@ namespace TheNomad::SGame {
 			EntityObject@ active = @EntityManager.GetActiveEnts();
 			EntityObject@ it = null;
 			
-			end.x = origin.x + ( m_Info.range * cos( angle ) );
-			end.y = origin.y + ( m_Info.range * sin( angle ) );
-//			end.z = m_Info.range * sin( angle );
+			end.x = origin.x + ( m_WeaponInfo.range * cos( angle ) );
+			end.y = origin.y + ( m_WeaponInfo.range * sin( angle ) );
+//			end.z = m_WeaponInfo.range * sin( angle );
 			
 			for ( @it = @active.m_Next; @it.m_Next !is @active; @it = @it.m_Next ) {
 				if ( it.GetBounds().LineIntersection( origin, end ) ) {
-					EmitSound( m_Info.useSfx, 10.0f, 0xff );
+					EmitSound( m_WeaponInfo.useSfx, 10.0f, 0xff );
 					// pike, bannerlord mode (you crouch to get a spear brace), high-risk, high-reward
 					if ( cast<PlayrObject@>( @m_Owner ).IsCrouching() || cast<PlayrObject@>( @m_Owner ).IsSliding() ) {
 						return 1000.0f; // it's an insta-kill for most mobs
 					} else {
-						return m_Info.damage;
+						return m_WeaponInfo.damage;
 					}
 				}
 			}
@@ -132,7 +144,7 @@ namespace TheNomad::SGame {
 			
 			// health mult doesn't matter on harder difficulties if the player is attacking with a firearm,
 			// that is, unless, the player is very close to the enemy
-			if ( sgame_Difficulty.GetInt() < int( TheNomad::GameSystem::GameDifficulty::Hard ) ) {
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" ) < int( TheNomad::GameSystem::GameDifficulty::Hard ) ) {
 				return damage;
 			} else {
 				if ( Util::Distance( ray.m_Origin, m_Owner.GetOrigin() ) <= 2.75f ) {
@@ -154,10 +166,10 @@ namespace TheNomad::SGame {
 				return 0.0f;
 			}
 			
-			m_nBulletsUsed += m_Info.fireRate;
+			m_nBulletsUsed += m_WeaponInfo.fireRate;
 			
-			SetState( @m_Info.useState );
-			damage = m_Info.damage;
+			SetState( @m_WeaponInfo.useState );
+			damage = m_WeaponInfo.damage;
 			
 			// TODO: adaptive weapon animation & cooldowns
 			
@@ -224,15 +236,15 @@ namespace TheNomad::SGame {
 				return;
 			}
 			
-			m_Link.m_Bounds.m_nWidth = m_Info.size.x;
-			m_Link.m_Bounds.m_nHeight = m_Info.size.y;
+			m_Link.m_Bounds.m_nWidth = m_WeaponInfo.size.x;
+			m_Link.m_Bounds.m_nHeight = m_WeaponInfo.size.y;
 			m_Link.m_Bounds.MakeBounds( m_Link.m_Origin );
 
 			if ( m_State.GetBaseNum() == StateNum::ST_WEAPON_USE && m_State.Done( m_nTicker ) ) {
-				if ( m_nBulletsUsed >= m_Info.magSize ) {
-					SetState( @m_Info.reloadState );
+				if ( m_nBulletsUsed >= m_WeaponInfo.magSize ) {
+					SetState( @m_WeaponInfo.reloadState );
 				} else {
-					SetState( @m_Info.idleState );
+					SetState( @m_WeaponInfo.idleState );
 				}
 			} else {
 				@m_State = @m_State.Run( m_nTicker );
@@ -246,33 +258,27 @@ namespace TheNomad::SGame {
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 			
 			refEntity.sheetNum = -1;
-			refEntity.spriteId = m_Info.hIconShader;
+			refEntity.spriteId = m_WeaponInfo.hIconShader;
 			refEntity.origin = m_Link.m_Origin;
-			refEntity.scale = m_Info.size;
+			refEntity.scale = m_WeaponInfo.size;
 			refEntity.Draw();
 		}
 		void Spawn( uint id, const vec3& in origin ) override {
-			@m_Info = @InfoSystem::InfoManager.GetWeaponInfo( id );
-			if ( @m_Info is null ) {
+			@m_WeaponInfo = @InfoSystem::InfoManager.GetWeaponInfo( id );
+			if ( @m_WeaponInfo is null ) {
 				GameError( "WeaponObject::Spawn: invalid weapon id " + id );
 			}
 
 			m_Link.m_Origin = origin;
-			m_Link.m_Bounds.m_nWidth = m_Info.size.x;
-			m_Link.m_Bounds.m_nHeight = m_Info.size.y;
+			m_Link.m_Bounds.m_nWidth = m_WeaponInfo.size.x;
+			m_Link.m_Bounds.m_nHeight = m_WeaponInfo.size.y;
 			m_Link.m_Bounds.MakeBounds( origin );
-		}
 
-		InfoSystem::ItemInfo@ GetItemInfo() {
-			return @m_Info;
-		}
-		const InfoSystem::ItemInfo@ GetItemInfo() const {
-			return @m_Info;
+			itemlib::AllocScript( @this );
 		}
 		
 		private InfoSystem::AmmoInfo@ m_AmmoInfo = null;
-		private InfoSystem::WeaponInfo@ m_Info = null;
-		private EntityObject@ m_Owner = null;
+		private InfoSystem::WeaponInfo@ m_WeaponInfo = null;
 		
 		private uint m_nBulletsUsed = 0;
 	};

@@ -97,24 +97,12 @@ namespace TheNomad::Engine::Physics {
 			} else if ( m_Velocity.y < 0.0f ) {
 				m_Velocity.y += friction;
 			}
-			/*
-			if ( m_Velocity[0] < 0.0f ) {
-				m_Velocity[0] = TheNomad::Util::Clamp( m_Velocity[0] + friction, m_Velocity[0], 100.0f );
-			} else if ( m_Velocity[0] > 0.0f ) {
-				m_Velocity[0] = TheNomad::Util::Clamp( m_Velocity[0] - friction, -100.0f, m_Velocity[0] );
-			}
-			if ( m_Velocity[1] < 0.0f ) {
-				m_Velocity[1] = TheNomad::Util::Clamp( m_Velocity[1] + friction, m_Velocity[1], 100.0f );
-			} else if ( m_Velocity[1] > 0.0f ) {
-				m_Velocity[1] = TheNomad::Util::Clamp( m_Velocity[1] - friction, -100.0f, m_Velocity[1] );
-			}
-			*/
-			if ( m_Velocity[2] < 0.0f && m_EntityData.GetOrigin().z <= 0.0f ) {
-				m_Velocity[2] = 0.0f;
+			if ( m_Velocity.z < 0.0f && m_EntityData.GetOrigin().z <= 0.0f ) {
+				m_Velocity.z = 0.0f;
 			} else if ( m_EntityData.GetOrigin().z >= MAX_JUMP_HEIGHT ) {
-				m_Velocity[2] = TheNomad::Util::Clamp(
-					m_Velocity[2] - ( TheNomad::SGame::sgame_Gravity.GetFloat() * TheNomad::GameSystem::DeltaTic ),
-					-TheNomad::SGame::sgame_Gravity.GetFloat(), m_Velocity[2] );
+				m_Velocity.z = TheNomad::Util::Clamp(
+					m_Velocity.z - ( TheNomad::SGame::sgame_Gravity.GetFloat() * TheNomad::GameSystem::DeltaTic ),
+					-TheNomad::SGame::sgame_Gravity.GetFloat(), m_Velocity.z );
 			}
 		}
 		
@@ -193,22 +181,16 @@ namespace TheNomad::Engine::Physics {
 		}
 		
 		void OnRunTic() {
+		#if _NOMAD_DEBUG
 			ProfileBlock block( "PhysicsObject::OnRunTic" );
+		#endif
 			
 			// clip it
 			ClipBounds();
 			SetWaterLevel();
 			
-			float friction = TheNomad::SGame::sgame_Friction.GetFloat();
 			vec3 origin = m_EntityData.GetOrigin();
 			bool inAir = false;
-			
-			const uint tileFlags = TheNomad::SGame::LevelManager.GetMapData().GetTile( origin, m_EntityData.GetBounds() );
-			if ( ( tileFlags & SURFACEPARM_WATER ) != 0 || ( tileFlags & SURFACEPARM_LAVA ) != 0 ) {
-				friction = TheNomad::SGame::sgame_WaterFriction.GetFloat() * m_nWaterLevel;
-			} else if ( origin.z > 0.0f && m_nWaterLevel == 0 ) {
-				friction = TheNomad::SGame::sgame_AirFriction.GetFloat();
-			}
 			
 			// calculate velocity
 			m_Velocity.x = m_Acceleration.x;
@@ -227,7 +209,6 @@ namespace TheNomad::Engine::Physics {
 			
 			TheNomad::SGame::EntityObject@ active = @TheNomad::SGame::EntityManager.GetActiveEnts();
 			TheNomad::SGame::EntityObject@ ent = null;
-			/*
 			for ( @ent = @active.m_Next; @ent.m_Next !is @active; @ent = @ent.m_Next ) {
 				if ( bounds.IntersectsBounds( ent.GetBounds() ) && @m_EntityData !is @ent ) {
 					if ( ent.GetType() == TheNomad::GameSystem::EntityType::Weapon || ent.GetType() == TheNomad::GameSystem::EntityType::Item ) {
@@ -245,38 +226,37 @@ namespace TheNomad::Engine::Physics {
 					return; // clip
 				}
 			}
-			*/
 
 			vec3 tmp = origin;
 			const TheNomad::GameSystem::DirType dir = CalcMoveDir();
 			switch ( dir ) {
 			case TheNomad::GameSystem::DirType::North:
-				tmp.y -= m_EntityData.GetBounds().m_nHeight * 0.5f;
+				tmp.y -= m_EntityData.GetHalfHeight();
 				break;
 			case TheNomad::GameSystem::DirType::NorthEast:
-				tmp.y -= m_EntityData.GetBounds().m_nHeight * 0.5f;
-				tmp.x += m_EntityData.GetBounds().m_nWidth * 0.5f;
+				tmp.y -= m_EntityData.GetHalfHeight();
+				tmp.x += m_EntityData.GetHalfWidth();
 				break;
 			case TheNomad::GameSystem::DirType::East:
-				tmp.x += m_EntityData.GetBounds().m_nWidth * 0.5f;
+				tmp.x += m_EntityData.GetHalfWidth();
 				break;
 			case TheNomad::GameSystem::DirType::SouthEast:
-				tmp.y += m_EntityData.GetBounds().m_nHeight * 0.5f;
-				tmp.x += m_EntityData.GetBounds().m_nWidth * 0.5f;
+				tmp.y += m_EntityData.GetHalfHeight();
+				tmp.x += m_EntityData.GetHalfWidth();
 				break;
 			case TheNomad::GameSystem::DirType::South:
-				tmp.y += m_EntityData.GetBounds().m_nHeight * 0.5f;
+				tmp.y += m_EntityData.GetHalfHeight();
 				break;
 			case TheNomad::GameSystem::DirType::SouthWest:
-				tmp.y += m_EntityData.GetBounds().m_nHeight * 0.5f;
-				tmp.x -= m_EntityData.GetBounds().m_nWidth * 0.5f;
+				tmp.y += m_EntityData.GetHalfHeight();
+				tmp.x -= m_EntityData.GetHalfWidth();
 				break;
 			case TheNomad::GameSystem::DirType::West:
-				tmp.x -= m_EntityData.GetBounds().m_nWidth * 0.5f;
+				tmp.x -= m_EntityData.GetHalfWidth();
 				break;
 			case TheNomad::GameSystem::DirType::NorthWest:
-				tmp.y -= m_EntityData.GetBounds().m_nHeight * 0.5f;
-				tmp.x -= m_EntityData.GetBounds().m_nWidth * 0.5f;
+				tmp.y -= m_EntityData.GetHalfHeight();
+				tmp.x -= m_EntityData.GetHalfWidth();
 				break;
 			};
 
@@ -302,7 +282,7 @@ namespace TheNomad::Engine::Physics {
 			m_EntityData.SetOrigin( origin );
 
 			if ( inAir && origin.z <= 0.0f ) {
-				if ( m_EntityData.GetWaterLevel() > 0 ) {
+				if ( m_nWaterLevel > 0 ) {
 					m_EntityData.EmitSound(
 						TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/water_land_" + formatUInt( Util::PRandom() & 2 ) ),
 						10.0f, 0xff );

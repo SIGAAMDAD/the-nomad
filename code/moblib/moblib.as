@@ -1,10 +1,18 @@
-#include "moblib/AIManager.as"
+#include "nomadmain/SGame/InfoSystem/InfoDataManager.as"
+#include "moblib/MobScript.as"
+#include "moblib/Scripts/ScriptData.as"
 
 namespace moblib {
 	void InitCvars() {
 	}
 
 	void InitResources() {
+	}
+
+	void AllocScript( TheNomad::SGame::MobObject@ mob ) {
+		MobScript@ script = Script::AllocateScriptEntity( mob.GetMobInfo().type );
+		mob.LinkScript( @script );
+		script.Link( @mob );
 	}
 
 	int ModuleOnInit() {
@@ -14,8 +22,6 @@ namespace moblib {
 		ConsolePrint( "Initializing AISystem...\n" );
 
 		InitCvars();
-
-		@AIManager = cast<AISystem@>( @TheNomad::GameSystem::AddSystem( AISystem() ) );
 
 		//
 		// load assets

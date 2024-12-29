@@ -105,7 +105,7 @@ void InitResources() {
 
 	// environmental sounds
 	{
-		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/bonfire" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/interaction/pickup_item" );
 
 		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/land_1" );
 		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/land_2" );
@@ -369,6 +369,7 @@ int ModuleOnRunTic( int msec ) {
 		TheNomad::GameSystem::GameTic = msec;
 		TheNomad::GameSystem::GameDeltaTic = TheNomad::GameSystem::GameTic * TheNomad::GameSystem::DeltaTic;
 		TheNomad::GameSystem::MousePosition = TheNomad::Engine::GetMousePosition();
+		TheNomad::GameSystem::ReflexTic = ( msec - TheNomad::GameSystem::GameTic ) * ( 1.0f / 60.0f );
 
 		TheNomad::SGame::LevelManager.Resume();
 		TheNomad::SGame::EntityManager.SetActivePlayer( @TheNomad::SGame::ScreenData.GetPlayer() );

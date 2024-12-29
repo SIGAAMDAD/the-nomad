@@ -6,11 +6,12 @@ namespace TheNomad::SGame {
 
 	const uint PF_SLIDING			= 0x00000001;
 	const uint PF_CROUCHING			= 0x00000002;
-	const uint PF_JUMPING			= 0x00000004;
+	const uint PF_REFLEX			= 0x00000004;
 	const uint PF_DASHING			= 0x00000008;
 	const uint PF_BULLET_TIME		= 0x00000010;
 	const uint PF_DEMON_RAGE		= 0x00000020;
 	const uint PF_INVUL				= 0x00000040;
+	const uint PF_USED_MANA			= 0x00000080;
 	const uint PF_USING_WEAPON		= 0x00000100;
 	const uint PF_USING_WEAPON_ALT	= 0x00000200;
 	const uint PF_AFTER_IMAGE		= 0x10000000;
@@ -19,7 +20,7 @@ namespace TheNomad::SGame {
 	const uint RIGHT_ARM			= 1;
 	const uint BOTH_ARMS			= 2;
 
-	const uint RAW_REFLEX_TIME		= 2000;
+	const uint RAW_REFLEX_TIME		= 8000;
 	const uint REFLEX_TIME			= 8000;
 
 	const uint DASH_COOLDOWN		= 200;
@@ -194,12 +195,20 @@ namespace TheNomad::SGame {
 		}
 
 		void PickupItem( EntityObject@ item ) {
-			switch ( item.GetType() ) {
-			case TheNomad::GameSystem::EntityType::Item:
-				break;
-			case TheNomad::GameSystem::EntityType::Weapon:
+			ItemObject@ data = cast<ItemObject@>( @item );
+			data.SetOwner( @this );
 
-				break;
+			switch ( item.GetType() ) {
+			case TheNomad::GameSystem::EntityType::Item: {
+				data.GetScript().OnEquip( @this );
+				EntityManager.RemoveEntity( @item );
+				@item = null;
+				break; }
+			case TheNomad::GameSystem::EntityType::Weapon: {
+				if ( TheNomad::Engine::CvarVariableInteger( "sgame_EquipWeaponOnPickup" ) == 1 ) {
+
+				}
+				break; }
 			default:
 				GameError( "PlayrObject::PickupItem: not an item" );
 			};
@@ -223,10 +232,10 @@ namespace TheNomad::SGame {
 			}
 		}
 		uint GetSlideTime() const {
-			return SlideEndTime;
+			return SlideStartTime;
 		}
 		void ResetSlide() {
-			SlideEndTime = ( TheNomad::GameSystem::GameTic + SLIDE_DURATION ) * TheNomad::GameSystem::DeltaTic;
+			SlideStartTime = ( TheNomad::GameSystem::GameTic + SLIDE_DURATION ) * TheNomad::GameSystem::DeltaTic;
 		}
 		
 		bool IsCrouching() const {
@@ -255,10 +264,10 @@ namespace TheNomad::SGame {
 			}
 		}
 		uint GetDashTime() const {
-			return DashEndTime;
+			return DashStartTime;
 		}
 		void ResetDash() {
-			DashEndTime = ( TheNomad::GameSystem::GameTic + DASH_DURATION ) * TheNomad::GameSystem::DeltaTic;
+			DashStartTime = ( TheNomad::GameSystem::GameTic + DASH_DURATION ) * TheNomad::GameSystem::DeltaTic;
 		}
 
 		void SetUsingWeapon( bool bUseWeapon ) {
@@ -305,10 +314,14 @@ namespace TheNomad::SGame {
 
 		void SetReflexMode( bool bReflex ) {
 			m_nRawReflexStartTime = TheNomad::GameSystem::GameTic;
-			m_HudData.SetReflexMode( bReflex );
+			if ( bReflex ) {
+				Flags |= PF_REFLEX;
+			} else {
+				Flags &= ~PF_REFLEX;
+			}
 		}
 		bool InReflex() const {
-			return m_HudData.IsReflexActive();
+			return ( Flags & PF_REFLEX ) != 0;
 		}
 
 		SpriteSheet@ GetLeftArmSpriteSheet() {
@@ -643,6 +656,9 @@ namespace TheNomad::SGame {
 			@m_LegAirMoveState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_GROUND );
 
 			@m_IdleState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE );
+
+			m_nHalfWidth = TheNomad::Engine::CvarVariableFloat( "sgame_PlayerWidth" ) * 0.5f;
+			m_nHalfHeight = TheNomad::Engine::CvarVariableFloat( "sgame_PlayerHeight" ) * 0.5f;
 		}
 
 		void Think() override {
@@ -664,13 +680,19 @@ namespace TheNomad::SGame {
 			//
 			// check reflex mode
 			//
-			if ( m_HudData.IsReflexActive() ) {
-				if ( TheNomad::GameSystem::GameTic - m_nRawReflexStartTime > RAW_REFLEX_TIME ) {
-					// raw reflex time is done
+			if ( ( Flags & PF_REFLEX ) != 0 ) {
+				if ( ( TheNomad::GameSystem::GameTic - m_nRawReflexStartTime ) > RAW_REFLEX_TIME ) {
+					// raw reflex time is done, start burning through mana
 					m_nRawReflexStartTime = 0;
-					ScreenData.m_SlowMoOff.Play();
-					TheNomad::GameSystem::TIMESTEP = 1.0f / 60.0f;
-					m_HudData.SetReflexMode( false );
+					Flags |= PF_USED_MANA;
+					if ( m_nRage < 0.0f ) {
+						Flags &= ~PF_REFLEX;
+						EmitSound( ScreenData.m_SlowMoOff, 10.0f, 0xff );
+						TheNomad::GameSystem::TIMESTEP = 1.0f / 60.0f;
+					} else {
+						m_nRage -= 6.0f * TheNomad::GameSystem::DeltaTic;
+						m_HudData.ShowRageBar();
+					}
 				}
 				
 				/*
@@ -691,7 +713,7 @@ namespace TheNomad::SGame {
 			// run a movement frame
 			Pmove.RunTic();
 
-			m_Emitter.SetPosition( m_Link.m_Origin, 0.0f, 0.0f, 0.0f );
+			SetSoundPosition();
 
 			if ( m_nHealth <= 15.0f ) {
 				// if there's another haptic going on, we don't want to annihilate their hands
@@ -712,11 +734,19 @@ namespace TheNomad::SGame {
 					m_nHealth = 100.0f;
 				}
 			}
-			m_nRage = Util::Clamp( m_nRage, 0.0f, m_nRage );
+			if ( m_nRage < 100.0f && ( Flags & PF_USED_MANA ) == 0 ) {
+				// only increase mana at a very slow rate if we're not hitting something
+				m_nRage += 0.05f * TheNomad::GameSystem::DeltaTic;
+			}
+			if ( m_nRage > 100.0f ) {
+				m_nRage = 100.0f;
+			}
 
 			@m_LegState = @m_LegState.Run( m_nLegTicker );
 			LeftArm.Think();
 			RightArm.Think();
+
+			Flags &= ~PF_USED_MANA;
 		}
 
 		private void DrawLegs() {
@@ -796,7 +826,6 @@ namespace TheNomad::SGame {
 
 				TheNomad::Engine::Renderer::AddDLightToScene( origin, 6.15f, vec3( 1.0f, 0.0f, 0.0f ) );
 				GfxManager.SmokeCloud( m_Link.m_Origin );
-				m_HudData.ShowDashMarks();
 			}
 
 			DrawLegs();
@@ -862,8 +891,8 @@ namespace TheNomad::SGame {
 
 		private AfterImage m_AfterImage;
 
-		uint DashEndTime = 0;
-		uint SlideEndTime = 0;
+		uint DashStartTime = 0;
+		uint SlideStartTime = 0;
 
 		private uint m_nRawReflexStartTime = 0;
 

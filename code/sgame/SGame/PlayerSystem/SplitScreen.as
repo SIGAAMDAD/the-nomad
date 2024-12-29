@@ -196,19 +196,19 @@ namespace TheNomad::SGame {
 			m_PlayerData.Flags &= ~PF_USING_WEAPON_ALT;
 		}
 		void Quickshot_f() {
-			if ( m_PlayerData.InReflex() ) {
-				m_PlayerData.SetReflexMode( false );
+			if ( ( m_PlayerData.Flags & PF_REFLEX ) != 0 ) {
+				m_PlayerData.Flags &= ~PF_REFLEX;
 				m_SlowMoOff.Play();
 				TheNomad::GameSystem::TIMESTEP = 1.0f / 60.0f;
 			} else {
-				m_PlayerData.SetReflexMode( true );
+				m_PlayerData.Flags |= PF_REFLEX;
 				m_SlowMoOn.Play();
 				TheNomad::GameSystem::TIMESTEP = 1.0f / 800.0f;
 			}
 		}
 		void Dash_Down_f() {
 			// wait at little bit before launching another dash
-			if ( ( TheNomad::GameSystem::GameTic - m_PlayerData.DashEndTime ) * TheNomad::GameSystem::DeltaTic < DASH_DURATION ) {
+			if ( ( TheNomad::GameSystem::GameTic - m_PlayerData.DashStartTime ) * TheNomad::GameSystem::DeltaTic < DASH_DURATION ) {
 				return;
 			}
 
@@ -218,7 +218,7 @@ namespace TheNomad::SGame {
 				m_PlayerData.EmitSound( m_DashSfx1, 10.0f, 0xff );
 			}
 
-			m_PlayerData.DashEndTime = TheNomad::GameSystem::GameTic;
+			m_PlayerData.DashStartTime = TheNomad::GameSystem::GameTic;
 			m_PlayerData.Flags |= PF_DASHING;
 			
 			vec3 origin = m_PlayerData.GetOrigin();
@@ -241,7 +241,7 @@ namespace TheNomad::SGame {
 		void Slide_Down_f() {
 			// TODO: ground slam?
 			if ( ( m_PlayerData.Flags & PF_CROUCHING ) != 0 || m_PlayerData.GetOrigin().z > 0.0f
-				|| ( TheNomad::GameSystem::GameTic - m_PlayerData.SlideEndTime ) * TheNomad::GameSystem::DeltaTic < SLIDE_DURATION  )
+				|| ( TheNomad::GameSystem::GameTic - m_PlayerData.SlideStartTime ) * TheNomad::GameSystem::DeltaTic < SLIDE_DURATION  )
 			{
 				return;
 			}
@@ -256,7 +256,7 @@ namespace TheNomad::SGame {
 					m_PlayerData.EmitSound( m_SlideSfx1, 10.0f, 0xff );
 				}
 				
-				m_PlayerData.SlideEndTime = TheNomad::GameSystem::GameTic;
+				m_PlayerData.SlideStartTime = TheNomad::GameSystem::GameTic;
 				m_PlayerData.Flags |= PF_SLIDING;
 
 				vec3 origin = m_PlayerData.GetOrigin();
@@ -300,16 +300,10 @@ namespace TheNomad::SGame {
 			m_PlayerData.SwitchUsedHand();
 		}
 		void Crouch_Down_f() {
-			if ( m_PlayerData.IsCrouching() ) {
-				return;
-			}
 			m_PlayerData.EmitSound( m_CrouchDownSfx, 10.0f, 0xff );
 			m_PlayerData.SetCrouching( true );
 		}
 		void Crouch_Up_f() {
-			if ( !m_PlayerData.IsCrouching() ) {
-				return;
-			}
 			m_PlayerData.EmitSound( m_CrouchUpSfx, 10.0f, 0xff );
 			m_PlayerData.SetCrouching( false );
 			m_PlayerData.SetState( @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE ) );
@@ -320,22 +314,24 @@ namespace TheNomad::SGame {
 			if ( m_PlayerData.GetCurrentWeaponIndex() >= NUM_WEAPON_SLOTS ) {
 				m_PlayerData.SetCurrentWeapon( 0 );
 			}
-			m_PlayerData.EmitSound(
-				cast<const InfoSystem::WeaponInfo@>( @m_PlayerData.GetCurrentWeapon().GetInfo() ).equipSfx,
-				10.0f,
-				0xff
-			);
+			TheNomad::Engine::SoundSystem::SoundEffect hSfx( "event:/sfx/env/interaction/pickup_item" );
+			const WeaponObject@ weapon = @m_PlayerData.GetCurrentWeapon();
+			if ( @weapon !is null ) {
+				hSfx = weapon.GetWeaponInfo().equipSfx;
+			}
+			m_PlayerData.EmitSound( hSfx, 10.0f, 0xff );
 		}
 		void PrevWeapon_f() {
 			m_PlayerData.SetCurrentWeapon( NUM_WEAPON_SLOTS - 1 );
 			if ( m_PlayerData.GetCurrentWeaponIndex() < 0 ) {
 				m_PlayerData.SetCurrentWeapon( NUM_WEAPON_SLOTS - 1 );
 			}
-			m_PlayerData.EmitSound(
-				cast<const InfoSystem::WeaponInfo@>( @m_PlayerData.GetCurrentWeapon().GetInfo() ).equipSfx,
-				10.0f,
-				0xff
-			);
+			TheNomad::Engine::SoundSystem::SoundEffect hSfx( "event:/sfx/env/interaction/pickup_item" );
+			const WeaponObject@ weapon = @m_PlayerData.GetCurrentWeapon();
+			if ( @weapon !is null ) {
+				hSfx = weapon.GetWeaponInfo().equipSfx;
+			}
+			m_PlayerData.EmitSound( hSfx, 10.0f, 0xff );
 		}
 
 		private void RenderScene( const uvec2& in scenePos, const uvec2& in sceneSize, const vec3& in origin ) {

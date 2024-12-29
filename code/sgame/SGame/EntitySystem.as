@@ -230,6 +230,8 @@ namespace TheNomad::SGame {
 			
 			array<MapCheckpoint>@ checkpoints = @LevelManager.GetMapData().GetCheckpoints();
 
+			m_EntityList.Reserve( LevelManager.GetMapData().GetSpawns().Count() + checkpoints.Count() );
+
 			checkpoints[ LevelManager.GetCheckpointIndex() ].Activate( 0 );
 			
 			for ( uint i = 0; i < checkpoints.Count(); i++ ) {
@@ -239,6 +241,14 @@ namespace TheNomad::SGame {
 			DebugPrint( formatUInt( m_EntityList.Count() ) + " total entities.\n" );
 		}
 		void OnLevelEnd() {
+			for ( uint i = 0; i < m_EntityList.Count(); ++i ) {
+				@m_EntityList[i] = null;
+			}
+			
+			@m_ActiveEnts.m_Next =
+			@m_ActiveEnts.m_Prev =
+				null;
+
 			// clear all level locals
 			m_EntityList.Clear();
 		}
@@ -262,12 +272,21 @@ namespace TheNomad::SGame {
 			}
 		}
 		
-		private void RemoveEntity( EntityObject@ ent ) {
+		//
+		// EntitySystem::RemoveEntity: used for deallocating active entities
+		// can be called from a pickup event or a death
+		//
+		void RemoveEntity( EntityObject@ ent ) {
 			@ent.m_Prev.m_Next = @ent.m_Next;
 			@ent.m_Next.m_Prev = @ent.m_Prev;
 
-			@ent.m_Next = @m_FreeEnts;
-			@m_FreeEnts = @ent;
+			DebugPrint( "Deallocated entity at '" + ent.GetEntityNum() + "'\n" );
+
+			// remove all the references
+			@ent.m_Next =
+			@ent.m_Prev =
+			@m_EntityList[ ent.GetEntityNum() ] =
+				null;
 		}
 		private EntityObject@ AllocEntity( TheNomad::GameSystem::EntityType type, uint id, const vec3& in origin, const vec2& in size ) {
 			EntityObject@ ent = null;
@@ -295,8 +314,8 @@ namespace TheNomad::SGame {
 				GameError( "EntityManager::Spawn: invalid entity type " + id );
 			};
 			
-			ent.Init( type, id, vec3( 0.0f ), m_EntityList.Count() );
-			ent.Spawn( id, vec3( 0.0f ) );
+			ent.Init( type, id, origin, m_EntityList.Count() );
+			ent.Spawn( id, origin );
 
 			ent.GetBounds().m_nWidth = size.x;
 			ent.GetBounds().m_nHeight = size.y;
@@ -319,8 +338,9 @@ namespace TheNomad::SGame {
 		
 		void DeadThink( EntityObject@ ent ) {
 			if ( ent.GetType() == TheNomad::GameSystem::EntityType::Mob ) {
-				if ( sgame_Difficulty.GetInt() < uint( TheNomad::GameSystem::GameDifficulty::VeryHard )
-					|| sgame_NoRespawningMobs.GetInt() == 1 || ( cast<MobObject@>( @ent ).GetMFlags() & InfoSystem::MobFlags::PermaDead ) != 0 )
+				if ( TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" ) < uint( TheNomad::GameSystem::GameDifficulty::VeryHard )
+					|| TheNomad::Engine::CvarVariableInteger( "sgame_NoRespawningMobs" ) == 1
+					|| ( cast<MobObject@>( @ent ).GetMFlags() & InfoSystem::MobFlags::PermaDead ) != 0 )
 				{
 					return; // no respawning for this one
 				} else {
@@ -330,7 +350,9 @@ namespace TheNomad::SGame {
 				PlayrObject@ obj = cast<PlayrObject@>( @ent );
 				
 				// is hellbreaker available?
-				if ( sgame_HellbreakerOn.GetInt() == 1 && sgame_HellbreakerActive.GetInt() == 0 ) {
+				if ( TheNomad::Engine::CvarVariableInteger( "sgame_HellbreakerOn" ) == 1
+					&& TheNomad::Engine::CvarVariableInteger( "sgame_HellbreakerActive" ) == 0 )
+				{
 					// ensure there's no recursion
 					TheNomad::Engine::CvarSet( "sgame_HellbreakerActive", "1" );
 					return; // startup the hellbreak
