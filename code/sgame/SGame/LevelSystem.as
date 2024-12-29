@@ -35,7 +35,6 @@ namespace TheNomad::SGame {
 
     class LevelSystem : TheNomad::GameSystem::GameObject {
 		LevelSystem() {
-			@m_MapData = MapData();
 		}
 
 		const string& GetName() const {
@@ -70,7 +69,8 @@ namespace TheNomad::SGame {
 				LevelInfoData@ data = LevelInfoData( levelName );
 
 				ConsolePrint( "Loaded level '" + data.m_Name + "'...\n" );
-
+				
+				data.m_MapHandles.Reserve( uint( TheNomad::GameSystem::GameDifficulty::NumDifficulties ) );
 				for ( uint j = 0; j < TheNomad::GameSystem::GameDifficulty::NumDifficulties; j++ ) {
 					if ( !info.get( "MapNameDifficulty_" + j, mapname ) ) {
 						ConsoleWarning( "invalid level map info for \"" + levelName
@@ -193,7 +193,7 @@ namespace TheNomad::SGame {
 				m_RankData.Draw( true, m_nLevelTimer );
 				return;
 			}
-			array<MapCheckpoint>@ checkpoints = @m_MapData.GetCheckpoints();
+			array<MapCheckpoint>@ checkpoints = @MapCheckpoints;
 			for ( uint i = 0; i < checkpoints.Count(); ++i ) {
 				checkpoints[i].Draw();
 			}
@@ -208,7 +208,7 @@ namespace TheNomad::SGame {
 			
 			// check if we are passing it
 			if ( ( @cp = @PlayerPassedCheckpoint( checkpointIndex ) ) !is null ) {
-				m_PassedCheckpointSfx.Play();
+				EntityManager.GetActivePlayer().EmitSound( m_PassedCheckpointSfx, 10.0f, 0xff );
 				cp.Activate( m_nLevelTimer );
 
 				DebugPrint( "Setting checkpoint " + m_CurrentCheckpoint + " to completed.\n" );
@@ -220,7 +220,7 @@ namespace TheNomad::SGame {
 				}
 
 				// done with the level?
-				if ( @cp is @m_MapData.GetCheckpoints()[ m_MapData.GetCheckpoints().Count() - 1 ] ) {
+				if ( @cp is @MapCheckpoints[ MapCheckpoints.Count() - 1 ] ) {
 					CalcTotalLevelTime();
 					m_RankData.CalcTotalLevelStats();
 					GlobalState = GameState::LevelFinish;
@@ -330,8 +330,7 @@ namespace TheNomad::SGame {
 			ConsolePrint( "Loading level \"" + m_LevelInfoDatas[ m_nIndex ].m_MapHandles[ difficulty ].m_Name + "\"...\n" );
 			
 			@m_Current = @m_LevelInfoDatas[ m_nIndex ];
-			m_MapData.Init( m_LevelInfoDatas[ m_nIndex ].m_MapHandles[ difficulty ].m_Name, 1 );
-			m_MapData.Load( m_LevelInfoDatas[ m_nIndex ].m_MapHandles[ difficulty ].mapHandle );
+			LoadMapData( m_LevelInfoDatas[ m_nIndex ].m_MapHandles[ difficulty ].mapHandle );
 
 			switch ( TheNomad::GameSystem::GameDifficulty( difficulty ) ) {
 			case TheNomad::GameSystem::GameDifficulty::Easy: // Recruit
@@ -358,10 +357,10 @@ namespace TheNomad::SGame {
 			// in the case we're in a split-screen co-op situation, then all the players after the
 			// first will be spawned around them
 			if ( !TheNomad::GameSystem::IsLoadGameActive ) {
-				if ( m_MapData.GetSpawns().Count() < 1 || m_MapData.GetCheckpoints().Count() < 1 ) {
+				if ( MapSpawns.Count() < 1 || MapCheckpoints.Count() < 1 ) {
 					ForcePlayerSpawn();
 				} else {
-					const MapSpawn@ spawn = @m_MapData.GetSpawns()[ 0 ];
+					const MapSpawn@ spawn = @MapSpawns[ 0 ];
 					if ( spawn.m_nEntityType != TheNomad::GameSystem::EntityType::Playr ) {
 						ForcePlayerSpawn();
 					}
@@ -395,11 +394,11 @@ namespace TheNomad::SGame {
 				section.SaveInt( "Difficulty", sgame_Difficulty.GetInt() );
 
 				// save checkpoint data
-				if ( m_CurrentCheckpoint < m_MapData.GetCheckpoints().Count() - 1 ) {
+				if ( m_CurrentCheckpoint < MapCheckpoints.Count() - 1 ) {
 					section.SaveUInt( "CurrentCheckpoint", m_CurrentCheckpoint );
 				}
 				for ( uint i = 0; i < m_CurrentCheckpoint; i++ ) {
-					section.SaveUInt64( "CheckpointTime_" + i, m_MapData.GetCheckpoints()[i].m_nTime );
+					section.SaveUInt64( "CheckpointTime_" + i, MapCheckpoints[i].m_nTime );
 				}
 			}
 
@@ -429,7 +428,7 @@ namespace TheNomad::SGame {
 			TheNomad::Engine::CvarSet( "sgame_Difficulty", formatUInt( load.LoadInt( "Difficulty" ) ) );
 			m_CurrentCheckpoint = load.LoadUInt( "CurrentCheckpoint" );
 			for ( uint i = 0; i < m_CurrentCheckpoint; i++ ) {
-				m_MapData.GetCheckpoints()[ i ].m_nTime = load.LoadUInt( "CheckpointTime_" + i );
+				MapCheckpoints[ i ].m_nTime = load.LoadUInt( "CheckpointTime_" + i );
 			}
 
 			if ( !LoadLevelStats( names ) ) {
@@ -454,15 +453,15 @@ namespace TheNomad::SGame {
 
 			ConsoleWarning( "LevelSystem::OnLevelStart: the first spawn in a level must always be the player!\n" );
 			ConsolePrint( "Forcing player spawn...\n" );
-			m_MapData.GetSpawns().InsertAt( 0, spawn );
-			if ( m_MapData.GetCheckpoints().Count() == 0 ) {
+			MapSpawns.InsertAt( 0, spawn );
+			if ( MapCheckpoints.Count() == 0 ) {
 				ConsoleWarning( "LevelSystem::OnLevelStart: at least one checkpoint is required per level\n" );
 				ConsolePrint( "Forcing mandatory checkpoint...\n" );
 
 				MapCheckpoint cp = MapCheckpoint( uvec3( 0, 0, 0 ), uvec2( 0, 0 ), 0 );
-				m_MapData.GetCheckpoints().InsertAt( 0, cp );
+				MapCheckpoints.InsertAt( 0, cp );
 			}
-			m_MapData.GetCheckpoints()[0].m_Spawns.Add( @spawn );
+			MapCheckpoints[0].m_Spawns.Add( @spawn );
 		}
 		
 		//
@@ -569,8 +568,8 @@ namespace TheNomad::SGame {
 		private void CalcTotalLevelTime() {
 			uint total = 0;
 
-			for ( uint i = 0; i < m_MapData.GetCheckpoints().Count(); i++ ) {
-				total += m_MapData.GetCheckpoints()[i].m_nTime;
+			for ( uint i = 0; i < MapCheckpoints.Count(); i++ ) {
+				total += MapCheckpoints[i].m_nTime;
 			}
 
 			m_nLevelTimer = total;
@@ -578,7 +577,7 @@ namespace TheNomad::SGame {
 
 		private MapCheckpoint@ PlayerPassedCheckpoint( uint& out nCheckpointIndex ) {
 			const vec3 origin = EntityManager.GetActivePlayer().GetOrigin();
-			array<MapCheckpoint>@ checkpoints = @m_MapData.GetCheckpoints();
+			array<MapCheckpoint>@ checkpoints = @MapCheckpoints;
 			const uvec3 pos = uvec3( uint( origin.x ), uint( origin.y ), uint( origin.z ) );
 			MapCheckpoint@ cp = null;
 
@@ -631,13 +630,6 @@ namespace TheNomad::SGame {
 			return m_CurrentCheckpoint;
 		}
 
-		const MapData@ GetMapData() const {
-			return @m_MapData;
-		}
-		MapData@ GetMapData() {
-			return @m_MapData;
-		}
-
 		const LevelInfoData@ GetCurrentData() const {
 			return @m_Current;
 		}
@@ -649,7 +641,7 @@ namespace TheNomad::SGame {
 		}
 
 		void CheckNewGamePlus() {
-			if ( m_CurrentCheckpoint < m_MapData.GetCheckpoints().Count() - 1 ) {
+			if ( m_CurrentCheckpoint < MapCheckpoints.Count() - 1 ) {
 				ConsolePrint( "NewGamePlus not active.\n" );
 				return;
 			}
@@ -673,14 +665,10 @@ namespace TheNomad::SGame {
 		
 		private LevelStats m_RankData = LevelStats();
 		private LevelInfoData@ m_Current = null;
-		private MapData@ m_MapData = null;
 	};
 
 	uint GetMapLevel( float elevation ) {
-		uint e;
-
-		e = uint( floor( elevation ) );
-
+//		return uint( floor( elevation ) );
 		return 0;
 	}
 

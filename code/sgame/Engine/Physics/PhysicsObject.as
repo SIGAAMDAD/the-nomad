@@ -68,11 +68,11 @@ namespace TheNomad::Engine::Physics {
             if ( origin.y < 0.0f ) {
                 m_EntityData.SetOrigin( vec3( origin.x, 0.0f, origin.z ) );
 		    }
-			if ( origin.x > TheNomad::SGame::LevelManager.GetMapData().GetWidth() - 1 ) {
-				m_EntityData.SetOrigin( vec3( TheNomad::SGame::LevelManager.GetMapData().GetWidth() - 1, origin.y, origin.z ) );
+			if ( origin.x > TheNomad::SGame::MapWidth - 1 ) {
+				m_EntityData.SetOrigin( vec3( TheNomad::SGame::MapWidth - 1, origin.y, origin.z ) );
 			}
-			if ( origin.y > TheNomad::SGame::LevelManager.GetMapData().GetHeight() - 1 ) {
-				m_EntityData.SetOrigin( vec3( origin.x, TheNomad::SGame::LevelManager.GetMapData().GetHeight() - 1, origin.z ) );
+			if ( origin.y > TheNomad::SGame::MapHeight - 1 ) {
+				m_EntityData.SetOrigin( vec3( origin.x, TheNomad::SGame::MapHeight - 1, origin.z ) );
 			}
 		}
 		
@@ -106,20 +106,16 @@ namespace TheNomad::Engine::Physics {
 			}
 		}
 		
-		void SetWaterLevel() {
-			vec3 point;
-			uint tile;
-			TheNomad::GameSystem::BBox bounds;
-			
+		void SetWaterLevel() {			
 			//
 			// get waterlevel, accounting for ducking
 			//
 			m_nWaterLevel = 0;
 			m_nWaterType = WaterType::None;
 			
-			point = m_EntityData.GetOrigin();
-			bounds = m_EntityData.GetBounds();
-			tile = TheNomad::SGame::LevelManager.GetMapData().GetTile( point, bounds );
+			const vec3 point = m_EntityData.GetOrigin();
+			TheNomad::GameSystem::BBox bounds = m_EntityData.GetBounds();
+			uint64 tile = TheNomad::SGame::GetTile( point, bounds );
 			
 			if ( ( tile & SURFACEPARM_WATER ) != 0 || ( tile & SURFACEPARM_LAVA ) != 0 ) {
 				m_nWaterType = WaterType( tile );
@@ -128,14 +124,14 @@ namespace TheNomad::Engine::Physics {
 				// check the level below us
 				bounds.m_Mins.z--;
 				bounds.m_Maxs.z--;
-				tile = TheNomad::SGame::LevelManager.GetMapData().GetTile( point, bounds );
+				tile = TheNomad::SGame::GetTile( point, bounds );
 				if ( ( tile & SURFACEPARM_WATER ) != 0 || ( tile & SURFACEPARM_LAVA ) != 0 ) {
 					m_nWaterLevel = 2; // swimming now
 					
 					// check the level above us
 					bounds.m_Mins.z += 2;
 					bounds.m_Maxs.z += 2;
-					tile = TheNomad::SGame::LevelManager.GetMapData().GetTile( point, bounds );
+					tile = TheNomad::SGame::GetTile( point, bounds );
 					if ( ( tile & SURFACEPARM_WATER ) != 0 || ( tile & SURFACEPARM_LAVA ) != 0 ) {
 						m_nWaterLevel = 3; // fully submerged
 					}

@@ -152,7 +152,7 @@ namespace TheNomad::SGame {
 			@m_ActiveEnts.m_Prev =
 				@m_ActiveEnts;
 
-			LevelManager.GetMapData().GetCheckpoints()[ LevelManager.GetCheckpointIndex() ].m_bPassed = true;
+			MapCheckpoints[ LevelManager.GetCheckpointIndex() ].m_bPassed = true;
 			
 			for ( uint i = 0; i < numEntities; i++ ) {
 				TheNomad::GameSystem::SaveSystem::LoadSection load( "EntityData_" + i );
@@ -227,15 +227,13 @@ namespace TheNomad::SGame {
 			@m_ActiveEnts.m_Next =
 			@m_ActiveEnts.m_Prev =
 				@m_ActiveEnts;
-			
-			array<MapCheckpoint>@ checkpoints = @LevelManager.GetMapData().GetCheckpoints();
 
-			m_EntityList.Reserve( LevelManager.GetMapData().GetSpawns().Count() + checkpoints.Count() );
+			m_EntityList.Reserve( MapCheckpoints.Count() + MapCheckpoints.Count() );
 
-			checkpoints[ LevelManager.GetCheckpointIndex() ].Activate( 0 );
+			MapCheckpoints[ LevelManager.GetCheckpointIndex() ].Activate( 0 );
 			
-			for ( uint i = 0; i < checkpoints.Count(); i++ ) {
-				checkpoints[i].InitEntity();
+			for ( uint i = 0; i < MapCheckpoints.Count(); i++ ) {
+				MapCheckpoints[i].InitEntity();
 			}
 
 			DebugPrint( formatUInt( m_EntityList.Count() ) + " total entities.\n" );

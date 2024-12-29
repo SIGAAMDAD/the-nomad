@@ -78,7 +78,7 @@ namespace TheNomad::SGame {
 					m_EntityData.SlideStartTime = 0;
 				}
 			} else {
-				const uint64 tile = LevelManager.GetMapData().GetTile( m_EntityData.GetOrigin(), m_EntityData.GetBounds() );
+				const uint64 tile = GetTile( m_EntityData.GetOrigin(), m_EntityData.GetBounds() );
 				if ( accel.x != 0.0f || accel.y != 0.0f ) {
 					// sync the extra particles and sounds with the actual animation
 					const uint lerpTime = m_EntityData.GetLegState().GetAnimation().GetLerpTime();

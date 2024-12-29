@@ -335,7 +335,7 @@ namespace TheNomad::SGame {
 		}
 
 		private void RenderScene( const uvec2& in scenePos, const uvec2& in sceneSize, const vec3& in origin ) {
-			if ( @LevelManager.GetMapData() is null ) {
+			if ( MapTileData.Count() == 0 ) {
 				return;
 			}
 
@@ -345,7 +345,7 @@ namespace TheNomad::SGame {
 			// snap to the player's position
 			// if we're in photomode, ignore
 			Game_CameraWorldPos.x = ( origin.x - 0.812913357f ) * 10.0f;
-			Game_CameraWorldPos.y = ( LevelManager.GetMapData().GetHeight() - ( origin.y + 0.812913357f ) ) * 10.0f;
+			Game_CameraWorldPos.y = ( MapHeight - ( origin.y + 0.812913357f ) ) * 10.0f;
 			Game_PlayerPos = origin;
 
 			TheNomad::Engine::Renderer::ClearScene();
