@@ -376,7 +376,7 @@ namespace TheNomad::SGame {
 			return @m_EntityList;
 		}
 		uint NumEntities() const {
-			return m_EntityList.Count();
+			return m_nActiveEnts;
 		}
 		EntityObject@ GetActiveEnts() {
 			return @m_ActiveEnts;

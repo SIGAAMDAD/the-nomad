@@ -33,9 +33,9 @@ namespace TheNomad::GameSystem {
 
 			const float dx = abs( end.x - m_Start.x );
 			const float dy = abs( end.y - m_Start.y );
-			const float sx = m_Start.x < end.x ? 0.25f : -0.25f;
-			const float sy = m_Start.y < end.y ? 0.25f : -0.25f;
-			float err = ( dx > dy ? dx : -dy ) / 2.0f;
+			const float sx = m_Start.x < end.x ? 0.75f : -0.75f;
+			const float sy = m_Start.y < end.y ? 0.75f : -0.75f;
+			float err = ( dx > dy ? dx : -dy ) * 0.5f;
 			
 			m_Origin = m_Start;
 
@@ -53,7 +53,7 @@ namespace TheNomad::GameSystem {
 					return;
 				}
 
-				const TheNomad::GameSystem::DirType rayDir = InverseDirs[ Util::Angle2Dir( m_nAngle ) ];
+				const TheNomad::GameSystem::DirType rayDir = Util::InverseDir( Util::Angle2Dir( m_nAngle ) );
 				if ( TheNomad::GameSystem::CheckWallHit( m_Origin, rayDir ) ) {
 					m_nEntityNumber = ENTITYNUM_WALL;
 					return;
@@ -66,15 +66,15 @@ namespace TheNomad::GameSystem {
 				}
 				if ( e2 < dy ) {
 					err += dx;
-					m_Origin.x += sy;
+					m_Origin.y += sy;
 				}
 			}
 		}
 
 		vec3 m_Start = vec3( 0.0f );
 		vec3 m_Origin = vec3( 0.0f );
+		uint m_nEntityNumber = ENTITYNUM_INVALID;
 		uint m_nOwner = ENTITYNUM_INVALID;
-	    uint m_nEntityNumber = 0;
 		float m_nLength = 0.0f;
 		float m_nAngle = 0.0f;
 //	    uint m_Flags = 0; // unused for now

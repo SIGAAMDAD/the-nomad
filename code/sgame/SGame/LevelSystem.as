@@ -657,8 +657,7 @@ namespace TheNomad::SGame {
 	GameState GlobalState;
 
 	LevelSystem@ LevelManager = null;
-
-	TheNomad::Engine::SoundSystem::SoundEffect selectedSfx;
+	
 	string[] SP_DIFF_STRINGS( TheNomad::GameSystem::GameDifficulty::NumDifficulties );
 	string[] sgame_RankStrings( TheNomad::SGame::LevelRank::NumRanks );
 	vec4[] sgame_RankStringColors( TheNomad::SGame::LevelRank::NumRanks );

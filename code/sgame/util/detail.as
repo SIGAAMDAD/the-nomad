@@ -722,4 +722,28 @@ namespace TheNomad::Util {
 		}
 		return TheNomad::GameSystem::DirType::North;
 	}
+
+	TheNomad::GameSystem::DirType InverseDir( TheNomad::GameSystem::DirType nDir ) {
+		switch ( nDir ) {
+		case TheNomad::GameSystem::DirType::North:
+			return TheNomad::GameSystem::DirType::South;
+		case TheNomad::GameSystem::DirType::NorthEast:
+			return TheNomad::GameSystem::DirType::SouthWest;
+		case TheNomad::GameSystem::DirType::East:
+			return TheNomad::GameSystem::DirType::West;
+		case TheNomad::GameSystem::DirType::SouthEast:
+			return TheNomad::GameSystem::DirType::NorthWest;
+		case TheNomad::GameSystem::DirType::South:
+			return TheNomad::GameSystem::DirType::North;
+		case TheNomad::GameSystem::DirType::SouthWest:
+			return TheNomad::GameSystem::DirType::NorthEast;
+		case TheNomad::GameSystem::DirType::West:
+			return TheNomad::GameSystem::DirType::East;
+		case TheNomad::GameSystem::DirType::NorthWest:
+			return TheNomad::GameSystem::DirType::SouthEast;
+		default:
+			break;
+		};
+		return TheNomad::GameSystem::DirType::Inside;
+	}
 };

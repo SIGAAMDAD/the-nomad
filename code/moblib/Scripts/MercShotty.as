@@ -63,7 +63,7 @@ namespace moblib::Script {
 			m_EntityData.SetDirection( TheNomad::GameSystem::DirType::South );
 			if ( m_Sensor.CheckSight() ) {
 				m_EntityData.EmitSound( TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/mobs/barks/patrol/target_spotted" ), 10.0f, 0xff );
-				m_EntityData.SetState( @m_FightState );
+//				m_EntityData.SetState( @m_FightState );
 			}
 			else if ( m_Sensor.CheckSound() ) {
 				/*

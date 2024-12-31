@@ -263,7 +263,7 @@ namespace TheNomad::SGame {
 			ImGui::EndTable();
 			
 			if ( ImGui::Button( "DONE" ) ) {
-				selectedSfx.Play();
+				TheNomad::Engine::SoundSystem::SoundEffect( "event:/sfx/menu/select_item" ).Play();
 				GlobalState = GameState::EndOfLevel;
 			}
 

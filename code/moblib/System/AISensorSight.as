@@ -95,8 +95,6 @@ namespace moblib {
 			if ( @ent is @activeEnts ) {
 				return false;
 			}
-
-			DebugPrint( "Target in range of sight.\n" );
 			
 			//
 			// make sure that the line of sight isn't obstructed
@@ -105,25 +103,20 @@ namespace moblib {
 
 			ray.m_nLength = info.sightRange;
 			ray.m_Start = origin;
-			ray.m_nEntityNumber = ENTITYNUM_INVALID;
-			ray.m_nAngle = mob.GetAngle();
+			ray.m_nAngle = TheNomad::Util::Dir2Angle( mob.GetDirection() );
 			ray.m_nOwner = mob.GetEntityNum();
 
 			ray.Cast( ent.GetOrigin() );
-
-			if ( ray.m_nEntityNumber == mob.GetEntityNum() ) {
-				return false;
-			}
 			
 			if ( ray.m_nEntityNumber == ENTITYNUM_INVALID || ray.m_nEntityNumber == ENTITYNUM_WALL ) {
-				DebugPrint( "Target obscured.\n" );
 				return false;
-			} else if ( ray.m_nEntityNumber >= TheNomad::SGame::EntityManager.NumEntities() ) {
+			}
+			else if ( ray.m_nEntityNumber >= TheNomad::SGame::EntityManager.NumEntities() ) {
 				GameError( "MobObject::SightCheck: ray entity number is out of range (" + ray.m_nEntityNumber + ")"  );
 			}
-			
-			mob.SetTarget( @TheNomad::SGame::EntityManager.GetEntityForNum( ray.m_nEntityNumber ) );
 
+//			mob.SetTarget( @TheNomad::SGame::EntityManager.GetEntityForNum( ray.m_nEntityNumber ) );
+			
 			return true;
 		}
 	};
