@@ -335,17 +335,14 @@ namespace TheNomad::SGame {
 		}
 
 		private void RenderScene( const uvec2& in scenePos, const uvec2& in sceneSize, const vec3& in origin ) {
-			if ( MapTileData.Count() == 0 ) {
-				return;
-			}
-
 			// technically no z coordinate because it's 2D
 			Game_CameraZoom = TheNomad::Engine::CvarVariableInteger( "sgame_CameraZoom" ) * 0.001f;
 
 			// snap to the player's position
 			// if we're in photomode, ignore
-			Game_CameraWorldPos.x = ( origin.x - 0.812913357f ) * 10.0f;
-			Game_CameraWorldPos.y = ( MapHeight - ( origin.y + 0.812913357f ) ) * 10.0f;
+			//0.812913357f
+			Game_CameraWorldPos.x = ( origin.x - log( MapWidth * 0.01f ) ) * 10.0f;
+			Game_CameraWorldPos.y = ( MapHeight - ( origin.y - log( MapHeight * 0.01f ) ) ) * 10.0f;
 			Game_PlayerPos = origin;
 
 			TheNomad::Engine::Renderer::ClearScene();

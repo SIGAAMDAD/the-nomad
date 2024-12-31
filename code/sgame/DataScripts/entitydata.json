@@ -1,10 +1,10 @@
 {
 	"MobData": [
-		{ "Name": "mob_merc_gatling", "Id": 0 },
-		{ "Name": "mob_merc_shotgunner", "Id": 1 },
-		{ "Name": "mob_zurgut_grunt", "Id": 2 },
-		{ "Name": "mob_zurgut_hulk", "Id": 3 },
-		{ "Name": "mob_death", "Id": 100 }
+		{ "Id": 0, "Name": "mob_merc_gatling" },
+		{ "Id": 1, "Name": "mob_merc_shotgunner" },
+		{ "Id": 2, "Name": "mob_zurgut_grunt" },
+		{ "Id": 3, "Name": "mob_zurgut_hulk" },
+		{ "Id": 100, "Name": "mob_death" }
 	],
 	"ItemData": [
 		{ "Id": 0, "Name": "item_stimpack" },
@@ -13,15 +13,17 @@
 		{ "Id": 3, "Name": "item_grenadepack" },
 		{ "Id": 4, "Name": "item_rocketpack" },
 		{ "Id": 5, "Name": "powerup_a" },
-		{ "Id": 6, "Name": "powerup_b" }
+		{ "Id": 6, "Name": "powerup_b" },
+		{ "Id": 7, "Name": "scenery_tent" },
+		{ "Id": 8, "Name": "scenery_outcrop" }
 	],
 	"AmmoData": [
-		{ "Id": 7, "Name": "ammo_rifle" },
-		{ "Id": 8, "Name": "ammo_pistol" },
-		{ "Id": 9, "Name": "ammo_shells" },
-		{ "Id": 10, "Name": "ammo_asturion_special" },
-		{ "Id": 11, "Name": "ammo_secret_dakka_dakka_dakka" },
-		{ "Id": 12, "Name": "ammo_secret_bullet_of_45" }
+		{ "Id": 9, "Name": "ammo_rifle" },
+		{ "Id": 10, "Name": "ammo_pistol" },
+		{ "Id": 11, "Name": "ammo_shells" },
+		{ "Id": 12, "Name": "ammo_asturion_special" },
+		{ "Id": 13, "Name": "ammo_secret_dakka_dakka_dakka" },
+		{ "Id": 14, "Name": "ammo_secret_bullet_of_45" }
 	],
 	"WeaponData": [
 		{ "Id": 0, "Name": "sidearm_murstar" },

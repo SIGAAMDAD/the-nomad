@@ -46,39 +46,14 @@ skins/raio/legs
 	}
 }
 
-sprites/mobs/shotty/base
+sprites/mobs/mercenary/shotgunner
 {
 	nomipmaps
 	nopicmip
 	{
 		texFilter nearest
-		map textures/sprites/mobs/shotty/base.dds
+		map textures/sprites/mobs/mercenary/spritesheet.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-		stage diffuseMap
-	}
-}
-
-sprites/mobs/shotty/wounded
-{
-	nomipmaps
-	nopicmip
-	{
-		texFilter nearest
-		map textures/sprites/mobs/shotty/wounded.dds
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-		stage diffuseMap
-	}
-}
-
-sprites/mobs/shotty/fatal
-{
-	nomipmaps
-	nopicmip
-	{
-		texFilter nearest
-		map textures/sprites/mobs/shotty/fatal.dds
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-		stage diffuseMap
 	}
 }
 

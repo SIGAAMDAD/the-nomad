@@ -236,9 +236,9 @@ namespace TheNomad::SGame {
 				return;
 			}
 			
-			m_Link.m_Bounds.m_nWidth = m_WeaponInfo.size.x;
-			m_Link.m_Bounds.m_nHeight = m_WeaponInfo.size.y;
-			m_Link.m_Bounds.MakeBounds( m_Link.m_Origin );
+			m_Bounds.m_nWidth = m_WeaponInfo.size.x;
+			m_Bounds.m_nHeight = m_WeaponInfo.size.y;
+			m_Bounds.MakeBounds( m_Link.m_Origin );
 
 			if ( m_State.GetBaseNum() == StateNum::ST_WEAPON_USE && m_State.Done( m_nTicker ) ) {
 				if ( m_nBulletsUsed >= m_WeaponInfo.magSize ) {
@@ -251,10 +251,6 @@ namespace TheNomad::SGame {
 			}
 		}
 		void Draw() override {
-			if ( Util::Distance( EntityManager.GetActivePlayer().GetOrigin(), m_Link.m_Origin ) > 16.0f || @m_Owner !is null ) {
-				return;
-			}
-			
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 			
 			refEntity.sheetNum = -1;
@@ -270,9 +266,9 @@ namespace TheNomad::SGame {
 			}
 
 			m_Link.m_Origin = origin;
-			m_Link.m_Bounds.m_nWidth = m_WeaponInfo.size.x;
-			m_Link.m_Bounds.m_nHeight = m_WeaponInfo.size.y;
-			m_Link.m_Bounds.MakeBounds( origin );
+			m_Bounds.m_nWidth = m_WeaponInfo.size.x;
+			m_Bounds.m_nHeight = m_WeaponInfo.size.y;
+			m_Bounds.MakeBounds( origin );
 
 			itemlib::AllocScript( @this );
 		}

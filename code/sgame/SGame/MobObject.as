@@ -55,12 +55,16 @@ namespace TheNomad::SGame {
 			if ( @m_Info is null ) {
 				GameError( "MobObject::Spawn: bad MobType " + id + "! Info was null!" );
 			}
+
+			m_Link.m_Origin = origin;
 			
 			m_Name = m_Info.name;
 			m_nHealth = m_Info.health;
 			m_MFlags = m_Info.mobFlags;
 			@m_State = @StateManager.GetStateForNum( m_Info.type + StateNum::ST_MOB_IDLE );
 			moblib::AllocScript( @this );
+
+			m_ScriptData.OnSpawn();
 		}
 		
 		void Damage( EntityObject@ source, float nAmount ) {
@@ -96,8 +100,11 @@ namespace TheNomad::SGame {
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 
 			refEntity.origin = m_Link.m_Origin;
+			refEntity.origin.y -= m_Info.size.y * 0.25f;
+
 			refEntity.scale = m_Info.size;
 			refEntity.sheetNum = m_Info.spriteSheet.GetShader();
+			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( @m_Info.spriteSheet, @m_State );
 
 			refEntity.Draw();
 		}
@@ -109,6 +116,7 @@ namespace TheNomad::SGame {
 			case StateNum::ST_MOB_FIGHT_MELEE:
 			case StateNum::ST_MOB_FIGHT_MISSILE:
 			case StateNum::ST_MOB_FIGHT:
+				m_ScriptData.FightThink();
 				break;
 			case StateNum::ST_MOB_CHASE:
 				break;

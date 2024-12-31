@@ -7,13 +7,12 @@ namespace TheNomad::SGame {
 		}
 
 		void SetOwner( EntityObject@ ent ) {
-			@m_Owner = @ent;
-		}
-		EntityObject@ GetOwner() {
-			return @m_Owner;
-		}
+			if ( @ent is null ) {
+				DebugPrint( "Clearing ownership of item '" + m_Link.m_nEntityNumber + "'\n" );
+				@m_Owner = null;
+				return;
+			}
 
-		void Pickup( EntityObject@ ent ) {
 			switch ( ent.GetType() ) {
 			case GameSystem::EntityType::Item:
 			case GameSystem::EntityType::Weapon:
@@ -23,13 +22,11 @@ namespace TheNomad::SGame {
 			};
 
 			@m_Owner = @ent;
-			DebugPrint( "Item " + m_Link.m_nEntityNumber + " now owned by " + ent.GetEntityNum() + ".\n" );
 
-			// TODO: in the future, mobs will be able to pick up items just like the player
-			EmitSound( TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/iteraction/pickup_item" ), 2.5f, 0xff );
+			DebugPrint( "Item " + m_Link.m_nEntityNumber + " now owned by " + ent.GetEntityNum() + ".\n" );
 		}
-		void Use() {
-			EmitSound( m_Info.useSfx, 2.5f, 0xff );
+		EntityObject@ GetOwner() {
+			return @m_Owner;
 		}
 
 		void Save( const TheNomad::GameSystem::SaveSystem::SaveSection& in section ) const {
@@ -59,17 +56,20 @@ namespace TheNomad::SGame {
 			}
 
 			@m_State = @StateManager.GetNullState();
+			m_Bounds.MakeBounds( m_Link.m_Origin );
 		}
 		void Draw() override {
-			if ( @m_Owner !is null || Util::Distance( EntityManager.GetActivePlayer().GetOrigin(), m_Link.m_Origin ) > 16.0f ) {
+			if ( @m_Owner !is null ) {
 				return;
 			}
 
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 
+			refEntity.origin = m_Link.m_Origin;
+			refEntity.origin.y -= m_Info.size.y * 0.25f;
+
 			refEntity.sheetNum = -1;
 			refEntity.spriteId = m_Info.iconShader;
-			refEntity.origin = m_Link.m_Origin;
 			refEntity.scale = m_Info.size;
 			refEntity.Draw();
 		}

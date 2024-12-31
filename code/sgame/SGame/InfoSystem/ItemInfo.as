@@ -5,31 +5,6 @@ namespace TheNomad::SGame::InfoSystem {
 		ItemInfo() {
 		}
 
-		bool LoadSoundsBlock( json@ json ) {
-			string str;
-
-			if ( !json.get( "Sounds.PickupSfx", str ) ) {
-				ConsoleWarning( "invalid item info, missing variable 'Sounds.PickupSfx' in \"" + name + "\"\n" );
-				return false;
-			} else {
-				pickupSfx = TheNomad::Engine::SoundSystem::RegisterSfx( string( json[ "Sounds.PickupSfx" ] ) );
-			}
-			if ( !json.get( "Sounds.UseSfx", str ) ) {
-				ConsoleWarning( "invalid item info, missing variable 'Sounds.UseSfx' in \"" + name + "\"\n" );
-				return false;
-			} else {
-				useSfx = TheNomad::Engine::SoundSystem::RegisterSfx( string( json[ "Sounds.UseSfx" ] ) );
-			}
-			if ( !json.get( "Sounds.EquipSfx", str ) ) {
-				ConsoleWarning( "invalid item info, missing variable 'Sounds.EquipSfx' in \"" + name + "\"\n" );
-				return false;
-			} else {
-				equipSfx = TheNomad::Engine::SoundSystem::RegisterSfx( string( json[ "Sounds.EquipSfx" ] ) );
-			}
-
-			return true;
-		}
-
 		bool LoadStatsBlock( json@ json ) {
 			if ( !json.get( "Stats.Width", size.x ) ) {
 				ConsoleWarning( "invalid item info, missing variable 'Stats.Width' in \"" + name + "\"\n" );
@@ -65,9 +40,6 @@ namespace TheNomad::SGame::InfoSystem {
 				}
 			}
 			
-			if ( !LoadSoundsBlock( @json ) ) {
-				return false;
-			}
 			if ( !LoadStatsBlock( @json ) ) {
 				return false;
 			}

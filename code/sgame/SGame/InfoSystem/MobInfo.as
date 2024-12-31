@@ -111,7 +111,7 @@ namespace TheNomad::SGame::InfoSystem {
 				ConsoleWarning( "invalid mob info, missing variable 'Detection.SightRange' in \"" + name + "\"\n" );
 				return false;
 			}
-			sightRadius = float( json[ "Detection.SightRange" ] );
+			sightRange = float( json[ "Detection.SightRange" ] );
 
 			if ( !json.get( "Detection.SightRadius", sightRadius ) ) {
 				ConsoleWarning( "invalid mob info, missing variable 'Detection.SightRadius' in \"" + name + "\"\n" );

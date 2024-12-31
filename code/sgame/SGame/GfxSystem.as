@@ -191,6 +191,8 @@ namespace TheNomad::SGame {
 			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 ) {
 				return;
 			}
+
+			AllocLocalEntity().Spawn( origin, vec3( 0.0f ), -1, m_hBulletHoleShader, vec2( 1.0f ), false );
 		}
 
 		void AddDustPuff( const vec3& in origin, int facing ) {
@@ -231,6 +233,7 @@ namespace TheNomad::SGame {
 		void CacheGfx() {
 			// NOTE: don't mess with the load order
 			m_hDustScreenShader = TheNomad::Engine::Renderer::RegisterShader( "gfx/env/dustScreen" );
+			m_hBulletHoleShader = TheNomad::Engine::Renderer::RegisterShader( "gfx/env/bullet_hole" );
 			@m_SmokeTrail = @TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/smokeTrail", 750, 1200, 150, 150 );
 			@m_SmokePuff = @TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/smokePuff", 576, 64, 64, 64 );
 //			@m_FlameBall = @TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/flameBall", 288, 192, 96, 48 );
@@ -250,6 +253,7 @@ namespace TheNomad::SGame {
 //		private SpriteSheet@ m_FlameBall = null;
 		private int m_hWaterWakeShader = FS_INVALID_HANDLE;
 		private int m_hDustScreenShader = FS_INVALID_HANDLE;
+		private int m_hBulletHoleShader = FS_INVALID_HANDLE;
 	};
 	
 	GfxSystem@ GfxManager = null;

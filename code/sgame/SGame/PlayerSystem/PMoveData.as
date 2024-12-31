@@ -265,7 +265,8 @@ namespace TheNomad::SGame {
 			SetMovementDir();
 
 			TheNomad::Engine::UserInterface::SetActiveFont( TheNomad::Engine::UserInterface::Font_RobotoMono );
-
+			
+			/*
 			ImGui::Begin( "Debug Player Movement", null, ImGuiWindowFlags::AlwaysAutoResize );
 			ImGui::SetWindowPos( vec2( 16, 128 ) );
 			ImGui::Text( "Origin: [ " + m_EntityData.GetOrigin().x + ", " + m_EntityData.GetOrigin().y + ", " + m_EntityData.GetOrigin().z + " ]" );
@@ -299,6 +300,7 @@ namespace TheNomad::SGame {
 			ImGui::Text( "  Frame: " + m_EntityData.GetLegState().GetAnimation().GetFrame() );
 			ImGui::Text( "  NumFrames: " + m_EntityData.GetLegState().GetAnimation().NumFrames() );
 			ImGui::End();
+			*/
 
 			m_EntityData.GetPhysicsObject().OnRunTic();
 		}

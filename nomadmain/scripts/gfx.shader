@@ -514,6 +514,42 @@ gfx/splatter
 }
 
 //
+// environmental artifacts
+//
+gfx/env/hanging_body
+{
+	nopicmip
+	nomipmaps
+	{
+		map gfx/env/gore1.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+	}
+}
+
+gfx/env/impaled_body
+{
+	nopicmip
+	nomipmaps
+	{
+		map gfx/env/gore0.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+	}
+}
+
+gfx/env/tent
+{
+	nopicmip
+	nomipmaps
+	{
+		map gfx/env/tent.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+	}
+}
+
+//
 // wall marks
 //
 gfx/bloodSplatter0
@@ -521,6 +557,18 @@ gfx/bloodSplatter0
 	nopicmip
 	{
 		clampmap gfx/env/blood_spurt.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+		alphaGen vertex
+	}
+}
+
+gfx/env/bullet_hole
+{
+	nopicmip
+	nomipmaps
+	{
+		clampmap gfx/env/bullet_hole.png
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		rgbGen vertex
 		alphaGen vertex

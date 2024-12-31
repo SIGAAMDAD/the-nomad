@@ -224,11 +224,9 @@ namespace TheNomad::SGame {
 			data.SetOwner( @this );
 
 			switch ( item.GetType() ) {
-			case TheNomad::GameSystem::EntityType::Item: {
+			case TheNomad::GameSystem::EntityType::Item:
 				data.GetScript().OnEquip( @this );
-				EntityManager.RemoveEntity( @item );
-				@item = null;
-				break; }
+				break;
 			case TheNomad::GameSystem::EntityType::Weapon: {
 				if ( TheNomad::Engine::CvarVariableInteger( "sgame_EquipWeaponOnPickup" ) == 1 ) {
 
