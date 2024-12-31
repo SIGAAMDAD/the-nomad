@@ -126,6 +126,10 @@ namespace TheNomad::SGame {
 		void Draw() {
 			m_Shake.OnRunTic();
 
+			if ( @m_Tutorial !is null ) {
+				m_Tutorial.Draw();
+			}
+
 			if ( ( m_Parent.Flags & PF_DASHING ) != 0 )	{
 				m_DashScreen.Draw();
 			}
@@ -173,8 +177,12 @@ namespace TheNomad::SGame {
 			}
 			m_nHealthBarEndTime = TheNomad::GameSystem::GameTic + 5000;
 		}
+		void SetTutorial( itemlib::Script::Tutorial@ popup ) {
+			@m_Tutorial = @popup;
+		}
 		
 		private PlayrObject@ m_Parent = null;
+		private itemlib::Script::Tutorial@ m_Tutorial = null;
 		
 		// cached ui values
 		private float m_nStatusBarWidth = 0.0f;

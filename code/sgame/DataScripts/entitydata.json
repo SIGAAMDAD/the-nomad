@@ -15,15 +15,21 @@
 		{ "Id": 5, "Name": "powerup_a" },
 		{ "Id": 6, "Name": "powerup_b" },
 		{ "Id": 7, "Name": "scenery_tent" },
-		{ "Id": 8, "Name": "scenery_outcrop" }
+		{ "Id": 8, "Name": "scenery_outcrop" },
+		{ "Id": 9, "Name": "tutorial_dashing" },
+		{ "Id": 10, "Name": "tutorial_jumping" },
+		{ "Id": 11, "Name": "tutorial_sliding" },
+		{ "Id": 12, "Name": "tutorial_checkpoints" },
+		{ "Id": 13, "Name": "tutorial_item_pickups" },
+		{ "Id": 14, "Name": "tutorial_parrying" }
 	],
 	"AmmoData": [
-		{ "Id": 9, "Name": "ammo_rifle" },
-		{ "Id": 10, "Name": "ammo_pistol" },
-		{ "Id": 11, "Name": "ammo_shells" },
-		{ "Id": 12, "Name": "ammo_asturion_special" },
-		{ "Id": 13, "Name": "ammo_secret_dakka_dakka_dakka" },
-		{ "Id": 14, "Name": "ammo_secret_bullet_of_45" }
+		{ "Id": 15, "Name": "ammo_rifle" },
+		{ "Id": 16, "Name": "ammo_pistol" },
+		{ "Id": 17, "Name": "ammo_shells" },
+		{ "Id": 18, "Name": "ammo_asturion_special" },
+		{ "Id": 19, "Name": "ammo_secret_dakka_dakka_dakka" },
+		{ "Id": 20, "Name": "ammo_secret_bullet_of_45" }
 	],
 	"WeaponData": [
 		{ "Id": 0, "Name": "sidearm_murstar" },

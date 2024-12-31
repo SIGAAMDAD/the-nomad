@@ -6,13 +6,23 @@ namespace TheNomad::SGame {
 			@m_ScriptData = null;
 		}
 
+		bool CanBeOwned() const {
+			return ( m_Info.flags & uint( InfoSystem::ItemFlags::NoOwner ) ) == 0;
+		}
+
 		void SetOwner( EntityObject@ ent ) {
+			m_ScriptData.OnEquip( @ent );
+
+			if ( !CanBeOwned() ) {
+				return;
+			}
 			if ( @ent is null ) {
 				DebugPrint( "Clearing ownership of item '" + m_Link.m_nEntityNumber + "'\n" );
 				@m_Owner = null;
 				return;
 			}
 
+			// make sure nothing weird is going on
 			switch ( ent.GetType() ) {
 			case GameSystem::EntityType::Item:
 			case GameSystem::EntityType::Weapon:
@@ -91,6 +101,8 @@ namespace TheNomad::SGame {
 			m_Name = m_Info.name;
 
 			itemlib::AllocScript( @this );
+			
+			m_ScriptData.OnSpawn();
 		}
 
 		itemlib::ItemScript@ GetScript() {

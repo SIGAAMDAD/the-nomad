@@ -48,6 +48,10 @@ namespace TheNomad::SGame::InfoSystem {
 		NumWeaponTypes
 	};
 
+	enum ItemFlags {
+		NoOwner		= 0x0001,
+	};
+
 	enum MobFlags {
 		Deaf		= 0x0001,
 		Blind		= 0x0002,

@@ -225,7 +225,6 @@ namespace TheNomad::SGame {
 
 			switch ( item.GetType() ) {
 			case TheNomad::GameSystem::EntityType::Item:
-				data.GetScript().OnEquip( @this );
 				break;
 			case TheNomad::GameSystem::EntityType::Weapon: {
 				if ( TheNomad::Engine::CvarVariableInteger( "sgame_EquipWeaponOnPickup" ) == 1 ) {

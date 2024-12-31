@@ -20,6 +20,20 @@ namespace TheNomad::SGame::InfoSystem {
 
 			return true;
 		}
+
+		void LoadFlags( json@ json ) {
+			array<json@> flagList;
+
+			if ( !json.get( "Flags", flagList ) ) {
+				return; // not required
+			}
+			for ( uint i = 0; i < flagList.Count(); ++i ) {
+				const string data = string( flagList[i] );
+				if ( data == "NoOwner" ) {
+					flags |= uint( ItemFlags::NoOwner );
+				}
+			}
+		}
 		
 		bool Load( json@ json ) {
 			string str;
@@ -51,14 +65,18 @@ namespace TheNomad::SGame::InfoSystem {
 				iconShader = TheNomad::Engine::Renderer::RegisterShader( string( json[ "RenderData.Icon" ] ) );
 			}
 
+			// load optional flags
+			LoadFlags( @json );
+
 			return true;
 		}
 
 		string name;
+		vec2 size = vec2( 0.0f );
+		uint flags = 0;
 		int iconShader = FS_INVALID_HANDLE;
 		uint type = 0;
 		uint maxStackSize = 0;
-		vec2 size = vec2( 0.0f );
 
 		TheNomad::Engine::SoundSystem::SoundEffect pickupSfx;
 		TheNomad::Engine::SoundSystem::SoundEffect useSfx;

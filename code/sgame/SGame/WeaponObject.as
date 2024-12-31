@@ -270,7 +270,7 @@ namespace TheNomad::SGame {
 			m_Bounds.m_nHeight = m_WeaponInfo.size.y;
 			m_Bounds.MakeBounds( origin );
 
-			itemlib::AllocScript( @this );
+//			itemlib::AllocScript( @this );
 		}
 		
 		private InfoSystem::AmmoInfo@ m_AmmoInfo = null;
