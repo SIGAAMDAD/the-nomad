@@ -1,0 +1,86 @@
+{
+	"ItemInfo": [
+		{
+			"Type": "Powerup",
+			"Id": "powerup_a",
+			"Name": "Trigger Happy",
+			"RenderData.Icon": "icons/iconpw_pewpew",
+			"Stats.Width": 0.9,
+			"Stats.Height": 0.9
+		},
+		{
+			"Type": "Powerup",
+			"Id": "powerup_b",
+			"Name": "Endless Anger",
+			"RenderData.Icon": "icons/iconpw_angry",
+			"Stats.Width": 0.9,
+			"Stats.Height": 0.9
+		},
+		{
+			"Type": "Consumable",
+			"Id": "item_stimpack",
+			"Name": "Stim Pack",
+			"RenderData.Icon": "icons/icon_healthpack",
+			"Stats.Width": 0.9,
+			"Stats.Height": 0.9,
+			"Flags": [
+				"NoOwner"
+			]
+		},
+		{
+			"Type": "Scenery",
+			"Id": "scenery_tent",
+			"Name": "Tent",
+			"RenderData.Icon": "world/sprites/tent",
+			"Stats.Width": 2.75,
+			"Stats.Height": 2.75,
+			"Flags": [
+				"NoOwner"
+			]
+		},
+		{
+			"Type": "Tutorial",
+			"Id": "tutorial_checkpoints",
+			"Name": "TutorialCheckpoints",
+			"RenderData.Icon": "world/sprites/signpost",
+			"Stats.Width": 1.25,
+			"Stats.Height": 1.5,
+			"Flags": [
+				"NoOwner"
+			]
+		},
+		{
+			"Type": "Tutorial",
+			"Id": "tutorial_parrying",
+			"Name": "TutorialParrying",
+			"RenderData.Icon": "world/sprites/signpost",
+			"Stats.Width": 1.25,
+			"Stats.Height": 1.5,
+			"Flags": [
+				"NoOwner"
+			]
+		},
+		{
+			"Type": "Tutorial",
+			"Id": "tutorial_item_pickups",
+			"Name": "TutorialItemPickups",
+			"RenderData.Icon": "world/sprites/signpost",
+			"Stats.Width": 1.25,
+			"Stats.Height": 1.5,
+			"Flags": [
+				"NoOwner"
+			]
+		},
+		{
+			"Type": "Tutorial",
+			"Id": "tutorial_dashing",
+			"Name": "TutorialDashing",
+			"RenderData.Icon": "world/sprites/signpost",
+			"Stats.Width": 1.25,
+			"Stats.Height": 1.5,
+			"Flags": [
+				"NoOwner"
+			]
+		}
+	]
+}

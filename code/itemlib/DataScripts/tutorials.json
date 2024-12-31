@@ -1,0 +1,28 @@
+{
+	"TutorialData": [
+		{
+			"Id": "TutorialCheckpoints",
+			"Type": "tooltip",
+			"Shader": "gfx/checkpoint",
+			"Text": " step onto these to save your progress"
+		},
+		{
+			"Id": "TutorialParrying",
+			"Type": "binding",
+			"Shader": "+melee",
+			"Text": " to melee, you can parry anything that flashes blue, but not if it flashes red"
+		},
+		{
+			"Id": "TutorialItemPickups",
+			"Type": "tooltip",
+			"Shader": "white",
+			"Text": " step over items to pick them up automatically"
+		},
+		{
+			"Id": "TutorialDashing",
+			"Type": "tooltip",
+			"Shader": "+dash",
+			"Text": " to dash, grants IFrames for 1/2 a second"
+		}
+	]
+}

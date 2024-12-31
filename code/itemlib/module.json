@@ -1,0 +1,24 @@
+{
+	"Name": "itemlib",
+	"Id": "itemlib",
+	"Description": "Item management system kept separate from the main VM for extra moddability",
+	"DependedModules": [
+		"nomadmain"
+	],
+	"IsDynamic": false,
+	"IncludePaths": [
+		"gamedata/modules/itemlib/",
+        "gamedata/modules/nomadmain/"
+	],
+	"SubModules": [
+		"itemlib.as"
+	],
+	"Version": {
+		"GameVersionMajor": 1,
+		"GameVersionUpdate": 1,
+		"GameVersionPatch": 0,
+		"VersionMajor": 1,
+		"VersionUpdate": 0,
+		"VersionPatch": 0
+	}
+}

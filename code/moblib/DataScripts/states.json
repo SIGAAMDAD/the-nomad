@@ -1,0 +1,46 @@
+{
+	"StateInfo": [
+		{
+			"Id": "mob_merc_shotgunner_idle",
+			"Tics": 1500,
+			"BaseNum": "ST_MOB_IDLE",
+			"Entity": "mob_merc_shotgunner",
+			"NextState": "this",
+			"SpriteOffset": [ 0, 0 ],
+			"Animation": {
+				"TicRate": 150,
+				"FlipFlop": false,
+				"Frames": 3,
+				"Reverse": false
+			}
+		},
+		{
+			"Id": "mob_merc_shotgunner_chase",
+			"Tics": 1500,
+			"BaseNum": "ST_MOB_CHASE",
+			"Entity": "mob_merc_shotgunner",
+			"NextState": "this",
+			"SpriteOffset": [ 0, 0 ],
+			"Animation": {
+				"TicRate": 150,
+				"FlipFlop": false,
+				"Frames": 2,
+				"Reverse": false
+			}
+		},
+		{
+			"Id": "mob_merc_shotgunner_melee",
+			"Tics": 1000,
+			"BaseNum": "ST_MOB_FIGHT_MELEE",
+			"Entity": "mob_merc_shotgunner",
+			"NextState": "mob_merc_shotgunner_idle",
+			"SpriteOffset": [ 0, 0 ],
+			"Animation": {
+				"TicRate": 0,
+				"FlipFlop": false,
+				"Frames": 0,
+				"Reverse": false
+			}
+		}
+	]
+}

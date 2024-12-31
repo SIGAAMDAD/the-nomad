@@ -1,0 +1,46 @@
+{
+	"MobInfo": [
+		{
+			"Name": "Zurgut Grunt",
+			"Id": "mob_grunt",
+			"ScriptName": "ZurgutGrunt",
+			"Stats.Health": 24,
+			"Stats.ArmorType": "None",
+			"Stats.Width": 1.2,
+			"Stats.Height": 0.75,
+			"Stats.Speed.x": 1.0,
+			"Stats.Speed.y": 1.0,
+			"Stats.Speed.z": 1.0,
+			"Detection.SoundRange": 4.50,
+			"Detection.SoundTolerance": 10.5,
+			"Detection.SightRange": 5.90,
+			"Detection.SightRadius": 4.0,
+			"RenderData.SheetWidth": 312,
+			"RenderData.SheetHeight": 300,
+			"RenderData.SpriteWidth": 52,
+			"RenderData.SpriteHeight": 60,
+			"RenderData.SpriteSheet": "sprites/mobs/zurgut/grunt"
+		},
+		{
+			"Name": "Mercenary Shotgunner",
+			"Id": "mob_merc_shotgunner",
+			"ScriptName": "MercShotty",
+			"Stats.Health": 50,
+			"Stats.ArmorType": "Light",
+			"Stats.Width": 1.75,
+			"Stats.Height": 2.10,
+			"Stats.Speed.x": 1.0,
+			"Stats.Speed.y": 1.0,
+			"Stats.Speed.z": 1.0,
+			"Detection.SoundRange": 4.50,
+			"Detection.SoundTolerance": 8.5,
+			"Detection.SightRange": 8.90,
+			"Detection.SightRadius": 4.0,
+			"RenderData.SheetWidth": 312,
+			"RenderData.SheetHeight": 300,
+			"RenderData.SpriteWidth": 52,
+			"RenderData.SpriteHeight": 60,
+			"RenderData.SpriteSheet": "sprites/mobs/mercenary/shotgunner"
+		}
+	]
+}
