@@ -15,32 +15,74 @@ namespace moblib {
 			vec3 maxs;
 
 			// very hardcody but it WORKS
+			const float half = info.sightRange / 2;
 			switch ( mob.GetDirection() ) {
-			case TheNomad::GameSystem::DirType::South:
-				mins.x = origin.x - ( info.sightRange / 2 );
-				mins.y = origin.y;
-
-				maxs.x = origin.x + ( info.sightRange / 2 );
-				maxs.y = origin.y + info.sightRange;
-				break;
 			case TheNomad::GameSystem::DirType::North:
-				mins.x = origin.x - ( info.sightRange / 2 );
+				mins.x = origin.x - half;
 				mins.y = origin.y - info.sightRange;
 
-				maxs.x = origin.x + ( info.sightRange / 2 );
+				maxs.x = origin.x + half;
 				maxs.y = origin.y;
 				break;
-			};
-			mins.x = origin.x - ( info.sightRange / 2 );
+			/*
+			case TheNomad::GameSystem::DirType::NorthEast:
+				mins.x = origin.x;
+				mins.y = origin.y - info.sightRange;
+
+				maxs.x = origin.x + info.sightRange;
+				maxs.y = origin.y;
+				break;
+			*/
+			case TheNomad::GameSystem::DirType::East:
+				mins.x = origin.x;
+				mins.y = origin.y - half;
+
+				maxs.x = origin.x + info.sightRange;
+				maxs.y = origin.y + half;
+				break;
+			/*
+			case TheNomad::GameSystem::DirType::SouthEast:
+				mins.x = origin.x;
 				mins.y = origin.y;
 
-				maxs.x = origin.x + ( info.sightRange / 2 );
+				maxs.x = origin.x + info.sightRange;
 				maxs.y = origin.y + info.sightRange;
-			
-			ConsolePrint( "mins: " + mins.x + ", " + mins.y+ "\n" );
-			ConsolePrint( "maxs: " + maxs.x + ", " + maxs.y+ "\n" );
-			ConsolePrint( "sightRange: " + info.sightRange + "\n" );
+				break;
+			*/
+			case TheNomad::GameSystem::DirType::South:
+				mins.x = origin.x - half;
+				mins.y = origin.y;
 
+				maxs.x = origin.x + half;
+				maxs.y = origin.y + info.sightRange;
+				break;
+			/*
+			case TheNomad::GameSystem::DirType::SouthWest:
+				mins.x = origin.x + info.sightRange;
+				mins.y = origin.y - half;
+
+				maxs.x = origin.x;
+				maxs.y = origin.y + half;
+				break;
+			*/
+			case TheNomad::GameSystem::DirType::West:
+				mins.x = origin.x - info.sightRange;
+				mins.y = origin.y - half;
+
+				maxs.x = origin.x;
+				maxs.y = origin.y - half;
+				break;
+			/*
+			case TheNomad::GameSystem::DirType::NorthWest:
+				mins.x = origin.x - ;
+				mins.y = origin.y - info.sightRange;
+
+				maxs.x = origin.x;
+				maxs.y = origin.y;
+				break;
+			*/
+			};
+			
 			bounds.m_nMins = mins;
 			bounds.m_nMaxs = maxs;
 
@@ -65,8 +107,13 @@ namespace moblib {
 			ray.m_Start = origin;
 			ray.m_nEntityNumber = ENTITYNUM_INVALID;
 			ray.m_nAngle = mob.GetAngle();
+			ray.m_nOwner = mob.GetEntityNum();
 
-			ray.Cast();
+			ray.Cast( ent.GetOrigin() );
+
+			if ( ray.m_nEntityNumber == mob.GetEntityNum() ) {
+				return false;
+			}
 			
 			if ( ray.m_nEntityNumber == ENTITYNUM_INVALID || ray.m_nEntityNumber == ENTITYNUM_WALL ) {
 				DebugPrint( "Target obscured.\n" );

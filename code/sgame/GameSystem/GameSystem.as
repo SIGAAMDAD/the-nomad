@@ -21,16 +21,20 @@ namespace TheNomad::GameSystem {
 		RayCast() {
 		}
 
-		void Cast() {
+		void Cast( const vec3& in endDefault = vec3( 0.0f ) ) {
 			vec3 end;
-			end.x = m_Start.x + m_nLength * cos( m_nAngle );
-			end.y = m_Start.y + m_nLength * sin( m_nAngle );
-			end.z = m_Start.z * sin( m_nAngle );
+			if ( endDefault != Vec3Origin ) {
+				end = endDefault;
+			} else {
+				end.x = m_Start.x + m_nLength * cos( m_nAngle );
+				end.y = m_Start.y + m_nLength * sin( m_nAngle );
+				end.z = m_Start.z * sin( m_nAngle );
+			}
 
 			const float dx = abs( end.x - m_Start.x );
 			const float dy = abs( end.y - m_Start.y );
-			const float sx = m_Start.x < end.x ? 1.0f : -1.0f;
-			const float sy = m_Start.y < end.y ? 1.0f : -1.0f;
+			const float sx = m_Start.x < end.x ? 0.25f : -0.25f;
+			const float sy = m_Start.y < end.y ? 0.25f : -0.25f;
 			float err = ( dx > dy ? dx : -dy ) / 2.0f;
 			
 			m_Origin = m_Start;
@@ -39,7 +43,7 @@ namespace TheNomad::GameSystem {
 			TheNomad::SGame::EntityObject@ ent = null;
 			for ( ;; ) {
 				for ( @ent = @activeEnts.m_Next; @ent !is @activeEnts; @ent = @ent.m_Next ) {
-					if ( ent.GetBounds().IntersectsPoint( m_Origin ) ) {
+					if ( ent.GetBounds().IntersectsPoint( m_Origin ) && ent.GetEntityNum() != m_nOwner ) {
 						m_nEntityNumber = ent.GetEntityNum();
 						return;
 					}
@@ -69,6 +73,7 @@ namespace TheNomad::GameSystem {
 
 		vec3 m_Start = vec3( 0.0f );
 		vec3 m_Origin = vec3( 0.0f );
+		uint m_nOwner = ENTITYNUM_INVALID;
 	    uint m_nEntityNumber = 0;
 		float m_nLength = 0.0f;
 		float m_nAngle = 0.0f;
