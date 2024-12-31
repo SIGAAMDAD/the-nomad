@@ -58,9 +58,7 @@ namespace TheNomad::SGame {
 			}
 			accel.x += side;
 			accel.y += forward;
-			if ( ( flags & PMF_JUMP_HELD ) != 0 ) {
-				accel.z += up;
-			}
+			accel.z += up;
 
 			if ( isDashing ) {
 				accel.y += 3.50f * forward;
