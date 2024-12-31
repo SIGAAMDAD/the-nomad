@@ -2,7 +2,7 @@
 	"MobInfo": [
 		{
 			"Name": "Zurgut Grunt",
-			"Id": "mob_grunt",
+			"Id": "mob_zurgut_grunt",
 			"ScriptName": "ZurgutGrunt",
 			"Stats.Health": 24,
 			"Stats.ArmorType": "None",

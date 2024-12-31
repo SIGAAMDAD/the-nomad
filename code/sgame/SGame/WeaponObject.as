@@ -271,7 +271,7 @@ namespace TheNomad::SGame {
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 			
 			refEntity.sheetNum = -1;
-			refEntity.spriteId = m_WeaponInfo.hIconShader;
+			refEntity.spriteId = TheNomad::Engine::Renderer::RegisterShader( "world/sprites/crate" );
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.scale = m_WeaponInfo.size;
 			refEntity.Draw();

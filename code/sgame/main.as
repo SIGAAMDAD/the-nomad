@@ -106,6 +106,7 @@ void InitResources() {
 	// environmental sounds
 	{
 		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/interaction/pickup_item" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/interaction/complete_checkpoint" );
 
 		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/land_1" );
 		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/land_2" );
@@ -153,7 +154,7 @@ void InitResources() {
 	TheNomad::Engine::Renderer::RegisterShader( "skins/" + TheNomad::Engine::CvarVariableString( "skin" ) );
 
 	//
-	// load particle effects
+	// load various other shaders
 	//
 
 	TheNomad::Engine::Renderer::RegisterShader( "gfx/completed_checkpoint" );
@@ -161,9 +162,9 @@ void InitResources() {
 
 	TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/checkpoint", 128, 32, 32, 32 );
 
-	TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/dash_screen" );
-	TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/parry_screen" );
-	TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/bullet_time_blur" );
+	TheNomad::Engine::Renderer::RegisterShader( "hud/dash_screen" );
+	TheNomad::Engine::Renderer::RegisterShader( "hud/parry_screen" );
+	TheNomad::Engine::Renderer::RegisterShader( "hud/bullet_time_blur" );
 
 	//
 	// register strings

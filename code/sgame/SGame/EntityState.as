@@ -55,6 +55,8 @@ namespace TheNomad::SGame {
 					m_nStateOffset = entity.GetID();
 				} else if ( ( @entity = @InfoSystem::InfoManager.GetItemType( base ) ) !is null ) {
 					m_nStateOffset = entity.GetID();
+				} else if ( ( @entity = @InfoSystem::InfoManager.GetWeaponType( base ) ) !is null ) {
+					m_nStateOffset = entity.GetID();
 				} else {
 					GameError( "invalid state info, Entity \"" + base + "\" doesn't exist" );
 				}
