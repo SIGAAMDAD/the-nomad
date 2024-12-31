@@ -28,6 +28,14 @@
 			]
 		},
 		{
+			"Type": "Consumable",
+			"Id": "item_weapon_pickup",
+			"Name": "Weapon Pickup",
+			"RenderData.Icon": "world/sprites/crate",
+			"Stats.Width": 1.0,
+			"Stats.Height": 1.0
+		},
+		{
 			"Type": "Scenery",
 			"Id": "scenery_tent",
 			"Name": "Tent",
@@ -75,6 +83,17 @@
 			"Type": "Tutorial",
 			"Id": "tutorial_dashing",
 			"Name": "TutorialDashing",
+			"RenderData.Icon": "world/sprites/signpost",
+			"Stats.Width": 1.25,
+			"Stats.Height": 1.5,
+			"Flags": [
+				"NoOwner"
+			]
+		},
+		{
+			"Type": "Tutorial",
+			"Id": "tutorial_sliding",
+			"Name": "TutorialSliding",
 			"RenderData.Icon": "world/sprites/signpost",
 			"Stats.Width": 1.25,
 			"Stats.Height": 1.5,

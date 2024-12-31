@@ -116,7 +116,7 @@ namespace TheNomad::SGame {
 			return @m_Info;
 		}
 
-		private InfoSystem::ItemInfo@ m_Info = null;
+		protected InfoSystem::ItemInfo@ m_Info = null;
 		protected itemlib::ItemScript@ m_ScriptData = null;
 		protected EntityObject@ m_Owner = null; // for applying effects
 	};

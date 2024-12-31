@@ -12,8 +12,25 @@ namespace TheNomad::SGame {
 		}
 
 		void SetOwner( EntityObject@ ent ) override {
+			if ( @ent is null ) {
+				DebugPrint( "Clearing ownership of item '" + m_Link.m_nEntityNumber + "'\n" );
+				@m_Owner = null;
+				return;
+			}
+
+			// make sure nothing weird is going on
+			switch ( ent.GetType() ) {
+			case GameSystem::EntityType::Item:
+			case GameSystem::EntityType::Weapon:
+				GameError( "ItemObject::Pickup: invalid pickup entity (item/weapon)" );
+			default:
+				break;
+			};
+
 			SetState( @m_WeaponInfo.equipState );
 			@m_Owner = @ent;
+
+			DebugPrint( "Weapon " + m_Link.m_nEntityNumber + " now owned by " + ent.GetEntityNum() + ".\n" );
 		}
 
 		const InfoSystem::WeaponInfo@ GetWeaponInfo() const {
@@ -265,12 +282,19 @@ namespace TheNomad::SGame {
 				GameError( "WeaponObject::Spawn: invalid weapon id " + id );
 			}
 
+			@m_Info = @InfoSystem::InfoManager.GetItemInfo( InfoSystem::InfoManager.GetItemType( "item_weapon_pickup" ).GetID() );
+			if ( @m_Info is null ) {
+				GameError( "WeaponObject::Spawn: couldn't get item info for \"item_weapon_pickup\"" );
+			}
+
 			m_Link.m_Origin = origin;
 			m_Bounds.m_nWidth = m_WeaponInfo.size.x;
 			m_Bounds.m_nHeight = m_WeaponInfo.size.y;
 			m_Bounds.MakeBounds( origin );
 
-//			itemlib::AllocScript( @this );
+			@m_State = @StateManager.GetNullState();
+
+			itemlib::AllocScript( @this );
 		}
 		
 		private InfoSystem::AmmoInfo@ m_AmmoInfo = null;

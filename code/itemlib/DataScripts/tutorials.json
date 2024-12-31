@@ -10,7 +10,7 @@
 			"Id": "TutorialParrying",
 			"Type": "binding",
 			"Shader": "+melee",
-			"Text": " to melee, you can parry anything that flashes blue, but not if it flashes red"
+			"Text": " to melee, you can parry anything that flashes blue,\nbut not if it flashes red"
 		},
 		{
 			"Id": "TutorialItemPickups",
@@ -20,9 +20,15 @@
 		},
 		{
 			"Id": "TutorialDashing",
-			"Type": "tooltip",
+			"Type": "binding",
 			"Shader": "+dash",
 			"Text": " to dash, grants IFrames for 1/2 a second"
+		},
+		{
+			"Id": "TutorialSliding",
+			"Type": "binding",
+			"Shader": "+slide",
+			"Text": " to slide"
 		}
 	]
 }
