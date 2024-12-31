@@ -268,6 +268,10 @@ namespace TheNomad::SGame {
 			}
 		}
 		void Draw() override {
+			if ( @m_Owner !is null ) {
+				return;
+			}
+
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 			
 			refEntity.sheetNum = -1;
