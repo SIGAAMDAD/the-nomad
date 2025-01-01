@@ -302,10 +302,10 @@ namespace TheNomad::Engine::Physics {
 					//
 
 					// left offset
-					TheNomad::SGame::GfxManager.AddDustPuff( vec3( origin.x - 0.5f, origin.y, origin.z ), TheNomad::SGame::FACING_RIGHT );
-
+//					TheNomad::SGame::GfxManager.AddDustPuff( vec3( origin.x - 0.5f, origin.y, origin.z ), TheNomad::SGame::FACING_RIGHT );
+					TheNomad::SGame::GfxManager.AddLanding( origin );
 					// right offset
-					TheNomad::SGame::GfxManager.AddDustPuff( vec3( origin.x + 0.5f, origin.y, origin.z ), TheNomad::SGame::FACING_LEFT );
+//					TheNomad::SGame::GfxManager.AddDustPuff( vec3( origin.x + 0.5f, origin.y, origin.z ), TheNomad::SGame::FACING_LEFT );
 				}
 			}
 			

@@ -12,6 +12,8 @@ namespace TheNomad::Engine::UserInterface {
 		}
 
 		void Draw() {
+			ImGui::TableNextColumn();
+
 			ImGui::Text( m_Name );
 
 			ImGui::SameLine();
@@ -27,6 +29,8 @@ namespace TheNomad::Engine::UserInterface {
 				}
 				ImGui::EndCombo();
 			}
+
+			ImGui::TableNextRow();
 		}
 		void Save() {
 			TheNomad::Engine::CvarSet( m_Id, Convert().ToString( m_nCurrent ) );

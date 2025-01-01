@@ -20,13 +20,17 @@ namespace TheNomad::Engine::UserInterface {
 				return;
 			}
 
-			for ( uint i = 0; i < m_Vars.Count(); i++ ) {
+			for ( uint i = 0; i < m_Vars.Count(); ++i ) {
 				m_Vars[i].Draw();
 			}
 		}
-
 		void AddVar( ConfigVar@ var ) {
 			m_Vars.Add( @var );
+		}
+		void Save() const {
+			for ( uint i = 0; i < m_Vars.Count(); ++i ) {
+				m_Vars[i].Save();
+			}
 		}
 
 		private string m_Name;

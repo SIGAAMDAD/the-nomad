@@ -2,8 +2,8 @@ namespace TheNomad::SGame {
 	const uint PMF_JUMP_HELD      = 0x01;
 	const uint PMF_BACKWARDS_JUMP = 0x02;
 
-	const uint DASH_DURATION = 8;
-	const uint SLIDE_DURATION = 12;
+	const uint DASH_DURATION = 800;
+	const uint SLIDE_DURATION = 500;
 	
 	const float JUMP_VELOCITY = 3.5f;
 	const float OVERCLIP = 1.5f;

@@ -30,6 +30,8 @@ namespace TheNomad::SGame {
 			SetState( @m_WeaponInfo.equipState );
 			@m_Owner = @ent;
 
+			m_Bounds.Clear();
+
 			DebugPrint( "Weapon " + m_Link.m_nEntityNumber + " now owned by " + ent.GetEntityNum() + ".\n" );
 		}
 
@@ -69,20 +71,19 @@ namespace TheNomad::SGame {
 		// AreaOfEffect: does exactly what you think it does
 		//
 		private float AreaOfEffect( float damage ) {
-			TheNomad::GameSystem::BBox bounds;
+			TheNomad::Engine::Physics::Bounds bounds;
 			EntityObject@ activeEnts = @EntityManager.GetActiveEnts();
 			EntityObject@ ent = @activeEnts.m_Next;
 			const float range = m_AmmoInfo.range / 2;
 			
 			// shit works like DOOM 1993 (box instead of circle)
 			// this weapon is a projectile or ordnance with its own entity
-			bounds.m_Mins = vec3( m_Link.m_Origin.x - range, m_Link.m_Origin.y - range, m_Link.m_Origin.z - range );
-			bounds.m_Maxs = vec3( m_Link.m_Origin.x + range, m_Link.m_Origin.y + range, m_Link.m_Origin.z + range );
 			bounds.m_nWidth = range;
 			bounds.m_nHeight = range;
+			bounds.MakeBounds( m_Link.m_Origin );
 			
 			for ( ; @ent !is @activeEnts; @ent = @ent.m_Next ) {
-				if ( Util::BoundsIntersectPoint( bounds, ent.GetOrigin() ) ) {
+				if ( bounds.IntersectsPoint( ent.GetOrigin() ) ) {
 					const float dist = Util::Distance( m_Link.m_Origin, ent.GetOrigin() );
 					if ( dist < 1.0f ) { // immediate impact range means death
 						EntityManager.KillEntity( @ent, @m_Owner );
@@ -250,16 +251,17 @@ namespace TheNomad::SGame {
 		}
 		void Think() override {
 			if ( @m_Owner is null ) {
+				m_Bounds.m_nWidth = m_WeaponInfo.size.x;
+				m_Bounds.m_nHeight = m_WeaponInfo.size.y;
+				m_Bounds.MakeBounds( m_Link.m_Origin );
+
 				return;
 			}
-			
-			m_Bounds.m_nWidth = m_WeaponInfo.size.x;
-			m_Bounds.m_nHeight = m_WeaponInfo.size.y;
-			m_Bounds.MakeBounds( m_Link.m_Origin );
 
 			if ( m_State.GetBaseNum() == StateNum::ST_WEAPON_USE && m_State.Done( m_nTicker ) ) {
 				if ( m_nBulletsUsed >= m_WeaponInfo.magSize ) {
 					SetState( @m_WeaponInfo.reloadState );
+					m_nBulletsUsed = 0;
 				} else {
 					SetState( @m_WeaponInfo.idleState );
 				}
@@ -295,6 +297,8 @@ namespace TheNomad::SGame {
 			m_Bounds.m_nWidth = m_WeaponInfo.size.x;
 			m_Bounds.m_nHeight = m_WeaponInfo.size.y;
 			m_Bounds.MakeBounds( origin );
+
+			@m_SpriteSheet = @m_WeaponInfo.spriteSheet;
 
 			@m_State = @StateManager.GetNullState();
 

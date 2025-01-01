@@ -42,6 +42,8 @@ namespace TheNomad::SGame {
 
 			m_CrouchDownSfx = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/cloth_foley_0" );
 			m_CrouchUpSfx = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/cloth_foley_1" );
+
+			m_EquipWeaponSfx = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/equip_weapon" );
 		}
 
 		void InitPlayers() {
@@ -458,6 +460,7 @@ namespace TheNomad::SGame {
 		TheNomad::Engine::SoundSystem::SoundEffect m_PainSfx1;
 		TheNomad::Engine::SoundSystem::SoundEffect m_PainSfx2;
 		TheNomad::Engine::SoundSystem::SoundEffect m_ParrySfx;
+		TheNomad::Engine::SoundSystem::SoundEffect m_EquipWeaponSfx;
 		private TheNomad::Engine::SoundSystem::SoundEffect m_WeaponChangeHandSfx;
 		private TheNomad::Engine::SoundSystem::SoundEffect m_WeaponChangeModeSfx;
 		private TheNomad::Engine::SoundSystem::SoundEffect m_MeleeSfx;

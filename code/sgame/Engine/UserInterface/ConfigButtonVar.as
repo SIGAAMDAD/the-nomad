@@ -9,12 +9,22 @@ namespace TheNomad::Engine::UserInterface {
 		}
 
 		void Draw() {
+			ImGui::TableNextColumn();
+
 			ImGui::Text( m_Name );
+
 			ImGui::SameLine();
+
+			ImGui::TableNextColumn();
+
+			if ( ImGui::RadioButton( ( m_bValue ? "YES" : "NO" ) + "##"  + m_Name + m_Id, m_bValue ) ) {
+				m_bValue = !m_bValue;
+			}
 
 			ImGui::TableNextRow();
 		}
 		void Save() {
+			TheNomad::Engine::CvarSet( m_Id, m_bValue ? "1" : "0" );
 		}
 
 		private bool m_bValue = false;

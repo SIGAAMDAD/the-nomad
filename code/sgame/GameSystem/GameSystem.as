@@ -17,6 +17,8 @@ namespace TheNomad::GameSystem {
 		return @SystemHandle;
 	}
 
+	const uint RAYFLAG_WALLPIERCING = 0x0001;
+
 	class RayCast {
 		RayCast() {
 		}
@@ -43,7 +45,7 @@ namespace TheNomad::GameSystem {
 			TheNomad::SGame::EntityObject@ ent = null;
 			for ( ;; ) {
 				for ( @ent = @activeEnts.m_Next; @ent !is @activeEnts; @ent = @ent.m_Next ) {
-					if ( ent.GetBounds().IntersectsPoint( m_Origin ) && ent.GetEntityNum() != m_nOwner ) {
+					if ( ent.GetEntityNum() != m_nOwner && ent.GetBounds().IntersectsPoint( m_Origin ) ) {
 						m_nEntityNumber = ent.GetEntityNum();
 						return;
 					}

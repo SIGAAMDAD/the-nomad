@@ -91,6 +91,8 @@ namespace TheNomad::SGame {
 				return;
 			}
 
+			@LastUsedArm = @dst;
+
 			const WeaponObject@ srcWeapon = @m_Inventory.GetSlot( src.GetEquippedWeapon() ).GetData();
 			if ( srcWeapon.IsTwoHanded() && !srcWeapon.IsOneHanded() ) {
 				// cannot change hands
@@ -145,14 +147,35 @@ namespace TheNomad::SGame {
 			}
 		}
 		void SwitchUsedHand() {
+			if ( TheNomad::Engine::IsKeyDown( TheNomad::Engine::KeyNum::V ) ) {
+				m_nHandsUsed = BOTH_ARMS;
+				@LastUsedArm = @LeftArm;
+				if ( LeftArm.GetEquippedWeapon() != uint( -1 ) ) {
+					m_Inventory.EquipSlot( LeftArm.GetEquippedWeapon() );
+				}
+				return;
+			}
 			switch ( m_nHandsUsed ) {
 			case LEFT_ARM:
 				m_nHandsUsed = 1; // set to right
+				@LastUsedArm = @RightArm;
+				if ( RightArm.GetEquippedWeapon() != uint( -1 ) ) {
+					m_Inventory.EquipSlot( RightArm.GetEquippedWeapon() );
+				}
 				break;
 			case RIGHT_ARM:
 				m_nHandsUsed = 0; // set to left
+				@LastUsedArm = @LeftArm;
+				if ( LeftArm.GetEquippedWeapon() != uint( -1 ) ) {
+					m_Inventory.EquipSlot( LeftArm.GetEquippedWeapon() );
+				}
 				break;
 			case BOTH_ARMS:
+				m_nHandsUsed = 1;
+				@LastUsedArm = @RightArm;
+				if ( RightArm.GetEquippedWeapon() != uint( -1 ) ) {
+					m_Inventory.EquipSlot( RightArm.GetEquippedWeapon() );
+				}
 				break; // can't switch if we're using both hands for one weapon
 			default:
 				ConsoleWarning( "PlayrObject::SwitchUsedHand: invalid hand, setting to default of left.\n" );
@@ -164,8 +187,14 @@ namespace TheNomad::SGame {
 		InfoSystem::WeaponProperty GetCurrentWeaponMode() {
 			switch ( m_nHandsUsed ) {
 			case LEFT_ARM:
+				if ( LeftArm.GetEquippedWeapon() == uint( -1 ) ) {
+					return m_EmptyInfo.weaponProps;
+				}
 				return m_Inventory.GetSlot( LeftArm.GetEquippedWeapon() ).GetMode();
 			case RIGHT_ARM:
+			if ( RightArm.GetEquippedWeapon() == uint( -1 ) ) {
+					return m_EmptyInfo.weaponProps;
+				}
 				return m_Inventory.GetSlot( RightArm.GetEquippedWeapon() ).GetMode();
 			case BOTH_ARMS:
 				return m_Inventory.GetEquippedWeapon().GetMode();
@@ -205,7 +234,7 @@ namespace TheNomad::SGame {
 
 			DebugPrint( "Setting checkpoint " + LevelManager.GetCheckpointIndex() + " to completed.\n" );
 			
-			TheNomad::Engine::CmdExecuteCommand( "sgame.save_game " + sgame_SaveSlot.GetInt() + "\n" );
+			TheNomad::Engine::CmdExecuteCommand( "sgame.save_game " + TheNomad::Engine::CvarVariableInteger( "sgame_SaveSlot" ) + "\n" );
 
 			for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); ++i ) {
 				TheNomad::GameSystem::GameSystems[i].OnCheckpointPassed( i );
@@ -219,6 +248,14 @@ namespace TheNomad::SGame {
 			}
 		}
 
+		void EquipWeapon( WeaponObject@ weapon ) {
+			EmitSound( ScreenData.m_EquipWeaponSfx, 10.0f, 0xff );
+
+			// set it to the current slot
+			m_Inventory.GetEquippedWeapon() = @weapon;
+			LastUsedArm.SetEquippedSlot( m_Inventory.GetSlotIndex() );
+		}
+
 		void PickupItem( EntityObject@ item ) {
 			ItemObject@ data = cast<ItemObject@>( @item );
 			data.SetOwner( @this );
@@ -226,11 +263,9 @@ namespace TheNomad::SGame {
 			switch ( item.GetType() ) {
 			case TheNomad::GameSystem::EntityType::Item:
 				break;
-			case TheNomad::GameSystem::EntityType::Weapon: {
-				if ( TheNomad::Engine::CvarVariableInteger( "sgame_EquipWeaponOnPickup" ) == 1 ) {
-
-				}
-				break; }
+			case TheNomad::GameSystem::EntityType::Weapon:
+				EquipWeapon( cast<WeaponObject@>( @data ) );
+				break;
 			default:
 				GameError( "PlayrObject::PickupItem: not an item" );
 			};
@@ -500,6 +535,20 @@ namespace TheNomad::SGame {
 				GfxManager.AddBloodSplatter( m_Link.m_Origin, m_Facing );
 			}
 		}
+
+		bool IsWeaponEquipped() const {
+			const ArmData@ arm = null;
+			switch ( m_nHandsUsed ) {
+			case RIGHT_ARM:
+				@arm = @RightArm;
+				break;
+			case LEFT_ARM:
+			case BOTH_ARMS:
+				@arm = @LeftArm;
+				break;
+			};
+			return arm.GetEquippedWeapon() != uint( -1 ) ? true : false;
+		}
 		
 		WeaponObject@ GetCurrentWeapon() {
 			return @m_Inventory.GetEquippedWeapon().GetData();
@@ -623,9 +672,9 @@ namespace TheNomad::SGame {
 			m_nRage = 0.0f;
 
 			// give the player a little starting boost if they're playing on the easier modes
-			if ( sgame_Difficulty.GetInt() == int( TheNomad::GameSystem::GameDifficulty::Easy ) ) {
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" ) == int( TheNomad::GameSystem::GameDifficulty::Easy ) ) {
 				m_nRage = 50.0f;
-			} else if ( sgame_Difficulty.GetInt() == int( TheNomad::GameSystem::GameDifficulty::Normal ) ) {
+			} else if ( TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" ) == int( TheNomad::GameSystem::GameDifficulty::Normal ) ) {
 				m_nRage = 25.0f;
 			}
 
@@ -895,6 +944,8 @@ namespace TheNomad::SGame {
 
 		private float m_nHealMult = HEAL_MULT_BASE;
 		private float m_nHealMultDecay = HEAL_MULT_BASE;
+
+		ArmData@ LastUsedArm = @RightArm;
 		
 		ArmData LeftArm;
 		ArmData RightArm;

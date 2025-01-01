@@ -92,67 +92,56 @@ namespace TheNomad::SGame::InfoSystem {
 	};
 
 	enum WeaponProperty {
-		OneHandedBlade       = 0x00000101,
-		OneHandedBlunt       = 0x00001002,
-		OneHandedPolearm     = 0x00010003,
-		OneHandedSideFirearm = 0x00100004,
-		OneHandedPrimFirearm = 0x00100005,
+		OneHandedBlade		= 0x00000101,
+		OneHandedBlunt		= 0x00001002,
+		OneHandedPolearm	= 0x00010003,
+		OneHandedSideFirearm= 0x00100004,
+		OneHandedPrimFirearm= 0x00100005,
 
-		TwoHandedBlade       = 0x00000110,
-		TwoHandedBlunt       = 0x00001020,
-		TwoHandedPolearm     = 0x00010030,
-		TwoHandedSideFirearm = 0x00100040,
-		TwoHandedPrimFirearm = 0x00100050,
+		TwoHandedBlade		= 0x00000110,
+		TwoHandedBlunt		= 0x00001020,
+		TwoHandedPolearm	= 0x00010030,
+		TwoHandedSideFirearm= 0x00100040,
+		TwoHandedPrimFirearm= 0x00100050,
 
-		IsOneHanded          = 0x0000000f,
-		IsTwoHanded          = 0x000000f0,
-		IsBladed             = 0x00000f00,
-		IsBlunt              = 0x0000f000,
-		IsPolearm            = 0x000f0000,
-		IsFirearm            = 0x00f00000,
+		IsOneHanded			= 0x0000000f,
+		IsTwoHanded			= 0x000000f0,
+		IsBladed			= 0x00000f00,
+		IsBlunt				= 0x0000f000,
+		IsPolearm			= 0x000f0000,
+		IsFirearm			= 0x00f00000,
 
-		SpawnsObject         = 0x10000000,
+		SpawnsObject		= 0x10000000,
 
-		None                 = 0x00000000
+		None				= 0x00000000 // here simply for the hell of it
+	};
+
+	const string[] WeaponPropertyStrings = {
+		"OneHandedBlade",
+		"OneHandedBlunt",
+		"OneHandedPolearm",
+		"OneHandedSideFirearm",
+		"OneHandedPrimFirearm",
+
+		"TwoHandedBlade",
+		"TwoHandedBlunt",
+		"TwoHandedPolearm",
+		"TwoHandedSideFirearm",
+		"TwoHandedPrimFirearm",
+
+		"IsOneHanded",
+		"IsTwoHanded",
+		"IsBladed",
+		"IsBlunt",
+		"IsPolearm",
+		"IsFirearm",
+
+		"SpawnsObject"
 	};
 
 	const string[] ItemTypeStrings = {
 		"Powerup",
 		"Consumable"
-	};
-
-	const uint[] WeaponPropertyBits = {
-		uint( WeaponProperty::TwoHandedBlade ),
-		uint( WeaponProperty::OneHandedBlade ),
-		uint( WeaponProperty::TwoHandedBlunt ),
-		uint( WeaponProperty::OneHandedBlunt ),
-
-		uint( WeaponProperty::TwoHandedPolearm ),
-		uint( WeaponProperty::OneHandedPolearm ),
-
-		uint( WeaponProperty::OneHandedSideFirearm ),
-		uint( WeaponProperty::TwoHandedSideFirearm ),
-		uint( WeaponProperty::OneHandedPrimFirearm ),
-		uint( WeaponProperty::TwoHandedPrimFirearm ),
-
-		uint( WeaponProperty::SpawnsObject )
-	};
-
-	const string[] WeaponPropertyStrings = {
-		"TwoHandedBlade",
-		"OneHandedBlade",
-		"TwoHandedBlunt",
-		"OneHandedBlunt",
-
-		"TwoHandedPolearm",
-		"OneHandedPolearm",
-
-		"OneHandedSidearmFirearm",
-		"TwoHandedSidearmFirearm",
-		"OneHandedPrimaryFirearm",
-		"TwoHandedPrimaryFirearm",
-
-		"SpawnsObject"
 	};
 
 	const string[] AmmoPropertyStrings = {

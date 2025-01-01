@@ -30,7 +30,29 @@ namespace TheNomad::SGame {
 			m_BulletTimeBlurScreen.Init( "hud/bullet_time_blur", vec2( 0.0f ), screenSize );
 		}
 		
-		private void DrawWeaponStatus() {
+		private void DrawLoadoutStatus() {
+			ImGui::Begin( "##LoadoutInventoryStatus", null,  ImGui::MakeWindowFlags( ImGuiWindowFlags::NoResize | ImGuiWindowFlags::NoMove
+				| ImGuiWindowFlags::NoCollapse | ImGuiWindowFlags::NoTitleBar | ImGuiWindowFlags::NoScrollbar ) );
+			
+			ImGui::SetWindowPos( vec2( 940.0f * TheNomad::GameSystem::UIScale, 580.0f * TheNomad::GameSystem::UIScale ) );
+			ImGui::SetWindowSize( vec2( 300.0f * TheNomad::GameSystem::UIScale, 120.0f * TheNomad::GameSystem::UIScale ) );
+			
+			// draw arm usage
+			const int handsUsed = m_Parent.GetHandsUsed();
+			ImGui::RadioButton( "##HandsUsedLeft", handsUsed == LEFT_ARM || handsUsed == BOTH_ARMS );
+			ImGui::SameLine();
+			ImGui::RadioButton( "##HandsUsedRight", handsUsed == RIGHT_ARM || handsUsed == BOTH_ARMS );
+
+			// draw weapon icon
+			if ( m_Parent.IsWeaponEquipped() ) {
+				ImGui::Image( m_Parent.GetCurrentWeapon().GetWeaponInfo().iconShader,
+					vec2( 820.0f * TheNomad::GameSystem::UIScale, 630.0f * TheNomad::GameSystem::UIScale ),
+					vec2( 128.0f * TheNomad::GameSystem::UIScale, 128.0f * TheNomad::GameSystem::UIScale ) );
+			} else {
+				ImGui::Text( "NOTHING EQUIPPED" );
+			}
+
+			ImGui::End();
 		}
 		
 		private void DrawMouseReticle() const {
@@ -148,9 +170,7 @@ namespace TheNomad::SGame {
 			if ( m_nRageBarEndTime != 0 ) {
 				DrawRageStatus();
 			}
-			if ( m_nWeaponStatusEndTime != 0 ) {
-				DrawWeaponStatus();
-			}
+			DrawLoadoutStatus();
 			DrawMouseReticle();
 		}
 		

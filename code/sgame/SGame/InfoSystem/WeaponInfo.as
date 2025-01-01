@@ -87,25 +87,41 @@ namespace TheNomad::SGame::InfoSystem {
 				return false;
 			}
 			@idleState = @StateManager.GetStateById( state );
+			if ( @idleState is null ) {
+				ConsoleWarning( "invalid weapon info, idle state '" + state + "' couldn't be found\n" );
+				return false;
+			}
 
 			if ( !json.get( "States.Reload", state ) ) {
 				ConsoleWarning( "invalid weapon info, missing variable 'States.Reload' in \"" + name + "\"\n"  );
 				return false;
 			}
 			@reloadState = @StateManager.GetStateById( state );
+			if ( @reloadState is null ) {
+				ConsoleWarning( "invalid weapon info, reload state '" + state + "' couldn't be found\n" );
+				return false;
+			}
 
 			if ( !json.get( "States.Equip", state ) ) {
 				ConsoleWarning( "invalid weapon info, missing variable 'States.Equip' in \"" + name + "\"\n" );
 				return false;
 			}
 			@equipState = @StateManager.GetStateById( state );
+			if ( @equipState is null ) {
+				ConsoleWarning( "invalid weapon info, equip state '" + state + "' couldn't be found\n" );
+				return false;
+			}
 
 			if ( !json.get( "States.Use", state ) ) {
 				ConsoleWarning( "invalid weapon info, missing variable 'States.Use' in \"" + name + "\"\n" );
 				return false;
 			}
 			@useState = @StateManager.GetStateById( state );
-			
+			if ( @useState is null ) {
+				ConsoleWarning( "invalid weapon info, use state '" + state + "' couldn't be found\n" );
+				return false;
+			}
+
 			return true;
 		}
 		private bool LoadSoundsBlock( json@ json ) {
@@ -122,6 +138,20 @@ namespace TheNomad::SGame::InfoSystem {
 				return false;
 			}
 			useSfx = TheNomad::Engine::SoundSystem::RegisterSfx( sfx );
+			
+			return true;
+		}
+		private bool LoadWeaponProperties( json@ json ) {
+			uint props = 0;
+			if ( !json.get( "Properties", props ) ) {
+				ConsoleWarning( "invalid weapon info, missing variable 'Properties' in \"" + name + "\"\n" );
+				return false;
+			}
+			weaponProps = WeaponProperty( uint( json[ "Properties" ] ) );
+			if ( weaponProps == WeaponProperty::None ) {
+				ConsoleWarning( "invalid weapon info, WeaponProperties '" + uint( weaponProps ) + "'' are invalid ( None, abide by physics pls ;) )\n" );
+				return false;
+			}
 			
 			return true;
 		}
@@ -185,18 +215,9 @@ namespace TheNomad::SGame::InfoSystem {
 			if ( !LoadSoundsBlock( @json ) ) {
 				return false;
 			}
-
-			uint props = 0;
-			if ( !json.get( "Properties", props ) ) {
-				ConsoleWarning( "invalid weapon info, missing variable 'Properties' in \"" + name + "\"\n" );
+			if ( !LoadWeaponProperties( @json ) ) {
 				return false;
 			}
-			weaponProps = WeaponProperty( uint( json[ "Properties" ] ) );
-			if ( weaponProps == WeaponProperty::None ) {
-				ConsoleWarning( "invalid weapon info, WeaponProperties '" + uint( weaponProps ) + "'' are invalid ( None, abide by physics pls ;) )\n" );
-				return false;
-			}
-			
 			return true;
 		}
 		

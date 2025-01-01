@@ -64,78 +64,6 @@ console
 */
 
 //
-// hud elements
-//
-gfx/hud/bullet_time_blur
-{
-	nopicmip
-	nomipmaps
-	{
-		texFilter bilinear
-		map gfx/hud/motion_blur.png
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-		rgbGen vertex
-	}
-}
-
-gfx/hud/dash_screen
-{
-	nopicmip
-	nomipmaps
-	{
-		texFilter nearest
-		map gfx/hud/dash.png
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-		rgbGen vertex
-	}
-}
-
-gfx/hud/blood_screen
-{
-	nopicmip
-	nomipmaps
-	{
-		texFilter bilinear
-		map textures/hud/PAIN1.dds
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-		rgbGen vertex
-	}
-	{
-		texFilter bilinear
-		map textures/hud/ARBLS1.dds
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-		rgbGen vertex
-		tcMod scroll 0.0 -0.9
-	}
-	{
-		texFilter bilinear
-		map textures/hud/ARBLS2.dds
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-		rgbGen vertex
-		tcMod scroll 0.0 -0.4
-	}
-	{
-		texFilter bilinear
-		map textures/hud/ARBLS3.dds
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-		rgbGen vertex
-		tcMod scroll 0.0 -0.25
-	}
-	{
-		texFilter bilinear
-		map textures/hud/ARBLS4.dds
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-		rgbGen vertex
-	}
-	{
-		texFilter bilinear
-		map textures/hud/ARBLS5.dds
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-		rgbGen vertex
-	}
-}
-
-//
 // powerup icons
 //
 icons/iconpw_pewpew
@@ -173,13 +101,13 @@ icons/iconw_murstar
 	}
 }
 
-icons/iconw_db
+icons/iconw_adb
 {
 	nopicmip
 	nomipmaps
 	{
 		texFilter nearest
-		map textures/icons/iconw_db.tga
+		map icons/iconw_adb.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 	}
 }
@@ -452,6 +380,15 @@ gfx/env/flameBall
 {
 	{
 		map particle_effects/Spritesheets/flameball.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+	}
+}
+
+gfx/env/landing
+{
+	{
+		map particle_effects/Spritesheets/land.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		rgbGen vertex
 	}

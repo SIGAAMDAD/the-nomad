@@ -195,6 +195,17 @@ namespace TheNomad::SGame {
 			AllocLocalEntity().Spawn( origin, vec3( 0.0f ), -1, m_hBulletHoleShader, vec2( 1.0f ), false );
 		}
 
+		void AddLanding( const vec3& in origin ) {
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 ) {
+				return;
+			}
+
+			TheNomad::Engine::Renderer::LocalEntity@ ent = @AllocLocalEntity();
+
+			ent.Spawn( origin, vec3( 0.0f ), 800, FS_INVALID_HANDLE, vec2( 3.5f ), false, @m_SmokeLanding );
+			ent.m_EffectAnimation.Load( 40, false, 16, false );
+		}
+
 		void AddDustPuff( const vec3& in origin, int facing ) {
 			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 ) {
 				return;
@@ -236,6 +247,7 @@ namespace TheNomad::SGame {
 			m_hBulletHoleShader = TheNomad::Engine::Renderer::RegisterShader( "gfx/env/bullet_hole" );
 			@m_SmokeTrail = @TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/smokeTrail", 750, 1200, 150, 150 );
 			@m_SmokePuff = @TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/smokePuff", 576, 64, 64, 64 );
+			@m_SmokeLanding = @TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/landing", 4032, 60, 252, 60 );
 //			@m_FlameBall = @TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/flameBall", 288, 192, 96, 48 );
 			@m_BloodSpurt = @TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/spurt", 1540, 836, 110, 92 );
 			m_hWaterWakeShader = TheNomad::Engine::Renderer::RegisterShader( "wake" );
@@ -249,6 +261,7 @@ namespace TheNomad::SGame {
 		// data cache
 		private SpriteSheet@ m_SmokeTrail = null;
 		private SpriteSheet@ m_SmokePuff = null;
+		private SpriteSheet@ m_SmokeLanding = null;
 		private SpriteSheet@ m_BloodSpurt = null;
 //		private SpriteSheet@ m_FlameBall = null;
 		private int m_hWaterWakeShader = FS_INVALID_HANDLE;
