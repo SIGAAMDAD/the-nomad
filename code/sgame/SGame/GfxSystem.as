@@ -238,6 +238,33 @@ namespace TheNomad::SGame {
 			ent.m_EffectAnimation.Load( 20, false, 40, false );
 		}
 
+		void AddMuzzleFlash( const vec3& in origin ) {
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 ) {
+				return;
+			}
+
+			TheNomad::Engine::Renderer::LocalEntity@ ent = @AllocLocalEntity();
+
+			int hShader = FS_INVALID_HANDLE;
+			switch ( Util::PRandom() & 3 ) {
+			case 0:
+				hShader = m_hMuzzleFlashShader0;
+				break;
+			case 1:
+				hShader = m_hMuzzleFlashShader1;
+				break;
+			case 2:
+				hShader = m_hMuzzleFlashShader2;
+				break;
+			case 3:
+				hShader = m_hMuzzleFlashShader3;
+				break;
+			};
+
+			ent.Spawn( origin, vec3( 0.0f ), 450, hShader, vec2( 2.5f ) );
+			ent.m_bLightSource = true;
+		}
+
 		void AddExplosionGfx( const vec3& in origin ) {
 		}
 
@@ -245,6 +272,10 @@ namespace TheNomad::SGame {
 			// NOTE: don't mess with the load order
 			m_hDustScreenShader = TheNomad::Engine::Renderer::RegisterShader( "gfx/env/dustScreen" );
 			m_hBulletHoleShader = TheNomad::Engine::Renderer::RegisterShader( "gfx/env/bullet_hole" );
+			m_hMuzzleFlashShader0 = TheNomad::Engine::Renderer::RegisterShader( "gfx/muzzle_flash/mf0" );
+			m_hMuzzleFlashShader1 = TheNomad::Engine::Renderer::RegisterShader( "gfx/muzzle_flash/mf1" );
+			m_hMuzzleFlashShader2 = TheNomad::Engine::Renderer::RegisterShader( "gfx/muzzle_flash/mf2" );
+			m_hMuzzleFlashShader3 = TheNomad::Engine::Renderer::RegisterShader( "gfx/muzzle_flash/mf3" );
 			@m_SmokeTrail = @TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/smokeTrail", 750, 1200, 150, 150 );
 			@m_SmokePuff = @TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/smokePuff", 576, 64, 64, 64 );
 			@m_SmokeLanding = @TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/landing", 4032, 60, 252, 60 );
@@ -264,6 +295,10 @@ namespace TheNomad::SGame {
 		private SpriteSheet@ m_SmokeLanding = null;
 		private SpriteSheet@ m_BloodSpurt = null;
 //		private SpriteSheet@ m_FlameBall = null;
+		private int m_hMuzzleFlashShader0 = FS_INVALID_HANDLE;
+		private int m_hMuzzleFlashShader1 = FS_INVALID_HANDLE;
+		private int m_hMuzzleFlashShader2 = FS_INVALID_HANDLE;
+		private int m_hMuzzleFlashShader3 = FS_INVALID_HANDLE;
 		private int m_hWaterWakeShader = FS_INVALID_HANDLE;
 		private int m_hDustScreenShader = FS_INVALID_HANDLE;
 		private int m_hBulletHoleShader = FS_INVALID_HANDLE;

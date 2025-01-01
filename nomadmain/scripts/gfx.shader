@@ -63,171 +63,6 @@ console
 }
 */
 
-//
-// powerup icons
-//
-icons/iconpw_pewpew
-{
-	nopicmip
-	nomipmaps
-	{
-		map textures/icons/iconpw_pewpew.tga
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-		rgbGen wave sin 0.3 5.0 0.0 0.4
-	}
-}
-
-icons/iconpw_angry
-{
-	nopicmip
-	nomipmaps
-	{
-		map textures/icons/iconpw_angry.tga
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-		rgbGen wave sin 0.3 5.0 0.0 0.4
-	}
-}
-
-//
-// weapon icons
-//
-icons/iconw_murstar
-{
-	nopicmip
-	nomipmaps
-	{
-		map textures/icons/iconw_murstar.tga
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-	}
-}
-
-icons/iconw_adb
-{
-	nopicmip
-	nomipmaps
-	{
-		texFilter nearest
-		map icons/iconw_adb.dds
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-	}
-}
-
-icons/iconw_fab
-{
-	nopicmip
-	nomipmaps
-	{
-		map textures/icons/iconw_fullauto_shotty.tga
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-	}
-}
-
-icons/iconw_plasma
-{
-	nopicmip
-	nomipmaps
-	{
-		map textures/icons/iconw_plasma.tga
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-	}
-}
-
-icons/iconw_frag
-{
-	nopicmip
-	nomipmaps
-	{
-		map textures/icons/iconw_frag.tga
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-	}
-}
-
-icons/iconw_incendiary
-{
-	nopicmip
-	nomipmaps
-	{
-		map textures/icons/iconw_incendiary.tga
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-	}
-}
-
-icons/iconw_smoke
-{
-	nopicmip
-	nomipmaps
-	{
-		map textures/icons/iconw_smoke.tga
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-	}
-}
-
-//
-// misc
-//
-icons/icon_healthpack
-{
-	nopicmip
-	nomipmaps
-	{
-		map icons/icon_health.dds
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-	}
-}
-
-//
-// ammo icons
-//
-icons/icona_bullets
-{
-	nopicmip
-	nomipmaps
-	{
-		map textures/icons/icona_bullets.tga
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-	}
-}
-
-icons/icona_shells
-{
-	nopicmip
-	nomipmaps
-	{
-		map textures/icons/icona_shells.tga
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-	}
-}
-
-icons/icona_rockets
-{
-	nopicmip
-	nomipmaps
-	{
-		map textures/icons/icona_rockets.tga
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-	}
-}
-
-icons/icona_frag
-{
-	nopicmip
-	nomipmaps
-	{
-		map textures/icons/icona_frag.tga
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-	}
-}
-
-icons/icona_incendiary
-{
-	nopicmip
-	nomipmaps
-	{
-		map textures/icons/icona_incendiary.tga
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-	}
-}
-
 icons/icona_smoke
 {
 	nopicmip
@@ -447,6 +282,50 @@ gfx/splatter
 		clampmap particle_effects/Spritesheets/Splatter-Sheet.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		rgbGen vertex
+	}
+}
+
+gfx/muzzle_flash/mf0
+{
+	nopicmip
+	nomipmaps
+	{
+		texFilter bilinear
+		clampmap gfx/env/muzzle/mf0.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+	}
+}
+
+gfx/muzzle_flash/mf1
+{
+	nopicmip
+	nomipmaps
+	{
+		texFilter bilinear
+		clampmap gfx/env/muzzle/mf1.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+	}
+}
+
+gfx/muzzle_flash/mf2
+{
+	nopicmip
+	nomipmaps
+	{
+		texFilter bilinear
+		clampmap gfx/env/muzzle/mf2.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+	}
+}
+
+gfx/muzzle_flash/mf3
+{
+	nopicmip
+	nomipmaps
+	{
+		texFilter bilinear
+		clampmap gfx/env/muzzle/mf3.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 	}
 }
 

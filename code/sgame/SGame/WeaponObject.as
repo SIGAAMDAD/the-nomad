@@ -188,11 +188,14 @@ namespace TheNomad::SGame {
 			case StateNum::ST_WEAPON_EQUIP:
 				return 0.0f; // cannot be used for some reason
 			};
+
 			m_nBulletsUsed += m_WeaponInfo.fireRate;
 			
 			EmitSound( m_WeaponInfo.useSfx, 10.0f, 0xff );
 			SetState( @m_WeaponInfo.useState );
 			float damage = m_WeaponInfo.damage;
+
+			GfxManager.AddMuzzleFlash( m_Owner.GetOrigin() );
 			
 			// TODO: adaptive weapon animation & cooldowns
 			
@@ -260,6 +263,11 @@ namespace TheNomad::SGame {
 				m_Bounds.m_nHeight = m_WeaponInfo.size.y;
 				m_Bounds.MakeBounds( m_Link.m_Origin );
 				return;
+			}
+			if ( m_nBulletsUsed >= m_WeaponInfo.magSize ) {
+				EmitSound( m_WeaponInfo.reloadSfx, 10.0f, 0xff );
+				SetState( @m_WeaponInfo.reloadState );
+				m_nBulletsUsed = 0;
 			}
 			if ( !m_State.Done( m_nTicker ) ) {
 				return; // only this can stop the spam, the bullet hell. OH LORD!

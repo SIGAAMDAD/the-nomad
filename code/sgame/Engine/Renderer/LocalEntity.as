@@ -30,6 +30,7 @@ namespace TheNomad::Engine::Renderer {
 			} else {
 				m_bSpriteSheet = false;
 			}
+			m_bLightSource = false;
 			m_EffectAnimation = TheNomad::SGame::Animation();
 		}
 
@@ -66,6 +67,10 @@ namespace TheNomad::Engine::Renderer {
 				refEntity.spriteId = m_hShader;
 			}
 			refEntity.Draw();
+
+			if ( m_bLightSource ) {
+				TheNomad::Engine::Renderer::AddDLightToScene( vec3( m_Origin.x, m_Origin.y, 0.0f ), 10.0f, vec3( 1.0f ) );
+			}
 		}
 
 		vec2 m_Origin = vec2( 0.0f );
@@ -85,5 +90,6 @@ namespace TheNomad::Engine::Renderer {
 		int m_hShader = FS_INVALID_HANDLE;
 		bool m_bSpriteSheet = false;
 		bool m_bGravity = false;
+		bool m_bLightSource = false;
 	};
 };
