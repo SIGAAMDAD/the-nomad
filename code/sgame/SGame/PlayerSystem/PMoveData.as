@@ -2,7 +2,7 @@ namespace TheNomad::SGame {
 	const uint PMF_JUMP_HELD      = 0x01;
 	const uint PMF_BACKWARDS_JUMP = 0x02;
 
-	const uint DASH_DURATION = 800;
+	const uint DASH_DURATION = 80;
 	const uint SLIDE_DURATION = 500;
 	
 	const float JUMP_VELOCITY = 3.5f;
@@ -264,7 +264,6 @@ namespace TheNomad::SGame {
 
 			TheNomad::Engine::UserInterface::SetActiveFont( TheNomad::Engine::UserInterface::Font_RobotoMono );
 			
-			/*
 			ImGui::Begin( "Debug Player Movement", null, ImGuiWindowFlags::AlwaysAutoResize );
 			ImGui::SetWindowPos( vec2( 16, 128 ) );
 			ImGui::Text( "Origin: [ " + m_EntityData.GetOrigin().x + ", " + m_EntityData.GetOrigin().y + ", " + m_EntityData.GetOrigin().z + " ]" );
@@ -293,12 +292,11 @@ namespace TheNomad::SGame {
 			ImGui::Separator();
 			ImGui::Text( "Arm Angle: " + m_nArmsAngle );
 			ImGui::Separator();
-			ImGui::Text( "LegState: " + m_EntityData.GetLegState().GetName() );
-			ImGui::Text( "LegAnimation:" );
-			ImGui::Text( "  Frame: " + m_EntityData.GetLegState().GetAnimation().GetFrame() );
-			ImGui::Text( "  NumFrames: " + m_EntityData.GetLegState().GetAnimation().NumFrames() );
+			if ( m_EntityData.IsWeaponEquipped() ) {
+				ImGui::Text( "Weapon State: " + m_EntityData.GetCurrentWeapon().GetState().GetName() );
+				ImGui::Text( "Weapon Tics: " + ( ( TheNomad::GameSystem::GameTic - m_EntityData.GetCurrentWeapon().GetTicker() ) ) );
+			}
 			ImGui::End();
-			*/
 
 			m_EntityData.GetPhysicsObject().OnRunTic();
 		}

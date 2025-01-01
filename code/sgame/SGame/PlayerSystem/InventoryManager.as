@@ -72,22 +72,22 @@ namespace TheNomad::SGame {
 		}
 
 		void SetRightHandWeapon( WeaponObject@ weapon ) {
-			m_WeaponSlots[ m_EntityData.GetRightArm().GetEquippedWeapon() ] = @weapon;
+			m_WeaponSlots[ m_RightArm.GetEquippedWeapon() ] = @weapon;
 		}
 		void SetLeftHandWeapon( WeaponObject@ weapon ) {
-			m_WeaponSlots[ m_EntityData.GetLeftArm().GetEquippedWeapon() ] = @weapon;
+			m_WeaponSlots[ m_LeftArm.GetEquippedWeapon() ] = @weapon;
 		}
 		const WeaponObject@ GetRightHandWeapon() const {
-			return @m_WeaponSlots[ m_EntityData.GetRightArm().GetEquippedWeapon() ].GetData();
+			return @m_WeaponSlots[ m_RightArm.GetEquippedWeapon() ].GetData();
 		}
 		const WeaponObject@ GetLeftHandWeapon() const {
-			return @m_WeaponSlots[ m_EntityData.GetLeftArm().GetEquippedWeapon() ].GetData();
+			return @m_WeaponSlots[ m_LeftArm.GetEquippedWeapon() ].GetData();
 		}
 		WeaponObject@ GetRightHandWeapon() {
-			return @m_WeaponSlots[ m_EntityData.GetRightArm().GetEquippedWeapon() ].GetData();
+			return @m_WeaponSlots[ m_RightArm.GetEquippedWeapon() ].GetData();
 		}
 		WeaponObject@ GetLeftHandWeapon() {
-			return @m_WeaponSlots[ m_EntityData.GetLeftArm().GetEquippedWeapon() ].GetData();
+			return @m_WeaponSlots[ m_LeftArm.GetEquippedWeapon() ].GetData();
 		}
 
 		void EquipSlot( uint nIndex ) {
@@ -95,6 +95,20 @@ namespace TheNomad::SGame {
 		}
 		uint GetSlotIndex() const {
 			return m_nCurrentWeapon;
+		}
+
+		void EquipWeapon( WeaponObject@ weapon ) {
+			// set it to the current slot
+			m_WeaponSlots[ m_nCurrentWeapon ] = @weapon;
+
+			// update the hand data
+			m_EntityData.LastUsedArm.SetEquippedSlot( m_nCurrentWeapon );
+
+			// apply rules of various weapon properties
+			if ( weapon.IsTwoHanded() ) {
+				m_LeftArm.SetEquippedSlot( m_nCurrentWeapon );
+				m_RightArm.SetEquippedSlot( m_nCurrentWeapon );
+			}
 		}
 
 		private WeaponSlot@[] m_WeaponSlots( NUM_WEAPON_SLOTS );

@@ -91,6 +91,14 @@ namespace TheNomad::SGame::InfoSystem {
 		None				= 0x0000 // invalid ammo
 	};
 
+	enum WeaponFireMode {
+		Single,
+		Burst,
+		Automatic,
+
+		NumFireModes,
+	};
+
 	enum WeaponProperty {
 		OneHandedBlade		= 0x00000101,
 		OneHandedBlunt		= 0x00001002,

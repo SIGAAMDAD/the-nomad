@@ -27,7 +27,7 @@ namespace TheNomad::SGame {
 				break;
 			};
 
-			SetState( @m_WeaponInfo.equipState );
+			SetState( @m_WeaponInfo.idleState );
 			@m_Owner = @ent;
 
 			m_Bounds.Clear();
@@ -48,23 +48,26 @@ namespace TheNomad::SGame {
 			return @m_WeaponInfo;
 		}
 		
+		InfoSystem::WeaponFireMode GetFireMode() const {
+			return m_WeaponInfo.weaponFireMode;
+		}
 		bool IsOneHanded() const {
-			return ( m_WeaponInfo.weaponProps & InfoSystem::WeaponProperty::IsOneHanded ) == 1;
+			return ( m_WeaponInfo.weaponProps & InfoSystem::WeaponProperty::IsOneHanded ) != 0;
 		}
 		bool IsTwoHanded() const {
-			return ( m_WeaponInfo.weaponProps & InfoSystem::WeaponProperty::IsTwoHanded ) == 1;
+			return ( m_WeaponInfo.weaponProps & InfoSystem::WeaponProperty::IsTwoHanded ) != 0;
 		}
 		bool IsBladed() const {
-			return ( m_WeaponInfo.weaponProps & InfoSystem::WeaponProperty::IsBladed ) == 1;
+			return ( m_WeaponInfo.weaponProps & InfoSystem::WeaponProperty::IsBladed ) != 0;
 		}
 		bool IsPolearm() const {
-			return ( m_WeaponInfo.weaponProps & InfoSystem::WeaponProperty::IsPolearm ) == 1;
+			return ( m_WeaponInfo.weaponProps & InfoSystem::WeaponProperty::IsPolearm ) != 0;
 		}
 		bool IsFirearm() const {
-			return ( m_WeaponInfo.weaponProps & InfoSystem::WeaponProperty::IsFirearm ) == 1;
+			return ( m_WeaponInfo.weaponProps & InfoSystem::WeaponProperty::IsFirearm ) != 0;
 		}
 		bool IsBlunt() const {
-			return ( m_WeaponInfo.weaponProps & InfoSystem::WeaponProperty::IsBlunt ) == 1;
+			return ( m_WeaponInfo.weaponProps & InfoSystem::WeaponProperty::IsBlunt ) != 0;
 		}
 		
 		//
@@ -177,17 +180,19 @@ namespace TheNomad::SGame {
 		// WeaponObject::Use: returns the amount of damage dealt
 		//
 		float Use( const uint weaponMode ) {
-			float damage;
-			
-			if ( m_State.GetBaseNum() == StateNum::ST_WEAPON_USE ) {
-				// already in use
-				return 0.0f;
-			}
-			
+			switch ( m_State.GetBaseNum() ) {
+			case StateNum::ST_WEAPON_IDLE:
+				break;
+			case StateNum::ST_WEAPON_USE:
+			case StateNum::ST_WEAPON_RELOAD:
+			case StateNum::ST_WEAPON_EQUIP:
+				return 0.0f; // cannot be used for some reason
+			};
 			m_nBulletsUsed += m_WeaponInfo.fireRate;
 			
+			EmitSound( m_WeaponInfo.useSfx, 10.0f, 0xff );
 			SetState( @m_WeaponInfo.useState );
-			damage = m_WeaponInfo.damage;
+			float damage = m_WeaponInfo.damage;
 			
 			// TODO: adaptive weapon animation & cooldowns
 			
@@ -254,20 +259,12 @@ namespace TheNomad::SGame {
 				m_Bounds.m_nWidth = m_WeaponInfo.size.x;
 				m_Bounds.m_nHeight = m_WeaponInfo.size.y;
 				m_Bounds.MakeBounds( m_Link.m_Origin );
-
 				return;
 			}
-
-			if ( m_State.GetBaseNum() == StateNum::ST_WEAPON_USE && m_State.Done( m_nTicker ) ) {
-				if ( m_nBulletsUsed >= m_WeaponInfo.magSize ) {
-					SetState( @m_WeaponInfo.reloadState );
-					m_nBulletsUsed = 0;
-				} else {
-					SetState( @m_WeaponInfo.idleState );
-				}
-			} else {
-				@m_State = @m_State.Run( m_nTicker );
+			if ( !m_State.Done( m_nTicker ) ) {
+				return; // only this can stop the spam, the bullet hell. OH LORD!
 			}
+			@m_State = @m_State.Run( m_nTicker );
 		}
 		void Draw() override {
 			if ( @m_Owner !is null ) {

@@ -45,7 +45,7 @@ namespace TheNomad::SGame {
 
 			// draw weapon icon
 			if ( m_Parent.IsWeaponEquipped() ) {
-				ImGui::Image( m_Parent.GetCurrentWeapon().GetWeaponInfo().iconShader,
+				ImGui::Image( m_Parent.GetCurrentWeapon().GetWeaponInfo().hIconShader,
 					vec2( 820.0f * TheNomad::GameSystem::UIScale, 630.0f * TheNomad::GameSystem::UIScale ),
 					vec2( 128.0f * TheNomad::GameSystem::UIScale, 128.0f * TheNomad::GameSystem::UIScale ) );
 			} else {

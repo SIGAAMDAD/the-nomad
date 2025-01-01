@@ -13,8 +13,8 @@
 			"Stats.Range": 2.75,
 			"Stats.Damage": 10.0,
 			"Stats.FireRate": 2,
-			"Stats.Width": 2.5,
-			"Stats.Height": 1.0,
+			"Stats.Width": 3.5,
+			"Stats.Height": 1.25,
 			"RenderData.Icon": "icons/iconw_adb",
 			"RenderData.SheetWidth": 512,
 			"RenderData.SheetHeight": 512,
@@ -23,7 +23,8 @@
 			"RenderData.SpriteSheet": "sprites/weapons/double_barrel",
 			"Sounds.Use": "event:/sfx/weapons/adb_shot",
 			"Sounds.Reload": "event:/sfx/weapons/adb_rld",
-			"Properties": 1052784
+			"Properties": 1052784,
+			"FireMode": 0
 		}
 	]
 }

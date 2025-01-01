@@ -120,7 +120,10 @@ namespace TheNomad::SGame {
 			return m_SpriteOffset;
 		}
 		bool Done( uint ticker ) const {
-			return ( TheNomad::GameSystem::GameTic - ticker ) * TheNomad::GameSystem::DeltaTic > m_nTics;
+			if ( EntityManager.GetActivePlayer().InReflex() ) {
+				return ( TheNomad::GameSystem::GameTic - ticker ) * TheNomad::GameSystem::DeltaTic >= m_nTics;
+			}
+			return ( TheNomad::GameSystem::GameTic - ticker ) * TheNomad::GameSystem::DeltaTic >= m_nTics * TheNomad::GameSystem::DeltaTic;
 		}
 		EntityState@ Run( uint& out ticker ) {
 			m_Animation.Run();

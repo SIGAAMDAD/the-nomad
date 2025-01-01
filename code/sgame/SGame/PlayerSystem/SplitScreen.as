@@ -119,7 +119,7 @@ namespace TheNomad::SGame {
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.UseWeapon_Down_f ), "+useweap" );
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.UseWeapon_Down_f ), "-useweap" );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.UseWeapon_Up_f ), "-useweap" );
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.AltUseWeapon_Down_f ), "+altuseweap" );
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(

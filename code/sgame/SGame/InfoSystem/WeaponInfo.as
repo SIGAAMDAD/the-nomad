@@ -149,10 +149,23 @@ namespace TheNomad::SGame::InfoSystem {
 			}
 			weaponProps = WeaponProperty( uint( json[ "Properties" ] ) );
 			if ( weaponProps == WeaponProperty::None ) {
-				ConsoleWarning( "invalid weapon info, WeaponProperties '" + uint( weaponProps ) + "'' are invalid ( None, abide by physics pls ;) )\n" );
+				ConsoleWarning( "invalid weapon info, WeaponProperties '" + uint( weaponProps ) + "' are invalid ( None, abide by physics pls ;) )\n" );
 				return false;
 			}
-			
+			return true;
+		}
+		private bool LoadWeaponFireModes( json@ json ) {
+			uint fireMode = 0;
+			if ( !json.get( "FireMode", fireMode ) ) {
+				ConsoleWarning( "invalid weapon info, missing variable 'FireMode' in \"" + name + "\"\n" );
+				return false;
+			}
+			weaponFireMode = WeaponFireMode( uint( json[ "FireMode" ] ) );
+			if ( weaponFireMode == WeaponFireMode::NumFireModes ) {
+				ConsoleWarning( "invalid weapon info, WeaponFireMode '" + uint( weaponFireMode )
+					+ "' are invalid ( None, please make a real weapon sir ;) \n" );
+				return false;
+			}
 			return true;
 		}
 		
@@ -218,6 +231,9 @@ namespace TheNomad::SGame::InfoSystem {
 			if ( !LoadWeaponProperties( @json ) ) {
 				return false;
 			}
+			if ( !LoadWeaponFireModes( @json ) ) {
+				return false;
+			}
 			return true;
 		}
 		
@@ -235,5 +251,6 @@ namespace TheNomad::SGame::InfoSystem {
 		AmmoType ammoType = AmmoType::Invalid; // ammo types allowed
 		WeaponProperty weaponProps = WeaponProperty::None;
 		WeaponType weaponType = WeaponType::NumWeaponTypes;
+		WeaponFireMode weaponFireMode = WeaponFireMode::NumFireModes;
 	};
 };

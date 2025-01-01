@@ -250,10 +250,7 @@ namespace TheNomad::SGame {
 
 		void EquipWeapon( WeaponObject@ weapon ) {
 			EmitSound( ScreenData.m_EquipWeaponSfx, 10.0f, 0xff );
-
-			// set it to the current slot
-			m_Inventory.GetEquippedWeapon() = @weapon;
-			LastUsedArm.SetEquippedSlot( m_Inventory.GetSlotIndex() );
+			m_Inventory.EquipWeapon( @weapon );
 		}
 
 		void PickupItem( EntityObject@ item ) {
@@ -737,10 +734,16 @@ namespace TheNomad::SGame {
 				m_QuickShot.Think();
 			}
 
-			if ( ( Flags & PF_USING_WEAPON ) != 0 && @GetCurrentWeapon() !is null ) {
-				m_nFrameDamage += GetCurrentWeapon().Use( GetCurrentWeaponMode() );
-			} else if ( ( Flags & PF_USING_WEAPON_ALT ) != 0 && @GetCurrentWeapon() !is null ) {
-				m_nFrameDamage += GetCurrentWeapon().UseAlt( GetCurrentWeaponMode() );
+			WeaponObject@ current = @GetCurrentWeapon();
+			if ( @current !is null ) {
+				if ( ( Flags & PF_USING_WEAPON ) != 0 ) {
+					m_nFrameDamage += current.Use( GetCurrentWeaponMode() );
+				} else if ( ( Flags & PF_USING_WEAPON_ALT ) != 0 ) {
+					m_nFrameDamage += current.UseAlt( GetCurrentWeaponMode() );
+				}
+				if ( current.GetFireMode() != InfoSystem::WeaponFireMode::Automatic ) {
+					Flags &= ~( PF_USING_WEAPON | PF_USING_WEAPON_ALT );
+				}
 			}
 
 			m_Bounds.m_nWidth = sgame_PlayerWidth.GetFloat();
@@ -873,9 +876,11 @@ namespace TheNomad::SGame {
 				@front = @RightArm;
 				break;
 			};
-
-			back.Draw();
-
+			if ( m_nHandsUsed == BOTH_ARMS ) {
+				@front = @LastUsedArm;
+			} else {
+				back.Draw();
+			}
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.sheetNum = m_SpriteSheet.GetShader();
 			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( @m_SpriteSheet, @m_State );
