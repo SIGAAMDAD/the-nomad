@@ -208,9 +208,14 @@ namespace TheNomad::SGame {
 			
 			// mouse & keyboard
 			// position torso facing wherever the mouse is
-			m_nArmsAngle = atan2( TheNomad::GameSystem::HalfScreenHeight - float( TheNomad::GameSystem::MousePosition.y ),
+			// NOTE: NEVER CHANGE THIS!
+			m_nArmsAngle = atan2( float( TheNomad::GameSystem::MousePosition.y ) - TheNomad::GameSystem::HalfScreenHeight,
 				float( TheNomad::GameSystem::MousePosition.x ) - TheNomad::GameSystem::HalfScreenWidth );
-			
+	//		m_nArmsAngle = atan2( TheNomad::GameSystem::MousePosition.x, TheNomad::GameSystem::HalfScreenHeight - float( TheNomad::GameSystem::MousePosition.y ) );
+
+			if ( TheNomad::GameSystem::MousePosition.y < TheNomad::GameSystem::HalfScreenHeight ) {
+//				m_nArmsAngle = -m_nArmsAngle;
+			}
 			if ( TheNomad::GameSystem::MousePosition.x < TheNomad::GameSystem::HalfScreenWidth ) {
 				/*
 				if ( @m_EntityData.GetLeftHandWeapon() !is null ) {
@@ -220,7 +225,7 @@ namespace TheNomad::SGame {
 					m_EntityData.SetRightArmFacing( FACING_LEFT );
 				}
 				*/
-				m_nArmsAngle = -m_nArmsAngle;
+//				m_nArmsAngle = -m_nArmsAngle;
 			} else if ( TheNomad::GameSystem::MousePosition.x > TheNomad::GameSystem::HalfScreenWidth ) {
 				/*
 				if ( @m_EntityData.GetLeftHandWeapon() !is null ) {
@@ -264,7 +269,6 @@ namespace TheNomad::SGame {
 
 			TheNomad::Engine::UserInterface::SetActiveFont( TheNomad::Engine::UserInterface::Font_RobotoMono );
 			
-			/*
 			ImGui::Begin( "Debug Player Movement", null, ImGuiWindowFlags::AlwaysAutoResize );
 			ImGui::SetWindowPos( vec2( 16, 128 ) );
 			ImGui::Text( "Origin: [ " + m_EntityData.GetOrigin().x + ", " + m_EntityData.GetOrigin().y + ", " + m_EntityData.GetOrigin().z + " ]" );
@@ -292,13 +296,7 @@ namespace TheNomad::SGame {
 			}
 			ImGui::Separator();
 			ImGui::Text( "Arm Angle: " +m_nArmsAngle );
-			ImGui::Separator();
-			if ( m_EntityData.IsWeaponEquipped() ) {
-				ImGui::Text( "Weapon State: " + m_EntityData.GetCurrentWeapon().GetState().GetName() );
-				ImGui::Text( "Weapon Tics: " + ( ( TheNomad::GameSystem::GameTic - m_EntityData.GetCurrentWeapon().GetTicker() ) ) );
-			}
 			ImGui::End();
-			*/
 
 			m_EntityData.GetPhysicsObject().OnRunTic();
 		}

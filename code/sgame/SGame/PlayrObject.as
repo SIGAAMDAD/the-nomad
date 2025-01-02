@@ -909,7 +909,7 @@ namespace TheNomad::SGame {
 			front.Draw();
 
 			m_HudData.Draw();
-			m_StyleData.Draw();
+//			m_StyleData.Draw();
 		}
 
 		PlayerDisplayUI@ GetUI() {

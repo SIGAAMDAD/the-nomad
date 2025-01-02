@@ -28,10 +28,12 @@ namespace TheNomad::GameSystem {
 			if ( endDefault != Vec3Origin ) {
 				end = endDefault;
 			} else {
-				end.x = m_Start.x + m_nLength * cos( m_nAngle );
-				end.y = m_Start.y + m_nLength * sin( m_nAngle );
+				end.x = m_Start.x + ( m_nLength * cos( m_nAngle ) );
+				end.y = m_Start.y + ( m_nLength * sin( m_nAngle ) );
+
 				end.z = m_Start.z * sin( m_nAngle );
 			}
+			DebugPrint( "Casting ray ending at [ " + end.x + ", " + end.y + " ]\n" );
 
 			const float dx = abs( end.x - m_Start.x );
 			const float dy = abs( end.y - m_Start.y );

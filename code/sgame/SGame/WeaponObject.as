@@ -151,10 +151,15 @@ namespace TheNomad::SGame {
 		}
 		private float UseFireArm( float damage, uint weaponMode ) {
 			TheNomad::GameSystem::RayCast ray;
-			
+
 			ray.m_nLength = m_AmmoInfo.range;
 			ray.m_Start = m_Owner.GetOrigin();
-			ray.m_nAngle = m_Owner.GetAngle();
+			if ( m_Owner.GetType() == TheNomad::GameSystem::EntityType::Playr ) {
+				ray.m_nAngle = cast<PlayrObject@>( @m_Owner ).GetArmAngle();
+			} else {
+				ray.m_nAngle = m_Owner.GetAngle();
+			}
+			ray.m_nOwner = m_Owner.GetEntityNum();
 			
 			ray.Cast();
 			
@@ -163,16 +168,21 @@ namespace TheNomad::SGame {
 				
 				if ( Util::Distance( player.GetOrigin(), ray.m_Origin ) <= 3.90f ) {
 					// if we're close to the bullet, then simulate a near-hit
-					player.EmitSound( TheNomad::Engine::SoundSystem::RegisterSfx( "ricochet_" + ( Util::PRandom() & 3 ) ), 10.0f, 0xff );
+					player.EmitSound(
+						TheNomad::Engine::SoundSystem::RegisterSfx(
+							"event:/sfx/env/bullet_impact/ricochet_" + ( Util::PRandom() & 3 )
+						),
+						10.0f, 0xff
+					);
 					// TODO: shake screen?
 				}
 				return 0.0f; // hit nothing
 			} else if ( ray.m_nEntityNumber == ENTITYNUM_WALL ) {
-				GfxManager.AddBulletHole( ray.m_Origin );
+//				GfxManager.AddBulletHole( ray.m_Origin );
 				return 0.0f;
 			}
 			
-			EntityManager.DamageEntity( @EntityManager.GetEntityForNum( ray.m_nEntityNumber ), @m_Owner );
+//			EntityManager.DamageEntity( @EntityManager.GetEntityForNum( ray.m_nEntityNumber ), @m_Owner );
 			
 			// health mult doesn't matter on harder difficulties if the player is attacking with a firearm,
 			// that is, unless, the player is very close to the enemy
