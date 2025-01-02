@@ -4,6 +4,7 @@
 #include "itemlib/Scripts/StimPack.as"
 #include "itemlib/Scripts/Scenery.as"
 #include "itemlib/Scripts/Tutorial.as"
+#include "itemlib/Scripts/ShellsPickup.as"
 
 namespace itemlib::Script {
 	// modify these if you want to add your own items
@@ -27,12 +28,9 @@ namespace itemlib::Script {
 		TUTORIAL_ITEM_PICKUPS,
 		TUTORIAL_PARRYING,
 
-		AMMO_RIFLE,
-		AMMO_PISTOL,
-		AMMO_SHELLS,
-		AMMO_ASTURION_SPECIAL,
-		AMMO_SECRET_DAKKA_DAKKA_DAKKA,
-		AMMO_SECRET_BULLET_OF_45
+		WEAPON_PICKUP, // here just for filler
+
+		SHELLS_PICKUP
 	};
 
 	ItemScript@ AllocateScriptEntity( uint nItemID ) {
@@ -56,12 +54,9 @@ namespace itemlib::Script {
 		case ITEM_ID::SCENERY_OUTCROP:
 			@scriptObject = Scenery();
 			break;
-		case ITEM_ID::AMMO_RIFLE:
-		case ITEM_ID::AMMO_PISTOL:
-		case ITEM_ID::AMMO_SHELLS:
-		case ITEM_ID::AMMO_ASTURION_SPECIAL:
-		case ITEM_ID::AMMO_SECRET_DAKKA_DAKKA_DAKKA:
-		case ITEM_ID::AMMO_SECRET_BULLET_OF_45:
+		
+		case ITEM_ID::SHELLS_PICKUP:
+			@scriptObject = ShellsPickup();
 			break;
 
 		// tutorial popups

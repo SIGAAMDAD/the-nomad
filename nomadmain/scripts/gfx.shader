@@ -291,7 +291,7 @@ gfx/muzzle_flash/mf0
 	nomipmaps
 	{
 		texFilter bilinear
-		clampmap gfx/env/muzzle/mf0.dds
+		clampmap gfx/env/muzzle/mf0.png
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 	}
 }
@@ -302,7 +302,7 @@ gfx/muzzle_flash/mf1
 	nomipmaps
 	{
 		texFilter bilinear
-		clampmap gfx/env/muzzle/mf1.dds
+		clampmap gfx/env/muzzle/mf1.png
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 	}
 }
@@ -313,7 +313,7 @@ gfx/muzzle_flash/mf2
 	nomipmaps
 	{
 		texFilter bilinear
-		clampmap gfx/env/muzzle/mf2.dds
+		clampmap gfx/env/muzzle/mf2.png
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 	}
 }
@@ -324,7 +324,7 @@ gfx/muzzle_flash/mf3
 	nomipmaps
 	{
 		texFilter bilinear
-		clampmap gfx/env/muzzle/mf3.dds
+		clampmap gfx/env/muzzle/mf3.png
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 	}
 }

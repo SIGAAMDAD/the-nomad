@@ -32,6 +32,7 @@ namespace TheNomad::SGame {
 			};
 
 			@m_Owner = @ent;
+			m_Bounds.Clear();
 
 			DebugPrint( "Item " + m_Link.m_nEntityNumber + " now owned by " + ent.GetEntityNum() + ".\n" );
 		}

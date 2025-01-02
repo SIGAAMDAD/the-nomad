@@ -36,6 +36,14 @@
 			"Stats.Height": 1.25
 		},
 		{
+			"Type": "Consumable",
+			"Id": "item_shells_pickup",
+			"Name": "Shells Box",
+			"RenderData.Icon": "icons/icona_shells",
+			"Stats.Width": 1.25,
+			"Stats.Height": 0.75
+		},
+		{
 			"Type": "Scenery",
 			"Id": "scenery_tent",
 			"Name": "Tent",

@@ -99,19 +99,23 @@ namespace TheNomad::SGame {
 			@m_State = @m_State.Run( m_nTicker );
 		}
 		void Draw() {
-			vec2 scale = TheNomad::Engine::Renderer::GetFacing( Facing );
-
-			if ( ( m_EntityData.Flags & PF_SLIDING ) != 0 ) {
-				scale.x = -scale.x;
-			}
-			
 			SpriteSheet@ sheet = @CalcState();
 			
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 			refEntity.origin = m_EntityData.GetOrigin();
 			refEntity.sheetNum = sheet.GetShader();
 			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( @sheet, @m_State );
-			refEntity.scale = scale;
+			if ( @sheet !is @m_SpriteSheet ) {
+				// drawing a weapon, don't mess with the sprite direction
+				WeaponObject@ weapon = @m_EntityData.GetInventory().GetSlot( m_nWeaponSlot ).GetData();
+				refEntity.scale = weapon.GetWeaponInfo().size;
+			} else {
+				vec2 scale = TheNomad::Engine::Renderer::GetFacing( Facing );
+				if ( ( m_EntityData.Flags & PF_SLIDING ) != 0 ) {
+					scale.x = -scale.x;
+				}
+				refEntity.scale = scale;
+			}
 			refEntity.rotation = m_EntityData.GetArmAngle();
 			refEntity.Draw();
 		}

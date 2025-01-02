@@ -99,8 +99,9 @@ namespace TheNomad::SGame::InfoSystem {
 
 			DebugPrint( "Processing Type for AmmoInfo '" + name + "'...\n" );
 			for ( uint i = 0; i < AmmoTypeStrings.Count(); i++ ) {
-				if ( Util::StrICmp( AmmoTypeStrings[i], type ) != 1 ) {
+				if ( Util::StrICmp( AmmoTypeStrings[i], type ) == 0 ) {
 					baseType = AmmoType( i );
+					DebugPrint( "ammo \"" + name + "\" using baseType \"" + AmmoTypeStrings[i] + "\"\n" );
 					break;
 				}
 			}

@@ -3,8 +3,6 @@ namespace itemlib::Script {
 		Scenery() {
 		}
 
-		void OnInteraction( TheNomad::SGame::EntityObject@ user ) override {
-		}
 		void OnEquip( TheNomad::SGame::EntityObject@ user ) override {
 		}
 		void OnUse( TheNomad::SGame::EntityObject@ user ) override {

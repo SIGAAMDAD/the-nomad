@@ -22,7 +22,8 @@
 		{ "Id": 12, "Name": "tutorial_checkpoints" },
 		{ "Id": 13, "Name": "tutorial_item_pickups" },
 		{ "Id": 14, "Name": "tutorial_parrying" },
-		{ "Id": 15, "Name": "item_weapon_pickup" }
+		{ "Id": 15, "Name": "item_weapon_pickup" },
+		{ "Id": 16, "Name": "item_shells_pickup" }
 	],
 	"AmmoData": [
 		{ "Id": 16, "Name": "ammo_rifle" },

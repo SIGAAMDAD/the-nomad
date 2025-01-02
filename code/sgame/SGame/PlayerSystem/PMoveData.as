@@ -3,7 +3,7 @@ namespace TheNomad::SGame {
 	const uint PMF_BACKWARDS_JUMP = 0x02;
 
 	const uint DASH_DURATION = 80;
-	const uint SLIDE_DURATION = 500;
+	const uint SLIDE_DURATION = 50;
 	
 	const float JUMP_VELOCITY = 3.5f;
 	const float OVERCLIP = 1.5f;
@@ -209,7 +209,7 @@ namespace TheNomad::SGame {
 			// mouse & keyboard
 			// position torso facing wherever the mouse is
 			m_nArmsAngle = atan2( TheNomad::GameSystem::HalfScreenHeight - float( TheNomad::GameSystem::MousePosition.y ),
-				TheNomad::GameSystem::HalfScreenWidth - float( TheNomad::GameSystem::MousePosition.x ) );
+				float( TheNomad::GameSystem::MousePosition.x ) - TheNomad::GameSystem::HalfScreenWidth );
 			
 			if ( TheNomad::GameSystem::MousePosition.x < TheNomad::GameSystem::HalfScreenWidth ) {
 				/*
@@ -264,6 +264,7 @@ namespace TheNomad::SGame {
 
 			TheNomad::Engine::UserInterface::SetActiveFont( TheNomad::Engine::UserInterface::Font_RobotoMono );
 			
+			/*
 			ImGui::Begin( "Debug Player Movement", null, ImGuiWindowFlags::AlwaysAutoResize );
 			ImGui::SetWindowPos( vec2( 16, 128 ) );
 			ImGui::Text( "Origin: [ " + m_EntityData.GetOrigin().x + ", " + m_EntityData.GetOrigin().y + ", " + m_EntityData.GetOrigin().z + " ]" );
@@ -290,13 +291,14 @@ namespace TheNomad::SGame {
 				ImGui::Text( "maxs[1]: " + maxs.y );
 			}
 			ImGui::Separator();
-			ImGui::Text( "Arm Angle: " + m_nArmsAngle );
+			ImGui::Text( "Arm Angle: " +m_nArmsAngle );
 			ImGui::Separator();
 			if ( m_EntityData.IsWeaponEquipped() ) {
 				ImGui::Text( "Weapon State: " + m_EntityData.GetCurrentWeapon().GetState().GetName() );
 				ImGui::Text( "Weapon Tics: " + ( ( TheNomad::GameSystem::GameTic - m_EntityData.GetCurrentWeapon().GetTicker() ) ) );
 			}
 			ImGui::End();
+			*/
 
 			m_EntityData.GetPhysicsObject().OnRunTic();
 		}

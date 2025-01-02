@@ -909,6 +909,7 @@ namespace TheNomad::SGame {
 			front.Draw();
 
 			m_HudData.Draw();
+			m_StyleData.Draw();
 		}
 
 		PlayerDisplayUI@ GetUI() {
@@ -977,6 +978,7 @@ namespace TheNomad::SGame {
 		private bool m_bEmoting = false;
 		
 		private PlayerDisplayUI m_HudData;
+		private StyleTracker m_StyleData;
 		PMoveData Pmove( @this );
 
 		uint Flags = 0;

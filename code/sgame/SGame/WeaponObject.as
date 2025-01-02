@@ -27,7 +27,15 @@ namespace TheNomad::SGame {
 				break;
 			};
 
-			SetState( @m_WeaponInfo.idleState );
+			m_Facing = ent.GetFacing();
+			switch ( m_Facing ) {
+			case FACING_LEFT:
+				SetState( @m_WeaponInfo.idleState_LEFT );
+				break;
+			case FACING_RIGHT:
+				SetState( @m_WeaponInfo.idleState_RIGHT );
+				break;
+			};
 			@m_Owner = @ent;
 
 			m_Bounds.Clear();
@@ -46,6 +54,9 @@ namespace TheNomad::SGame {
 		}
 		const InfoSystem::ItemInfo@ GetItemInfo() const {
 			return @m_WeaponInfo;
+		}
+		void SetAmmo( InfoSystem::AmmoInfo@ ammo ) {
+			@m_AmmoInfo = @ammo;
 		}
 		
 		InfoSystem::WeaponFireMode GetFireMode() const {
@@ -186,13 +197,20 @@ namespace TheNomad::SGame {
 			case StateNum::ST_WEAPON_USE:
 			case StateNum::ST_WEAPON_RELOAD:
 			case StateNum::ST_WEAPON_EQUIP:
-				return 0.0f; // cannot be used for some reason
+				return 0.0f;
 			};
 
 			m_nBulletsUsed += m_WeaponInfo.fireRate;
 			
 			EmitSound( m_WeaponInfo.useSfx, 10.0f, 0xff );
-			SetState( @m_WeaponInfo.useState );
+			switch ( m_Owner.GetFacing() ) {
+			case FACING_LEFT:
+				SetState( @m_WeaponInfo.useState_LEFT );
+				break;
+			case FACING_RIGHT:
+				SetState( @m_WeaponInfo.useState_RIGHT );
+				break;
+			};
 			float damage = m_WeaponInfo.damage;
 
 			GfxManager.AddMuzzleFlash( m_Owner.GetOrigin() );
@@ -264,13 +282,65 @@ namespace TheNomad::SGame {
 				m_Bounds.MakeBounds( m_Link.m_Origin );
 				return;
 			}
-			if ( m_nBulletsUsed >= m_WeaponInfo.magSize ) {
-				EmitSound( m_WeaponInfo.reloadSfx, 10.0f, 0xff );
-				SetState( @m_WeaponInfo.reloadState );
-				m_nBulletsUsed = 0;
+
+			//
+			// set the correct sprite direction
+			//
+			const int facing = m_Owner.GetFacing();
+			if ( m_Facing != facing ) {
+				EntityState@ newState = null;
+				switch ( m_State.GetBaseNum() ) {
+				case StateNum::ST_WEAPON_IDLE:
+					switch ( facing ) {
+					case FACING_LEFT:
+						@newState = @m_WeaponInfo.idleState_LEFT;
+						break;
+					case FACING_RIGHT:
+						@newState = @m_WeaponInfo.idleState_RIGHT;
+						break;
+					};
+					break;
+				case StateNum::ST_WEAPON_USE:
+					switch ( facing ) {
+					case FACING_LEFT:
+						@newState = @m_WeaponInfo.useState_LEFT;
+						break;
+					case FACING_RIGHT:
+						@newState = @m_WeaponInfo.useState_RIGHT;
+						break;
+					};
+					break;
+				case StateNum::ST_WEAPON_RELOAD:
+					switch ( facing ) {
+					case FACING_LEFT:
+						@newState = @m_WeaponInfo.reloadState_LEFT;
+						break;
+					case FACING_RIGHT:
+						@newState = @m_WeaponInfo.reloadState_RIGHT;
+						break;
+					};
+					break;
+				};
+
+				// don't mess with the ticker
+				@m_State = @newState;
 			}
+			m_Facing = facing;
 			if ( !m_State.Done( m_nTicker ) ) {
 				return; // only this can stop the spam, the bullet hell. OH LORD!
+			}
+			if ( m_nBulletsUsed >= m_WeaponInfo.magSize ) {
+				EmitSound( m_WeaponInfo.reloadSfx, 10.0f, 0xff );
+				switch ( facing ) {
+				case FACING_LEFT:
+					SetState( @m_WeaponInfo.reloadState_LEFT );
+					break;
+				case FACING_RIGHT:
+					SetState( @m_WeaponInfo.reloadState_RIGHT );
+					break;
+				};
+				m_nBulletsUsed = 0;
+				return;
 			}
 			@m_State = @m_State.Run( m_nTicker );
 		}
@@ -282,7 +352,7 @@ namespace TheNomad::SGame {
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 			
 			refEntity.sheetNum = -1;
-			refEntity.spriteId = TheNomad::Engine::Renderer::RegisterShader( "world/sprites/crate" );
+			refEntity.spriteId = m_WeaponInfo.hIconShader;
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.scale = m_WeaponInfo.size;
 			refEntity.Draw();
@@ -312,6 +382,8 @@ namespace TheNomad::SGame {
 		
 		private InfoSystem::AmmoInfo@ m_AmmoInfo = null;
 		private InfoSystem::WeaponInfo@ m_WeaponInfo = null;
+
+		private EntityState@ m_OppositeState = null;
 		
 		private uint m_nBulletsUsed = 0;
 	};

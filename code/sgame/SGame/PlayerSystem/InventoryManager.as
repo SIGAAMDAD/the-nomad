@@ -13,6 +13,8 @@ namespace TheNomad::SGame {
 			@m_WeaponSlots[7] = @m_LeftHand;
 			@m_WeaponSlots[8] = @m_Ordnance;
 
+			m_AmmoData.Reserve( InfoSystem::InfoManager.GetAmmoTypes().Count() );
+
 			@m_LeftArm = @left;
 			@m_RightArm = @right;
 			@m_EntityData = @ent;
@@ -101,13 +103,42 @@ namespace TheNomad::SGame {
 			// set it to the current slot
 			m_WeaponSlots[ m_nCurrentWeapon ] = @weapon;
 
-			// update the hand data
-			m_EntityData.LastUsedArm.SetEquippedSlot( m_nCurrentWeapon );
-
 			// apply rules of various weapon properties
 			if ( weapon.IsTwoHanded() ) {
 				m_LeftArm.SetEquippedSlot( m_nCurrentWeapon );
 				m_RightArm.SetEquippedSlot( m_nCurrentWeapon );
+
+				// this will automatically override any other modes
+				m_WeaponSlots[ m_LeftArm.GetEquippedWeapon() ].SetMode( weapon.GetWeaponInfo().weaponProps );
+				m_WeaponSlots[ m_RightArm.GetEquippedWeapon() ].SetMode( weapon.GetWeaponInfo().weaponProps );
+				return;
+			}
+
+			// update the hand data
+			m_EntityData.LastUsedArm.SetEquippedSlot( m_nCurrentWeapon );
+			m_WeaponSlots[ m_EntityData.LastUsedArm.GetEquippedWeapon() ].SetMode( weapon.GetWeaponInfo().weaponProps );
+		}
+
+		void AddAmmo( InfoSystem::AmmoInfo@ ammoType ) {
+			bool found = false;
+			for ( uint i = 0; i < m_AmmoData.Count(); ++i ) {
+				if ( @m_AmmoData[i] is @ammoType ) {
+					found = true;
+					break;
+				}
+			}
+			if ( !found ) {
+				m_AmmoData.Add( @ammoType );
+			}
+			for ( uint i = 0; i < m_WeaponSlots.Count(); ++i ) {
+				if ( !m_WeaponSlots[i].IsUsed() ) {
+					DebugPrint( "Slot " + i + " is unused\n" );
+					continue;
+				}
+				if ( m_WeaponSlots[i].GetData().GetWeaponInfo().ammoType == ammoType.baseType ) {
+					DebugPrint( "Assigning slot " + i + " to ammoType '" + ammoType.name + "'\n" );
+					m_WeaponSlots[i].GetData().SetAmmo( @ammoType );
+				}
 			}
 		}
 
@@ -125,6 +156,8 @@ namespace TheNomad::SGame {
 		private PlayrObject@ m_EntityData = null;
 		private ArmData@ m_LeftArm = null;
 		private ArmData@ m_RightArm = null;
+
+		private array<InfoSystem::AmmoInfo@> m_AmmoData;
 
 		private uint m_nCurrentWeapon = 0;
 	};

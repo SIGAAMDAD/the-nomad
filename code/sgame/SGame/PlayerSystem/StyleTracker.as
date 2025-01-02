@@ -26,6 +26,7 @@ namespace TheNomad::SGame {
 	
 	class StyleTracker {
 		StyleTracker() {
+			Init();
 		}
 		
 		private void Init() {
@@ -43,7 +44,9 @@ namespace TheNomad::SGame {
 		// action in the tracker
 		//
 		private void PopAction() {
-			m_StyleStack.RemoveAt( m_StyleStack.Count() - 1 );
+			if ( m_StyleStack.Count() > 0 ) {
+				m_StyleStack.RemoveAt( m_StyleStack.Count() - 1 );
+			}
 		}
 		
 		void PushAction( StyleType type ) {
@@ -97,8 +100,6 @@ namespace TheNomad::SGame {
 				}
 				break; }
 			};
-			
-			
 		}
 		
 		void Draw() {
@@ -106,7 +107,7 @@ namespace TheNomad::SGame {
 			
 			// add up to the mult
 			if ( EntityManager.GetActivePlayer().IsSliding() ) {
-				m_nMultiplier += 0.5f;
+				m_nMultiplier += 1.0f;
 			}
 			if ( EntityManager.GetActivePlayer().IsDoubleJumping() ) {
 				m_nMultiplier += 0.5f;
@@ -116,19 +117,16 @@ namespace TheNomad::SGame {
 			}
 			
 			ImGui::Begin( "##StyleTrackerWindow", null, ImGui::MakeWindowFlags( ImGuiWindowFlags::NoTitleBar |
-				ImGuiWindowFlags::NoBackground | ImGuiWindowFlags::NoMove | ImGuiWindowFlags::NoResize ) );
+				ImGuiWindowFlags::NoMove | ImGuiWindowFlags::NoResize ) );
 			ImGui::SetWindowSize( vec2( 128 * scale, 256 * scale ) );
-			ImGui::SetWindowPos( vec2( 728 * scale, 16 * scale ) );
+			ImGui::SetWindowPos( vec2( 800 * scale, 16 * scale ) );
 			
 			if ( TheNomad::GameSystem::GameTic - m_nTimeSinceLastPush > 8000 ) {
-				PopAction();
-			}
-			
-			for ( uint i = 0; i < m_StyleStack.Count(); i++ ) {
+//				PopAction();
 			}
 			
 			ImGui::NewLine();
-			ImGui::Text( "MULTIPLIER X" + formatFloat( m_nFreshnessAmount, "%.2f" ) );
+			ImGui::Text( "MULTIPLIER X" + formatFloat( m_nMultiplier, "%.2f" ) );
 			ImGui::PushStyleColor( ImGuiCol::FrameBg, m_FreshnessColor );
 			ImGui::PushStyleColor( ImGuiCol::FrameBgActive, m_FreshnessColor );
 			ImGui::PushStyleColor( ImGuiCol::FrameBgHovered, m_FreshnessColor );
