@@ -17,7 +17,7 @@ menu/companyLogo
 	nopicmip
 	{
 		texFilter bilinear
-		map GDRLogo.jpg
+		map GDRLogo.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		tcGen texture
 		rgbGen vertex
@@ -30,7 +30,7 @@ menu/engineLogo
 	nopicmip
 	{
 		texFilter bilinear
-		map SIREngineLogo.jpg
+		map SIREngineLogo.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		tcGen texture
 		rgbGen vertex
@@ -117,7 +117,7 @@ menu/tales_around_the_campfire
 	nopicmip
 	{
 		texFilter nearest
-		map textures/menu/campfire.jpg
+		map textures/menu/campfire.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 		tcGen texture
 	}

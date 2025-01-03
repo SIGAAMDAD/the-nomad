@@ -84,7 +84,7 @@ namespace TheNomad::Engine::Physics {
 				frictionConstant = TheNomad::Engine::CvarVariableFloat( "sgame_AirFriction" );
 			}
 			if ( m_nWaterLevel > 0 ) {
-				frictionConstant += TheNomad::Engine::CvarVariableFloat( "sgame_WaterFriction" );
+				frictionConstant = TheNomad::Engine::CvarVariableFloat( "sgame_WaterFriction" );
 			}
 
 			const float friction = frictionConstant * TheNomad::GameSystem::DeltaTic;
@@ -103,8 +103,8 @@ namespace TheNomad::Engine::Physics {
 				m_Velocity.z = 0.0f;
 			} else if ( m_EntityData.GetOrigin().z >= MAX_JUMP_HEIGHT ) {
 				m_Velocity.z = TheNomad::Util::Clamp(
-					m_Velocity.z - ( TheNomad::SGame::sgame_Gravity.GetFloat() * TheNomad::GameSystem::DeltaTic ),
-					-TheNomad::SGame::sgame_Gravity.GetFloat(), m_Velocity.z );
+					m_Velocity.z - ( TheNomad::Engine::CvarVariableFloat( "sgame_Gravity" ) * TheNomad::GameSystem::DeltaTic ),
+					-TheNomad::Engine::CvarVariableFloat( "sgame_Gravity" ), m_Velocity.z );
 			}
 		}
 		

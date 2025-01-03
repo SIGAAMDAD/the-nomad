@@ -97,7 +97,7 @@ sprites/weapons/double_barrel
 {
 	{
 		texFilter nearest
-		map textures/sprites/weapons/adb.dds
+		map textures/sprites/weapons/double_barrel.png
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 	}
 }

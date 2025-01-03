@@ -4,15 +4,9 @@ namespace moblib {
 		}
 		
 		bool DoCheck( TheNomad::SGame::MobObject@ mob ) {
-			if ( @mob.GetTarget() is null ) {
-				return false;
-			}
-
-			const TheNomad::SGame::InfoSystem::MobInfo@ info = cast<TheNomad::SGame::InfoSystem::MobInfo@>( @mob.GetInfo() );
+			const TheNomad::SGame::InfoSystem::MobInfo@ info = @mob.GetMobInfo();
 			
-			const float tolerance = info.soundTolerance;
-			
-			return mob.GetTarget().GetBounds().IntersectsSphere( mob.GetOrigin(), info.soundRange );
+			return mob.GetBounds().IntersectsSphere( TheNomad::SGame::EntityManager.GetActivePlayer().GetOrigin(), info.soundRange );
 		}
 	};
 };

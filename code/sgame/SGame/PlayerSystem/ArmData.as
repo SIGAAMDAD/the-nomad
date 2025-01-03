@@ -116,7 +116,7 @@ namespace TheNomad::SGame {
 				}
 				refEntity.scale = scale;
 			}
-			refEntity.rotation = m_EntityData.GetArmAngle();
+			refEntity.rotation = Util::RAD2DEG( -m_EntityData.GetArmAngle() );
 			refEntity.Draw();
 		}
 		

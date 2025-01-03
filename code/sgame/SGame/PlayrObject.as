@@ -15,6 +15,7 @@ namespace TheNomad::SGame {
 	const uint PF_USING_WEAPON		= 0x00000100;
 	const uint PF_USING_WEAPON_ALT	= 0x00000200;
 	const uint PF_AFTER_IMAGE		= 0x10000000;
+	const uint PF_BACKPEDAL			= 0x20000000;
 
 	const uint LEFT_ARM				= 0;
 	const uint RIGHT_ARM			= 1;

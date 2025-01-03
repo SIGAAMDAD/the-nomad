@@ -150,27 +150,34 @@ namespace TheNomad::SGame {
 			return 0.0f;
 		}
 		private float UseFireArm( float damage, uint weaponMode ) {
-			TheNomad::GameSystem::RayCast ray;
-
-			ray.m_nLength = m_AmmoInfo.range;
-			ray.m_Start = m_Owner.GetOrigin();
-			if ( m_Owner.GetType() == TheNomad::GameSystem::EntityType::Playr ) {
-				ray.m_nAngle = cast<PlayrObject@>( @m_Owner ).GetArmAngle();
-			} else {
-				ray.m_nAngle = m_Owner.GetAngle();
+			if ( @m_AmmoInfo is null ) {
+				EmitSound( TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/weapons/noammo" ), 10.0f, 0xff );
+				return 0.0f;
 			}
+
+			EmitSound( m_WeaponInfo.useSfx, 10.0f, 0xff );
+
+			const vec3 origin = m_Owner.GetOrigin();
+			GfxManager.AddMuzzleFlash( origin );
+
+			m_nBulletsUsed += m_WeaponInfo.fireRate;
+
+			TheNomad::GameSystem::RayCast ray;
+			ray.m_Start = origin;
 			ray.m_nOwner = m_Owner.GetEntityNum();
-			
+			ray.m_nOwner2 = m_Link.m_nEntityNumber;
+			ray.m_nLength = m_AmmoInfo.range;
+			ray.m_nAngle = EntityManager.GetActivePlayer().GetArmAngle();
 			ray.Cast();
 			
 			if ( ray.m_nEntityNumber == ENTITYNUM_INVALID ) {
 				PlayrObject@ player = @EntityManager.GetActivePlayer();
 				
-				if ( Util::Distance( player.GetOrigin(), ray.m_Origin ) <= 3.90f ) {
+				if ( Util::Distance( player.GetOrigin(), ray.m_Origin ) <= 2.90f ) {
 					// if we're close to the bullet, then simulate a near-hit
 					player.EmitSound(
 						TheNomad::Engine::SoundSystem::RegisterSfx(
-							"event:/sfx/env/bullet_impact/ricochet_" + ( Util::PRandom() & 3 )
+							"event:/sfx/env/bullet_impact/ricochet_" + ( Util::PRandom() & 2 )
 						),
 						10.0f, 0xff
 					);
@@ -178,11 +185,11 @@ namespace TheNomad::SGame {
 				}
 				return 0.0f; // hit nothing
 			} else if ( ray.m_nEntityNumber == ENTITYNUM_WALL ) {
-//				GfxManager.AddBulletHole( ray.m_Origin );
+				GfxManager.AddBulletHole( ray.m_Origin );
 				return 0.0f;
 			}
 			
-//			EntityManager.DamageEntity( @EntityManager.GetEntityForNum( ray.m_nEntityNumber ), @m_Owner );
+			EntityManager.DamageEntity( @EntityManager.GetEntityForNum( ray.m_nEntityNumber ), @m_Owner );
 			
 			// health mult doesn't matter on harder difficulties if the player is attacking with a firearm,
 			// that is, unless, the player is very close to the enemy
@@ -209,10 +216,7 @@ namespace TheNomad::SGame {
 			case StateNum::ST_WEAPON_EQUIP:
 				return 0.0f;
 			};
-
-			m_nBulletsUsed += m_WeaponInfo.fireRate;
 			
-			EmitSound( m_WeaponInfo.useSfx, 10.0f, 0xff );
 			switch ( m_Owner.GetFacing() ) {
 			case FACING_LEFT:
 				SetState( @m_WeaponInfo.useState_LEFT );
@@ -222,8 +226,6 @@ namespace TheNomad::SGame {
 				break;
 			};
 			float damage = m_WeaponInfo.damage;
-
-			GfxManager.AddMuzzleFlash( m_Owner.GetOrigin() );
 			
 			// TODO: adaptive weapon animation & cooldowns
 			
@@ -355,6 +357,13 @@ namespace TheNomad::SGame {
 			@m_State = @m_State.Run( m_nTicker );
 		}
 		void Draw() override {
+			for ( uint i = 0; i < hit.Count(); ++i ) {
+				TheNomad::Engine::Renderer::RenderEntity refEntity;
+				refEntity.origin = hit[i];
+				refEntity.sheetNum = -1;
+				refEntity.spriteId = TheNomad::Engine::Renderer::RegisterShader( "world/sprites/crate" );
+				refEntity.Draw();
+			}
 			if ( @m_Owner !is null ) {
 				return;
 			}
@@ -390,6 +399,8 @@ namespace TheNomad::SGame {
 			itemlib::AllocScript( @this );
 		}
 		
+
+		array<vec3> hit;
 		private InfoSystem::AmmoInfo@ m_AmmoInfo = null;
 		private InfoSystem::WeaponInfo@ m_WeaponInfo = null;
 

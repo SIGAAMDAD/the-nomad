@@ -43,20 +43,6 @@
 			}
 		},
 		{
-			"Id": "player_backpedal",
-			"Tics": 1000,
-			"BaseNum": "ST_PLAYR_LEGS_BACKPEDAL",
-			"Entity": "player",
-			"NextState": "player_ground_idle",
-			"SpriteOffset": [ 5, 16 ],
-			"Animation": {
-				"TicRate": 100,
-				"FlipFlop": false,
-				"Frames": 3,
-				"Reverse": true
-			}
-		},
-		{
 			"Id": "player_air_idle",
 			"Tics": 0,
 			"BaseNum": "ST_PLAYR_LEGS_IDLE_AIR",

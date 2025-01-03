@@ -58,6 +58,9 @@ namespace TheNomad::SGame {
 
 			m_Link.m_Origin = origin;
 			
+			m_Bounds.m_nWidth = m_Info.size.x;
+			m_Bounds.m_nHeight = m_Info.size.y;
+
 			m_Name = m_Info.name;
 			m_nHealth = m_Info.health;
 			m_MFlags = m_Info.mobFlags;
@@ -109,6 +112,9 @@ namespace TheNomad::SGame {
 			refEntity.Draw();
 		}
 		void Think() override {
+			m_Bounds.m_nWidth = m_Info.size.x;
+			m_Bounds.m_nHeight = m_Info.size.y;
+			m_Bounds.MakeBounds( m_Link.m_Origin );
 			switch ( m_State.GetBaseNum() ) {
 			case StateNum::ST_MOB_IDLE:
 				m_ScriptData.IdleThink();

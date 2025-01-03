@@ -192,7 +192,7 @@ namespace TheNomad::SGame {
 				return;
 			}
 
-			AllocLocalEntity().Spawn( origin, vec3( 0.0f ), -1, m_hBulletHoleShader, vec2( 1.0f ), false );
+			AllocLocalEntity().Spawn( origin, vec3( 0.0f ), -1, m_hBulletHoleShader, vec2( 2.0f ), false );
 		}
 
 		void AddLanding( const vec3& in origin ) {
@@ -202,7 +202,7 @@ namespace TheNomad::SGame {
 
 			TheNomad::Engine::Renderer::LocalEntity@ ent = @AllocLocalEntity();
 
-			ent.Spawn( origin, vec3( 0.0f ), 800, FS_INVALID_HANDLE, vec2( 3.5f ), false, @m_SmokeLanding );
+			ent.Spawn( origin, vec3( 0.0f ), 600, FS_INVALID_HANDLE, vec2( 3.5f ), false, @m_SmokeLanding );
 			ent.m_EffectAnimation.Load( 40, false, 16, false );
 		}
 
@@ -238,6 +238,9 @@ namespace TheNomad::SGame {
 			ent.m_EffectAnimation.Load( 20, false, 40, false );
 		}
 
+		void AddExplosionGfx( const vec3& in origin ) {
+		}
+
 		void AddMuzzleFlash( const vec3& in origin ) {
 			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 ) {
 				return;
@@ -245,27 +248,8 @@ namespace TheNomad::SGame {
 
 			TheNomad::Engine::Renderer::LocalEntity@ ent = @AllocLocalEntity();
 
-			int hShader = FS_INVALID_HANDLE;
-			switch ( Util::PRandom() & 3 ) {
-			case 0:
-				hShader = m_hMuzzleFlashShader0;
-				break;
-			case 1:
-				hShader = m_hMuzzleFlashShader1;
-				break;
-			case 2:
-				hShader = m_hMuzzleFlashShader2;
-				break;
-			case 3:
-				hShader = m_hMuzzleFlashShader3;
-				break;
-			};
-
-			ent.Spawn( origin, vec3( 0.0f ), 450, hShader, vec2( 2.5f ) );
-			ent.m_bLightSource = true;
-		}
-
-		void AddExplosionGfx( const vec3& in origin ) {
+			ent.Spawn( origin, vec3( 0.0f ), 200, FS_INVALID_HANDLE );
+			ent.m_Flags |= TheNomad::Engine::Renderer::LOCALENT_NODRAW | TheNomad::Engine::Renderer::LOCALENT_LIGHT_SOURCE;
 		}
 
 		void CacheGfx() {

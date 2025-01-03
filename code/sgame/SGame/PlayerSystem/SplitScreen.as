@@ -68,7 +68,11 @@ namespace TheNomad::SGame {
 
 			m_ScreenSize = uvec2( TheNomad::GameSystem::GPUConfig.screenWidth, TheNomad::GameSystem::GPUConfig.screenHeight );
 
-			@m_PlayerData = cast<PlayrObject@>( @EntityManager.GetEntityForNum( 0 ) );
+			for ( uint i = 0; i < EntityManager.NumEntities(); i++ ) {
+				if ( EntityManager.GetEntityForNum( i ).GetType() == TheNomad::GameSystem::EntityType::Playr ) {
+					@m_PlayerData = cast<PlayrObject@>( @EntityManager.GetEntityForNum( i ) );
+				}
+			}
 			m_PlayerData.SetPlayerIndex( 0 );
 
 			CacheSfx();

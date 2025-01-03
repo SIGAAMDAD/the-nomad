@@ -23,7 +23,7 @@ namespace TheNomad::GameSystem {
 		RayCast() {
 		}
 
-		void Cast( const vec3& in endDefault = vec3( 0.0f ) ) {
+		void Cast( const vec3& in endDefault = vec3( 0.0f ), bool inDegress = false ) {
 			vec3 end;
 			if ( endDefault != Vec3Origin ) {
 				end = endDefault;
@@ -42,22 +42,32 @@ namespace TheNomad::GameSystem {
 			float err = ( dx > dy ? dx : -dy ) * 0.5f;
 			
 			m_Origin = m_Start;
+			float angle = m_nAngle;
+			if ( m_nOwner2 != ENTITYNUM_INVALID ) {
+				angle = Util::RAD2DEG( angle );
+				if ( angle < 0.0f ) {
+					angle += 360.0f;
+				}
+			}
 
 			TheNomad::SGame::EntityObject@ activeEnts = @TheNomad::SGame::EntityManager.GetActiveEnts();
 			TheNomad::SGame::EntityObject@ ent = null;
 			for ( ;; ) {
 				for ( @ent = @activeEnts.m_Next; @ent !is @activeEnts; @ent = @ent.m_Next ) {
-					if ( ent.GetEntityNum() != m_nOwner && ent.GetBounds().IntersectsPoint( m_Origin ) ) {
+					if ( ent.GetEntityNum() != m_nOwner && ent.GetEntityNum() != m_nOwner2 && ent.GetBounds().IntersectsPoint( m_Origin ) ) {
 						m_nEntityNumber = ent.GetEntityNum();
+						DebugPrint( "Ray hit entity '" + m_nEntityNumber + "'\n" );
 						return;
 					}
 				}
-				if ( m_Origin.x > end.x || m_Origin.y > end.y ) {
+				if ( ( sy == -0.75f && m_Origin.y <= end.y ) || ( sy == 0.75f && m_Origin.y >= end.y )
+					|| ( sx == -0.75f && m_Origin.x <= end.x || ( sx == 0.75f && m_Origin.x >= end.x ) ) )
+				{
 					m_nEntityNumber = ENTITYNUM_INVALID;
 					return;
 				}
 
-				const TheNomad::GameSystem::DirType rayDir = Util::InverseDir( Util::Angle2Dir( m_nAngle ) );
+				const TheNomad::GameSystem::DirType rayDir = Util::InverseDir( Util::Angle2Dir( angle ) );
 				if ( TheNomad::GameSystem::CheckWallHit( m_Origin, rayDir ) ) {
 					m_nEntityNumber = ENTITYNUM_WALL;
 					return;
@@ -79,6 +89,7 @@ namespace TheNomad::GameSystem {
 		vec3 m_Origin = vec3( 0.0f );
 		uint m_nEntityNumber = ENTITYNUM_INVALID;
 		uint m_nOwner = ENTITYNUM_INVALID;
+		uint m_nOwner2 = ENTITYNUM_INVALID;
 		float m_nLength = 0.0f;
 		float m_nAngle = 0.0f;
 //	    uint m_Flags = 0; // unused for now

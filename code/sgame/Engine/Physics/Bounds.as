@@ -233,11 +233,11 @@ namespace TheNomad::Engine::Physics {
 			return true;
 		}
 		bool IntersectsPoint( const vec3& in p ) const {
-			if ( p.z > m_nMaxs.z || p.z < m_nMins.z ) {
-				return false;
-			}
-			if ( p.x < m_nMins.x || p.y < m_nMins.y
-				|| p.x > m_nMaxs.x || p.y > m_nMaxs.y )
+//			if ( p.z > m_nMaxs.z || p.z < m_nMins.z ) {
+//				return false;
+//			}
+			if ( p.x < m_nMins.x || p.y < m_nMins.y || p.z < m_nMins.z
+				|| p.x > m_nMaxs.x || p.y > m_nMaxs.y || p.z > m_nMaxs.z )
 			{
 				return false;
 			}
