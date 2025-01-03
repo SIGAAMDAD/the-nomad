@@ -29,6 +29,33 @@
 			}
 		},
 		{
+			"Id": "mob_merc_shotgunner_fight",
+			"Tics": 2500,
+			"BaseNum": "ST_MOB_FIGHT",
+			"Entity": "mob_merc_shotgunner",
+			"NextState": "this",
+			"SpriteOffset": [ 0, 0 ],
+			"Animation": {
+				"TicRate": 0,
+				"FlipFlop": false,
+				"Frames": 0,
+				"Reverse": false
+			}
+		},
+		{
+			"Id": "mob_merc_shotgunner_aim",
+			"Tics": 6500,
+			"Entity": "mob_merc_shotgunner",
+			"NextState": "this",
+			"SpriteOffset": [ 0, 0 ],
+			"Animation": {
+				"TicRate": 0,
+				"FlipFlop": false,
+				"Frames": 0,
+				"Reverse": false
+			}
+		},
+		{
 			"Id": "mob_merc_shotgunner_melee",
 			"Tics": 1000,
 			"BaseNum": "ST_MOB_FIGHT_MELEE",

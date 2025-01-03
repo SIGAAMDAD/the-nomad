@@ -100,28 +100,26 @@ namespace TheNomad::SGame::InfoSystem {
 	};
 
 	enum WeaponProperty {
-		OneHandedBlade		= 0x00000101,
-		OneHandedBlunt		= 0x00001002,
-		OneHandedPolearm	= 0x00010003,
-		OneHandedSideFirearm= 0x00100004,
-		OneHandedPrimFirearm= 0x00100005,
+		IsOneHanded			= 0b01000000,
+		IsTwoHanded			= 0b00100000,
+		IsBladed			= 0b00000001,
+		IsBlunt				= 0b00000010,
+		IsPolearm			= 0b00000100,
+		IsFirearm			= 0b00001000,
 
-		TwoHandedBlade		= 0x00000110,
-		TwoHandedBlunt		= 0x00001020,
-		TwoHandedPolearm	= 0x00010030,
-		TwoHandedSideFirearm= 0x00100040,
-		TwoHandedPrimFirearm= 0x00100050,
+		OneHandedBlade		= uint( WeaponProperty::IsOneHanded ) | uint( WeaponProperty::IsBladed ),
+		OneHandedBlunt		= uint( WeaponProperty::IsOneHanded ) | uint( WeaponProperty::IsBlunt ),
+		OneHandedPolearm	= uint( WeaponProperty::IsOneHanded ) | uint( WeaponProperty::IsPolearm ),
+		OneHandedFirearm	= uint( WeaponProperty::IsOneHanded ) | uint( WeaponProperty::IsFirearm ),
 
-		IsOneHanded			= 0x0000000f,
-		IsTwoHanded			= 0x000000f0,
-		IsBladed			= 0x00000f00,
-		IsBlunt				= 0x0000f000,
-		IsPolearm			= 0x000f0000,
-		IsFirearm			= 0x00f00000,
+		TwoHandedBlade		= uint( WeaponProperty::IsTwoHanded ) | uint( WeaponProperty::IsBladed ),
+		TwoHandedBlunt		= uint( WeaponProperty::IsTwoHanded ) | uint( WeaponProperty::IsBlunt ),
+		TwoHandedPolearm	= uint( WeaponProperty::IsTwoHanded ) | uint( WeaponProperty::IsPolearm ),
+		TwoHandedFirearm	= uint( WeaponProperty::IsTwoHanded ) | uint( WeaponProperty::IsFirearm ),
 
-		SpawnsObject		= 0x10000000,
+		SpawnsObject		= 0b10000000,
 
-		None				= 0x00000000 // here simply for the hell of it
+		None				= 0b00000000 // here simply for the hell of it
 	};
 
 	const string[] WeaponPropertyStrings = {

@@ -26,12 +26,18 @@ namespace TheNomad::SGame {
 
 	const uint DASH_COOLDOWN		= 200;
 
-	const uint[] sgame_WeaponModeList = {
-		uint( InfoSystem::WeaponProperty::OneHandedBlade | InfoSystem::WeaponProperty::TwoHandedBlade ),
-		uint( InfoSystem::WeaponProperty::OneHandedBlunt | InfoSystem::WeaponProperty::TwoHandedBlunt ),
-		uint( InfoSystem::WeaponProperty::OneHandedPolearm | InfoSystem::WeaponProperty::TwoHandedPolearm ),
-		uint( InfoSystem::WeaponProperty::OneHandedSideFirearm | InfoSystem::WeaponProperty::OneHandedPrimFirearm
-			| InfoSystem::WeaponProperty::TwoHandedSideFirearm | InfoSystem::WeaponProperty::TwoHandedPrimFirearm ),
+	const uint[] sgame_WeaponModeList_OneHanded = {
+		uint( InfoSystem::WeaponProperty::OneHandedBlade ),
+		uint( InfoSystem::WeaponProperty::OneHandedBlunt ),
+		uint( InfoSystem::WeaponProperty::OneHandedPolearm ),
+		uint( InfoSystem::WeaponProperty::OneHandedFirearm )
+	};
+
+	const uint[] sgame_WeaponModeList_TwoHanded = {
+		uint( InfoSystem::WeaponProperty::TwoHandedBlade ),
+		uint( InfoSystem::WeaponProperty::TwoHandedBlunt ),
+		uint( InfoSystem::WeaponProperty::TwoHandedPolearm ),
+		uint( InfoSystem::WeaponProperty::TwoHandedFirearm )
 	};
 	
     class PlayrObject : EntityObject {
@@ -140,10 +146,36 @@ namespace TheNomad::SGame {
 			const uint handBits = ( uint( mode ) & uint( InfoSystem::WeaponProperty::IsTwoHanded ) ) |
 				( uint( mode ) & uint( InfoSystem::WeaponProperty::IsOneHanded ) );
 			
+			slot.SetMode( InfoSystem::WeaponProperty::None ); // clear the modes
+			
 			// find the next most suitable mode
-			for ( uint i = 0; i < sgame_WeaponModeList.Count(); i++ ) {
-				if ( ( uint( weapon.GetProperties() ) & sgame_WeaponModeList[i] ) != 0 ) {
-					slot.SetMode( InfoSystem::WeaponProperty( ( uint( weapon.GetProperties() ) & sgame_WeaponModeList[i] ) | handBits  ) );
+			const InfoSystem::WeaponProperty props = weapon.GetWeaponInfo().weaponProps;
+			if ( ( uint( props ) & InfoSystem::WeaponProperty::IsOneHanded ) != 0 ) {
+				for ( uint i = 0; i < sgame_WeaponModeList_OneHanded.Count(); i++ ) {
+					if ( ( uint( props ) & ( sgame_WeaponModeList_OneHanded[i] ^ InfoSystem::WeaponProperty::IsOneHanded ) ) != 0 ) {
+						// found a match, but check if its the same
+						if ( ( uint( mode ) & ( sgame_WeaponModeList_OneHanded[i] ^ InfoSystem::WeaponProperty::IsOneHanded ) ) != 0 ) {
+							// same mode, don't switch
+							continue;
+						}
+						slot.SetMode( InfoSystem::WeaponProperty( sgame_WeaponModeList_OneHanded[i] ) );
+						slot.GetData().SetUseMode( sgame_WeaponModeList_OneHanded[i] );
+						break;
+					}
+				}
+			}
+			else if ( ( uint( props ) & InfoSystem::WeaponProperty::IsTwoHanded ) != 0 ) {
+				for ( uint i = 0; i < sgame_WeaponModeList_TwoHanded.Count(); i++ ) {
+					if ( ( uint( props ) & ( sgame_WeaponModeList_TwoHanded[i] ^ InfoSystem::WeaponProperty::IsTwoHanded ) ) != 0 ) {
+						// found a match, but check if its the same
+						if ( ( uint( mode ) & ( sgame_WeaponModeList_TwoHanded[i] ^ InfoSystem::WeaponProperty::IsTwoHanded ) ) != 0 ) {
+							// same mode, don't switch
+							continue;
+						}
+						slot.SetMode( InfoSystem::WeaponProperty( sgame_WeaponModeList_TwoHanded[i] ) );
+						slot.GetData().SetUseMode( sgame_WeaponModeList_TwoHanded[i] );
+						break;
+					}
 				}
 			}
 		}

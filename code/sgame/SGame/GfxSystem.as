@@ -179,6 +179,34 @@ namespace TheNomad::SGame {
 			AllocLocalEntity().Spawn( origin, vec3( 0.0f ), 1800, m_hDustScreenShader );
 		}
 
+		//
+		// AddDebrisCloud: we can force constant repositioning by clouding up the fighting area with a sizeable debris
+		// cloud
+		//
+		void AddDebrisCloud( const vec3& in origin, float velocity ) {
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 ) {
+				return;
+			}
+			const uint numSmokeClouds = floor( velocity ) * 2;
+			vec3 vel = vec3( 0.0f );
+			TheNomad::Engine::Renderer::LocalEntity@ ent = null;
+
+			for ( uint i = 0; i < numSmokeClouds; ++i ) {
+				@ent = @AllocLocalEntity();
+
+				vel.x = ( Util::PRandom() & 25 ) * 0.001f;
+				if ( ( Util::PRandom() & 1 ) == 0 ) {
+					vel.x = -vel.x;
+				}
+				vel.y = ( Util::PRandom() & 25 ) * 0.001f;
+				if ( ( Util::PRandom() & 1 ) == 0 ) {
+					vel.y = -vel.y;
+				}
+
+				ent.Spawn( origin, vel, 7500, m_hDustScreenShader );
+			}
+		}
+
 		void AddWaterWake( const vec3& in origin, uint lifeTime = 200, float scale = 2.5f ) {
 			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 ) {
 				return;

@@ -1,7 +1,9 @@
 #include "moblib/MobScript.as"
 
 // include your own mobs here
+#include "moblib/Scripts/Resources.as"
 #include "moblib/Scripts/MercShotty.as"
+#include "moblib/Scripts/ZurgutGrunt.as"
 
 namespace moblib::Script {
 	// modify these if you want to add your own mobs

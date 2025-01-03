@@ -103,6 +103,7 @@ namespace TheNomad::SGame {
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 
 			refEntity.origin = m_Link.m_Origin;
+			refEntity.origin.x += m_Info.size.x * 0.5f;
 			refEntity.origin.y -= m_Info.size.y * 0.25f;
 
 			refEntity.scale = m_Info.size;

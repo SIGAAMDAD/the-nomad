@@ -72,10 +72,8 @@ namespace TheNomad::SGame {
 					}
 				}
 			}
-			if ( !data.get( "BaseNum", base ) ) {
-				ConsoleWarning( "invalid state info, missing variable 'BaseNum'\n" );
-				return false;
-			} else {
+			m_nStateNum = 0;
+			if ( data.get( "BaseNum", base ) ) {
 				if ( !StateManager.GetBaseStateCache().TryGetValue( base, m_nStateNum ) ) {
 					GameError( "invalid state info, variable BaseNum \"" + base + "\" isn't a valid state" );
 				}
@@ -141,13 +139,11 @@ namespace TheNomad::SGame {
 		}
 		
 		private string m_Name;
-		private uvec2 m_SpriteOffset = uvec2( 0 );
-		private EntityState@ m_NextState = null;
 		private Animation m_Animation;
+		private EntityState@ m_NextState = null;
+		private uvec2 m_SpriteOffset = uvec2( 0 );
 		private uint m_nTics = 0;
 		private uint m_nStateNum = 0;
 		private uint m_nStateOffset = 0;
-
-		private uint m_nTicker = 0;
 	};
 };

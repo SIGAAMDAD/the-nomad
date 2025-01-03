@@ -82,44 +82,148 @@ namespace TheNomad::SGame::InfoSystem {
 		private bool LoadStatesBlock( json@ json ) {
 			string state;
 
-			if ( !json.get( "States.Idle.Left", state ) ) {
-				ConsoleWarning( "invalid weapon info, missing variable 'States.Idle.Left' in \"" + name + "\"\n"  );
-				return false;
-			}
-			@idleState_LEFT = @StateManager.GetStateById( state );
-			if ( @idleState_LEFT is null ) {
-				ConsoleWarning( "invalid weapon info, idle state '" + state + "' couldn't be found\n" );
-				return false;
-			}
+			if ( ( uint( weaponProps ) & WeaponProperty::IsFirearm ) != 0 ) {
+				if ( !json.get( "States.Idle.FireArm.Left", state ) ) {
+					ConsoleWarning( "invalid weapon info, missing variable 'States.Idle.FireArm.Left' in \"" + name + "\"\n"  );
+					return false;
+				}
+				@idleState_FireArm_LEFT = @StateManager.GetStateById( state );
+				if ( @idleState_FireArm_LEFT is null ) {
+					ConsoleWarning( "invalid weapon info, idle state '" + state + "' couldn't be found\n" );
+					return false;
+				}
 
-			if ( !json.get( "States.Idle.Right", state ) ) {
-				ConsoleWarning( "invalid weapon info, missing variable 'States.Idle.Right' in \"" + name + "\"\n"  );
-				return false;
-			}
-			@idleState_RIGHT = @StateManager.GetStateById( state );
-			if ( @idleState_RIGHT is null ) {
-				ConsoleWarning( "invalid weapon info, idle state '" + state + "' couldn't be found\n" );
-				return false;
-			}
+				if ( !json.get( "States.Idle.FireArm.Right", state ) ) {
+					ConsoleWarning( "invalid weapon info, missing variable 'States.Idle.FireArm.Right' in \"" + name + "\"\n"  );
+					return false;
+				}
+				@idleState_FireArm_RIGHT = @StateManager.GetStateById( state );
+				if ( @idleState_FireArm_RIGHT is null ) {
+					ConsoleWarning( "invalid weapon info, idle state '" + state + "' couldn't be found\n" );
+					return false;
+				}
 
-			if ( !json.get( "States.Reload.Left", state ) ) {
-				ConsoleWarning( "invalid weapon info, missing variable 'States.Reload.Left' in \"" + name + "\"\n"  );
-				return false;
-			}
-			@reloadState_LEFT = @StateManager.GetStateById( state );
-			if ( @reloadState_LEFT is null ) {
-				ConsoleWarning( "invalid weapon info, reload state '" + state + "' couldn't be found\n" );
-				return false;
-			}
+				if ( !json.get( "States.Use.FireArm.Left", state ) ) {
+					ConsoleWarning( "invalid weapon info, missing variable 'States.Use.FireArm.Left' in \"" + name + "\"\n" );
+					return false;
+				}
+				@useState_FireArm_LEFT = @StateManager.GetStateById( state );
+				if ( @useState_FireArm_LEFT is null ) {
+					ConsoleWarning( "invalid weapon info, use state '" + state + "' couldn't be found\n" );
+					return false;
+				}
 
-			if ( !json.get( "States.Reload.Right", state ) ) {
-				ConsoleWarning( "invalid weapon info, missing variable 'States.Reload.Right' in \"" + name + "\"\n"  );
-				return false;
+				if ( !json.get( "States.Use.FireArm.Right", state ) ) {
+					ConsoleWarning( "invalid weapon info, missing variable 'States.Use.FireArm.Right' in \"" + name + "\"\n" );
+					return false;
+				}
+				@useState_FireArm_RIGHT = @StateManager.GetStateById( state );
+				if ( @useState_FireArm_RIGHT is null ) {
+					ConsoleWarning( "invalid weapon info, use state '" + state + "' couldn't be found\n" );
+					return false;
+				}
+
+				if ( !json.get( "States.Reload.Left", state ) ) {
+					ConsoleWarning( "invalid weapon info, missing variable 'States.Reload.Left' in \"" + name + "\"\n"  );
+					return false;
+				}
+				@reloadState_LEFT = @StateManager.GetStateById( state );
+				if ( @reloadState_LEFT is null ) {
+					ConsoleWarning( "invalid weapon info, reload state '" + state + "' couldn't be found\n" );
+					return false;
+				}
+
+				if ( !json.get( "States.Reload.Right", state ) ) {
+					ConsoleWarning( "invalid weapon info, missing variable 'States.Reload.Right' in \"" + name + "\"\n"  );
+					return false;
+				}
+				@reloadState_RIGHT = @StateManager.GetStateById( state );
+				if ( @reloadState_RIGHT is null ) {
+					ConsoleWarning( "invalid weapon info, reload state '" + state + "' couldn't be found\n" );
+					return false;
+				}
 			}
-			@reloadState_RIGHT = @StateManager.GetStateById( state );
-			if ( @reloadState_RIGHT is null ) {
-				ConsoleWarning( "invalid weapon info, reload state '" + state + "' couldn't be found\n" );
-				return false;
+			if ( ( uint( weaponProps ) & WeaponProperty::IsBladed ) != 0 ) {
+				if ( !json.get( "States.Idle.Bladed.Left", state ) ) {
+					ConsoleWarning( "invalid weapon info, missing variable 'States.Idle.Bladed.Left' in \"" + name + "\"\n"  );
+					return false;
+				}
+				@idleState_Bladed_LEFT = @StateManager.GetStateById( state );
+				if ( @idleState_Bladed_LEFT is null ) {
+					ConsoleWarning( "invalid weapon info, idle state '" + state + "' couldn't be found\n" );
+					return false;
+				}
+
+				if ( !json.get( "States.Idle.Bladed.Right", state ) ) {
+					ConsoleWarning( "invalid weapon info, missing variable 'States.Idle.Bladed.Right' in \"" + name + "\"\n"  );
+					return false;
+				}
+				@idleState_Bladed_RIGHT = @StateManager.GetStateById( state );
+				if ( @idleState_Bladed_RIGHT is null ) {
+					ConsoleWarning( "invalid weapon info, idle state '" + state + "' couldn't be found\n" );
+					return false;
+				}
+
+				if ( !json.get( "States.Use.Bladed.Left", state ) ) {
+					ConsoleWarning( "invalid weapon info, missing variable 'States.Use.Bladed.Left' in \"" + name + "\"\n" );
+					return false;
+				}
+				@useState_Bladed_LEFT = @StateManager.GetStateById( state );
+				if ( @useState_Bladed_LEFT is null ) {
+					ConsoleWarning( "invalid weapon info, use state '" + state + "' couldn't be found\n" );
+					return false;
+				}
+
+				if ( !json.get( "States.Use.Bladed.Right", state ) ) {
+					ConsoleWarning( "invalid weapon info, missing variable 'States.Use.Bladed.Right' in \"" + name + "\"\n" );
+					return false;
+				}
+				@useState_Bladed_RIGHT = @StateManager.GetStateById( state );
+				if ( @useState_Bladed_RIGHT is null ) {
+					ConsoleWarning( "invalid weapon info, use state '" + state + "' couldn't be found\n" );
+					return false;
+				}
+			}
+			if ( ( uint( weaponProps ) & WeaponProperty::IsBlunt ) != 0 ) {
+				if ( !json.get( "States.Idle.Blunt.Left", state ) ) {
+					ConsoleWarning( "invalid weapon info, missing variable 'States.Idle.Blunt.Left' in \"" + name + "\"\n"  );
+					return false;
+				}
+				@idleState_Blunt_LEFT = @StateManager.GetStateById( state );
+				if ( @idleState_Blunt_LEFT is null ) {
+					ConsoleWarning( "invalid weapon info, idle state '" + state + "' couldn't be found\n" );
+					return false;
+				}
+
+				if ( !json.get( "States.Idle.Blunt.Right", state ) ) {
+					ConsoleWarning( "invalid weapon info, missing variable 'States.Idle.Blunt.Right' in \"" + name + "\"\n"  );
+					return false;
+				}
+				@idleState_Blunt_RIGHT = @StateManager.GetStateById( state );
+				if ( @idleState_Blunt_RIGHT is null ) {
+					ConsoleWarning( "invalid weapon info, idle state '" + state + "' couldn't be found\n" );
+					return false;
+				}
+
+				if ( !json.get( "States.Use.Blunt.Left", state ) ) {
+					ConsoleWarning( "invalid weapon info, missing variable 'States.Use.Blunt.Left' in \"" + name + "\"\n" );
+					return false;
+				}
+				@useState_Blunt_LEFT = @StateManager.GetStateById( state );
+				if ( @useState_Blunt_LEFT is null ) {
+					ConsoleWarning( "invalid weapon info, use state '" + state + "' couldn't be found\n" );
+					return false;
+				}
+
+				if ( !json.get( "States.Use.Blunt.Right", state ) ) {
+					ConsoleWarning( "invalid weapon info, missing variable 'States.Use.Blunt.Right' in \"" + name + "\"\n" );
+					return false;
+				}
+				@useState_Blunt_RIGHT = @StateManager.GetStateById( state );
+				if ( @useState_Blunt_RIGHT is null ) {
+					ConsoleWarning( "invalid weapon info, use state '" + state + "' couldn't be found\n" );
+					return false;
+				}
 			}
 
 			if ( !json.get( "States.Equip.Left", state ) ) {
@@ -142,26 +246,6 @@ namespace TheNomad::SGame::InfoSystem {
 				return false;
 			}
 
-			if ( !json.get( "States.Use.Left", state ) ) {
-				ConsoleWarning( "invalid weapon info, missing variable 'States.Use.Left' in \"" + name + "\"\n" );
-				return false;
-			}
-			@useState_LEFT = @StateManager.GetStateById( state );
-			if ( @useState_LEFT is null ) {
-				ConsoleWarning( "invalid weapon info, use state '" + state + "' couldn't be found\n" );
-				return false;
-			}
-
-			if ( !json.get( "States.Use.Right", state ) ) {
-				ConsoleWarning( "invalid weapon info, missing variable 'States.Use.Right' in \"" + name + "\"\n" );
-				return false;
-			}
-			@useState_RIGHT = @StateManager.GetStateById( state );
-			if ( @useState_RIGHT is null ) {
-				ConsoleWarning( "invalid weapon info, use state '" + state + "' couldn't be found\n" );
-				return false;
-			}
-
 			return true;
 		}
 		private bool LoadSoundsBlock( json@ json ) {
@@ -181,7 +265,7 @@ namespace TheNomad::SGame::InfoSystem {
 			
 			return true;
 		}
-		private bool LoadWeaponProperties( json@ json ) {
+		private bool LoadWeaponProperty( json@ json ) {
 			uint props = 0;
 			if ( !json.get( "Properties", props ) ) {
 				ConsoleWarning( "invalid weapon info, missing variable 'Properties' in \"" + name + "\"\n" );
@@ -189,7 +273,17 @@ namespace TheNomad::SGame::InfoSystem {
 			}
 			weaponProps = WeaponProperty( uint( json[ "Properties" ] ) );
 			if ( weaponProps == WeaponProperty::None ) {
-				ConsoleWarning( "invalid weapon info, WeaponProperties '" + uint( weaponProps ) + "' are invalid ( None, abide by physics pls ;) )\n" );
+				ConsoleWarning( "invalid weapon info, WeaponProperty '" + uint( weaponProps ) + "' are invalid ( None, abide by physics pls ;) )\n" );
+				return false;
+			}
+
+			if ( !json.get( "DefaultMode", props ) ) {
+				ConsoleWarning( "invalid weapon info, missing variable 'DefaultMode' in \"" + name + "\"\n" );
+				return false;
+			}
+			defaultMode = WeaponProperty( uint( json[ "DefaultMode" ] ) );
+			if ( defaultMode == WeaponProperty::None ) {
+				ConsoleWarning( "invalid weapon info, WeaponProperty '" + uint( defaultMode ) + "' are invalid ( None, abide by physics pls ;) )\n" );
 				return false;
 			}
 			return true;
@@ -257,6 +351,9 @@ namespace TheNomad::SGame::InfoSystem {
 				return false;
 			}
 
+			if ( !LoadWeaponProperty( @json ) ) {
+				return false;
+			}
 			if ( !LoadStatesBlock( @json ) ) {
 				return false;
 			}
@@ -269,9 +366,6 @@ namespace TheNomad::SGame::InfoSystem {
 			if ( !LoadSoundsBlock( @json ) ) {
 				return false;
 			}
-			if ( !LoadWeaponProperties( @json ) ) {
-				return false;
-			}
 			if ( !LoadWeaponFireModes( @json ) ) {
 				return false;
 			}
@@ -279,13 +373,27 @@ namespace TheNomad::SGame::InfoSystem {
 		}
 
 		EntityState@ reloadState_LEFT = null;
-		EntityState@ useState_LEFT = null;
-		EntityState@ idleState_LEFT = null;
-		EntityState@ equipState_LEFT = null;
-
 		EntityState@ reloadState_RIGHT = null;
-		EntityState@ useState_RIGHT = null;
-		EntityState@ idleState_RIGHT = null;
+
+		EntityState@ useState_FireArm_LEFT = null;
+		EntityState@ useState_FireArm_RIGHT = null;
+
+		EntityState@ idleState_FireArm_LEFT = null;
+		EntityState@ idleState_FireArm_RIGHT = null;
+
+		EntityState@ useState_Blunt_LEFT = null;
+		EntityState@ useState_Blunt_RIGHT = null;
+
+		EntityState@ idleState_Blunt_LEFT = null;
+		EntityState@ idleState_Blunt_RIGHT = null;
+
+		EntityState@ useState_Bladed_LEFT = null;
+		EntityState@ useState_Bladed_RIGHT = null;
+
+		EntityState@ idleState_Bladed_LEFT = null;
+		EntityState@ idleState_Bladed_RIGHT = null;
+
+		EntityState@ equipState_LEFT = null;
 		EntityState@ equipState_RIGHT = null;
 
 		SpriteSheet@ spriteSheet = null;
@@ -300,6 +408,7 @@ namespace TheNomad::SGame::InfoSystem {
 		int hIconShader = FS_INVALID_HANDLE;
 		AmmoType ammoType = AmmoType::Invalid; // ammo types allowed
 		WeaponProperty weaponProps = WeaponProperty::None;
+		WeaponProperty defaultMode = WeaponProperty::None;
 		WeaponType weaponType = WeaponType::NumWeaponTypes;
 		WeaponFireMode weaponFireMode = WeaponFireMode::NumFireModes;
 	};

@@ -7,6 +7,7 @@ namespace moblib {
 	}
 
 	void InitResources() {
+		Script::ResourceCache.Load();
 	}
 
 	void AllocScript( TheNomad::SGame::MobObject@ mob ) {
@@ -23,11 +24,6 @@ namespace moblib {
 
 		InitCvars();
 
-		//
-		// load assets
-		//
-		InitResources();
-
 		return 1;
 	}
 
@@ -36,6 +32,11 @@ namespace moblib {
 	}
 
 	int ModuleOnLevelStart() {
+		//
+		// load assets
+		//
+		InitResources();
+		
 		return 1;
 	}
 

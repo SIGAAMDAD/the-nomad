@@ -11,6 +11,31 @@ namespace TheNomad::SGame {
 			return m_WeaponInfo.weaponProps;
 		}
 
+		const string LogWeaponMode( uint weaponMode ) const {
+			string msg = "WeaponMode is ";
+			
+			if ( ( weaponMode & InfoSystem::WeaponProperty::IsTwoHanded ) != 0 ) {
+				msg += "[TwoHanded]";
+			}
+			if ( ( weaponMode & InfoSystem::WeaponProperty::IsOneHanded ) != 0 ) {
+				msg += "[OneHanded]";
+			}
+			if ( ( weaponMode & InfoSystem::WeaponProperty::IsFirearm ) != 0 ) {
+				msg += "[Firearm]";
+			}
+			if ( ( weaponMode & InfoSystem::WeaponProperty::IsBlunt ) != 0 ) {
+				msg += "[Blunt]";
+			}
+			if ( ( weaponMode & InfoSystem::WeaponProperty::IsBladed ) != 0 ) {
+				msg += "[Bladed]";
+			}
+			if ( ( weaponMode & InfoSystem::WeaponProperty::IsPolearm ) != 0 ) {
+				msg += "[Polearm]";
+			}
+
+			return msg;
+		}
+
 		void SetOwner( EntityObject@ ent ) override {
 			if ( @ent is null ) {
 				DebugPrint( "Clearing ownership of item '" + m_Link.m_nEntityNumber + "'\n" );
@@ -27,16 +52,18 @@ namespace TheNomad::SGame {
 				break;
 			};
 
+			@m_Owner = @ent;
+			SetUseMode( m_WeaponInfo.defaultMode );
+
 			m_Facing = ent.GetFacing();
 			switch ( m_Facing ) {
 			case FACING_LEFT:
-				SetState( @m_WeaponInfo.idleState_LEFT );
+				SetState( @m_IdleState_LEFT );
 				break;
 			case FACING_RIGHT:
-				SetState( @m_WeaponInfo.idleState_RIGHT );
+				SetState( @m_IdleState_RIGHT );
 				break;
 			};
-			@m_Owner = @ent;
 
 			m_Bounds.Clear();
 
@@ -63,22 +90,49 @@ namespace TheNomad::SGame {
 			return m_WeaponInfo.weaponFireMode;
 		}
 		bool IsOneHanded() const {
-			return ( m_WeaponInfo.weaponProps & InfoSystem::WeaponProperty::IsOneHanded ) != 0;
+			return ( m_nLastUsedMode & InfoSystem::WeaponProperty::IsOneHanded ) != 0;
 		}
 		bool IsTwoHanded() const {
-			return ( m_WeaponInfo.weaponProps & InfoSystem::WeaponProperty::IsTwoHanded ) != 0;
+			return ( m_nLastUsedMode & InfoSystem::WeaponProperty::IsTwoHanded ) != 0;
 		}
 		bool IsBladed() const {
-			return ( m_WeaponInfo.weaponProps & InfoSystem::WeaponProperty::IsBladed ) != 0;
+			return ( m_nLastUsedMode & InfoSystem::WeaponProperty::IsBladed ) != 0;
 		}
 		bool IsPolearm() const {
-			return ( m_WeaponInfo.weaponProps & InfoSystem::WeaponProperty::IsPolearm ) != 0;
+			return ( m_nLastUsedMode & InfoSystem::WeaponProperty::IsPolearm ) != 0;
 		}
 		bool IsFirearm() const {
-			return ( m_WeaponInfo.weaponProps & InfoSystem::WeaponProperty::IsFirearm ) != 0;
+			return ( m_nLastUsedMode & InfoSystem::WeaponProperty::IsFirearm ) != 0;
 		}
 		bool IsBlunt() const {
-			return ( m_WeaponInfo.weaponProps & InfoSystem::WeaponProperty::IsBlunt ) != 0;
+			return ( m_nLastUsedMode & InfoSystem::WeaponProperty::IsBlunt ) != 0;
+		}
+
+		uint GetUseMode() const {
+			return m_nLastUsedMode;
+		}
+		void SetUseMode( uint weaponMode ) {
+			m_nLastUsedMode = weaponMode;
+			
+			if ( ( weaponMode & InfoSystem::WeaponProperty::IsFirearm ) != 0 ) {
+				@m_UseState_LEFT = @m_WeaponInfo.useState_FireArm_LEFT;
+				@m_UseState_RIGHT = @m_WeaponInfo.useState_FireArm_RIGHT;
+				@m_IdleState_LEFT = @m_WeaponInfo.idleState_FireArm_LEFT;
+				@m_IdleState_RIGHT = @m_WeaponInfo.idleState_FireArm_RIGHT;
+			} else if ( ( weaponMode & InfoSystem::WeaponProperty::IsBladed ) != 0 ) {
+				@m_UseState_LEFT = @m_WeaponInfo.useState_Bladed_LEFT;
+				@m_UseState_RIGHT = @m_WeaponInfo.useState_Bladed_RIGHT;
+				@m_IdleState_LEFT = @m_WeaponInfo.idleState_Bladed_LEFT;
+				@m_IdleState_RIGHT = @m_WeaponInfo.idleState_Bladed_RIGHT;
+			} else if ( ( weaponMode & InfoSystem::WeaponProperty::IsBlunt ) != 0 ) {
+				@m_UseState_LEFT = @m_WeaponInfo.useState_Blunt_LEFT;
+				@m_UseState_RIGHT = @m_WeaponInfo.useState_Blunt_RIGHT;
+				@m_IdleState_LEFT = @m_WeaponInfo.idleState_Blunt_LEFT;
+				@m_IdleState_RIGHT = @m_WeaponInfo.idleState_Blunt_RIGHT;
+			}
+			if ( @m_UseState_LEFT is null || @m_UseState_RIGHT is null || @m_IdleState_LEFT is null || @m_IdleState_RIGHT is null ) {
+				GameError( "WeaponObject::SetUseMode: bad weaponMode, states don't exist" );
+			}
 		}
 		
 		//
@@ -170,6 +224,7 @@ namespace TheNomad::SGame {
 			ray.m_nAngle = EntityManager.GetActivePlayer().GetArmAngle();
 			ray.Cast();
 			
+			GfxManager.AddBulletHole( ray.m_Origin );
 			if ( ray.m_nEntityNumber == ENTITYNUM_INVALID ) {
 				PlayrObject@ player = @EntityManager.GetActivePlayer();
 				
@@ -185,7 +240,24 @@ namespace TheNomad::SGame {
 				}
 				return 0.0f; // hit nothing
 			} else if ( ray.m_nEntityNumber == ENTITYNUM_WALL ) {
-				GfxManager.AddBulletHole( ray.m_Origin );
+				if ( ( ray.m_Origin.y < 0.0f || ray.m_Origin.y >= MapHeight ) || ( ray.m_Origin.x < 0.0f || ray.m_Origin.x >= MapWidth ) ) {
+					return 0.0f; // out of bounds
+				}
+				const uint64 tile = MapTileData[0][ ray.m_Origin.y * MapWidth + ray.m_Origin.x ];
+				if ( ( tile & SURFACEPARM_WATER ) != 0 ) {
+//					SetSoundPosition( ray.m_Origin );
+//					EmitSound( TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/water_land_" + ( Util::PRandom() & 2 ) ),
+//						10.0f, 0xff );
+					GfxManager.AddWaterWake( ray.m_Origin );
+					// TODO: dynamically allocate a sound emitter for a bullet hitting a water surface
+//					SetSoundPosition( origin );
+				}
+				if ( ( tile & SURFACEPARM_METAL ) != 0 ) {
+					
+				} else {
+					const float velocity = ray.m_nLength - Util::Distance( ray.m_Origin, ray.m_Start );
+					GfxManager.AddDebrisCloud( ray.m_Origin, velocity );
+				}
 				return 0.0f;
 			}
 			
@@ -216,13 +288,15 @@ namespace TheNomad::SGame {
 			case StateNum::ST_WEAPON_EQUIP:
 				return 0.0f;
 			};
-			
+
+			SetUseMode( weaponMode );
+
 			switch ( m_Owner.GetFacing() ) {
 			case FACING_LEFT:
-				SetState( @m_WeaponInfo.useState_LEFT );
+				SetState( @m_UseState_LEFT );
 				break;
 			case FACING_RIGHT:
-				SetState( @m_WeaponInfo.useState_RIGHT );
+				SetState( @m_UseState_RIGHT );
 				break;
 			};
 			float damage = m_WeaponInfo.damage;
@@ -305,20 +379,20 @@ namespace TheNomad::SGame {
 				case StateNum::ST_WEAPON_IDLE:
 					switch ( facing ) {
 					case FACING_LEFT:
-						@newState = @m_WeaponInfo.idleState_LEFT;
+						@newState = @m_IdleState_LEFT;
 						break;
 					case FACING_RIGHT:
-						@newState = @m_WeaponInfo.idleState_RIGHT;
+						@newState = @m_IdleState_RIGHT;
 						break;
 					};
 					break;
 				case StateNum::ST_WEAPON_USE:
 					switch ( facing ) {
 					case FACING_LEFT:
-						@newState = @m_WeaponInfo.useState_LEFT;
+						@newState = @m_UseState_LEFT;
 						break;
 					case FACING_RIGHT:
-						@newState = @m_WeaponInfo.useState_RIGHT;
+						@newState = @m_UseState_RIGHT;
 						break;
 					};
 					break;
@@ -341,29 +415,24 @@ namespace TheNomad::SGame {
 			if ( !m_State.Done( m_nTicker ) ) {
 				return; // only this can stop the spam, the bullet hell. OH LORD!
 			}
-			if ( m_nBulletsUsed >= m_WeaponInfo.magSize ) {
-				EmitSound( m_WeaponInfo.reloadSfx, 10.0f, 0xff );
-				switch ( facing ) {
-				case FACING_LEFT:
-					SetState( @m_WeaponInfo.reloadState_LEFT );
-					break;
-				case FACING_RIGHT:
-					SetState( @m_WeaponInfo.reloadState_RIGHT );
-					break;
-				};
-				m_nBulletsUsed = 0;
-				return;
+			if ( ( m_nLastUsedMode & InfoSystem::WeaponProperty::IsFirearm ) != 0 ) {
+				if ( m_nBulletsUsed >= m_WeaponInfo.magSize ) {
+					EmitSound( m_WeaponInfo.reloadSfx, 10.0f, 0xff );
+					switch ( facing ) {
+					case FACING_LEFT:
+						SetState( @m_WeaponInfo.reloadState_LEFT );
+						break;
+					case FACING_RIGHT:
+						SetState( @m_WeaponInfo.reloadState_RIGHT );
+						break;
+					};
+					m_nBulletsUsed = 0;
+					return;
+				}
 			}
 			@m_State = @m_State.Run( m_nTicker );
 		}
 		void Draw() override {
-			for ( uint i = 0; i < hit.Count(); ++i ) {
-				TheNomad::Engine::Renderer::RenderEntity refEntity;
-				refEntity.origin = hit[i];
-				refEntity.sheetNum = -1;
-				refEntity.spriteId = TheNomad::Engine::Renderer::RegisterShader( "world/sprites/crate" );
-				refEntity.Draw();
-			}
 			if ( @m_Owner !is null ) {
 				return;
 			}
@@ -399,13 +468,16 @@ namespace TheNomad::SGame {
 			itemlib::AllocScript( @this );
 		}
 		
-
-		array<vec3> hit;
 		private InfoSystem::AmmoInfo@ m_AmmoInfo = null;
 		private InfoSystem::WeaponInfo@ m_WeaponInfo = null;
 
-		private EntityState@ m_OppositeState = null;
+		// these will change whenever the usage mode changes
+		private EntityState@ m_UseState_LEFT = null;
+		private EntityState@ m_UseState_RIGHT = null;
+		private EntityState@ m_IdleState_LEFT = null;
+		private EntityState@ m_IdleState_RIGHT = null;
 		
 		private uint m_nBulletsUsed = 0;
+		private uint m_nLastUsedMode = 0;
 	};
 };

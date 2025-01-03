@@ -2,8 +2,10 @@
 
 namespace moblib::Script {
 	const uint MERC_AIM_TIME = 2500;
+	const float MERC_SHOTGUN_DAMAGE = 25.0f;
+	const float MERC_SHOTGUN_RANGE = 15.75f;
 	
-	class MercShotty : MobScript {
+	final class MercShotty : MobScript {
 		MercShotty() {
 		}
 		
@@ -62,8 +64,8 @@ namespace moblib::Script {
 		void IdleThink() override {
 			m_EntityData.SetDirection( TheNomad::GameSystem::DirType::South );
 			if ( m_Sensor.CheckSight() ) {
-				m_EntityData.EmitSound( TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/mobs/barks/patrol/target_spotted" ), 10.0f, 0xff );
-//				m_EntityData.SetState( @m_FightState );
+				m_EntityData.EmitSound( ResourceCache.ShottyTargetSpotted, 10.0f, 0xff );
+				m_EntityData.SetState( @m_FightState );
 			}
 			else if ( m_Sensor.CheckSound() ) {
 				/*
@@ -98,7 +100,7 @@ namespace moblib::Script {
 			}
 			
 			m_EntityData.SetParry( false );
-			m_EntityData.EmitSound( TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/mobs/shotgunner_attack" ), 1.0f, 0xff );
+			m_EntityData.EmitSound( ResourceCache.ShottyAttack, 10.0f, 0xff );
 			
 			const vec3 origin = m_EntityData.GetOrigin();
 			const vec3 target = m_EntityData.GetTarget().GetOrigin();
@@ -106,17 +108,10 @@ namespace moblib::Script {
 			TheNomad::GameSystem::RayCast ray;
 			
 			ray.m_Start = origin;
-//			ray.m_nLength = cast<TheNomad::SGame::InfoSystem::MobInfo@>( @m_EntityData.GetInfo() ).missileRange;
-			if ( TheNomad::SGame::sgame_Difficulty.GetInt() > uint( TheNomad::GameSystem::GameDifficulty::Normal ) ) {
-				for ( uint i = 0; i < 12; i++ ) {
-					ray.m_nAngle = 0.0f;
-					ray.Cast();
-				}
-			} else {
-				ray.m_nAngle = atan2( origin.x - target.x, origin.y - target.y );
-				ray.Cast();
-			}
-			
+			ray.m_nLength = MERC_SHOTGUN_RANGE;
+			ray.m_nAngle = TheNomad::Util::AngleBetweenPoints( target, origin, m_EntityData.GetFacing() );
+			ray.Cast();
+
 			if ( ray.m_nEntityNumber == ENTITYNUM_WALL ) {
 				// TODO: add wall hit mark here
 				return;
@@ -124,8 +119,8 @@ namespace moblib::Script {
 				return;
 			}
 			
-			TheNomad::SGame::EntityManager.DamageEntity( cast<TheNomad::SGame::EntityObject@>( @m_EntityData ),
-				@TheNomad::SGame::EntityManager.GetEntityForNum( ray.m_nEntityNumber ) );
+			TheNomad::SGame::EntityManager.DamageEntity( @TheNomad::SGame::EntityManager.GetEntityForNum( ray.m_nEntityNumber ),
+				cast<TheNomad::SGame::EntityObject@>( @m_EntityData ) );
 			
 			m_EntityData.SetState( @m_FightState );
 		}
@@ -158,9 +153,6 @@ namespace moblib::Script {
 				m_nAimScale = 1.75f;
 				break;
 			};
-			
-			@m_AimState = @TheNomad::SGame::StateManager.GetStateById( "shotty_aim" );
-			@m_CoverState = @TheNomad::SGame::StateManager.GetStateById( "shotty_cover" );
 
 			m_EntityData.SetDirection( TheNomad::GameSystem::DirType::South );
 		}
@@ -181,7 +173,6 @@ namespace moblib::Script {
 		private float m_nFearAmount = 0.0f;
 		
 		private uint m_nCombatTicker = 0;
-		private TheNomad::SGame::EntityState@ m_CoverState = null;
-		private TheNomad::SGame::EntityState@ m_AimState = null;
+		private TheNomad::SGame::EntityState@ m_SubState = null;
 	};
 };

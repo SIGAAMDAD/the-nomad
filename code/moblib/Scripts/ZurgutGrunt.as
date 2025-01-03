@@ -1,15 +1,16 @@
-#include "moblib/MobScript.as"
-
-namespace moblib {
+namespace moblib::Script {
 	const uint GRUNT_BLOWUP_TIME = 25000;
 	const uint GRUNT_MELEE_WINDUP_TIME = 1000;
-	
+	const float GRUNT_MELEE_RANGE = 5.5f;
+	const float GRUNT_EXPLOSION_RADIUS = 7.5f;
+	const float GRUNT_HAMMER_RANGE = 3.0f;
+
 	final class ZurgutGrunt : MobScript {
 		ZurgutGrunt() {
 		}
 		
 		private bool CheckRage() const {
-			return m_bEnraged || m_EntityData.GetHealth() <= m_EntityData.GetInfo().health * 0.25f;
+			return m_bEnraged || m_EntityData.GetHealth() <= m_EntityData.GetMobInfo().health * 0.25f;
 		}
 		private bool IsBehindTarget() const {
 			const TheNomad::GameSystem::DirType targetDir = m_EntityData.GetTarget().GetDirection();
@@ -29,6 +30,7 @@ namespace moblib {
 			default:
 				break;
 			};
+			return false;
 		}
 		
 		void OnSpawn() override {
@@ -38,35 +40,48 @@ namespace moblib {
 		}
 		void FightMissile() override {
 			if ( m_nBombStartTic == 0 ) {
-				m_nBombStartTic = TheNomad::GameSystem::GameManager.GetGameTic();
-			} else if ( TheNomad::GameSystem::GameManager.GetGameTic() - m_nBombStartTic <= GRUNT_BLOWUP_TIME ) {
+				m_nBombStartTic = TheNomad::GameSystem::GameTic;
+			} else if ( TheNomad::GameSystem::GameTic - m_nBombStartTic <= GRUNT_BLOWUP_TIME ) {
 				return;
 			}
 			
 			// suicide bomb
-			m_EntityData.EmitSound( TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/mobs/grunt_explosion" ), 2.5f, 0xff );
-			TheNomad::SGame::GfxManager.AddExplosionMark( m_EntityData.GetOrigin() );
-			TheNomad::SGame::EntityManager.KillEntity( cast<TheNomad::SGame::EntityObject@>( @mob ), null );
+			m_EntityData.EmitSound( m_hExplosionSfx, 10.5f, 0xff );
+//			TheNomad::SGame::GfxManager.AddExplosionMark( m_EntityData.GetOrigin() );
+			TheNomad::SGame::EntityObject@ activeEnts = @TheNomad::SGame::EntityManager.GetActiveEnts();
+			TheNomad::SGame::EntityObject@ ent = @activeEnts.m_Next;
+
+			TheNomad::Engine::Physics::Bounds bounds;
+			bounds.m_nWidth = GRUNT_EXPLOSION_RADIUS;
+			bounds.m_nHeight = GRUNT_EXPLOSION_RADIUS;
+			bounds.MakeBounds( m_EntityData.GetOrigin() );
+
+			for ( ; @ent !is @activeEnts; @ent = @ent.m_Next ) {
+				if ( @ent !is @m_EntityData && bounds.IntersectsPoint( ent.GetOrigin() ) ) {
+					TheNomad::SGame::EntityManager.DamageEntity( @ent, cast<TheNomad::SGame::EntityObject@>( @m_EntityData ) );
+				}
+			}
+			TheNomad::SGame::EntityManager.KillEntity( cast<TheNomad::SGame::EntityObject@>( @m_EntityData ), null );
 		}
 		void FightMelee() override {
 			if ( m_nMeleeWindupStartTic == 0 ) {
-				m_nMeleeWindupStartTic = TheNomad::GameSystem::GameManager.GetGameTic();
+				m_nMeleeWindupStartTic = TheNomad::GameSystem::GameTic;
 			}
-			
-			const uint lerpTime = m_State.GetAnimation().GetTicRate() * m_State.GetAnimation().NumFrames();
-			if ( TheNomad::GameSystem::GameManager.GetGameTic() - m_nMeleeWindupStartTic >= lerpTime ) {
-				TheNomad::SGame::EntityManager.ForEachEntity( function( TheNomad::SGame::EntityObject@ ent, ref@ thisData ){
-					ZurgutGrunt@ this = cast<ZurgutGrunt@>( @thisData );
-					
-					if ( TheNomad::Util::Distance( ent.GetOrigin(), this.GetBase().GetOrigin() ) > this.GetBase().GetInfo().meleeRange ) ) {
-						return;
-					}
-					
-					TheNomad::SGame::EntityManager.DamageEntity( cast<TheNomad::SGame::EntityObject@>( @this.GetBase() ), @ent );
-					
-					// reset
-					this.SetState( this.GetFightState() );
-				}, @this );
+			if ( TheNomad::GameSystem::GameTic - m_nMeleeWindupStartTic < m_EntityData.GetState().GetAnimation().GetLerpTime() ) {
+				return;
+			}
+
+			TheNomad::Engine::Physics::Bounds bounds;
+			bounds.m_nWidth = GRUNT_HAMMER_RANGE;
+			bounds.m_nHeight = GRUNT_HAMMER_RANGE;
+			bounds.MakeBounds( m_EntityData.GetOrigin() );
+
+			TheNomad::SGame::EntityObject@ activeEnts = @TheNomad::SGame::EntityManager.GetActiveEnts();
+			TheNomad::SGame::EntityObject@ ent = @activeEnts.m_Next;
+			for ( ; @ent !is @activeEnts; @ent = @ent.m_Next ) {
+				if ( @ent !is @m_EntityData && bounds.IntersectsPoint( ent.GetOrigin() ) ) {
+					TheNomad::SGame::EntityManager.DamageEntity( @ent, cast<TheNomad::SGame::EntityObject@>( @m_EntityData ) );
+				}
 			}
 		}
 		
@@ -76,29 +91,33 @@ namespace moblib {
 				
 				// force a no-move
 				m_EntityData.SetDirection( TheNomad::GameSystem::DirType::Inside );
-				if ( ( Util::PRandom() & 100 ) == 100 ) {
-					m_EntityData.EmitSound( TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/secrets/scream" ), 1.25f, 0xff );
+				if ( ( TheNomad::Util::PRandom() & 100 ) == 100 ) {
+					m_EntityData.EmitSound( ResourceCache.GruntScreamSecretSfx, 10.25f, 0xff );
 				} else {
-					m_EntityData.EmitSound( TheNomad::Engine::ResourceCache.GetSfx( "event:/sfx/mobs/grunt_scream" ), 1.25f, 0xff );
+					m_EntityData.EmitSound( ResourceCache.GruntScreamSfx, 10.25f, 0xff );
 				}
-				m_EntityData.SetState( @m_MissileState );
+				m_EntityData.SetState( @m_FightMissileState );
 			}
-			if ( TheNomad::Util::Distance( m_EntityData.GetOrigin(),
-				m_EntityData.GetTarget().GetOrigin() ) <= m_EntityData.GetInfo().meleeRange )
+			if ( TheNomad::Util::Distance( m_EntityData.GetOrigin(), m_EntityData.GetTarget().GetOrigin() )
+				<= GRUNT_MELEE_RANGE )
 			{
-				m_EntityData.SetState( @m_MeleeState );
+				m_EntityData.SetState( @m_FightMeleeState );
 			} else {
-				m_EntityData.TryWalk();
+//				m_EntityData.TryWalk();
 			}
 		}
 		void FleeThink() override {
 			// fight to the death
 		}
 		void IdleThink() override {
-			if ( m_Sensor.SightCheck() ) {
+			if ( m_Sensor.CheckSight() ) {
 				m_EntityData.SetState( @m_FightState );
 			}
 		}
+
+		private int m_hScreamSecretSfx = FS_INVALID_HANDLE;
+		private int m_hScreamSfx = FS_INVALID_HANDLE;
+		private int m_hExplosionSfx = FS_INVALID_HANDLE;
 		
 		private uint m_nBombStartTic = 0;
 		private uint m_nMeleeWindupStartTic = 0;

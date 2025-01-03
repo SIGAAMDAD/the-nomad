@@ -37,8 +37,8 @@ namespace TheNomad::GameSystem {
 
 			const float dx = abs( end.x - m_Start.x );
 			const float dy = abs( end.y - m_Start.y );
-			const float sx = m_Start.x < end.x ? 0.75f : -0.75f;
-			const float sy = m_Start.y < end.y ? 0.75f : -0.75f;
+			const float sx = m_Start.x < end.x ? 0.5f : -0.5f;
+			const float sy = m_Start.y < end.y ? 0.5f : -0.5f;
 			float err = ( dx > dy ? dx : -dy ) * 0.5f;
 			
 			m_Origin = m_Start;
@@ -60,8 +60,8 @@ namespace TheNomad::GameSystem {
 						return;
 					}
 				}
-				if ( ( sy == -0.75f && m_Origin.y <= end.y ) || ( sy == 0.75f && m_Origin.y >= end.y )
-					|| ( sx == -0.75f && m_Origin.x <= end.x || ( sx == 0.75f && m_Origin.x >= end.x ) ) )
+				if ( ( sy == -0.5f && m_Origin.y <= end.y ) || ( sy == 0.5f && m_Origin.y >= end.y )
+					|| ( sx == -0.5f && m_Origin.x <= end.x || ( sx == 0.5f && m_Origin.x >= end.x ) ) )
 				{
 					m_nEntityNumber = ENTITYNUM_INVALID;
 					return;

@@ -200,6 +200,8 @@ void InitResources() {
 		TheNomad::SGame::sgame_RankStringColors[ TheNomad::SGame::LevelRank::RankWereUBotting ] = TheNomad::Util::StringToColor( str );
 	}
 
+	TheNomad::Engine::CvarSet( "r_clearColor", "83.5 62.4 33.3 1.0" );
+
 	timer.Stop();
 	ConsolePrint( "InitResources: " + timer.ElapsedMilliseconds() + "ms\n" );
 }

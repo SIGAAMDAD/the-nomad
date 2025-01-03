@@ -226,7 +226,6 @@ namespace TheNomad::SGame {
 				m_EntityData.SetLegsFacing( FACING_RIGHT );
 				m_EntityData.LeftArm.SetFacing( FACING_RIGHT );
 				m_EntityData.RightArm.SetFacing( FACING_RIGHT );
-
 				m_nArmsAngle = atan2( float( TheNomad::GameSystem::MousePosition.y ) - TheNomad::GameSystem::HalfScreenHeight,
 					float( TheNomad::GameSystem::MousePosition.x ) - TheNomad::GameSystem::HalfScreenWidth );
 			} else if ( TheNomad::GameSystem::MousePosition.x < TheNomad::GameSystem::HalfScreenWidth ) {
@@ -238,7 +237,7 @@ namespace TheNomad::SGame {
 				m_EntityData.LeftArm.SetFacing( FACING_LEFT );
 				m_EntityData.RightArm.SetFacing( FACING_LEFT );
 				
-				m_nArmsAngle = atan2( TheNomad::GameSystem::HalfScreenHeight - float( TheNomad::GameSystem::MousePosition.y ),
+				m_nArmsAngle = atan2( float( TheNomad::GameSystem::MousePosition.y ) - TheNomad::GameSystem::HalfScreenHeight,
 					TheNomad::GameSystem::HalfScreenWidth - float( TheNomad::GameSystem::MousePosition.x ) );
 			}
 		}
@@ -274,7 +273,6 @@ namespace TheNomad::SGame {
 
 			TheNomad::Engine::UserInterface::SetActiveFont( TheNomad::Engine::UserInterface::Font_RobotoMono );
 			
-			/*
 			ImGui::Begin( "Debug Player Movement", null, ImGuiWindowFlags::AlwaysAutoResize );
 			ImGui::SetWindowPos( vec2( 16, 128 ) );
 			ImGui::Text( "Origin: [ " + m_EntityData.GetOrigin().x + ", " + m_EntityData.GetOrigin().y + ", " + m_EntityData.GetOrigin().z + " ]" );
@@ -301,9 +299,12 @@ namespace TheNomad::SGame {
 				ImGui::Text( "maxs[1]: " + maxs.y );
 			}
 			ImGui::Separator();
-			ImGui::Text( "Arm Angle: " +m_nArmsAngle );
+			ImGui::Text( "Arm Angle: " + m_nArmsAngle );
+			ImGui::Separator();
+			if ( m_EntityData.IsWeaponEquipped() ) {
+				ImGui::Text( "WeaponMode: " + m_EntityData.GetCurrentWeapon().LogWeaponMode( m_EntityData.GetCurrentWeapon().GetUseMode() ) );
+			}
 			ImGui::End();
-			*/
 
 			m_EntityData.GetPhysicsObject().OnRunTic();
 		}

@@ -64,6 +64,7 @@ namespace TheNomad::Engine::Physics {
 
 			vec3 origin = m_EntityData.GetOrigin();
 
+			/*
             if ( origin.x < 0.0f ) {
                 m_EntityData.SetOrigin( vec3( 0.0f, origin.y, origin.z ) );
             }
@@ -76,6 +77,7 @@ namespace TheNomad::Engine::Physics {
 			if ( origin.y > TheNomad::SGame::MapHeight - 1 ) {
 				m_EntityData.SetOrigin( vec3( origin.x, TheNomad::SGame::MapHeight - 1, origin.z ) );
 			}
+			*/
 		}
 		
 		void ApplyFriction() {
@@ -258,22 +260,24 @@ namespace TheNomad::Engine::Physics {
 						( m_Velocity.x > 2.25f && m_Velocity.y > 2.25f ) )
 					{
 						// damage
-						TheNomad::SGame::EntityManager.DamageEntity( @m_EntityData, @ent );
+						TheNomad::SGame::EntityManager.DamageEntity( @ent, @m_EntityData );
 					}
 					return; // clip
 				}
 			}
+			
+			if ( !( ( tmp.x < 0.0f || tmp.x >= TheNomad::SGame::MapWidth ) || ( tmp.y < 0.0f || tmp.y >= TheNomad::SGame::MapHeight ) ) ) {
+				if ( TheNomad::GameSystem::CheckWallHit( tmp, dir ) ) {
+					m_Acceleration = vec3( 0.0f );
 
-			if ( TheNomad::GameSystem::CheckWallHit( tmp, dir ) ) {
-				m_Acceleration = vec3( 0.0f );
-
-				const float z = m_Velocity.z;
-				m_Velocity = 0.0f;
-				if ( origin.z > 0.0f ) {
-					m_Velocity.z = z;
-					origin.z += ( m_Velocity.z * TheNomad::GameSystem::DeltaTic );
+					const float z = m_Velocity.z;
+					m_Velocity = 0.0f;
+					if ( origin.z > 0.0f ) {
+						m_Velocity.z = z;
+						origin.z += ( m_Velocity.z * TheNomad::GameSystem::DeltaTic );
+					}
+					return;
 				}
-				return;
 			}
 			
 			origin.x += ( m_Velocity.x * TheNomad::GameSystem::DeltaTic );
@@ -288,24 +292,20 @@ namespace TheNomad::Engine::Physics {
 			if ( inAir && origin.z <= 0.0f ) {
 				if ( m_nWaterLevel > 0 ) {
 					m_EntityData.EmitSound(
-						TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/water_land_" + formatUInt( Util::PRandom() & 2 ) ),
+						TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/water_land_" + ( Util::PRandom() & 2 ) ),
 						10.0f, 0xff );
 					
 					TheNomad::SGame::GfxManager.AddWaterWake( origin, 800 );
 				} else {
 					m_EntityData.EmitSound(
-						TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/land_" + formatUInt( ( Util::PRandom() & 3 ) + 1 ) ),
+						TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/land_" + ( ( Util::PRandom() & 3 ) + 1 ) ),
 						10.0f, 0xff );
 
 					//
 					// add a little dust effect for that extra IMPACT
 					//
 
-					// left offset
-//					TheNomad::SGame::GfxManager.AddDustPuff( vec3( origin.x - 0.5f, origin.y, origin.z ), TheNomad::SGame::FACING_RIGHT );
 					TheNomad::SGame::GfxManager.AddLanding( origin );
-					// right offset
-//					TheNomad::SGame::GfxManager.AddDustPuff( vec3( origin.x + 0.5f, origin.y, origin.z ), TheNomad::SGame::FACING_LEFT );
 				}
 			}
 			

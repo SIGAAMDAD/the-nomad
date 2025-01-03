@@ -746,4 +746,14 @@ namespace TheNomad::Util {
 		};
 		return TheNomad::GameSystem::DirType::Inside;
 	}
+
+	float AngleBetweenPoints( const vec3& in origin, const vec3& in target, int facing ) {
+		switch ( facing ) {
+		case TheNomad::SGame::FACING_LEFT:
+			return atan2( origin.y - target.y, origin.x - target.x );
+		case TheNomad::SGame::FACING_RIGHT:
+			return atan2( target.y - origin.y, target.x - origin.x );
+		};
+		return 0.0f;
+	}
 };
