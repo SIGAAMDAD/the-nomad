@@ -29,9 +29,6 @@ namespace TheNomad::SGame {
 			if ( ( weaponMode & InfoSystem::WeaponProperty::IsBladed ) != 0 ) {
 				msg += "[Bladed]";
 			}
-			if ( ( weaponMode & InfoSystem::WeaponProperty::IsPolearm ) != 0 ) {
-				msg += "[Polearm]";
-			}
 
 			return msg;
 		}
@@ -97,9 +94,6 @@ namespace TheNomad::SGame {
 		}
 		bool IsBladed() const {
 			return ( m_nLastUsedMode & InfoSystem::WeaponProperty::IsBladed ) != 0;
-		}
-		bool IsPolearm() const {
-			return ( m_nLastUsedMode & InfoSystem::WeaponProperty::IsPolearm ) != 0;
 		}
 		bool IsFirearm() const {
 			return ( m_nLastUsedMode & InfoSystem::WeaponProperty::IsFirearm ) != 0;
@@ -178,30 +172,6 @@ namespace TheNomad::SGame {
 			TheNomad::GameSystem::BBox bounds;
 			
 			return damage;
-		}
-		private float UsePolearm( float damage, uint weaponMode ) {
-			const vec3 origin = m_Owner.GetOrigin();
-			const float angle = m_Owner.GetAngle();
-			vec3 end = vec3( 0.0f );
-			EntityObject@ active = @EntityManager.GetActiveEnts();
-			EntityObject@ it = null;
-			
-			end.x = origin.x + ( m_WeaponInfo.range * cos( angle ) );
-			end.y = origin.y + ( m_WeaponInfo.range * sin( angle ) );
-//			end.z = m_WeaponInfo.range * sin( angle );
-			
-			for ( @it = @active.m_Next; @it.m_Next !is @active; @it = @it.m_Next ) {
-				if ( it.GetBounds().LineIntersection( origin, end ) ) {
-					EmitSound( m_WeaponInfo.useSfx, 10.0f, 0xff );
-					// pike, bannerlord mode (you crouch to get a spear brace), high-risk, high-reward
-					if ( cast<PlayrObject@>( @m_Owner ).IsCrouching() || cast<PlayrObject@>( @m_Owner ).IsSliding() ) {
-						return 1000.0f; // it's an insta-kill for most mobs
-					} else {
-						return m_WeaponInfo.damage;
-					}
-				}
-			}
-			return 0.0f;
 		}
 		private float UseFireArm( float damage, uint weaponMode ) {
 			if ( @m_AmmoInfo is null ) {
@@ -316,8 +286,6 @@ namespace TheNomad::SGame {
 			
 			if ( ( weaponMode & uint( InfoSystem::WeaponProperty::IsFirearm ) ) != 0 ) {
 				return UseFireArm( damage, weaponMode );
-			} else if ( ( weaponMode & uint( InfoSystem::WeaponProperty::IsPolearm ) ) != 0 ) {
-				return UsePolearm( damage, weaponMode );
 			} else if ( ( weaponMode & uint( InfoSystem::WeaponProperty::IsBladed ) ) != 0 ) {
 				return UseBlade( damage, weaponMode );
 			} else if ( ( weaponMode & uint( InfoSystem::WeaponProperty::IsBlunt ) ) != 0 ) {

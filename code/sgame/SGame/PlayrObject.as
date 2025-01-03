@@ -26,18 +26,14 @@ namespace TheNomad::SGame {
 
 	const uint DASH_COOLDOWN		= 200;
 
-	const uint[] sgame_WeaponModeList_OneHanded = {
-		uint( InfoSystem::WeaponProperty::OneHandedBlade ),
-		uint( InfoSystem::WeaponProperty::OneHandedBlunt ),
-		uint( InfoSystem::WeaponProperty::OneHandedPolearm ),
-		uint( InfoSystem::WeaponProperty::OneHandedFirearm )
-	};
+	const uint[] sgame_WeaponModeList = {
+		uint( InfoSystem::WeaponProperty::IsOneHanded ) | uint( InfoSystem::WeaponProperty::IsBladed ),
+		uint( InfoSystem::WeaponProperty::IsOneHanded ) | uint( InfoSystem::WeaponProperty::IsBlunt ),
+		uint( InfoSystem::WeaponProperty::IsOneHanded ) | uint( InfoSystem::WeaponProperty::IsFirearm ),
 
-	const uint[] sgame_WeaponModeList_TwoHanded = {
-		uint( InfoSystem::WeaponProperty::TwoHandedBlade ),
-		uint( InfoSystem::WeaponProperty::TwoHandedBlunt ),
-		uint( InfoSystem::WeaponProperty::TwoHandedPolearm ),
-		uint( InfoSystem::WeaponProperty::TwoHandedFirearm )
+		uint( InfoSystem::WeaponProperty::IsTwoHanded ) | uint( InfoSystem::WeaponProperty::IsBladed ),
+		uint( InfoSystem::WeaponProperty::IsTwoHanded ) | uint( InfoSystem::WeaponProperty::IsBlunt ),
+		uint( InfoSystem::WeaponProperty::IsTwoHanded ) | uint( InfoSystem::WeaponProperty::IsFirearm )
 	};
 	
     class PlayrObject : EntityObject {
@@ -150,32 +146,35 @@ namespace TheNomad::SGame {
 			
 			// find the next most suitable mode
 			const InfoSystem::WeaponProperty props = weapon.GetWeaponInfo().weaponProps;
-			if ( ( uint( props ) & InfoSystem::WeaponProperty::IsOneHanded ) != 0 ) {
-				for ( uint i = 0; i < sgame_WeaponModeList_OneHanded.Count(); i++ ) {
-					if ( ( uint( props ) & ( sgame_WeaponModeList_OneHanded[i] ^ InfoSystem::WeaponProperty::IsOneHanded ) ) != 0 ) {
-						// found a match, but check if its the same
-						if ( ( uint( mode ) & ( sgame_WeaponModeList_OneHanded[i] ^ InfoSystem::WeaponProperty::IsOneHanded ) ) != 0 ) {
-							// same mode, don't switch
-							continue;
-						}
-						slot.SetMode( InfoSystem::WeaponProperty( sgame_WeaponModeList_OneHanded[i] ) );
-						slot.GetData().SetUseMode( sgame_WeaponModeList_OneHanded[i] );
-						break;
+			const uint hands = ~( InfoSystem::WeaponProperty::IsOneHanded | InfoSystem::WeaponProperty::IsTwoHanded );
+			for ( uint i = 0; i < sgame_WeaponModeList.Count(); i++ ) {
+				if ( ( uint( props ) & ( sgame_WeaponModeList[i] & hands ) ) != 0 ) {
+					// found a match, but check if its the same
+					if ( uint( mode ) == sgame_WeaponModeList[i] ) {
+						// same mode, don't switch
+						continue;
 					}
-				}
-			}
-			else if ( ( uint( props ) & InfoSystem::WeaponProperty::IsTwoHanded ) != 0 ) {
-				for ( uint i = 0; i < sgame_WeaponModeList_TwoHanded.Count(); i++ ) {
-					if ( ( uint( props ) & ( sgame_WeaponModeList_TwoHanded[i] ^ InfoSystem::WeaponProperty::IsTwoHanded ) ) != 0 ) {
-						// found a match, but check if its the same
-						if ( ( uint( mode ) & ( sgame_WeaponModeList_TwoHanded[i] ^ InfoSystem::WeaponProperty::IsTwoHanded ) ) != 0 ) {
-							// same mode, don't switch
-							continue;
-						}
-						slot.SetMode( InfoSystem::WeaponProperty( sgame_WeaponModeList_TwoHanded[i] ) );
-						slot.GetData().SetUseMode( sgame_WeaponModeList_TwoHanded[i] );
-						break;
+
+					// apply some filters
+					const uint tmp = sgame_WeaponModeList[i];
+					if ( ( tmp & InfoSystem::WeaponProperty::IsOneHanded ) != 0
+						&& ( uint( props ) & InfoSystem::WeaponProperty::IsOneHanded ) == 0 )
+					{
+						// one handing not possible, deny
+						continue;
 					}
+					if ( ( tmp & InfoSystem::WeaponProperty::IsTwoHanded ) != 0
+						&& ( uint( props ) & InfoSystem::WeaponProperty::IsTwoHanded ) == 0 )
+					{
+						// two handing not possible, deny
+						continue;
+					}
+
+					DebugPrint( "Switched weapon mode from " + slot.GetData().LogWeaponMode( mode ) + " to "
+						+ slot.GetData().LogWeaponMode( sgame_WeaponModeList[i] ) + "\n" );
+					slot.SetMode( InfoSystem::WeaponProperty( sgame_WeaponModeList[i] ) );
+					slot.GetData().SetUseMode( sgame_WeaponModeList[i] );
+					break;
 				}
 			}
 		}

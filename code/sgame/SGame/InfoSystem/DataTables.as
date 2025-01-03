@@ -104,17 +104,14 @@ namespace TheNomad::SGame::InfoSystem {
 		IsTwoHanded			= 0b00100000,
 		IsBladed			= 0b00000001,
 		IsBlunt				= 0b00000010,
-		IsPolearm			= 0b00000100,
 		IsFirearm			= 0b00001000,
 
 		OneHandedBlade		= uint( WeaponProperty::IsOneHanded ) | uint( WeaponProperty::IsBladed ),
 		OneHandedBlunt		= uint( WeaponProperty::IsOneHanded ) | uint( WeaponProperty::IsBlunt ),
-		OneHandedPolearm	= uint( WeaponProperty::IsOneHanded ) | uint( WeaponProperty::IsPolearm ),
 		OneHandedFirearm	= uint( WeaponProperty::IsOneHanded ) | uint( WeaponProperty::IsFirearm ),
 
 		TwoHandedBlade		= uint( WeaponProperty::IsTwoHanded ) | uint( WeaponProperty::IsBladed ),
 		TwoHandedBlunt		= uint( WeaponProperty::IsTwoHanded ) | uint( WeaponProperty::IsBlunt ),
-		TwoHandedPolearm	= uint( WeaponProperty::IsTwoHanded ) | uint( WeaponProperty::IsPolearm ),
 		TwoHandedFirearm	= uint( WeaponProperty::IsTwoHanded ) | uint( WeaponProperty::IsFirearm ),
 
 		SpawnsObject		= 0b10000000,

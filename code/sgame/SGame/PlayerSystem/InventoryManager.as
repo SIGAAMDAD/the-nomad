@@ -109,8 +109,8 @@ namespace TheNomad::SGame {
 				m_RightArm.SetEquippedSlot( m_nCurrentWeapon );
 
 				// this will automatically override any other modes
-				m_WeaponSlots[ m_LeftArm.GetEquippedWeapon() ].SetMode( weapon.GetWeaponInfo().weaponProps );
-				m_WeaponSlots[ m_RightArm.GetEquippedWeapon() ].SetMode( weapon.GetWeaponInfo().weaponProps );
+				m_WeaponSlots[ m_LeftArm.GetEquippedWeapon() ].SetMode( weapon.GetWeaponInfo().defaultMode );
+				m_WeaponSlots[ m_RightArm.GetEquippedWeapon() ].SetMode( weapon.GetWeaponInfo().defaultMode );
 				return;
 			}
 
