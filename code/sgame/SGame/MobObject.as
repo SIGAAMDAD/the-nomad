@@ -67,7 +67,7 @@ namespace TheNomad::SGame {
 			if ( !Move() ) {
 				return false;
 			}
-			m_nMoveCounter = Util::PRandom() & 15;
+			m_nMoveCounter = Util::PRandom() & 30;
 			return true;
 		}
 
@@ -188,8 +188,7 @@ namespace TheNomad::SGame {
 				m_nReactionTime--;
 			}
 
-			// turn towards movement direction if not there yet
-//			if ( m_Direction < TheNomad::GameSystem::DirType::Inside && @m_Target !is null ) {
+			if ( @m_Target !is null ) {
 				const vec3 target = m_Target.GetOrigin();
 
 				const float deltaY = m_Link.m_Origin.y - target.y;
@@ -202,16 +201,27 @@ namespace TheNomad::SGame {
 					angle += 360.0f;
 				}
 				m_Direction = Util::Angle2Dir( angle );
-//			}
+			}
+
+			// check for melee attack
+			if ( @m_Info.meleeState !is null ) {
+				m_ScriptData.FightMelee();
+//				return;
+			}
+
+			// check for missile attack
+			if ( @m_Info.missileState !is null ) {
+				if ( TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" ) < TheNomad::GameSystem::GameDifficulty::VeryHard ) {
+
+				}
+			}
 
 			if ( @m_Target is null ) {
 				SetState( @m_Info.idleState );
 			}
 
 			// chase towards player
-			if ( --m_nMoveCounter < 0 || !Move() ) {
-				NewChaseDir();
-			}
+			!Move();
 		}
 
 		void LinkScript( moblib::MobScript@ script ) {
@@ -291,7 +301,11 @@ namespace TheNomad::SGame {
 				m_ScriptData.IdleThink();
 				break;
 			case StateNum::ST_MOB_FIGHT_MELEE:
+				m_ScriptData.FightMelee();
+				break;
 			case StateNum::ST_MOB_FIGHT_MISSILE:
+				m_ScriptData.FightMissile();
+				break;
 			case StateNum::ST_MOB_FIGHT:
 				m_ScriptData.FightThink();
 				break;
@@ -325,6 +339,7 @@ namespace TheNomad::SGame {
 			@m_State = @StateManager.GetStateForNum( m_Info.type + state );
 			if ( @m_State is null ) {
 				ConsoleWarning( "MobObject::SetState: bad state" );
+				return;
 			}
 			m_State.Reset( m_nTicker );
 		}
@@ -332,6 +347,7 @@ namespace TheNomad::SGame {
 			@m_State = @state;
 			if ( @m_State is null ) {
 				ConsoleWarning( "MobObject::SetState: bad state" );
+				return;
 			}
 			m_State.Reset( m_nTicker );
 		}
@@ -341,6 +357,15 @@ namespace TheNomad::SGame {
 		}
 		void SetMoveCounter( uint nMoveCounter ) {
 			m_nMoveCounter = nMoveCounter;
+		}
+		uint GetReactionTime() const {
+			return m_nReactionTime;
+		}
+		void SetReactionTime( uint nTime ) {
+			m_nReactionTime = nTime;
+		}
+		void ResetReactionTime() {
+			m_nReactionTime = m_Info.reactionTime;
 		}
 
 		private EntityObject@ m_Target = null;

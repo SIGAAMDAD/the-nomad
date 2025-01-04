@@ -30,10 +30,23 @@
 		},
 		{
 			"Id": "mob_merc_shotgunner_fight",
-			"Tics": 2500,
-			"BaseNum": "ST_MOB_FIGHT",
+			"Tics": 5500,
+			"BaseNum": "ST_MOB_FIGHT_MISSILE",
 			"Entity": "mob_merc_shotgunner",
-			"NextState": "this",
+			"NextState": "mob_merc_shotgunner_idle",
+			"SpriteOffset": [ 0, 0 ],
+			"Animation": {
+				"TicRate": 0,
+				"FlipFlop": false,
+				"Frames": 0,
+				"Reverse": false
+			}
+		},
+		{
+			"Id": "mob_merc_shotgunner_aim",
+			"Tics": 750,
+			"Entity": "mob_merc_shotgunner",
+			"NextState": "mob_merc_shotgunner_fight",
 			"SpriteOffset": [ 0, 0 ],
 			"Animation": {
 				"TicRate": 0,

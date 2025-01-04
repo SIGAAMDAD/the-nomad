@@ -103,6 +103,18 @@ namespace TheNomad::SGame::InfoSystem {
 			}
 			speed.z = float( json[ "Stats.Speed.z" ] );
 
+			if ( !json.get( "Stats.PainTolerance", painTolerance ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'Stats.PainTolerance' in \"" + name + "\"\n" );
+				return false;
+			}
+			painTolerance = uint( json[ "Stats.PainTolerance" ] );
+
+			if ( !json.get( "Stats.ReactionTime", reactionTime ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'Stats.ReactionTime' in \"" + name + "\"\n" );
+				return false;
+			}
+			reactionTime = uint( json[ "Stats.ReactionTime" ] );
+
 			return true;
 		}
 
@@ -136,6 +148,7 @@ namespace TheNomad::SGame::InfoSystem {
 
 		private bool LoadStatesBlock( json@ json ) {
 			string state;
+			bool hasState = false;
 
 			if ( !json.get( "States.Idle", state ) ) {
 				ConsoleWarning( "invalid mob info, missing variable 'States.Idle' in \"" + name + "\"\n" );
@@ -147,14 +160,34 @@ namespace TheNomad::SGame::InfoSystem {
 				return false;
 			}
 
-			if ( !json.get( "States.Fight", state ) ) {
-				ConsoleWarning( "invalid mob info, missing variable 'States.Fight' in \"" + name + "\"\n" );
+			if ( !json.get( "States.HasMissile", hasState ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'States.HasMissile' in \"" + name + "\"\n" );
 				return false;
 			}
-			@fightState = @StateManager.GetStateById( state );
-			if ( @fightState is null ) {
-				ConsoleWarning( "invalid mob info, bad state \"" + state + "\"\n" );
+			hasState = bool( json[ "States.HasMissile" ] );
+			if ( hasState ) {
+				if ( !json.get( "States.Missile", state ) ) {
+					ConsoleWarning( "invalid mob info, missing variable 'States.Missile' in \"" + name + "\"\n" );
+					return false;
+				}
+				@missileState = @StateManager.GetStateById( state );
+			} else {
+				@missileState = null;
+			}
+			
+			if ( !json.get( "States.HasMelee", hasState ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'States.HasMelee' in \"" + name + "\"\n" );
 				return false;
+			}
+			hasState = bool( json[ "States.HasMelee" ] );
+			if ( hasState ) {
+				if ( !json.get( "States.Melee", state ) ) {
+					ConsoleWarning( "invalid mob info, missing variable 'States.Melee' in \"" + name + "\"\n" );
+					return false;
+				}
+				@meleeState = @StateManager.GetStateById( state );
+			} else {
+				@meleeState = null;
 			}
 
 			if ( !json.get( "States.Chase", state ) ) {
@@ -266,7 +299,8 @@ namespace TheNomad::SGame::InfoSystem {
 
 		EntityState@ idleState = null;
 		EntityState@ chaseState = null;
-		EntityState@ fightState = null;
+		EntityState@ missileState = null;
+		EntityState@ meleeState = null;
 		EntityState@ dieHighState = null;
 		EntityState@ dieLowState = null;
 
@@ -275,6 +309,9 @@ namespace TheNomad::SGame::InfoSystem {
 
 		float sightRange = 0.0f;
 		float sightRadius = 0.0f;
+
+		uint reactionTime = 0;
+		uint painTolerance = 0;
 
 		float health = 0.0f;
 		uint type = 0;

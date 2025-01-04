@@ -15,11 +15,10 @@ namespace moblib {
 			@m_IdleState = @info.idleState;
 			@m_SearchState = @TheNomad::SGame::StateManager.GetStateForNum( uint( TheNomad::SGame::StateNum::ST_MOB_SEARCH ) + id );
 			@m_ChaseState = @info.chaseState;
-			@m_FightState = @info.fightState;
-			@m_FightMeleeState = @TheNomad::SGame::StateManager.GetStateForNum( uint( TheNomad::SGame::StateNum::ST_MOB_FIGHT_MELEE ) + id );
-			@m_FightMissileState = @TheNomad::SGame::StateManager.GetStateForNum( uint( TheNomad::SGame::StateNum::ST_MOB_FIGHT_MISSILE ) + id );
+			@m_FightMeleeState = @info.meleeState;
+			@m_FightMissileState = @info.missileState;
 			@m_FleeState = @TheNomad::SGame::StateManager.GetStateForNum( uint( TheNomad::SGame::StateNum::ST_MOB_FLEE ) + id );
-			@m_DeathState = @TheNomad::SGame::StateManager.GetStateForNum( uint( TheNomad::SGame::StateNum::ST_MOB_DEAD ) + id );
+			@m_DeathState = @info.dieLowState;
 			
 			@m_EntityData = @mob;
 			m_Sensor.Init( @mob );

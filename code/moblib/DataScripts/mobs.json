@@ -11,6 +11,8 @@
 			"Stats.Speed.x": 1.0,
 			"Stats.Speed.y": 1.0,
 			"Stats.Speed.z": 1.0,
+			"Stats.ReactionTime": 10,
+			"Stats.PainTolerance": 2,
 			"Detection.SoundRange": 4.50,
 			"Detection.SoundTolerance": 10.5,
 			"Detection.SightRange": 5.90,
@@ -19,7 +21,13 @@
 			"RenderData.SheetHeight": 300,
 			"RenderData.SpriteWidth": 52,
 			"RenderData.SpriteHeight": 60,
-			"RenderData.SpriteSheet": "sprites/mobs/zurgut/grunt"
+			"RenderData.SpriteSheet": "sprites/mobs/zurgut/grunt",
+			"States.Idle": "mob_zurgut_grunt_idle",
+			"States.HasMelee": false,
+			"States.HasMissile": false,
+			"States.Chase": "mob_zurgut_grunt_chase",
+			"States.DieHigh": "mob_zurgut_grunt_die_high",
+			"States.DieLow": "mob_zurgut_grunt_die_low"
 		},
 		{
 			"Name": "Mercenary Shotgunner",
@@ -32,6 +40,8 @@
 			"Stats.Speed.x": 1.0,
 			"Stats.Speed.y": 1.0,
 			"Stats.Speed.z": 1.0,
+			"Stats.ReactionTime": 5,
+			"Stats.PainTolerance": 15,
 			"Detection.SoundRange": 4.50,
 			"Detection.SoundTolerance": 8.5,
 			"Detection.SightRange": 8.90,
@@ -42,7 +52,9 @@
 			"RenderData.SpriteHeight": 32,
 			"RenderData.SpriteSheet": "sprites/mobs/mercenary/shotgunner",
 			"States.Idle": "mob_merc_shotgunner_idle",
-			"States.Fight": "mob_merc_shotgunner_fight",
+			"States.HasMissile": true,
+			"States.HasMelee": false,
+			"States.Missile": "mob_merc_shotgunner_fight",
 			"States.Chase": "mob_merc_shotgunner_chase",
 			"States.DieHigh": "mob_merc_shotgunner_die_high",
 			"States.DieLow": "mob_merc_shotgunner_die_low"
