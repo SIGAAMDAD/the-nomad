@@ -775,7 +775,7 @@ namespace TheNomad::SGame {
 					Flags &= ~( PF_USING_WEAPON | PF_USING_WEAPON_ALT );
 				}
 			}
-			
+
 			m_Bounds.m_nWidth = sgame_PlayerWidth.GetFloat();
 			m_Bounds.m_nHeight = sgame_PlayerHeight.GetFloat();
 			m_Bounds.MakeBounds( m_Link.m_Origin );
@@ -849,6 +849,10 @@ namespace TheNomad::SGame {
 			@m_LegState = @m_LegState.Run( m_nLegTicker );
 			LeftArm.Think();
 			RightArm.Think();
+
+			if ( m_nSoundLevel > 0.0f ) {
+				m_nSoundLevel -= 0.5f * TheNomad::GameSystem::DeltaTic;
+			}
 
 			Flags &= ~PF_USED_MANA;
 		}

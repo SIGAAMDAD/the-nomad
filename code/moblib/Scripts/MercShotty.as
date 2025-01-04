@@ -155,18 +155,15 @@ namespace moblib::Script {
 				m_EntityData.SetState( @m_SearchState );
 			}
 			m_EntityData.Chase();
-
-			if ( @m_SubState !is @ResourceCache.ShottyAimState ) {
-				if ( TheNomad::Util::Distance( origin, target ) <= MERC_SHOTGUN_RANGE && canSee ) {
-					// only start aiming if we can see the target
-					@m_SubState = @ResourceCache.ShottyAimState;
-					m_SubState.Reset( m_nSubTicker );
-					m_EntityData.EmitSound( ResourceCache.ShottyAimSfx, 10.0f, 0xff );
-					m_EntityData.SetState( @m_FightMissileState );
-
-					if ( IsAllyNearby() ) {
-						Bark( ResourceCache.ShottyOutOfTheWay[ TheNomad::Util::PRandom() & ( ResourceCache.ShottyOutOfTheWay.Count() - 1 ) ] );
-					}
+			
+			if ( TheNomad::Util::Distance( origin, target ) <= MERC_SHOTGUN_RANGE && canSee ) {
+				// only start aiming if we can see the target
+				@m_SubState = @ResourceCache.ShottyAimState;
+				m_SubState.Reset( m_nSubTicker );
+				m_EntityData.EmitSound( ResourceCache.ShottyAimSfx, 10.0f, 0xff );
+				m_EntityData.SetState( @m_FightMissileState );
+				if ( IsAllyNearby() ) {
+					Bark( ResourceCache.ShottyOutOfTheWay[ TheNomad::Util::PRandom() & ( ResourceCache.ShottyOutOfTheWay.Count() - 1 ) ] );
 				}
 			}
 		}
