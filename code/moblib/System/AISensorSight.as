@@ -8,91 +8,93 @@ namespace moblib {
 			const TheNomad::SGame::InfoSystem::MobInfo@ info = @mob.GetMobInfo();
 			const vec3 origin = mob.GetOrigin();
 
-			vec3 mins;
-			vec3 maxs;
-
-			// very hardcody but it WORKS
-			const float half = info.sightRange / 2;
-			switch ( mob.GetDirection() ) {
-			case TheNomad::GameSystem::DirType::North:
-				mins.x = origin.x - half;
-				mins.y = origin.y - info.sightRange;
-
-				maxs.x = origin.x + half;
-				maxs.y = origin.y;
-				break;
-			/*
-			case TheNomad::GameSystem::DirType::NorthEast:
-				mins.x = origin.x;
-				mins.y = origin.y - info.sightRange;
-
-				maxs.x = origin.x + info.sightRange;
-				maxs.y = origin.y;
-				break;
-			*/
-			case TheNomad::GameSystem::DirType::East:
-				mins.x = origin.x;
-				mins.y = origin.y - half;
-
-				maxs.x = origin.x + info.sightRange;
-				maxs.y = origin.y + half;
-				break;
-			/*
-			case TheNomad::GameSystem::DirType::SouthEast:
-				mins.x = origin.x;
-				mins.y = origin.y;
-
-				maxs.x = origin.x + info.sightRange;
-				maxs.y = origin.y + info.sightRange;
-				break;
-			*/
-			case TheNomad::GameSystem::DirType::South:
-				mins.x = origin.x - half;
-				mins.y = origin.y;
-
-				maxs.x = origin.x + half;
-				maxs.y = origin.y + info.sightRange;
-				break;
-			/*
-			case TheNomad::GameSystem::DirType::SouthWest:
-				mins.x = origin.x + info.sightRange;
-				mins.y = origin.y - half;
-
-				maxs.x = origin.x;
-				maxs.y = origin.y + half;
-				break;
-			*/
-			case TheNomad::GameSystem::DirType::West:
-				mins.x = origin.x - info.sightRange;
-				mins.y = origin.y - half;
-
-				maxs.x = origin.x;
-				maxs.y = origin.y - half;
-				break;
-			/*
-			case TheNomad::GameSystem::DirType::NorthWest:
-				mins.x = origin.x - ;
-				mins.y = origin.y - info.sightRange;
-
-				maxs.x = origin.x;
-				maxs.y = origin.y;
-				break;
-			*/
-			};
-			
-			TheNomad::Engine::Physics::Bounds bounds;
-			bounds.m_nMins = mins;
-			bounds.m_nMaxs = maxs;
-
-			/* NOTE: this will really only matter once we implement factions
-			TheNomad::SGame::EntityObject@ activeEnts = @TheNomad::SGame::EntityManager.GetActiveEnts();
-			if ( @ent is @activeEnts ) {
-				return false;
-			}
-			*/
 			const vec3 target = TheNomad::SGame::EntityManager.GetActivePlayer().GetOrigin();
-			if ( !bounds.IntersectsPoint( target ) ) {
-				return false;
+			if ( @mob.GetTarget() is null ) {
+				vec3 mins;
+				vec3 maxs;
+
+				// very hardcody but it WORKS
+				const float half = info.sightRange / 2;
+				switch ( mob.GetDirection() ) {
+				case TheNomad::GameSystem::DirType::North:
+					mins.x = origin.x - half;
+					mins.y = origin.y - info.sightRange;
+
+					maxs.x = origin.x + half;
+					maxs.y = origin.y;
+					break;
+				/*
+				case TheNomad::GameSystem::DirType::NorthEast:
+					mins.x = origin.x;
+					mins.y = origin.y - info.sightRange;
+
+					maxs.x = origin.x + info.sightRange;
+					maxs.y = origin.y;
+					break;
+				*/
+				case TheNomad::GameSystem::DirType::East:
+					mins.x = origin.x;
+					mins.y = origin.y - half;
+
+					maxs.x = origin.x + info.sightRange;
+					maxs.y = origin.y + half;
+					break;
+				/*
+				case TheNomad::GameSystem::DirType::SouthEast:
+					mins.x = origin.x;
+					mins.y = origin.y;
+
+					maxs.x = origin.x + info.sightRange;
+					maxs.y = origin.y + info.sightRange;
+					break;
+				*/
+				case TheNomad::GameSystem::DirType::South:
+					mins.x = origin.x - half;
+					mins.y = origin.y;
+
+					maxs.x = origin.x + half;
+					maxs.y = origin.y + info.sightRange;
+					break;
+				/*
+				case TheNomad::GameSystem::DirType::SouthWest:
+					mins.x = origin.x + info.sightRange;
+					mins.y = origin.y - half;
+
+					maxs.x = origin.x;
+					maxs.y = origin.y + half;
+					break;
+				*/
+				case TheNomad::GameSystem::DirType::West:
+					mins.x = origin.x - info.sightRange;
+					mins.y = origin.y - half;
+
+					maxs.x = origin.x;
+					maxs.y = origin.y - half;
+					break;
+				/*
+				case TheNomad::GameSystem::DirType::NorthWest:
+					mins.x = origin.x - ;
+					mins.y = origin.y - info.sightRange;
+
+					maxs.x = origin.x;
+					maxs.y = origin.y;
+					break;
+				*/
+				};
+
+				TheNomad::Engine::Physics::Bounds bounds;
+				bounds.m_nMins = mins;
+				bounds.m_nMaxs = maxs;
+
+				/* NOTE: this will really only matter once we implement factions
+				TheNomad::SGame::EntityObject@ activeEnts = @TheNomad::SGame::EntityManager.GetActiveEnts();
+				if ( @ent is @activeEnts ) {
+					return false;
+				}
+				*/
+				if ( !bounds.IntersectsPoint( target ) ) {
+					return false;
+				}
 			}
 			
 			//
@@ -102,8 +104,13 @@ namespace moblib {
 
 			ray.m_nLength = info.sightRange;
 			ray.m_Start = origin;
-			ray.m_nAngle = TheNomad::Util::Dir2Angle( mob.GetDirection() );
+			ray.m_nAngle = mob.GetAngle();
 			ray.m_nOwner = mob.GetEntityNum();
+
+			if ( ray.m_nAngle < 0.0f ) {
+				const float tmp = TheNomad::Util::RAD2DEG( ray.m_nAngle ) + 360.0f;
+				ray.m_nAngle = TheNomad::Util::DEG2RAD( tmp );
+			}
 
 			ray.Cast( target );
 			

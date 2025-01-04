@@ -161,6 +161,8 @@ void InitResources() {
 
 	TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/checkpoint", 128, 32, 32, 32 );
 
+	TheNomad::Engine::Renderer::RegisterShader( "gfx/mob_parry" );
+
 	TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/dash_screen" );
 	TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/parry_screen" );
 	TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/bullet_time_blur" );

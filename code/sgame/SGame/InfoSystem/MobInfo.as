@@ -200,6 +200,16 @@ namespace TheNomad::SGame::InfoSystem {
 				return false;
 			}
 
+			if ( !json.get( "States.Search", state ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'States.Search' in \"" + name + "\"\n" );
+				return false;
+			}
+			@searchState = @StateManager.GetStateById( state );
+			if ( @searchState is null ) {
+				ConsoleWarning( "invalid mob info, bad state \"" + state + "\"\n" );
+				return false;
+			}
+
 			if ( !json.get( "States.DieHigh", state ) ) {
 				ConsoleWarning( "invalid mob info, missing variable 'States.DieHigh' in \"" + name + "\"\n" );
 				return false;
@@ -299,6 +309,7 @@ namespace TheNomad::SGame::InfoSystem {
 
 		EntityState@ idleState = null;
 		EntityState@ chaseState = null;
+		EntityState@ searchState = null;
 		EntityState@ missileState = null;
 		EntityState@ meleeState = null;
 		EntityState@ dieHighState = null;

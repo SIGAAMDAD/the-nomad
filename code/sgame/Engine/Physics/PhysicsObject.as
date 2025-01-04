@@ -64,6 +64,7 @@ namespace TheNomad::Engine::Physics {
 
 			vec3 origin = m_EntityData.GetOrigin();
 
+			/*
             if ( origin.x < 0.0f ) {
                 m_EntityData.SetOrigin( vec3( 0.0f, origin.y, origin.z ) );
             }
@@ -76,6 +77,7 @@ namespace TheNomad::Engine::Physics {
 			if ( origin.y > TheNomad::SGame::MapHeight - 1 ) {
 				m_EntityData.SetOrigin( vec3( origin.x, TheNomad::SGame::MapHeight - 1, origin.z ) );
 			}
+			*/
 		}
 		
 		void ApplyFriction() {

@@ -193,6 +193,9 @@ namespace TheNomad::SGame {
 		void SetAngle( float nAngle ) {
 			m_PhysicsObject.SetAngle( nAngle );
 		}
+		void SetSoundLevel( float nSoundLevel ) {
+			m_nSoundLevel = nSoundLevel;
+		}
 
 		//
 		// functions that should be implemented by the derived class

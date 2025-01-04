@@ -175,6 +175,9 @@ namespace TheNomad::SGame {
 				break;
 			};
 
+			// melee kills should only make a little bit of noise
+			m_Owner.SetSoundLevel( m_Owner.GetSoundLevel() + 1.5f );
+
 			vec3 end = origin;
 			end.x += m_WeaponInfo.range * cos( angle );
 			end.y += m_WeaponInfo.range * sin( angle );
@@ -198,6 +201,8 @@ namespace TheNomad::SGame {
 
 			const vec3 origin = m_Owner.GetOrigin();
 			GfxManager.AddMuzzleFlash( origin );
+
+			m_Owner.SetSoundLevel( m_Owner.GetSoundLevel() + 25.0f );
 
 			m_nBulletsUsed += m_WeaponInfo.fireRate;
 

@@ -37,12 +37,12 @@
 			"Stats.ArmorType": "Light",
 			"Stats.Width": 1.75,
 			"Stats.Height": 2.10,
-			"Stats.Speed.x": 1.0,
-			"Stats.Speed.y": 1.0,
+			"Stats.Speed.x": 0.75,
+			"Stats.Speed.y": 0.75,
 			"Stats.Speed.z": 1.0,
 			"Stats.ReactionTime": 5,
 			"Stats.PainTolerance": 15,
-			"Detection.SoundRange": 4.50,
+			"Detection.SoundRange": 20.50,
 			"Detection.SoundTolerance": 8.5,
 			"Detection.SightRange": 8.90,
 			"Detection.SightRadius": 4.0,
@@ -56,6 +56,7 @@
 			"States.HasMelee": false,
 			"States.Missile": "mob_merc_shotgunner_fight",
 			"States.Chase": "mob_merc_shotgunner_chase",
+			"States.Search": "mob_merc_shotgunner_search",
 			"States.DieHigh": "mob_merc_shotgunner_die_high",
 			"States.DieLow": "mob_merc_shotgunner_die_low"
 		}

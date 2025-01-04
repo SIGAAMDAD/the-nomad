@@ -365,6 +365,16 @@ gfx/env/tent
 	}
 }
 
+gfx/mob_parry
+{
+	nopicmip
+	nomipmaps
+	{
+		map textures/sprites/mobs/attack_icon.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+	}
+}
+
 //
 // wall marks
 //

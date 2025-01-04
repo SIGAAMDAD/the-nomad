@@ -85,7 +85,7 @@ namespace moblib::Script {
 			}
 		}
 		
-		void FightThink() override {
+		void ChaseThink() override {
 			if ( CheckRage() ) {
 				m_bEnraged = true;
 				
@@ -111,7 +111,7 @@ namespace moblib::Script {
 		}
 		void IdleThink() override {
 			if ( m_Sensor.CheckSight() ) {
-				m_EntityData.SetState( @m_FightState );
+				m_EntityData.SetState( @m_FightMissileState );
 			}
 		}
 

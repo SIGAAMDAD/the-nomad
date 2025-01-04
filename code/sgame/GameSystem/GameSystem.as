@@ -33,8 +33,6 @@ namespace TheNomad::GameSystem {
 
 				end.z = m_Start.z * sin( m_nAngle );
 			}
-			DebugPrint( "Casting ray ending at [ " + end.x + ", " + end.y + " ]\n" );
-
 			const float dx = abs( end.x - m_Start.x );
 			const float dy = abs( end.y - m_Start.y );
 			const float sx = m_Start.x < end.x ? 0.5f : -0.5f;
@@ -56,7 +54,6 @@ namespace TheNomad::GameSystem {
 				for ( @ent = @activeEnts.m_Next; @ent !is @activeEnts; @ent = @ent.m_Next ) {
 					if ( ent.GetEntityNum() != m_nOwner && ent.GetEntityNum() != m_nOwner2 && ent.GetBounds().IntersectsPoint( m_Origin ) ) {
 						m_nEntityNumber = ent.GetEntityNum();
-						DebugPrint( "Ray hit entity '" + m_nEntityNumber + "'\n" );
 						return;
 					}
 				}

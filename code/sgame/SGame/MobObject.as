@@ -188,40 +188,14 @@ namespace TheNomad::SGame {
 				m_nReactionTime--;
 			}
 
-			if ( @m_Target !is null ) {
-				const vec3 target = m_Target.GetOrigin();
-
-				const float deltaY = m_Link.m_Origin.y - target.y;
-				const float deltaX = target.x - m_Link.m_Origin.x;
-				float angle = atan2( deltaY, deltaX );
-				m_PhysicsObject.SetAngle( -angle );
-				
-				angle = Util::RAD2DEG( angle );
-				if ( angle < 0.0f ) {
-					angle += 360.0f;
-				}
-				m_Direction = Util::Angle2Dir( angle );
-			}
-
-			// check for melee attack
-			if ( @m_Info.meleeState !is null ) {
-				m_ScriptData.FightMelee();
-//				return;
-			}
-
-			// check for missile attack
-			if ( @m_Info.missileState !is null ) {
-				if ( TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" ) < TheNomad::GameSystem::GameDifficulty::VeryHard ) {
-
-				}
-			}
+			FaceTarget();
 
 			if ( @m_Target is null ) {
 				SetState( @m_Info.idleState );
 			}
 
 			// chase towards player
-			!Move();
+			Move();
 		}
 
 		void LinkScript( moblib::MobScript@ script ) {
@@ -274,18 +248,60 @@ namespace TheNomad::SGame {
 				return;
 			}
 			// set them facing the target
-			m_PhysicsObject.SetAngle( atan2( m_Link.m_Origin.x - m_Target.GetOrigin().x, m_Link.m_Origin.y - m_Target.GetOrigin().y ) );
-			m_Direction = Util::Angle2Dir( m_PhysicsObject.GetAngle() );
+			const vec3 target = m_Target.GetOrigin();
+
+			const float deltaY = m_Link.m_Origin.y - target.y;
+			const float deltaX = target.x - m_Link.m_Origin.x;
+			float angle = atan2( deltaY, deltaX );
+			m_PhysicsObject.SetAngle( -angle );
+				
+			angle = Util::RAD2DEG( angle );
+			if ( angle < 0.0f ) {
+				angle += 360.0f;
+				if ( angle < 0.0f ) {
+					angle = 0.0f;
+				}
+			}
+			m_Direction = Util::Angle2Dir( angle );
+
+			switch ( m_Direction ) {
+			case TheNomad::GameSystem::DirType::North:
+			case TheNomad::GameSystem::DirType::NorthEast:
+			case TheNomad::GameSystem::DirType::East:
+			case TheNomad::GameSystem::DirType::SouthEast:
+				m_Facing = FACING_RIGHT;
+				break;
+			case TheNomad::GameSystem::DirType::South:
+			case TheNomad::GameSystem::DirType::SouthWest:
+			case TheNomad::GameSystem::DirType::West:
+			case TheNomad::GameSystem::DirType::NorthWest:
+				m_Facing = FACING_LEFT;
+				break;
+			};
 		}
 
 		void Draw() override {
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 
+			if ( @m_State is @m_Info.searchState ) {
+				m_AfterImage.Draw();
+			}
+			if ( m_bParry ) {
+				// draw a large blue parry icon above the mob to signal for an action
+				refEntity.origin = m_Link.m_Origin;
+				refEntity.origin.x += m_Info.size.x * 0.25f;
+				refEntity.origin.y -= m_Info.size.y;
+				refEntity.scale = vec2( 1.5f );
+				refEntity.sheetNum = -1;
+				refEntity.spriteId = TheNomad::Engine::Renderer::RegisterShader( "gfx/mob_parry" );
+				refEntity.Draw();
+			}
+
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.origin.x += m_Info.size.x * 0.5f;
 			refEntity.origin.y -= m_Info.size.y * 0.25f;
 
-			refEntity.scale = m_Info.size;
+			refEntity.scale = TheNomad::Engine::Renderer::GetFacing( m_Facing, m_Info.size );
 			refEntity.sheetNum = m_Info.spriteSheet.GetShader();
 			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( @m_Info.spriteSheet, @m_State );
 
@@ -306,10 +322,11 @@ namespace TheNomad::SGame {
 			case StateNum::ST_MOB_FIGHT_MISSILE:
 				m_ScriptData.FightMissile();
 				break;
-			case StateNum::ST_MOB_FIGHT:
-				m_ScriptData.FightThink();
-				break;
 			case StateNum::ST_MOB_CHASE:
+				m_ScriptData.ChaseThink();
+				break;
+			case StateNum::ST_MOB_SEARCH:
+				m_ScriptData.SearchThink();
 				break;
 			default:
 				GameError( "MobEntity::Think: invalid mob state " + formatUInt( m_State.GetID() ) + "\n" );
@@ -380,6 +397,8 @@ namespace TheNomad::SGame {
 
 		private uint m_nMoveCounter = 0;
 		private uint m_nReactionTime = 0;
+
+		private AfterImage m_AfterImage;
 		
 		// attack data
 		private bool m_bIsAttacking = false;

@@ -13,11 +13,11 @@ namespace moblib {
 			const uint id = info.type;
 			
 			@m_IdleState = @info.idleState;
-			@m_SearchState = @TheNomad::SGame::StateManager.GetStateForNum( uint( TheNomad::SGame::StateNum::ST_MOB_SEARCH ) + id );
+			@m_SearchState = @info.searchState;
 			@m_ChaseState = @info.chaseState;
 			@m_FightMeleeState = @info.meleeState;
 			@m_FightMissileState = @info.missileState;
-			@m_FleeState = @TheNomad::SGame::StateManager.GetStateForNum( uint( TheNomad::SGame::StateNum::ST_MOB_FLEE ) + id );
+//			@m_FleeState = @TheNomad::SGame::StateManager.GetStateForNum( uint( TheNomad::SGame::StateNum::ST_MOB_FLEE ) + id );
 			@m_DeathState = @info.dieLowState;
 			
 			@m_EntityData = @mob;
@@ -33,14 +33,17 @@ namespace moblib {
 		void DeadThink() {
 			GameError( "MobScript::DeadThink: pure virtual function called" );
 		}
-		void FightThink() {
-			GameError( "MobScript::FightThink: pure virtual function called" );
-		}
 		void FightMissile() {
 			GameError( "MobScript::FightMissile: pure virtual function called" );
 		}
 		void FightMelee() {
 			GameError( "MobScript::FightMelee: pure virtual function called" );
+		}
+		void SearchThink() {
+			GameError( "MobScript::SearchThink: pure virtual function called" );
+		}
+		void ChaseThink() {
+			GameError( "MobScript::ChaseThink: pure virtual function called" );
 		}
 		void OnSpawn() {
 			GameError( "MobScript::OnSpawn: pure virtual function called" );
@@ -62,9 +65,6 @@ namespace moblib {
 		TheNomad::SGame::EntityState@ GetChaseState() {
 			return @m_ChaseState;
 		}
-		TheNomad::SGame::EntityState@ GetFightState() {
-			return @m_FightState;
-		}
 		TheNomad::SGame::EntityState@ GetFightMissileState() {
 			return @m_FightMissileState;
 		}
@@ -82,7 +82,6 @@ namespace moblib {
 		protected TheNomad::SGame::EntityState@ m_IdleState = null;
 		protected TheNomad::SGame::EntityState@ m_SearchState = null;
 		protected TheNomad::SGame::EntityState@ m_ChaseState = null;
-		protected TheNomad::SGame::EntityState@ m_FightState = null;
 		protected TheNomad::SGame::EntityState@ m_FightMeleeState = null;
 		protected TheNomad::SGame::EntityState@ m_FightMissileState = null;
 		protected TheNomad::SGame::EntityState@ m_FleeState = null;
