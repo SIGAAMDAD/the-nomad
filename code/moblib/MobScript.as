@@ -12,10 +12,10 @@ namespace moblib {
 			TheNomad::SGame::InfoSystem::MobInfo@ info = @mob.GetMobInfo();
 			const uint id = info.type;
 			
-			@m_IdleState = @TheNomad::SGame::StateManager.GetStateForNum( uint( TheNomad::SGame::StateNum::ST_MOB_IDLE ) + id );
+			@m_IdleState = @info.idleState;
 			@m_SearchState = @TheNomad::SGame::StateManager.GetStateForNum( uint( TheNomad::SGame::StateNum::ST_MOB_SEARCH ) + id );
-			@m_ChaseState = @TheNomad::SGame::StateManager.GetStateForNum( uint( TheNomad::SGame::StateNum::ST_MOB_CHASE ) + id );
-			@m_FightState = @TheNomad::SGame::StateManager.GetStateForNum( uint( TheNomad::SGame::StateNum::ST_MOB_FIGHT ) + id );
+			@m_ChaseState = @info.chaseState;
+			@m_FightState = @info.fightState;
 			@m_FightMeleeState = @TheNomad::SGame::StateManager.GetStateForNum( uint( TheNomad::SGame::StateNum::ST_MOB_FIGHT_MELEE ) + id );
 			@m_FightMissileState = @TheNomad::SGame::StateManager.GetStateForNum( uint( TheNomad::SGame::StateNum::ST_MOB_FIGHT_MISSILE ) + id );
 			@m_FleeState = @TheNomad::SGame::StateManager.GetStateForNum( uint( TheNomad::SGame::StateNum::ST_MOB_FLEE ) + id );

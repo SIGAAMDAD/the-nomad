@@ -6,10 +6,6 @@ namespace moblib {
 	void InitCvars() {
 	}
 
-	void InitResources() {
-		Script::ResourceCache.Load();
-	}
-
 	void AllocScript( TheNomad::SGame::MobObject@ mob ) {
 		MobScript@ script = Script::AllocateScriptEntity( mob.GetMobInfo().type );
 		mob.LinkScript( @script );
@@ -24,19 +20,17 @@ namespace moblib {
 
 		InitCvars();
 
+		@Script::ResourceCache = cast<moblib::Script::Resources@>( @TheNomad::GameSystem::AddSystem( moblib::Script::Resources() ) );
+
 		return 1;
 	}
 
 	int ModuleOnShutdown() {
+		@Script::ResourceCache = null;
 		return 1;
 	}
 
 	int ModuleOnLevelStart() {
-		//
-		// load assets
-		//
-		InitResources();
-		
 		return 1;
 	}
 

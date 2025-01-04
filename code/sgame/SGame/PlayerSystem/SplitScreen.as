@@ -35,7 +35,7 @@ namespace TheNomad::SGame {
 			m_DashSfx0 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/use_jumpkit_0" );
 			m_DashSfx1 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/use_jumpkit_1" );
 
-			m_MeleeSfx = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/melee" );
+			m_MeleeSfx = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/melee_swing" );
 
 			m_WeaponChangeHandSfx = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/weapon_change_hand" );
 			m_WeaponChangeModeSfx = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/weapon_change_mode" );

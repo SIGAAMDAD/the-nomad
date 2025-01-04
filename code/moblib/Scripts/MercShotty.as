@@ -3,7 +3,7 @@
 namespace moblib::Script {
 	const uint MERC_AIM_TIME = 2500;
 	const float MERC_SHOTGUN_DAMAGE = 25.0f;
-	const float MERC_SHOTGUN_RANGE = 15.75f;
+	const float MERC_SHOTGUN_RANGE = 5.75f;
 	
 	final class MercShotty : MobScript {
 		MercShotty() {
@@ -62,36 +62,23 @@ namespace moblib::Script {
 			}
 		}
 		void IdleThink() override {
-			m_EntityData.SetDirection( TheNomad::GameSystem::DirType::South );
 			if ( m_Sensor.CheckSight() ) {
 				m_EntityData.EmitSound( ResourceCache.ShottyTargetSpotted, 10.0f, 0xff );
 				m_EntityData.SetState( @m_FightState );
 			}
 			else if ( m_Sensor.CheckSound() ) {
-				/*
-				if ( m_Sensor.GetSoundLevel() >= m_EntityData.GetInfo().soundTolerance ) {
-					m_EntityData.SetState( @m_FightState );
-				} else {
-					m_EntityData.SetState( @m_SearchState );
-				}
-				*/
+				m_EntityData.SetState( @m_SearchState );
 			}
 		}
 		void DeadThink() override {
 		}
 		void FightThink() override {
-			/*
 			if ( TheNomad::Util::Distance( m_EntityData.GetOrigin(), m_EntityData.GetTarget().GetOrigin() )
-				<= cast<TheNomad::SGame::InfoSystem::MobInfo@>( @m_EntityData.GetInfo() ).meleeRange )
+				<= MERC_SHOTGUN_RANGE )
 			{
-				m_EntityData.SetState( @m_FightMeleeState );
+			} else {
+				m_EntityData.Chase();
 			}
-			else if ( TheNomad::Util::Distance( m_EntityData.GetOrigin(), m_EntityData.GetTarget().GetOrigin() )
-				<= cast<TheNomad::SGame::InfoSystem::MobInfo@>( @m_EntityData.GetInfo() ).missileRange )
-			{
-				m_EntityData.SetState( @m_FightMissileState );
-			}
-			*/
 		}
 		void FightMissile() override {
 			if ( TheNomad::GameSystem::GameTic - m_EntityData.GetTicker() < MERC_AIM_TIME ) {

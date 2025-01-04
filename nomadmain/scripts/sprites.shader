@@ -52,44 +52,8 @@ sprites/mobs/mercenary/shotgunner
 	nopicmip
 	{
 		texFilter nearest
-		map textures/sprites/mobs/mercenary/spritesheet.dds
+		map textures/sprites/mobs/mercenary/shotty.dds
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-	}
-}
-
-sprites/mobs/grunt/base
-{
-	nomipmaps
-	nopicmip
-	{
-		texFilter nearest
-		map textures/sprites/mobs/grunt/base.dds
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-		stage diffuseMap
-	}
-}
-
-sprites/mobs/grunt/wounded
-{
-	nomipmaps
-	nopicmip
-	{
-		texFilter nearest
-		map textures/sprites/mobs/grunt/wounded.dds
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-		stage diffuseMap
-	}
-}
-
-sprites/mobs/grunt/fatal
-{
-	nomipmaps
-	nopicmip
-	{
-		texFilter nearest
-		map textures/sprites/mobs/grunt/fatal.dds
-		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-		stage diffuseMap
 	}
 }
 

@@ -24,6 +24,7 @@ namespace TheNomad::SGame {
 			// just create a temporary bbox to link it in, we'll rebuild every frame anyway
 			TheNomad::GameSystem::BBox bounds( 1.0f, 1.0f, origin );
 			m_Link.Create( origin, bounds, id, uint( type ), nEntityNumber );
+			m_PhysicsObject.Init( @this );
 
 			// create emitter
 			m_hEmitter = TheNomad::Engine::SoundSystem::RegisterEmitter( m_Link.m_nEntityNumber );
@@ -127,11 +128,14 @@ namespace TheNomad::SGame {
 		void SetWaterLevel( int level ) {
 			m_PhysicsObject.SetWaterLevel( level );
 		}
+		float GetSoundLevel() const {
+			return m_nSoundLevel;
+		}
 		TheNomad::GameSystem::EntityType GetType() const {
 			return TheNomad::GameSystem::EntityType( m_Link.m_nEntityType );
 		}
 		bool IsProjectile() const {
-			return m_bProjectile;
+			return ( uint( m_Flags ) & EntityFlags::Projectile ) != 0;
 		}
 		SpriteSheet@ GetSpriteSheet() {
 			return @m_SpriteSheet;
@@ -168,7 +172,11 @@ namespace TheNomad::SGame {
 			m_Flags = EntityFlags( flags );
 		}
 		void SetProjectile( bool bProjectile ) {
-			m_bProjectile = bProjectile;
+			if ( bProjectile ) {
+				m_Flags = EntityFlags( uint( m_Flags ) | EntityFlags::Projectile );
+			} else {
+				m_Flags = EntityFlags( uint( m_Flags ) & ~EntityFlags::Projectile );
+			}
 		}
 		void SetVelocity( const vec3& in vel ) {
 			m_PhysicsObject.SetVelocity( vel );
@@ -252,9 +260,8 @@ namespace TheNomad::SGame {
 		protected float m_nHalfHeight = 1.0f;
 		
 		protected TheNomad::GameSystem::DirType m_Direction = TheNomad::GameSystem::DirType::North;
-		
-		// is it a projectile?
-		protected bool m_bProjectile = false;
+
+		protected float m_nSoundLevel = 0.0f;
 		
 		// for direction based sprite drawing
 		protected int m_Facing = 0;

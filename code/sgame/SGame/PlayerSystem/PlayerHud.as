@@ -25,9 +25,9 @@ namespace TheNomad::SGame {
 			// create overlays
 			//
 
-			m_DashScreen.Init( "hud/dash_screen", vec2( 0.0f ), screenSize );
-			m_BloodScreenSplatter.Init( "hud/blood_screen", vec2( 0.0f ), screenSize );
-			m_BulletTimeBlurScreen.Init( "hud/bullet_time_blur", vec2( 0.0f ), screenSize );
+			m_DashScreen.Init( "gfx/hud/dash_screen", vec2( 0.0f ), screenSize );
+			m_BloodScreenSplatter.Init( "gfx/hud/blood_screen", vec2( 0.0f ), screenSize );
+			m_BulletTimeBlurScreen.Init( "gfx/hud/bullet_time_blur", vec2( 0.0f ), screenSize );
 		}
 		
 		private void DrawLoadoutStatus() {

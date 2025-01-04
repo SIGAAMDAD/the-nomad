@@ -2,13 +2,13 @@
 	"StateInfo": [
 		{
 			"Id": "mob_merc_shotgunner_idle",
-			"Tics": 1500,
+			"Tics": 100,
 			"BaseNum": "ST_MOB_IDLE",
 			"Entity": "mob_merc_shotgunner",
 			"NextState": "this",
 			"SpriteOffset": [ 0, 0 ],
 			"Animation": {
-				"TicRate": 150,
+				"TicRate": 25,
 				"FlipFlop": false,
 				"Frames": 3,
 				"Reverse": false
@@ -43,29 +43,30 @@
 			}
 		},
 		{
-			"Id": "mob_merc_shotgunner_aim",
-			"Tics": 6500,
+			"Id": "mob_merc_shotgunner_die_high",
+			"Tics": 5500,
+			"BaseNum": "ST_MOB_DEAD",
 			"Entity": "mob_merc_shotgunner",
 			"NextState": "this",
-			"SpriteOffset": [ 0, 0 ],
+			"SpriteOffset": [ 15, 0 ],
 			"Animation": {
-				"TicRate": 0,
+				"TicRate": 1500,
 				"FlipFlop": false,
-				"Frames": 0,
+				"Frames": 3,
 				"Reverse": false
 			}
 		},
 		{
-			"Id": "mob_merc_shotgunner_melee",
-			"Tics": 1000,
-			"BaseNum": "ST_MOB_FIGHT_MELEE",
+			"Id": "mob_merc_shotgunner_die_low",
+			"Tics": 2500,
+			"BaseNum": "ST_MOB_DEAD",
 			"Entity": "mob_merc_shotgunner",
-			"NextState": "mob_merc_shotgunner_idle",
-			"SpriteOffset": [ 0, 0 ],
+			"NextState": "this",
+			"SpriteOffset": [ 18, 0 ],
 			"Animation": {
-				"TicRate": 0,
+				"TicRate": 1000,
 				"FlipFlop": false,
-				"Frames": 0,
+				"Frames": 2,
 				"Reverse": false
 			}
 		}

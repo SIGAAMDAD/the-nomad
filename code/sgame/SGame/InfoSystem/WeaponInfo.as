@@ -1,7 +1,7 @@
 #include "SGame/InfoSystem/InfoDataManager.as"
 
 namespace TheNomad::SGame::InfoSystem {
-    class WeaponInfo : ItemInfo {
+    class WeaponInfo : InfoLoader {
 		WeaponInfo() {
 		}
 		
@@ -251,17 +251,36 @@ namespace TheNomad::SGame::InfoSystem {
 		private bool LoadSoundsBlock( json@ json ) {
 			string sfx;
 
-			if ( !json.get( "Sounds.Reload", sfx ) ) {
-				ConsoleWarning( "invalid weapon info, missing variable 'Sounds.Reload' in \"" + name + "\"\n" );
-				return false;
+			if ( ( uint( weaponProps ) & WeaponProperty::IsFirearm ) != 0 ) {
+				if ( !json.get( "Sounds.Reload", sfx ) ) {
+					ConsoleWarning( "invalid weapon info, missing variable 'Sounds.Reload' in \"" + name + "\"\n" );
+					return false;
+				}
+				reloadSfx = TheNomad::Engine::SoundSystem::RegisterSfx( sfx );
 			}
-			reloadSfx = TheNomad::Engine::SoundSystem::RegisterSfx( sfx );
 
-			if ( !json.get( "Sounds.Use", sfx ) ) {
-				ConsoleWarning( "invalid weapon info, missing variable 'Sounds.Use' in \"" + name + "\"\n" );
-				return false;
+			if ( ( uint( weaponProps ) & WeaponProperty::IsFirearm ) != 0 ) {
+				if ( !json.get( "Sounds.Use.FireArm", sfx ) ) {
+					ConsoleWarning( "invalid weapon info, missing variable 'Sounds.Use.FireArm' in \"" + name + "\"\n" );
+					return false;
+				}
+				useSfx_FireArm = TheNomad::Engine::SoundSystem::RegisterSfx( sfx );
 			}
-			useSfx = TheNomad::Engine::SoundSystem::RegisterSfx( sfx );
+			if ( ( uint( weaponProps ) & WeaponProperty::IsBlunt ) != 0 ) {
+				DebugPrint( "Loading blunt usage sound effects...\n" );
+				if ( !json.get( "Sounds.Use.Blunt", sfx ) ) {
+					ConsoleWarning( "invalid weapon info, missing variable 'Sounds.Use.Blunt' in \"" + name + "\"\n" );
+					return false;
+				}
+				useSfx_Blunt = TheNomad::Engine::SoundSystem::RegisterSfx( sfx );
+			}
+			if ( ( uint( weaponProps ) & WeaponProperty::IsBladed ) != 0 ) {
+				if ( !json.get( "Sounds.Use.Bladed", sfx ) ) {
+					ConsoleWarning( "invalid weapon info, missing variable 'Sounds.Use.Bladed' in \"" + name + "\"\n" );
+					return false;
+				}
+				useSfx_Bladed = TheNomad::Engine::SoundSystem::RegisterSfx( sfx );
+			}
 			
 			return true;
 		}
@@ -320,10 +339,11 @@ namespace TheNomad::SGame::InfoSystem {
 				return false;
 			}
 			
-			const EntityData@ type = @InfoManager.GetWeaponType( id );
-			if ( @type is null ) {
+			const EntityData@ entityType = @InfoManager.GetWeaponType( id );
+			if ( @entityType is null ) {
 				GameError( "invalid weapon info, Type \"" + id + "\" wasn't found" );
 			}
+			type = entityType.GetID();
 
 			const string ammo = string( json[ "AmmoType" ] );
 			
@@ -354,6 +374,9 @@ namespace TheNomad::SGame::InfoSystem {
 			if ( !LoadWeaponProperty( @json ) ) {
 				return false;
 			}
+			if ( !LoadSoundsBlock( @json ) ) {
+				return false;
+			}
 			if ( !LoadStatesBlock( @json ) ) {
 				return false;
 			}
@@ -361,9 +384,6 @@ namespace TheNomad::SGame::InfoSystem {
 				return false;
 			}
 			if ( !LoadStatsBlock( @json ) ) {
-				return false;
-			}
-			if ( !LoadSoundsBlock( @json ) ) {
 				return false;
 			}
 			if ( !LoadWeaponFireModes( @json ) ) {
@@ -397,11 +417,21 @@ namespace TheNomad::SGame::InfoSystem {
 		EntityState@ equipState_RIGHT = null;
 
 		SpriteSheet@ spriteSheet = null;
+
+		string name;
+		vec2 size = vec2( 0.0f );
+		uint type = 0;
 		
 		uint magSize = 0; // maximum shots before cooldown/reload
 		uint fireRate = 0;
 		float range = 0.0f; // unused if this is a firearm
 		float damage = 0.0f; // unused if this is a firearm
+
+		TheNomad::Engine::SoundSystem::SoundEffect equipSfx;
+
+		TheNomad::Engine::SoundSystem::SoundEffect useSfx_FireArm;
+		TheNomad::Engine::SoundSystem::SoundEffect useSfx_Blunt;
+		TheNomad::Engine::SoundSystem::SoundEffect useSfx_Bladed;
 
 		TheNomad::Engine::SoundSystem::SoundEffect reloadSfx;
 

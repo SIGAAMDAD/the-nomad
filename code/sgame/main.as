@@ -75,37 +75,8 @@ void InitResources() {
 	// load sound effects
 	//
 
-	// player specific
-	{
-		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/death1" );
-		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/death2" );
-		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/death3" );
-	
-		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_scream_0" );
-		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_scream_1" );
-		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_scream_2" );
-
-		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slide_0" );
-		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slide_1" );
-
-		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/use_jumpkit_0" );
-		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/use_jumpkit_1" );
-
-		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/melee" );
-
-		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/weapon_change_hand" );
-		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/weapon_change_mode" );
-
-		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/cloth_foley_0" );
-		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/cloth_foley_1" );
-
-		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slowmo_on" );
-		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slowmo_off" );
-	}
-
 	// environmental sounds
 	{
-		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/interaction/pickup_item" );
 		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/interaction/complete_checkpoint" );
 
 		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/land_1" );
@@ -146,6 +117,34 @@ void InitResources() {
 		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/bullet_impact/ricochet_1" );
 		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/bullet_impact/ricochet_2" );
 	}
+
+	// player specific
+	{
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/death1" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/death2" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/death3" );
+	
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_scream_0" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_scream_1" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_scream_2" );
+
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slide_0" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slide_1" );
+
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/melee_swing" );
+
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/use_jumpkit_0" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/use_jumpkit_1" );
+
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/weapon_change_hand" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/weapon_change_mode" );
+
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/cloth_foley_0" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/cloth_foley_1" );
+
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slowmo_on" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slowmo_off" );
+	}
 	
 	//
 	// load materials
@@ -162,9 +161,9 @@ void InitResources() {
 
 	TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/checkpoint", 128, 32, 32, 32 );
 
-	TheNomad::Engine::Renderer::RegisterShader( "hud/dash_screen" );
-	TheNomad::Engine::Renderer::RegisterShader( "hud/parry_screen" );
-	TheNomad::Engine::Renderer::RegisterShader( "hud/bullet_time_blur" );
+	TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/dash_screen" );
+	TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/parry_screen" );
+	TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/bullet_time_blur" );
 
 	//
 	// register strings

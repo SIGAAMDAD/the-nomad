@@ -303,6 +303,7 @@ namespace TheNomad::SGame {
 			ImGui::Separator();
 			if ( m_EntityData.IsWeaponEquipped() ) {
 				ImGui::Text( "WeaponMode: " + m_EntityData.GetCurrentWeapon().LogWeaponMode( m_EntityData.GetCurrentWeapon().GetUseMode() ) );
+				ImGui::Text( "WeaponState: " + m_EntityData.GetCurrentWeapon().GetState().GetName() );
 			}
 			ImGui::End();
 

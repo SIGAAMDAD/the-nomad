@@ -133,6 +133,62 @@ namespace TheNomad::SGame::InfoSystem {
 
 			return true;
 		}
+
+		private bool LoadStatesBlock( json@ json ) {
+			string state;
+
+			if ( !json.get( "States.Idle", state ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'States.Idle' in \"" + name + "\"\n" );
+				return false;
+			}
+			@idleState = @StateManager.GetStateById( state );
+			if ( @idleState is null ) {
+				ConsoleWarning( "invalid mob info, bad state \"" + state + "\"\n" );
+				return false;
+			}
+
+			if ( !json.get( "States.Fight", state ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'States.Fight' in \"" + name + "\"\n" );
+				return false;
+			}
+			@fightState = @StateManager.GetStateById( state );
+			if ( @fightState is null ) {
+				ConsoleWarning( "invalid mob info, bad state \"" + state + "\"\n" );
+				return false;
+			}
+
+			if ( !json.get( "States.Chase", state ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'States.Chase' in \"" + name + "\"\n" );
+				return false;
+			}
+			@chaseState = @StateManager.GetStateById( state );
+			if ( @chaseState is null ) {
+				ConsoleWarning( "invalid mob info, bad state \"" + state + "\"\n" );
+				return false;
+			}
+
+			if ( !json.get( "States.DieHigh", state ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'States.DieHigh' in \"" + name + "\"\n" );
+				return false;
+			}
+			@dieHighState = @StateManager.GetStateById( state );
+			if ( @dieHighState is null ) {
+				ConsoleWarning( "invalid mob info, bad state \"" + state + "\"\n" );
+				return false;
+			}
+
+			if ( !json.get( "States.DieLow", state ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'States.DieLow' in \"" + name + "\"\n" );
+				return false;
+			}
+			@dieLowState = @StateManager.GetStateById( state );
+			if ( @dieLowState is null ) {
+				ConsoleWarning( "invalid mob info, bad state \"" + state + "\"\n" );
+				return false;
+			}
+
+			return true;
+		}
 		
 		bool Load( json@ json ) {
 			const EntityData@ entity = null;
@@ -184,6 +240,9 @@ namespace TheNomad::SGame::InfoSystem {
 				}
 			}
 
+			if ( !LoadStatesBlock( @json ) ) {
+				return false;
+			}
 			if ( !LoadStatsBlock( @json ) ) {
 				return false;
 			}
@@ -204,6 +263,12 @@ namespace TheNomad::SGame::InfoSystem {
 		vec2 size = vec2( 1.0f );
 		
 		SpriteSheet@ spriteSheet = null;
+
+		EntityState@ idleState = null;
+		EntityState@ chaseState = null;
+		EntityState@ fightState = null;
+		EntityState@ dieHighState = null;
+		EntityState@ dieLowState = null;
 
 		float soundTolerance = 0.0f;
 		float soundRange = 0.0f;

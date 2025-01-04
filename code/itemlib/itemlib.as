@@ -15,6 +15,11 @@ namespace itemlib {
 		item.LinkScript( @script );
 		script.Link( @item );
 	}
+	void AllocWeapon( TheNomad::SGame::WeaponObject@ weapon, uint id ) {
+		ItemScript@ script = itemlib::Script::AllocateScriptEntity( id );
+		weapon.LinkScript( @script );
+		script.Link( cast<TheNomad::SGame::ItemObject@>( @weapon ) );
+	}
 
 	int ModuleOnInit() {
 		//

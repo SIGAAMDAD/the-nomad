@@ -52,16 +52,6 @@ namespace TheNomad::SGame {
 			@m_Owner = @ent;
 			SetUseMode( m_WeaponInfo.defaultMode );
 
-			m_Facing = ent.GetFacing();
-			switch ( m_Facing ) {
-			case FACING_LEFT:
-				SetState( @m_IdleState_LEFT );
-				break;
-			case FACING_RIGHT:
-				SetState( @m_IdleState_RIGHT );
-				break;
-			};
-
 			m_Bounds.Clear();
 
 			DebugPrint( "Weapon " + m_Link.m_nEntityNumber + " now owned by " + ent.GetEntityNum() + ".\n" );
@@ -71,12 +61,6 @@ namespace TheNomad::SGame {
 			return @m_WeaponInfo;
 		}
 		InfoSystem::WeaponInfo@ GetWeaponInfo() {
-			return @m_WeaponInfo;
-		}
-		InfoSystem::ItemInfo@ GetItemInfo() {
-			return @m_WeaponInfo;
-		}
-		const InfoSystem::ItemInfo@ GetItemInfo() const {
 			return @m_WeaponInfo;
 		}
 		void SetAmmo( InfoSystem::AmmoInfo@ ammo ) {
@@ -124,6 +108,14 @@ namespace TheNomad::SGame {
 				@m_IdleState_LEFT = @m_WeaponInfo.idleState_Blunt_LEFT;
 				@m_IdleState_RIGHT = @m_WeaponInfo.idleState_Blunt_RIGHT;
 			}
+			switch ( m_Facing ) {
+			case FACING_LEFT:
+				SetState( @m_IdleState_LEFT );
+				break;
+			case FACING_RIGHT:
+				SetState( @m_IdleState_RIGHT );
+				break;
+			};
 			if ( @m_UseState_LEFT is null || @m_UseState_RIGHT is null || @m_IdleState_LEFT is null || @m_IdleState_RIGHT is null ) {
 				GameError( "WeaponObject::SetUseMode: bad weaponMode, states don't exist" );
 			}
@@ -168,9 +160,32 @@ namespace TheNomad::SGame {
 		}
 		private float UseBlunt( float damage, uint weaponMode ) {
 			const vec3 origin = m_Owner.GetOrigin();
-			const float angle = m_Owner.GetAngle();
-			TheNomad::GameSystem::BBox bounds;
-			
+			const float angle = cast<PlayrObject@>( @m_Owner ).GetArmAngle();
+			EntityObject@ activeEnts = @EntityManager.GetActiveEnts();
+			EntityObject@ ent = @activeEnts.m_Next;
+
+			EmitSound( m_WeaponInfo.useSfx_Blunt, 10.0f, 0xff );
+
+			switch ( m_Facing ) {
+			case FACING_LEFT:
+				SetState( @m_UseState_LEFT );
+				break;
+			case FACING_RIGHT:
+				SetState( @m_UseState_RIGHT );
+				break;
+			};
+
+			vec3 end = origin;
+			end.x += m_WeaponInfo.range * cos( angle );
+			end.y += m_WeaponInfo.range * sin( angle );
+			end.z += m_WeaponInfo.range * sin( angle );
+
+			for ( ; @ent !is @activeEnts; @ent = @ent.m_Next ) {
+				if ( @ent !is @m_Owner && ent.GetBounds().LineIntersection( origin, end ) ) {
+					EntityManager.DamageEntity( @ent, @m_Owner, m_WeaponInfo.damage );
+				}
+			}
+
 			return damage;
 		}
 		private float UseFireArm( float damage, uint weaponMode ) {
@@ -179,7 +194,7 @@ namespace TheNomad::SGame {
 				return 0.0f;
 			}
 
-			EmitSound( m_WeaponInfo.useSfx, 10.0f, 0xff );
+			EmitSound( m_WeaponInfo.useSfx_FireArm, 10.0f, 0xff );
 
 			const vec3 origin = m_Owner.GetOrigin();
 			GfxManager.AddMuzzleFlash( origin );
@@ -260,15 +275,6 @@ namespace TheNomad::SGame {
 			};
 
 			SetUseMode( weaponMode );
-
-			switch ( m_Owner.GetFacing() ) {
-			case FACING_LEFT:
-				SetState( @m_UseState_LEFT );
-				break;
-			case FACING_RIGHT:
-				SetState( @m_UseState_RIGHT );
-				break;
-			};
 			float damage = m_WeaponInfo.damage;
 			
 			// TODO: adaptive weapon animation & cooldowns
@@ -378,8 +384,8 @@ namespace TheNomad::SGame {
 
 				// don't mess with the ticker
 				@m_State = @newState;
+				m_Facing = facing;
 			}
-			m_Facing = facing;
 			if ( !m_State.Done( m_nTicker ) ) {
 				return; // only this can stop the spam, the bullet hell. OH LORD!
 			}
@@ -419,11 +425,6 @@ namespace TheNomad::SGame {
 				GameError( "WeaponObject::Spawn: invalid weapon id " + id );
 			}
 
-			@m_Info = @InfoSystem::InfoManager.GetItemInfo( InfoSystem::InfoManager.GetItemType( "item_weapon_pickup" ).GetID() );
-			if ( @m_Info is null ) {
-				GameError( "WeaponObject::Spawn: couldn't get item info for \"item_weapon_pickup\"" );
-			}
-
 			m_Link.m_Origin = origin;
 			m_Bounds.m_nWidth = m_WeaponInfo.size.x;
 			m_Bounds.m_nHeight = m_WeaponInfo.size.y;
@@ -432,8 +433,6 @@ namespace TheNomad::SGame {
 			@m_SpriteSheet = @m_WeaponInfo.spriteSheet;
 
 			@m_State = @StateManager.GetNullState();
-
-			itemlib::AllocScript( @this );
 		}
 		
 		private InfoSystem::AmmoInfo@ m_AmmoInfo = null;

@@ -24,6 +24,7 @@ namespace moblib::Script {
 			@scriptObject = MercShotty();
 			break;
 		case MOB_ID::ZURGUT_GRUNT:
+			@scriptObject = ZurgutGrunt();
 			break;
 		case MOB_ID::ZURGUT_HULK:
 			break;

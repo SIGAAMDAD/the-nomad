@@ -115,6 +115,7 @@ namespace TheNomad::SGame {
 			if ( m_nMultiplier > 3.0f ) {
 				m_nMultiplier = 3.0f;
 			}
+			return;
 			
 			ImGui::Begin( "##StyleTrackerWindow", null, ImGui::MakeWindowFlags( ImGuiWindowFlags::NoTitleBar |
 				ImGuiWindowFlags::NoMove | ImGuiWindowFlags::NoResize ) );

@@ -1,3 +1,5 @@
+#include "Engine/Physics/Sphere.as"
+
 const float INFINITY = 1e30f;
 
 namespace TheNomad::Engine::Physics {
@@ -233,9 +235,6 @@ namespace TheNomad::Engine::Physics {
 			return true;
 		}
 		bool IntersectsPoint( const vec3& in p ) const {
-//			if ( p.z > m_nMaxs.z || p.z < m_nMins.z ) {
-//				return false;
-//			}
 			if ( p.x < m_nMins.x || p.y < m_nMins.y || p.z < m_nMins.z
 				|| p.x > m_nMaxs.x || p.y > m_nMaxs.y || p.z > m_nMaxs.z )
 			{
@@ -253,6 +252,12 @@ namespace TheNomad::Engine::Physics {
 				return false;
 			}
 			return true;
+		}
+		Sphere ToSphere() const {
+			Sphere sphere;
+			sphere.SetOrigin( ( m_nMins + m_nMaxs ) * 0.5f );
+			sphere.SetRadius( Util::VectorLength( m_nMaxs - sphere.GetOrigin() ) );
+			return sphere;
 		}
 
 		void MakeBounds( const vec3& in origin ) {

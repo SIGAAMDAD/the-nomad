@@ -91,6 +91,7 @@ namespace TheNomad::SGame {
 			};
 
 			if ( src.GetEquippedWeapon() == uint( -1 ) ) {
+				// nothing in the source hand, deny
 				return;
 			}
 
@@ -98,7 +99,7 @@ namespace TheNomad::SGame {
 
 			const WeaponObject@ srcWeapon = @m_Inventory.GetSlot( src.GetEquippedWeapon() ).GetData();
 			if ( srcWeapon.IsTwoHanded() && !srcWeapon.IsOneHanded() ) {
-				// cannot change hands
+				// cannot change hands, no one-handing allowed
 				return;
 			}
 
@@ -118,7 +119,7 @@ namespace TheNomad::SGame {
 		}
 		void SwitchWeaponMode() {
 			// weapon mode order (default)
-			// blade -> blunt -> polearm -> firearm
+			// blade -> blunt -> firearm
 
 			WeaponSlot@ slot = null;
 			InfoSystem::WeaponProperty mode;
@@ -138,42 +139,39 @@ namespace TheNomad::SGame {
 			mode = slot.GetMode();
 			const WeaponObject@ weapon = @slot.GetData();
 			
-			// the weapon mode list doesn't contain hand bits
-			const uint handBits = ( uint( mode ) & uint( InfoSystem::WeaponProperty::IsTwoHanded ) ) |
-				( uint( mode ) & uint( InfoSystem::WeaponProperty::IsOneHanded ) );
-			
 			slot.SetMode( InfoSystem::WeaponProperty::None ); // clear the modes
 			
 			// find the next most suitable mode
 			const InfoSystem::WeaponProperty props = weapon.GetWeaponInfo().weaponProps;
 			const uint hands = ~( InfoSystem::WeaponProperty::IsOneHanded | InfoSystem::WeaponProperty::IsTwoHanded );
 			for ( uint i = 0; i < sgame_WeaponModeList.Count(); i++ ) {
-				if ( ( uint( props ) & ( sgame_WeaponModeList[i] & hands ) ) != 0 ) {
+				const uint current = sgame_WeaponModeList[i];
+				if ( ( uint( props ) & ( current & hands ) ) != 0 ) {
 					// found a match, but check if its the same
-					if ( uint( mode ) == sgame_WeaponModeList[i] ) {
+					if ( uint( mode ) == current ) {
 						// same mode, don't switch
 						continue;
 					}
 
 					// apply some filters
-					const uint tmp = sgame_WeaponModeList[i];
-					if ( ( tmp & InfoSystem::WeaponProperty::IsOneHanded ) != 0
+					if ( ( current & InfoSystem::WeaponProperty::IsOneHanded ) != 0
 						&& ( uint( props ) & InfoSystem::WeaponProperty::IsOneHanded ) == 0 )
 					{
 						// one handing not possible, deny
 						continue;
 					}
-					if ( ( tmp & InfoSystem::WeaponProperty::IsTwoHanded ) != 0
+					if ( ( current & InfoSystem::WeaponProperty::IsTwoHanded ) != 0
 						&& ( uint( props ) & InfoSystem::WeaponProperty::IsTwoHanded ) == 0 )
 					{
 						// two handing not possible, deny
 						continue;
 					}
-
+					
+					// we've got a match!
 					DebugPrint( "Switched weapon mode from " + slot.GetData().LogWeaponMode( mode ) + " to "
-						+ slot.GetData().LogWeaponMode( sgame_WeaponModeList[i] ) + "\n" );
-					slot.SetMode( InfoSystem::WeaponProperty( sgame_WeaponModeList[i] ) );
-					slot.GetData().SetUseMode( sgame_WeaponModeList[i] );
+						+ slot.GetData().LogWeaponMode( current ) + "\n" );
+					slot.SetMode( InfoSystem::WeaponProperty( current ) );
+					slot.GetData().SetUseMode( current );
 					break;
 				}
 			}
@@ -777,7 +775,7 @@ namespace TheNomad::SGame {
 					Flags &= ~( PF_USING_WEAPON | PF_USING_WEAPON_ALT );
 				}
 			}
-
+			
 			m_Bounds.m_nWidth = sgame_PlayerWidth.GetFloat();
 			m_Bounds.m_nHeight = sgame_PlayerHeight.GetFloat();
 			m_Bounds.MakeBounds( m_Link.m_Origin );

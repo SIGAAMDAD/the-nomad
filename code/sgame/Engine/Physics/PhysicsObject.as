@@ -64,7 +64,6 @@ namespace TheNomad::Engine::Physics {
 
 			vec3 origin = m_EntityData.GetOrigin();
 
-			/*
             if ( origin.x < 0.0f ) {
                 m_EntityData.SetOrigin( vec3( 0.0f, origin.y, origin.z ) );
             }
@@ -77,7 +76,6 @@ namespace TheNomad::Engine::Physics {
 			if ( origin.y > TheNomad::SGame::MapHeight - 1 ) {
 				m_EntityData.SetOrigin( vec3( origin.x, TheNomad::SGame::MapHeight - 1, origin.z ) );
 			}
-			*/
 		}
 		
 		void ApplyFriction() {
@@ -180,7 +178,10 @@ namespace TheNomad::Engine::Physics {
 			return TheNomad::GameSystem::DirType::Inside;
 		}
 		
-		void OnRunTic() {
+		//
+		// PhysicsObject::OnRunTic: returns false if the movement was clipped for some reason
+		//
+		bool OnRunTic() {
 		#if _NOMAD_DEBUG
 			ProfileBlock block( "PhysicsObject::OnRunTic" );
 		#endif
@@ -262,7 +263,7 @@ namespace TheNomad::Engine::Physics {
 						// damage
 						TheNomad::SGame::EntityManager.DamageEntity( @ent, @m_EntityData );
 					}
-					return; // clip
+					return false; // clip
 				}
 			}
 			
@@ -276,7 +277,7 @@ namespace TheNomad::Engine::Physics {
 						m_Velocity.z = z;
 						origin.z += ( m_Velocity.z * TheNomad::GameSystem::DeltaTic );
 					}
-					return;
+					return false;
 				}
 			}
 			
@@ -313,7 +314,9 @@ namespace TheNomad::Engine::Physics {
 			ClipBounds();
 
 			m_Acceleration = vec3( 0.0f );
-        }
+
+			return true;
+		}
         
         private TheNomad::SGame::EntityObject@ m_EntityData = null;
         private vec3 m_Velocity = vec3( 0.0f );

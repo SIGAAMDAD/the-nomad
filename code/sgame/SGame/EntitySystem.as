@@ -13,23 +13,14 @@ namespace TheNomad::SGame {
 	funcdef void ForEachEntityIteratorThis( ref@ this, EntityObject@ ent );
 	
     enum CauseOfDeath {
-		Cod_Unknown,
-		Cod_Bullet,
-		Cod_Imploded,
-		Cod_Exploded,
-		Cod_Suicide,
-		Cod_Telefrag,
-		Cod_Punch,
-		Cod_Falling
-	};
-	
-	enum AttackEffect {
-		Knockback = 0,
-		Stunned,
-		Bleeding,
-		Blinded,
-		
-		None
+		Unknown,
+		Bullet,
+		Imploded,
+		Exploded,
+		Suicide,
+		Telefrag,
+		Punch,
+		Falling
 	};
 	
 	enum EntityFlags {
@@ -41,8 +32,8 @@ namespace TheNomad::SGame {
 		Invis     = 0x00000004,
 		// doesn't get respawned in Nomad or greater difficulties
 		PermaDead = 0x00000008,
-		// will it bleed?
-		Killable  = 0x00000010,
+		// its a bird, its a plane, its a bullet!
+		Projectile= 0x00000010,
 
 		None      = 0x00000000
 	};

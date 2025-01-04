@@ -45,6 +45,175 @@ namespace TheNomad::SGame {
 			return m_MFlags;
 		}
 		
+		private bool Move() {
+			if ( m_Direction == TheNomad::GameSystem::DirType::Inside ) {
+				return false;
+			}
+			if ( uint( m_Direction ) >= TheNomad::GameSystem::DirType::Inside ) {
+				GameError( "MobObject::Move: weird movedir!" );
+			}
+
+			vec3 accel;
+			const float angle = m_PhysicsObject.GetAngle();
+
+			accel.x = m_Info.speed.x * cos( angle );
+			accel.y = m_Info.speed.y * sin( angle );
+
+			m_PhysicsObject.SetAcceleration( accel );
+			return m_PhysicsObject.OnRunTic();
+		}
+
+		bool TryWalk() {
+			if ( !Move() ) {
+				return false;
+			}
+			m_nMoveCounter = Util::PRandom() & 15;
+			return true;
+		}
+
+		void NewChaseDir() {
+			TheNomad::GameSystem::DirType olddir;
+			TheNomad::GameSystem::DirType d0, d1, d2;
+			TheNomad::GameSystem::DirType turnaround;
+			TheNomad::GameSystem::DirType tdir;
+
+			if ( @m_Target is null ) {
+				GameError( "MobObject::NewChaseDir: called with no target" );
+			}
+
+			olddir = m_Direction;
+			turnaround = Util::InverseDir( olddir );
+
+			const vec3 target = m_Target.GetOrigin();
+			const float deltaX = target.x - m_Link.m_Origin.x;
+			const float deltaY = target.y - m_Link.m_Origin.y;
+
+			if ( deltaX > 0.0f ) {
+				d1 = TheNomad::GameSystem::DirType::East;
+			} else if ( deltaX < 0.0f ) {
+				d1 = TheNomad::GameSystem::DirType::West;
+			} else {
+				d1 = TheNomad::GameSystem::DirType::Inside;
+			}
+
+			if ( deltaY > 0.0f ) {
+				d2 = TheNomad::GameSystem::DirType::South;
+			} else if ( deltaY < 0.0f ) {
+				d2 = TheNomad::GameSystem::DirType::North;
+			} else {
+				d2 = TheNomad::GameSystem::DirType::Inside;
+			}
+
+			// try direct route
+			if ( d1 != TheNomad::GameSystem::DirType::Inside && d2 != TheNomad::GameSystem::DirType::Inside ) {
+				m_Direction++;
+				if ( m_Direction == uint( turnaround ) && TryWalk() ) {
+					return;
+				}
+			}
+
+			// try other directions
+			if ( Util::PRandom() > 200 || abs( deltaY ) > abs( deltaX ) ) {
+				tdir = d1;
+				d1 = d2;
+				d2 = tdir;
+			}
+
+			if ( d1 == turnaround ) {
+				d1 = TheNomad::GameSystem::DirType::Inside;
+			}
+			if ( d2 == turnaround ) {
+				d2 = TheNomad::GameSystem::DirType::Inside;
+			}
+
+			if ( d1 != TheNomad::GameSystem::DirType::Inside ) {
+				m_Direction = d1;
+				if ( TryWalk() ) {
+					// either moved forward or attacked
+					return;
+				}
+			}
+
+			if ( d2 != TheNomad::GameSystem::DirType::Inside ) {
+				m_Direction = d2;
+				if ( TryWalk() ) {
+					return;
+				}
+			}
+
+			// there is no direct path to the player,
+			// so pick another direction.
+			if ( olddir != TheNomad::GameSystem::DirType::Inside ) {
+				m_Direction = olddir;
+				if ( TryWalk() ) {
+					return;
+				}
+			}
+
+			// randomly determine direction of search
+			if ( ( Util::PRandom() & 1 ) == 1 ) {
+				for ( tdir = TheNomad::GameSystem::DirType::East; tdir <= TheNomad::GameSystem::DirType::SouthEast; tdir++ ) {
+					if ( tdir != turnaround ) {
+						m_Direction = tdir;
+						if ( TryWalk() ) {
+							return;
+						}
+					}
+				}
+			}
+			else {
+				for ( tdir = TheNomad::GameSystem::DirType::SouthEast; tdir != ( TheNomad::GameSystem::DirType::North - 1 ); tdir-- ) {
+					if ( tdir == turnaround ) {
+						m_Direction = tdir;
+						if ( TryWalk() ) {
+							return;
+						}
+					}
+				}
+			}
+
+			if ( turnaround != TheNomad::GameSystem::DirType::Inside ) {
+				m_Direction = turnaround;
+				if ( TryWalk() ) {
+					return;
+				}
+			}
+
+			m_Direction = TheNomad::GameSystem::DirType::Inside; // can not move
+		}
+		void Chase() {
+			int delta;
+
+			if ( m_nReactionTime > 0 ) {
+				m_nReactionTime--;
+			}
+
+			// turn towards movement direction if not there yet
+//			if ( m_Direction < TheNomad::GameSystem::DirType::Inside && @m_Target !is null ) {
+				const vec3 target = m_Target.GetOrigin();
+
+				const float deltaY = m_Link.m_Origin.y - target.y;
+				const float deltaX = target.x - m_Link.m_Origin.x;
+				float angle = atan2( deltaY, deltaX );
+				m_PhysicsObject.SetAngle( -angle );
+				
+				angle = Util::RAD2DEG( angle );
+				if ( angle < 0.0f ) {
+					angle += 360.0f;
+				}
+				m_Direction = Util::Angle2Dir( angle );
+//			}
+
+			if ( @m_Target is null ) {
+				SetState( @m_Info.idleState );
+			}
+
+			// chase towards player
+			if ( --m_nMoveCounter < 0 || !Move() ) {
+				NewChaseDir();
+			}
+		}
+
 		void LinkScript( moblib::MobScript@ script ) {
 			@m_ScriptData = @script;
 			DebugPrint( "Linked mob script for \"" + m_Info.name + "\" at entity '" + m_Link.m_nEntityNumber + "''\n" );
@@ -116,6 +285,7 @@ namespace TheNomad::SGame {
 			m_Bounds.m_nWidth = m_Info.size.x;
 			m_Bounds.m_nHeight = m_Info.size.y;
 			m_Bounds.MakeBounds( m_Link.m_Origin );
+
 			switch ( m_State.GetBaseNum() ) {
 			case StateNum::ST_MOB_IDLE:
 				m_ScriptData.IdleThink();
@@ -166,22 +336,31 @@ namespace TheNomad::SGame {
 			m_State.Reset( m_nTicker );
 		}
 
-		protected EntityObject@ m_Target = null;
-		protected InfoSystem::MobInfo@ m_Info = null;
-		protected InfoSystem::MobFlags m_MFlags = InfoSystem::MobFlags( 0 );
-		
+		uint GetMoveCounter() const {
+			return m_nMoveCounter;
+		}
+		void SetMoveCounter( uint nMoveCounter ) {
+			m_nMoveCounter = nMoveCounter;
+		}
+
+		private EntityObject@ m_Target = null;
+		private InfoSystem::MobInfo@ m_Info = null;
+		private InfoSystem::MobFlags m_MFlags = InfoSystem::MobFlags( 0 );
+		private moblib::MobScript@ m_ScriptData = null;
+
 		// stealth tracking
 		private uint m_nLastAlertTime = 0;
 		private float m_nAlertAmount = 0.0f;
 		private uint m_nAlertLevel = 0;
+
+		private uint m_nMoveCounter = 0;
+		private uint m_nReactionTime = 0;
 		
 		// attack data
-		protected bool m_bIsAttacking = false;
-		protected uint m_nAttackTime = 0;
-		protected uint m_nLastAttackTime = 0;
+		private bool m_bIsAttacking = false;
+		private uint m_nAttackTime = 0;
+		private uint m_nLastAttackTime = 0;
 
 		private bool m_bParry = false;
-
-		private moblib::MobScript@ m_ScriptData = null;
 	};
 };

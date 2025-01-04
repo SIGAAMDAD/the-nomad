@@ -36,11 +36,16 @@
 			"Detection.SoundTolerance": 8.5,
 			"Detection.SightRange": 8.90,
 			"Detection.SightRadius": 4.0,
-			"RenderData.SheetWidth": 312,
-			"RenderData.SheetHeight": 300,
-			"RenderData.SpriteWidth": 52,
-			"RenderData.SpriteHeight": 60,
-			"RenderData.SpriteSheet": "sprites/mobs/mercenary/shotgunner"
+			"RenderData.SheetWidth": 1024,
+			"RenderData.SheetHeight": 1024,
+			"RenderData.SpriteWidth": 32,
+			"RenderData.SpriteHeight": 32,
+			"RenderData.SpriteSheet": "sprites/mobs/mercenary/shotgunner",
+			"States.Idle": "mob_merc_shotgunner_idle",
+			"States.Fight": "mob_merc_shotgunner_fight",
+			"States.Chase": "mob_merc_shotgunner_chase",
+			"States.DieHigh": "mob_merc_shotgunner_die_high",
+			"States.DieLow": "mob_merc_shotgunner_die_low"
 		}
 	]
 }
