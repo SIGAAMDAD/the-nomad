@@ -64,7 +64,7 @@ namespace TheNomad::SGame {
 			return @m_WeaponInfo;
 		}
 		void SetAmmo( InfoSystem::AmmoInfo@ ammo ) {
-			@m_AmmoInfo = @ammo;
+			@m_AmmoInfo = ammo;
 		}
 		
 		InfoSystem::WeaponFireMode GetFireMode() const {
@@ -93,20 +93,20 @@ namespace TheNomad::SGame {
 			m_nLastUsedMode = weaponMode;
 			
 			if ( ( weaponMode & InfoSystem::WeaponProperty::IsFirearm ) != 0 ) {
-				@m_UseState_LEFT = @m_WeaponInfo.useState_FireArm_LEFT;
-				@m_UseState_RIGHT = @m_WeaponInfo.useState_FireArm_RIGHT;
-				@m_IdleState_LEFT = @m_WeaponInfo.idleState_FireArm_LEFT;
-				@m_IdleState_RIGHT = @m_WeaponInfo.idleState_FireArm_RIGHT;
+				@m_UseState_LEFT = m_WeaponInfo.useState_FireArm_LEFT;
+				@m_UseState_RIGHT = m_WeaponInfo.useState_FireArm_RIGHT;
+				@m_IdleState_LEFT = m_WeaponInfo.idleState_FireArm_LEFT;
+				@m_IdleState_RIGHT = m_WeaponInfo.idleState_FireArm_RIGHT;
 			} else if ( ( weaponMode & InfoSystem::WeaponProperty::IsBladed ) != 0 ) {
-				@m_UseState_LEFT = @m_WeaponInfo.useState_Bladed_LEFT;
-				@m_UseState_RIGHT = @m_WeaponInfo.useState_Bladed_RIGHT;
-				@m_IdleState_LEFT = @m_WeaponInfo.idleState_Bladed_LEFT;
-				@m_IdleState_RIGHT = @m_WeaponInfo.idleState_Bladed_RIGHT;
+				@m_UseState_LEFT = m_WeaponInfo.useState_Bladed_LEFT;
+				@m_UseState_RIGHT = m_WeaponInfo.useState_Bladed_RIGHT;
+				@m_IdleState_LEFT = m_WeaponInfo.idleState_Bladed_LEFT;
+				@m_IdleState_RIGHT = m_WeaponInfo.idleState_Bladed_RIGHT;
 			} else if ( ( weaponMode & InfoSystem::WeaponProperty::IsBlunt ) != 0 ) {
-				@m_UseState_LEFT = @m_WeaponInfo.useState_Blunt_LEFT;
-				@m_UseState_RIGHT = @m_WeaponInfo.useState_Blunt_RIGHT;
-				@m_IdleState_LEFT = @m_WeaponInfo.idleState_Blunt_LEFT;
-				@m_IdleState_RIGHT = @m_WeaponInfo.idleState_Blunt_RIGHT;
+				@m_UseState_LEFT = m_WeaponInfo.useState_Blunt_LEFT;
+				@m_UseState_RIGHT = m_WeaponInfo.useState_Blunt_RIGHT;
+				@m_IdleState_LEFT = m_WeaponInfo.idleState_Blunt_LEFT;
+				@m_IdleState_RIGHT = m_WeaponInfo.idleState_Blunt_RIGHT;
 			}
 			switch ( m_Facing ) {
 			case FACING_LEFT:
@@ -126,8 +126,8 @@ namespace TheNomad::SGame {
 		//
 		private float AreaOfEffect( float damage ) {
 			TheNomad::Engine::Physics::Bounds bounds;
-			EntityObject@ activeEnts = @EntityManager.GetActiveEnts();
-			EntityObject@ ent = @activeEnts.m_Next;
+			EntityObject@ activeEnts = EntityManager.GetActiveEnts();
+			EntityObject@ ent = activeEnts.m_Next;
 			const float range = m_AmmoInfo.range / 2;
 			
 			// shit works like DOOM 1993 (box instead of circle)
@@ -136,14 +136,14 @@ namespace TheNomad::SGame {
 			bounds.m_nHeight = range;
 			bounds.MakeBounds( m_Link.m_Origin );
 			
-			for ( ; @ent !is @activeEnts; @ent = @ent.m_Next ) {
+			for ( ; @ent !is activeEnts; @ent = ent.m_Next ) {
 				if ( bounds.IntersectsPoint( ent.GetOrigin() ) ) {
 					const float dist = Util::Distance( m_Link.m_Origin, ent.GetOrigin() );
 					if ( dist < 1.0f ) { // immediate impact range means death
-						EntityManager.KillEntity( @ent, @m_Owner );
+						EntityManager.KillEntity( ent, m_Owner );
 						damage += m_WeaponInfo.damage;
 					} else if ( dist <= m_WeaponInfo.range ) {
-						EntityManager.DamageEntity( @ent, @m_Owner, m_WeaponInfo.damage
+						EntityManager.DamageEntity( ent, m_Owner, m_WeaponInfo.damage
 							+ ( m_AmmoInfo.range + ( dist * 0.1f ) ) );
 						damage += m_WeaponInfo.damage;
 					}
@@ -161,7 +161,7 @@ namespace TheNomad::SGame {
 		private float UseBlunt( float damage, uint weaponMode ) {
 			const vec3 origin = m_Owner.GetOrigin();
 			const float angle = cast<PlayrObject@>( @m_Owner ).GetArmAngle();
-			EntityObject@ activeEnts = @EntityManager.GetActiveEnts();
+			EntityObject@ activeEnts = EntityManager.GetActiveEnts();
 			EntityObject@ ent = @activeEnts.m_Next;
 
 			EmitSound( m_WeaponInfo.useSfx_Blunt, 10.0f, 0xff );
@@ -183,9 +183,9 @@ namespace TheNomad::SGame {
 			end.y += m_WeaponInfo.range * sin( angle );
 			end.z += m_WeaponInfo.range * sin( angle );
 
-			for ( ; @ent !is @activeEnts; @ent = @ent.m_Next ) {
-				if ( @ent !is @m_Owner && ent.GetBounds().LineIntersection( origin, end ) ) {
-					EntityManager.DamageEntity( @ent, @m_Owner, m_WeaponInfo.damage );
+			for ( ; @ent !is activeEnts; @ent = ent.m_Next ) {
+				if ( @ent !is m_Owner && ent.GetBounds().LineIntersection( origin, end ) ) {
+					EntityManager.DamageEntity( ent, m_Owner, m_WeaponInfo.damage );
 				}
 			}
 
@@ -216,7 +216,7 @@ namespace TheNomad::SGame {
 			
 			GfxManager.AddBulletHole( ray.m_Origin );
 			if ( ray.m_nEntityNumber == ENTITYNUM_INVALID ) {
-				PlayrObject@ player = @EntityManager.GetActivePlayer();
+				PlayrObject@ player = EntityManager.GetActivePlayer();
 				
 				if ( Util::Distance( player.GetOrigin(), ray.m_Origin ) <= 2.90f ) {
 					// if we're close to the bullet, then simulate a near-hit
@@ -251,7 +251,7 @@ namespace TheNomad::SGame {
 				return m_AmmoInfo.damage;
 			}
 			
-			EntityManager.DamageEntity( @EntityManager.GetEntityForNum( ray.m_nEntityNumber ), @m_Owner );
+			EntityManager.DamageEntity( EntityManager.GetEntityForNum( ray.m_nEntityNumber ), m_Owner );
 			
 			// health mult doesn't matter on harder difficulties if the player is attacking with a firearm,
 			// that is, unless, the player is very close to the enemy
@@ -317,7 +317,7 @@ namespace TheNomad::SGame {
 		bool Load( const TheNomad::GameSystem::SaveSystem::LoadSection& in section ) {
 			if ( section.LoadBool( "hasOwner" ) ) {
 				m_Flags = EntityFlags( section.LoadUInt( "flags" ) );
-				@m_Owner = @EntityManager.GetEntityForNum( section.LoadUInt( "owner" ) );
+				@m_Owner = EntityManager.GetEntityForNum( section.LoadUInt( "owner" ) );
 				
 				m_Link.m_Origin = vec3( 0.0f );
 			} else {
@@ -358,37 +358,37 @@ namespace TheNomad::SGame {
 				case StateNum::ST_WEAPON_IDLE:
 					switch ( facing ) {
 					case FACING_LEFT:
-						@newState = @m_IdleState_LEFT;
+						@newState = m_IdleState_LEFT;
 						break;
 					case FACING_RIGHT:
-						@newState = @m_IdleState_RIGHT;
+						@newState = m_IdleState_RIGHT;
 						break;
 					};
 					break;
 				case StateNum::ST_WEAPON_USE:
 					switch ( facing ) {
 					case FACING_LEFT:
-						@newState = @m_UseState_LEFT;
+						@newState = m_UseState_LEFT;
 						break;
 					case FACING_RIGHT:
-						@newState = @m_UseState_RIGHT;
+						@newState = m_UseState_RIGHT;
 						break;
 					};
 					break;
 				case StateNum::ST_WEAPON_RELOAD:
 					switch ( facing ) {
 					case FACING_LEFT:
-						@newState = @m_WeaponInfo.reloadState_LEFT;
+						@newState = m_WeaponInfo.reloadState_LEFT;
 						break;
 					case FACING_RIGHT:
-						@newState = @m_WeaponInfo.reloadState_RIGHT;
+						@newState = m_WeaponInfo.reloadState_RIGHT;
 						break;
 					};
 					break;
 				};
 
 				// don't mess with the ticker
-				@m_State = @newState;
+				@m_State = newState;
 				m_Facing = facing;
 			}
 			if ( !m_State.Done( m_nTicker ) ) {
@@ -399,17 +399,17 @@ namespace TheNomad::SGame {
 					EmitSound( m_WeaponInfo.reloadSfx, 10.0f, 0xff );
 					switch ( facing ) {
 					case FACING_LEFT:
-						SetState( @m_WeaponInfo.reloadState_LEFT );
+						SetState( m_WeaponInfo.reloadState_LEFT );
 						break;
 					case FACING_RIGHT:
-						SetState( @m_WeaponInfo.reloadState_RIGHT );
+						SetState( m_WeaponInfo.reloadState_RIGHT );
 						break;
 					};
 					m_nBulletsUsed = 0;
 					return;
 				}
 			}
-			@m_State = @m_State.Run( m_nTicker );
+			@m_State = m_State.Run( m_nTicker );
 		}
 		void Draw() override {
 			if ( @m_Owner !is null ) {

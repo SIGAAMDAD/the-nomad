@@ -154,7 +154,7 @@ namespace TheNomad::SGame {
 					continue;
 				}
 
-				m_States.Add( @state );
+				m_States.Add( state );
 				m_StateCache.Add( state.GetName(), @state );
 			}
 			stateInfos.Clear();
@@ -188,7 +188,7 @@ namespace TheNomad::SGame {
 		EntityState@ GetStateForNum( uint nIndex ) {
 			for ( uint i = 0; i < m_States.Count(); i++ ) {
 				if ( m_States[i].GetID() == nIndex ) {
-					return @m_States[i];
+					return m_States[i];
 				}
 			}
 			return @m_NullState;

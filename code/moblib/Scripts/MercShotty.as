@@ -99,7 +99,8 @@ namespace moblib::Script {
 			m_SubState.Reset( m_nSubTicker );
 			
 			m_EntityData.SetParry( false );
-			m_EntityData.EmitSound( ResourceCache.ShottyAttackSfx, 10.0f, 0xff );
+
+			// NOTE: maybe add something in here if the player parries them up close right before they shoot
 			
 			TheNomad::GameSystem::RayCast ray;
 			
@@ -111,27 +112,35 @@ namespace moblib::Script {
 			ray.m_nOwner = m_EntityData.GetEntityNum();
 			ray.Cast();
 
-			TheNomad::SGame::GfxManager.AddMuzzleFlash( origin );
+			m_EntityData.SetState( m_EntityData.GetState().Run( m_EntityData.GetTicker() ) );
 
-			m_EntityData.SetState( @m_EntityData.GetState().Run( m_EntityData.GetTicker() ) );
-
-			if ( ray.m_nEntityNumber == ENTITYNUM_WALL ) {
+			if ( ray.m_nEntityNumber == ENTITYNUM_WALL || ray.m_nEntityNumber == ENTITYNUM_INVALID ) {
 				// TODO: add wall hit mark here
 				const float velocity = ray.m_nLength - TheNomad::Util::Distance( ray.m_Origin, ray.m_Start );
 				TheNomad::SGame::GfxManager.AddDebrisCloud( ray.m_Origin, velocity );
-				return;
-			} else if ( ray.m_nEntityNumber == ENTITYNUM_INVALID ) {
+				TheNomad::SGame::GfxManager.AddBulletHole( ray.m_Origin );
+				m_EntityData.EmitSound( ResourceCache.ShottyAttackSfx, 10.0f, 0xff );
+				TheNomad::SGame::GfxManager.AddMuzzleFlash( origin );
 				return;
 			}
 			
-			TheNomad::SGame::EntityManager.DamageEntity( @TheNomad::SGame::EntityManager.GetEntityForNum( ray.m_nEntityNumber ),
-				cast<TheNomad::SGame::EntityObject@>( @m_EntityData ), MERC_SHOTGUN_DAMAGE );
+			/*
+			TheNomad::SGame::EntityObject@ hit = TheNomad::SGame::EntityManager.GetEntityForNum( ray.m_nEntityNumber );
+			if ( hit.GetType() == TheNomad::GameSystem::EntityType::Mob ) {
+				m_EntityData.EmitSound( ResourceCache.ShottyOutOfTheWay[ TheNomad::Util::PRandom()
+					& ( ResourceCache.ShottyOutOfTheWay.Count() - 1 ) ], 10.0f, 0xff );
+				return; // don't shoot
+			}
+			*/
+			m_EntityData.EmitSound( ResourceCache.ShottyAttackSfx, 10.0f, 0xff );
+			TheNomad::SGame::GfxManager.AddMuzzleFlash( origin );
+			
+			TheNomad::SGame::EntityManager.DamageEntity( TheNomad::SGame::EntityManager.GetEntityForNum( ray.m_nEntityNumber ), @m_EntityData, MERC_SHOTGUN_DAMAGE );
 		}
 		void FightMelee() override {
 		}
 		void SearchThink() override {
 			const bool canSee = m_Sensor.CheckSight();
-			DebugPrint( "Search state\n" );
 			if ( canSee ) {
 				ChangeState( ResourceCache.ShottyTargetSpottedSfx[ TheNomad::Util::PRandom() &
 					( ResourceCache.ShottyTargetSpottedSfx.Count() - 1 ) ], @m_ChaseState );
@@ -183,10 +192,6 @@ namespace moblib::Script {
 				@m_SubState = @ResourceCache.ShottyAimState;
 				m_SubState.Reset( m_nSubTicker );
 				m_EntityData.FaceTarget();
-				if ( IsAllyNearby() ) {
-					m_EntityData.EmitSound( ResourceCache.ShottyOutOfTheWay[ TheNomad::Util::PRandom()
-					& ( ResourceCache.ShottyOutOfTheWay.Count() - 1 ) ], 10.0f, 0xff );
-				}
 				m_EntityData.SetState( @m_FightMissileState );
 				m_EntityData.EmitSound( ResourceCache.ShottyAimSfx, 10.0f, 0xff );
 			}

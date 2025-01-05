@@ -69,7 +69,7 @@ namespace TheNomad::SGame {
 
 			const vec3 origin = m_ActivePlayer.GetOrigin();
 
-			for ( @ent = @m_ActiveEnts.m_Next; @ent !is @m_ActiveEnts; @ent = @ent.m_Next ) {
+			for ( @ent = m_ActiveEnts.m_Next; @ent !is m_ActiveEnts; @ent = ent.m_Next ) {
 				// draw
 				if ( Util::Distance( origin, ent.GetOrigin() ) >= 16.0f ) {
 					continue;
@@ -84,13 +84,13 @@ namespace TheNomad::SGame {
 				return;
 			}
 			
-			for ( @ent = @m_ActiveEnts.m_Next; @ent !is @m_ActiveEnts; @ent = @ent.m_Next ) {
+			for ( @ent = m_ActiveEnts.m_Next; @ent !is m_ActiveEnts; @ent = ent.m_Next ) {
 				if ( ent.CheckFlags( EntityFlags::Dead ) ) {
 					if ( ( TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" ) > TheNomad::GameSystem::GameDifficulty::Hard
 						&& ent.GetType() == TheNomad::GameSystem::EntityType::Mob )
 						|| ent.GetType() == TheNomad::GameSystem::EntityType::Playr )
 					{
-						DeadThink( @ent );
+						DeadThink( ent );
 					}
 					else {
 						if ( ent.GetState().Done( ent.GetTicker() ) ) {
@@ -99,13 +99,13 @@ namespace TheNomad::SGame {
 						}
 						else {
 							// run the death animation
-							ent.SetState( @ent.GetState().Run( ent.GetTicker() ) );
+							ent.SetState( ent.GetState().Run( ent.GetTicker() ) );
 						}
 					}
 					continue;
 				}
 
-				if ( @ent.GetState() is null ) {
+				if ( ent.GetState() is null ) {
 					GameError( "EntitySystem::OnRunTic(): entity " + ent.GetName() + " state is null" );
 				}
 
@@ -147,7 +147,7 @@ namespace TheNomad::SGame {
 			
 			@m_ActiveEnts.m_Next =
 			@m_ActiveEnts.m_Prev =
-				@m_ActiveEnts;
+				m_ActiveEnts;
 
 			MapCheckpoints[ LevelManager.GetCheckpointIndex() ].m_bPassed = true;
 			
@@ -190,10 +190,10 @@ namespace TheNomad::SGame {
 				DebugPrint( "Spawned entity " + m_EntityList.Count() + "\n" );
 				m_EntityList.Add( @ent );
 
-				@m_ActiveEnts.m_Prev.m_Next = @ent;
-				@ent.m_Next = @m_ActiveEnts;
-				@ent.m_Prev = @m_ActiveEnts.m_Prev;
-				@m_ActiveEnts.m_Prev = @ent;
+				@m_ActiveEnts.m_Prev.m_Next = ent;
+				@ent.m_Next = m_ActiveEnts;
+				@ent.m_Prev = m_ActiveEnts.m_Prev;
+				@m_ActiveEnts.m_Prev = ent;
 
 				if ( !ent.Load( load ) ) {
 					GameError( "EntitySystem::OnLoad: save file corruption, section 'EntityData_" + i + "' failed to load" );
@@ -207,7 +207,7 @@ namespace TheNomad::SGame {
 				section.SaveUInt( "NumEntities", m_nActiveEnts );
 			}
 			
-			for ( EntityObject@ ent = @m_ActiveEnts.m_Next; @ent !is @m_ActiveEnts; @ent = @ent.m_Next ) {
+			for ( EntityObject@ ent = m_ActiveEnts.m_Next; @ent !is m_ActiveEnts; @ent = ent.m_Next ) {
 				TheNomad::GameSystem::SaveSystem::SaveSection section( "EntityData_" + ent.GetEntityNum() );
 				section.SaveUInt( "Type", uint( ent.GetType() ) );
 				section.SaveUInt( "Id", ent.GetId() );
@@ -412,6 +412,7 @@ namespace TheNomad::SGame {
 		}
 		
 		void KillEntity( EntityObject@ target, EntityObject@ attacker ) {
+			return;
 			if ( attacker.GetType() == TheNomad::GameSystem::EntityType::Mob ) {
 				// write an obituary for the player
 				GenObituary( @attacker, @target );
@@ -420,14 +421,14 @@ namespace TheNomad::SGame {
 			if ( target.GetType() == TheNomad::GameSystem::EntityType::Mob ) {
 				MobObject@ mob = cast<MobObject@>( @target );
 				
-				// respawn mobs on Insane, they are so skilled and so pissed off, they ressurect
+				// respawn mobs on Insane, they are so skilled and so pissed off, they ressurrect
 				if ( TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" ) > uint( TheNomad::GameSystem::GameDifficulty::VeryHard )
 					&& TheNomad::Engine::CvarVariableInteger( "sgame_NoRespawningMobs" ) != 1
 					&& ( uint( mob.GetMFlags() ) & InfoSystem::MobFlags::PermaDead ) == 0 )
 				{
 					//TODO:
 				}
-				target.SetState( @cast<MobObject@>( @target ).GetScript().GetDeathState() );
+				target.SetState( cast<MobObject@>( @target ).GetScript().GetDeathState() );
 			}
 			else if ( target.GetType() == TheNomad::GameSystem::EntityType::Playr ) {
 				target.SetState( StateNum::ST_PLAYR_DEAD );
