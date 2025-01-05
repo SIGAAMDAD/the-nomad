@@ -70,7 +70,7 @@ namespace TheNomad::SGame {
 
 			for ( uint i = 0; i < EntityManager.NumEntities(); i++ ) {
 				if ( EntityManager.GetEntityForNum( i ).GetType() == TheNomad::GameSystem::EntityType::Playr ) {
-					@m_PlayerData = cast<PlayrObject@>( @EntityManager.GetEntityForNum( i ) );
+					@m_PlayerData = cast<PlayrObject@>( EntityManager.GetEntityForNum( i ) );
 				}
 			}
 			m_PlayerData.SetPlayerIndex( 0 );
@@ -84,62 +84,62 @@ namespace TheNomad::SGame {
 			
 			// these specific movement commands MUST NOT CHANGE as they are hardcoded into the engine
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_Down_f ), "+north" );
+				TheNomad::Engine::CommandSystem::CommandFunc( this.MoveNorth_Down_f ), "+north" );
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_Up_f ), "-north" );
+				TheNomad::Engine::CommandSystem::CommandFunc( this.MoveNorth_Up_f ), "-north" );
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveSouth_Down_f ), "+south" );
+				TheNomad::Engine::CommandSystem::CommandFunc( this.MoveSouth_Down_f ), "+south" );
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveSouth_Up_f ), "-south" );
+				TheNomad::Engine::CommandSystem::CommandFunc( this.MoveSouth_Up_f ), "-south" );
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveWest_Down_f ), "+west" );
+				TheNomad::Engine::CommandSystem::CommandFunc( this.MoveWest_Down_f ), "+west" );
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveWest_Up_f ), "-west" );
+				TheNomad::Engine::CommandSystem::CommandFunc( this.MoveWest_Up_f ), "-west" );
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveEast_Down_f ), "+east" );
+				TheNomad::Engine::CommandSystem::CommandFunc( this.MoveEast_Down_f ), "+east" );
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveEast_Up_f ), "-east" );
+				TheNomad::Engine::CommandSystem::CommandFunc( this.MoveEast_Up_f ), "-east" );
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Jump_Down_f ), "+jump" );
+				TheNomad::Engine::CommandSystem::CommandFunc( this.Jump_Down_f ), "+jump" );
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Jump_Up_f ), "-jump" );
+				TheNomad::Engine::CommandSystem::CommandFunc( this.Jump_Up_f ), "-jump" );
 			
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Crouch_Down_f ), "+crouch" );
+				TheNomad::Engine::CommandSystem::CommandFunc( this.Crouch_Down_f ), "+crouch" );
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Crouch_Up_f ), "-crouch" );
+				TheNomad::Engine::CommandSystem::CommandFunc( this.Crouch_Up_f ), "-crouch" );
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Slide_Down_f ), "+slide" );
+				TheNomad::Engine::CommandSystem::CommandFunc( this.Slide_Down_f ), "+slide" );
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Slide_Up_f ), "-slide" );
+				TheNomad::Engine::CommandSystem::CommandFunc( this.Slide_Up_f ), "-slide" );
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Dash_Down_f ), "+dash" );
+				TheNomad::Engine::CommandSystem::CommandFunc( this.Dash_Down_f ), "+dash" );
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Dash_Up_f ), "-dash" );
+				TheNomad::Engine::CommandSystem::CommandFunc( this.Dash_Up_f ), "-dash" );
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Melee_Down_f ), "+melee" );
+				TheNomad::Engine::CommandSystem::CommandFunc( this.Melee_Down_f ), "+melee" );
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Melee_Up_f ), "-melee" );
+				TheNomad::Engine::CommandSystem::CommandFunc( this.Melee_Up_f ), "-melee" );
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.UseWeapon_Down_f ), "+useweap" );
+				TheNomad::Engine::CommandSystem::CommandFunc( this.UseWeapon_Down_f ), "+useweap" );
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.UseWeapon_Up_f ), "-useweap" );
+				TheNomad::Engine::CommandSystem::CommandFunc( this.UseWeapon_Up_f ), "-useweap" );
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.AltUseWeapon_Down_f ), "+altuseweap" );
+				TheNomad::Engine::CommandSystem::CommandFunc( this.AltUseWeapon_Down_f ), "+altuseweap" );
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.AltUseWeapon_Up_f ), "-altuseweap" );
+				TheNomad::Engine::CommandSystem::CommandFunc( this.AltUseWeapon_Up_f ), "-altuseweap" );
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Quickshot_f ), "quickshot" );
+				TheNomad::Engine::CommandSystem::CommandFunc( this.Quickshot_f ), "quickshot" );
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.SwitchWeaponWielding_f ), "switchwielding" );
+				TheNomad::Engine::CommandSystem::CommandFunc( this.SwitchWeaponWielding_f ), "switchwielding" );
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.SwitchWeaponMode_f ), "switchmode" );
+				TheNomad::Engine::CommandSystem::CommandFunc( this.SwitchWeaponMode_f ), "switchmode" );
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.SwitchHand_f ), "switchhand" );
+				TheNomad::Engine::CommandSystem::CommandFunc( this.SwitchHand_f ), "switchhand" );
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.NextWeapon_f ), "weapnext" );
+				TheNomad::Engine::CommandSystem::CommandFunc( this.NextWeapon_f ), "weapnext" );
 			TheNomad::Engine::CommandSystem::CmdManager.AddKeyBind(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.PrevWeapon_f ), "weapprev" );
+				TheNomad::Engine::CommandSystem::CommandFunc( this.PrevWeapon_f ), "weapprev" );
 		}
 		void Shutdown() {
 		}
@@ -284,7 +284,7 @@ namespace TheNomad::SGame {
 			m_PlayerData.Flags &= ~PF_SLIDING;
 		}
 		void Melee_Down_f() {	
-			if ( @m_PlayerData.GetLeftArmState() is @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_MELEE ) ) {
+			if ( m_PlayerData.GetLeftArmState() is StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_MELEE ) ) {
 				return;
 			}
 			m_PlayerData.EmitSound( m_MeleeSfx, 10.0f, 0xff );
@@ -312,7 +312,7 @@ namespace TheNomad::SGame {
 		void Crouch_Up_f() {
 			m_PlayerData.EmitSound( m_CrouchUpSfx, 10.0f, 0xff );
 			m_PlayerData.SetCrouching( false );
-			m_PlayerData.SetState( @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE ) );
+			m_PlayerData.SetState( StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE ) );
 		}
 
 		void NextWeapon_f() {
@@ -321,7 +321,7 @@ namespace TheNomad::SGame {
 				m_PlayerData.SetCurrentWeapon( 0 );
 			}
 			TheNomad::Engine::SoundSystem::SoundEffect hSfx( "event:/sfx/env/interaction/pickup_item" );
-			const WeaponObject@ weapon = @m_PlayerData.GetCurrentWeapon();
+			const WeaponObject@ weapon = m_PlayerData.GetCurrentWeapon();
 			if ( @weapon !is null ) {
 				hSfx = weapon.GetWeaponInfo().equipSfx;
 			}
@@ -333,7 +333,7 @@ namespace TheNomad::SGame {
 				m_PlayerData.SetCurrentWeapon( NUM_WEAPON_SLOTS - 1 );
 			}
 			TheNomad::Engine::SoundSystem::SoundEffect hSfx( "event:/sfx/env/interaction/pickup_item" );
-			const WeaponObject@ weapon = @m_PlayerData.GetCurrentWeapon();
+			const WeaponObject@ weapon = m_PlayerData.GetCurrentWeapon();
 			if ( @weapon !is null ) {
 				hSfx = weapon.GetWeaponInfo().equipSfx;
 			}

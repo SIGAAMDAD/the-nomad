@@ -40,38 +40,41 @@ namespace TheNomad::SGame {
 			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 ) {
 				return;
 			}
-
+		
+		#if _NOMAD_DEBUG
 			if ( sgame_DebugMode.GetBool() ) {
 				TheNomad::Engine::ProfileBlock block( "GfxSystem::OnRenderScene" );
 			}
+		#endif
 
 			TheNomad::Engine::Renderer::LocalEntity@ next = null;
 
 			// walk the list backwards, so any new local entities generated
 			// (trails, marks, etc) will be present this frame
-			TheNomad::Engine::Renderer::LocalEntity@ ent = @m_ActiveLocalEnts.m_Prev;
-			for ( ; @ent !is @m_ActiveLocalEnts; @ent = @next ) {
+			TheNomad::Engine::Renderer::LocalEntity@ ent = m_ActiveLocalEnts.m_Prev;
+			for ( ; ent !is m_ActiveLocalEnts; @ent = next ) {
 				// grab next now, so if the local entity is freed we
 				// still have it
-				@next = @ent.m_Prev;
+				@next = ent.m_Prev;
 
 				uint endTime = ent.m_nEndTime;
 				if ( !EntityManager.GetActivePlayer().InReflex() ) {
 					endTime *= TheNomad::GameSystem::DeltaTic;
 				}
 				if ( TheNomad::GameSystem::GameDeltaTic > endTime ) {
-					FreeLocalEntity( @ent );
+					FreeLocalEntity( ent );
 					continue;
 				}
 
 				ent.RunTic();
+				@ent = null;
 			}
 		}
 
 		private void ClearLocalEntities() {
 			@m_ActiveLocalEnts.m_Next =
 			@m_ActiveLocalEnts.m_Prev =
-				@m_ActiveLocalEnts;
+				m_ActiveLocalEnts;
 			@m_FreeLocalEnts = null;
 
 			// clear all references
@@ -112,31 +115,31 @@ namespace TheNomad::SGame {
 
 			@m_ActiveLocalEnts.m_Next =
 			@m_ActiveLocalEnts.m_Prev =
-				@m_ActiveLocalEnts;
-			@m_FreeLocalEnts = @m_LocalEnts[0];
+				m_ActiveLocalEnts;
+			@m_FreeLocalEnts = m_LocalEnts[0];
 
 			for ( uint i = 0; i < m_LocalEnts.Count() - 1; i++ ) {
-				@m_LocalEnts[i].m_Next = @m_LocalEnts[ i + 1 ];
+				@m_LocalEnts[i].m_Next = m_LocalEnts[ i + 1 ];
 			}
 		}
 
 		private TheNomad::Engine::Renderer::LocalEntity@ AllocLocalEntity() {
-			if ( @m_FreeLocalEnts is null ) {
+			if ( m_FreeLocalEnts is null ) {
 				// no free polys, so free the one at the end of the chain
 				// remove the oldest active entity
-				FreeLocalEntity( @m_ActiveLocalEnts.m_Prev );
+				FreeLocalEntity( m_ActiveLocalEnts.m_Prev );
 			}
 
-			TheNomad::Engine::Renderer::LocalEntity@ ent = @m_FreeLocalEnts;
-			@m_FreeLocalEnts = @m_FreeLocalEnts.m_Next;
+			TheNomad::Engine::Renderer::LocalEntity@ ent = m_FreeLocalEnts;
+			@m_FreeLocalEnts = m_FreeLocalEnts.m_Next;
 
 			// link into active list
-			@ent.m_Next = @m_ActiveLocalEnts.m_Next;
-			@ent.m_Prev = @m_ActiveLocalEnts;
-			@m_ActiveLocalEnts.m_Next.m_Prev = @ent;
-			@m_ActiveLocalEnts.m_Next = @ent;
+			@ent.m_Next = m_ActiveLocalEnts.m_Next;
+			@ent.m_Prev = m_ActiveLocalEnts;
+			@m_ActiveLocalEnts.m_Next.m_Prev = ent;
+			@m_ActiveLocalEnts.m_Next = ent;
 
-			return @ent;
+			return ent;
 		}
 		//
 		// FreeLocalEntity: only LocalEntity when its finished should ever call this, or AllocLocalEntity
@@ -160,7 +163,7 @@ namespace TheNomad::SGame {
 				return;
 			}
 
-			TheNomad::Engine::Renderer::LocalEntity@ ent = @AllocLocalEntity();
+			TheNomad::Engine::Renderer::LocalEntity@ ent = AllocLocalEntity();
 
 			const uint row = ( Util::PRandom() & 3 ) + 2;
 			vec2 scale = vec2( 1.0f );
@@ -168,7 +171,7 @@ namespace TheNomad::SGame {
 				scale.x = -scale.x;
 			}
 
-			ent.Spawn( origin, vec3( 0.0f ), 180, FS_INVALID_HANDLE, scale, true, @m_BloodSpurt, uvec2( 0, row ) );
+			ent.Spawn( origin, vec3( 0.0f ), 180, FS_INVALID_HANDLE, scale, true, m_BloodSpurt, uvec2( 0, row ) );
 			ent.m_EffectAnimation.Load( 30, false, 14, false );
 		}
 
@@ -176,7 +179,9 @@ namespace TheNomad::SGame {
 			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 ) {
 				return;
 			}
-			AllocLocalEntity().Spawn( origin, vec3( 0.0f ), 1800, m_hDustScreenShader );
+
+			TheNomad::Engine::Renderer::LocalEntity@ ent = AllocLocalEntity();
+			ent.Spawn( origin, vec3( 0.0f ), 1800, m_hDustScreenShader );
 		}
 
 		//
@@ -192,7 +197,7 @@ namespace TheNomad::SGame {
 			TheNomad::Engine::Renderer::LocalEntity@ ent = null;
 
 			for ( uint i = 0; i < numSmokeClouds; ++i ) {
-				@ent = @AllocLocalEntity();
+				@ent = AllocLocalEntity();
 
 				vel.x = ( Util::PRandom() & 25 ) * 0.001f;
 				if ( ( Util::PRandom() & 1 ) == 0 ) {
@@ -212,7 +217,8 @@ namespace TheNomad::SGame {
 				return;
 			}
 
-			AllocLocalEntity().Spawn( origin, vec3( 0.0f ), lifeTime, m_hWaterWakeShader, scale, false );
+			TheNomad::Engine::Renderer::LocalEntity@ ent = AllocLocalEntity();
+			ent.Spawn( origin, vec3( 0.0f ), lifeTime, m_hWaterWakeShader, scale, false );
 		}
 
 		void AddBulletHole( const vec3& in origin ) {
@@ -220,7 +226,8 @@ namespace TheNomad::SGame {
 				return;
 			}
 
-			AllocLocalEntity().Spawn( origin, vec3( 0.0f ), uint( -1 ), m_hBulletHoleShader, vec2( 2.0f ), false );
+			TheNomad::Engine::Renderer::LocalEntity@ ent = AllocLocalEntity();
+			ent.Spawn( origin, vec3( 0.0f ), uint( -1 ), m_hBulletHoleShader, vec2( 2.0f ), false );
 		}
 
 		void AddLanding( const vec3& in origin ) {
@@ -228,9 +235,9 @@ namespace TheNomad::SGame {
 				return;
 			}
 
-			TheNomad::Engine::Renderer::LocalEntity@ ent = @AllocLocalEntity();
+			TheNomad::Engine::Renderer::LocalEntity@ ent = AllocLocalEntity();
 
-			ent.Spawn( origin, vec3( 0.0f ), 600, FS_INVALID_HANDLE, vec2( 3.5f ), false, @m_SmokeLanding );
+			ent.Spawn( origin, vec3( 0.0f ), 600, FS_INVALID_HANDLE, vec2( 3.5f ), false, m_SmokeLanding );
 			ent.m_EffectAnimation.Load( 40, false, 16, false );
 		}
 
@@ -239,14 +246,14 @@ namespace TheNomad::SGame {
 				return;
 			}
 
-			TheNomad::Engine::Renderer::LocalEntity@ ent = @AllocLocalEntity();
+			TheNomad::Engine::Renderer::LocalEntity@ ent = AllocLocalEntity();
 
 			vec2 scale = vec2( 2.5f );
 			if ( facing == FACING_LEFT ) {
 				scale.x = -scale.x;
 			}
 			
-			ent.Spawn( origin, vec3( 0.0f ), 400, FS_INVALID_HANDLE, scale, false, @m_SmokePuff );
+			ent.Spawn( origin, vec3( 0.0f ), 400, FS_INVALID_HANDLE, scale, false, m_SmokePuff );
 			ent.m_EffectAnimation.Load( 90, false, 9, false );
 		}
 
@@ -255,14 +262,14 @@ namespace TheNomad::SGame {
 				return;
 			}
 
-			TheNomad::Engine::Renderer::LocalEntity@ ent = @AllocLocalEntity();
+			TheNomad::Engine::Renderer::LocalEntity@ ent = AllocLocalEntity();
 
 			vec2 scale = vec2( 5.5f );
 			if ( facing == FACING_LEFT ) {
 				scale.x = -scale.x;
 			}
 			
-			ent.Spawn( origin, vec3( 0.0f ), 720, FS_INVALID_HANDLE, scale, false, @m_SmokeTrail );
+			ent.Spawn( origin, vec3( 0.0f ), 720, FS_INVALID_HANDLE, scale, false, m_SmokeTrail );
 			ent.m_EffectAnimation.Load( 20, false, 40, false );
 		}
 
@@ -274,7 +281,7 @@ namespace TheNomad::SGame {
 				return;
 			}
 
-			TheNomad::Engine::Renderer::LocalEntity@ ent = @AllocLocalEntity();
+			TheNomad::Engine::Renderer::LocalEntity@ ent = AllocLocalEntity();
 
 			ent.Spawn( origin, vec3( 0.0f ), 200, FS_INVALID_HANDLE );
 			ent.m_Flags |= TheNomad::Engine::Renderer::LOCALENT_NODRAW | TheNomad::Engine::Renderer::LOCALENT_LIGHT_SOURCE;
@@ -284,11 +291,11 @@ namespace TheNomad::SGame {
 			// NOTE: don't mess with the load order
 			m_hDustScreenShader = TheNomad::Engine::Renderer::RegisterShader( "gfx/env/dustScreen" );
 			m_hBulletHoleShader = TheNomad::Engine::Renderer::RegisterShader( "gfx/env/bullet_hole" );
-			@m_SmokeTrail = @TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/smokeTrail", 750, 1200, 150, 150 );
-			@m_SmokePuff = @TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/smokePuff", 576, 64, 64, 64 );
-			@m_SmokeLanding = @TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/landing", 4032, 60, 252, 60 );
+			@m_SmokeTrail = TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/smokeTrail", 750, 1200, 150, 150 );
+			@m_SmokePuff = TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/smokePuff", 576, 64, 64, 64 );
+			@m_SmokeLanding = TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/landing", 4032, 60, 252, 60 );
 //			@m_FlameBall = @TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/env/flameBall", 288, 192, 96, 48 );
-			@m_BloodSpurt = @TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/spurt", 1540, 836, 110, 92 );
+			@m_BloodSpurt = TheNomad::Engine::ResourceCache.GetSpriteSheet( "gfx/spurt", 1540, 836, 110, 92 );
 			m_hWaterWakeShader = TheNomad::Engine::Renderer::RegisterShader( "wake" );
 		}
 

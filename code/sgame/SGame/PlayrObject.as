@@ -68,7 +68,7 @@ namespace TheNomad::SGame {
 		*/
 
 		bool opCmp( const PlayrObject& in other ) const {
-			return @this == @other;
+			return this is @other;
 		}
 
 		//
@@ -81,12 +81,12 @@ namespace TheNomad::SGame {
 			switch ( m_nHandsUsed ) {
 			case LEFT_ARM:
 			case BOTH_ARMS:
-				@src = @LeftArm;
-				@dst = @RightArm;
+				@src = LeftArm;
+				@dst = RightArm;
 				break;
 			case RIGHT_ARM:
-				@src = @RightArm;
-				@dst = @LeftArm;
+				@src = RightArm;
+				@dst = LeftArm;
 				break;
 			};
 
@@ -125,18 +125,18 @@ namespace TheNomad::SGame {
 
 			switch ( m_nHandsUsed ) {
 			case LEFT_ARM:
-				@slot = @m_Inventory.GetSlot( LeftArm.GetEquippedWeapon() );
+				@slot = m_Inventory.GetSlot( LeftArm.GetEquippedWeapon() );
 				break;
 			case RIGHT_ARM:
-				@slot = @m_Inventory.GetSlot( RightArm.GetEquippedWeapon() );
+				@slot = m_Inventory.GetSlot( RightArm.GetEquippedWeapon() );
 				break;
 			case BOTH_ARMS:
-				@slot = @m_Inventory.GetEquippedWeapon();
+				@slot = m_Inventory.GetEquippedWeapon();
 				break;
 			};
 
 			const uint mode = slot.GetMode();
-			const WeaponObject@ weapon = @slot.GetData();
+			const WeaponObject@ weapon = slot.GetData();
 			
 			slot.SetMode( InfoSystem::WeaponProperty::None ); // clear the modes
 			
@@ -177,7 +177,7 @@ namespace TheNomad::SGame {
 		void SwitchUsedHand() {
 			if ( TheNomad::Engine::IsKeyDown( TheNomad::Engine::KeyNum::V ) ) {
 				m_nHandsUsed = BOTH_ARMS;
-				@LastUsedArm = @LeftArm;
+				@LastUsedArm = LeftArm;
 				if ( LeftArm.GetEquippedWeapon() != uint( -1 ) ) {
 					m_Inventory.EquipSlot( LeftArm.GetEquippedWeapon() );
 				}
@@ -186,21 +186,21 @@ namespace TheNomad::SGame {
 			switch ( m_nHandsUsed ) {
 			case LEFT_ARM:
 				m_nHandsUsed = 1; // set to right
-				@LastUsedArm = @RightArm;
+				@LastUsedArm = RightArm;
 				if ( RightArm.GetEquippedWeapon() != uint( -1 ) ) {
 					m_Inventory.EquipSlot( RightArm.GetEquippedWeapon() );
 				}
 				break;
 			case RIGHT_ARM:
 				m_nHandsUsed = 0; // set to left
-				@LastUsedArm = @LeftArm;
+				@LastUsedArm = LeftArm;
 				if ( LeftArm.GetEquippedWeapon() != uint( -1 ) ) {
 					m_Inventory.EquipSlot( LeftArm.GetEquippedWeapon() );
 				}
 				break;
 			case BOTH_ARMS:
 				m_nHandsUsed = 1;
-				@LastUsedArm = @RightArm;
+				@LastUsedArm = RightArm;
 				if ( RightArm.GetEquippedWeapon() != uint( -1 ) ) {
 					m_Inventory.EquipSlot( RightArm.GetEquippedWeapon() );
 				}
@@ -252,7 +252,7 @@ namespace TheNomad::SGame {
 		}
 
 		void PassCheckpoint( EntityObject@ cp ) {
-			MapCheckpoint@ data = cast<MapCheckpoint@>( @cast<WallObject@>( @cp ).GetData() );
+			MapCheckpoint@ data = cast<MapCheckpoint@>( cast<WallObject@>( cp ).GetData() );
 			if ( data.m_bPassed ) {
 				return;
 			}
@@ -269,7 +269,7 @@ namespace TheNomad::SGame {
 			}
 
 			// done with the level?
-			if ( @data is @MapCheckpoints[ MapCheckpoints.Count() - 1 ] ) {
+			if ( data is MapCheckpoints[ MapCheckpoints.Count() - 1 ] ) {
 				LevelManager.CalcLevelStats();
 				GlobalState = GameState::LevelFinish;
 				return;
@@ -278,18 +278,18 @@ namespace TheNomad::SGame {
 
 		void EquipWeapon( WeaponObject@ weapon ) {
 			EmitSound( ScreenData.m_EquipWeaponSfx, 10.0f, 0xff );
-			m_Inventory.EquipWeapon( @weapon );
+			m_Inventory.EquipWeapon( weapon );
 		}
 
 		void PickupItem( EntityObject@ item ) {
-			ItemObject@ data = cast<ItemObject@>( @item );
-			data.SetOwner( @this );
+			ItemObject@ data = cast<ItemObject@>( item );
+			data.SetOwner( this );
 
 			switch ( item.GetType() ) {
 			case TheNomad::GameSystem::EntityType::Item:
 				break;
 			case TheNomad::GameSystem::EntityType::Weapon:
-				EquipWeapon( cast<WeaponObject@>( @data ) );
+				EquipWeapon( cast<WeaponObject@>( data ) );
 				break;
 			default:
 				GameError( "PlayrObject::PickupItem: not an item" );
@@ -379,10 +379,10 @@ namespace TheNomad::SGame {
 		}
 
 		ArmData@ GetLeftArm() {
-			return @LeftArm;
+			return LeftArm;
 		}
 		ArmData@ GetRightArm() {
-			return @RightArm;
+			return RightArm;
 		}
 		int GetHandsUsed() const {
 			return m_nHandsUsed;
@@ -407,16 +407,16 @@ namespace TheNomad::SGame {
 		}
 
 		SpriteSheet@ GetLeftArmSpriteSheet() {
-			return @LeftArm.GetSpriteSheet();
+			return LeftArm.GetSpriteSheet();
 		}
 		SpriteSheet@ GetRightArmSpriteSheet() {
-			return @RightArm.GetSpriteSheet();
+			return RightArm.GetSpriteSheet();
 		}
 		const SpriteSheet@ GetLeftArmSpriteSheet() const {
-			return @LeftArm.GetSpriteSheet();
+			return LeftArm.GetSpriteSheet();
 		}
 		const SpriteSheet@ GetRightArmSpriteSheet() const {
-			return @RightArm.GetSpriteSheet();
+			return RightArm.GetSpriteSheet();
 		}
 
 		void SetLegsFacing( int facing ) {
@@ -437,8 +437,8 @@ namespace TheNomad::SGame {
 			RightArm.SetState( nState );
 		}
 		void SetArmsState( EntityState@ state ) {
-			LeftArm.SetState( @state );
-			RightArm.SetState( @state );
+			LeftArm.SetState( state );
+			RightArm.SetState( state );
 		}
 		int GetLegsFacing() const {
 			return m_LegsFacing;
@@ -451,19 +451,19 @@ namespace TheNomad::SGame {
 		}
 
 		EntityState@ GetLegState() {
-			return @m_LegState;
+			return m_LegState;
 		}
 		EntityState@ GetLeftArmState() {
-			return @LeftArm.GetState();
+			return LeftArm.GetState();
 		}
 		const EntityState@ GetLegState() const {
-			return @m_LegState;
+			return m_LegState;
 		}
 		const EntityState@ GetLeftArmState() const {
-			return @LeftArm.GetState();
+			return LeftArm.GetState();
 		}
 		const EntityState@ GetRightArmState() const {
-			return @RightArm.GetState();
+			return RightArm.GetState();
 		}
 
 		bool Load( const TheNomad::GameSystem::SaveSystem::LoadSection& in section ) {
@@ -521,13 +521,14 @@ namespace TheNomad::SGame {
 
 			m_HudData.ShowStatusBars();
 			
+			DebugPrint( "Damaging player...\n" );
 			m_nHealth -= nAmount;
 
 			if ( m_nHealth < 1 ) {
 				if ( m_nFrameDamage > 0 ) {
 					return; // as long as you're hitting SOMETHING, you cannot die
 				}
-				switch ( Util::PRandom() & 3 ) {
+				switch ( Util::PRandom() & 2 ) {
 				case 0:
 					EmitSound( ScreenData.m_DieSfx0, 1.0f, 0xff );
 					break;
@@ -539,7 +540,7 @@ namespace TheNomad::SGame {
 					break;
 				};
 				DebugPrint( "Killing player...\n" );
-				EntityManager.KillEntity( @attacker, @this );
+				EntityManager.KillEntity( attacker, this );
 				
 				Util::HapticRumble( m_nControllerIndex, 0.80f, 4000 );
 			} else {
@@ -565,28 +566,28 @@ namespace TheNomad::SGame {
 			const ArmData@ arm = null;
 			switch ( m_nHandsUsed ) {
 			case RIGHT_ARM:
-				@arm = @RightArm;
+				@arm = RightArm;
 				break;
 			case LEFT_ARM:
 			case BOTH_ARMS:
-				@arm = @LeftArm;
+				@arm = LeftArm;
 				break;
 			};
 			return arm.GetEquippedWeapon() != uint( -1 ) ? true : false;
 		}
 		
 		WeaponObject@ GetCurrentWeapon() {
-			return @m_Inventory.GetEquippedWeapon().GetData();
+			return m_Inventory.GetEquippedWeapon().GetData();
 		}
 		const WeaponObject@ GetCurrentWeapon() const {
-			return @m_Inventory.GetEquippedWeapon().GetData();
+			return m_Inventory.GetEquippedWeapon().GetData();
 		}
 
 		InventoryManager@ GetInventory() {
-			return @m_Inventory;
+			return m_Inventory;
 		}
 		const InventoryManager@ GetInventory() const {
-			return @m_Inventory;
+			return m_Inventory;
 		}
 
 		void SetLeftArmState( StateNum num ) {
@@ -634,7 +635,7 @@ namespace TheNomad::SGame {
 					}
 					
 					// TODO: make dead mobs with ANY velocity flying corpses
-					EntityManager.DamageEntity( cast<EntityObject@>( @this ), @ent );
+					EntityManager.DamageEntity( cast<EntityObject@>( @this ), ent );
 					EmitSound( ScreenData.m_ParrySfx, 10.0f, 0xff );
 				}
 			}
@@ -712,7 +713,7 @@ namespace TheNomad::SGame {
 
 			m_PhysicsObject.Init( cast<EntityObject>( @this ) );
 			m_PhysicsObject.SetAngle( Util::Dir2Angle( TheNomad::GameSystem::DirType::East ) );
-			m_PhysicsObject.SetWeight( sgame_PlayerWeight.GetFloat() );
+			m_PhysicsObject.SetWeight( TheNomad::Engine::CvarVariableFloat( "sgame_PlayerWeight" ) );
 
 			// fetch the current skin's data
 			m_Skin = TheNomad::Engine::CvarVariableString( "skin" );
@@ -721,21 +722,21 @@ namespace TheNomad::SGame {
 
 			@m_SpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "skins/" +
 				m_Skin, 1024, 1024, 32, 32 );
-			if ( @m_SpriteSheet is null ) {
+			if ( m_SpriteSheet is null ) {
 				GameError( "PlayrObject::Spawn: failed to load torso sprite sheet" );
 			}
 
-			@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE );
-			if ( @m_State is null ) {
+			@m_State = StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE );
+			if ( m_State is null ) {
 				GameError( "PlayrObject::Spawn: failed to load idle torso state" );
 			}
 			m_Facing = FACING_RIGHT;
 
-			LeftArm.Link( @this, FACING_LEFT, armsSheetSize, armsSpriteSize );
-			RightArm.Link( @this, FACING_RIGHT, armsSheetSize, armsSpriteSize );
+			LeftArm.Link( this, FACING_LEFT, armsSheetSize, armsSpriteSize );
+			RightArm.Link( this, FACING_RIGHT, armsSheetSize, armsSpriteSize );
 
-			@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_GROUND );
-			if ( @m_LegState is null ) {
+			@m_LegState = StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_GROUND );
+			if ( m_LegState is null ) {
 				GameError( "PlayrObject::Spawn: failed to load idle leg state" );
 			}
 			m_LegsFacing = FACING_RIGHT;
@@ -743,13 +744,13 @@ namespace TheNomad::SGame {
 			m_nLegTicker = 0;
 			m_Name = "player";
 
-			@m_LegIdleState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_GROUND );
-			@m_LegSlideState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_SLIDE );
-			@m_LegMoveState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_MOVE_GROUND );
-			@m_LegAirIdleState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_AIR );
-			@m_LegAirMoveState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_GROUND );
+			@m_LegIdleState = StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_GROUND );
+			@m_LegSlideState = StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_SLIDE );
+			@m_LegMoveState = StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_MOVE_GROUND );
+			@m_LegAirIdleState = StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_AIR );
+			@m_LegAirMoveState = StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_GROUND );
 
-			@m_IdleState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE );
+			@m_IdleState = StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE );
 
 			m_nHalfWidth = TheNomad::Engine::CvarVariableFloat( "sgame_PlayerWidth" ) * 0.5f;
 			m_nHalfHeight = TheNomad::Engine::CvarVariableFloat( "sgame_PlayerHeight" ) * 0.5f;
@@ -764,7 +765,7 @@ namespace TheNomad::SGame {
 			}
 
 			WeaponObject@ current = @GetCurrentWeapon();
-			if ( @current !is null ) {
+			if ( current !is null ) {
 				if ( ( Flags & PF_USING_WEAPON ) != 0 ) {
 					m_nFrameDamage = current.Use( GetCurrentWeaponMode() );
 				} else if ( ( Flags & PF_USING_WEAPON_ALT ) != 0 ) {
@@ -851,7 +852,7 @@ namespace TheNomad::SGame {
 				m_nRage = 100.0f;
 			}
 
-			@m_LegState = @m_LegState.Run( m_nLegTicker );
+			@m_LegState = m_LegState.Run( m_nLegTicker );
 			LeftArm.Think();
 			RightArm.Think();
 
@@ -872,23 +873,23 @@ namespace TheNomad::SGame {
 			if ( m_Link.m_Origin.z > 0.0f ) {
 				// airborne, special sprites
 				if ( velocity.x == 0.0f && velocity.y == 0.0f ) {
-					@m_LegState = @m_LegAirIdleState;
+					@m_LegState = m_LegAirIdleState;
 				} else {
-					@m_LegState = @m_LegAirMoveState;
+					@m_LegState = m_LegAirMoveState;
 				}
 			} else {
 				if ( velocity.x == 0.0f && velocity.y == 0.0f ) {
-					@m_LegState = @m_LegIdleState;
+					@m_LegState = m_LegIdleState;
 				} else if ( IsSliding() ) {
-					@m_LegState = @m_LegSlideState;
+					@m_LegState = m_LegSlideState;
 				} else {
-					@m_LegState = @m_LegMoveState;
+					@m_LegState = m_LegMoveState;
 				}
 			}
 
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.sheetNum = m_SpriteSheet.GetShader();
-			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( @m_SpriteSheet, @m_LegState );
+			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( m_SpriteSheet, m_LegState );
 			refEntity.scale = TheNomad::Engine::Renderer::GetFacing( m_LegsFacing );
 			refEntity.Draw();
 		}
@@ -903,29 +904,29 @@ namespace TheNomad::SGame {
 
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 
-			@m_State = @m_IdleState;
+			@m_State = m_IdleState;
 
 			ArmData@ back = null;
 			ArmData@ front = null;
 
 			switch ( m_Facing ) {
 			case FACING_LEFT:
-				@back = @RightArm;
-				@front = @LeftArm;
+				@back = RightArm;
+				@front = LeftArm;
 				break;
 			case FACING_RIGHT:
-				@back = @LeftArm;
-				@front = @RightArm;
+				@back = LeftArm;
+				@front = RightArm;
 				break;
 			};
 			if ( m_nHandsUsed == BOTH_ARMS ) {
-				@front = @LastUsedArm;
+				@front = LastUsedArm;
 			} else {
 				back.Draw();
 			}
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.sheetNum = m_SpriteSheet.GetShader();
-			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( @m_SpriteSheet, @m_State );
+			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( m_SpriteSheet, m_State );
 			refEntity.scale = TheNomad::Engine::Renderer::GetFacing( m_Facing );
 			refEntity.Draw();
 
@@ -966,7 +967,7 @@ namespace TheNomad::SGame {
 		}
 
 		PlayerDisplayUI@ GetUI() {
-			return @m_HudData;
+			return m_HudData;
 		}
 
 		KeyBind key_MoveNorth;

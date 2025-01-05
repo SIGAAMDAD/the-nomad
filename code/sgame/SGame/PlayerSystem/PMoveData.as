@@ -14,7 +14,7 @@ namespace TheNomad::SGame {
 	//
 	class PMoveData {
 		PMoveData( PlayrObject@ ent ) {
-			@m_EntityData = @ent;
+			@m_EntityData = ent;
 
 			moveGravel0 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/move_gravel_0" );
 			moveGravel1 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/env/world/move_gravel_1" );

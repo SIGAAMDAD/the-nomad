@@ -6,6 +6,10 @@ namespace TheNomad::SGame {
 	class MobObject : EntityObject {
 		MobObject() {
 		}
+		~MobObject() {
+			@m_Info = null;
+			@m_ScriptData = null;
+		}
 
 		const EntityObject@ GetTarget() const {
 			return m_Target;
@@ -72,7 +76,7 @@ namespace TheNomad::SGame {
 		}
 
 		void NewChaseDir() {
-			if ( @m_Target is null ) {
+			if ( m_Target is null ) {
 				GameError( "MobObject::NewChaseDir: called with no target" );
 			}
 
@@ -119,12 +123,12 @@ namespace TheNomad::SGame {
 
 			FaceTarget();
 
-			if ( @m_Target is null ) {
-				SetState( @m_Info.idleState );
+			if ( m_Target is null ) {
+				SetState( m_Info.idleState );
 			}
 
 			// chase towards player
-			if ( @m_Target !is null && !Move() ) {
+			if ( m_Target !is null && !Move() ) {
 				NewChaseDir();
 			}
 		}
@@ -136,7 +140,7 @@ namespace TheNomad::SGame {
 
 		void Spawn( uint id, const vec3& in origin ) {
 			@m_Info = @InfoSystem::InfoManager.GetMobInfo( id );
-			if ( @m_Info is null ) {
+			if ( m_Info is null ) {
 				GameError( "MobObject::Spawn: bad MobType " + id + "! Info was null!" );
 			}
 
@@ -148,34 +152,38 @@ namespace TheNomad::SGame {
 			m_Name = m_Info.name;
 			m_nHealth = m_Info.health;
 			m_MFlags = m_Info.mobFlags;
-			@m_State = @StateManager.GetStateForNum( m_Info.type + StateNum::ST_MOB_IDLE );
+			@m_State = StateManager.GetStateForNum( m_Info.type + StateNum::ST_MOB_IDLE );
 			moblib::AllocScript( @this );
 
 			m_ScriptData.OnSpawn();
 		}
 		
 		void Damage( EntityObject@ source, float nAmount ) {
+			DebugPrint( "Damaging mob...\n" );
 			m_nHealth -= nAmount;
 			if ( m_nHealth < 0.0f ) {
 				if ( m_nHealth <= -m_Info.health ) {
 					// GIBS!
 //					EntityManager.GibbEntity( @this );
 				}
+				DebugPrint( "Killing entity...\n" );
 				m_ScriptData.OnDeath();
-				EntityManager.KillEntity( @source, cast<EntityObject@>( @this ) );
+				EntityManager.KillEntity( source, cast<EntityObject@>( this ) );
 				
 				return;
 			}
 
-			m_ScriptData.OnDamage( @source );
-			
-			if ( @source !is @m_Target ) {
-				SetTarget( @source );
+			DebugPrint( "Applying damage...\n" );
+			m_ScriptData.OnDamage( source );
+
+			if ( source !is m_Target ) {
+				DebugPrint( "Setting target...\n" );
+				SetTarget( source );
 			}
 		}
 		
 		void FaceTarget() {
-			if ( @m_Target is null ) {
+			if ( m_Target is null ) {
 				return;
 			}
 			// set them facing the target
@@ -214,7 +222,7 @@ namespace TheNomad::SGame {
 		void Draw() override {
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 
-			if ( @m_State is @m_Info.searchState ) {
+			if ( m_State is m_Info.searchState ) {
 				m_AfterImage.Draw();
 			}
 			if ( m_bParry ) {
@@ -234,9 +242,9 @@ namespace TheNomad::SGame {
 
 			refEntity.scale = TheNomad::Engine::Renderer::GetFacing( m_Facing, m_Info.size );
 			refEntity.sheetNum = m_Info.spriteSheet.GetShader();
-			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( @m_Info.spriteSheet, @m_State );
+			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( m_Info.spriteSheet, m_State );
 
-			if ( @m_Target !is null ) {
+			if ( m_Target !is null ) {
 				FaceTarget();
 			}
 
@@ -277,26 +285,24 @@ namespace TheNomad::SGame {
 		}
 		
 		void SetTarget( EntityObject@ newTarget ) {
-			@m_Target = @newTarget;
+			@m_Target = newTarget;
 			FaceTarget();
-			
-			DebugPrint( "Set mob target to " + m_Target.GetEntityNum() + "\n" );
 		}
 
 		//
 		// SetState: custom for mobs
 		//
 		void SetState( StateNum state ) {
-			@m_State = @StateManager.GetStateForNum( m_Info.type + state );
-			if ( @m_State is null ) {
+			@m_State = StateManager.GetStateForNum( m_Info.type + state );
+			if ( m_State is null ) {
 				ConsoleWarning( "MobObject::SetState: bad state" );
 				return;
 			}
 			m_State.Reset( m_nTicker );
 		}
 		void SetState( EntityState@ state ) {
-			@m_State = @state;
-			if ( @m_State is null ) {
+			@m_State = state;
+			if ( m_State is null ) {
 				ConsoleWarning( "MobObject::SetState: bad state" );
 				return;
 			}

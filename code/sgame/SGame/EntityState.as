@@ -51,11 +51,11 @@ namespace TheNomad::SGame {
 			} else {
 				if ( Util::StrICmp( base, "player" ) == 0 ) {
 					m_nStateOffset = 0;
-				} else if ( ( @entity = @InfoSystem::InfoManager.GetMobType( base ) ) !is null ) {
+				} else if ( ( @entity = InfoSystem::InfoManager.GetMobType( base ) ) !is null ) {
 					m_nStateOffset = entity.GetID();
-				} else if ( ( @entity = @InfoSystem::InfoManager.GetItemType( base ) ) !is null ) {
+				} else if ( ( @entity = InfoSystem::InfoManager.GetItemType( base ) ) !is null ) {
 					m_nStateOffset = entity.GetID();
-				} else if ( ( @entity = @InfoSystem::InfoManager.GetWeaponType( base ) ) !is null ) {
+				} else if ( ( @entity = InfoSystem::InfoManager.GetWeaponType( base ) ) !is null ) {
 					m_nStateOffset = entity.GetID();
 				} else {
 					GameError( "invalid state info, Entity \"" + base + "\" doesn't exist" );
@@ -67,7 +67,7 @@ namespace TheNomad::SGame {
 					@m_NextState = @this;
 				} else {
 					@m_NextState = @StateManager.GetStateById( base );
-					if ( @m_NextState is null ) {
+					if ( m_NextState is null ) {
 						GameError( "invalid state info, variable NextState \"" + base + "\" isn't a valid state" );
 					}
 				}
@@ -79,19 +79,19 @@ namespace TheNomad::SGame {
 				}
 			}
 
-			if ( @m_NextState is null ) {
-				@m_NextState = @StateManager.GetStateForNum( ( m_nStateNum + m_nStateOffset ) + 1 );
+			if ( m_NextState is null ) {
+				@m_NextState = StateManager.GetStateForNum( ( m_nStateNum + m_nStateOffset ) + 1 );
 			}
-			if ( @m_NextState is null ) {
+			if ( m_NextState is null ) {
 				ConsoleWarning( "EntityState::Load: next state is null\n" );
 			}
 
-			@anim = @data[ "Animation" ];
-			if ( @anim is null ) {
+			@anim = data[ "Animation" ];
+			if ( anim is null ) {
 				ConsoleWarning( "invalid state info, missing variable 'Animation'\n" );
 				return false;
 			} else {
-				if ( !m_Animation.Load( @anim ) ) {
+				if ( !m_Animation.Load( anim ) ) {
 					return false;
 				}
 				m_Animation.SetState( @this );

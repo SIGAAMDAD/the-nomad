@@ -4,6 +4,8 @@ namespace TheNomad::SGame {
 		}
 		~ItemObject() {
 			@m_ScriptData = null;
+			@m_Owner = null;
+			@m_Info = null;
 		}
 
 		bool CanBeOwned() const {
@@ -11,12 +13,12 @@ namespace TheNomad::SGame {
 		}
 
 		void SetOwner( EntityObject@ ent ) {
-			m_ScriptData.OnEquip( @ent );
+			m_ScriptData.OnEquip( ent );
 
 			if ( !CanBeOwned() ) {
 				return;
 			}
-			if ( @ent is null ) {
+			if ( ent is null ) {
 				DebugPrint( "Clearing ownership of item '" + m_Link.m_nEntityNumber + "'\n" );
 				@m_Owner = null;
 				return;
@@ -37,12 +39,12 @@ namespace TheNomad::SGame {
 			DebugPrint( "Item " + m_Link.m_nEntityNumber + " now owned by " + ent.GetEntityNum() + ".\n" );
 		}
 		EntityObject@ GetOwner() {
-			return @m_Owner;
+			return m_Owner;
 		}
 
 		void Save( const TheNomad::GameSystem::SaveSystem::SaveSection& in section ) const {
 			section.SaveBool( "hasOwner", m_Owner !is null );
-			if ( @m_Owner !is null ) {
+			if ( m_Owner !is null ) {
 				section.SaveUInt( "owner", m_Owner.GetEntityNum() );
 			}
 		}
@@ -97,7 +99,7 @@ namespace TheNomad::SGame {
 			m_Bounds.m_nHeight = m_Info.size.y;
 			m_Bounds.MakeBounds( origin );
 
-			@m_State = @StateManager.GetNullState();
+			@m_State = StateManager.GetNullState();
 
 			m_Name = m_Info.name;
 
@@ -107,14 +109,14 @@ namespace TheNomad::SGame {
 		}
 
 		itemlib::ItemScript@ GetScript() {
-			return @m_ScriptData;
+			return m_ScriptData;
 		}
 
 		const InfoSystem::ItemInfo@ GetItemInfo() const {
-			return @m_Info;
+			return m_Info;
 		}
 		InfoSystem::ItemInfo@ GetItemInfo() {
-			return @m_Info;
+			return m_Info;
 		}
 
 		protected InfoSystem::ItemInfo@ m_Info = null;

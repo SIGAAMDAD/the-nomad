@@ -9,6 +9,12 @@ namespace TheNomad::SGame {
 		}
 		MapCheckpoint() {
 		}
+		~MapCheckpoint() {
+			for ( uint i = 0; i < m_Spawns.Count(); ++i ) {
+				@m_Spawns[i] = null;
+			}
+			EntityManager.RemoveEntity( @m_Entity );
+		}
 		
 		void AddSpawn( MapSpawn@ spawn ) {
 			m_Spawns.Add( @spawn );
@@ -23,7 +29,6 @@ namespace TheNomad::SGame {
 			m_Spawns.Clear();
 			m_bPassed = true;
 			m_nTime = TheNomad::GameSystem::GameTic - nLevelTime;
-			@m_Entity = null;
 		}
 
 		void InitEntity() {

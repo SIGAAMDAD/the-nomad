@@ -19,6 +19,8 @@ namespace TheNomad::SGame {
 			EntityManager.Spawn( m_nEntityType, m_nEntityId,
 				vec3( float( m_Origin.x ), float( m_Origin.y ),
 				float( m_Origin.z ) ), vec2( 0.0f, 0.0f ) );
+			
+			@m_Checkpoint = null;
 		}
 		
 		uvec3 m_Origin = uvec3( 0 );

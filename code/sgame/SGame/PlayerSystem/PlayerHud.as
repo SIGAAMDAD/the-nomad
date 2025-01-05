@@ -149,7 +149,7 @@ namespace TheNomad::SGame {
 		void Draw() {
 			m_Shake.OnRunTic();
 
-			if ( @m_Tutorial !is null ) {
+			if ( m_Tutorial !is null ) {
 				m_Tutorial.Draw();
 			}
 
@@ -202,7 +202,7 @@ namespace TheNomad::SGame {
 			return TheNomad::GameSystem::GameTic < m_nHealthBarEndTime;
 		}
 		void SetTutorial( itemlib::Script::Tutorial@ popup ) {
-			@m_Tutorial = @popup;
+			@m_Tutorial = popup;
 		}
 		
 		private PlayrObject@ m_Parent = null;

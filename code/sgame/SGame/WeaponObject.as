@@ -183,8 +183,8 @@ namespace TheNomad::SGame {
 			end.y += m_WeaponInfo.range * sin( angle );
 			end.z += m_WeaponInfo.range * sin( angle );
 
-			for ( ; @ent !is activeEnts; @ent = ent.m_Next ) {
-				if ( @ent !is m_Owner && ent.GetBounds().LineIntersection( origin, end ) ) {
+			for ( ; ent !is activeEnts; @ent = ent.m_Next ) {
+				if ( ent !is m_Owner && ent.GetBounds().LineIntersection( origin, end ) ) {
 					EntityManager.DamageEntity( ent, m_Owner, m_WeaponInfo.damage );
 				}
 			}
@@ -192,7 +192,7 @@ namespace TheNomad::SGame {
 			return damage;
 		}
 		private float UseFireArm( float damage, uint weaponMode ) {
-			if ( @m_AmmoInfo is null ) {
+			if ( m_AmmoInfo is null ) {
 				EmitSound( TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/weapons/noammo" ), 10.0f, 0xff );
 				return 0.0f;
 			}
@@ -331,9 +331,9 @@ namespace TheNomad::SGame {
 			return true;
 		}
 		void Save( const TheNomad::GameSystem::SaveSystem::SaveSection& in section ) {
-			section.SaveBool( "hasOwner", @m_Owner !is null );
+			section.SaveBool( "hasOwner", m_Owner !is null );
 			section.SaveUInt( "id",  m_Link.m_nEntityId );
-			if ( @m_Owner !is null ) {
+			if ( m_Owner !is null ) {
 				section.SaveUInt( "flags", uint( m_Flags ) );
 				section.SaveUInt( "owner", m_Owner.GetEntityNum() );
 			} else {
@@ -341,7 +341,7 @@ namespace TheNomad::SGame {
 			}
 		}
 		void Think() override {
-			if ( @m_Owner is null ) {
+			if ( m_Owner is null ) {
 				m_Bounds.m_nWidth = m_WeaponInfo.size.x;
 				m_Bounds.m_nHeight = m_WeaponInfo.size.y;
 				m_Bounds.MakeBounds( m_Link.m_Origin );
@@ -412,7 +412,7 @@ namespace TheNomad::SGame {
 			@m_State = m_State.Run( m_nTicker );
 		}
 		void Draw() override {
-			if ( @m_Owner !is null ) {
+			if ( m_Owner !is null ) {
 				return;
 			}
 

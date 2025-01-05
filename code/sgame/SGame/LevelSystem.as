@@ -194,6 +194,13 @@ namespace TheNomad::SGame {
 		void OnRunTic() {
 			m_RankData.Draw( false, m_nLevelTimer );
 
+			EntityObject@ activeEnts = EntityManager.GetActiveEnts();
+			EntityObject@ ent = activeEnts.m_Next;
+
+			for ( ; ent !is activeEnts; @ent = ent.m_Next ) {
+
+			}
+
 			int hTrack = FS_INVALID_HANDLE;
 			if ( EntityManager.GetActivePlayer().GetUI().InCombat() ) {
 				hTrack = m_LevelInfoDatas[ m_nIndex ].m_hCombatTheme;
@@ -243,7 +250,7 @@ namespace TheNomad::SGame {
 				// we don't use NumDifficulties because a map doesn't have to be registered with all difficulties
 				save.SaveUInt( "MapCount", m_LevelInfoDatas[i].m_MapHandles.Count() );
 				for ( uint a = 0; a < m_LevelInfoDatas[i].m_MapHandles.Count(); a++ ) {
-					LevelStats@ stats = @m_LevelInfoDatas[i].m_MapHandles[a].highStats;
+					LevelStats@ stats = m_LevelInfoDatas[i].m_MapHandles[a].highStats;
 					
 					//
 					// save the ranks, then the actual numbers (for the perfectionists)
@@ -269,7 +276,7 @@ namespace TheNomad::SGame {
 		}
 		private bool LoadLevelStats( const array<string>& in names ) {
 			for ( uint i = 0; i < m_LevelInfoDatas.Count(); i++ ) {
-				LevelInfoData@ data = @m_LevelInfoDatas[i];
+				LevelInfoData@ data = m_LevelInfoDatas[i];
 				ConsolePrint( "Loading level stats for " + names[i] + "\n" );
 				TheNomad::GameSystem::SaveSystem::LoadSection section( data.m_Name + "_RankData" );
 				if ( !section.Found() ) {
@@ -282,7 +289,7 @@ namespace TheNomad::SGame {
 				const uint mapCount = section.LoadUInt( "MapCount" );
 				data.m_MapHandles.Resize( mapCount );
 				for ( uint a = 0; a < mapCount; a++ ) {
-					LevelStats@ stats = @data.m_MapHandles[a].highStats;
+					LevelStats@ stats = data.m_MapHandles[a].highStats;
 					
 					data.m_MapHandles[a].difficulty = TheNomad::GameSystem::GameDifficulty( section.LoadUInt( "GameDifficulty" ) );
 					
@@ -346,7 +353,7 @@ namespace TheNomad::SGame {
 				if ( MapSpawns.Count() < 1 || MapCheckpoints.Count() < 1 ) {
 					ForcePlayerSpawn();
 				} else {
-					const MapSpawn@ spawn = @MapSpawns[ 0 ];
+					const MapSpawn@ spawn = MapSpawns[ 0 ];
 					if ( spawn.m_nEntityType != TheNomad::GameSystem::EntityType::Playr ) {
 						ForcePlayerSpawn();
 					}
@@ -450,7 +457,7 @@ namespace TheNomad::SGame {
 				MapCheckpoint cp = MapCheckpoint( uvec3( 0, 0, 0 ), uvec2( 0, 0 ), 0 );
 				MapCheckpoints.InsertAt( 0, cp );
 			}
-			MapCheckpoints[0].m_Spawns.Add( @spawn );
+			MapCheckpoints[0].m_Spawns.Add( spawn );
 		}
 		
 		//
@@ -471,7 +478,7 @@ namespace TheNomad::SGame {
 			for ( uint i = 0; i < m_LevelInfoDatas.Count(); i++ ) {
 				for ( uint a = 0; a < m_LevelInfoDatas[i].m_MapHandles.Count(); a++ ) {
 					if ( Util::StrICmp( m_LevelInfoDatas[i].m_MapHandles[a].m_Name, mapname ) == 0 ) {
-						return @m_LevelInfoDatas[i];
+						return m_LevelInfoDatas[i];
 					}
 				}
 			}
@@ -511,7 +518,7 @@ namespace TheNomad::SGame {
 			m_nLevels += levels.Count();
 			levelInfos.Reserve( levels.Count() );
 			for ( uint i = 0; i < levels.Count(); i++ ) {
-				levelInfos.Add( @levels[i] );
+				levelInfos.Add( levels[i] );
 			}
 		}
 
@@ -570,15 +577,15 @@ namespace TheNomad::SGame {
 
 		private MapCheckpoint@ PlayerPassedCheckpoint( uint& out nCheckpointIndex ) {
 			const vec3 origin = EntityManager.GetActivePlayer().GetOrigin();
-			array<MapCheckpoint>@ checkpoints = @MapCheckpoints;
+			array<MapCheckpoint>@ checkpoints = MapCheckpoints;
 			const uvec3 pos = uvec3( uint( origin.x ), uint( origin.y ), uint( origin.z ) );
 			MapCheckpoint@ cp = null;
 
 			for ( uint i = 0; i < checkpoints.Count(); ++i ) {
-				@cp = @checkpoints[i];
+				@cp = checkpoints[i];
 				if ( cp.m_Origin == pos && !cp.m_bPassed ) {
 					nCheckpointIndex = i;
-					return @cp;
+					return cp;
 				}
 			}
 			return null;
@@ -627,13 +634,13 @@ namespace TheNomad::SGame {
 		}
 
 		const LevelInfoData@ GetCurrentData() const {
-			return @m_Current;
+			return m_Current;
 		}
 		LevelInfoData@ GetCurrentData() {
-			return @m_Current;
+			return m_Current;
 		}
 		const string GetLevelName() const {
-			return @m_Current !is null ? m_Current.m_Name : "N/A";
+			return m_Current !is null ? m_Current.m_Name : "N/A";
 		}
 
 		void CheckNewGamePlus() {

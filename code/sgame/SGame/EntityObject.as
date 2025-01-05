@@ -41,7 +41,7 @@ namespace TheNomad::SGame {
 		}
 
 		void RunState() {
-			@m_State = @m_State.Run( m_nTicker );
+			@m_State = m_State.Run( m_nTicker );
 		}
 		
 		//
@@ -102,7 +102,7 @@ namespace TheNomad::SGame {
 			return m_PhysicsObject;
 		}
 		InfoSystem::InfoLoader@ GetInfo() {
-			return @m_InfoData;
+			return m_InfoData;
 		}
 		vec3& GetOrigin() {
 			return m_Link.m_Origin;
@@ -138,10 +138,10 @@ namespace TheNomad::SGame {
 			return ( uint( m_Flags ) & EntityFlags::Projectile ) != 0;
 		}
 		SpriteSheet@ GetSpriteSheet() {
-			return @m_SpriteSheet;
+			return m_SpriteSheet;
 		}
 		const SpriteSheet@ GetSpriteSheet() const {
-			return @m_SpriteSheet;
+			return m_SpriteSheet;
 		}
 		float GetHalfWidth() const {
 			return m_nHalfWidth;

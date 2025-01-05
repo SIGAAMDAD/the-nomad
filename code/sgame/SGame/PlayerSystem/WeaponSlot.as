@@ -13,20 +13,20 @@ namespace TheNomad::SGame {
 		}
 
 		WeaponSlot& opAssign( WeaponObject@ obj ) {
-			@m_Base = @obj;
+			@m_Base = obj;
 			return this;
 		}
 		WeaponObject@ opConv() {
-			return @m_Base;
+			return m_Base;
 		}
 		const WeaponObject@ opConv() const {
-			return @m_Base;
+			return m_Base;
 		}
 		WeaponObject@ opImplConv() {
-			return @m_Base;
+			return m_Base;
 		}
 		const WeaponObject@ opImplConv() const {
-			return @m_Base;
+			return m_Base;
 		}
 
 		uint GetSlot() const {
@@ -34,16 +34,16 @@ namespace TheNomad::SGame {
 		}
 
 		bool IsUsed() const {
-			return @m_Base !is null;
+			return m_Base !is null;
 		}
 		WeaponObject@ GetData() {
-			return @m_Base;
+			return m_Base;
 		}
 		const WeaponObject@ GetData() const {
-			return @m_Base;
+			return m_Base;
 		}
 		void SetData( WeaponObject@ obj ) {
-			@m_Base = @obj;
+			@m_Base = obj;
 		}
 
 		void SetMode( InfoSystem::WeaponProperty nMode ) {

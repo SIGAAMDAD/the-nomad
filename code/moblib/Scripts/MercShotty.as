@@ -124,18 +124,16 @@ namespace moblib::Script {
 				return;
 			}
 			
-			/*
 			TheNomad::SGame::EntityObject@ hit = TheNomad::SGame::EntityManager.GetEntityForNum( ray.m_nEntityNumber );
 			if ( hit.GetType() == TheNomad::GameSystem::EntityType::Mob ) {
 				m_EntityData.EmitSound( ResourceCache.ShottyOutOfTheWay[ TheNomad::Util::PRandom()
 					& ( ResourceCache.ShottyOutOfTheWay.Count() - 1 ) ], 10.0f, 0xff );
 				return; // don't shoot
 			}
-			*/
 			m_EntityData.EmitSound( ResourceCache.ShottyAttackSfx, 10.0f, 0xff );
 			TheNomad::SGame::GfxManager.AddMuzzleFlash( origin );
-			
-			TheNomad::SGame::EntityManager.DamageEntity( TheNomad::SGame::EntityManager.GetEntityForNum( ray.m_nEntityNumber ), @m_EntityData, MERC_SHOTGUN_DAMAGE );
+
+			TheNomad::SGame::EntityManager.DamageEntity( hit, m_EntityData, MERC_SHOTGUN_DAMAGE );
 		}
 		void FightMelee() override {
 		}
@@ -205,9 +203,12 @@ namespace moblib::Script {
 			if ( ( TheNomad::Util::PRandom() & 50 ) >= 25 ) {
 				m_EntityData.EmitSound( ResourceCache.ShottyCurse[ TheNomad::Util::PRandom() & ( ResourceCache.ShottyCurse.Count() - 1 ) ], 10.0f, 0xff );
 			}
-			if ( @m_EntityData.GetState() is @m_IdleState ) {
-				m_EntityData.SetState( @m_ChaseState );
-			}
+			DebugPrint( "Finished damaging mob.\n" );
+
+			// causes an assertion crash
+//			if ( m_EntityData.GetState() is m_IdleState ) {
+//				m_EntityData.SetState( m_ChaseState );
+//			}
 		}
 		void OnSpawn() override {
 			// canonically, the higher the difficulty, the more risky the mission.

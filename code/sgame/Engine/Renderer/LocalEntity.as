@@ -24,7 +24,7 @@ namespace TheNomad::Engine::Renderer {
 			if ( bGravity ) {
 				m_Flags |= LOCALENT_GRAVITY;
 			}
-			if ( @SpriteSheet !is null ) {
+			if ( SpriteSheet !is null ) {
 				m_Flags |= LOCALENT_SPRITE_SHEET;
 				m_hShader = SpriteSheet.GetShader();
 				m_nSpriteOffset = nSpriteOffset.y * SpriteSheet.GetSpriteCountX() + nSpriteOffset.x;

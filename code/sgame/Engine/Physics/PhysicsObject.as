@@ -243,17 +243,17 @@ namespace TheNomad::Engine::Physics {
 			bounds.m_nHeight = m_EntityData.GetBounds().m_nHeight;
 			bounds.MakeBounds( tmp );
 
-			TheNomad::SGame::EntityObject@ active = @TheNomad::SGame::EntityManager.GetActiveEnts();
-			TheNomad::SGame::EntityObject@ ent = null;
-			for ( @ent = @active.m_Next; @ent !is @active; @ent = @ent.m_Next ) {
-				if ( bounds.IntersectsBounds( ent.GetBounds() ) && @m_EntityData !is @ent ) {
+			TheNomad::SGame::EntityObject@ active = TheNomad::SGame::EntityManager.GetActiveEnts();
+			TheNomad::SGame::EntityObject@ ent = active.m_Next;
+			for ( ; ent !is active; @ent = ent.m_Next ) {
+				if ( bounds.IntersectsBounds( ent.GetBounds() ) && m_EntityData !is ent ) {
 					if ( ent.GetType() == TheNomad::GameSystem::EntityType::Weapon || ent.GetType() == TheNomad::GameSystem::EntityType::Item ) {
-						m_EntityData.PickupItem( @ent );
+						m_EntityData.PickupItem( ent );
 						break;
 					}
 					else if ( ent.GetType() == TheNomad::GameSystem::EntityType::Wall ) {
 						if ( m_EntityData.GetType() == TheNomad::GameSystem::EntityType::Playr ) {
-							cast<TheNomad::SGame::PlayrObject@>( @m_EntityData ).PassCheckpoint( @ent );
+							cast<TheNomad::SGame::PlayrObject@>( @m_EntityData ).PassCheckpoint( ent );
 						}
 						break;
 					}
@@ -263,7 +263,7 @@ namespace TheNomad::Engine::Physics {
 						// damage
 						m_Velocity = 0.0f;
 						m_Acceleration = 0.0f;
-						TheNomad::SGame::EntityManager.DamageEntity( @ent, @m_EntityData );
+						TheNomad::SGame::EntityManager.DamageEntity( ent, m_EntityData );
 					}
 					break;
 				}

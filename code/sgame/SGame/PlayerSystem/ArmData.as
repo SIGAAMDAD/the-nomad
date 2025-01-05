@@ -14,12 +14,12 @@ namespace TheNomad::SGame {
 		}
 		
 		void Link( PlayrObject@ base, int nArmIndex, const uvec2& in sheetSize, const uvec2& in spriteSize ) {
-			@m_EntityData = @base;
+			@m_EntityData = base;
 
 			@m_SpriteSheet = @TheNomad::Engine::ResourceCache.GetSpriteSheet( "skins/" + base.GetSkin(), 1024, 1024, 32, 32 );
 
-			@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_IDLE );
-			if ( @m_State is null ) {
+			@m_State = StateManager.GetStateForNum( StateNum::ST_PLAYR_ARMS_IDLE );
+			if ( m_State is null ) {
 				GameError( "ArmData::Link: failed to load idle arms state" );
 			}
 
@@ -28,86 +28,86 @@ namespace TheNomad::SGame {
 			m_nTicker = 0;
 
 			const string id = ( nArmIndex == 0 ? "right" : "left" );
-			@m_IdleState = @StateManager.GetStateById( "player_arms_idle_" + id );
-			if ( @m_IdleState is null ) {
+			@m_IdleState = StateManager.GetStateById( "player_arms_idle_" + id );
+			if ( m_IdleState is null ) {
 				GameError( "ArmData::Link: couldn't find state \"player_arms_idle_" + id + "\"" );
 			}
 
-			@m_MeleeState = @StateManager.GetStateById( "player_arms_melee_" + id );
-			if ( @m_MeleeState is null ) {
+			@m_MeleeState = StateManager.GetStateById( "player_arms_melee_" + id );
+			if ( m_MeleeState is null ) {
 				GameError( "ArmData::Link: couldn't find state \"player_arms_melee_" + id + "\"" );
 			}
 
-			@m_MoveState = @StateManager.GetStateById( "player_arms_move_" + id );
-			if ( @m_MoveState is null ) {
+			@m_MoveState = StateManager.GetStateById( "player_arms_move_" + id );
+			if ( m_MoveState is null ) {
 				GameError( "ArmData::Link: couldn't find state \"player_arms_move_" + id + "\"" );
 			}
 
-			@m_SlideState = @StateManager.GetStateById( "player_arms_slide_" + id );
-			if ( @m_SlideState is null ) {
+			@m_SlideState = StateManager.GetStateById( "player_arms_slide_" + id );
+			if ( m_SlideState is null ) {
 				GameError( "ArmData::Link: couldn't find state \"player_arms_slide_" + id + "\"" );
 			}
 
-			@m_StealthCrawlState = @StateManager.GetStateById( "player_arms_stealth_crawl_" + id );
-			if ( @m_StealthCrawlState is null ) {
+			@m_StealthCrawlState = StateManager.GetStateById( "player_arms_stealth_crawl_" + id );
+			if ( m_StealthCrawlState is null ) {
 				GameError( "ArmData::Link: couldn't find state \"player_arms_stealth_crawl_" + id + "\"" );
 			}
 
-			@m_StealthReadyState = @StateManager.GetStateById( "player_arms_stealth_ready_" + id );
-			if ( @m_StealthReadyState is null ) {
+			@m_StealthReadyState = StateManager.GetStateById( "player_arms_stealth_ready_" + id );
+			if ( m_StealthReadyState is null ) {
 				GameError( "ArmData::Link: couldn't find state \"player_arms_stealth_ready_" + id + "\"" );
 			}
 		}
 		
 		private SpriteSheet@ CalcState() {
-			if ( @m_State is @m_MeleeState ) {
+			if ( m_State is m_MeleeState ) {
 				// if we're in melee state, lock in
-				return @m_SpriteSheet;
+				return m_SpriteSheet;
 			}
 			
 			if ( m_nWeaponSlot != uint( -1 ) ) {
 				// assign a weapon specific state
-				WeaponObject@ weapon = @m_EntityData.GetInventory().GetSlot( m_nWeaponSlot ).GetData();
+				WeaponObject@ weapon = m_EntityData.GetInventory().GetSlot( m_nWeaponSlot ).GetData();
 
-				@m_State = @weapon.GetState();
+				@m_State = weapon.GetState();
 				
-				return @weapon.GetSpriteSheet();
+				return weapon.GetSpriteSheet();
 			}
 			else if ( m_EntityData.GetPhysicsObject().GetVelocity() != Vec3Origin && m_EntityData.GetOrigin().z == 0.0f ) {
 				if ( ( m_EntityData.Flags & PF_SLIDING ) != 0 ) {
-					@m_State = @m_SlideState;
+					@m_State = m_SlideState;
 				}
 				else if ( ( m_EntityData.Flags & PF_CROUCHING ) != 0 ) {
 					// get a specific stealth state
 					if ( m_EntityData.GetFacing() == m_nArmIndex ) {
-						@m_State = @m_StealthCrawlState;
+						@m_State = m_StealthCrawlState;
 					} else {
-						@m_State = @m_StealthReadyState;
+						@m_State = m_StealthReadyState;
 					}
 				}
 				else {
-					@m_State = @m_MoveState;
+					@m_State = m_MoveState;
 				}
 			}
 			else {
-				@m_State = @m_IdleState;
+				@m_State = m_IdleState;
 			}
 			
-			return @m_SpriteSheet;
+			return m_SpriteSheet;
 		}
 		void Think() {
-			@m_State = @m_State.Run( m_nTicker );
+			@m_State = m_State.Run( m_nTicker );
 		}
 		void Draw() {
-			SpriteSheet@ sheet = @CalcState();
+			SpriteSheet@ sheet = CalcState();
 			
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 			refEntity.origin = m_EntityData.GetOrigin();
 			refEntity.sheetNum = sheet.GetShader();
-			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( @sheet, @m_State );
-			if ( @sheet !is @m_SpriteSheet ) {
+			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( sheet, m_State );
+			if ( sheet !is m_SpriteSheet ) {
 				// drawing a weapon, don't mess with the sprite direction
-				WeaponObject@ weapon = @m_EntityData.GetInventory().GetSlot( m_nWeaponSlot ).GetData();
+				WeaponObject@ weapon = m_EntityData.GetInventory().GetSlot( m_nWeaponSlot ).GetData();
 				refEntity.scale = weapon.GetWeaponInfo().size;
 			} else {
 				vec2 scale = TheNomad::Engine::Renderer::GetFacing( Facing );
@@ -125,19 +125,19 @@ namespace TheNomad::SGame {
 		}
 		
 		SpriteSheet@ GetSpriteSheet() {
-			return @m_SpriteSheet;
+			return m_SpriteSheet;
 		}
 		const SpriteSheet@ GetSpriteSheet() const {
-			return @m_SpriteSheet;
+			return m_SpriteSheet;
 		}
 		uint GetEquippedWeapon() const {
 			return m_nWeaponSlot;
 		}
 		EntityState@ GetState() {
-			return @m_State;
+			return m_State;
 		}
 		const EntityState@ GetState() const {
-			return @m_State;
+			return m_State;
 		}
 		int GetFacing() const {
 			return Facing;
@@ -153,10 +153,10 @@ namespace TheNomad::SGame {
 			m_nWeaponSlot = nSlot;
 		}
 		void SetState( EntityState@ state ) {
-			@m_State = @state;
+			@m_State = state;
 		}
 		void SetState( StateNum state ) {
-			@m_State = @StateManager.GetStateForNum( state );
+			@m_State = StateManager.GetStateForNum( state );
 		}
 		void SetFacing( int nFacing ) {
 			Facing = nFacing;

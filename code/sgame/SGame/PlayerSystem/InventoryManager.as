@@ -15,13 +15,22 @@ namespace TheNomad::SGame {
 
 			m_AmmoData.Reserve( InfoSystem::InfoManager.GetAmmoTypes().Count() );
 
-			@m_LeftArm = @left;
-			@m_RightArm = @right;
-			@m_EntityData = @ent;
+			@m_LeftArm = left;
+			@m_RightArm = right;
+			@m_EntityData = ent;
 
 			for ( uint i = 0; i < m_WeaponSlots.Count(); ++i ) {
 				m_WeaponSlots[i] = WeaponSlot( i );
 			}
+		}
+		~InventoryManager() {
+			for ( uint i = 0; i < m_WeaponSlots.Count(); ++i ) {
+				@m_WeaponSlots[i] = null;
+			}
+			for ( uint i = 0; i < m_AmmoData.Count(); ++i ) {
+				@m_AmmoData[i] = null;
+			}
+			m_AmmoData.Clear();
 		}
 
 		void Save( const TheNomad::GameSystem::SaveSystem::SaveSection& in section ) const {
@@ -60,17 +69,17 @@ namespace TheNomad::SGame {
 		}
 
 		const WeaponSlot@ GetEquippedWeapon() const {
-			return @m_WeaponSlots[ m_nCurrentWeapon ];
+			return m_WeaponSlots[ m_nCurrentWeapon ];
 		}
 		WeaponSlot@ GetEquippedWeapon() {
-			return @m_WeaponSlots[ m_nCurrentWeapon ];
+			return m_WeaponSlots[ m_nCurrentWeapon ];
 		}
 
 		const WeaponSlot@ GetSlot( uint nIndex ) const {
-			return @m_WeaponSlots[ nIndex ];
+			return m_WeaponSlots[ nIndex ];
 		}
 		WeaponSlot@ GetSlot( uint nIndex ) {
-			return @m_WeaponSlots[ nIndex ];
+			return m_WeaponSlots[ nIndex ];
 		}
 
 		void SetRightHandWeapon( WeaponObject@ weapon ) {
@@ -80,16 +89,16 @@ namespace TheNomad::SGame {
 			m_WeaponSlots[ m_LeftArm.GetEquippedWeapon() ] = @weapon;
 		}
 		const WeaponObject@ GetRightHandWeapon() const {
-			return @m_WeaponSlots[ m_RightArm.GetEquippedWeapon() ].GetData();
+			return m_WeaponSlots[ m_RightArm.GetEquippedWeapon() ].GetData();
 		}
 		const WeaponObject@ GetLeftHandWeapon() const {
-			return @m_WeaponSlots[ m_LeftArm.GetEquippedWeapon() ].GetData();
+			return m_WeaponSlots[ m_LeftArm.GetEquippedWeapon() ].GetData();
 		}
 		WeaponObject@ GetRightHandWeapon() {
-			return @m_WeaponSlots[ m_RightArm.GetEquippedWeapon() ].GetData();
+			return m_WeaponSlots[ m_RightArm.GetEquippedWeapon() ].GetData();
 		}
 		WeaponObject@ GetLeftHandWeapon() {
-			return @m_WeaponSlots[ m_LeftArm.GetEquippedWeapon() ].GetData();
+			return m_WeaponSlots[ m_LeftArm.GetEquippedWeapon() ].GetData();
 		}
 
 		void EquipSlot( uint nIndex ) {
@@ -122,7 +131,7 @@ namespace TheNomad::SGame {
 		void AddAmmo( InfoSystem::AmmoInfo@ ammoType ) {
 			bool found = false;
 			for ( uint i = 0; i < m_AmmoData.Count(); ++i ) {
-				if ( @m_AmmoData[i] is @ammoType ) {
+				if ( m_AmmoData[i] is ammoType ) {
 					found = true;
 					break;
 				}

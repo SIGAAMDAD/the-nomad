@@ -58,7 +58,7 @@ namespace TheNomad::SGame {
 			uint type = 0;
 			uint checkpoint = 0;
 			uvec3 xyz = uvec3( 0 );
-				
+			
 			TheNomad::GameSystem::GetSpawnData( xyz, type, id, i, checkpoint );
 			spawn = MapSpawn( xyz, id, TheNomad::GameSystem::EntityType( type ) );
 
