@@ -8,6 +8,15 @@ namespace TheNomad::Engine::Renderer {
 
 	class LocalEntity {
 		LocalEntity() {
+			m_Flags = 0;
+			m_Origin = vec2( 0.0f );
+			m_Velocity = vec2( 0.0f );
+			m_nEndTime = 0;
+			m_nScale = vec2( 0.0f );
+			m_nRotation = 0.0f;
+			m_hShader = FS_INVALID_HANDLE;
+			m_nSpriteOffset = 0;
+			m_EffectAnimation = TheNomad::SGame::Animation();
 		}
 
 		void Spawn( const vec3& in origin, const vec3& in velocity, uint lifeTime, int hShader, const vec2& in scale = vec2( 1.5f ),

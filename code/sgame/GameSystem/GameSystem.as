@@ -133,8 +133,7 @@ namespace TheNomad::GameSystem {
 		// clear out all the current entities, then respawn the player
 		TheNomad::SGame::EntityManager.OnLevelEnd();
 		TheNomad::SGame::EntityManager.OnLevelStart();
-		TheNomad::SGame::GfxManager.OnLevelEnd();
-		TheNomad::SGame::GfxManager.OnLevelStart();
+		TheNomad::SGame::GfxManager.Respawn();
 
 		TheNomad::SGame::ScreenData.InitPlayers();
 		TheNomad::SGame::ScreenData.GetPlayer().InitHUD();

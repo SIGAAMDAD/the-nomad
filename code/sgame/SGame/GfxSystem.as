@@ -13,7 +13,6 @@ namespace TheNomad::SGame {
 		void OnInit() {
 		}
 		void OnShutdown() {
-			m_LocalEnts.Clear();
 		}
 		void OnPlayerDeath( int ) {
 		}
@@ -24,8 +23,25 @@ namespace TheNomad::SGame {
 		}
 		void OnSave() const {
 		}
+		void Respawn() {
+			TheNomad::Engine::Renderer::LocalEntity@ next = null;
+
+			// walk the list backwards, so any new local entities generated
+			// (trails, marks, etc) will be present this frame
+			TheNomad::Engine::Renderer::LocalEntity@ ent = m_ActiveLocalEnts.m_Prev;
+			for ( ; ent !is @m_ActiveLocalEnts; @ent = next ) {
+				// grab next now, so if the local entity is freed we
+				// still have it
+				@next = ent.m_Prev;
+				
+				FreeLocalEntity( ent );
+				
+				@ent = null;
+			}
+			InitLocalEntities();
+		}
 		void OnRunTic() {
-//			InitLocalEntities();
+			InitLocalEntities();
 		}
 		void OnLevelStart() {
 			InitLocalEntities();
@@ -85,11 +101,6 @@ namespace TheNomad::SGame {
 			@m_ActiveLocalEnts.m_Prev =
 				null;
 			@m_FreeLocalEnts = null;
-
-			@m_SmokeTrail = null;
-			@m_SmokePuff = null;
-			@m_SmokeLanding = null;
-			@m_BloodSpurt = null;
 		}
 
 		private void InitLocalEntities() {
@@ -235,7 +246,7 @@ namespace TheNomad::SGame {
 			}
 
 			TheNomad::Engine::Renderer::LocalEntity@ ent = AllocLocalEntity();
-			ent.Spawn( origin, vec3( 0.0f ), 50000, m_hBulletHoleShader, vec2( 2.0f ), false );
+			ent.Spawn( origin, vec3( 0.0f ), 50000, m_hBulletHoleShader, vec2( 0.5f ), false );
 		}
 
 		void AddLanding( const vec3& in origin ) {

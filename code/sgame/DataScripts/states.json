@@ -16,13 +16,13 @@
 		},
 		{
 			"Id": "player_dead",
-			"Tics": 2000,
+			"Tics": 3360,
 			"BaseNum": "ST_PLAYR_DEAD",
 			"Entity": "player",
 			"NextState": "player_dead_idle",
 			"SpriteOffset": [ 20, 16 ],
 			"Animation": {
-				"TicRate": 400,
+				"TicRate": 560,
 				"FlipFlop": false,
 				"Frames": 6,
 				"Reverse": false

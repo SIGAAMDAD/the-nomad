@@ -30,7 +30,7 @@ namespace TheNomad::SGame {
 			m_nHealth = section.LoadFloat( "health" );
 //			m_MFlags = InfoSystem::MobFlags( section.LoadUInt( "mobFlags" ) );
 			if ( section.LoadBool( "hasTarget" ) ) {
-				@m_Target = @EntityManager.GetEntityForNum( section.LoadUInt( "target" ) );
+				@m_Target = EntityManager.GetEntityForNum( section.LoadUInt( "target" ) );
 			}
 			
 			return true;
@@ -159,27 +159,22 @@ namespace TheNomad::SGame {
 		}
 		
 		void Damage( EntityObject@ source, float nAmount ) override {
-			if ( source is this ) {
-				return;
-			}
 			m_nHealth -= nAmount;
 			if ( m_nHealth < 0.0f ) {
 				if ( m_nHealth <= -m_Info.health ) {
 					// GIBS!
 //					EntityManager.GibbEntity( @this );
 				}
-				DebugPrint( "Killing entity...\n" );
 				m_ScriptData.OnDeath();
-				EntityManager.KillEntity( source, cast<EntityObject@>( this ) );
+				EntityManager.KillEntity( source, this );
 				
 				return;
 			}
 
-			DebugPrint( "Applying damage...\n" );
 			m_ScriptData.OnDamage( source );
+			GfxManager.AddBloodSplatter( m_Link.m_Origin, m_Facing );
 
 			if ( source !is m_Target ) {
-				DebugPrint( "Setting target...\n" );
 				SetTarget( source );
 			}
 		}

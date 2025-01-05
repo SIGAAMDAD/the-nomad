@@ -125,9 +125,6 @@ namespace TheNomad::SGame {
 				};
 				*/
 
-				if ( TheNomad::GameSystem::IsRespawnActive && ent.GetType() != TheNomad::GameSystem::EntityType::Playr ) {
-					continue;
-				}
 				ent.Think();
 
 				// update engine data
