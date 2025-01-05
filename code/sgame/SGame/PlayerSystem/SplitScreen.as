@@ -21,13 +21,13 @@ namespace TheNomad::SGame {
 			m_SlowMoOff = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slowmo_off" );
 			m_SlowMoOn = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slowmo_on" );
 
-			m_DieSfx0 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/death1" );
-			m_DieSfx1 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/death2" );
-			m_DieSfx2 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/death3" );
+			m_DieSfx0 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/dying1" );
+			m_DieSfx1 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/dying2" );
+			m_DieSfx2 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/dying3" );
 
-			m_PainSfx0 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_scream_0" );
-			m_PainSfx1 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_scream_1" );
-			m_PainSfx2 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_scream_2" );
+			m_PainSfx0 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_0" );
+			m_PainSfx1 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_1" );
+			m_PainSfx2 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_2" );
 
 			m_SlideSfx0 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slide_0" );
 			m_SlideSfx1 = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slide_1" );

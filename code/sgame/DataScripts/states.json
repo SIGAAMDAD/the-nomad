@@ -1,6 +1,20 @@
 {
 	"StateInfo": [
 		{
+			"Id": "player_dead",
+			"Tics": 6000,
+			"BaseNum": "ST_PLAYR_DEAD",
+			"Entity": "player",
+			"NextState": "this",
+			"SpriteOffset": [ 20, 16 ],
+			"Animation": {
+				"TicRate": 500,
+				"FlipFlop": false,
+				"Frames": 6,
+				"Reverse": false
+			}
+		},
+		{
 			"Id": "player_idle",
 			"Tics": 0,
 			"BaseNum": "ST_PLAYR_IDLE",

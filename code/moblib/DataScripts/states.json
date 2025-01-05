@@ -16,7 +16,7 @@
 		},
 		{
 			"Id": "mob_merc_shotgunner_search",
-			"Tics": 10000,
+			"Tics": 4000,
 			"BaseNum": "ST_MOB_SEARCH",
 			"Entity": "mob_merc_shotgunner",
 			"NextState": "mob_merc_shotgunner_idle",
@@ -33,7 +33,7 @@
 			"Tics": 5000,
 			"BaseNum": "ST_MOB_CHASE",
 			"Entity": "mob_merc_shotgunner",
-			"NextState": "mob_merc_shotgunner_search",
+			"NextState": "mob_merc_shotgunner_idle",
 			"SpriteOffset": [ 4, 0 ],
 			"Animation": {
 				"TicRate": 200,
@@ -47,7 +47,7 @@
 			"Tics": 2500,
 			"BaseNum": "ST_MOB_FIGHT_MISSILE",
 			"Entity": "mob_merc_shotgunner",
-			"NextState": "mob_merc_shotgunner_idle",
+			"NextState": "mob_merc_shotgunner_chase",
 			"SpriteOffset": [ 0, 0 ],
 			"Animation": {
 				"TicRate": 0,
@@ -60,7 +60,7 @@
 			"Id": "mob_merc_shotgunner_aim",
 			"Tics": 1025,
 			"Entity": "mob_merc_shotgunner",
-			"NextState": "mob_merc_shotgunner_fight",
+			"NextState": "mob_merc_shotgunner_idle",
 			"SpriteOffset": [ 0, 0 ],
 			"Animation": {
 				"TicRate": 0,

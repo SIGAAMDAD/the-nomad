@@ -220,7 +220,7 @@ namespace TheNomad::SGame {
 				return;
 			}
 
-			AllocLocalEntity().Spawn( origin, vec3( 0.0f ), -1, m_hBulletHoleShader, vec2( 2.0f ), false );
+			AllocLocalEntity().Spawn( origin, vec3( 0.0f ), uint( -1 ), m_hBulletHoleShader, vec2( 2.0f ), false );
 		}
 
 		void AddLanding( const vec3& in origin ) {

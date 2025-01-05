@@ -718,7 +718,7 @@ namespace TheNomad::Util {
 		} else if ( angle >= 292.5f && angle <= 337.5f ) {
 			return TheNomad::GameSystem::DirType::NorthWest;
 		} else {
-			ConsoleWarning( "Angle2Dir: funny angle " + angle + "\n" );
+//			ConsoleWarning( "Angle2Dir: funny angle " + angle + "\n" );
 		}
 		return TheNomad::GameSystem::DirType::North;
 	}

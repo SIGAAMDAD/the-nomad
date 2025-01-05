@@ -3,8 +3,8 @@
 
 namespace moblib::Script {
 	const uint MERC_AIM_TIME = 2500;
-	const float MERC_SHOTGUN_DAMAGE = 25.0f;
-	const float MERC_SHOTGUN_RANGE = 20.75f;
+	float MERC_SHOTGUN_DAMAGE = 25.0f;
+	float MERC_SHOTGUN_RANGE = 20.75f;
 	const uint MERC_BARK_COOLDOWN = 300;
 	
 	final class MercShotty : MobScript {
@@ -76,14 +76,15 @@ namespace moblib::Script {
 			}
 			else if ( m_Sensor.CheckSound() ) {
 				ChangeState( ResourceCache.ShottyConfusionSfx[ TheNomad::Util::PRandom()
-					& ( ResourceCache.ShottyConfusionSfx.Count() - 1 ) ], @m_SearchState );
+					& ( ResourceCache.ShottyConfusionSfx.Count() - 1 ) ], @m_ChaseState );
 				m_EntityData.FaceTarget();
 				m_nLastCheckTime = TheNomad::GameSystem::GameTic;
 			}
 			if ( m_EntityData.GetDirection() == TheNomad::GameSystem::DirType::Inside ) {
-				m_EntityData.EmitSound( ResourceCache.ShottyHelpMe[ TheNomad::Util::PRandom() & ( ResourceCache.ShottyHelpMe.Count() - 1 ) ],
-					10.0f, 0xff );
+//				m_EntityData.EmitSound( ResourceCache.ShottyHelpMe[ TheNomad::Util::PRandom() & ( ResourceCache.ShottyHelpMe.Count() - 1 ) ],
+//					10.0f, 0xff );
 			}
+//			m_EntityData.SetState( @m_EntityData.GetState().Run( m_EntityData.GetTicker() ) );
 		}
 		void DeadThink() override {
 		}
@@ -112,7 +113,7 @@ namespace moblib::Script {
 
 			TheNomad::SGame::GfxManager.AddMuzzleFlash( origin );
 
-			m_EntityData.SetState( @m_ChaseState );
+			m_EntityData.SetState( @m_EntityData.GetState().Run( m_EntityData.GetTicker() ) );
 
 			if ( ray.m_nEntityNumber == ENTITYNUM_WALL ) {
 				// TODO: add wall hit mark here
@@ -124,18 +125,20 @@ namespace moblib::Script {
 			}
 			
 			TheNomad::SGame::EntityManager.DamageEntity( @TheNomad::SGame::EntityManager.GetEntityForNum( ray.m_nEntityNumber ),
-				cast<TheNomad::SGame::EntityObject@>( @m_EntityData ) );
+				cast<TheNomad::SGame::EntityObject@>( @m_EntityData ), MERC_SHOTGUN_DAMAGE );
 		}
 		void FightMelee() override {
 		}
 		void SearchThink() override {
 			const bool canSee = m_Sensor.CheckSight();
+			DebugPrint( "Search state\n" );
 			if ( canSee ) {
 				ChangeState( ResourceCache.ShottyTargetSpottedSfx[ TheNomad::Util::PRandom() &
 					( ResourceCache.ShottyTargetSpottedSfx.Count() - 1 ) ], @m_ChaseState );
 			}
-			if ( m_Sensor.CheckSound() ) {
-				m_EntityData.SetState( @m_SearchState );
+			else if ( m_Sensor.CheckSound() ) {
+				ChangeState( ResourceCache.ShottyAlertSfx[ TheNomad::Util::PRandom() &
+					( ResourceCache.ShottyAlertSfx.Count() - 1 ) ], @m_ChaseState );
 			}
 			m_EntityData.Chase();
 		}
@@ -160,37 +163,45 @@ namespace moblib::Script {
 				return;
 			}
 
+			const bool canSee = m_Sensor.CheckSight();
 			const vec3 origin = m_EntityData.GetOrigin();
 			const vec3 target = m_EntityData.GetTarget().GetOrigin();
-			const bool canSee = m_Sensor.CheckSight();
 			if ( canSee ) {
 				if ( TheNomad::Util::DotProduct( target, origin ) > TheNomad::Util::DotProduct( m_OldTargetPosition, origin ) ) {
 					m_EntityData.EmitSound( ResourceCache.ShottyTargetRunningSfx[ TheNomad::Util::PRandom()
 						& ( ResourceCache.ShottyTargetRunningSfx.Count() - 1 ) ], 10.0f, 0xff );
 				}
 				m_OldTargetPosition = target;
-				if ( TheNomad::Util::Distance( origin, target ) <= MERC_SHOTGUN_RANGE ) {
-					// only start aiming if we can see the target
-					@m_SubState = @ResourceCache.ShottyAimState;
-					m_SubState.Reset( m_nSubTicker );
-					if ( IsAllyNearby() ) {
-						m_EntityData.EmitSound( ResourceCache.ShottyOutOfTheWay[ TheNomad::Util::PRandom()
-						& ( ResourceCache.ShottyOutOfTheWay.Count() - 1 ) ], 10.0f, 0xff );
-					}
-					m_EntityData.SetState( @m_FightMissileState );
-					m_EntityData.EmitSound( ResourceCache.ShottyAimSfx, 10.0f, 0xff );
-				}
 			}
-			m_EntityData.Chase();
+			if ( TheNomad::Util::Distance( origin, target ) >= MERC_SHOTGUN_RANGE / 2 ) {
+				m_EntityData.SetState( @m_EntityData.GetState().Run( m_EntityData.GetTicker() ) );
+				m_EntityData.Chase();
+				return;
+			}
+			if ( TheNomad::Util::Distance( origin, target ) <= MERC_SHOTGUN_RANGE ) {
+				// only start aiming if we can see the target
+				@m_SubState = @ResourceCache.ShottyAimState;
+				m_SubState.Reset( m_nSubTicker );
+				m_EntityData.FaceTarget();
+				if ( IsAllyNearby() ) {
+					m_EntityData.EmitSound( ResourceCache.ShottyOutOfTheWay[ TheNomad::Util::PRandom()
+					& ( ResourceCache.ShottyOutOfTheWay.Count() - 1 ) ], 10.0f, 0xff );
+				}
+				m_EntityData.SetState( @m_FightMissileState );
+				m_EntityData.EmitSound( ResourceCache.ShottyAimSfx, 10.0f, 0xff );
+			}
 		}
 		void OnDamage( TheNomad::SGame::EntityObject@ attacker ) override {
 			if ( attacker.GetType() == TheNomad::GameSystem::EntityType::Mob ) {
-				m_EntityData.EmitSound( ResourceCache.ShottyCeasfire[ TheNomad::Util::PRandom() & ( ResourceCache.ShottyCeasfire.Count() - 1 ) ],
-					10.0f, 0xff );
+//				m_EntityData.EmitSound( ResourceCache.ShottyCeasfire[ TheNomad::Util::PRandom() & ( ResourceCache.ShottyCeasfire.Count() - 1 ) ],
+//					10.0f, 0xff );
 			}
 			m_EntityData.EmitSound( ResourceCache.ShottyPain[ TheNomad::Util::PRandom() & ( ResourceCache.ShottyPain.Count() - 1 ) ], 10.0f, 0xff );
 			if ( ( TheNomad::Util::PRandom() & 50 ) >= 25 ) {
 				m_EntityData.EmitSound( ResourceCache.ShottyCurse[ TheNomad::Util::PRandom() & ( ResourceCache.ShottyCurse.Count() - 1 ) ], 10.0f, 0xff );
+			}
+			if ( @m_EntityData.GetState() is @m_IdleState ) {
+				m_EntityData.SetState( @m_ChaseState );
 			}
 		}
 		void OnSpawn() override {
@@ -202,17 +213,32 @@ namespace moblib::Script {
 			case TheNomad::GameSystem::GameDifficulty::Easy:
 				m_nAggressionScale = 1;
 				m_nAimScale = 0.25f;
+
+				// they have the least experience with firearms, they can't hit a far shot
+				MERC_SHOTGUN_RANGE = 8.75f;
+
+				// they aren't hitting vital spots
+				MERC_SHOTGUN_DAMAGE = 10.5f;
 				break;
 			case TheNomad::GameSystem::GameDifficulty::Normal:
 				m_nAggressionScale = 2;
 				m_nAimScale = 0.60f;
+
+				MERC_SHOTGUN_RANGE = 16.0f;
+				MERC_SHOTGUN_DAMAGE = 25.0f;
 				break;
 			case TheNomad::GameSystem::GameDifficulty::Hard:
 				m_nAggressionScale = 3;
 				m_nAimScale = 1.0f;
+
+				MERC_SHOTGUN_RANGE = 20.75f;
+				MERC_SHOTGUN_DAMAGE = 45.0f;
 				break;
 			case TheNomad::GameSystem::GameDifficulty::VeryHard:
 				m_nAimScale = 1.25f;
+				
+				MERC_SHOTGUN_RANGE = 35.0f;
+				MERC_SHOTGUN_DAMAGE = 60.0f;
 				break;
 			case TheNomad::GameSystem::GameDifficulty::Insane:
 				// the elite
@@ -221,6 +247,7 @@ namespace moblib::Script {
 			};
 
 			@m_Squad = @GlobalSquad;
+			GlobalSquad.AddSquadMember( @this );
 		}
 		void OnDeath() override {
 		}

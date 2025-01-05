@@ -120,13 +120,13 @@ void InitResources() {
 
 	// player specific
 	{
-		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/death1" );
-		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/death2" );
-		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/death3" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/dying1" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/dying2" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/dying3" );
 	
-		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_scream_0" );
-		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_scream_1" );
-		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_scream_2" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_0" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_1" );
+		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/pain_2" );
 
 		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slide_0" );
 		TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/slide_1" );
@@ -226,8 +226,8 @@ int ModuleOnInit() {
 	@TheNomad::Engine::FileSystem::FileManager = TheNomad::Engine::FileSystem::FileSystemManager();
 
 	@TheNomad::SGame::LevelManager = cast<TheNomad::SGame::LevelSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::LevelSystem() ) );
-	@TheNomad::SGame::GfxManager = cast<TheNomad::SGame::GfxSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::GfxSystem() ) );
 	@TheNomad::SGame::EntityManager = cast<TheNomad::SGame::EntitySystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::EntitySystem() ) );
+	@TheNomad::SGame::GfxManager = cast<TheNomad::SGame::GfxSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::GfxSystem() ) );
 
 	TheNomad::GameSystem::Init();
 
@@ -315,6 +315,8 @@ int ModuleOnLoadGame() {
 	TheNomad::SGame::LevelManager.CheckNewGamePlus();
 
 	TheNomad::SGame::ScreenData.InitPlayers();
+	TheNomad::SGame::ScreenData.GetPlayer().InitHUD();
+
 	TheNomad::GameSystem::IsLoadGameActive = false;
 
 	return 1;
@@ -329,6 +331,7 @@ int ModuleOnLevelStart() {
 	}
 
 	TheNomad::SGame::ScreenData.InitPlayers();
+	TheNomad::SGame::ScreenData.GetPlayer().InitHUD();
 
 	return 1;
 }

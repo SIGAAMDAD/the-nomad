@@ -545,13 +545,13 @@ namespace TheNomad::SGame {
 			} else {
 				switch ( Util::PRandom() & 2 ) {
 				case 0:
-					EmitSound( ScreenData.m_PainSfx0, 1.0f, 0xff );
+					EmitSound( ScreenData.m_PainSfx0, 10.0f, 0xff );
 					break;
 				case 1:
-					EmitSound( ScreenData.m_PainSfx1, 1.0f, 0xff );
+					EmitSound( ScreenData.m_PainSfx1, 10.0f, 0xff );
 					break;
 				case 2:
-					EmitSound( ScreenData.m_PainSfx2, 1.0f, 0xff );
+					EmitSound( ScreenData.m_PainSfx2, 10.0f, 0xff );
 					break;
 				};
 				
@@ -743,8 +743,6 @@ namespace TheNomad::SGame {
 			m_nLegTicker = 0;
 			m_Name = "player";
 
-			m_HudData.Init( @this );
-
 			@m_LegIdleState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_GROUND );
 			@m_LegSlideState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_SLIDE );
 			@m_LegMoveState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_MOVE_GROUND );
@@ -756,6 +754,9 @@ namespace TheNomad::SGame {
 			m_nHalfWidth = TheNomad::Engine::CvarVariableFloat( "sgame_PlayerWidth" ) * 0.5f;
 			m_nHalfHeight = TheNomad::Engine::CvarVariableFloat( "sgame_PlayerHeight" ) * 0.5f;
 		}
+		void InitHUD() {
+			m_HudData.Init( @this );
+		}
 
 		void Think() override {
 			if ( m_State.GetID() == StateNum::ST_PLAYR_QUICKSHOT ) {
@@ -765,9 +766,9 @@ namespace TheNomad::SGame {
 			WeaponObject@ current = @GetCurrentWeapon();
 			if ( @current !is null ) {
 				if ( ( Flags & PF_USING_WEAPON ) != 0 ) {
-					m_nFrameDamage += current.Use( GetCurrentWeaponMode() );
+					m_nFrameDamage = current.Use( GetCurrentWeaponMode() );
 				} else if ( ( Flags & PF_USING_WEAPON_ALT ) != 0 ) {
-					m_nFrameDamage += current.UseAlt( GetCurrentWeaponMode() );
+					m_nFrameDamage = current.UseAlt( GetCurrentWeaponMode() );
 				}
 				if ( current.GetFireMode() != InfoSystem::WeaponFireMode::Automatic ) {
 					Flags &= ~( PF_USING_WEAPON | PF_USING_WEAPON_ALT );
@@ -839,6 +840,12 @@ namespace TheNomad::SGame {
 			if ( m_nRage < 100.0f && ( Flags & PF_USED_MANA ) == 0 ) {
 				// only increase mana at a very slow rate if we're not hitting something
 				m_nRage += 0.05f * TheNomad::GameSystem::DeltaTic;
+				m_HudData.ShowRageBar();
+			}
+			if ( m_nFrameDamage > 0.0f ) {
+				m_nRage += m_nFrameDamage * TheNomad::GameSystem::DeltaTic;
+				m_nFrameDamage = 0.0f;
+				m_HudData.ShowRageBar();
 			}
 			if ( m_nRage > 100.0f ) {
 				m_nRage = 100.0f;
@@ -920,6 +927,17 @@ namespace TheNomad::SGame {
 			refEntity.sheetNum = m_SpriteSheet.GetShader();
 			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( @m_SpriteSheet, @m_State );
 			refEntity.scale = TheNomad::Engine::Renderer::GetFacing( m_Facing );
+			refEntity.Draw();
+
+			if ( m_nHealth < 75.0f ) {
+				refEntity.spriteId++;
+			}
+			if ( m_nHealth < 50.0f ) {
+				refEntity.spriteId++;
+			}
+			if ( m_nHealth < 25.0f ) {
+				refEntity.spriteId++;
+			}
 			refEntity.Draw();
 
 			if ( ( Flags & PF_DASHING ) != 0 ) {

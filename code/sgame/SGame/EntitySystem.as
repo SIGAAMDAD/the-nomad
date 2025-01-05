@@ -93,8 +93,14 @@ namespace TheNomad::SGame {
 						DeadThink( @ent );
 					}
 					else {
-						// remove it
-						RemoveEntity( @ent );
+						if ( ent.GetState().Done( ent.GetTicker() ) ) {
+							// done with dead state, give it off to the corspe handler
+							//TODO:
+						}
+						else {
+							// run the death animation
+							ent.SetState( @ent.GetState().Run( ent.GetTicker() ) );
+						}
 					}
 					continue;
 				}
@@ -414,16 +420,14 @@ namespace TheNomad::SGame {
 			if ( target.GetType() == TheNomad::GameSystem::EntityType::Mob ) {
 				MobObject@ mob = cast<MobObject@>( @target );
 				
-				// respawn mobs on VeryHard
-				if ( uint( sgame_Difficulty.GetInt() ) >= uint( TheNomad::GameSystem::GameDifficulty::VeryHard )
-					&& sgame_NoRespawningMobs.GetInt() != 1 && ( uint( mob.GetMFlags() ) & InfoSystem::MobFlags::PermaDead ) == 0 )
+				// respawn mobs on Insane, they are so skilled and so pissed off, they ressurect
+				if ( TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" ) > uint( TheNomad::GameSystem::GameDifficulty::VeryHard )
+					&& TheNomad::Engine::CvarVariableInteger( "sgame_NoRespawningMobs" ) != 1
+					&& ( uint( mob.GetMFlags() ) & InfoSystem::MobFlags::PermaDead ) == 0 )
 				{
-					// ST_MOB_DEAD only used with respawning mobs
-					target.SetState( StateNum::ST_MOB_DEAD );
+					//TODO:
 				}
-				else {
-					RemoveEntity( @target );
-				}
+				target.SetState( @cast<MobObject@>( @target ).GetScript().GetDeathState() );
 			}
 			else if ( target.GetType() == TheNomad::GameSystem::EntityType::Playr ) {
 				target.SetState( StateNum::ST_PLAYR_DEAD );

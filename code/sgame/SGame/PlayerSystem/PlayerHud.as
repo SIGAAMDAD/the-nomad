@@ -77,7 +77,9 @@ namespace TheNomad::SGame {
 			ImGui::SetWindowPos( vec2( 0.0f, 0.0f ) );
 			ImGui::SetWindowSize( vec2( m_nStatusBarWidth, m_nStatusBarHeight ) );
 			ImGui::SameLine( m_nStatusBarStretchAmount );
+			ImGui::SetWindowFontScale( m_nStatusBarFontScale );
 			ImGui::Text( "HEALTH" );
+			ImGui::SetWindowFontScale( 1.0f );
 			ImGui::End();
 			
 			{
@@ -91,22 +93,22 @@ namespace TheNomad::SGame {
 				} else {
 					healthColor = colorGreen;
 				}
-
+				
 				ImGui::PushStyleColor( ImGuiCol::WindowBg, healthColor );
 				ImGui::Begin( "##HealthBar", null, ImGui::MakeWindowFlags( ImGuiWindowFlags::NoResize | ImGuiWindowFlags::NoMove
-					| ImGuiWindowFlags::NoCollapse | ImGuiWindowFlags::NoBackground | ImGuiWindowFlags::NoTitleBar
+					| ImGuiWindowFlags::NoCollapse | ImGuiWindowFlags::NoTitleBar
 					| ImGuiWindowFlags::NoScrollbar ) );
 				ImGui::SetWindowPos( vec2( 0.0f, 0.0f ) );
 				ImGui::SetWindowSize( vec2( ( float( ( 250.0f * ( health * 0.01f ) ) * TheNomad::GameSystem::UIScale ) ), m_nStatusBarHeight ) );
+				ImGui::End();
+				ImGui::PopStyleColor( 1 );
 				if ( health < 30.0f ) {
 					m_Shake.Start( 2000, 20.5f, 20.5f );
 					Util::HapticRumble( 0, 0.20f, 100 );
 					
 					// draw a red overlay if we're really low on health
-//					m_BloodScreenSplatter.Draw();
+					m_BloodScreenSplatter.Draw();
 				}
-				ImGui::End();
-				ImGui::PopStyleColor( 1 );
 			}
 
 			if ( TheNomad::GameSystem::GameTic > m_nHealthBarEndTime ) {

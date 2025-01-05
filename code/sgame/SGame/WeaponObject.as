@@ -248,7 +248,7 @@ namespace TheNomad::SGame {
 					const float velocity = ray.m_nLength - Util::Distance( ray.m_Origin, ray.m_Start );
 					GfxManager.AddDebrisCloud( ray.m_Origin, velocity );
 				}
-				return 0.0f;
+				return m_AmmoInfo.damage;
 			}
 			
 			EntityManager.DamageEntity( @EntityManager.GetEntityForNum( ray.m_nEntityNumber ), @m_Owner );

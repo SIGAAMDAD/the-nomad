@@ -17,6 +17,9 @@ namespace moblib::System {
 			m_bSquadMemberDied = false;
 		}
 		void SquadBark( int hBark ) {
+			if ( ( TheNomad::GameSystem::GameTic - m_nLastBarkTime ) * TheNomad::GameSystem::DeltaTic < 350 ) {
+				return;
+			}
 			m_nSquadBark = hBark;
 		}
 		void AddSquadMember( moblib::Script::MercShotty@ member ) {
@@ -34,6 +37,7 @@ namespace moblib::System {
 						break;
 					}
 				}
+				m_nLastBarkTime = TheNomad::GameSystem::GameTic;
 				m_nSquadBark = -1;
 			}
 		}
@@ -83,6 +87,7 @@ namespace moblib::System {
 		private float m_nMorale = 0.0f;
 		private int m_nSquadID = 0;
 		private uint m_nSquadMembers = 0;
+		private uint m_nLastBarkTime = 0;
 		private int m_nSquadBark = -1;
 		private bool m_bSquadMemberDied = false;
 	};

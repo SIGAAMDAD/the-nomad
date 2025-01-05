@@ -246,7 +246,6 @@ namespace TheNomad::SGame {
 			m_Bounds.m_nWidth = m_Info.size.x;
 			m_Bounds.m_nHeight = m_Info.size.y;
 			m_Bounds.MakeBounds( m_Link.m_Origin );
-			@m_State = @m_State.Run( m_nTicker );
 
 			switch ( m_State.GetBaseNum() ) {
 			case StateNum::ST_MOB_IDLE:
@@ -318,6 +317,13 @@ namespace TheNomad::SGame {
 		}
 		void ResetReactionTime() {
 			m_nReactionTime = m_Info.reactionTime;
+		}
+
+		const moblib::MobScript@ GetScript() const {
+			return @m_ScriptData;
+		}
+		moblib::MobScript@ GetScript() {
+			return @m_ScriptData;
 		}
 
 		private EntityObject@ m_Target = null;

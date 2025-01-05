@@ -12,6 +12,7 @@ namespace moblib {
 				if ( player.GetSoundLevel() >= info.soundTolerance
 					|| TheNomad::Util::Distance( player.GetOrigin(), mob.GetOrigin() ) < 2.0f )
 				{
+					mob.SetTarget( @player );
 					return true;
 				}
 				return false;
