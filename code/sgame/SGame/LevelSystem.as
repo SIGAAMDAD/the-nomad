@@ -37,6 +37,33 @@ namespace TheNomad::SGame {
 		LevelSystem() {
 		}
 
+		private void DrawDeathScreen() const {
+			ImGui::PushStyleColor( ImGuiCol::WindowBg, vec4( 0.10f, 0.10f, 0.10f, 0.90f ) );
+
+			ImGui::Begin( "##DeathScreen", null, ImGui::MakeWindowFlags( ImGuiWindowFlags::NoResize | ImGuiWindowFlags::NoMove
+				| ImGuiWindowFlags::NoCollapse | ImGuiWindowFlags::NoTitleBar | ImGuiWindowFlags::NoScrollbar ) );
+			
+			ImGui::SetWindowPos( vec2( 0.0f, 280.0f * TheNomad::GameSystem::UIScale ) );
+			ImGui::SetWindowSize( vec2( TheNomad::GameSystem::GPUConfig.screenWidth, 260.0f * TheNomad::GameSystem::UIScale ) );
+
+			ImGui::SetWindowFontScale( 5.75f * TheNomad::GameSystem::UIScale );
+			ImGui::PushStyleColor( ImGuiCol::Text, colorRed );
+			ImGui::SameLine( 286.0f * TheNomad::GameSystem::UIScale );
+			ImGui::Text( "YOU DIED" );
+			ImGui::PopStyleColor( 1 );
+			ImGui::SetWindowFontScale( 1.0f );
+
+			ImGui::SetCursorScreenPos( vec2( 380.0f * TheNomad::GameSystem::UIScale, 390.0f * TheNomad::GameSystem::UIScale ) );
+			if ( ImGui::Button( "TRY AGAIN" ) ) {
+				// TODO: hellbreaker
+				TheNomad::GameSystem::RespawnPlayer();
+			}
+
+			ImGui::End();
+
+			ImGui::PopStyleColor( 1 );
+		}
+
 		const string& GetName() const {
 			return "LevelSystem";
 		}
@@ -189,6 +216,9 @@ namespace TheNomad::SGame {
 		void OnRenderScene() {
 			if ( GlobalState == GameState::StatsMenu ) {
 				m_RankData.Draw( true, m_nLevelTimer );
+			}
+			if ( EntityManager.GetActivePlayer().CheckFlags( EntityFlags::Dead ) ) {
+				DrawDeathScreen();
 			}
 		}
 		void OnRunTic() {
@@ -464,14 +494,14 @@ namespace TheNomad::SGame {
 		// AddLevelData: for manual level infos
 		//
 		void AddLevelData( LevelInfoData@ levelData ) {
-			m_LevelInfoDatas.Add( @levelData );
+			m_LevelInfoDatas.Add( levelData );
 		}
 		
 		const LevelInfoData@ GetLevelDataByIndex( uint nIndex ) const {
-			return @m_LevelInfoDatas[ nIndex ];
+			return m_LevelInfoDatas[ nIndex ];
 		}
 		LevelInfoData@ GetLevelDataByIndex( uint nIndex ) {
-			return @m_LevelInfoDatas[ nIndex ];
+			return m_LevelInfoDatas[ nIndex ];
 		}
 		
 		const LevelInfoData@ GetLevelInfoByMapName( const string& in mapname ) const {

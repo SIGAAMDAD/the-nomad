@@ -514,14 +514,13 @@ namespace TheNomad::SGame {
 			Flags &= ~PF_INVUL;
 		}
 		
-		void Damage( EntityObject@ attacker, float nAmount ) {
+		void Damage( EntityObject@ attacker, float nAmount ) override {
 			if ( m_bEmoting ) {
 				return; // god has blessed thy soul...
 			}
 
 			m_HudData.ShowStatusBars();
 			
-			DebugPrint( "Damaging player...\n" );
 			m_nHealth -= nAmount;
 
 			if ( m_nHealth < 1 ) {
@@ -539,8 +538,7 @@ namespace TheNomad::SGame {
 					EmitSound( ScreenData.m_DieSfx2, 1.0f, 0xff );
 					break;
 				};
-				DebugPrint( "Killing player...\n" );
-				EntityManager.KillEntity( attacker, this );
+				EntityManager.KillEntity( this, attacker );
 				
 				Util::HapticRumble( m_nControllerIndex, 0.80f, 4000 );
 			} else {
@@ -696,6 +694,7 @@ namespace TheNomad::SGame {
 			m_Link.m_nEntityId = 0;
 			m_nHealth = 100.0f;
 			m_nRage = 0.0f;
+			m_nHealMult = 10.0f;
 
 			// give the player a little starting boost if they're playing on the easier modes
 			if ( TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" ) == int( TheNomad::GameSystem::GameDifficulty::Easy ) ) {
@@ -754,12 +753,26 @@ namespace TheNomad::SGame {
 
 			m_nHalfWidth = TheNomad::Engine::CvarVariableFloat( "sgame_PlayerWidth" ) * 0.5f;
 			m_nHalfHeight = TheNomad::Engine::CvarVariableFloat( "sgame_PlayerHeight" ) * 0.5f;
+
+			m_Link.m_nEntityType = TheNomad::GameSystem::EntityType::Playr;
 		}
 		void InitHUD() {
 			m_HudData.Init( @this );
 		}
 
 		void Think() override {
+			if ( ( uint( m_Flags ) & EntityFlags::Dead ) != 0 ) {
+				if ( m_State.GetBaseNum() == StateNum::ST_PLAYR_DEAD_IDLE ) {
+					@m_State = m_State.Run( m_nTicker );
+				} else if ( m_State.GetBaseNum() == StateNum::ST_PLAYR_DEAD && m_State.Done( m_nTicker ) ) {
+					@m_State = m_State.Run( m_nTicker );
+				} else {
+					m_State.GetAnimation().Run();
+				}
+				return;
+			}
+			TheNomad::GameSystem::IsRespawnActive = false;
+
 			if ( m_State.GetID() == StateNum::ST_PLAYR_QUICKSHOT ) {
 				m_QuickShot.Think();
 			}
@@ -837,6 +850,9 @@ namespace TheNomad::SGame {
 				if ( m_nHealth > 100.0f ) {
 					m_nHealth = 100.0f;
 				}
+
+				Flags |= PF_USED_MANA;
+				m_HudData.ShowHealthBar();
 			}
 			if ( m_nRage < 100.0f && ( Flags & PF_USED_MANA ) == 0 ) {
 				// only increase mana at a very slow rate if we're not hitting something
@@ -903,6 +919,15 @@ namespace TheNomad::SGame {
 		#endif
 
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
+
+			if ( ( uint( m_Flags ) & EntityFlags::Dead ) != 0 ) {
+				refEntity.origin = m_Link.m_Origin;
+				refEntity.sheetNum = m_SpriteSheet.GetShader();
+				refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( m_SpriteSheet, m_State );
+				refEntity.scale = TheNomad::Engine::Renderer::GetFacing( m_Facing );
+				refEntity.Draw();
+				return;
+			}
 
 			@m_State = m_IdleState;
 

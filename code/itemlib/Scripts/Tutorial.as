@@ -107,7 +107,7 @@ namespace itemlib::Script {
 		}
 
 		void Draw() const {
-			TheNomad::SGame::PlayrObject@ player = @TheNomad::SGame::EntityManager.GetActivePlayer();
+			TheNomad::SGame::PlayrObject@ player = TheNomad::SGame::EntityManager.GetActivePlayer();
 
 			ImGui::PushStyleColor( ImGuiCol::WindowBg, vec4( 0.25f, 0.25f, 0.25f, 0.5f ) );
 
@@ -147,11 +147,11 @@ namespace itemlib::Script {
 		}
 		void OnSpawn() override {
 			// load the tutorial's text
-			TheNomad::SGame::InfoSystem::ItemInfo@ info = @m_EntityData.GetItemInfo();
+			TheNomad::SGame::InfoSystem::ItemInfo@ info = m_EntityData.GetItemInfo();
 
 			for ( uint i = 0; i < Tutorials.Count(); ++i ) {
 				if ( info.name == Tutorials[i].Id ) {
-					@m_Data = @Tutorials[i];
+					@m_Data = Tutorials[i];
 					DebugPrint( "Tutorial \"" + info.name + "\" linked.\n" );
 				}
 			}

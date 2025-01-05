@@ -13,6 +13,7 @@ namespace TheNomad::SGame {
 		void OnInit() {
 		}
 		void OnShutdown() {
+			m_LocalEnts.Clear();
 		}
 		void OnPlayerDeath( int ) {
 		}
@@ -24,7 +25,7 @@ namespace TheNomad::SGame {
 		void OnSave() const {
 		}
 		void OnRunTic() {
-			InitLocalEntities();
+//			InitLocalEntities();
 		}
 		void OnLevelStart() {
 			InitLocalEntities();
@@ -37,10 +38,10 @@ namespace TheNomad::SGame {
 			return "GfxManager";
 		}
 		void OnRenderScene() {
-			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 ) {
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 || TheNomad::GameSystem::IsRespawnActive ) {
 				return;
 			}
-		
+
 		#if _NOMAD_DEBUG
 			if ( sgame_DebugMode.GetBool() ) {
 				TheNomad::Engine::ProfileBlock block( "GfxSystem::OnRenderScene" );
@@ -51,8 +52,8 @@ namespace TheNomad::SGame {
 
 			// walk the list backwards, so any new local entities generated
 			// (trails, marks, etc) will be present this frame
-			TheNomad::Engine::Renderer::LocalEntity@ ent = m_ActiveLocalEnts.m_Prev;
-			for ( ; ent !is m_ActiveLocalEnts; @ent = next ) {
+			TheNomad::Engine::Renderer::LocalEntity@ ent = @m_ActiveLocalEnts.m_Prev;
+			for ( ; ent !is @m_ActiveLocalEnts; @ent = next ) {
 				// grab next now, so if the local entity is freed we
 				// still have it
 				@next = ent.m_Prev;
@@ -69,21 +70,26 @@ namespace TheNomad::SGame {
 				ent.RunTic();
 				@ent = null;
 			}
+			@ent = null;
 		}
 
 		private void ClearLocalEntities() {
-			@m_ActiveLocalEnts.m_Next =
-			@m_ActiveLocalEnts.m_Prev =
-				m_ActiveLocalEnts;
-			@m_FreeLocalEnts = null;
-
 			// clear all references
 			for ( uint i = 0; i < m_LocalEnts.Count(); i++ ) {
 				@m_LocalEnts[i].m_Next =
 				@m_LocalEnts[i].m_Prev =
 					null;
 			}
-			m_LocalEnts.Clear();
+
+			@m_ActiveLocalEnts.m_Next =
+			@m_ActiveLocalEnts.m_Prev =
+				null;
+			@m_FreeLocalEnts = null;
+
+			@m_SmokeTrail = null;
+			@m_SmokePuff = null;
+			@m_SmokeLanding = null;
+			@m_BloodSpurt = null;
 		}
 
 		private void InitLocalEntities() {
@@ -106,16 +112,18 @@ namespace TheNomad::SGame {
 				break;
 			};
 			// only resize if we're changing qualities
-			if ( maxGfx != m_LocalEnts.Count() ) {
-				ConsolePrint( "Initializing LocalEntity list...\n" );
-				m_LocalEnts.Resize( maxGfx );
-			} else {
-				return;
+			if ( !TheNomad::GameSystem::IsRespawnActive ) {
+				if ( maxGfx != m_LocalEnts.Count() ) {
+					ConsolePrint( "Initializing LocalEntity list...\n" );
+					m_LocalEnts.Resize( maxGfx );
+				} else {
+					return;
+				}
 			}
 
 			@m_ActiveLocalEnts.m_Next =
 			@m_ActiveLocalEnts.m_Prev =
-				m_ActiveLocalEnts;
+				@m_ActiveLocalEnts;
 			@m_FreeLocalEnts = m_LocalEnts[0];
 
 			for ( uint i = 0; i < m_LocalEnts.Count() - 1; i++ ) {
@@ -145,21 +153,21 @@ namespace TheNomad::SGame {
 		// FreeLocalEntity: only LocalEntity when its finished should ever call this, or AllocLocalEntity
 		//
 		private void FreeLocalEntity( TheNomad::Engine::Renderer::LocalEntity@ ent ) {
-			if ( @ent.m_Prev is null ) {
+			if ( ent.m_Prev is null ) {
 				GameError( "GfxManager::FreeLocalEntity: not active" );
 			}
 
 			// remove from doubly linked list
-			@ent.m_Prev.m_Next = @ent.m_Next;
-			@ent.m_Next.m_Prev = @ent.m_Prev;
+			@ent.m_Prev.m_Next = ent.m_Next;
+			@ent.m_Next.m_Prev = ent.m_Prev;
 
 			// the free list is only singly linked
-			@ent.m_Next = @m_FreeLocalEnts;
-			@m_FreeLocalEnts = @ent;
+			@ent.m_Next = m_FreeLocalEnts;
+			@m_FreeLocalEnts = ent;
 		}
 
 		void AddBloodSplatter( const vec3& in origin, int facing ) {
-			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 ) {
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 || TheNomad::GameSystem::IsRespawnActive ) {
 				return;
 			}
 
@@ -176,7 +184,7 @@ namespace TheNomad::SGame {
 		}
 
 		void SmokeCloud( const vec3& in origin ) {
-			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 ) {
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 || TheNomad::GameSystem::IsRespawnActive ) {
 				return;
 			}
 
@@ -189,7 +197,7 @@ namespace TheNomad::SGame {
 		// cloud
 		//
 		void AddDebrisCloud( const vec3& in origin, float velocity ) {
-			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 ) {
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 || TheNomad::GameSystem::IsRespawnActive ) {
 				return;
 			}
 			const uint numSmokeClouds = floor( velocity ) * 2;
@@ -213,7 +221,7 @@ namespace TheNomad::SGame {
 		}
 
 		void AddWaterWake( const vec3& in origin, uint lifeTime = 200, float scale = 2.5f ) {
-			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 ) {
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 || TheNomad::GameSystem::IsRespawnActive ) {
 				return;
 			}
 
@@ -222,16 +230,16 @@ namespace TheNomad::SGame {
 		}
 
 		void AddBulletHole( const vec3& in origin ) {
-			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 ) {
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 || TheNomad::GameSystem::IsRespawnActive ) {
 				return;
 			}
 
 			TheNomad::Engine::Renderer::LocalEntity@ ent = AllocLocalEntity();
-			ent.Spawn( origin, vec3( 0.0f ), uint( -1 ), m_hBulletHoleShader, vec2( 2.0f ), false );
+			ent.Spawn( origin, vec3( 0.0f ), 50000, m_hBulletHoleShader, vec2( 2.0f ), false );
 		}
 
 		void AddLanding( const vec3& in origin ) {
-			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 ) {
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 || TheNomad::GameSystem::IsRespawnActive ) {
 				return;
 			}
 
@@ -242,7 +250,7 @@ namespace TheNomad::SGame {
 		}
 
 		void AddDustPuff( const vec3& in origin, int facing ) {
-			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 ) {
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 || TheNomad::GameSystem::IsRespawnActive ) {
 				return;
 			}
 
@@ -258,7 +266,7 @@ namespace TheNomad::SGame {
 		}
 
 		void AddDustTrail( const vec3& in origin, int facing ) {
-			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 ) {
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 || TheNomad::GameSystem::IsRespawnActive ) {
 				return;
 			}
 
@@ -277,7 +285,7 @@ namespace TheNomad::SGame {
 		}
 
 		void AddMuzzleFlash( const vec3& in origin ) {
-			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 ) {
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 || TheNomad::GameSystem::IsRespawnActive ) {
 				return;
 			}
 

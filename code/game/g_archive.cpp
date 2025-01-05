@@ -343,8 +343,8 @@ CGameArchive::CGameArchive( void )
 		m_pArchiveFileList[ i ] = (char *)Z_Malloc( strlen( szName ) + 1, TAG_SAVEFILE );
 		N_strncpyz( m_pArchiveFileList[ i ], szName, strlen( szName ) + 1 );
 
-		if ( FS_FileExists( va( "SaveData/%s.ngd", szName ) ) ) {
-			LoadArchiveFile( va( "SaveData/%s.ngd", szName ), i );
+		if ( FS_FileExists( va( "gamedata/SaveData/%s.ngd", szName ) ) ) {
+			LoadArchiveFile( va( "gamedata/SaveData/%s.ngd", szName ), i );
 			Con_Printf( "...Cached save slot %lu\n", i );
 			m_nUsedSaveSlots++;
 		}

@@ -127,15 +127,18 @@ namespace TheNomad::SGame {
 			m_Animation.Run();
 			if ( Done( ticker ) ) {
 				Reset( ticker );
-				return @m_NextState;
+				return m_NextState;
 			}
-			return @this;
+			return this;
 		}
 		EntityState@ Cycle() {
-			return @m_NextState;
+			return m_NextState;
+		}
+		Animation@ GetAnimation() {
+			return m_Animation;
 		}
 		const Animation@ GetAnimation() const {
-			return @m_Animation;
+			return m_Animation;
 		}
 		
 		private string m_Name;

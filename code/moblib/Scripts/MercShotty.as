@@ -114,13 +114,40 @@ namespace moblib::Script {
 
 			m_EntityData.SetState( m_EntityData.GetState().Run( m_EntityData.GetTicker() ) );
 
-			if ( ray.m_nEntityNumber == ENTITYNUM_WALL || ray.m_nEntityNumber == ENTITYNUM_INVALID ) {
+			if ( ray.m_nEntityNumber == ENTITYNUM_WALL ) {
 				// TODO: add wall hit mark here
 				const float velocity = ray.m_nLength - TheNomad::Util::Distance( ray.m_Origin, ray.m_Start );
 				TheNomad::SGame::GfxManager.AddDebrisCloud( ray.m_Origin, velocity );
 				TheNomad::SGame::GfxManager.AddBulletHole( ray.m_Origin );
 				m_EntityData.EmitSound( ResourceCache.ShottyAttackSfx, 10.0f, 0xff );
 				TheNomad::SGame::GfxManager.AddMuzzleFlash( origin );
+				
+				TheNomad::SGame::PlayrObject@ player = TheNomad::SGame::EntityManager.GetActivePlayer();
+				
+				if ( TheNomad::Util::Distance( player.GetOrigin(), ray.m_Origin ) <= 2.90f ) {
+					// if we're close to the bullet, then simulate a near-hit
+					player.EmitSound(
+						TheNomad::Engine::SoundSystem::RegisterSfx(
+							"event:/sfx/env/bullet_impact/ricochet_" + ( TheNomad::Util::PRandom() & 2 )
+						),
+						10.0f, 0xff
+					);
+					// TODO: shake screen?
+				}
+				return;
+			} else if ( ray.m_nEntityNumber == ENTITYNUM_INVALID ) {
+				TheNomad::SGame::PlayrObject@ player = TheNomad::SGame::EntityManager.GetActivePlayer();
+				
+				if ( TheNomad::Util::Distance( player.GetOrigin(), ray.m_Origin ) <= 2.90f ) {
+					// if we're close to the bullet, then simulate a near-hit
+					player.EmitSound(
+						TheNomad::Engine::SoundSystem::RegisterSfx(
+							"event:/sfx/env/bullet_impact/ricochet_" + ( TheNomad::Util::PRandom() & 2 )
+						),
+						10.0f, 0xff
+					);
+					// TODO: shake screen?
+				}
 				return;
 			}
 			
@@ -180,7 +207,7 @@ namespace moblib::Script {
 				}
 				m_OldTargetPosition = target;
 			}
-			if ( TheNomad::Util::Distance( origin, target ) >= MERC_SHOTGUN_RANGE / 2 ) {
+			if ( TheNomad::Util::Distance( origin, target ) >= MERC_SHOTGUN_RANGE / 4 ) {
 				m_EntityData.SetState( @m_EntityData.GetState().Run( m_EntityData.GetTicker() ) );
 				m_EntityData.Chase();
 				return;
@@ -196,14 +223,14 @@ namespace moblib::Script {
 		}
 		void OnDamage( TheNomad::SGame::EntityObject@ attacker ) override {
 			if ( attacker.GetType() == TheNomad::GameSystem::EntityType::Mob ) {
-//				m_EntityData.EmitSound( ResourceCache.ShottyCeasfire[ TheNomad::Util::PRandom() & ( ResourceCache.ShottyCeasfire.Count() - 1 ) ],
-//					10.0f, 0xff );
+				m_EntityData.EmitSound( ResourceCache.ShottyCeasfire[ TheNomad::Util::PRandom() & ( ResourceCache.ShottyCeasfire.Count() - 1 ) ],
+					10.0f, 0xff );
+				return;
 			}
 			m_EntityData.EmitSound( ResourceCache.ShottyPain[ TheNomad::Util::PRandom() & ( ResourceCache.ShottyPain.Count() - 1 ) ], 10.0f, 0xff );
 			if ( ( TheNomad::Util::PRandom() & 50 ) >= 25 ) {
 				m_EntityData.EmitSound( ResourceCache.ShottyCurse[ TheNomad::Util::PRandom() & ( ResourceCache.ShottyCurse.Count() - 1 ) ], 10.0f, 0xff );
 			}
-			DebugPrint( "Finished damaging mob.\n" );
 
 			// causes an assertion crash
 //			if ( m_EntityData.GetState() is m_IdleState ) {
@@ -254,6 +281,8 @@ namespace moblib::Script {
 
 			@m_Squad = @GlobalSquad;
 			GlobalSquad.AddSquadMember( @this );
+
+			m_EntityData.GetLink().m_nEntityType = TheNomad::GameSystem::EntityType::Mob;
 		}
 		void OnDeath() override {
 		}

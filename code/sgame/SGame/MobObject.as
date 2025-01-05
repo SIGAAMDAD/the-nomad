@@ -26,7 +26,7 @@ namespace TheNomad::SGame {
 			return @m_Info;
 		}
 		
-		bool Load( const TheNomad::GameSystem::SaveSystem::LoadSection& in section ) {
+		bool Load( const TheNomad::GameSystem::SaveSystem::LoadSection& in section ) override {
 			m_nHealth = section.LoadFloat( "health" );
 //			m_MFlags = InfoSystem::MobFlags( section.LoadUInt( "mobFlags" ) );
 			if ( section.LoadBool( "hasTarget" ) ) {
@@ -36,7 +36,7 @@ namespace TheNomad::SGame {
 			return true;
 		}
 		
-		void Save( const TheNomad::GameSystem::SaveSystem::SaveSection& in section ) const {
+		void Save( const TheNomad::GameSystem::SaveSystem::SaveSection& in section ) const override {
 			section.SaveFloat( "health", m_nHealth );
 //			section.SaveUInt( "mobFlags", uint( m_MFlags ) );
 			section.SaveBool( "hasTarget", @m_Target !is null );
@@ -138,7 +138,7 @@ namespace TheNomad::SGame {
 			DebugPrint( "Linked mob script for \"" + m_Info.name + "\" at entity '" + m_Link.m_nEntityNumber + "''\n" );
 		}
 
-		void Spawn( uint id, const vec3& in origin ) {
+		void Spawn( uint id, const vec3& in origin ) override {
 			@m_Info = @InfoSystem::InfoManager.GetMobInfo( id );
 			if ( m_Info is null ) {
 				GameError( "MobObject::Spawn: bad MobType " + id + "! Info was null!" );
@@ -158,8 +158,10 @@ namespace TheNomad::SGame {
 			m_ScriptData.OnSpawn();
 		}
 		
-		void Damage( EntityObject@ source, float nAmount ) {
-			DebugPrint( "Damaging mob...\n" );
+		void Damage( EntityObject@ source, float nAmount ) override {
+			if ( source is this ) {
+				return;
+			}
 			m_nHealth -= nAmount;
 			if ( m_nHealth < 0.0f ) {
 				if ( m_nHealth <= -m_Info.health ) {
@@ -270,6 +272,9 @@ namespace TheNomad::SGame {
 				break;
 			case StateNum::ST_MOB_SEARCH:
 				m_ScriptData.SearchThink();
+				break;
+			case StateNum::ST_MOB_DEAD:
+				m_ScriptData.DeadThink();
 				break;
 			default:
 				GameError( "MobEntity::Think: invalid mob state " + formatUInt( m_State.GetID() ) + "\n" );

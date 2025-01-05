@@ -26,6 +26,9 @@ namespace TheNomad::SGame {
 			m_Link.Create( origin, bounds, id, uint( type ), nEntityNumber );
 			m_PhysicsObject.Init( @this );
 
+			m_Link.m_nEntityId = id;
+			m_Link.m_nEntityType = type;
+
 			// create emitter
 			m_hEmitter = TheNomad::Engine::SoundSystem::RegisterEmitter( m_Link.m_nEntityNumber );
 		}

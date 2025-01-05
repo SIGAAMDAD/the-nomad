@@ -85,6 +85,7 @@ namespace TheNomad::SGame {
 			}
 			
 			for ( @ent = m_ActiveEnts.m_Next; ent !is m_ActiveEnts; @ent = ent.m_Next ) {
+				/*
 				if ( ent.CheckFlags( EntityFlags::Dead ) ) {
 					if ( ( TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" ) > TheNomad::GameSystem::GameDifficulty::Hard
 						&& ent.GetType() == TheNomad::GameSystem::EntityType::Mob )
@@ -92,18 +93,19 @@ namespace TheNomad::SGame {
 					{
 						DeadThink( ent );
 					}
-					else {
+					else
+					{
 						if ( ent.GetState().Done( ent.GetTicker() ) ) {
 							// done with dead state, give it off to the corspe handler
 							//TODO:
 						}
 						else {
-							// run the death animation
-							ent.SetState( ent.GetState().Run( ent.GetTicker() ) );
+
 						}
 					}
 					continue;
 				}
+				*/
 
 				if ( ent.GetState() is null ) {
 					GameError( "EntitySystem::OnRunTic(): entity " + ent.GetName() + " state is null" );
@@ -123,6 +125,9 @@ namespace TheNomad::SGame {
 				};
 				*/
 
+				if ( TheNomad::GameSystem::IsRespawnActive && ent.GetType() != TheNomad::GameSystem::EntityType::Playr ) {
+					continue;
+				}
 				ent.Think();
 
 				// update engine data
@@ -223,11 +228,12 @@ namespace TheNomad::SGame {
 
 			@m_ActiveEnts.m_Next =
 			@m_ActiveEnts.m_Prev =
-				@m_ActiveEnts;
+				m_ActiveEnts;
 
-			m_EntityList.Reserve( MapCheckpoints.Count() + MapCheckpoints.Count() );
+			m_EntityList.Reserve( MapCheckpoints.Count() + MapSpawns.Count() );
 
-			MapCheckpoints[ LevelManager.GetCheckpointIndex() ].Activate( 0 );
+			MapCheckpoints[ LevelManager.GetCheckpointIndex() ].Activate( LevelManager.GetLevelTimer() );
+			DebugPrint( "Spawning " + MapCheckpoints[ LevelManager.GetCheckpointIndex() ].m_Spawns.Count() + " entities...\n" );
 			
 			for ( uint i = 0; i < MapCheckpoints.Count(); i++ ) {
 				MapCheckpoints[i].InitEntity();
@@ -236,6 +242,7 @@ namespace TheNomad::SGame {
 			DebugPrint( formatUInt( m_EntityList.Count() ) + " total entities.\n" );
 		}
 		void OnLevelEnd() {
+			DebugPrint( "Releasing " + m_nActiveEnts + " entities\n" );
 			for ( uint i = 0; i < m_EntityList.Count(); ++i ) {
 				@m_EntityList[i] = null;
 			}
@@ -246,6 +253,8 @@ namespace TheNomad::SGame {
 
 			// clear all level locals
 			m_EntityList.Clear();
+
+			m_nActiveEnts = 0;
 		}
 		void OnPlayerDeath( int ) {
 		}
@@ -276,12 +285,6 @@ namespace TheNomad::SGame {
 			@ent.m_Next.m_Prev = ent.m_Prev;
 
 			DebugPrint( "Deallocated entity at '" + ent.GetEntityNum() + "'\n" );
-
-			// remove all the references
-			@ent.m_Next =
-			@ent.m_Prev =
-			@m_EntityList[ ent.GetEntityNum() ] =
-				null;
 		}
 		private EntityObject@ AllocEntity( TheNomad::GameSystem::EntityType type, uint id, const vec3& in origin, const vec2& in size ) {
 			EntityObject@ ent = null;
@@ -334,6 +337,7 @@ namespace TheNomad::SGame {
 		}
 		
 		void DeadThink( EntityObject@ ent ) {
+			return;
 			if ( ent.GetType() == TheNomad::GameSystem::EntityType::Mob ) {
 				if ( TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" ) < uint( TheNomad::GameSystem::GameDifficulty::VeryHard )
 					|| TheNomad::Engine::CvarVariableInteger( "sgame_NoRespawningMobs" ) == 1
@@ -367,10 +371,10 @@ namespace TheNomad::SGame {
 			return m_EntityList[ nIndex ];
 		}
 		const array<EntityObject@>@ GetEntities() const {
-			return m_EntityList;
+			return @m_EntityList;
 		}
 		array<EntityObject@>@ GetEntities() {
-			return m_EntityList;
+			return @m_EntityList;
 		}
 		uint NumEntities() const {
 			return m_nActiveEnts;
@@ -430,7 +434,20 @@ namespace TheNomad::SGame {
 				target.SetState( cast<MobObject@>( target ).GetScript().GetDeathState() );
 			}
 			else if ( target.GetType() == TheNomad::GameSystem::EntityType::Playr ) {
-				target.SetState( StateNum::ST_PLAYR_DEAD );
+				DebugPrint( "Showing death screen...\n" );
+				target.SetState( StateManager.GetStateById( "player_dead" ) );
+
+				int random = Util::PRandom() & 100;
+				if ( random < 2 ) {
+					target.EmitSound( TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/death_sound_0" ), 10.0f, 0xff );
+				} else if ( random < 10 ) {
+					target.EmitSound( TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/death_sound_1" ), 10.0f, 0xff );
+				} else {
+					target.EmitSound( TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/player/death_sound_2" ), 10.0f, 0xff );
+				}
+				for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); ++i ) {
+					TheNomad::GameSystem::GameSystems[i].OnPlayerDeath( i );
+				}
 			}
 			target.SetFlags( uint( target.GetFlags() ) | EntityFlags::Dead );
 		}
@@ -439,12 +456,17 @@ namespace TheNomad::SGame {
 		// DamageEntity: entity v entity
 		//
 		void DamageEntity( EntityObject@ target, EntityObject@ attacker, float damage = 1.0f ) {
-			switch ( attacker.GetType() ) {
+			if ( target is attacker ) {
+				return;
+			}
+			target.Damage( attacker, damage );
+			/*
+			switch ( target.GetType() ) {
 			case TheNomad::GameSystem::EntityType::Mob: {
-				target.Damage( attacker, damage );
+				cast<MobObject>( target ).Damage( attacker, damage );
 				break; }
 			case TheNomad::GameSystem::EntityType::Playr: {
-				target.Damage( attacker, damage );
+				cast<PlayrObject>( target ).Damage( attacker, damage );
 				if ( target.GetType() == TheNomad::GameSystem::EntityType::Bot ) {
 					// TODO: calculate collateral damage here
 				}
@@ -455,6 +477,7 @@ namespace TheNomad::SGame {
 			default:
 				GameError( "EntitySystem::Damage: invalid entity type " + uint( attacker.GetType() ) );
 			};
+			*/
 		}
 
 		void SetActivePlayer( PlayrObject@ player ) {

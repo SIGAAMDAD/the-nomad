@@ -52,7 +52,9 @@ namespace TheNomad::GameSystem {
 			TheNomad::SGame::EntityObject@ ent = null;
 			for ( ;; ) {
 				for ( @ent = @activeEnts.m_Next; @ent !is @activeEnts; @ent = @ent.m_Next ) {
-					if ( ent.GetEntityNum() != m_nOwner && ent.GetEntityNum() != m_nOwner2 && ent.GetBounds().IntersectsPoint( m_Origin ) ) {
+					if ( ent.GetEntityNum() != m_nOwner && ent.GetEntityNum() != m_nOwner2 && ent.GetBounds().IntersectsPoint( m_Origin )
+						&& !ent.CheckFlags( TheNomad::SGame::EntityFlags::Dead ) )
+					{
 						m_nEntityNumber = ent.GetEntityNum();
 						return;
 					}
@@ -97,6 +99,7 @@ namespace TheNomad::GameSystem {
 	// much faster and much less boilerplate-driven
 	float TIMESTEP = 1.0f / 60.0f;
 	bool IsLoadGameActive = false;
+	bool IsRespawnActive = false;
  	uint GameTic = 0;
 	float GameDeltaTic = 0.0f;
  	float DeltaTic = 0.0f;
@@ -124,5 +127,16 @@ namespace TheNomad::GameSystem {
 
 		HalfScreenWidth = GPUConfig.screenWidth * 0.5f;
 		HalfScreenHeight = GPUConfig.screenHeight * 0.5f;
+	}
+
+	void RespawnPlayer() {
+		// clear out all the current entities, then respawn the player
+		TheNomad::SGame::EntityManager.OnLevelEnd();
+		TheNomad::SGame::EntityManager.OnLevelStart();
+		TheNomad::SGame::GfxManager.OnLevelEnd();
+		TheNomad::SGame::GfxManager.OnLevelStart();
+
+		TheNomad::SGame::ScreenData.InitPlayers();
+		TheNomad::SGame::ScreenData.GetPlayer().InitHUD();
 	}
 };

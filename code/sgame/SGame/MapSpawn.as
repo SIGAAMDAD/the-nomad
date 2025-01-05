@@ -12,7 +12,7 @@ namespace TheNomad::SGame {
 		
 		void Activate() {
 			if ( m_bUsed ) {
-				return; // ensure no recursions
+			//	return; // ensure no recursions
 			}
 			
 			m_bUsed = true;
@@ -20,7 +20,7 @@ namespace TheNomad::SGame {
 				vec3( float( m_Origin.x ), float( m_Origin.y ),
 				float( m_Origin.z ) ), vec2( 0.0f, 0.0f ) );
 			
-			@m_Checkpoint = null;
+//			@m_Checkpoint = null;
 		}
 		
 		uvec3 m_Origin = uvec3( 0 );

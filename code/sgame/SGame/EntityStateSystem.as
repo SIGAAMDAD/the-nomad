@@ -7,6 +7,7 @@ namespace TheNomad::SGame {
 		ST_PLAYR_MELEE,
 		ST_PLAYR_COMBAT,
 		ST_PLAYR_DEAD,
+		ST_PLAYR_DEAD_IDLE, // here so that the player stays still when they're dead
 		ST_PLAYR_QUICKSHOT,
 
 		ST_PLAYR_ARMS_IDLE,
@@ -99,6 +100,7 @@ namespace TheNomad::SGame {
 			m_BaseStateCache.Add( "ST_PLAYR_MELEE", StateNum::ST_PLAYR_MELEE );
 			m_BaseStateCache.Add( "ST_PLAYR_COMBAT", StateNum::ST_PLAYR_COMBAT );
 			m_BaseStateCache.Add( "ST_PLAYR_DEAD", StateNum::ST_PLAYR_DEAD );
+			m_BaseStateCache.Add( "ST_PLAYR_DEAD_IDLE", StateNum::ST_PLAYR_DEAD_IDLE );
 			m_BaseStateCache.Add( "ST_PLAYR_QUICKSHOT", StateNum::ST_PLAYR_QUICKSHOT );
 			m_BaseStateCache.Add( "ST_PLAYR_ARMS_IDLE", StateNum::ST_PLAYR_ARMS_IDLE );
 			m_BaseStateCache.Add( "ST_PLAYR_ARMS_MOVE", StateNum::ST_PLAYR_ARMS_MOVE );

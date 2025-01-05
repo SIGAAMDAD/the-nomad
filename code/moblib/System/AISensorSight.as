@@ -135,7 +135,7 @@ namespace moblib {
 				}
 			}
 			
-			mob.SetTarget( @TheNomad::SGame::EntityManager.GetEntityForNum( ray.m_nEntityNumber ) );
+			mob.SetTarget( @TheNomad::SGame::EntityManager.GetActivePlayer() );
 			
 			return true;
 		}

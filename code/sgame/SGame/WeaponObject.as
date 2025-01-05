@@ -250,7 +250,7 @@ namespace TheNomad::SGame {
 				}
 				return m_AmmoInfo.damage;
 			}
-			
+
 			EntityManager.DamageEntity( EntityManager.GetEntityForNum( ray.m_nEntityNumber ), m_Owner );
 			
 			// health mult doesn't matter on harder difficulties if the player is attacking with a firearm,
@@ -314,7 +314,7 @@ namespace TheNomad::SGame {
 			return damage;
 		}
 
-		bool Load( const TheNomad::GameSystem::SaveSystem::LoadSection& in section ) {
+		bool Load( const TheNomad::GameSystem::SaveSystem::LoadSection& in section ) override {
 			if ( section.LoadBool( "hasOwner" ) ) {
 				m_Flags = EntityFlags( section.LoadUInt( "flags" ) );
 				@m_Owner = EntityManager.GetEntityForNum( section.LoadUInt( "owner" ) );

@@ -14,6 +14,7 @@ namespace TheNomad::SGame {
 				@m_Spawns[i] = null;
 			}
 			EntityManager.RemoveEntity( @m_Entity );
+			m_Spawns.Clear();
 		}
 		
 		void AddSpawn( MapSpawn@ spawn ) {
@@ -21,12 +22,11 @@ namespace TheNomad::SGame {
 		}
 		void Activate( uint nLevelTime ) {
 			if ( m_bPassed ) {
-				return;
+//				return;
 			}
 			for ( uint i = 0; i < m_Spawns.Count(); i++ ) {
 				m_Spawns[i].Activate(); 
 			}
-			m_Spawns.Clear();
 			m_bPassed = true;
 			m_nTime = TheNomad::GameSystem::GameTic - nLevelTime;
 		}

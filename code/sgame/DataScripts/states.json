@@ -1,14 +1,28 @@
 {
 	"StateInfo": [
 		{
-			"Id": "player_dead",
-			"Tics": 6000,
-			"BaseNum": "ST_PLAYR_DEAD",
+			"Id": "player_dead_idle",
+			"Tics": 0,
+			"BaseNum": "ST_PLAYR_DEAD_IDLE",
 			"Entity": "player",
 			"NextState": "this",
+			"SpriteOffset": [ 25, 16 ],
+			"Animation": {
+				"TicRate": 0,
+				"FlipFlop": false,
+				"Frames": 0,
+				"Reverse": false
+			}
+		},
+		{
+			"Id": "player_dead",
+			"Tics": 2000,
+			"BaseNum": "ST_PLAYR_DEAD",
+			"Entity": "player",
+			"NextState": "player_dead_idle",
 			"SpriteOffset": [ 20, 16 ],
 			"Animation": {
-				"TicRate": 500,
+				"TicRate": 400,
 				"FlipFlop": false,
 				"Frames": 6,
 				"Reverse": false
