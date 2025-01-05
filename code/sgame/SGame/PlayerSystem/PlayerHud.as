@@ -71,8 +71,6 @@ namespace TheNomad::SGame {
 		private void DrawHealthStatus() {
 			const float health = m_Parent.GetHealth();
 
-			ImGui::SetWindowFontScale( m_nStatusBarFontScale );
-
 			ImGui::Begin( "##HealthBarFilled", null, ImGui::MakeWindowFlags( ImGuiWindowFlags::NoResize | ImGuiWindowFlags::NoMove
 				| ImGuiWindowFlags::NoCollapse | ImGuiWindowFlags::NoBackground | ImGuiWindowFlags::NoTitleBar
 				| ImGuiWindowFlags::NoScrollbar ) );
@@ -105,9 +103,10 @@ namespace TheNomad::SGame {
 					Util::HapticRumble( 0, 0.20f, 100 );
 					
 					// draw a red overlay if we're really low on health
-					m_BloodScreenSplatter.Draw();
+//					m_BloodScreenSplatter.Draw();
 				}
 				ImGui::End();
+				ImGui::PopStyleColor( 1 );
 			}
 
 			if ( TheNomad::GameSystem::GameTic > m_nHealthBarEndTime ) {
@@ -196,6 +195,9 @@ namespace TheNomad::SGame {
 				return;
 			}
 			m_nHealthBarEndTime = TheNomad::GameSystem::GameTic + 5000;
+		}
+		bool InCombat() const {
+			return TheNomad::GameSystem::GameTic < m_nHealthBarEndTime;
 		}
 		void SetTutorial( itemlib::Script::Tutorial@ popup ) {
 			@m_Tutorial = @popup;

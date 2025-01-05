@@ -8,6 +8,10 @@ namespace moblib {
 		MobScript() {
 		}
 		
+		TheNomad::SGame::MobObject@ GetData() {
+			return @m_EntityData;
+		}
+
 		void Link( TheNomad::SGame::MobObject@ mob ) {
 			TheNomad::SGame::InfoSystem::MobInfo@ info = @mob.GetMobInfo();
 			const uint id = info.type;
@@ -44,6 +48,9 @@ namespace moblib {
 		}
 		void ChaseThink() {
 			GameError( "MobScript::ChaseThink: pure virtual function called" );
+		}
+		void OnDamage( TheNomad::SGame::EntityObject@ attacker ) {
+			GameError( "MobScript::OnDamage: pure virtual function called" );
 		}
 		void OnSpawn() {
 			GameError( "MobScript::OnSpawn: pure virtual function called" );

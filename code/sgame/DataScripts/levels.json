@@ -1,90 +1,88 @@
 {
-    "LevelInfo": [
-        {
-            "Name": "In The Dark of The Night",
-            "Credits": "level from vanilla Nomad",
-            "MapNameDifficulty_0": "maps/darkofthenight.bmf",
-            "MapNameDifficulty_1": "maps/darkofthenight.bmf",
-            "MapNameDifficulty_2": "maps/darkofthenight.bmf",
-            "MapNameDifficulty_3": "maps/darkofthenight.bmf",
-            "MapNameDifficulty_4": "maps/darkofthenight.bmf",
-            "MapNameDifficulty_5": "maps/darkofthenight.bmf",
-            "BeginLevelScript": "scripts/levels/darkofthenight.level",
-            "Music": {
-                "AmbientStealth": "event:/music/level0/ambience_music",
-                "AmbientEnvironment": "event:/music/level0/ambience_world",
-                "Combat": "event:/music/level0/combat"
-            },
-            "RankS": {
-                "MinKills": 0,
-                "MinStyle": 0,
-                "MaxDeaths": 0,
-                "MinTime.Milliseconds": 0,
-                "MinTime.Seconds": 0,
-                "MinTime.Minutes": 0,
-                "MaxCollateral": 0,
-                "RequiresClean": true
-            },
-            "RankA": {
-                "MinKills": 0,
-                "MinStyle": 0,
-                "MaxDeaths": 0,
-                "MinTime.Milliseconds": 0,
-                "MinTime.Seconds": 0,
-                "MinTime.Minutes": 0,
-                "MaxCollateral": 0,
-                "RequiresClean": true
-            },
-            "RankB": {
-                "MinKills": 0,
-                "MinStyle": 0,
-                "MaxDeaths": 0,
-                "MinTime.Milliseconds": 0,
-                "MinTime.Seconds": 0,
-                "MinTime.Minutes": 0,
-                "MaxCollateral": 0,
-                "RequiresClean": false
-            },
-            "RankC": {
-                "MinKills": 0,
-                "MinStyle": 0,
-                "MaxDeaths": 0,
-                "MinTime.Milliseconds": 0,
-                "MinTime.Seconds": 0,
-                "MinTime.Minutes": 0,
-                "MaxCollateral": 0,
-                "RequiresClean": false
-            },
-            "RankD": {
-                "MinKills": 0,
-                "MinStyle": 0,
-                "MaxDeaths": 0,
-                "MinTime.Milliseconds": 0,
-                "MinTime.Seconds": 0,
-                "MinTime.Minutes": 0,
-                "MaxCollateral": 0,
-                "RequiresClean": false
-            },
-            "RankF": {
-                "MinKills": 0,
-                "MinStyle": 0,
-                "MaxDeaths": 0,
-                "MinTime.Milliseconds": 0,
-                "MinTime.Seconds": 0,
-                "MinTime.Minutes": 0,
-                "MaxCollateral": 0,
-                "RequiresClean": false
-            },
-            "RankU": {
-                "MinKills": 0,
-                "MinStyle": 0,
-                "MaxDeaths": 0,
-                "MinTime.Milliseconds": 0,
-                "MinTime.Seconds": 0,
-                "MinTime.Minutes": 0,
-                "MaxCollateral": 0,
-                "RequiresClean": false
-            }
-        }
-    ]
+	"LevelInfo": [
+		{
+			"Name": "In The Dark of The Night",
+			"Credits": "level from vanilla Nomad",
+			"MapNameDifficulty_0": "maps/darkofthenight.bmf",
+			"MapNameDifficulty_1": "maps/darkofthenight.bmf",
+			"MapNameDifficulty_2": "maps/darkofthenight.bmf",
+			"MapNameDifficulty_3": "maps/darkofthenight.bmf",
+			"MapNameDifficulty_4": "maps/darkofthenight.bmf",
+			"MapNameDifficulty_5": "maps/darkofthenight.bmf",
+			"BeginLevelScript": "scripts/levels/darkofthenight.level",
+			"SoundTrack_AmbientStealth": "event:/music/level0/ambience_music",
+			"SoundTrack_AmbientEnvironment": "event:/music/level0/ambience_world",
+			"SoundTrack_Combat": "event:/music/level0/combat_0",
+			"RankS": {
+				"MinKills": 0,
+				"MinStyle": 0,
+				"MaxDeaths": 0,
+				"MinTime.Milliseconds": 0,
+				"MinTime.Seconds": 0,
+				"MinTime.Minutes": 0,
+				"MaxCollateral": 0,
+				"RequiresClean": true
+			},
+			"RankA": {
+				"MinKills": 0,
+				"MinStyle": 0,
+				"MaxDeaths": 0,
+				"MinTime.Milliseconds": 0,
+				"MinTime.Seconds": 0,
+				"MinTime.Minutes": 0,
+				"MaxCollateral": 0,
+				"RequiresClean": true
+			},
+			"RankB": {
+				"MinKills": 0,
+				"MinStyle": 0,
+				"MaxDeaths": 0,
+				"MinTime.Milliseconds": 0,
+				"MinTime.Seconds": 0,
+				"MinTime.Minutes": 0,
+				"MaxCollateral": 0,
+				"RequiresClean": false
+			},
+			"RankC": {
+				"MinKills": 0,
+				"MinStyle": 0,
+				"MaxDeaths": 0,
+				"MinTime.Milliseconds": 0,
+				"MinTime.Seconds": 0,
+				"MinTime.Minutes": 0,
+				"MaxCollateral": 0,
+				"RequiresClean": false
+			},
+			"RankD": {
+				"MinKills": 0,
+				"MinStyle": 0,
+				"MaxDeaths": 0,
+				"MinTime.Milliseconds": 0,
+				"MinTime.Seconds": 0,
+				"MinTime.Minutes": 0,
+				"MaxCollateral": 0,
+				"RequiresClean": false
+			},
+			"RankF": {
+				"MinKills": 0,
+				"MinStyle": 0,
+				"MaxDeaths": 0,
+				"MinTime.Milliseconds": 0,
+				"MinTime.Seconds": 0,
+				"MinTime.Minutes": 0,
+				"MaxCollateral": 0,
+				"RequiresClean": false
+			},
+			"RankU": {
+				"MinKills": 0,
+				"MinStyle": 0,
+				"MaxDeaths": 0,
+				"MinTime.Milliseconds": 0,
+				"MinTime.Seconds": 0,
+				"MinTime.Minutes": 0,
+				"MaxCollateral": 0,
+				"RequiresClean": false
+			}
+		}
+	]
 }

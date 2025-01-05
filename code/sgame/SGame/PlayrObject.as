@@ -122,7 +122,6 @@ namespace TheNomad::SGame {
 			// blade -> blunt -> firearm
 
 			WeaponSlot@ slot = null;
-			InfoSystem::WeaponProperty mode;
 
 			switch ( m_nHandsUsed ) {
 			case LEFT_ARM:
@@ -136,40 +135,39 @@ namespace TheNomad::SGame {
 				break;
 			};
 
-			mode = slot.GetMode();
+			const uint mode = slot.GetMode();
 			const WeaponObject@ weapon = @slot.GetData();
 			
 			slot.SetMode( InfoSystem::WeaponProperty::None ); // clear the modes
 			
 			// find the next most suitable mode
-			const InfoSystem::WeaponProperty props = weapon.GetWeaponInfo().weaponProps;
+			const uint props = uint( weapon.GetWeaponInfo().weaponProps );
+			const bool IsOneHanded = ( props & InfoSystem::WeaponProperty::IsOneHanded ) != 0;
+			const bool isTwoHanded = ( props & InfoSystem::WeaponProperty::IsTwoHanded ) != 0;
 			const uint hands = ~( InfoSystem::WeaponProperty::IsOneHanded | InfoSystem::WeaponProperty::IsTwoHanded );
+
 			for ( uint i = 0; i < sgame_WeaponModeList.Count(); i++ ) {
 				const uint current = sgame_WeaponModeList[i];
-				if ( ( uint( props ) & ( current & hands ) ) != 0 ) {
-					// found a match, but check if its the same
-					if ( uint( mode ) == current ) {
-						// same mode, don't switch
-						continue;
-					}
-
+				if ( mode == current ) {
+					// same mode, don't switch
+					continue;
+				}
+				if ( ( props & ( current & hands ) ) != 0 ) {
 					// apply some filters
 					if ( ( current & InfoSystem::WeaponProperty::IsOneHanded ) != 0
-						&& ( uint( props ) & InfoSystem::WeaponProperty::IsOneHanded ) == 0 )
+						&& !IsOneHanded )
 					{
 						// one handing not possible, deny
 						continue;
 					}
 					if ( ( current & InfoSystem::WeaponProperty::IsTwoHanded ) != 0
-						&& ( uint( props ) & InfoSystem::WeaponProperty::IsTwoHanded ) == 0 )
+						&& !isTwoHanded )
 					{
 						// two handing not possible, deny
 						continue;
 					}
 					
 					// we've got a match!
-					DebugPrint( "Switched weapon mode from " + slot.GetData().LogWeaponMode( mode ) + " to "
-						+ slot.GetData().LogWeaponMode( current ) + "\n" );
 					slot.SetMode( InfoSystem::WeaponProperty( current ) );
 					slot.GetData().SetUseMode( current );
 					break;
@@ -545,7 +543,7 @@ namespace TheNomad::SGame {
 				
 				Util::HapticRumble( m_nControllerIndex, 0.80f, 4000 );
 			} else {
-				switch ( Util::PRandom() & 3 ) {
+				switch ( Util::PRandom() & 2 ) {
 				case 0:
 					EmitSound( ScreenData.m_PainSfx0, 1.0f, 0xff );
 					break;
@@ -851,7 +849,10 @@ namespace TheNomad::SGame {
 			RightArm.Think();
 
 			if ( m_nSoundLevel > 0.0f ) {
-				m_nSoundLevel -= 0.5f * TheNomad::GameSystem::DeltaTic;
+				m_nSoundLevel -= 1.0f * TheNomad::GameSystem::DeltaTic;
+			}
+			if ( m_nSoundLevel < 0.0f ) {
+				m_nSoundLevel = 0.0f;
 			}
 
 			Flags &= ~PF_USED_MANA;

@@ -428,6 +428,7 @@ namespace TheNomad::SGame {
 			else if ( target.GetType() == TheNomad::GameSystem::EntityType::Playr ) {
 				target.SetState( StateNum::ST_PLAYR_DEAD );
 			}
+			target.SetFlags( uint( target.GetFlags() ) | EntityFlags::Dead );
 		}
 		
 		//

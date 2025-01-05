@@ -1,105 +1,89 @@
 #include "nomadmain/SGame/MobObject.as"
+#include "moblib/Script/MercShotty.as"
 
-namespace moblib {
+namespace moblib::System {
 	const uint MAX_SQUAD_SIZE = 20;
 	
 	class AISquad {
 		AISquad() {
 		}
-		
-		//
-		// AISquad::CheckLeaderShip: if the squad's morale is less than given
-		// threshold, then disband it
-		//
-		bool CheckLeaderShip() {
-			if ( @m_Leader is null ) {
-				Disband();
-				return false;
-			}
-			else if ( m_nMorale < m_Leader.GetMoraleRequirement() ) {
-				return false;
-			}
-			return true; // all good
+
+		void InitSquad( uint nSquadID ) {
+			m_nSquadID = nSquadID;
+
+			m_SquadAABB.Clear();
+			m_nSquadMembers = 0;
+
+			m_bSquadMemberDied = false;
 		}
-		void MergeSquad( AISquad@ other ) {
-			for ( uint i = 0; i < other.m_nSquadMembers; ++i ) {
-				// bail if squad is full
-				if ( m_nSquadMembers < m_Leader.GetInfo().maxSquadSize ) {
-					@m_SquadMembers[ m_nSquadMembers ] = @other.m_SquadMembers[ i ];
-					@m_SquadMembers[ m_nSquadMembers ].SetGroup( @this );
-					++m_nSquadMembers;
-				}
-			}
-			m_SquadAABB.Merge( other.m_SquadAAB );
-			
-			other.m_SquadMembers.Clear();
-			other.m_nSquadMembers = 0;
-			@other.m_Leader = null;
-			other.m_nSquadID = -1;
+		void SquadBark( int hBark ) {
+			m_nSquadBark = hBark;
 		}
-		void Disband() {
-			DebugPrint( "Disbanding Squad #" + m_nSquadID + "\n" );
-			for ( uint i = 0; i < m_nSquadMembers; i++ ) {
-				m_Members[ i ].SetGroup( null );
-			}
-		}
-		void AssignLeader( TheNomad::SGame::MobObject@ leader ) {
-			// add or detract from the group's morale
-			if ( @m_Leader !is null && @leader is null ) {
-				m_nMorale -= m_Leader.GetLeaderMoraleBuff();
-			} else if ( @leader !is null ) {
-				m_nMorale += m_Leader.GetLeaderMoraleBuff();
-			}
-			
-			for ( uint i = 0; i < m_nSquadMembers; i++ ) {
-				m_Members[ i ].SetGroupLeader( @leader );
-			}
-			@m_Leader = @leader;
-		}
-		void RemoveMember( TheNomad::SGame::MobObject@ member ) {
-			if ( floor( m_nMorale ) < m_nSquadMembers ) {
-				Disband();
-			}
-		}
-		
-		void AddMember( TheNomad::SGame::MobObject@ member, const TheNomad::GameSystem::BBox& in bounds ) {
-			// bail if squad is full
-			
-			if ( m_nSquadMembers < m_Leader.GetInfo().maxSquadSize ) {
-				DebugPrint( "Joining Squad " + m_nSquadID + "\n" );
-				
-				// expand the squad's bounds to encompass the new member
-				if ( m_nSquadMembers == 0 ) {
-					m_SquadAABB = bounds;
-					AssignLeader( @member );
-				} else {
-					m_SquadAABB.Merge( bounds );
-				}
-				
+		void AddSquadMember( moblib::Script::MercShotty@ member ) {
+			if ( m_nSquadMembers < MAX_SQUAD_SIZE ) {
 				@m_SquadMembers[ m_nSquadMembers ] = @member;
 				++m_nSquadMembers;
 			}
-			member.SetGroup( @this );
-			
-			// depending on how big this member is, add to the
-			// mental strength
-			m_nMorale += member.GetMoraleBuff();
 		}
-		array<TheNomad::SGame::MobObject@>@ GetMembers() {
+		void Update() {
+			if ( m_nSquadBark != -1 ) {
+				int rand = TheNomad::Util::PRandom() & ( m_nSquadMembers - 1 );
+				for ( int iMember = 0; iMember < m_nSquadMembers; ++iMember ) {
+					if ( iMember == rand ) {
+						m_SquadMembers[ iMember ].GetData().EmitSound( m_nSquadBark, 10.0f, 0xff );
+						break;
+					}
+				}
+				m_nSquadBark = -1;
+			}
+		}
+		/*
+		void Update() {
+			HandleSquadDeaths();
+		}
+		void HandleSquadDeaths() {
+			bool bDead = false;
+			int iMember;
+			for ( iMember = m_nSquadMembers; ++iMember ) {
+				if ( m_SquadMembers[i].m_EntityData.CheckFlags( EntityFlags::Dead ) ) {
+					@m_SquadMembers[i] = null;
+					bDead = true;
+					break;
+				}
+			}
+
+			if ( !bDead ) {
+				return;
+			}
+			m_bSquadMemberDied = true;
+
+			int iDead = iMember;
+			for ( iMember = iDead; iMember < m_nSquadMembers - 1; ++iMember ) {
+				@m_SquadMembers[i] = @m_SquadMembers[ i + 1 ];
+			}
+		}
+		*/
+		void SetTarget( TheNomad::SGame::EntityObject@ ent ) {
+			m_Leader.GetData().SetTarget( @ent );
+		}
+
+		array<moblib::Script::MercShotty@>@ GetMembers() {
 			return @m_SquadMembers;
 		}
-		TheNomad::SGame::MobObject@ GetLeader() {
+		moblib::Script::MercShotty@ GetLeader() {
 			return @m_Leader;
 		}
 		uint GetID() const {
 			return m_nSquadID;
 		}
 		
-		private TheNomad::GameSystem::BBox m_SquadAABB;
-		private array<TheNomad::SGame::MobObject@> m_SquadMembers;
-		private TheNomad::SGame::MobObject@ m_Leader = null;
+		private TheNomad::Engine::Physics::Bounds m_SquadAABB;
+		private moblib::Script::MercShotty@[] m_SquadMembers( MAX_SQUAD_SIZE );
+		private moblib::Script::MercShotty@ m_Leader = null;
 		private float m_nMorale = 0.0f;
 		private int m_nSquadID = 0;
 		private uint m_nSquadMembers = 0;
+		private int m_nSquadBark = -1;
+		private bool m_bSquadMemberDied = false;
 	};
 };

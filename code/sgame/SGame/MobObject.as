@@ -72,90 +72,19 @@ namespace TheNomad::SGame {
 		}
 
 		void NewChaseDir() {
-			TheNomad::GameSystem::DirType olddir;
-			TheNomad::GameSystem::DirType d0, d1, d2;
-			TheNomad::GameSystem::DirType turnaround;
-			TheNomad::GameSystem::DirType tdir;
-
 			if ( @m_Target is null ) {
 				GameError( "MobObject::NewChaseDir: called with no target" );
 			}
 
-			olddir = m_Direction;
-			turnaround = Util::InverseDir( olddir );
-
-			const vec3 target = m_Target.GetOrigin();
-			const float deltaX = target.x - m_Link.m_Origin.x;
-			const float deltaY = target.y - m_Link.m_Origin.y;
-
-			if ( deltaX > 0.0f ) {
-				d1 = TheNomad::GameSystem::DirType::East;
-			} else if ( deltaX < 0.0f ) {
-				d1 = TheNomad::GameSystem::DirType::West;
-			} else {
-				d1 = TheNomad::GameSystem::DirType::Inside;
-			}
-
-			if ( deltaY > 0.0f ) {
-				d2 = TheNomad::GameSystem::DirType::South;
-			} else if ( deltaY < 0.0f ) {
-				d2 = TheNomad::GameSystem::DirType::North;
-			} else {
-				d2 = TheNomad::GameSystem::DirType::Inside;
-			}
-
-			// try direct route
-			if ( d1 != TheNomad::GameSystem::DirType::Inside && d2 != TheNomad::GameSystem::DirType::Inside ) {
-				m_Direction++;
-				if ( m_Direction == uint( turnaround ) && TryWalk() ) {
-					return;
-				}
-			}
-
-			// try other directions
-			if ( Util::PRandom() > 200 || abs( deltaY ) > abs( deltaX ) ) {
-				tdir = d1;
-				d1 = d2;
-				d2 = tdir;
-			}
-
-			if ( d1 == turnaround ) {
-				d1 = TheNomad::GameSystem::DirType::Inside;
-			}
-			if ( d2 == turnaround ) {
-				d2 = TheNomad::GameSystem::DirType::Inside;
-			}
-
-			if ( d1 != TheNomad::GameSystem::DirType::Inside ) {
-				m_Direction = d1;
-				if ( TryWalk() ) {
-					// either moved forward or attacked
-					return;
-				}
-			}
-
-			if ( d2 != TheNomad::GameSystem::DirType::Inside ) {
-				m_Direction = d2;
-				if ( TryWalk() ) {
-					return;
-				}
-			}
-
-			// there is no direct path to the player,
-			// so pick another direction.
-			if ( olddir != TheNomad::GameSystem::DirType::Inside ) {
-				m_Direction = olddir;
-				if ( TryWalk() ) {
-					return;
-				}
-			}
+			const TheNomad::GameSystem::DirType turnaround = Util::InverseDir( m_Direction );
+			TheNomad::GameSystem::DirType tdir;
 
 			// randomly determine direction of search
 			if ( ( Util::PRandom() & 1 ) == 1 ) {
 				for ( tdir = TheNomad::GameSystem::DirType::East; tdir <= TheNomad::GameSystem::DirType::SouthEast; tdir++ ) {
 					if ( tdir != turnaround ) {
 						m_Direction = tdir;
-						if ( TryWalk() ) {
+						if ( Move() ) {
 							return;
 						}
 					}
@@ -165,7 +94,7 @@ namespace TheNomad::SGame {
 				for ( tdir = TheNomad::GameSystem::DirType::SouthEast; tdir != ( TheNomad::GameSystem::DirType::North - 1 ); tdir-- ) {
 					if ( tdir == turnaround ) {
 						m_Direction = tdir;
-						if ( TryWalk() ) {
+						if ( Move() ) {
 							return;
 						}
 					}
@@ -174,7 +103,7 @@ namespace TheNomad::SGame {
 
 			if ( turnaround != TheNomad::GameSystem::DirType::Inside ) {
 				m_Direction = turnaround;
-				if ( TryWalk() ) {
+				if ( Move() ) {
 					return;
 				}
 			}
@@ -195,7 +124,9 @@ namespace TheNomad::SGame {
 			}
 
 			// chase towards player
-			Move();
+			if ( @m_Target !is null && !Move() ) {
+				NewChaseDir();
+			}
 		}
 
 		void LinkScript( moblib::MobScript@ script ) {
@@ -235,8 +166,8 @@ namespace TheNomad::SGame {
 				
 				return;
 			}
-			
-//			EmitSound( m_Info.painSfx, 1.0f, 0xff );
+
+			m_ScriptData.OnDamage( @source );
 			
 			if ( @source !is @m_Target ) {
 				SetTarget( @source );
@@ -305,12 +236,17 @@ namespace TheNomad::SGame {
 			refEntity.sheetNum = m_Info.spriteSheet.GetShader();
 			refEntity.spriteId = TheNomad::Engine::Renderer::GetSpriteId( @m_Info.spriteSheet, @m_State );
 
+			if ( @m_Target !is null ) {
+				FaceTarget();
+			}
+
 			refEntity.Draw();
 		}
 		void Think() override {
 			m_Bounds.m_nWidth = m_Info.size.x;
 			m_Bounds.m_nHeight = m_Info.size.y;
 			m_Bounds.MakeBounds( m_Link.m_Origin );
+			@m_State = @m_State.Run( m_nTicker );
 
 			switch ( m_State.GetBaseNum() ) {
 			case StateNum::ST_MOB_IDLE:
@@ -343,8 +279,7 @@ namespace TheNomad::SGame {
 		
 		void SetTarget( EntityObject@ newTarget ) {
 			@m_Target = @newTarget;
-			m_PhysicsObject.SetAngle( atan2( m_Link.m_Origin.x - m_Target.GetOrigin().x, m_Link.m_Origin.y - m_Target.GetOrigin().y ) );
-			m_Direction = Util::Angle2Dir( m_PhysicsObject.GetAngle() );
+			FaceTarget();
 			
 			DebugPrint( "Set mob target to " + m_Target.GetEntityNum() + "\n" );
 		}

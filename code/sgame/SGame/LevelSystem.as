@@ -87,10 +87,10 @@ namespace TheNomad::SGame {
 					data.m_MapHandles.Add( MapData );
 				}
 
-				if ( info.get( "SoundTrack_Ambient", music ) ) {
+				if ( info.get( "SoundTrack_AmbientStealth", music ) ) {
 					data.m_hAmbientTheme = TheNomad::Engine::SoundSystem::RegisterTrack( music );
 					if ( data.m_hAmbientTheme == -1 ) {
-						ConsoleWarning( "SoundTrack_Ambient for LevelData \"" + data.m_Name + "\" not found.\n" );
+						ConsoleWarning( "SoundTrack_AmbientStealth for LevelData \"" + data.m_Name + "\" not found.\n" );
 					}
 				}
 				if ( info.get( "SoundTrack_Combat", music ) ) {
@@ -193,6 +193,19 @@ namespace TheNomad::SGame {
 		}
 		void OnRunTic() {
 			m_RankData.Draw( false, m_nLevelTimer );
+
+			int hTrack = FS_INVALID_HANDLE;
+			if ( EntityManager.GetActivePlayer().GetUI().InCombat() ) {
+				hTrack = m_LevelInfoDatas[ m_nIndex ].m_hCombatTheme;
+			} else {
+				hTrack = m_LevelInfoDatas[ m_nIndex ].m_hAmbientTheme;
+			}
+
+			if ( hTrack != m_hTrack ) {
+				TheNomad::Engine::SoundSystem::StopSfx( m_hTrack );
+				TheNomad::Engine::SoundSystem::PlaySfx( hTrack );
+				m_hTrack = hTrack;
+			}
 		}
 		void OnPlayerDeath( int ) {
 		}
@@ -371,7 +384,7 @@ namespace TheNomad::SGame {
 					section.SaveUInt( "CurrentCheckpoint", m_CurrentCheckpoint );
 				}
 				for ( uint i = 0; i < m_CurrentCheckpoint; i++ ) {
-					section.SaveUInt64( "CheckpointTime_" + i, MapCheckpoints[i].m_nTime );
+					section.SaveUInt( "CheckpointTime_" + i, MapCheckpoints[i].m_nTime );
 				}
 			}
 
@@ -419,6 +432,9 @@ namespace TheNomad::SGame {
 			if ( !TheNomad::GameSystem::IsLoadGameActive ) {
 				LoadMap();
 			}
+
+			m_hTrack = m_LevelInfoDatas[ m_nIndex ].m_hAmbientTheme;
+			TheNomad::Engine::SoundSystem::PlaySfx( m_hTrack );
 		}
 		
 		private void ForcePlayerSpawn() {
@@ -636,6 +652,7 @@ namespace TheNomad::SGame {
 		private array<LevelInfoData@> m_LevelInfoDatas;
 		private uint m_nIndex = 0;
 		private uint m_nLevels = 0;
+		private int m_hTrack = FS_INVALID_HANDLE;
 		private bool m_bPaused = false;
 		
 		private bool m_bNewCheckpoint = true;

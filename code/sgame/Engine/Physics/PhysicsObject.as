@@ -257,15 +257,15 @@ namespace TheNomad::Engine::Physics {
 						}
 						break;
 					}
-					m_Velocity = 0.0f;
-					m_Acceleration = 0.0f;
 					if ( ent.GetType() == TheNomad::GameSystem::EntityType::Mob &&
 						( m_Velocity.x > 2.25f && m_Velocity.y > 2.25f ) )
 					{
 						// damage
+						m_Velocity = 0.0f;
+						m_Acceleration = 0.0f;
 						TheNomad::SGame::EntityManager.DamageEntity( @ent, @m_EntityData );
 					}
-					return false; // clip
+					break;
 				}
 			}
 			

@@ -1,4 +1,5 @@
 #include "moblib/MobScript.as"
+#include "moblib/System/AISquad.as"
 
 namespace moblib::Script {
 	const uint MERC_AIM_TIME = 2500;
@@ -17,12 +18,9 @@ namespace moblib::Script {
 			return missChance * m_nAimScale;
 		}
 
-		private void Bark( int hSfx ) {
-			if ( ( TheNomad::GameSystem::GameTic - m_nLastBarkTime ) * TheNomad::GameSystem::DeltaTic < MERC_BARK_COOLDOWN ) {
-				return;
-			}
-			m_nLastBarkTime = TheNomad::GameSystem::GameTic;
-			m_EntityData.EmitSound( hSfx, 10.0f, 0xff );
+		private void ChangeState( int hBark, TheNomad::SGame::EntityState@ state ) {
+			m_Squad.SquadBark( hBark );
+			m_EntityData.SetState( @state );
 		}
 		
 		/* TODO: implement
@@ -72,12 +70,19 @@ namespace moblib::Script {
 		}
 		void IdleThink() override {
 			if ( m_Sensor.CheckSight() ) {
-				Bark( ResourceCache.ShottyTargetSpottedSfx[ TheNomad::Util::PRandom() & ( ResourceCache.ShottyTargetSpottedSfx.Count() - 1 ) ] );
-				m_EntityData.SetState( @m_ChaseState );
+				ChangeState( ResourceCache.ShottyTargetSpottedSfx[ TheNomad::Util::PRandom() & ( ResourceCache.ShottyTargetSpottedSfx.Count() - 1 ) ],
+					@m_ChaseState );
+				m_EntityData.FaceTarget();
 			}
 			else if ( m_Sensor.CheckSound() ) {
-				Bark( ResourceCache.ShottyConfusionSfx[ TheNomad::Util::PRandom() & ( ResourceCache.ShottyConfusionSfx.Count() - 1 ) ] );
-				m_EntityData.SetState( @m_SearchState );
+				ChangeState( ResourceCache.ShottyConfusionSfx[ TheNomad::Util::PRandom()
+					& ( ResourceCache.ShottyConfusionSfx.Count() - 1 ) ], @m_SearchState );
+				m_EntityData.FaceTarget();
+				m_nLastCheckTime = TheNomad::GameSystem::GameTic;
+			}
+			if ( m_EntityData.GetDirection() == TheNomad::GameSystem::DirType::Inside ) {
+				m_EntityData.EmitSound( ResourceCache.ShottyHelpMe[ TheNomad::Util::PRandom() & ( ResourceCache.ShottyHelpMe.Count() - 1 ) ],
+					10.0f, 0xff );
 			}
 		}
 		void DeadThink() override {
@@ -97,16 +102,22 @@ namespace moblib::Script {
 			
 			TheNomad::GameSystem::RayCast ray;
 			
-			ray.m_Start = m_EntityData.GetOrigin();
+			const vec3 origin = m_EntityData.GetOrigin();
+
+			ray.m_Start = origin;
 			ray.m_nLength = MERC_SHOTGUN_RANGE;
 			ray.m_nAngle = m_EntityData.GetAngle();
 			ray.m_nOwner = m_EntityData.GetEntityNum();
 			ray.Cast();
 
+			TheNomad::SGame::GfxManager.AddMuzzleFlash( origin );
+
 			m_EntityData.SetState( @m_ChaseState );
 
 			if ( ray.m_nEntityNumber == ENTITYNUM_WALL ) {
 				// TODO: add wall hit mark here
+				const float velocity = ray.m_nLength - TheNomad::Util::Distance( ray.m_Origin, ray.m_Start );
+				TheNomad::SGame::GfxManager.AddDebrisCloud( ray.m_Origin, velocity );
 				return;
 			} else if ( ray.m_nEntityNumber == ENTITYNUM_INVALID ) {
 				return;
@@ -120,8 +131,11 @@ namespace moblib::Script {
 		void SearchThink() override {
 			const bool canSee = m_Sensor.CheckSight();
 			if ( canSee ) {
-				Bark( ResourceCache.ShottyTargetSpottedSfx[ TheNomad::Util::PRandom() & ( ResourceCache.ShottyTargetSpottedSfx.Count() - 1 ) ] );
-				m_EntityData.SetState( @m_ChaseState );
+				ChangeState( ResourceCache.ShottyTargetSpottedSfx[ TheNomad::Util::PRandom() &
+					( ResourceCache.ShottyTargetSpottedSfx.Count() - 1 ) ], @m_ChaseState );
+			}
+			if ( m_Sensor.CheckSound() ) {
+				m_EntityData.SetState( @m_SearchState );
 			}
 			m_EntityData.Chase();
 		}
@@ -142,29 +156,41 @@ namespace moblib::Script {
 			return TheNomad::SGame::EntityManager.GetEntityForNum( ray.m_nEntityNumber ).GetType() == TheNomad::GameSystem::EntityType::Mob;
 		}
 		void ChaseThink() override {
+			if ( @m_SubState !is null && !m_SubState.Done( m_nSubTicker ) ) {
+				return;
+			}
+
 			const vec3 origin = m_EntityData.GetOrigin();
 			const vec3 target = m_EntityData.GetTarget().GetOrigin();
 			const bool canSee = m_Sensor.CheckSight();
 			if ( canSee ) {
 				if ( TheNomad::Util::DotProduct( target, origin ) > TheNomad::Util::DotProduct( m_OldTargetPosition, origin ) ) {
-					Bark( ResourceCache.ShottyTargetRunningSfx[ TheNomad::Util::PRandom() & ( ResourceCache.ShottyTargetRunningSfx.Count() - 1 ) ] );
+					m_EntityData.EmitSound( ResourceCache.ShottyTargetRunningSfx[ TheNomad::Util::PRandom()
+						& ( ResourceCache.ShottyTargetRunningSfx.Count() - 1 ) ], 10.0f, 0xff );
 				}
 				m_OldTargetPosition = target;
-			} else {
-				Bark( ResourceCache.ShottyTargetEscapedSfx[ TheNomad::Util::PRandom() & ( ResourceCache.ShottyTargetEscapedSfx.Count() - 1 ) ] );
-				m_EntityData.SetState( @m_SearchState );
+				if ( TheNomad::Util::Distance( origin, target ) <= MERC_SHOTGUN_RANGE ) {
+					// only start aiming if we can see the target
+					@m_SubState = @ResourceCache.ShottyAimState;
+					m_SubState.Reset( m_nSubTicker );
+					if ( IsAllyNearby() ) {
+						m_EntityData.EmitSound( ResourceCache.ShottyOutOfTheWay[ TheNomad::Util::PRandom()
+						& ( ResourceCache.ShottyOutOfTheWay.Count() - 1 ) ], 10.0f, 0xff );
+					}
+					m_EntityData.SetState( @m_FightMissileState );
+					m_EntityData.EmitSound( ResourceCache.ShottyAimSfx, 10.0f, 0xff );
+				}
 			}
 			m_EntityData.Chase();
-			
-			if ( TheNomad::Util::Distance( origin, target ) <= MERC_SHOTGUN_RANGE && canSee ) {
-				// only start aiming if we can see the target
-				@m_SubState = @ResourceCache.ShottyAimState;
-				m_SubState.Reset( m_nSubTicker );
-				m_EntityData.EmitSound( ResourceCache.ShottyAimSfx, 10.0f, 0xff );
-				m_EntityData.SetState( @m_FightMissileState );
-				if ( IsAllyNearby() ) {
-					Bark( ResourceCache.ShottyOutOfTheWay[ TheNomad::Util::PRandom() & ( ResourceCache.ShottyOutOfTheWay.Count() - 1 ) ] );
-				}
+		}
+		void OnDamage( TheNomad::SGame::EntityObject@ attacker ) override {
+			if ( attacker.GetType() == TheNomad::GameSystem::EntityType::Mob ) {
+				m_EntityData.EmitSound( ResourceCache.ShottyCeasfire[ TheNomad::Util::PRandom() & ( ResourceCache.ShottyCeasfire.Count() - 1 ) ],
+					10.0f, 0xff );
+			}
+			m_EntityData.EmitSound( ResourceCache.ShottyPain[ TheNomad::Util::PRandom() & ( ResourceCache.ShottyPain.Count() - 1 ) ], 10.0f, 0xff );
+			if ( ( TheNomad::Util::PRandom() & 50 ) >= 25 ) {
+				m_EntityData.EmitSound( ResourceCache.ShottyCurse[ TheNomad::Util::PRandom() & ( ResourceCache.ShottyCurse.Count() - 1 ) ], 10.0f, 0xff );
 			}
 		}
 		void OnSpawn() override {
@@ -194,7 +220,7 @@ namespace moblib::Script {
 				break;
 			};
 
-			m_EntityData.SetDirection( TheNomad::GameSystem::DirType::South );
+			@m_Squad = @GlobalSquad;
 		}
 		void OnDeath() override {
 		}
@@ -206,9 +232,11 @@ namespace moblib::Script {
 		private bool m_bSearchForCover = false;
 		*/
 
+		private moblib::System::AISquad@ m_Squad = null;
+
 		private vec3 m_OldTargetPosition = vec3( 0.0f );
 		private uint m_nLastBarkTime = 0;
-		private int m_hLastBark = FS_INVALID_HANDLE;
+		private uint m_nLastCheckTime = 0;
 
 		private uint m_nAimStartTic = 0;
 		private uint m_nAggressionScale = 0;

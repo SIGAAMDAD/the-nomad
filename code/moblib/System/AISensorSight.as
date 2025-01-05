@@ -7,6 +7,7 @@ namespace moblib {
 //			TheNomad::SGame::EntityObject@ ent = null;
 			const TheNomad::SGame::InfoSystem::MobInfo@ info = @mob.GetMobInfo();
 			const vec3 origin = mob.GetOrigin();
+			TheNomad::GameSystem::RayCast ray;
 
 			const vec3 target = TheNomad::SGame::EntityManager.GetActivePlayer().GetOrigin();
 			if ( @mob.GetTarget() is null ) {
@@ -95,31 +96,45 @@ namespace moblib {
 				if ( !bounds.IntersectsPoint( target ) ) {
 					return false;
 				}
+				
+				//
+				// make sure that the line of sight isn't obstructed
+				//
+				ray.m_nLength = info.sightRange;
+				ray.m_Start = origin;
+				ray.m_nAngle = mob.GetAngle();
+				ray.m_nOwner = mob.GetEntityNum();
+
+				if ( ray.m_nAngle < 0.0f ) {
+					const float tmp = TheNomad::Util::RAD2DEG( ray.m_nAngle ) + 360.0f;
+					ray.m_nAngle = TheNomad::Util::DEG2RAD( tmp );
+				}
+
+				ray.Cast( target );
+
+				if ( ray.m_nEntityNumber != TheNomad::SGame::EntityManager.GetActivePlayer().GetEntityNum() ) {
+					return false;
+				} else if ( ray.m_nEntityNumber >= TheNomad::SGame::EntityManager.NumEntities() ) {
+					GameError( "MobObject::SightCheck: ray entity number is out of range (" + ray.m_nEntityNumber + ")"  );
+				}
+			}
+			else {
+				mob.SetAngle( -atan2( origin.y - target.y, target.x - origin.x ) );
+
+				ray.m_nLength = info.sightRange;
+				ray.m_Start = origin;
+				ray.m_nAngle = mob.GetAngle();
+				ray.m_nOwner = mob.GetEntityNum();
+
+				ray.Cast();
+
+				if ( ray.m_nEntityNumber != TheNomad::SGame::EntityManager.GetActivePlayer().GetEntityNum() ) {
+					return false;
+				} else if ( ray.m_nEntityNumber >= TheNomad::SGame::EntityManager.NumEntities() ) {
+					GameError( "MobObject::SightCheck: ray entity number is out of range (" + ray.m_nEntityNumber + ")"  );
+				}
 			}
 			
-			//
-			// make sure that the line of sight isn't obstructed
-			//
-			TheNomad::GameSystem::RayCast ray;
-
-			ray.m_nLength = info.sightRange;
-			ray.m_Start = origin;
-			ray.m_nAngle = mob.GetAngle();
-			ray.m_nOwner = mob.GetEntityNum();
-
-			if ( ray.m_nAngle < 0.0f ) {
-				const float tmp = TheNomad::Util::RAD2DEG( ray.m_nAngle ) + 360.0f;
-				ray.m_nAngle = TheNomad::Util::DEG2RAD( tmp );
-			}
-
-			ray.Cast( target );
-			
-			if ( ray.m_nEntityNumber == ENTITYNUM_INVALID || ray.m_nEntityNumber == ENTITYNUM_WALL ) {
-				return false;
-			} else if ( ray.m_nEntityNumber >= TheNomad::SGame::EntityManager.NumEntities() ) {
-				GameError( "MobObject::SightCheck: ray entity number is out of range (" + ray.m_nEntityNumber + ")"  );
-			}
-
 			mob.SetTarget( @TheNomad::SGame::EntityManager.GetEntityForNum( ray.m_nEntityNumber ) );
 			
 			return true;

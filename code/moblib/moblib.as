@@ -3,6 +3,8 @@
 #include "moblib/Scripts/ScriptData.as"
 
 namespace moblib {
+	System::AISquad@ GlobalSquad = null;
+
 	void InitCvars() {
 	}
 
@@ -21,12 +23,14 @@ namespace moblib {
 		InitCvars();
 
 		@Script::ResourceCache = cast<moblib::Script::Resources@>( @TheNomad::GameSystem::AddSystem( moblib::Script::Resources() ) );
+		@GlobalSquad = moblib::System::AISquad();
 
 		return 1;
 	}
 
 	int ModuleOnShutdown() {
 		@Script::ResourceCache = null;
+		@GlobalSquad = null;
 		return 1;
 	}
 
