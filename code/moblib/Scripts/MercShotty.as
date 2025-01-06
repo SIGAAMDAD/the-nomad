@@ -80,11 +80,6 @@ namespace moblib::Script {
 				m_EntityData.FaceTarget();
 				m_nLastCheckTime = TheNomad::GameSystem::GameTic;
 			}
-			if ( m_EntityData.GetDirection() == TheNomad::GameSystem::DirType::Inside ) {
-//				m_EntityData.EmitSound( ResourceCache.ShottyHelpMe[ TheNomad::Util::PRandom() & ( ResourceCache.ShottyHelpMe.Count() - 1 ) ],
-//					10.0f, 0xff );
-			}
-//			m_EntityData.SetState( @m_EntityData.GetState().Run( m_EntityData.GetTicker() ) );
 		}
 		void DeadThink() override {
 		}
@@ -111,8 +106,6 @@ namespace moblib::Script {
 			ray.m_nAngle = m_EntityData.GetAngle();
 			ray.m_nOwner = m_EntityData.GetEntityNum();
 			ray.Cast();
-
-			m_EntityData.SetState( m_EntityData.GetState().Run( m_EntityData.GetTicker() ) );
 
 			if ( ray.m_nEntityNumber == ENTITYNUM_WALL ) {
 				// TODO: add wall hit mark here
@@ -201,10 +194,12 @@ namespace moblib::Script {
 			const vec3 origin = m_EntityData.GetOrigin();
 			const vec3 target = m_EntityData.GetTarget().GetOrigin();
 			if ( canSee ) {
+				/*
 				if ( TheNomad::Util::DotProduct( target, origin ) > TheNomad::Util::DotProduct( m_OldTargetPosition, origin ) ) {
 					m_EntityData.EmitSound( ResourceCache.ShottyTargetRunningSfx[ TheNomad::Util::PRandom()
 						& ( ResourceCache.ShottyTargetRunningSfx.Count() - 1 ) ], 10.0f, 0xff );
 				}
+				*/
 				m_OldTargetPosition = target;
 			}
 			if ( TheNomad::Util::Distance( origin, target ) >= MERC_SHOTGUN_RANGE / 4 ) {
@@ -233,15 +228,16 @@ namespace moblib::Script {
 			}
 
 			// causes an assertion crash
-//			if ( m_EntityData.GetState() is m_IdleState ) {
-//				m_EntityData.SetState( m_ChaseState );
-//			}
+			if ( m_EntityData.GetState() is m_IdleState ) {
+				m_EntityData.SetState( m_ChaseState );
+			}
 		}
 		void OnSpawn() override {
 			// canonically, the higher the difficulty, the more risky the mission.
 			// the riskier the mission, the more elite the enemies will be
 			//
 			// also give the player a lot of leeway
+			TheNomad::SGame::InfoSystem::MobInfo@ info = m_EntityData.GetMobInfo();
 			switch ( TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" ) ) {
 			case TheNomad::GameSystem::GameDifficulty::Easy:
 				m_nAggressionScale = 1;
@@ -251,40 +247,61 @@ namespace moblib::Script {
 				MERC_SHOTGUN_RANGE = 8.75f;
 
 				// they aren't hitting vital spots
-				MERC_SHOTGUN_DAMAGE = 10.5f;
+				MERC_SHOTGUN_DAMAGE = 8.5f;
 				break;
 			case TheNomad::GameSystem::GameDifficulty::Normal:
 				m_nAggressionScale = 2;
 				m_nAimScale = 0.60f;
 
-				MERC_SHOTGUN_RANGE = 16.0f;
-				MERC_SHOTGUN_DAMAGE = 25.0f;
+				MERC_SHOTGUN_RANGE = 10.0f;
+				MERC_SHOTGUN_DAMAGE = 15.0f;
 				break;
 			case TheNomad::GameSystem::GameDifficulty::Hard:
 				m_nAggressionScale = 3;
 				m_nAimScale = 1.0f;
 
-				MERC_SHOTGUN_RANGE = 20.75f;
-				MERC_SHOTGUN_DAMAGE = 45.0f;
+				MERC_SHOTGUN_RANGE = 14.75f;
+				MERC_SHOTGUN_DAMAGE = 35.0f;
+
+				info.health = 90.0f;
 				break;
 			case TheNomad::GameSystem::GameDifficulty::VeryHard:
 				m_nAimScale = 1.25f;
 				
-				MERC_SHOTGUN_RANGE = 35.0f;
-				MERC_SHOTGUN_DAMAGE = 60.0f;
+				MERC_SHOTGUN_RANGE = 15.0f;
+				MERC_SHOTGUN_DAMAGE = 50.0f;
+
+				info.health = 120.0f;
 				break;
 			case TheNomad::GameSystem::GameDifficulty::Insane:
 				// the elite
 				m_nAimScale = 1.75f;
+
+				MERC_SHOTGUN_RANGE = 16.0f;
+				MERC_SHOTGUN_DAMAGE = 69.0f;
+
+				info.health = 160.0f;
 				break;
 			};
+			m_EntityData.SetHealth( info.health );
 
 			@m_Squad = @GlobalSquad;
 			GlobalSquad.AddSquadMember( @this );
-
-			m_EntityData.GetLink().m_nEntityType = TheNomad::GameSystem::EntityType::Mob;
 		}
 		void OnDeath() override {
+			m_EntityData.EmitSound( ResourceCache.ShottyDieSfx[ TheNomad::Util::PRandom() & ( ResourceCache.ShottyDieSfx.Count() - 1 ) ],
+				10.0f, 0xff );
+			
+			TheNomad::SGame::EntityState@ deathState = null;
+			if ( ( TheNomad::Util::PRandom() & 100 ) <= 50 ) {
+				@deathState = ResourceCache.ShottyDieLowState;
+				m_EntityData.EmitSound( ResourceCache.ShottyDieLowSfx, 10.0f, 0xff );
+			} else {
+				@deathState = ResourceCache.ShottyDieHighState;
+				m_EntityData.EmitSound( ResourceCache.ShottyDieHighSfx, 10.0f, 0xff );
+			}
+
+			m_EntityData.SetState( deathState );
 		}
 		
 		/*

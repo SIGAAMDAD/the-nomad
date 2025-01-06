@@ -108,6 +108,28 @@
 			"Flags": [
 				"NoOwner"
 			]
+		},
+		{
+			"Type": "Tutorial",
+			"Id": "tutorial_rage",
+			"Name": "TutorialRage",
+			"RenderData.Icon": "world/sprites/signpost",
+			"Stats.Width": 1.25,
+			"Stats.Height": 1.5,
+			"Flags": [
+				"NoOwner"
+			]
+		},
+		{
+			"Type": "Tutorial",
+			"Id": "tutorial_bullet_time",
+			"Name": "TutorialBulletTime",
+			"RenderData.Icon": "world/sprites/signpost",
+			"Stats.Width": 1.25,
+			"Stats.Height": 1.5,
+			"Flags": [
+				"NoOwner"
+			]
 		}
 	]
 }

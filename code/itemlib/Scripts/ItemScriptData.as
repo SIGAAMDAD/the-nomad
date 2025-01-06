@@ -21,16 +21,17 @@ namespace itemlib::Script {
 		SCENERY_TENT,
 		SCENERY_OUTCROP,
 
+		WEAPON_PICKUP,
+		SHELLS_PICKUP,
+
 		TUTORIAL_DASHING,
 		TUTORIAL_JUMPING,
 		TUTORIAL_SLIDING,
 		TUTORIAL_CHECKPOINTS,
 		TUTORIAL_ITEM_PICKUPS,
 		TUTORIAL_PARRYING,
-
-		WEAPON_PICKUP, // here just for filler
-
-		SHELLS_PICKUP
+		TUTORIAL_RAGE,
+		TUTORIAL_BULLET_TIME,
 	};
 
 	ItemScript@ AllocateScriptEntity( uint nItemID ) {
@@ -66,6 +67,8 @@ namespace itemlib::Script {
 		case ITEM_ID::TUTORIAL_CHECKPOINTS:
 		case ITEM_ID::TUTORIAL_ITEM_PICKUPS:
 		case ITEM_ID::TUTORIAL_PARRYING:
+		case ITEM_ID::TUTORIAL_RAGE:
+		case ITEM_ID::TUTORIAL_BULLET_TIME:
 			@scriptObject = @Tutorial();
 			break;
 

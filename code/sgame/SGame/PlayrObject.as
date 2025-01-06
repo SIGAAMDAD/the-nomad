@@ -124,12 +124,20 @@ namespace TheNomad::SGame {
 			WeaponSlot@ slot = null;
 
 			switch ( m_nHandsUsed ) {
-			case LEFT_ARM:
-				@slot = m_Inventory.GetSlot( LeftArm.GetEquippedWeapon() );
-				break;
-			case RIGHT_ARM:
-				@slot = m_Inventory.GetSlot( RightArm.GetEquippedWeapon() );
-				break;
+			case LEFT_ARM: {
+				const uint nIndex = LeftArm.GetEquippedWeapon();
+				if ( nIndex == uint( -1 ) ) {
+					return;
+				}
+				@slot = m_Inventory.GetSlot( nIndex );
+				break; }
+			case RIGHT_ARM: {
+				const uint nIndex = RightArm.GetEquippedWeapon();
+				if ( nIndex == uint( -1 ) ) {
+					return;
+				}
+				@slot = m_Inventory.GetSlot( nIndex );
+				break; }
 			case BOTH_ARMS:
 				@slot = m_Inventory.GetEquippedWeapon();
 				break;
@@ -515,30 +523,33 @@ namespace TheNomad::SGame {
 		}
 		
 		void Damage( EntityObject@ attacker, float nAmount ) override {
-			if ( m_bEmoting ) {
+			if ( m_bEmoting || ( Flags & PF_INVUL ) != 0 ) {
 				return; // god has blessed thy soul...
 			}
 
 			m_HudData.ShowStatusBars();
 			
 			m_nHealth -= nAmount;
+			m_nDamageMult += nAmount;
 
-			if ( m_nHealth < 1 ) {
+			if ( m_nHealth <= 0.0f ) {
 				if ( m_nFrameDamage > 0 ) {
 					return; // as long as you're hitting SOMETHING, you cannot die
 				}
 				switch ( Util::PRandom() & 2 ) {
 				case 0:
-					EmitSound( ScreenData.m_DieSfx0, 1.0f, 0xff );
+					EmitSound( ScreenData.m_DieSfx0, 10.0f, 0xff );
 					break;
 				case 1:
-					EmitSound( ScreenData.m_DieSfx1, 1.0f, 0xff );
+					EmitSound( ScreenData.m_DieSfx1, 10.0f, 0xff );
 					break;
 				case 2:
-					EmitSound( ScreenData.m_DieSfx2, 1.0f, 0xff );
+					EmitSound( ScreenData.m_DieSfx2, 10.0f, 0xff );
 					break;
 				};
 				EntityManager.KillEntity( this, attacker );
+				LevelManager.GetStats().numDeaths++;
+				Flags = 0;
 				
 				Util::HapticRumble( m_nControllerIndex, 0.80f, 4000 );
 			} else {
@@ -706,8 +717,6 @@ namespace TheNomad::SGame {
 			m_Direction = Util::Angle2Dir( m_PhysicsObject.GetAngle() );
 			m_nHealMultDecay = LevelManager.GetDifficultyScale();
 
-			m_hListener = TheNomad::Engine::SoundSystem::PushListener( m_Link.m_nEntityNumber );
-
 			InitLoadout();
 
 			m_PhysicsObject.Init( cast<EntityObject>( @this ) );
@@ -777,7 +786,7 @@ namespace TheNomad::SGame {
 				m_QuickShot.Think();
 			}
 
-			WeaponObject@ current = @GetCurrentWeapon();
+			WeaponObject@ current = GetCurrentWeapon();
 			if ( current !is null ) {
 				if ( ( Flags & PF_USING_WEAPON ) != 0 ) {
 					m_nFrameDamage = current.Use( GetCurrentWeaponMode() );
@@ -807,7 +816,7 @@ namespace TheNomad::SGame {
 						EmitSound( ScreenData.m_SlowMoOff, 10.0f, 0xff );
 						TheNomad::GameSystem::TIMESTEP = 1.0f / 60.0f;
 					} else {
-						m_nRage -= 6.0f * TheNomad::GameSystem::DeltaTic;
+						m_nRage -= 8.0f * TheNomad::GameSystem::DeltaTic;
 						m_HudData.ShowRageBar();
 					}
 				}

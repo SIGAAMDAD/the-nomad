@@ -185,7 +185,7 @@ namespace TheNomad::SGame {
 
 			for ( ; ent !is activeEnts; @ent = ent.m_Next ) {
 				if ( ent !is m_Owner && ent.GetBounds().LineIntersection( origin, end ) ) {
-					EntityManager.DamageEntity( ent, m_Owner, m_WeaponInfo.damage );
+					EntityManager.DamageEntity( ent, m_Owner, damage );
 				}
 			}
 
@@ -251,7 +251,7 @@ namespace TheNomad::SGame {
 				return m_AmmoInfo.damage;
 			}
 
-			EntityManager.DamageEntity( EntityManager.GetEntityForNum( ray.m_nEntityNumber ), m_Owner );
+			EntityManager.DamageEntity( EntityManager.GetEntityForNum( ray.m_nEntityNumber ), m_Owner, m_AmmoInfo.damage );
 			
 			// health mult doesn't matter on harder difficulties if the player is attacking with a firearm,
 			// that is, unless, the player is very close to the enemy
@@ -281,6 +281,10 @@ namespace TheNomad::SGame {
 
 			SetUseMode( weaponMode );
 			float damage = m_WeaponInfo.damage;
+
+			if ( m_Owner.GetType() == TheNomad::GameSystem::EntityType::Playr ) {
+				damage += cast<PlayrObject@>( m_Owner ).GetDamageMult();
+			}
 			
 			// TODO: adaptive weapon animation & cooldowns
 			

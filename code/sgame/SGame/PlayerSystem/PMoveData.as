@@ -69,7 +69,7 @@ namespace TheNomad::SGame {
 				accel.y += 3.50f * forward;
 				accel.x += 3.50f * side;
 				if ( ( TheNomad::GameSystem::GameTic - m_EntityData.DashStartTime ) * TheNomad::GameSystem::DeltaTic > DASH_DURATION ) {
-					m_EntityData.Flags &= ~PF_DASHING;
+					m_EntityData.Flags &= ~( PF_DASHING | PF_INVUL );
 					m_EntityData.DashStartTime = 0;
 				}
 			}
@@ -237,7 +237,7 @@ namespace TheNomad::SGame {
 				m_EntityData.LeftArm.SetFacing( FACING_LEFT );
 				m_EntityData.RightArm.SetFacing( FACING_LEFT );
 				
-				m_nArmsAngle = atan2( float( TheNomad::GameSystem::MousePosition.y ) - TheNomad::GameSystem::HalfScreenHeight,
+				m_nArmsAngle = -atan2( float( TheNomad::GameSystem::MousePosition.y ) - TheNomad::GameSystem::HalfScreenHeight,
 					TheNomad::GameSystem::HalfScreenWidth - float( TheNomad::GameSystem::MousePosition.x ) );
 			}
 		}

@@ -415,10 +415,13 @@ namespace TheNomad::SGame {
 		void KillEntity( EntityObject@ target, EntityObject@ attacker ) {
 			if ( attacker.GetType() == TheNomad::GameSystem::EntityType::Mob ) {
 				// write an obituary for the player
-				GenObituary( attacker, target );
+//				GenObituary( attacker, target ); //TODO: maybe later
 			}
 			// TODO: make the enemies nearby declare the infighting individual a traitor
 			if ( target.GetType() == TheNomad::GameSystem::EntityType::Mob ) {
+				if ( attacker.GetType() == TheNomad::GameSystem::EntityType::Playr ) {
+					LevelManager.GetStats().collateralScore += 10;
+				}
 				MobObject@ mob = cast<MobObject@>( target );
 				
 				// respawn mobs on Insane, they are so skilled and so pissed off, they ressurrect
@@ -446,6 +449,7 @@ namespace TheNomad::SGame {
 					TheNomad::GameSystem::GameSystems[i].OnPlayerDeath( i );
 				}
 			}
+			target.GetBounds().Clear();
 			target.SetFlags( uint( target.GetFlags() ) | EntityFlags::Dead );
 		}
 		

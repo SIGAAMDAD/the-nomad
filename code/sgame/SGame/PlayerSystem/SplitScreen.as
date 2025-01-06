@@ -225,7 +225,7 @@ namespace TheNomad::SGame {
 			}
 
 			m_PlayerData.DashStartTime = TheNomad::GameSystem::GameTic;
-			m_PlayerData.Flags |= PF_DASHING;
+			m_PlayerData.Flags |= PF_DASHING | PF_INVUL;
 			
 			vec3 origin = m_PlayerData.GetOrigin();
 			origin.y -= 1.5f;
@@ -316,11 +316,12 @@ namespace TheNomad::SGame {
 		}
 
 		void NextWeapon_f() {
-			m_PlayerData.SetCurrentWeapon( m_PlayerData.GetCurrentWeaponIndex() + 1 );
-			if ( m_PlayerData.GetCurrentWeaponIndex() >= NUM_WEAPON_SLOTS ) {
+			if ( m_PlayerData.GetCurrentWeaponIndex() == NUM_WEAPON_SLOTS - 1 ) {
 				m_PlayerData.SetCurrentWeapon( 0 );
+			} else {
+				m_PlayerData.SetCurrentWeapon( m_PlayerData.GetCurrentWeaponIndex() + 1 );
 			}
-			TheNomad::Engine::SoundSystem::SoundEffect hSfx( "event:/sfx/env/interaction/pickup_item" );
+			int hSfx = m_EquipWeaponSfx;
 			const WeaponObject@ weapon = m_PlayerData.GetCurrentWeapon();
 			if ( @weapon !is null ) {
 				hSfx = weapon.GetWeaponInfo().equipSfx;
@@ -328,11 +329,12 @@ namespace TheNomad::SGame {
 			m_PlayerData.EmitSound( hSfx, 10.0f, 0xff );
 		}
 		void PrevWeapon_f() {
-			m_PlayerData.SetCurrentWeapon( NUM_WEAPON_SLOTS - 1 );
-			if ( m_PlayerData.GetCurrentWeaponIndex() < 0 ) {
+			if ( m_PlayerData.GetCurrentWeaponIndex() == 0 ) {
 				m_PlayerData.SetCurrentWeapon( NUM_WEAPON_SLOTS - 1 );
+			} else {
+				m_PlayerData.SetCurrentWeapon( m_PlayerData.GetCurrentWeaponIndex() - 1 );
 			}
-			TheNomad::Engine::SoundSystem::SoundEffect hSfx( "event:/sfx/env/interaction/pickup_item" );
+			int hSfx = m_EquipWeaponSfx;
 			const WeaponObject@ weapon = m_PlayerData.GetCurrentWeapon();
 			if ( @weapon !is null ) {
 				hSfx = weapon.GetWeaponInfo().equipSfx;

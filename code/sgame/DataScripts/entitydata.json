@@ -16,22 +16,24 @@
 		{ "Id": 6, "Name": "powerup_b" },
 		{ "Id": 7, "Name": "scenery_tent" },
 		{ "Id": 8, "Name": "scenery_outcrop" },
-		{ "Id": 9, "Name": "tutorial_dashing" },
-		{ "Id": 10, "Name": "tutorial_jumping" },
-		{ "Id": 11, "Name": "tutorial_sliding" },
-		{ "Id": 12, "Name": "tutorial_checkpoints" },
-		{ "Id": 13, "Name": "tutorial_item_pickups" },
-		{ "Id": 14, "Name": "tutorial_parrying" },
-		{ "Id": 15, "Name": "item_weapon_pickup" },
-		{ "Id": 16, "Name": "item_shells_pickup" }
+		{ "Id": 9, "Name": "item_weapon_pickup" },
+		{ "Id": 10, "Name": "item_shells_pickup" },
+		{ "Id": 11, "Name": "tutorial_dashing" },
+		{ "Id": 12, "Name": "tutorial_jumping" },
+		{ "Id": 13, "Name": "tutorial_sliding" },
+		{ "Id": 14, "Name": "tutorial_checkpoints" },
+		{ "Id": 15, "Name": "tutorial_item_pickups" },
+		{ "Id": 16, "Name": "tutorial_parrying" },
+		{ "Id": 17, "Name": "tutorial_rage" },
+		{ "Id": 18, "Name": "tutorial_bullet_time" }
 	],
 	"AmmoData": [
-		{ "Id": 16, "Name": "ammo_rifle" },
-		{ "Id": 17, "Name": "ammo_pistol" },
-		{ "Id": 18, "Name": "ammo_shells" },
-		{ "Id": 19, "Name": "ammo_asturion_special" },
-		{ "Id": 20, "Name": "ammo_secret_dakka_dakka_dakka" },
-		{ "Id": 21, "Name": "ammo_secret_bullet_of_45" }
+		{ "Id": 18, "Name": "ammo_rifle" },
+		{ "Id": 19, "Name": "ammo_pistol" },
+		{ "Id": 20, "Name": "ammo_shells" },
+		{ "Id": 21, "Name": "ammo_asturion_special" },
+		{ "Id": 22, "Name": "ammo_secret_dakka_dakka_dakka" },
+		{ "Id": 23, "Name": "ammo_secret_bullet_of_45" }
 	],
 	"WeaponData": [
 		{ "Id": 0, "Name": "sidearm_murstar" },

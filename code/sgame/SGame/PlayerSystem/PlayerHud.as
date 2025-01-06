@@ -44,9 +44,10 @@ namespace TheNomad::SGame {
 			ImGui::RadioButton( "##HandsUsedRight", handsUsed == RIGHT_ARM || handsUsed == BOTH_ARMS );
 
 			// draw weapon icon
-			if ( m_Parent.IsWeaponEquipped() ) {
-				ImGui::Image( m_Parent.GetCurrentWeapon().GetWeaponInfo().hIconShader,
-					vec2( 820.0f * TheNomad::GameSystem::UIScale, 630.0f * TheNomad::GameSystem::UIScale ),
+			const WeaponObject@ weapon = m_Parent.GetCurrentWeapon();
+			if ( weapon !is null ) {
+				ImGui::Image( weapon.GetWeaponInfo().hIconShader,
+					vec2( 950.0f * TheNomad::GameSystem::UIScale, 600.0f * TheNomad::GameSystem::UIScale ),
 					vec2( 128.0f * TheNomad::GameSystem::UIScale, 128.0f * TheNomad::GameSystem::UIScale ) );
 			} else {
 				ImGui::Text( "NOTHING EQUIPPED" );

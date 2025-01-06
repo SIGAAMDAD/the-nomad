@@ -15,6 +15,7 @@ namespace moblib::System {
 			m_nSquadMembers = 0;
 
 			m_bSquadMemberDied = false;
+			m_nSquadMembersDead = 0;
 		}
 		void SquadBark( int hBark ) {
 			if ( ( TheNomad::GameSystem::GameTic - m_nLastBarkTime ) * TheNomad::GameSystem::DeltaTic < 350 ) {
@@ -29,6 +30,28 @@ namespace moblib::System {
 			}
 		}
 		void Update() {
+			HandleSquadDeaths();
+			/*
+			if ( m_bSquadMemberDied ) {
+				int hBark = moblib::Script::ResourceCache.ShottyManDownSfx[ TheNomad::Util::PRandom() &
+					( moblib::Script::ResourceCache.ShottyManDownSfx.Count() - 1 ) ];
+				if ( m_nSquadMembersDead == 2 ) {
+					hBark = moblib::Script::ResourceCache.ShottyManDown2Sfx;
+				} else if ( m_nSquadMembersDead == 3 ) {
+					hBark = moblib::Script::ResourceCache.ShottyManDown3Sfx;
+				} else if ( m_nSquadMembersDead > 3 ) {
+					hBark = moblib::Script::ResourceCache.ShottyScaredSfx;
+				}
+				int rand = TheNomad::Util::PRandom() & ( m_nSquadMembers - 1 );
+				for ( int iMember = 0; iMember < m_nSquadMembers; ++iMember ) {
+					if ( iMember == rand ) {
+						m_SquadMembers[ iMember ].GetData().EmitSound( hBark, 10.0f, 0xff );
+						break;
+					}
+				}
+				m_bSquadMemberDied = false;
+			}
+			*/
 			if ( m_nSquadBark != -1 ) {
 				int rand = TheNomad::Util::PRandom() & ( m_nSquadMembers - 1 );
 				for ( int iMember = 0; iMember < m_nSquadMembers; ++iMember ) {
@@ -41,16 +64,12 @@ namespace moblib::System {
 				m_nSquadBark = -1;
 			}
 		}
-		/*
-		void Update() {
-			HandleSquadDeaths();
-		}
 		void HandleSquadDeaths() {
 			bool bDead = false;
 			int iMember;
-			for ( iMember = m_nSquadMembers; ++iMember ) {
-				if ( m_SquadMembers[i].m_EntityData.CheckFlags( EntityFlags::Dead ) ) {
-					@m_SquadMembers[i] = null;
+			for ( iMember = 0; iMember < m_nSquadMembers; ++iMember ) {
+				if ( m_SquadMembers[ iMember ].GetData().CheckFlags( TheNomad::SGame::EntityFlags::Dead ) ) {
+					@m_SquadMembers[ iMember ] = null;
 					bDead = true;
 					break;
 				}
@@ -60,13 +79,13 @@ namespace moblib::System {
 				return;
 			}
 			m_bSquadMemberDied = true;
+			m_nSquadMembersDead++;
 
 			int iDead = iMember;
 			for ( iMember = iDead; iMember < m_nSquadMembers - 1; ++iMember ) {
-				@m_SquadMembers[i] = @m_SquadMembers[ i + 1 ];
+				@m_SquadMembers[ iMember ] = m_SquadMembers[ iMember + 1 ];
 			}
 		}
-		*/
 		void SetTarget( TheNomad::SGame::EntityObject@ ent ) {
 			m_Leader.GetData().SetTarget( @ent );
 		}
@@ -90,5 +109,6 @@ namespace moblib::System {
 		private uint m_nLastBarkTime = 0;
 		private int m_nSquadBark = -1;
 		private bool m_bSquadMemberDied = false;
+		private int m_nSquadMembersDead = 0;
 	};
 };

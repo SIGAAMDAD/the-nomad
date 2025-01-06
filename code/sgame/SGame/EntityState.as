@@ -109,6 +109,9 @@ namespace TheNomad::SGame {
 		uint GetBaseNum() const {
 			return m_nStateNum;
 		}
+		void SetTics( uint nTics ) {
+			m_nTics = nTics;
+		}
 
 		void Reset( uint& out ticker ) {
 			ticker = TheNomad::GameSystem::GameTic;

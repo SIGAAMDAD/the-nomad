@@ -16,7 +16,7 @@
 		},
 		{
 			"Id": "player_dead",
-			"Tics": 3360,
+			"Tics": 2800,
 			"BaseNum": "ST_PLAYR_DEAD",
 			"Entity": "player",
 			"NextState": "player_dead_idle",

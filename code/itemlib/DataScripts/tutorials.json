@@ -15,7 +15,7 @@
 		{
 			"Id": "TutorialItemPickups",
 			"Type": "tooltip",
-			"Shader": "white",
+			"Shader": "icons/tooltip",
 			"Text": " step over items to pick them up automatically"
 		},
 		{
@@ -28,7 +28,19 @@
 			"Id": "TutorialSliding",
 			"Type": "binding",
 			"Shader": "+slide",
-			"Text": " to slide"
+			"Text": " to slide, for extra mobility in the heat of a moment"
+		},
+		{
+			"Id": "TutorialRage",
+			"Type": "tooltip",
+			"Shader": "icons/tooltip",
+			"Text": " rage is a powerful tool that can be attained from recieving\ndamage and dealing damage, but be wary, for this resource is not infinite!"
+		},
+		{
+			"Id": "TutorialBulletTime",
+			"Type": "binding",
+			"Shader": "quickshot",
+			"Text": " to use your reflex mode, more commonly known as bullet time.\nThis will consume a lot of rage."
 		}
 	]
 }

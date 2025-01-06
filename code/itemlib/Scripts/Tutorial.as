@@ -31,6 +31,8 @@ namespace itemlib::Script {
 		case TheNomad::Engine::KeyNum::Y: return TheNomad::Engine::Renderer::RegisterShader( "icons/iconk_y" );
 		case TheNomad::Engine::KeyNum::Z: return TheNomad::Engine::Renderer::RegisterShader( "icons/iconk_z" );
 
+		case 137: return TheNomad::Engine::Renderer::RegisterShader( "icons/iconk_ctrl" );
+		case 138: return TheNomad::Engine::Renderer::RegisterShader( "icons/iconk_shift" );
 		case TheNomad::Engine::KeyNum::Tab: return TheNomad::Engine::Renderer::RegisterShader( "icons/iconk_tab" );
 		case TheNomad::Engine::KeyNum::Space: return TheNomad::Engine::Renderer::RegisterShader( "icons/iconk_space" );
 		case TheNomad::Engine::KeyNum::BackSpace: return TheNomad::Engine::Renderer::RegisterShader( "icons/iconk_backspace" );
@@ -96,6 +98,8 @@ namespace itemlib::Script {
 				type = TUTORIAL_TYPE_BINDING;
 			} else if ( typeString == "tooltip" ) {
 				type = TUTORIAL_TYPE_TOOLTIP;
+			} else {
+				GameError( "LoadTutorialData: invalid tutorial type " + typeString );
 			}
 
 			Tutorials.Add( TutorialData( id, shader, text, type ) );
@@ -154,6 +158,9 @@ namespace itemlib::Script {
 					@m_Data = Tutorials[i];
 					DebugPrint( "Tutorial \"" + info.name + "\" linked.\n" );
 				}
+			}
+			if ( m_Data is null ) {
+				GameError( "Tutorial::OnSpawn: couldn't link tutorial \"" + info.name + "\"!" );
 			}
 		}
 

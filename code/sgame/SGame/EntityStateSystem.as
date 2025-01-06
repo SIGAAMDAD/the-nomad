@@ -40,6 +40,7 @@ namespace TheNomad::SGame {
 		ST_MOB_FIGHT_MISSILE,
 		ST_MOB_FLEE,
 		ST_MOB_DEAD,
+		ST_MOB_DEAD_IDLE, // here for the same reason as ST_PLAYR_DEAD_IDLE
 
 		ST_WEAPON_IDLE,
 		ST_WEAPON_RELOAD,
@@ -127,6 +128,7 @@ namespace TheNomad::SGame {
 			m_BaseStateCache.Add( "ST_MOB_FIGHT_MISSILE", StateNum::ST_MOB_FIGHT_MISSILE );
 			m_BaseStateCache.Add( "ST_MOB_FLEE", StateNum::ST_MOB_FLEE );
 			m_BaseStateCache.Add( "ST_MOB_DEAD", StateNum::ST_MOB_DEAD );
+			m_BaseStateCache.Add( "ST_MOB_DEAD_IDLE", StateNum::ST_MOB_DEAD_IDLE );
 			m_BaseStateCache.Add( "ST_WEAPON_IDLE", StateNum::ST_WEAPON_IDLE );
 			m_BaseStateCache.Add( "ST_WEAPON_RELOAD", StateNum::ST_WEAPON_RELOAD );
 			m_BaseStateCache.Add( "ST_WEAPON_USE", StateNum::ST_WEAPON_USE );

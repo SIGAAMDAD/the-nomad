@@ -316,6 +316,7 @@ int ModuleOnLoadGame() {
 
 	TheNomad::SGame::ScreenData.InitPlayers();
 	TheNomad::SGame::ScreenData.GetPlayer().InitHUD();
+	TheNomad::Engine::SoundSystem::PushListener( TheNomad::SGame::ScreenData.GetPlayer().GetEntityNum() );
 
 	TheNomad::GameSystem::IsLoadGameActive = false;
 
@@ -332,6 +333,7 @@ int ModuleOnLevelStart() {
 
 	TheNomad::SGame::ScreenData.InitPlayers();
 	TheNomad::SGame::ScreenData.GetPlayer().InitHUD();
+	TheNomad::Engine::SoundSystem::PushListener( TheNomad::SGame::ScreenData.GetPlayer().GetEntityNum() );
 
 	return 1;
 }

@@ -38,7 +38,7 @@ namespace TheNomad::SGame {
 		}
 
 		private void DrawDeathScreen() const {
-			ImGui::PushStyleColor( ImGuiCol::WindowBg, vec4( 0.10f, 0.10f, 0.10f, 0.90f ) );
+			ImGui::PushStyleColor( ImGuiCol::WindowBg, vec4( 0.10f, 0.10f, 0.10f, 0.0f ) );
 
 			ImGui::Begin( "##DeathScreen", null, ImGui::MakeWindowFlags( ImGuiWindowFlags::NoResize | ImGuiWindowFlags::NoMove
 				| ImGuiWindowFlags::NoCollapse | ImGuiWindowFlags::NoTitleBar | ImGuiWindowFlags::NoScrollbar ) );
@@ -53,7 +53,7 @@ namespace TheNomad::SGame {
 			ImGui::PopStyleColor( 1 );
 			ImGui::SetWindowFontScale( 1.0f );
 
-			ImGui::SetCursorScreenPos( vec2( 380.0f * TheNomad::GameSystem::UIScale, 390.0f * TheNomad::GameSystem::UIScale ) );
+			ImGui::SetCursorScreenPos( vec2( 400.0f * TheNomad::GameSystem::UIScale, 440.0f * TheNomad::GameSystem::UIScale ) );
 			if ( ImGui::Button( "TRY AGAIN" ) ) {
 				// TODO: hellbreaker
 				TheNomad::GameSystem::RespawnPlayer();
@@ -227,15 +227,13 @@ namespace TheNomad::SGame {
 			EntityObject@ activeEnts = EntityManager.GetActiveEnts();
 			EntityObject@ ent = activeEnts.m_Next;
 
+			int hTrack = m_LevelInfoDatas[ m_nIndex ].m_hAmbientTheme;
 			for ( ; ent !is activeEnts; @ent = ent.m_Next ) {
-
-			}
-
-			int hTrack = FS_INVALID_HANDLE;
-			if ( EntityManager.GetActivePlayer().GetUI().InCombat() ) {
-				hTrack = m_LevelInfoDatas[ m_nIndex ].m_hCombatTheme;
-			} else {
-				hTrack = m_LevelInfoDatas[ m_nIndex ].m_hAmbientTheme;
+				if ( ent.GetType() == TheNomad::GameSystem::EntityType::Mob ) {
+					if ( cast<MobObject@>( ent ).GetTarget() !is null ) {
+						hTrack = m_LevelInfoDatas[ m_nIndex ].m_hCombatTheme;
+					}
+				}
 			}
 
 			if ( hTrack != m_hTrack ) {

@@ -68,12 +68,12 @@ namespace TheNomad::SGame {
 			if ( m_nWeaponSlot != uint( -1 ) ) {
 				// assign a weapon specific state
 				WeaponObject@ weapon = m_EntityData.GetInventory().GetSlot( m_nWeaponSlot ).GetData();
-
-				@m_State = weapon.GetState();
-				
-				return weapon.GetSpriteSheet();
+				if ( weapon !is null ) {
+					@m_State = weapon.GetState();
+					return weapon.GetSpriteSheet();
+				}
 			}
-			else if ( m_EntityData.GetPhysicsObject().GetVelocity() != Vec3Origin && m_EntityData.GetOrigin().z == 0.0f ) {
+			if ( m_EntityData.GetPhysicsObject().GetVelocity() != Vec3Origin && m_EntityData.GetOrigin().z == 0.0f ) {
 				if ( ( m_EntityData.Flags & PF_SLIDING ) != 0 ) {
 					@m_State = m_SlideState;
 				}

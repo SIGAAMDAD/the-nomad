@@ -31,25 +31,25 @@ namespace TheNomad::SGame {
 			kills_Rank = rank;
 
 			rank = LevelRank::RankWereUBotting;
-			if ( stylePoints > data.m_RankU.minStyle ) {
+			if ( m_TimeMilliseconds < data.m_RankU.min_TimeMilliseconds ) {
 				rank = LevelRank::RankF;
 			}
-			if ( stylePoints > data.m_RankF.minStyle ) {
+			if ( m_TimeMilliseconds < data.m_RankF.min_TimeMilliseconds ) {
 				rank = LevelRank::RankD;
 			}
-			if ( stylePoints > data.m_RankD.minStyle ) {
+			if ( m_TimeMilliseconds < data.m_RankD.min_TimeMilliseconds ) {
 				rank = LevelRank::RankC;
 			}
-			if ( stylePoints > data.m_RankC.minStyle ) {
+			if ( m_TimeMilliseconds < data.m_RankC.min_TimeMilliseconds ) {
 				rank = LevelRank::RankB;
 			}
-			if ( stylePoints > data.m_RankB.minStyle ) {
+			if ( m_TimeMilliseconds < data.m_RankB.min_TimeMilliseconds ) {
 				rank = LevelRank::RankA;
 			}
-			if ( stylePoints > data.m_RankA.minStyle ) {
+			if ( m_TimeMilliseconds < data.m_RankA.min_TimeMilliseconds ) {
 				rank = LevelRank::RankS;
 			}
-			style_Rank = rank;
+			time_Rank = rank;
 
 			rank = LevelRank::RankWereUBotting;
 			if ( numDeaths > data.m_RankS.maxDeaths ) {
@@ -71,31 +71,10 @@ namespace TheNomad::SGame {
 				rank = LevelRank::RankWereUBotting;
 			}
 			deaths_Rank = rank;
-
-			rank = LevelRank::RankWereUBotting;
-			if ( stylePoints > data.m_RankU.minStyle ) {
-				rank = LevelRank::RankF;
-			}
-			if ( stylePoints > data.m_RankF.minStyle ) {
-				rank = LevelRank::RankD;
-			}
-			if ( stylePoints > data.m_RankD.minStyle ) {
-				rank = LevelRank::RankC;
-			}
-			if ( stylePoints > data.m_RankC.minStyle ) {
-				rank = LevelRank::RankB;
-			}
-			if ( stylePoints > data.m_RankB.minStyle ) {
-				rank = LevelRank::RankA;
-			}
-			if ( stylePoints > data.m_RankA.minStyle ) {
-				rank = LevelRank::RankS;
-			}
-			style_Rank = rank;
 		}
 
 		private bool AllRanksAre( LevelRank rank ) const {
-			return ( style_Rank == rank && kills_Rank == rank && deaths_Rank == rank && time_Rank == rank );
+			return ( kills_Rank == rank && deaths_Rank == rank && time_Rank == rank );
 		}
 
 		void CalcTotalLevelStats() {
@@ -107,9 +86,18 @@ namespace TheNomad::SGame {
 			// add bonus
 			if ( collateralScore == 0 ) {
 				totalScore += 1000;
+			} else {
+				totalScore -= collateralScore;
 			}
 			if ( numDeaths == 0 ) {
 				totalScore += 1000;
+			} else {
+				totalScore -= numDeaths * 500;
+			}
+			isClean = collateralScore == 0;
+
+			if ( TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" ) > TheNomad::GameSystem::GameDifficulty::Normal ) {
+				totalScore += TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" ) * 100;
 			}
 
 			// absolute perfection
@@ -119,9 +107,10 @@ namespace TheNomad::SGame {
 			}
 
 			highestRank = GetHighestRank();
-			if ( style_Rank == highestRank ) {
+			/*if ( style_Rank == highestRank ) {
 				numHighestRanks++;
 			}
+			*/
 			if ( kills_Rank == highestRank ) {
 				numHighestRanks++;
 			}
@@ -131,7 +120,7 @@ namespace TheNomad::SGame {
 			if ( time_Rank == highestRank ) {
 				numHighestRanks++;
 			}
-			if ( numHighestRanks >= 3 ) {
+			if ( numHighestRanks >= 2 ) {
 				total_Rank = highestRank;
 			} else {
 				total_Rank = LevelRank( uint( highestRank ) - 1 );
@@ -192,6 +181,7 @@ namespace TheNomad::SGame {
 
 					ImGui::TableNextRow();
 
+					/*
 					ImGui::TableNextColumn();
 					ImGui::Text( "STYLE" );
 					ImGui::TableNextColumn();
@@ -200,6 +190,7 @@ namespace TheNomad::SGame {
 					ImGui::TableNextColumn();
 					ImGui::Text( sgame_RankStrings[ style_Rank ] );
 					ImGui::PopStyleColor();
+					*/
 				}
 				ImGui::EndTable();
 
@@ -224,7 +215,7 @@ namespace TheNomad::SGame {
 					ImGui::Text( formatUInt( collateralScore ) );
 					ImGui::PopStyleColor();
 					ImGui::SameLine();
-					ImGui::Text( " COLLATERAL" );
+					ImGui::Text( " COLLATERAL (PENALTY -" + collateralScore + ")" );
 				} else {
 					ImGui::PushStyleColor( ImGuiCol::Text, colorGreen );
 					ImGui::Text( "NO CLEANUP (+1000)" );
@@ -238,7 +229,7 @@ namespace TheNomad::SGame {
 					ImGui::Text( formatUInt( numDeaths ) );
 					ImGui::PopStyleColor();
 					ImGui::SameLine();
-					ImGui::Text( " DEATHS" );
+					ImGui::Text( " DEATHS (PENALTY -" + numDeaths * 500 +  " )" );
 				} else {
 					ImGui::PushStyleColor( ImGuiCol::Text, colorGreen );
 					ImGui::Text( "NO RESTARTS (+1000)" );
@@ -250,6 +241,7 @@ namespace TheNomad::SGame {
 				// TODO:
 				ImGui::Text( "CHALLENGE:" );
 
+				/*
 				if ( isClean ) {
 					ImGui::Text( "- " );
 					ImGui::SameLine();
@@ -257,6 +249,7 @@ namespace TheNomad::SGame {
 					ImGui::Text( "CLEAN RUN" );
 					ImGui::PopStyleColor();
 				}
+				*/
 				
 				ImGui::Text( "TOTAL " + totalScore );
 			}
@@ -298,7 +291,7 @@ namespace TheNomad::SGame {
 
 			ImGui::Begin( "##LevelStatsShow", null, windowFlags );
 			ImGui::SetWindowPos( vec2( 16 * scale, 16 * scale ) );
-			ImGui::SetWindowSize( vec2( 256 * scale, 72 * scale ) );
+			ImGui::SetWindowSize( vec2( 320.0f * scale, 128.0f * scale ) );
 			
 			ImGui::BeginTable( "##LevelStatsNumbers", 2 );
 			
@@ -336,18 +329,6 @@ namespace TheNomad::SGame {
 			ImGui::Text( formatUInt( numDeaths ) );
 			ImGui::SameLine();
 			ImGui::TextColored( sgame_RankStringColors[ deaths_Rank ], sgame_RankStrings[ deaths_Rank ] );
-			
-			ImGui::TableNextRow();
-			
-			//
-			// style
-			//
-			ImGui::TableNextColumn();
-			ImGui::Text( "STYLE:" );
-			ImGui::TableNextColumn();
-			ImGui::Text( formatUInt( stylePoints ) );
-			ImGui::SameLine();
-			ImGui::TextColored( sgame_RankStringColors[ style_Rank ], sgame_RankStrings[ style_Rank ] );
 			
 			ImGui::EndTable();
 			

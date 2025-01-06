@@ -103,6 +103,25 @@ namespace TheNomad::SGame {
 
 		void EquipSlot( uint nIndex ) {
 			m_nCurrentWeapon = nIndex;
+
+			WeaponObject@ weapon = m_WeaponSlots[ nIndex ].GetData();
+			if ( weapon !is null ) {
+				// apply rules of various weapon properties
+				if ( weapon.IsTwoHanded() ) {
+					m_LeftArm.SetEquippedSlot( m_nCurrentWeapon );
+					m_RightArm.SetEquippedSlot( m_nCurrentWeapon );
+
+					// this will automatically override any other modes
+					m_WeaponSlots[ m_LeftArm.GetEquippedWeapon() ].SetMode( weapon.GetWeaponInfo().defaultMode );
+					m_WeaponSlots[ m_RightArm.GetEquippedWeapon() ].SetMode( weapon.GetWeaponInfo().defaultMode );
+				}
+				m_WeaponSlots[ m_EntityData.LastUsedArm.GetEquippedWeapon() ].SetMode( weapon.GetWeaponInfo().weaponProps );
+			} else {
+				m_LeftArm.SetEquippedSlot( uint( -1 ) );
+				m_RightArm.SetEquippedSlot( uint( -1 ) );
+			}
+			// update the hand data
+			m_EntityData.LastUsedArm.SetEquippedSlot( m_nCurrentWeapon );
 		}
 		uint GetSlotIndex() const {
 			return m_nCurrentWeapon;

@@ -165,8 +165,10 @@ namespace TheNomad::SGame {
 					// GIBS!
 //					EntityManager.GibbEntity( @this );
 				}
+				EntityManager.KillEntity( this, source );
 				m_ScriptData.OnDeath();
-				EntityManager.KillEntity( source, this );
+				@m_Target = null;
+				m_bParry = false;
 				
 				return;
 			}
@@ -271,10 +273,17 @@ namespace TheNomad::SGame {
 			case StateNum::ST_MOB_DEAD:
 				m_ScriptData.DeadThink();
 				break;
+			case StateNum::ST_MOB_DEAD_IDLE:
+				break;
 			default:
 				GameError( "MobEntity::Think: invalid mob state " + formatUInt( m_State.GetID() ) + "\n" );
 				break;
 			};
+
+			if ( !m_State.Done( m_nTicker ) ) {
+				return;
+			}
+			@m_State = m_State.Run( m_nTicker );
 		}
 
 		bool CanParry() const {
