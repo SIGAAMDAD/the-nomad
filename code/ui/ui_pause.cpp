@@ -66,6 +66,12 @@ static void PauseMenu_ExitCallback( qboolean result )
 	if ( !result ) {
 		return;
 	}
+	UI_PopMenu();
+	UI_SetActiveMenu( UI_MENU_MAIN );
+	gi.mapLoaded = qfalse;
+	gi.mapCache.currentMapLoaded = -1;
+	gi.state = GS_INACTIVE;
+
 	g_pModuleLib->ModuleCall( sgvm, ModuleOnLevelEnd, 0 );
 	g_pModuleLib->RunModules( ModuleOnLevelEnd, 0 );
 	Cvar_SetIntegerValue( "g_paused", 0 );
@@ -91,12 +97,13 @@ static void PauseMenu_EventCallback( void *ptr, int event )
 		UI_SetActiveMenu( UI_MENU_NONE );
 		Key_ClearStates();
 		Key_SetCatcher( KEYCATCH_SGAME );
-		Cvar_Set( "g_paused", "0" );
 		break;
 	case ID_CHECKPOINT:
 		// rewind the checkpoint
 		Cbuf_ExecuteText( EXEC_NOW, "sgame.rewind_checkpoint\n" );
 		UI_SetActiveMenu( UI_MENU_NONE );
+		Key_ClearStates();
+		Key_SetCatcher( KEYCATCH_SGAME );
 		break;
 	case ID_PHOTOMODE: 
 		s_pauseMenu->photomode.cameraRotation = 0.0f;
@@ -118,12 +125,7 @@ static void PauseMenu_EventCallback( void *ptr, int event )
 		UI_SettingsMenu();
 		break;
 	case ID_EXIT_LEVEL:
-		UI_PopMenu();
-		UI_SetActiveMenu( UI_MENU_MAIN );
-		gi.mapLoaded = qfalse;
-		gi.mapCache.currentMapLoaded = -1;
-		gi.state = GS_INACTIVE;
-		UI_ConfirmMenu( strManager->ValueForKey( "PAUSE_MENU_EXIT" )->value, NULL, PauseMenu_ExitCallback );
+		UI_ConfirmMenu( strManager->ValueForKey( "PAUSE_MENU_ETMM" )->value, NULL, PauseMenu_ExitCallback );
 		break;
 	case ID_EXIT_GAME:
 		UI_ConfirmMenu( strManager->ValueForKey( "PAUSE_MENU_EXIT" )->value, NULL, PauseMenu_QuitCallback );
@@ -251,7 +253,7 @@ void PauseMenu_Cache( void )
 	s_pauseMenu->menu.width = gi.gpuConfig.vidWidth;
 	s_pauseMenu->menu.height = gi.gpuConfig.vidHeight;
 	s_pauseMenu->menu.fullscreen = qfalse;
-	s_pauseMenu->menu.name = "PAUSED";
+	s_pauseMenu->menu.name = strManager->ValueForKey( "PAUSE_MENU_TITLE" )->value;
 	s_pauseMenu->menu.draw = PauseMenu_Draw;
 	s_pauseMenu->menu.titleFontScale = 3.5f;
 	s_pauseMenu->menu.textFontScale = 1.90f;
@@ -264,7 +266,7 @@ void PauseMenu_Cache( void )
 	s_pauseMenu->resume.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
 	s_pauseMenu->resume.generic.eventcallback = PauseMenu_EventCallback;
 	s_pauseMenu->resume.generic.font = AlegreyaSC;
-	s_pauseMenu->resume.text = "RESUME";
+	s_pauseMenu->resume.text = strManager->ValueForKey( "PAUSE_MENU_RESUME" )->value;
 	s_pauseMenu->resume.color = color_white;
 
 	s_pauseMenu->checkpoint.generic.type = MTYPE_TEXT;
@@ -272,7 +274,7 @@ void PauseMenu_Cache( void )
 	s_pauseMenu->checkpoint.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
 	s_pauseMenu->checkpoint.generic.eventcallback = PauseMenu_EventCallback;
 	s_pauseMenu->checkpoint.generic.font = AlegreyaSC;
-	s_pauseMenu->checkpoint.text = "RESTART CHECKPOINT";
+	s_pauseMenu->checkpoint.text = strManager->ValueForKey( "PAUSE_MENU_RESTART" )->value;
 	s_pauseMenu->checkpoint.color = color_white;
 
 	s_pauseMenu->settings.generic.type = MTYPE_TEXT;
@@ -280,7 +282,7 @@ void PauseMenu_Cache( void )
 	s_pauseMenu->settings.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
 	s_pauseMenu->settings.generic.eventcallback = PauseMenu_EventCallback;
 	s_pauseMenu->settings.generic.font = AlegreyaSC;
-	s_pauseMenu->settings.text = "SETTINGS";
+	s_pauseMenu->settings.text = strManager->ValueForKey( "PAUSE_MENU_SETTINGS" )->value;
 	s_pauseMenu->settings.color = color_white;
 
 	s_pauseMenu->help.generic.type = MTYPE_TEXT;
@@ -288,7 +290,7 @@ void PauseMenu_Cache( void )
 	s_pauseMenu->help.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
 	s_pauseMenu->help.generic.eventcallback = PauseMenu_EventCallback;
 	s_pauseMenu->help.generic.font = AlegreyaSC;
-	s_pauseMenu->help.text = "HELP";
+	s_pauseMenu->help.text = strManager->ValueForKey( "PAUSE_MENU_HELP" )->value;
 	s_pauseMenu->help.color = color_white;
 
 	s_pauseMenu->exitToMainMenu.generic.type = MTYPE_TEXT;
@@ -296,7 +298,7 @@ void PauseMenu_Cache( void )
 	s_pauseMenu->exitToMainMenu.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
 	s_pauseMenu->exitToMainMenu.generic.eventcallback = PauseMenu_EventCallback;
 	s_pauseMenu->exitToMainMenu.generic.font = AlegreyaSC;
-	s_pauseMenu->exitToMainMenu.text = "EXIT TO MAIN MENU";
+	s_pauseMenu->exitToMainMenu.text = strManager->ValueForKey( "PAUSE_MENU_ETMM" )->value;
 	s_pauseMenu->exitToMainMenu.color = color_white;
 
 	s_pauseMenu->exitToDesktop.generic.type = MTYPE_TEXT;
