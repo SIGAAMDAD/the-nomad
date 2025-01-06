@@ -1,0 +1,174 @@
+{
+	"StateInfo": [
+		{
+			"Id": "weapon_equip_adb_left",
+			"Tics": 0,
+			"BaseNum": "ST_WEAPON_EQUIP",
+			"Entity": "primary_double_barrel",
+			"NextState": "this",
+			"SpriteOffset": [ 2, 0 ],
+			"Animation": {
+				"TicRate": 0,
+				"FlipFlop": false,
+				"Frames": 0,
+				"Reverse": false
+			}
+		},
+		{
+			"Id": "weapon_idle_firearm_adb_left",
+			"Tics": 0,
+			"BaseNum": "ST_WEAPON_IDLE",
+			"Entity": "primary_double_barrel",
+			"NextState": "this",
+			"SpriteOffset": [ 2, 0 ],
+			"Animation": {
+				"TicRate": 0,
+				"FlipFlop": false,
+				"Frames": 0,
+				"Reverse": false
+			}
+		},
+		{
+			"Id": "weapon_reload_adb_left",
+			"Tics": 700,
+			"BaseNum": "ST_WEAPON_RELOAD",
+			"Entity": "primary_double_barrel",
+			"NextState": "weapon_idle_firearm_adb_left",
+			"SpriteOffset": [ 3, 0 ],
+			"Animation": {
+				"TicRate": 240,
+				"FlipFlop": false,
+				"Frames": 1,
+				"Reverse": false
+			}
+		},
+		{
+			"Id": "weapon_use_firearm_adb_left",
+			"Tics": 500,
+			"BaseNum": "ST_WEAPON_USE",
+			"Entity": "primary_double_barrel",
+			"NextState": "weapon_idle_firearm_adb_left",
+			"SpriteOffset": [ 2, 0 ],
+			"Animation": {
+				"TicRate": 0,
+				"FlipFlop": false,
+				"Frames": 0,
+				"Reverse": false
+			}
+		},
+		{
+			"Id": "weapon_equip_adb_right",
+			"Tics": 0,
+			"BaseNum": "ST_WEAPON_EQUIP",
+			"Entity": "primary_double_barrel",
+			"NextState": "this",
+			"SpriteOffset": [ 0, 0 ],
+			"Animation": {
+				"TicRate": 0,
+				"FlipFlop": false,
+				"Frames": 0,
+				"Reverse": false
+			}
+		},
+		{
+			"Id": "weapon_idle_firearm_adb_right",
+			"Tics": 0,
+			"BaseNum": "ST_WEAPON_IDLE",
+			"Entity": "primary_double_barrel",
+			"NextState": "this",
+			"SpriteOffset": [ 0, 0 ],
+			"Animation": {
+				"TicRate": 0,
+				"FlipFlop": false,
+				"Frames": 0,
+				"Reverse": false
+			}
+		},
+		{
+			"Id": "weapon_reload_adb_right",
+			"Tics": 700,
+			"BaseNum": "ST_WEAPON_RELOAD",
+			"Entity": "primary_double_barrel",
+			"NextState": "weapon_idle_firearm_adb_right",
+			"SpriteOffset": [ 1, 0 ],
+			"Animation": {
+				"TicRate": 240,
+				"FlipFlop": false,
+				"Frames": 1,
+				"Reverse": false
+			}
+		},
+		{
+			"Id": "weapon_use_firearm_adb_right",
+			"Tics": 500,
+			"BaseNum": "ST_WEAPON_USE",
+			"Entity": "primary_double_barrel",
+			"NextState": "weapon_idle_firearm_adb_right",
+			"SpriteOffset": [ 0, 0 ],
+			"Animation": {
+				"TicRate": 0,
+				"FlipFlop": false,
+				"Frames": 0,
+				"Reverse": false
+			}
+		},
+
+		{
+			"Id": "weapon_idle_blunt_adb_right",
+			"Tics": 0,
+			"BaseNum": "ST_WEAPON_IDLE",
+			"Entity": "primary_double_barrel",
+			"NextState": "this",
+			"SpriteOffset": [ 4, 0 ],
+			"Animation": {
+				"TicRate": 0,
+				"FlipFlop": false,
+				"Frames": 0,
+				"Reverse": false
+			}
+		},
+		{
+			"Id": "weapon_use_blunt_adb_right",
+			"Tics": 500,
+			"BaseNum": "ST_WEAPON_USE",
+			"Entity": "primary_double_barrel",
+			"NextState": "weapon_idle_blunt_adb_right",
+			"SpriteOffset": [ 4, 0 ],
+			"Animation": {
+				"TicRate": 150,
+				"FlipFlop": false,
+				"Frames": 3,
+				"Reverse": false
+			}
+		},
+
+		{
+			"Id": "weapon_idle_blunt_adb_left",
+			"Tics": 0,
+			"BaseNum": "ST_WEAPON_IDLE",
+			"Entity": "primary_double_barrel",
+			"NextState": "this",
+			"SpriteOffset": [ 7, 0 ],
+			"Animation": {
+				"TicRate": 0,
+				"FlipFlop": false,
+				"Frames": 0,
+				"Reverse": false
+			}
+		},
+		{
+			"Id": "weapon_use_blunt_adb_left",
+			"Tics": 500,
+			"BaseNum": "ST_WEAPON_USE",
+			"Entity": "primary_double_barrel",
+			"NextState": "weapon_idle_blunt_adb_left",
+			"SpriteOffset": [ 7, 0 ],
+			"Animation": {
+				"TicRate": 150,
+				"FlipFlop": false,
+				"Frames": 3,
+				"Reverse": false
+			}
+		}
+	]
+}
