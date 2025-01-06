@@ -9,49 +9,49 @@ namespace TheNomad::SGame {
 			LevelInfoData@ data = @LevelManager.GetCurrentData();
 			LevelRank rank;
 
-			rank = LevelRank::RankWereUBotting;
-			if ( numKills > data.m_RankU.minKills ) {
-				rank = LevelRank::RankF;
-			}
-			if ( numKills > data.m_RankF.minKills ) {
-				rank = LevelRank::RankD;
-			}
-			if ( numKills > data.m_RankD.minKills ) {
-				rank = LevelRank::RankC;
-			}
-			if ( numKills > data.m_RankC.minKills ) {
-				rank = LevelRank::RankB;
-			}
-			if ( numKills > data.m_RankB.minKills ) {
+			rank = LevelRank::RankS;
+			if ( numKills < data.m_RankS.minKills ) {
 				rank = LevelRank::RankA;
 			}
-			if ( numKills > data.m_RankA.minKills ) {
-				rank = LevelRank::RankS;
+			if ( numKills < data.m_RankA.minKills ) {
+				rank = LevelRank::RankB;
+			}
+			if ( numKills < data.m_RankB.minKills ) {
+				rank = LevelRank::RankC;
+			}
+			if ( numKills < data.m_RankC.minKills ) {
+				rank = LevelRank::RankD;
+			}
+			if ( numKills < data.m_RankD.minKills ) {
+				rank = LevelRank::RankF;
+			}
+			if ( numKills < data.m_RankF.minKills ) {
+				rank = LevelRank::RankWereUBotting;
 			}
 			kills_Rank = rank;
 
-			rank = LevelRank::RankWereUBotting;
-			if ( m_TimeMilliseconds < data.m_RankU.min_TimeMilliseconds ) {
-				rank = LevelRank::RankF;
-			}
-			if ( m_TimeMilliseconds < data.m_RankF.min_TimeMilliseconds ) {
-				rank = LevelRank::RankD;
-			}
-			if ( m_TimeMilliseconds < data.m_RankD.min_TimeMilliseconds ) {
-				rank = LevelRank::RankC;
-			}
-			if ( m_TimeMilliseconds < data.m_RankC.min_TimeMilliseconds ) {
-				rank = LevelRank::RankB;
-			}
-			if ( m_TimeMilliseconds < data.m_RankB.min_TimeMilliseconds ) {
+			rank = LevelRank::RankS;
+			if ( m_TimeMilliseconds > data.m_RankS.minTime ) {
 				rank = LevelRank::RankA;
 			}
-			if ( m_TimeMilliseconds < data.m_RankA.min_TimeMilliseconds ) {
-				rank = LevelRank::RankS;
+			if ( m_TimeMilliseconds > data.m_RankA.minTime ) {
+				rank = LevelRank::RankB;
+			}
+			if ( m_TimeMilliseconds > data.m_RankB.minTime ) {
+				rank = LevelRank::RankC;
+			}
+			if ( m_TimeMilliseconds > data.m_RankC.minTime ) {
+				rank = LevelRank::RankD;
+			}
+			if ( m_TimeMilliseconds > data.m_RankD.minTime ) {
+				rank = LevelRank::RankF;
+			}
+			if ( m_TimeMilliseconds > data.m_RankF.minTime ) {
+				rank = LevelRank::RankWereUBotting;
 			}
 			time_Rank = rank;
 
-			rank = LevelRank::RankWereUBotting;
+			rank = LevelRank::RankS;
 			if ( numDeaths > data.m_RankS.maxDeaths ) {
 				rank = LevelRank::RankA;
 			}
@@ -97,7 +97,8 @@ namespace TheNomad::SGame {
 			isClean = collateralScore == 0;
 
 			if ( TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" ) > TheNomad::GameSystem::GameDifficulty::Normal ) {
-				totalScore += TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" ) * 100;
+				difficulty = TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" );
+				totalScore += difficulty * 100;
 			}
 
 			// absolute perfection
@@ -120,7 +121,7 @@ namespace TheNomad::SGame {
 			if ( time_Rank == highestRank ) {
 				numHighestRanks++;
 			}
-			if ( numHighestRanks >= 2 ) {
+			if ( numHighestRanks >= 1 ) {
 				total_Rank = highestRank;
 			} else {
 				total_Rank = LevelRank( uint( highestRank ) - 1 );
@@ -143,8 +144,8 @@ namespace TheNomad::SGame {
 			// ensure we aren't drawing anything over this
 			TheNomad::Engine::CvarSet( "g_paused", "0" );
 
-			ImGui::SetWindowPos( vec2( 256 * scale, 64 * scale ) );
-			ImGui::SetWindowSize( vec2( 800 * scale, 500 * scale ) );
+			ImGui::SetWindowPos( vec2( 160 * scale, 64 * scale ) );
+			ImGui::SetWindowSize( vec2( 1000 * scale, 500 * scale ) );
 
 			TheNomad::Engine::UserInterface::SetActiveFont( TheNomad::Engine::UserInterface::Font_RobotoMono );
 			ImGui::SetWindowFontScale( fontScale * 2.0f );
@@ -162,7 +163,7 @@ namespace TheNomad::SGame {
 					ImGui::TableNextColumn();
 					ImGui::Text( "TIME" );
 					ImGui::TableNextColumn();
-					ImGui::Text( formatUInt( m_TimeMinutes ) + ":" + m_TimeSeconds + "." + m_TimeMilliseconds );
+					ImGui::Text( "" + m_TimeMinutes + ":" + m_TimeSeconds + "." + m_TimeMilliseconds );
 					ImGui::PushStyleColor( ImGuiCol::Text, sgame_RankStringColors[ time_Rank ] );
 					ImGui::TableNextColumn();
 					ImGui::Text( sgame_RankStrings[ time_Rank ] );
@@ -180,6 +181,15 @@ namespace TheNomad::SGame {
 					ImGui::PopStyleColor();
 
 					ImGui::TableNextRow();
+
+					ImGui::TableNextColumn();
+					ImGui::Text( "DEATHS" );
+					ImGui::TableNextColumn();
+					ImGui::Text( formatUInt( numDeaths ) );
+					ImGui::PushStyleColor( ImGuiCol::Text, sgame_RankStringColors[ deaths_Rank ] );
+					ImGui::TableNextColumn();
+					ImGui::Text( sgame_RankStrings[ deaths_Rank ] );
+					ImGui::PopStyleColor();
 
 					/*
 					ImGui::TableNextColumn();
@@ -202,7 +212,7 @@ namespace TheNomad::SGame {
 				ImGui::SetWindowFontScale( ( fontScale * 2.5f ) );
 				ImGui::PopStyleColor();
 
-				ImGui::TableNextRow();
+				ImGui::TableNextColumn();
 
 				ImGui::Separator();
 
@@ -222,6 +232,8 @@ namespace TheNomad::SGame {
 					ImGui::PopStyleColor();
 				}
 
+				ImGui::TableNextColumn();
+
 				ImGui::Text( "- " );
 				ImGui::SameLine();
 				if ( numDeaths > 0 ) {
@@ -229,7 +241,7 @@ namespace TheNomad::SGame {
 					ImGui::Text( formatUInt( numDeaths ) );
 					ImGui::PopStyleColor();
 					ImGui::SameLine();
-					ImGui::Text( " DEATHS (PENALTY -" + numDeaths * 500 +  " )" );
+					ImGui::Text( "DEATHS (PENALTY -" + ( numDeaths * 500 ) + ")" );
 				} else {
 					ImGui::PushStyleColor( ImGuiCol::Text, colorGreen );
 					ImGui::Text( "NO RESTARTS (+1000)" );
@@ -238,8 +250,23 @@ namespace TheNomad::SGame {
 
 				ImGui::TableNextColumn();
 
+				ImGui::Text( "- " );
+				ImGui::SameLine();
+				ImGui::Text( "DIFFICULTY BONUS " );
+				if ( TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" ) > TheNomad::GameSystem::GameDifficulty::Normal ) {
+					ImGui::PushStyleColor( ImGuiCol::Text, colorMagenta );
+					ImGui::Text( SP_DIFF_STRINGS[ TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" ) ] );
+					ImGui::PopStyleColor();
+					ImGui::SameLine();
+					ImGui::Text( " (BONUS +" + ( difficulty * 100 ) +  ")" );
+				} else {
+					ImGui::Text( "NONE" );
+				}
+
+				ImGui::TableNextColumn();
+
 				// TODO:
-				ImGui::Text( "CHALLENGE:" );
+				ImGui::Text( "CHALLENGE: NONE" );
 
 				/*
 				if ( isClean ) {
@@ -250,6 +277,8 @@ namespace TheNomad::SGame {
 					ImGui::PopStyleColor();
 				}
 				*/
+
+				ImGui::TableNextColumn();
 				
 				ImGui::Text( "TOTAL " + totalScore );
 			}
@@ -302,7 +331,7 @@ namespace TheNomad::SGame {
 			ImGui::Text( "TIME:" );
 			ImGui::TableNextColumn();
 
-			ImGui::Text( formatUInt( m_TimeMinutes ) + ":" + formatUInt( m_TimeSeconds ) + "." + formatUInt( m_TimeMilliseconds ) );
+			ImGui::Text( "" + m_TimeMinutes + ":" + m_TimeSeconds + "." + m_TimeMilliseconds );
 			ImGui::SameLine();
 			ImGui::TextColored( sgame_RankStringColors[ time_Rank ], sgame_RankStrings[ time_Rank ] );
 			
@@ -364,9 +393,6 @@ namespace TheNomad::SGame {
 		private LevelRank GetHighestRank() const {
 			LevelRank rank = kills_Rank;
 
-			if ( rank < style_Rank ) {
-				rank = style_Rank;
-			}
 			if ( rank < deaths_Rank ) {
 				rank = deaths_Rank;
 			}
@@ -389,6 +415,8 @@ namespace TheNomad::SGame {
 			}
 			return rank;
 		}
+
+		int difficulty = 0;
 
 		uint m_TimeMilliseconds = 0;
 		int m_TimeSeconds = 0;

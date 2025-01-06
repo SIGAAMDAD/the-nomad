@@ -573,16 +573,8 @@ namespace TheNomad::SGame {
 				ConsoleWarning( "invalid level info object '" + rankName + "', no variable 'RequiresClean'.\n" );
 				return false;
 			}
-			if ( !src.get( "MinTime.Milliseconds", data.min_TimeMilliseconds ) ) {
-				ConsoleWarning( "invalid level info object '" + rankName + "', no variable 'MinTime.Milliseconds'.\n" );
-				return false;
-			}
-			if ( !src.get( "MinTime.Seconds", data.min_TimeSeconds ) ) {
-				ConsoleWarning( "invalid level info object '" + rankName + "', no variable 'MinTime.Seconds'.\n" );
-				return false;
-			}
-			if ( !src.get( "MinTime.Minutes", data.min_TimeMinutes ) ) {
-				ConsoleWarning( "invalid level info object '" + rankName + "', no variable 'MinTime.Minutes'.\n" );
+			if ( !src.get( "MinTime", data.minTime ) ) {
+				ConsoleWarning( "invalid level info object '" + rankName + "', no variable 'MinTime'.\n" );
 				return false;
 			}
 
