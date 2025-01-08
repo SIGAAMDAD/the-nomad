@@ -6,6 +6,7 @@ namespace moblib::Script {
 	float MERC_SHOTGUN_DAMAGE = 25.0f;
 	float MERC_SHOTGUN_RANGE = 20.75f;
 	const uint MERC_BARK_COOLDOWN = 300;
+	const uint MERC_AGGRESSION_SCALE = 6;
 	
 	final class MercShotty : MobScript {
 		MercShotty() {
@@ -207,6 +208,9 @@ namespace moblib::Script {
 				m_EntityData.Chase();
 				return;
 			}
+			if ( ( TheNomad::Util::PRandom() & MERC_AGGRESSION_SCALE ) >= m_nAggressionScale ) {
+//				return;
+			}
 			if ( TheNomad::Util::Distance( origin, target ) <= MERC_SHOTGUN_RANGE ) {
 				// only start aiming if we can see the target
 				@m_SubState = @ResourceCache.ShottyAimState;
@@ -254,7 +258,7 @@ namespace moblib::Script {
 				m_nAimScale = 0.60f;
 
 				MERC_SHOTGUN_RANGE = 10.0f;
-				MERC_SHOTGUN_DAMAGE = 15.0f;
+				MERC_SHOTGUN_DAMAGE = 13.0f;
 				break;
 			case TheNomad::GameSystem::GameDifficulty::Hard:
 				m_nAggressionScale = 3;
@@ -266,6 +270,7 @@ namespace moblib::Script {
 				info.health = 90.0f;
 				break;
 			case TheNomad::GameSystem::GameDifficulty::VeryHard:
+				m_nAggressionScale = 4;
 				m_nAimScale = 1.25f;
 				
 				MERC_SHOTGUN_RANGE = 15.0f;
@@ -275,6 +280,7 @@ namespace moblib::Script {
 				break;
 			case TheNomad::GameSystem::GameDifficulty::Insane:
 				// the elite
+				m_nAggressionScale = 6;
 				m_nAimScale = 1.75f;
 
 				MERC_SHOTGUN_RANGE = 16.0f;

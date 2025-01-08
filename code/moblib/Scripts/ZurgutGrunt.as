@@ -2,8 +2,8 @@ namespace moblib::Script {
 	const uint GRUNT_BLOWUP_TIME = 25000;
 	const uint GRUNT_MELEE_WINDUP_TIME = 1000;
 	const float GRUNT_MELEE_RANGE = 5.5f;
-	const float GRUNT_EXPLOSION_RADIUS = 7.5f;
-	const float GRUNT_HAMMER_RANGE = 3.0f;
+	float GRUNT_EXPLOSION_RADIUS = 7.5f;
+	float GRUNT_HAMMER_RANGE = 3.0f;
 
 	final class ZurgutGrunt : MobScript {
 		ZurgutGrunt() {

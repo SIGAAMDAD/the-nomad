@@ -897,7 +897,7 @@ void RB_FlushBatchBuffer( void )
 
 		if ( HAVE_DIRECT_STATE_ACCESS ) {
 			data = nglMapNamedBufferRange( buf->index.id, 0, backend.drawBatch.idxDataSize * backend.drawBatch.idxOffset,
-				GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT );
+				GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_INVALIDATE_RANGE_BIT );
 			if ( data ) {
 				memcpy( data, backend.drawBatch.indices, backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize );
 			}
@@ -912,7 +912,7 @@ void RB_FlushBatchBuffer( void )
 		}
 		else {
 			data = nglMapBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, backend.drawBatch.idxDataSize * backend.drawBatch.idxOffset,
-				GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT );
+				GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_INVALIDATE_RANGE_BIT );
 			if ( data ) {
 				memcpy( data, backend.drawBatch.indices, backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize );
 			}

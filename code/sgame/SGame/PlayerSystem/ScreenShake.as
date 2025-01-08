@@ -3,47 +3,41 @@ namespace TheNomad::SGame {
 		ScreenShake() {
 		}
 		
-		void Start( uint nDuration, float nStrengthX, float nStrengthY ) {
+		void Start( uint nDuration, float nStrengthX, float ) {
+			/*
+			m_nMagnitude = nStrength;
 			m_nDuration = nDuration;
-			m_nStart = TheNomad::GameSystem::GameTic;
-			m_Strength = vec2( nStrengthX, nStrengthY );
-			m_nAngle = atan2( nStrengthX, nStrengthY );
-			m_bDone = false;
+			m_nStartTic = TheNomad::GameSystem::GameTic;
 			
 			// save the old camera position to restore it after the screen shake
 			m_CameraPos = Game_CameraPos;
+			*/
 		}
+
+		//vec2 GetNoise() {
+		//	const uint time = ( TheNomad::GameSystem::GameTic - m_nStartTic ) * TheNomad::GameSystem::DeltaTic;
+		//}
 		
 		void OnRunTic() {
-			if ( ( TheNomad::GameSystem::GameTic - m_nStart ) * TheNomad::GameSystem::DeltaTic >= m_nDuration ) {
-				if ( !m_bDone ) {
-					Game_CameraPos = m_CameraPos;
-				}
-				m_bDone = true;
+			/*
+			if ( ( TheNomad::GameSystem::GameTic - m_nStartTic ) * TheNomad::GameSystem::DeltaTic > m_nDuration ) {
 				return;
 			}
-			
-			float noise = Util::PRandom();
-			if ( noise <= 0.0f ) {
-				noise = 1.0f;
-			} else {
-				noise = 1.0f / noise;
-			}
-			const vec2 offset = vec2( cos( m_nAngle ) + ( m_Strength.x * noise ), sin( m_nAngle ) + ( m_Strength.y * noise ) );
-			
-			// decrease a little every frame
-			m_Strength.x -= 0.1f * m_nDuration;
-			m_Strength.y -= 0.1f * m_nDuration;
-			
+
+			const float sinValue = sin( m_nSpeed * ( m_nSeed + m_nSeed * ( TheNomad::GameSystem::GameTic - m_nStartTic ) ) );
+			vec2 direction = m_Direction * GetNoise();
+
 			Game_CameraPos.x += offset.x;
 			Game_CameraPos.y += offset.y;
+			*/
 		}
 		
+		/*
 		private vec3 m_CameraPos;
-		private vec2 m_Strength = vec2( 0.0f );
-		private uint m_nStart = 0;
+		private vec2 m_Direction = vec2( 0.0f );
+		private float m_nMagnitude = 0.0f;
 		private uint m_nDuration = 0;
-		private float m_nAngle = 0.0f;
-		private bool m_bDone = false;
+		private uint m_nStartTic = 0;
+		*/
 	};
 };

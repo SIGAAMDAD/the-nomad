@@ -769,6 +769,38 @@ namespace TheNomad::SGame {
 			m_HudData.Init( @this );
 		}
 
+		private void CheckStatus() {
+			if ( m_nRage < 100.0f ) {
+				if ( ( Flags & PF_USED_MANA ) == 0 ) {
+//					m_nRage += 0.001f * TheNomad::GameSystem::DeltaTic;
+					// this makes it WAY too easy
+				}
+				m_HudData.ShowRageBar();
+			}
+			if ( m_nFrameDamage > 0.0f ) {
+				m_nRage += m_nFrameDamage * TheNomad::GameSystem::DeltaTic;
+				m_nFrameDamage -= 0.05f * TheNomad::GameSystem::DeltaTic;
+				if ( m_nFrameDamage < 0.0f ) {
+					m_nFrameDamage = 0.0f;
+				}
+				Flags |= PF_USED_MANA;
+				m_HudData.ShowRageBar();
+			}
+			if ( m_nHealth < 100.0f ) {
+				m_nHealth += 0.005f * TheNomad::GameSystem::DeltaTic;
+				m_nRage -= 0.05f * TheNomad::GameSystem::DeltaTic; // rage is essentially just converted mana
+				// mana conversion ratio to health is extremely minimal
+
+				Flags |= PF_USED_MANA;
+				m_HudData.ShowHealthBar();
+			}
+			if ( m_nRage > 100.0f ) {
+				m_nRage = 100.0f;
+			} else if ( m_nRage < 0.0f ) {
+				m_nRage = 0.0f;
+			}
+		}
+
 		void Think() override {
 			if ( ( uint( m_Flags ) & EntityFlags::Dead ) != 0 ) {
 				if ( m_State.GetBaseNum() == StateNum::ST_PLAYR_DEAD_IDLE ) {
@@ -846,36 +878,7 @@ namespace TheNomad::SGame {
 				Util::HapticRumble( m_nControllerIndex, 0.50f, 1000 );
 			}
 
-			if ( m_nHealth < 100.0f ) {
-				m_nHealth += m_nHealMult;
-				m_nRage -= m_nHealMult; // rage is essentially just converted mana
-
-				if ( m_nHealMult > HEAL_MULT_BASE ) {
-					m_nHealMult -= m_nHealMultDecay;
-					if ( m_nHealMult < HEAL_MULT_BASE ) {
-						m_nHealMult = HEAL_MULT_BASE;
-					}
-				}
-				if ( m_nHealth > 100.0f ) {
-					m_nHealth = 100.0f;
-				}
-
-				Flags |= PF_USED_MANA;
-				m_HudData.ShowHealthBar();
-			}
-			if ( m_nRage < 100.0f && ( Flags & PF_USED_MANA ) == 0 ) {
-				// only increase mana at a very slow rate if we're not hitting something
-				m_nRage += 0.05f * TheNomad::GameSystem::DeltaTic;
-				m_HudData.ShowRageBar();
-			}
-			if ( m_nFrameDamage > 0.0f ) {
-				m_nRage += m_nFrameDamage * TheNomad::GameSystem::DeltaTic;
-				m_nFrameDamage = 0.0f;
-				m_HudData.ShowRageBar();
-			}
-			if ( m_nRage > 100.0f ) {
-				m_nRage = 100.0f;
-			}
+			CheckStatus();
 
 			@m_LegState = m_LegState.Run( m_nLegTicker );
 			LeftArm.Think();

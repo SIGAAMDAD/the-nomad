@@ -84,7 +84,29 @@ CModuleBoundBox& CModuleBoundBox::operator=( const CModuleBoundBox& other ) {
 }
 
 void CModuleBoundBox::Clear( void ) {
-    memset( this, 0, sizeof( *this ) );
+	width = INFINITY;
+	height = INFINITY;
+	mins.x = mins.y = mins.z = INFINITY;
+	maxs.x = maxs.y = maxs.z = INFINITY;
+}
+
+void CModuleBoundBox::Zero( void ) {
+	memset( this, 0, sizeof( *this ) );
+}
+
+bool CModuleBoundBox::IntersectsEntity( uint32_t *nEntityNumber ) const
+{
+	const linkEntity_t *activeEnts = g_world->GetEntities();
+	const linkEntity_t *ent = activeEnts->next;
+	const bbox_t thisData = ToPOD();
+
+	for ( ; ent != activeEnts; ent = ent->next ) {
+		if ( BoundsIntersect( &ent->bounds, &thisData ) ) {
+			*nEntityNumber = ent->entityNumber;
+			return true;
+		}
+	}
+	return false;
 }
 
 float CModuleBoundBox::GetRadius( void ) const {
@@ -248,11 +270,11 @@ void CModuleBoundBox::MakeBounds( const glm::vec3& origin ) {
 
     mins[0] = origin[0];
     mins[1] = origin[1];
-    mins[2] = origin[2] + ( height / 2 );
+    mins[2] = origin[2];
 
     maxs[0] = origin[0] + width;
     maxs[1] = origin[1] + height;
-    maxs[2] = origin[2] - ( height / 2 );
+    maxs[2] = origin[2] - height;
 }
 
 const bbox_t CModuleBoundBox::ToPOD( void ) const {

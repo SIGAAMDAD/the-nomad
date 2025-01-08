@@ -870,16 +870,11 @@ void AddPointToBounds( const vec3_t v, bbox_t *bounds ) {
 
 qboolean BoundsIntersect( const bbox_t *a, const bbox_t *b )
 {
-	if ( a->maxs[0] < b->mins[0] ||
-		a->maxs[1] < b->mins[1] ||
-		a->maxs[2] < b->mins[2] ||
-		a->mins[0] > b->maxs[0] ||
-		a->mins[1] > b->maxs[1] ||
-		a->mins[2] > b->maxs[2] )
+	if ( a->maxs[0] < b->mins[0] || a->maxs[1] < b->mins[1] || a->maxs[2] < b->mins[2] ||
+		a->mins[0] > b->maxs[0] || a->mins[1] > b->maxs[1] || a->mins[2] > b->maxs[2] )
 	{
 		return qfalse;
 	}
-
 	return qtrue;
 }
 
@@ -895,7 +890,6 @@ qboolean BoundsIntersectSphere( const bbox_t *bounds,
 	{
 		return qfalse;
 	}
-
 	return qtrue;
 }
 

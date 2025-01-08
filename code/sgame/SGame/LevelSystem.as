@@ -557,26 +557,37 @@ namespace TheNomad::SGame {
 				ConsoleWarning( "invalid level info object '" + rankName + "', no variable 'MinKills'.\n" );
 				return false;
 			}
+			data.minKills = uint( src[ "MinKills" ] );
+
 			if ( !src.get( "MinStyle", data.minStyle ) ) {
 				ConsoleWarning( "invalid level info object '" + rankName + "', no variable 'MinStyle'.\n" );
 				return false;
 			}
+			data.minStyle = uint( src[ "MinStyle" ] );
+
 			if ( !src.get( "MaxDeaths", data.maxDeaths ) ) {
 				ConsoleWarning( "invalid level info object '" + rankName + "', no variable 'MaxDeaths'.\n" );
 				return false;
 			}
+			data.maxDeaths = uint( src[ "MaxDeaths" ] );
+
 			if ( !src.get( "MaxCollateral", data.maxCollateral ) ) {
 				ConsoleWarning( "invalid level info object '" + rankName + "', no variable 'MaxCollateral'.\n" );
 				return false;
 			}
+			data.maxCollateral = uint( src[ "MaxCollateral" ] );
+
 			if ( !src.get( "RequiresClean", data.requiresClean ) ) {
 				ConsoleWarning( "invalid level info object '" + rankName + "', no variable 'RequiresClean'.\n" );
 				return false;
 			}
+			data.requiresClean = bool( src[ "RequiresClean" ] );
+
 			if ( !src.get( "MinTime", data.minTime ) ) {
 				ConsoleWarning( "invalid level info object '" + rankName + "', no variable 'MinTime'.\n" );
 				return false;
 			}
+			data.minTime = uint( src[ "MinTime" ] );
 
 			return true;
 		}

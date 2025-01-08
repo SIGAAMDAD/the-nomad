@@ -61,7 +61,7 @@
 			"Tics": 5000,
 			"BaseNum": "ST_MOB_CHASE",
 			"Entity": "mob_merc_shotgunner",
-			"NextState": "mob_merc_shotgunner_idle",
+			"NextState": "this",
 			"SpriteOffset": [ 4, 0 ],
 			"Animation": {
 				"TicRate": 200,

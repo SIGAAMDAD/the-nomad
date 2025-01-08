@@ -14,7 +14,7 @@
 			"SoundTrack_AmbientEnvironment": "event:/music/level0/ambience_world",
 			"SoundTrack_Combat": "event:/music/level0/combat_0",
 			"RankS": {
-				"MinKills": 13,
+				"MinKills": 14,
 				"MinStyle": 0,
 				"MaxDeaths": 0,
 				"MinTime": 150000,
@@ -22,7 +22,7 @@
 				"RequiresClean": false
 			},
 			"RankA": {
-				"MinKills": 13,
+				"MinKills": 12,
 				"MinStyle": 0,
 				"MaxDeaths": 4,
 				"MinTime": 250000,
@@ -38,7 +38,7 @@
 				"RequiresClean": false
 			},
 			"RankC": {
-				"MinKills": 10,
+				"MinKills": 9,
 				"MinStyle": 0,
 				"MaxDeaths": 9,
 				"MinTime": 600000,

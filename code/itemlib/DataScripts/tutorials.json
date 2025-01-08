@@ -1,46 +1,64 @@
 {
 	"TutorialData": [
 		{
+			"Id": "TutorialForTutorial",
+			"Type": "tooltip",
+			"Shader": "world/sprites/signpost",
+			"Text": "step onto these to see a tutorial"
+		},
+		{
 			"Id": "TutorialCheckpoints",
 			"Type": "tooltip",
-			"Shader": "gfx/checkpoint",
-			"Text": " step onto these to save your progress"
+			"Shader": "icons/checkpoint",
+			"Text": "step onto these to save your progress [bugged rn]"
 		},
 		{
 			"Id": "TutorialParrying",
 			"Type": "binding",
 			"Shader": "+melee",
-			"Text": " to melee, you can parry anything that flashes blue,\nbut not if it flashes red"
+			"Text": "to melee, you can parry anything that flashes blue,\nbut not if it flashes red"
 		},
 		{
 			"Id": "TutorialItemPickups",
 			"Type": "tooltip",
 			"Shader": "icons/tooltip",
-			"Text": " step over items to pick them up automatically"
+			"Text": "step over items to pick them up automatically"
 		},
 		{
 			"Id": "TutorialDashing",
 			"Type": "binding",
 			"Shader": "+dash",
-			"Text": " to dash, grants IFrames for 1/2 a second"
+			"Text": "to dash, grants IFrames for 1/2 a second. To use,\npress the key while moving in the desired direction"
 		},
 		{
 			"Id": "TutorialSliding",
 			"Type": "binding",
 			"Shader": "+slide",
-			"Text": " to slide, for extra mobility in the heat of a moment"
+			"Text": "to slide, for extra mobility in the heat of a moment"
 		},
 		{
 			"Id": "TutorialRage",
 			"Type": "tooltip",
 			"Shader": "icons/tooltip",
-			"Text": " rage is a powerful tool that can be attained from recieving\ndamage and dealing damage, but be wary, for this resource is not infinite!"
+			"Text": "rage is an energy source, (top left) so manage it when\nin combat, otherwise, you will die quickly."
 		},
 		{
 			"Id": "TutorialBulletTime",
 			"Type": "binding",
 			"Shader": "quickshot",
-			"Text": " to use your reflex mode, more commonly known as bullet time.\nThis will consume a lot of rage."
+			"Text": "to use your reflex mode, more commonly known as bullet time.\nThis will consume a lot of rage."
+		},
+		{
+			"Id": "TutorialFacing",
+			"Type": "tooltip",
+			"Shader": "icons/tooltip",
+			"Text": "you'll see The Nomad pointed in a certain direction, move\nthe mouse to either sides of the screen to change his\ndirection"
+		},
+		{
+			"Id": "TutorialGuns",
+			"Type": "tooltip",
+			"Shader": "icons/tooltip",
+			"Text": "you'll probably want a gun, pick up the ammo and the gun"
 		}
 	]
 }

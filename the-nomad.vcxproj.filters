@@ -773,9 +773,6 @@
     <ClCompile Include="code\module_lib\module_virtual_asm_x64.cpp">
       <Filter>Source Files\module_lib</Filter>
     </ClCompile>
-    <ClCompile Include="code\module_lib\module_virtual_asm_x86.cpp">
-      <Filter>Source Files\module_lib</Filter>
-    </ClCompile>
     <ClCompile Include="code\module_lib\module_memory.cpp">
       <Filter>Source Files\module_lib</Filter>
     </ClCompile>

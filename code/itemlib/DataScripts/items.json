@@ -130,6 +130,39 @@
 			"Flags": [
 				"NoOwner"
 			]
+		},
+		{
+			"Type": "Tutorial",
+			"Id": "tutorial_for_tutorials",
+			"Name": "TutorialForTutorial",
+			"RenderData.Icon": "world/sprites/signpost",
+			"Stats.Width": 1.25,
+			"Stats.Height": 1.5,
+			"Flags": [
+				"NoOwner"
+			]
+		},
+		{
+			"Type": "Tutorial",
+			"Id": "tutorial_facing",
+			"Name": "TutorialFacing",
+			"RenderData.Icon": "world/sprites/signpost",
+			"Stats.Width": 1.25,
+			"Stats.Height": 1.5,
+			"Flags": [
+				"NoOwner"
+			]
+		},
+		{
+			"Type": "Tutorial",
+			"Id": "tutorial_guns",
+			"Name": "TutorialGuns",
+			"RenderData.Icon": "world/sprites/signpost",
+			"Stats.Width": 1.25,
+			"Stats.Height": 1.5,
+			"Flags": [
+				"NoOwner"
+			]
 		}
 	]
 }

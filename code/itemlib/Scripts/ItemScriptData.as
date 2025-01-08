@@ -32,6 +32,9 @@ namespace itemlib::Script {
 		TUTORIAL_PARRYING,
 		TUTORIAL_RAGE,
 		TUTORIAL_BULLET_TIME,
+		TUTORIAL_FOR_TUTORIALS,
+		TUTORIAL_FACING,
+		TUTORIAL_GUNS
 	};
 
 	ItemScript@ AllocateScriptEntity( uint nItemID ) {
@@ -69,6 +72,9 @@ namespace itemlib::Script {
 		case ITEM_ID::TUTORIAL_PARRYING:
 		case ITEM_ID::TUTORIAL_RAGE:
 		case ITEM_ID::TUTORIAL_BULLET_TIME:
+		case ITEM_ID::TUTORIAL_FOR_TUTORIALS:
+		case ITEM_ID::TUTORIAL_FACING:
+		case ITEM_ID::TUTORIAL_GUNS:
 			@scriptObject = @Tutorial();
 			break;
 

@@ -55,8 +55,19 @@ namespace TheNomad::GameSystem {
 					if ( ent.GetEntityNum() != m_nOwner && ent.GetEntityNum() != m_nOwner2 && ent.GetBounds().IntersectsPoint( m_Origin )
 						&& !ent.CheckFlags( TheNomad::SGame::EntityFlags::Dead ) )
 					{
-						m_nEntityNumber = ent.GetEntityNum();
-						return;
+						switch ( ent.GetType() ) {
+						case TheNomad::GameSystem::EntityType::Wall:
+						case TheNomad::GameSystem::EntityType::Item:
+						case TheNomad::GameSystem::EntityType::Weapon:
+							break;
+						case TheNomad::GameSystem::EntityType::Playr:
+							if ( TheNomad::Engine::CvarVariableInteger( "sgame_NoClip" ) == 1 ) {
+								continue;
+							}
+						case TheNomad::GameSystem::EntityType::Mob:
+							m_nEntityNumber = ent.GetEntityNum();
+							return;
+						};
 					}
 				}
 				if ( ( sy == -0.5f && m_Origin.y <= end.y ) || ( sy == 0.5f && m_Origin.y >= end.y )
@@ -134,6 +145,11 @@ namespace TheNomad::GameSystem {
 		TheNomad::SGame::EntityManager.OnLevelEnd();
 		TheNomad::SGame::EntityManager.OnLevelStart();
 		TheNomad::SGame::GfxManager.Respawn();
+
+		// TODO: edit this later to accomidate saving
+		for ( uint i = 1; i < TheNomad::SGame::MapCheckpoints.Count(); ++i ) {
+			TheNomad::SGame::MapCheckpoints[i].m_bPassed = false;
+		}
 
 		TheNomad::SGame::ScreenData.InitPlayers();
 		TheNomad::SGame::ScreenData.GetPlayer().InitHUD();

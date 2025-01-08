@@ -176,7 +176,7 @@
       <GenerateMapFile>true</GenerateMapFile>
       <MapFileName>$(IntDir)$(TargetName).map</MapFileName>
       <FixedBaseAddress>false</FixedBaseAddress>
-      <AdditionalDependencies>$(SolutionDir)$(Platform)\$(Configuration)\pthread_static_lib.lib;$(CoreLibraryDependencies);%(AdditionalDependencies);$(SolutionDir)$(Platform)\$(Configuration)\libjpeg.lib;$(SolutionDir)fmodstudio_vc.lib;$(SolutionDir)fmodstudioL_vc.lib;$(SolutionDir)fmod_vc.lib;$(SolutionDir)fmodL_vc.lib;$(SolutionDir)$(Platform)\$(Configuration)\TheNomad.ASLib.$(Platform).lib;$(SolutionDir)SDL2.lib;$(SolutionDir)$(Platform)\$(Configuration)\libEASTL.lib;$(SolutionDir)SDL2_image.lib;$(SolutionDir)libbz2.lib;$(SolutionDir)zlib.lib;$(SolutionDir)libcurl.dll.a</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)bin\Release-Unicode-64bit-x64\pthread_static_lib.lib;$(CoreLibraryDependencies);%(AdditionalDependencies);$(SolutionDir)$(Platform)\$(Configuration)\libjpeg.lib;$(SolutionDir)fmodstudio_vc.lib;$(SolutionDir)fmodstudioL_vc.lib;$(SolutionDir)fmod_vc.lib;$(SolutionDir)fmodL_vc.lib;$(SolutionDir)$(Platform)\$(Configuration)\TheNomad.ASLib.$(Platform).lib;$(SolutionDir)SDL2.lib;$(SolutionDir)$(Platform)\$(Configuration)\libEASTL.lib;$(SolutionDir)SDL2_image.lib;$(SolutionDir)libbz2.lib;$(SolutionDir)zlib.lib;$(SolutionDir)libcurl.dll.a</AdditionalDependencies>
       <HeapReserveSize>1627389952</HeapReserveSize>
       <HeapCommitSize>553648128</HeapCommitSize>
       <StackCommitSize>2097152</StackCommitSize>
@@ -420,7 +420,6 @@
     <ClCompile Include="code\module_lib\module_memory.cpp" />
     <ClCompile Include="code\module_lib\module_virtual_asm_windows.cpp" />
     <ClCompile Include="code\module_lib\module_virtual_asm_x64.cpp" />
-    <ClCompile Include="code\module_lib\module_virtual_asm_x86.cpp" />
     <ClCompile Include="code\module_lib\scriptbuilder.cpp" />
     <ClCompile Include="code\module_lib\scriptlib\scriptany.cpp" />
     <ClCompile Include="code\module_lib\scriptlib\scriptarray.cpp" />

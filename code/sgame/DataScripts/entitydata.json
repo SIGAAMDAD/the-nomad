@@ -25,15 +25,18 @@
 		{ "Id": 15, "Name": "tutorial_item_pickups" },
 		{ "Id": 16, "Name": "tutorial_parrying" },
 		{ "Id": 17, "Name": "tutorial_rage" },
-		{ "Id": 18, "Name": "tutorial_bullet_time" }
+		{ "Id": 18, "Name": "tutorial_bullet_time" },
+		{ "Id": 19, "Name": "tutorial_for_tutorials" },
+		{ "Id": 20, "Name": "tutorial_facing" },
+		{ "Id": 21, "Name": "tutorial_guns" }
 	],
 	"AmmoData": [
-		{ "Id": 18, "Name": "ammo_rifle" },
-		{ "Id": 19, "Name": "ammo_pistol" },
-		{ "Id": 20, "Name": "ammo_shells" },
-		{ "Id": 21, "Name": "ammo_asturion_special" },
-		{ "Id": 22, "Name": "ammo_secret_dakka_dakka_dakka" },
-		{ "Id": 23, "Name": "ammo_secret_bullet_of_45" }
+		{ "Id": 22, "Name": "ammo_rifle" },
+		{ "Id": 23, "Name": "ammo_pistol" },
+		{ "Id": 24, "Name": "ammo_shells" },
+		{ "Id": 25, "Name": "ammo_asturion_special" },
+		{ "Id": 26, "Name": "ammo_secret_dakka_dakka_dakka" },
+		{ "Id": 27, "Name": "ammo_secret_bullet_of_45" }
 	],
 	"WeaponData": [
 		{ "Id": 0, "Name": "sidearm_murstar" },

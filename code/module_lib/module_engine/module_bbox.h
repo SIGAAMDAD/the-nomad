@@ -26,6 +26,8 @@ public:
 	CModuleBoundBox& operator+=( const CModuleBoundBox& a );
 	CModuleBoundBox operator-( const CModuleBoundBox& a ) const;
 	CModuleBoundBox& operator-=( const CModuleBoundBox& a );
+    
+    bool IntersectsEntity( uint32_t *nEntityNumber ) const;
 
     void MakeBounds( const glm::vec3& origin );
 

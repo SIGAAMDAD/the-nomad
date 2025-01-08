@@ -76,7 +76,7 @@ namespace moblib::Script {
 
 			switch ( TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" ) ) {
 			case TheNomad::GameSystem::GameDifficulty::Easy:
-				ShottyAimState.SetTics( 3075 );
+				ShottyAimState.SetTics( 2075 );
 				break;
 			case TheNomad::GameSystem::GameDifficulty::Normal:
 				break;

@@ -286,6 +286,7 @@ static void PlayMenu_DrawNewGameEdit( void )
 		Menu_DrawItemGeneric( &s_playMenu->difficulties[i].generic );
 		if ( s_playMenu->difficulties[i].generic.focused ) {
 			focusedDif = i;
+			Cvar_SetIntegerValue( "sgame_Difficulty", i );
 		}
 	}
 

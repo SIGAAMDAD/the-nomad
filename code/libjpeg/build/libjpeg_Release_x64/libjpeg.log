@@ -44,4 +44,4 @@
   jquant1.c
   jquant2.c
   jutils.c
-  libjpeg.vcxproj -> Z:\the-nomad\code\libjpeg\build\libjpeg_Release_x64\libjpeg.lib
+  libjpeg.vcxproj -> Y:\the-nomad\code\libjpeg\build\libjpeg_Release_x64\libjpeg.lib

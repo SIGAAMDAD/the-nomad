@@ -8,4 +8,4 @@
   red_black_tree.cpp
   string.cpp
   thread_support.cpp
-  EASTL.vcxproj -> Z:\the-nomad\x64\Release\libEASTL.lib
+  EASTL.vcxproj -> Y:\the-nomad\x64\Release\libEASTL.lib

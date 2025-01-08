@@ -90,21 +90,20 @@ namespace TheNomad::SGame {
 				totalScore -= collateralScore;
 			}
 			if ( numDeaths == 0 ) {
-				totalScore += 1000;
+				totalScore += 5000;
 			} else {
-				totalScore -= numDeaths * 500;
+				totalScore -= numDeaths * 250;
 			}
 			isClean = collateralScore == 0;
 
 			if ( TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" ) > TheNomad::GameSystem::GameDifficulty::Normal ) {
 				difficulty = TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" );
-				totalScore += difficulty * 100;
+				totalScore += difficulty * 1000;
 			}
 
 			// absolute perfection
 			if ( AllRanksAre( LevelRank::RankS ) && collateralScore == 0 ) {
 				total_Rank = LevelRank::RankS;
-				return;
 			}
 
 			highestRank = GetHighestRank();
@@ -114,23 +113,50 @@ namespace TheNomad::SGame {
 			*/
 			if ( kills_Rank == highestRank ) {
 				numHighestRanks++;
+				totalScore += 250;
 			}
 			if ( deaths_Rank == highestRank ) {
 				numHighestRanks++;
+				totalScore += 250;
 			}
 			if ( time_Rank == highestRank ) {
 				numHighestRanks++;
+				totalScore += 250;
 			}
-			if ( numHighestRanks >= 1 ) {
+			if ( numHighestRanks > 1 ) {
 				total_Rank = highestRank;
+				totalScore += 500;
 			} else {
 				total_Rank = LevelRank( uint( highestRank ) - 1 );
 			}
+
+			switch ( highestRank ) {
+			case LevelRank::RankS:
+				totalScore += 1500;
+				break;
+			case LevelRank::RankA:
+				totalScore += 500;
+				break;
+			case LevelRank::RankB:
+				totalScore += 275;
+				break;
+			case LevelRank::RankC:
+				totalScore += 150;
+				break;
+			case LevelRank::RankD:
+				totalScore += 50;
+				break;
+			case LevelRank::RankF:
+				totalScore += 10;
+				break;
+			};
 
 			// apply collateral damages
 			if ( collateralScore > 0 ) {
 				ApplyCollateral();
 			}
+
+			// TODO: give massive bonus for no bullet time used
 		}
 
 		private void DrawEndOfLevelStats() const {
@@ -144,8 +170,8 @@ namespace TheNomad::SGame {
 			// ensure we aren't drawing anything over this
 			TheNomad::Engine::CvarSet( "g_paused", "0" );
 
-			ImGui::SetWindowPos( vec2( 160 * scale, 64 * scale ) );
-			ImGui::SetWindowSize( vec2( 1000 * scale, 500 * scale ) );
+			ImGui::SetWindowPos( vec2( 120 * scale, 64 * scale ) );
+			ImGui::SetWindowSize( vec2( 1200 * scale, 500 * scale ) );
 
 			TheNomad::Engine::UserInterface::SetActiveFont( TheNomad::Engine::UserInterface::Font_RobotoMono );
 			ImGui::SetWindowFontScale( fontScale * 2.0f );
@@ -163,7 +189,7 @@ namespace TheNomad::SGame {
 					ImGui::TableNextColumn();
 					ImGui::Text( "TIME" );
 					ImGui::TableNextColumn();
-					ImGui::Text( "" + m_TimeMinutes + ":" + m_TimeSeconds + "." + m_TimeMilliseconds );
+					ImGui::Text( " " + m_TimeMinutes + ":" + m_TimeSeconds + "." + m_TimeMilliseconds );
 					ImGui::PushStyleColor( ImGuiCol::Text, sgame_RankStringColors[ time_Rank ] );
 					ImGui::TableNextColumn();
 					ImGui::Text( sgame_RankStrings[ time_Rank ] );
@@ -174,7 +200,7 @@ namespace TheNomad::SGame {
 					ImGui::TableNextColumn();
 					ImGui::Text( "KILLS" );
 					ImGui::TableNextColumn();
-					ImGui::Text( formatUInt( numKills ) );
+					ImGui::Text( " " + numKills );
 					ImGui::PushStyleColor( ImGuiCol::Text, sgame_RankStringColors[ kills_Rank ] );
 					ImGui::TableNextColumn();
 					ImGui::Text( sgame_RankStrings[ kills_Rank ] );
@@ -185,7 +211,7 @@ namespace TheNomad::SGame {
 					ImGui::TableNextColumn();
 					ImGui::Text( "DEATHS" );
 					ImGui::TableNextColumn();
-					ImGui::Text( formatUInt( numDeaths ) );
+					ImGui::Text( " " + numDeaths );
 					ImGui::PushStyleColor( ImGuiCol::Text, sgame_RankStringColors[ deaths_Rank ] );
 					ImGui::TableNextColumn();
 					ImGui::Text( sgame_RankStrings[ deaths_Rank ] );
@@ -216,13 +242,11 @@ namespace TheNomad::SGame {
 
 				ImGui::Separator();
 
-				ImGui::TableNextColumn();
-
 				ImGui::Text( "- " );
 				ImGui::SameLine();
 				if ( collateralScore > 0 ) {
 					ImGui::PushStyleColor( ImGuiCol::Text, colorRed );
-					ImGui::Text( formatUInt( collateralScore ) );
+					ImGui::Text( formatInt( collateralScore ) );
 					ImGui::PopStyleColor();
 					ImGui::SameLine();
 					ImGui::Text( " COLLATERAL (PENALTY -" + collateralScore + ")" );
@@ -238,13 +262,13 @@ namespace TheNomad::SGame {
 				ImGui::SameLine();
 				if ( numDeaths > 0 ) {
 					ImGui::PushStyleColor( ImGuiCol::Text, colorRed );
-					ImGui::Text( formatUInt( numDeaths ) );
+					ImGui::Text( formatInt( numDeaths ) );
 					ImGui::PopStyleColor();
 					ImGui::SameLine();
-					ImGui::Text( "DEATHS (PENALTY -" + ( numDeaths * 500 ) + ")" );
+					ImGui::Text( "DEATHS (PENALTY -" + ( numDeaths * 250 ) + ")" );
 				} else {
 					ImGui::PushStyleColor( ImGuiCol::Text, colorGreen );
-					ImGui::Text( "NO RESTARTS (+1000)" );
+					ImGui::Text( "NO RESTARTS (+5000)" );
 					ImGui::PopStyleColor();
 				}
 
@@ -258,7 +282,7 @@ namespace TheNomad::SGame {
 					ImGui::Text( SP_DIFF_STRINGS[ TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" ) ] );
 					ImGui::PopStyleColor();
 					ImGui::SameLine();
-					ImGui::Text( " (BONUS +" + ( difficulty * 100 ) +  ")" );
+					ImGui::Text( " (BONUS +" + ( difficulty * 1000 ) +  ")" );
 				} else {
 					ImGui::Text( "NONE" );
 				}
@@ -331,7 +355,7 @@ namespace TheNomad::SGame {
 			ImGui::Text( "TIME:" );
 			ImGui::TableNextColumn();
 
-			ImGui::Text( "" + m_TimeMinutes + ":" + m_TimeSeconds + "." + m_TimeMilliseconds );
+			ImGui::Text( " " + m_TimeMinutes + ":" + m_TimeSeconds + "." + m_TimeMilliseconds );
 			ImGui::SameLine();
 			ImGui::TextColored( sgame_RankStringColors[ time_Rank ], sgame_RankStrings[ time_Rank ] );
 			
@@ -343,7 +367,7 @@ namespace TheNomad::SGame {
 			ImGui::TableNextColumn();
 			ImGui::Text( "KILLS:" );
 			ImGui::TableNextColumn();
-			ImGui::Text( formatUInt( numKills ) );
+			ImGui::Text( " " + numKills );
 			ImGui::SameLine();
 			ImGui::TextColored( sgame_RankStringColors[ kills_Rank ], sgame_RankStrings[ kills_Rank ] );
 			
@@ -355,7 +379,7 @@ namespace TheNomad::SGame {
 			ImGui::TableNextColumn();
 			ImGui::Text( "DEATHS:" );
 			ImGui::TableNextColumn();
-			ImGui::Text( formatUInt( numDeaths ) );
+			ImGui::Text( " " + numDeaths );
 			ImGui::SameLine();
 			ImGui::TextColored( sgame_RankStringColors[ deaths_Rank ], sgame_RankStrings[ deaths_Rank ] );
 			
@@ -427,7 +451,7 @@ namespace TheNomad::SGame {
 		uint numDeaths = 0;
 		uint collateralScore = 0;
 		bool isClean = true;
-		uint totalScore = 0;
+		int totalScore = 0;
 		uint numSecrets = 0;
 
 		LevelRank total_Rank = LevelRank::RankS;

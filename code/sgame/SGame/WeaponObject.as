@@ -248,7 +248,7 @@ namespace TheNomad::SGame {
 					const float velocity = ray.m_nLength - Util::Distance( ray.m_Origin, ray.m_Start );
 					GfxManager.AddDebrisCloud( ray.m_Origin, velocity );
 				}
-				return m_AmmoInfo.damage;
+				return 0.0f;
 			}
 
 			EntityManager.DamageEntity( EntityManager.GetEntityForNum( ray.m_nEntityNumber ), m_Owner, m_AmmoInfo.damage );
@@ -256,11 +256,11 @@ namespace TheNomad::SGame {
 			// health mult doesn't matter on harder difficulties if the player is attacking with a firearm,
 			// that is, unless, the player is very close to the enemy
 			if ( TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" ) < int( TheNomad::GameSystem::GameDifficulty::Hard ) ) {
-				return damage;
+				return m_AmmoInfo.damage;
 			} else {
-				if ( Util::Distance( ray.m_Origin, m_Owner.GetOrigin() ) <= 2.75f ) {
+				if ( Util::Distance( ray.m_Origin, m_Owner.GetOrigin() ) <= 3.75f ) {
 					// close enough to the blood
-					return damage;
+					return m_AmmoInfo.damage;
 				}
 				return 0.0f;
 			}

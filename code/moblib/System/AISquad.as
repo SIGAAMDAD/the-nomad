@@ -30,7 +30,7 @@ namespace moblib::System {
 			}
 		}
 		void Update() {
-			HandleSquadDeaths();
+//			HandleSquadDeaths();
 			/*
 			if ( m_bSquadMemberDied ) {
 				int hBark = moblib::Script::ResourceCache.ShottyManDownSfx[ TheNomad::Util::PRandom() &

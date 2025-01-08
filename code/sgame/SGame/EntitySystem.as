@@ -413,14 +413,17 @@ namespace TheNomad::SGame {
 		}
 		
 		void KillEntity( EntityObject@ target, EntityObject@ attacker ) {
-			if ( attacker.GetType() == TheNomad::GameSystem::EntityType::Mob ) {
+			if ( attacker.GetType() == TheNomad::GameSystem::EntityType::Mob
+				&& target.GetType() == TheNomad::GameSystem::EntityType::Playr )
+			{
 				// write an obituary for the player
-//				GenObituary( attacker, target ); //TODO: maybe later
+				GenObituary( attacker, target ); //TODO: maybe later
 			}
 			// TODO: make the enemies nearby declare the infighting individual a traitor
 			if ( target.GetType() == TheNomad::GameSystem::EntityType::Mob ) {
 				if ( attacker.GetType() == TheNomad::GameSystem::EntityType::Playr ) {
-					LevelManager.GetStats().collateralScore += 10;
+					// TODO: maybe some collateral?
+					LevelManager.GetStats().numKills++;
 				}
 				MobObject@ mob = cast<MobObject@>( target );
 				
