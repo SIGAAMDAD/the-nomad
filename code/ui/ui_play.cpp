@@ -84,14 +84,17 @@ static void BeginNewGame( void )
 
 	UI_SetActiveMenu( UI_MENU_NONE );
 
+	gi.mapCache.currentMapLoaded = 1;
+	gi.mapLoaded = qtrue;
 	gi.state = GS_LEVEL;
 
-	Con_Printf( "Beginning new game on map \"%s\"...\n", *gi.mapCache.mapList );
-
+	UI_SetActiveMenu( UI_MENU_NONE );
 	Cvar_SetIntegerValue( "g_paused", 0 );
 	Cvar_SetIntegerValue( "g_levelIndex", 0 );
-	Cvar_SetIntegerValue( "sgame_SaveSlot", slot - s_playMenu->saveSlots );
 	Cvar_Set( "mapname", *gi.mapCache.mapList );
+	Cvar_Set( "nextmap", "" );
+
+	Con_Printf( "Beginning new game on map \"%s\"...\n", *gi.mapCache.mapList );
 
 	gi.playTimeStart = Sys_Milliseconds();
 

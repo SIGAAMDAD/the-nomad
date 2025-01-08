@@ -43,9 +43,6 @@ const uint64_t inversedirs_flags[ NUMDIRS ] = {
 	TILESIDE_INSIDE
 };
 
-static bbox_t *wallBounds;
-static uint64_t nWalls;
-
 static uint64_t CopyLump( void **dest, uint32_t lump, uint64_t size, bmf_t *header ) {
 	uint64_t length, fileofs;
 
@@ -59,42 +56,6 @@ static uint64_t CopyLump( void **dest, uint32_t lump, uint64_t size, bmf_t *head
 	memcpy( *dest, (byte *)header + fileofs, length );
 
 	return length / size;
-}
-
-static float CM_GetWallLength( dirtype_t dir, int x, int y, const mapinfo_t *info )
-{
-	const maptile_t *tile;
-	float length;
-	int deltaX, deltaY;
-
-	length = 0.0f;
-	
-	switch ( dir ) {
-	case DIR_NORTH:
-		deltaY = -1;
-		deltaX = 0;
-		break;
-	case DIR_SOUTH:
-		deltaY = 1;
-		deltaX = 0;
-		break;
-	case DIR_WEST:
-		deltaY = 0;
-		deltaX = -1;
-		break;
-	case DIR_EAST:
-		deltaY = 0;
-		deltaX = 1;
-		break;
-	};
-
-	for ( ; y < info->height; y += deltaY ) {
-		for ( ; x < info->width; x += deltaX ) {
-			tile = &info->tiles[ y * info->width + x ];
-		}
-	}
-
-	return length;
 }
 
 static qboolean G_LoadLevelFile( const char *filename, mapinfo_t *info )
@@ -139,40 +100,8 @@ static qboolean G_LoadLevelFile( const char *filename, mapinfo_t *info )
 	info->numTiles = CopyLump( (void **)&info->tiles, LUMP_TILES, sizeof( maptile_t ), header );
 	info->numCheckpoints = CopyLump( (void **)&info->checkpoints, LUMP_CHECKPOINTS, sizeof( mapcheckpoint_t ), header );
 	info->numSpawns = CopyLump( (void **)&info->spawns, LUMP_SPAWNS, sizeof( mapspawn_t ), header );
-//	info->numLights = CopyLump( (void **)&info->lights, LUMP_LIGHTS, sizeof( maplight_t ), header );
 	info->numSecrets = CopyLump( (void **)&info->secrets, LUMP_SECRETS, sizeof( mapsecret_t ), header );
 	info->numLevels = 1;
-
-	/*
-	nWalls = 0;
-	for ( y = 0; y < info->height; y++ ) {
-		for ( x = 0; x < info->width; x++ ) {
-			if ( memcmp( info->tiles[ y * info->width + x ].sides, nowall, sizeof( nowall ) ) != 0 ) {
-				nWalls++;
-			}
-		}
-	}
-
-	p = coords = (ivec2_t *)alloca( sizeof( *coords ) * nWalls );
-	for ( y = 0; y < info->height; y++ ) {
-		for ( x = 0; x < info->width; x++ ) {
-			if ( memcmp( info->tiles[ y * info->width + x ].sides, nowall, sizeof( nowall ) ) != 0 ) {
-				VectorSet2( *p, x, y );
-				p++;
-			}
-		}
-	}
-	
-	wallBounds = (bbox_t *)Hunk_Alloc( nWalls * sizeof( *wallBounds ), h_high );
-	for ( i = 0; i < nWalls; i++ ) {
-		// 9.84375
-		if ( memcmp( info->tiles[ coords[i][1] * info->width + coords[i][0] ].sides, nowall, sizeof( nowall ) ) != 0 ) {
-			VectorSet( wallBounds[i].mins, coords[i][0] * 10, coords[i][1] * 10, 0.0f );
-			VectorSet( wallBounds[i].maxs, coords[i][0] * 10 + 10, coords[i][1] * 10 + 10, 0.0f );
-		}
-	}
-	Con_Printf( "Generated %lu walls.\n", nWalls );
-	*/
 
 	FS_FreeFile( f.v );
 
@@ -208,16 +137,6 @@ void G_InitMapCache( void )
 	}
 
 	FS_FreeFileList( fileList );
-
-	// allocate the info
-//    gi.mapCache.infoList = (mapinfo_t *)Hunk_Alloc( sizeof( mapinfo_t ) * gi.mapCache.numMapFiles, h_low );
-//
-//    info = gi.mapCache.infoList;
-//    for ( i = 0; i < gi.mapCache.numMapFiles; i++, info++ ) {
-//        if ( !G_LoadLevelFile( gi.mapCache.mapList[i], info ) ) {
-//            N_Error( ERR_DROP, "G_InitMapCache: failed to load map file '%s'", gi.mapCache.mapList[i] );
-//        }
-//    }
 }
 
 static nhandle_t G_GetMapHandle( const char *name )
@@ -282,7 +201,15 @@ void G_SetMap_f( void ) {
 
 		Hunk_ClearToMark();
 
-		Cbuf_ExecuteText( EXEC_APPEND, "vid_restart keep_context\n" );
+		Cbuf_ExecuteText( EXEC_NOW, "vid_restart keep_context\n" );
+		
+		const char *nextmap = Cvar_VariableString( "nextmap" );
+		
+		// we've triggered a map transition
+		if ( nextmap[0] ) {
+			Con_Printf( "Map transition triggered...\n" );
+			Cbuf_ExecuteText( EXEC_NOW, va( "setmap %s\n", nextmap ) );
+		}
 		return;
 	}
 
@@ -297,6 +224,10 @@ void G_SetMap_f( void ) {
 
 	gi.mapCache.currentMapLoaded = hMap;
 	gi.mapLoaded = qtrue;
+	gi.state = GS_LEVEL;
+
+	Cvar_SetIntegerValue( "g_paused", 0 );
+	Cvar_SetIntegerValue( "g_levelIndex", hMap );
 
 	Cvar_Set( "mapname", gi.mapCache.info.name );
 

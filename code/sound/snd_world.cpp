@@ -268,7 +268,6 @@ void CSoundWorld::Init( void )
 void CSoundWorld::Update( void )
 {
 	emitter_t *em;
-	int i;
 	float volume;
 	FMOD_3D_ATTRIBUTES attribs;
 	FMOD_STUDIO_PLAYBACK_STATE state;
@@ -424,7 +423,7 @@ void CSoundWorld::SetEmitterVolume( nhandle_t hEmitter, float nVolume )
 	em->volume = nVolume;
 
 	if ( em->channel ) {
-//		em->channel->event->setVolume( nVolume );
+		em->channel->event->setVolume( nVolume );
 	}
 }
 	

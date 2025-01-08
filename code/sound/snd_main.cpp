@@ -843,7 +843,7 @@ void Snd_Shutdown( void )
 
 void Snd_Update( int msec )
 {
-	if ( gi.mapLoaded ) {
+	if ( s_SoundWorld ) {
 		s_SoundWorld->Update();
 	}
 	sndManager->Update();
