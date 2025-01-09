@@ -4,7 +4,7 @@
 #include "moblib/System/AISensorSound.as"
 
 namespace moblib {
-	class MobScript {
+	class MobScript : TheNomad::Util::ScriptClass {
 		MobScript() {
 		}
 		

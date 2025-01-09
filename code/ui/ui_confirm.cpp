@@ -97,6 +97,51 @@ static void ConfirmMenu_Draw( void )
 		s_confirm->draw();
 	}
 
+	{
+		menutext_t *text = &s_confirm->question;
+
+		qboolean colorChanged;
+
+		ImGui::PushStyleColor( ImGuiCol_Button, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+		ImGui::PushStyleColor( ImGuiCol_ButtonActive, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+		ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+
+		if ( text->generic.font ) {
+			FontCache()->SetActiveFont( text->generic.font );
+		}
+
+		colorChanged = qfalse;
+		if ( text->generic.flags & QMF_GRAYED ) {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorMdGrey );
+			colorChanged = qtrue;
+		}
+		else if ( !( ( text->generic.flags & QMF_HIGHLIGHT_IF_FOCUS && text->generic.focused )
+			|| text->generic.flags & QMF_HIGHLIGHT ) )
+		{
+			ImGui::PushStyleColor( ImGuiCol_Text, text->color );
+			colorChanged = qtrue;
+		}
+		if ( text->generic.flags & QMF_OWNERDRAW && text->generic.ownerdraw ) {
+			text->generic.ownerdraw( text );
+		} else {
+			ImGui::TextWrapped( text->text ); // for joysticks
+		}
+
+		if ( ImGui::IsItemClicked() || ImGui::IsItemActivated() ) {
+			if ( !( text->generic.flags & QMF_SILENT ) ) {
+				Snd_PlaySfx( ui->sfx_select );
+			}
+			if ( text->generic.eventcallback ) {
+				text->generic.eventcallback( text, EVENT_ACTIVATED );
+			}
+		}
+
+		if ( colorChanged ) {
+			ImGui::PopStyleColor();
+		}
+
+		ImGui::PopStyleColor( 3 );
+	}
 	Menu_DrawItemList( menu->items, menu->nitems );
 
     if ( Key_IsDown( KEY_ENTER ) || Key_IsDown( KEY_Y ) ) {
@@ -169,7 +214,6 @@ void UI_ConfirmMenu( const char *question, void (*draw)( void ), void (*action)(
 	s_confirm->no.text = "NO";
 	s_confirm->no.color = color_red;
 	
-	Menu_AddItem( &s_confirm->menu, &s_confirm->question );
 	Menu_AddItem( &s_confirm->menu, &s_confirm->yes );
 	Menu_AddItem( &s_confirm->menu, &s_confirm->no );
 

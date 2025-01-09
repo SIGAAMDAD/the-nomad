@@ -914,9 +914,14 @@ static void AddEntityToScene( asIScriptGeneric *pGeneric ) {
 static void AddDLightToScene( asIScriptGeneric *pGeneric ) {
 	const vec3& origin = *(const vec3 *)pGeneric->GetArgObject( 0 );
 	float range = pGeneric->GetArgFloat( 1 );
-	const vec3& color = *(const vec3 *)pGeneric->GetArgObject( 2 );
+	float constant = pGeneric->GetArgFloat( 2 );
+	float linear = pGeneric->GetArgFloat( 3 );
+	float quadratic = pGeneric->GetArgFloat( 4 );
+	float brightness = pGeneric->GetArgFloat( 5 );
+	const vec3& color = *(const vec3 *)pGeneric->GetArgObject( 6 );
 
-	re.AddDynamicLightToScene( (const vec_t *)glm::value_ptr( origin ), range, (const vec_t *)glm::value_ptr( color ) );
+	re.AddDynamicLightToScene( (const vec_t *)glm::value_ptr( origin ), range, constant, linear, quadratic,
+		brightness, (const vec_t *)glm::value_ptr( color ) );
 }
 
 static void AddLineToScene( asIScriptGeneric *pGeneric ) {
@@ -1545,7 +1550,7 @@ static void AllocateExternalScriptObject( asIScriptGeneric *pGeneric )
 	const string_t& name = *(const string_t *)pGeneric->GetArgObject( 1 );
 
 	memset( szFactoryName, 0, sizeof( szFactoryName ) );
-	snprintf( szFactoryName, sizeof( szFactoryName ) - 1, "moblib::Script::%s@ %s()", /*nameSpace.c_str(),*/ name.c_str(), name.c_str() );
+	snprintf( szFactoryName, sizeof( szFactoryName ) - 1, "%s::Script::%s@ %s()", nameSpace.c_str(), name.c_str(), name.c_str() );
 
 	pTypeInfo = g_pModuleLib->GetScriptModule()->GetTypeInfoByDecl( va( "moblib::Script::%s", /*nameSpace.c_str(),*/ name.c_str() ) );
 	if ( !pTypeInfo ) {
@@ -1562,13 +1567,13 @@ static void AllocateExternalScriptObject( asIScriptGeneric *pGeneric )
 	g_pModuleLib->GetScriptContext()->PushState();
 	g_pModuleLib->GetScriptContext()->Prepare( pFactory );
 	g_pModuleLib->GetScriptContext()->Execute();
-	g_pModuleLib->GetScriptContext()->Unprepare();
-	g_pModuleLib->GetScriptContext()->PopState();
 
 	pObject = *(asIScriptObject **)g_pModuleLib->GetScriptContext()->GetAddressOfReturnValue();
 	pObject->AddRef();
 
 	pGeneric->SetReturnObject( pObject );
+
+	g_pModuleLib->GetScriptContext()->PopState();
 }
 
 static void GetString( asIScriptGeneric *pGeneric ) {
@@ -2800,7 +2805,7 @@ void ModuleLib_Register_Engine( void )
 			g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::Renderer::AddEntityToScene( int, int, int, const vec3& in, const vec3& in, uint64,"
 				" uint32, uint32, const vec2& in, float, float, float, const vec2& in )",
 				asFUNCTION( AddEntityToScene ), asCALL_GENERIC );
-			g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::Renderer::AddDLightToScene( const vec3& in, float, const vec3& in )",
+			g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::Renderer::AddDLightToScene( const vec3& in, float, float, float, float, float, const vec3& in )",
 				asFUNCTION( AddDLightToScene ), asCALL_GENERIC );
 			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddQuadToScene( int, const TheNomad::Engine::Renderer::PolyQuad& in )", asFUNCTION( AddQuadToScene ) );
 			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddLineToScene( int, const TheNomad::Engine::Renderer::PolyQuad& in )", asFUNCTION( AddLineToScene ) );
@@ -2856,11 +2861,10 @@ void ModuleLib_Register_Engine( void )
 		REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Util::BoundsIntersectPoint( const TheNomad::GameSystem::BBox& in, const vec3& in )", WRAP_FN_PR( BoundsIntersectPoint, ( const CModuleBoundBox *, const vec3 * ), bool ) );
 		REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Util::BoundsIntersectSphere( const TheNomad::GameSystem::BBox& in, const vec3& in, float )", WRAP_FN_PR( BoundsIntersectSphere, ( const CModuleBoundBox *, const vec3 *, float ), bool ) );
 
-		REGISTER_GLOBAL_FUNCTION( "ref@ TheNomad::Util::AllocateExternalScriptClass( const string& in nameSpace, const string& in name )", asFUNCTION( AllocateExternalScriptObject ) );
-
-		RESET_NAMESPACE();
+		CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterface( "ScriptClass" ) );
+		REGISTER_GLOBAL_FUNCTION( "TheNomad::Util::ScriptClass@ TheNomad::Util::AllocateExternalScriptClass( const string& in nameSpace, const string& in name )",
+			asFUNCTION( AllocateExternalScriptObject ) );
 	}
-
 	RESET_NAMESPACE();
 	
 	//

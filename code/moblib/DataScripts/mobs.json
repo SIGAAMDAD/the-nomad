@@ -59,6 +59,37 @@
 			"States.Search": "mob_merc_shotgunner_search",
 			"States.DieHigh": "mob_merc_shotgunner_die_high",
 			"States.DieLow": "mob_merc_shotgunner_die_low"
+		},
+		{
+			"Name": "Mercenary Gatling Gunner",
+			"Id": "mob_merc_gatling",
+			"ScriptName": "MercGatling",
+			"Stats.Health": 140,
+			"Stats.ArmorType": "Heavy",
+			"Stats.Width": 2.75,
+			"Stats.Height": 2.30,
+			"Stats.Speed.x": 0.25,
+			"Stats.Speed.y": 0.25,
+			"Stats.Speed.z": 1.0,
+			"Stats.ReactionTime": 5,
+			"Stats.PainTolerance": 15,
+			"Detection.SoundRange": 10.0,
+			"Detection.SoundTolerance": 20.0,
+			"Detection.SightRange": 4.90,
+			"Detection.SightRadius": 4.0,
+			"RenderData.SheetWidth": 1024,
+			"RenderData.SheetHeight": 32,
+			"RenderData.SpriteWidth": 32,
+			"RenderData.SpriteHeight": 32,
+			"RenderData.SpriteSheet": "sprites/mobs/mercenary/gatling_gunner",
+			"States.Idle": "mob_merc_gatling_idle",
+			"States.HasMissile": true,
+			"States.HasMelee": false,
+			"States.Missile": "mob_merc_gatling_fight",
+			"States.Chase": "mob_merc_gatling_chase",
+			"States.Search": "mob_merc_gatling_search",
+			"States.DieHigh": "mob_merc_gatling_die_high",
+			"States.DieLow": "mob_merc_gatling_die_high"
 		}
 	]
 }

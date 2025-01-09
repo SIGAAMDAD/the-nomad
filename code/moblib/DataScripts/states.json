@@ -48,7 +48,7 @@
 			"BaseNum": "ST_MOB_SEARCH",
 			"Entity": "mob_merc_shotgunner",
 			"NextState": "mob_merc_shotgunner_idle",
-			"SpriteOffset": [ 4, 0 ],
+			"SpriteOffset": [ 3, 0 ],
 			"Animation": {
 				"TicRate": 220,
 				"FlipFlop": false,
@@ -62,7 +62,7 @@
 			"BaseNum": "ST_MOB_CHASE",
 			"Entity": "mob_merc_shotgunner",
 			"NextState": "this",
-			"SpriteOffset": [ 4, 0 ],
+			"SpriteOffset": [ 3, 0 ],
 			"Animation": {
 				"TicRate": 200,
 				"FlipFlop": false,
@@ -122,6 +122,104 @@
 				"TicRate": 1500,
 				"FlipFlop": false,
 				"Frames": 2,
+				"Reverse": false
+			}
+		},
+
+		{
+			"Id": "mob_merc_gatling_dead_high_idle",
+			"Tics": 0,
+			"BaseNum": "ST_MOB_DEAD_IDLE",
+			"Entity": "mob_merc_gatling",
+			"NextState": "this",
+			"SpriteOffset": [ 18, 0 ],
+			"Animation": {
+				"TicRate": 0,
+				"FlipFlop": false,
+				"Frames": 0,
+				"Reverse": false
+			}
+		},
+		{
+			"Id": "mob_merc_gatling_idle",
+			"Tics": 700,
+			"BaseNum": "ST_MOB_IDLE",
+			"Entity": "mob_merc_gatling",
+			"NextState": "this",
+			"SpriteOffset": [ 0, 0 ],
+			"Animation": {
+				"TicRate": 240,
+				"FlipFlop": false,
+				"Frames": 3,
+				"Reverse": false
+			}
+		},
+		{
+			"Id": "mob_merc_gatling_die_high",
+			"Tics": 4500,
+			"BaseNum": "ST_MOB_DEAD",
+			"Entity": "mob_merc_gatling",
+			"NextState": "mob_merc_gatling_dead_high_idle",
+			"SpriteOffset": [ 16, 0 ],
+			"Animation": {
+				"TicRate": 1500,
+				"FlipFlop": false,
+				"Frames": 2,
+				"Reverse": false
+			}
+		},
+		{
+			"Id": "mob_merc_gatling_chase",
+			"Tics": 2500,
+			"BaseNum": "ST_MOB_CHASE",
+			"Entity": "mob_merc_gatling",
+			"NextState": "this",
+			"SpriteOffset": [ 3, 0 ],
+			"Animation": {
+				"TicRate": 200,
+				"FlipFlop": false,
+				"Frames": 2,
+				"Reverse": false
+			}
+		},
+		{
+			"Id": "mob_merc_gatling_fight",
+			"Tics": 1000,
+			"BaseNum": "ST_MOB_FIGHT_MISSILE",
+			"Entity": "mob_merc_gatling",
+			"NextState": "this",
+			"SpriteOffset": [ 6, 0 ],
+			"Animation": {
+				"TicRate": 0,
+				"FlipFlop": false,
+				"Frames": 0,
+				"Reverse": false
+			}
+		},
+		{
+			"Id": "mob_merc_gatling_parry",
+			"Tics": 2000,
+			"Entity": "mob_merc_gatling",
+			"NextState": "mob_merc_gatling_fight",
+			"SpriteOffset": [ 5, 0 ],
+			"Animation": {
+				"TicRate": 0,
+				"FlipFlop": false,
+				"Frames": 0,
+				"Reverse": false
+			}
+		},
+		{
+			"Id": "mob_merc_gatling_search",
+			"Tics": 0,
+			"BaseNum": "ST_MOB_SEARCH",
+			"Entity": "mob_merc_gatling",
+			"NextState": "mob_merc_gatling_idle",
+			"SpriteOffset": [ 0, 0 ],
+			"Animation": {
+				"TicRate": 0,
+				"FlipFlop": false,
+				"Frames": 0,
 				"Reverse": false
 			}
 		}

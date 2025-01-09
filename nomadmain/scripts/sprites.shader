@@ -57,6 +57,17 @@ sprites/mobs/mercenary/shotgunner
 	}
 }
 
+sprites/mobs/mercenary/gatling_gunner
+{
+	nomipmaps
+	nopicmip
+	{
+		texFilter nearest
+		map textures/sprites/mobs/mercenary/gatling.dds
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+	}
+}
+
 sprites/weapons/double_barrel
 {
 	{

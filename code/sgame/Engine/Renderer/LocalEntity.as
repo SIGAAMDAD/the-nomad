@@ -11,9 +11,11 @@ namespace TheNomad::Engine::Renderer {
 			m_Flags = 0;
 			m_Origin = vec2( 0.0f );
 			m_Velocity = vec2( 0.0f );
+			m_Color = vec3( 1.0f );
 			m_nEndTime = 0;
 			m_nScale = vec2( 0.0f );
 			m_nRotation = 0.0f;
+			m_nBrightnesss = 0.0f;
 			m_hShader = FS_INVALID_HANDLE;
 			m_nSpriteOffset = 0;
 			m_EffectAnimation = TheNomad::SGame::Animation();
@@ -30,6 +32,8 @@ namespace TheNomad::Engine::Renderer {
 			m_hShader = hShader;
 			m_nScale = scale;
 			m_nRotation = 0.0f;
+			m_nBrightnesss = 0.0f;
+			m_Color = vec3( 1.0f );
 			if ( bGravity ) {
 				m_Flags |= LOCALENT_GRAVITY;
 			}
@@ -71,9 +75,12 @@ namespace TheNomad::Engine::Renderer {
 			}
 
 			if ( ( m_Flags & LOCALENT_LIGHT_SOURCE ) != 0 ) {
-				TheNomad::Engine::Renderer::AddDLightToScene( vec3( m_Origin.x, m_Origin.y, 0.0f ), 10.0f, vec3( 1.0f ) );
+				TheNomad::Engine::Renderer::AddDLightToScene( vec3( m_Origin.x, m_Origin.y, 0.0f ), m_nRange, m_nConstant, m_nLinear,
+					m_nQuadratic, m_nBrightnesss, m_Color );
 			}
 		}
+
+		vec3 m_Color = vec3( 0.0f );
 
 		vec2 m_Origin = vec2( 0.0f );
 		vec2 m_Velocity = vec2( 0.0f );
@@ -87,6 +94,12 @@ namespace TheNomad::Engine::Renderer {
 
 		uint m_nEndTime = 0;
 		uint m_nSpriteOffset = 0;
+
+		float m_nBrightnesss = 0.0f;
+		float m_nRange = 0.0f;
+		float m_nLinear = 0.0f;
+		float m_nQuadratic = 0.0f;
+		float m_nConstant = 0.0f;
 
 		float m_nRotation = 0.0f;
 		int m_hShader = FS_INVALID_HANDLE;

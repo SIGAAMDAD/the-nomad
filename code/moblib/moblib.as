@@ -22,7 +22,7 @@ namespace moblib {
 
 		InitCvars();
 
-		@Script::ResourceCache = cast<moblib::Script::Resources@>( @TheNomad::GameSystem::AddSystem( moblib::Script::Resources() ) );
+		@Script::ResourceCache = cast<moblib::Script::Resources@>( TheNomad::GameSystem::AddSystem( moblib::Script::Resources() ) );
 		@GlobalSquad = moblib::System::AISquad();
 
 		return 1;

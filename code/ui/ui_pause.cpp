@@ -125,7 +125,7 @@ static void PauseMenu_EventCallback( void *ptr, int event )
 		UI_SettingsMenu();
 		break;
 	case ID_EXIT_LEVEL:
-		UI_ConfirmMenu( strManager->ValueForKey( "PAUSE_MENU_ETMM" )->value, NULL, PauseMenu_ExitCallback );
+		UI_ConfirmMenu( strManager->ValueForKey( "PAUSE_MENU_EXIT" )->value, NULL, PauseMenu_ExitCallback );
 		break;
 	case ID_EXIT_GAME:
 		UI_ConfirmMenu( strManager->ValueForKey( "PAUSE_MENU_EXIT" )->value, NULL, PauseMenu_QuitCallback );

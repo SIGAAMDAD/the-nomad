@@ -49,7 +49,7 @@ namespace TheNomad::SGame {
 			return m_MFlags;
 		}
 		
-		private bool Move() {
+		bool Move() {
 			if ( m_Direction == TheNomad::GameSystem::DirType::Inside ) {
 				return false;
 			}
@@ -115,12 +115,6 @@ namespace TheNomad::SGame {
 			m_Direction = TheNomad::GameSystem::DirType::Inside; // can not move
 		}
 		void Chase() {
-			int delta;
-
-			if ( m_nReactionTime > 0 ) {
-				m_nReactionTime--;
-			}
-
 			FaceTarget();
 
 			if ( m_Target is null ) {

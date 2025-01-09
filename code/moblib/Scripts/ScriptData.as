@@ -3,6 +3,7 @@
 // include your own mobs here
 #include "moblib/Scripts/Resources.as"
 #include "moblib/Scripts/MercShotty.as"
+#include "moblib/Scripts/MercGatling.as"
 #include "moblib/Scripts/ZurgutGrunt.as"
 
 namespace moblib::Script {
@@ -19,6 +20,7 @@ namespace moblib::Script {
 
 		switch ( nMobID ) {
 		case MOB_ID::MERC_GATLING:
+			@scriptObject = MercGatling();
 			break;
 		case MOB_ID::MERC_SHOTGUNNER:
 			@scriptObject = MercShotty();

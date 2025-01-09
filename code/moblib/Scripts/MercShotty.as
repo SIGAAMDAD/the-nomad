@@ -221,7 +221,9 @@ namespace moblib::Script {
 			}
 		}
 		void OnDamage( TheNomad::SGame::EntityObject@ attacker ) override {
-			if ( attacker.GetType() == TheNomad::GameSystem::EntityType::Mob ) {
+			if ( attacker.GetType() == TheNomad::GameSystem::EntityType::Mob
+				&& cast<TheNomad::SGame::MobObject@>( attacker ).GetMobInfo().type == MOB_ID::MERC_SHOTGUNNER )
+			{
 				m_EntityData.EmitSound( ResourceCache.ShottyCeasfire[ TheNomad::Util::PRandom() & ( ResourceCache.ShottyCeasfire.Count() - 1 ) ],
 					10.0f, 0xff );
 				return;

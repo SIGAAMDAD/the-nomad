@@ -70,6 +70,15 @@ namespace moblib::Script {
 				ShottyCurse[i] = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/mobs/barks/combat/curse_" + i );
 			}
 
+			@MercGatlingFightMissileState = TheNomad::SGame::StateManager.GetStateById( "mob_merc_gatling_fight" );
+			@MercGatlingIdleState = TheNomad::SGame::StateManager.GetStateById( "mob_merc_gatling_idle" );
+			@MercGatlingParryState = TheNomad::SGame::StateManager.GetStateById( "mob_merc_gatling_parry" );
+			@MercGatlingDieHighState = TheNomad::SGame::StateManager.GetStateById( "mob_merc_gatling_die_high" );
+			@MercGatlingDieLowState = TheNomad::SGame::StateManager.GetStateById( "mob_merc_gatling_die_high" );
+			MercGatlingAttackSfx = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/mobs/mercenary/gatling_attacking" );
+			MercGatlingDisappointedSfx = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/mobs/mercenary/gatling_disappointed" );
+			MercGatlingParrySfx = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/mobs/mercenary/gatling_can_parry" );
+
 			GruntScreamSecretSfx = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/mobs/grunt_scream_1" );
 			GruntScreamSfx = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/mobs/grunt_scream_0" );
 			GruntExplosionSfx = TheNomad::Engine::SoundSystem::RegisterSfx( "event:/sfx/mobs/grunt_explosion" );
@@ -140,6 +149,15 @@ namespace moblib::Script {
 		int[] ShottyCurse( 3 );
 		int[] ShottyKilledTargetSfx( 3 );
 		int[] ShottyManDownSfx( 2 );
+
+		TheNomad::SGame::EntityState@ MercGatlingFightMissileState = null;
+		TheNomad::SGame::EntityState@ MercGatlingParryState = null;
+		TheNomad::SGame::EntityState@ MercGatlingIdleState = null;
+		TheNomad::SGame::EntityState@ MercGatlingDieHighState = null;
+		TheNomad::SGame::EntityState@ MercGatlingDieLowState = null;
+		int MercGatlingDisappointedSfx = FS_INVALID_HANDLE;
+		int MercGatlingAttackSfx = FS_INVALID_HANDLE;
+		int MercGatlingParrySfx = FS_INVALID_HANDLE;
 
 		int GruntScreamSecretSfx = FS_INVALID_HANDLE;
 		int GruntScreamSfx = FS_INVALID_HANDLE;

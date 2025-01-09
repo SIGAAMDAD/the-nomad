@@ -295,7 +295,9 @@ namespace TheNomad::SGame {
 		void AddExplosionGfx( const vec3& in origin ) {
 		}
 
-		void AddMuzzleFlash( const vec3& in origin ) {
+		void AddMuzzleFlash( const vec3& in origin, float range = 10.0f, float brightness = 0.3f, float constant = 0.5f, float quadratic = 0.05f,
+			float linear = 0.05f, const vec3& in color = vec3( 1.0f ) )
+		{
 			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 || TheNomad::GameSystem::IsRespawnActive ) {
 				return;
 			}
@@ -304,6 +306,12 @@ namespace TheNomad::SGame {
 
 			ent.Spawn( origin, vec3( 0.0f ), 200, FS_INVALID_HANDLE );
 			ent.m_Flags |= TheNomad::Engine::Renderer::LOCALENT_NODRAW | TheNomad::Engine::Renderer::LOCALENT_LIGHT_SOURCE;
+			ent.m_nRange = range;
+			ent.m_nLinear = linear;
+			ent.m_nConstant = constant;
+			ent.m_nQuadratic = quadratic;
+			ent.m_nBrightnesss = brightness;
+			ent.m_Color = color;
 		}
 
 		void CacheGfx() {

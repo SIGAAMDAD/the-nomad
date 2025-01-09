@@ -442,58 +442,64 @@ void CGameWorld::CastRay( ray_t *ray )
 	float dy, sy;
 	float err;
 	float e2;
-	float angle2;
-	uint32_t hitCount;
-	ivec3_t end;
-	vec3_t pos;
+	vec3_t end;
 	dirtype_t rayDir;
 	uint64_t i;
+	float angle2;
+	linkEntity_t *it;
 	
 	// calculate the endpoint
-	angle2 = ray->angle;
-	ray->end[0] = ray->start[0] + ray->length * cos( angle2 );
-	ray->end[1] = ray->start[1] + ray->length * sin( angle2 );
-	ray->end[2] = ray->start[2]; // just elevation
-	
+	ray->end[0] = ray->start[0] + ( ray->length * cos( ray->angle ) );
+	ray->end[1] = ray->start[1] + ( ray->length * sin( ray->angle ) );
+	ray->end[2] = ray->start[2] * sin( ray->angle );
+
 	dx = abs( ray->end[0] - ray->start[0] );
 	dy = abs( ray->end[1] - ray->start[1] );
-	sx = ray->start[0] < ray->end[0] ? 1 : -1;
-	sy = ray->start[1] < ray->end[1] ? 1 : -1;
-	err = ( dx > dy ? dx : -dy ) / 2;
+	sx = ray->end[0] > ray->start[0] ? ray->speed : -ray->speed;
+	sy = ray->end[1] > ray->start[1] ? ray->speed : -ray->speed;
+	err = ( dx > dy ? dx : -dy ) / 2.0f;
 	VectorCopy( ray->origin, ray->start );
+
+	angle2 = ray->angle;
+	if ( ray->ownerNumber2 != ENTITYNUM_INVALID ) {
+		angle2 = RAD2DEG( ray->angle );
+		if ( angle2 < 0.0f ) {
+			angle2 += 360.0f;
+		}
+	}
 	
-	hitCount = 0;
 	for ( ;; ) {
-		for ( linkEntity_t *it = m_ActiveEnts.next; it != &m_ActiveEnts; it = it->next ) {
-			if ( BoundsIntersectPoint( &it->bounds, ray->origin ) ) {
-				ray->entityNumber = it->entityNumber;
-				return;
+		for ( it = m_ActiveEnts.next; it != &m_ActiveEnts; it = it->next ) {
+			if ( it->entityNumber != ray->ownerNumber && it->entityNumber != ray->ownerNumber2
+				&& BoundsIntersectPoint( &it->bounds, ray->origin ) )
+			{
+				switch ( it->type ) {
+				case ET_WALL:
+				case ET_BOT:
+				case ET_ITEM:
+				case ET_WEAPON:
+					break;
+				case ET_PLAYR:
+					if ( Cvar_VariableInteger( "sgame_NoClip" ) ) {
+						continue;
+					}
+				case ET_MOB:
+					ray->entityNumber = it->entityNumber;
+					return;
+				};
 			}
 		}
 
-		if ( ray->origin[0] >= ray->end[0] || ray->origin[1] >= ray->end[1] ) {
+		if ( ( sy == -ray->speed && ray->origin[1] <= end[1] ) || ( sy == ray->speed && ray->origin[1] >= end[1] )
+			|| ( sx == -ray->speed && ray->origin[0] <= end[0] ) || ( sx == ray->speed && ray->origin[0] >= end[0] ) )
+		{
 			ray->entityNumber = ENTITYNUM_INVALID;
-			break;
+			return;
 		}
 
-		/*
-		for ( i = 0; i < nWalls; i++ ) {
-			if ( BoundsIntersectPoint( &wallBounds[i], ray->origin ) ) {
-				ray->entityNumber = ENTITYNUM_WALL;
-				return;
-			}
-		}
-		*/
-
-		VectorCopy( pos, ray->origin );
-		Sys_SnapVector( pos );
-		pos[0] /= 10;
-		pos[1] /= 10;
 		rayDir = inversedirs[ Angle2Dir( angle2 ) ];
 
-		Con_Printf( "Checking dir %i\n", (int)rayDir );
-
-		if ( CheckWallHit( pos, Angle2Dir( angle2 ) ) ) {
+		if ( CheckWallHit( ray->origin, rayDir ) ) {
 			// hit a wall
 			ray->entityNumber = ENTITYNUM_WALL;
 			break;

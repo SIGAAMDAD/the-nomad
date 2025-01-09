@@ -92,7 +92,9 @@ typedef struct {
 	vec3_t end;
 	vec3_t origin;
 	uint32_t entityNumber;
-//	float speed;
+	uint32_t ownerNumber;
+	uint32_t ownerNumber2;
+	float speed;
 	float length;
 	float angle;
 	uint32_t flags; // unused for now

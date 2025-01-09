@@ -426,7 +426,9 @@ typedef struct dlight_s {
 	vec3_t origin;
 	float brightness;
 	float range;
-	dlightType_t ltype;
+	float constant;
+	float linear;
+	float quadratic;
 } dlight_t;
 
 typedef struct {
@@ -518,6 +520,7 @@ typedef struct {
 	uint32_t count;
 	uint32_t binding; // only for GL_ARB_direct_state_access
 	uint32_t size; // only for GL_ARB_direct_state_access
+	bufferType_t usage; // only for GL_ARB_direct_state_access
 	uint32_t type;
 	uint32_t enabled;
 	uint32_t normalized;
@@ -1617,7 +1620,8 @@ void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t num
 void RE_AddPolyListToScene( const poly_t *polys, uint32_t numPolys );
 void RE_RenderScene( const renderSceneRef_t *fd );
 void RE_AddEntityToScene( const renderEntityRef_t *ent );
-void RE_AddDynamicLightToScene( const vec3_t origin, float brightness, const vec3_t color );
+void RE_AddDynamicLightToScene( const vec3_t origin, float range, float constant, float linear, float quadratic,
+	float brightness, const vec3_t color );
 void RE_BeginScene( const renderSceneRef_t *fd );
 void RE_EndScene( void );
 void RE_ClearScene( void );
@@ -1659,7 +1663,7 @@ void R_VaoUnpackColor( vec4_t v, uint16_t *pack );
 vertexBuffer_t *R_AllocateBuffer( const char *name, void *vertices, uint32_t verticesSize, void *indices, uint32_t indicesSize,
 	bufferType_t type, vertexAttrib_t szAttribs[ ATTRIB_INDEX_COUNT ] );
 void VBO_BindNull( void );
-void VBO_MapBuffers( buffer_t *buf );
+void VBO_MapBuffers( buffer_t *buf, qboolean staticData );
 void R_InitGPUBuffers( void );
 void R_ShutdownGPUBuffers( void );
 void VBO_Bind( vertexBuffer_t *vbo );

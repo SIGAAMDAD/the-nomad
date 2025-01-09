@@ -182,7 +182,8 @@ typedef struct {
 	void (*AddPolyToScene)( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts );
 	void (*AddPolyListToScene)( const poly_t *polys, uint32_t numPolys );
 	void (*AddEntityToScene)( const renderEntityRef_t *ent );
-	void (*AddDynamicLightToScene)( const vec3_t origin, float brightness, const vec3_t color );
+	void (*AddDynamicLightToScene)( const vec3_t origin, float range, float constant, float linear, float quadratic,
+		float brightness, const vec3_t color );
 	void (*DrawImage)( float x, float y, float w, float h, float u1, float v1, float u2, float v2, nhandle_t hShader );
 	void (*RenderScene)( const renderSceneRef_t *fd );
 

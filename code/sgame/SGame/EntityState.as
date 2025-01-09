@@ -112,6 +112,9 @@ namespace TheNomad::SGame {
 		void SetTics( uint nTics ) {
 			m_nTics = nTics;
 		}
+		uint GetTics() const {
+			return m_nTics;
+		}
 
 		void Reset( uint& out ticker ) {
 			ticker = TheNomad::GameSystem::GameTic;

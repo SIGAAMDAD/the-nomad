@@ -991,7 +991,7 @@ namespace TheNomad::SGame {
 				};
 				origin.y += 0.5f;
 
-				TheNomad::Engine::Renderer::AddDLightToScene( origin, 6.15f, vec3( 1.0f, 0.0f, 0.0f ) );
+				TheNomad::Engine::Renderer::AddDLightToScene( origin, 6.15f, 0.5f, 0.05f, 0.05f, 0.3f, vec3( 1.0f, 0.0f, 0.0f ) );
 				GfxManager.SmokeCloud( m_Link.m_Origin );
 			}
 

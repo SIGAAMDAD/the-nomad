@@ -118,7 +118,8 @@ void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t num
 	r_numPolys++;
 }
 
-void RE_AddDynamicLightToScene( const vec3_t origin, float brightness, const vec3_t color )
+void RE_AddDynamicLightToScene( const vec3_t origin, float range, float constant, float linear, float quadratic,
+	float brightness, const vec3_t color )
 {
 	dlight_t *dl;
 
@@ -136,8 +137,10 @@ void RE_AddDynamicLightToScene( const vec3_t origin, float brightness, const vec
 	VectorCopy( dl->origin, origin );
 	VectorCopy( dl->color, color );
 	dl->brightness = brightness;
-	dl->range = brightness;
-	dl->ltype = LIGHT_POINT;
+	dl->range = range;
+	dl->constant = constant;
+	dl->linear = linear;
+	dl->quadratic = quadratic;
 
 	r_numDLights++;
 }
@@ -217,15 +220,12 @@ void RE_ProcessDLights( void )
 
 			gpuLight[i].color[3] = 1.0f;
 
-			gpuLight[i].brightness = 0.3f;
+			gpuLight[i].brightness = dlight->brightness;
 			gpuLight[i].range = dlight->range;
-			gpuLight[i].type = dlight->ltype;
-			gpuLight[i].constant = 0.4f;
-			gpuLight[i].quadratic = 0.05f;
-			gpuLight[i].linear = 0.05f;
-//			gpuLight[i].constant = 0.05f;
-//			gpuLight[i].quadratic = 0.6f;
-//			gpuLight[i].linear = 0.05f;
+			gpuLight[i].type = LIGHT_POINT;
+			gpuLight[i].constant = dlight->constant;
+			gpuLight[i].quadratic = dlight->quadratic;
+			gpuLight[i].linear = dlight->linear;
 
 			dlight++;
 		}
@@ -295,10 +295,9 @@ void RE_ProcessEntities( void )
 
 		if ( refEntity->e.sheetNum == -1 ) {
 			*(double *)verts[0].uv = *(double *)texCoords[0];
-			VectorSet2( verts[0].uv, 0, 0 );
-			VectorSet2( verts[1].uv, 1, 0 );
-			VectorSet2( verts[2].uv, 1, 1 );
-			VectorSet2( verts[3].uv, 0, 1 );
+			*(double *)verts[1].uv = *(double *)texCoords[1];
+			*(double *)verts[2].uv = *(double *)texCoords[2];
+			*(double *)verts[3].uv = *(double *)texCoords[3];
 
 			shader = R_GetShaderByHandle( refEntity->e.spriteId );
 		} else {
