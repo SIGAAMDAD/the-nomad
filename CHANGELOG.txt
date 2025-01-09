@@ -1,0 +1,4 @@
+1/8/2025: v1.1.0 - v1.1.1 pre alpha
+* difficulty bug fixed, the difficulty select screen was bugged to only set to hard mode ('2')
+* difficulty rebalance, shotgunners now do less damage and are less accurate
+* player health and rage ratio rewrite.
