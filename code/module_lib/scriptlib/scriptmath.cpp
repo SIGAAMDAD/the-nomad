@@ -356,11 +356,7 @@ void RegisterScriptMath_Generic(asIScriptEngine *engine)
 
 void RegisterScriptMath( asIScriptEngine *engine )
 {
-	if ( strstr( asGetLibraryOptions(), "AS_MAX_PORTABILITY" ) ) {
-		RegisterScriptMath_Generic( engine );
-	} else {
-		RegisterScriptMath_Native( engine );
-	}
+	RegisterScriptMath_Native( engine );
 }
 
 END_AS_NAMESPACE
