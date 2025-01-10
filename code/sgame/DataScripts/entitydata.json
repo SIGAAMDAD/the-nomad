@@ -28,15 +28,17 @@
 		{ "Id": 18, "Name": "tutorial_bullet_time" },
 		{ "Id": 19, "Name": "tutorial_for_tutorials" },
 		{ "Id": 20, "Name": "tutorial_facing" },
-		{ "Id": 21, "Name": "tutorial_guns" }
+		{ "Id": 21, "Name": "tutorial_guns" },
+		{ "Id": 22, "Name": "item_plasma_pickup" }
 	],
 	"AmmoData": [
-		{ "Id": 22, "Name": "ammo_rifle" },
-		{ "Id": 23, "Name": "ammo_pistol" },
-		{ "Id": 24, "Name": "ammo_shells" },
-		{ "Id": 25, "Name": "ammo_asturion_special" },
-		{ "Id": 26, "Name": "ammo_secret_dakka_dakka_dakka" },
-		{ "Id": 27, "Name": "ammo_secret_bullet_of_45" }
+		{ "Id": 23, "Name": "ammo_rifle" },
+		{ "Id": 24, "Name": "ammo_pistol" },
+		{ "Id": 25, "Name": "ammo_shells" },
+		{ "Id": 26, "Name": "ammo_plasma" },
+		{ "Id": 27, "Name": "ammo_asturion_special" },
+		{ "Id": 28, "Name": "ammo_secret_dakka_dakka_dakka" },
+		{ "Id": 29, "Name": "ammo_secret_bullet_of_45" }
 	],
 	"WeaponData": [
 		{ "Id": 0, "Name": "sidearm_murstar" },

@@ -203,7 +203,7 @@ static void RB_CalcBulgeVertexes( deformStage_t *ds ) {
 	uint32_t xyz = 0;
 	uint32_t normal = 0;
 	float now;
-	srfVert_t *vtx = (srfVert_t *)backend.drawBuffer->vertex[0].data;
+	srfVert_t *vtx = (srfVert_t *)backend.drawBuffer[ backend.cpuBuffer ]->vertex[0].data;
 
 	now = backend.refdef.time * ds->bulgeSpeed * 0.001;
 
@@ -473,7 +473,7 @@ static void Autosprite2Deform( void ) {
 
 		// find the midpoint
 		ri.Error( ERR_FATAL, "%s: called", __func__ );
-		xyz = &( (srfVert_t *)backend.drawBuffer->vertex[0].data )[i];
+		xyz = &( (srfVert_t *)backend.drawBuffer[ backend.cpuBuffer ]->vertex[0].data )[i];
 
 		// identify the two shortest edges
 		nums[0] = nums[1] = 0;
@@ -527,8 +527,8 @@ static void Autosprite2Deform( void ) {
 			// we need to see which direction this edge
 			// is used to determine direction of projection
 			for ( k = 0 ; k < 5 ; k++ ) {
-				if ( ( (uint32_t *)backend.drawBuffer->index.data )[ indexes + k ] == i + edgeVerts[nums[j]][0]
-					&& ( (uint32_t *)backend.drawBuffer->index.data )[ indexes + k + 1 ] == i + edgeVerts[nums[j]][1] ) {
+				if ( ( (uint32_t *)backend.drawBuffer[ backend.cpuBuffer ]->index.data )[ indexes + k ] == i + edgeVerts[nums[j]][0]
+					&& ( (uint32_t *)backend.drawBuffer[ backend.cpuBuffer ]->index.data )[ indexes + k + 1 ] == i + edgeVerts[nums[j]][1] ) {
 					break;
 				}
 			}

@@ -184,7 +184,7 @@
 		},
 		{
 			"Id": "mob_merc_gatling_fight",
-			"Tics": 1000,
+			"Tics": 2600,
 			"BaseNum": "ST_MOB_FIGHT_MISSILE",
 			"Entity": "mob_merc_gatling",
 			"NextState": "this",
@@ -201,7 +201,7 @@
 			"Tics": 2000,
 			"Entity": "mob_merc_gatling",
 			"NextState": "mob_merc_gatling_fight",
-			"SpriteOffset": [ 5, 0 ],
+			"SpriteOffset": [ 4, 0 ],
 			"Animation": {
 				"TicRate": 0,
 				"FlipFlop": false,

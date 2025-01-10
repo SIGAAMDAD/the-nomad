@@ -17,6 +17,14 @@
 			"Stats.Range": 25.0
 		},
 		{
+			"Name": "Plasma Ammo",
+			"Id": "ammo_plasma",
+			"Type": "Bullet",
+			"Properties": [ "Light", "Flechette" ],
+			"Stats.Damage": 15.0,
+			"Stats.Range": 18.0
+		},
+		{
 			"Name": "Pistol Ammo",
 			"Id": "ammo_pistol",
 			"Type": "Bullet",

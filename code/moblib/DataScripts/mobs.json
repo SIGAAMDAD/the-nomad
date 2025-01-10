@@ -47,6 +47,7 @@
 			"Detection.SightRange": 4.90,
 			"Detection.SightRadius": 4.0,
 			"RenderData.SheetWidth": 1024,
+			
 			"RenderData.SheetHeight": 1024,
 			"RenderData.SpriteWidth": 32,
 			"RenderData.SpriteHeight": 32,
@@ -73,7 +74,7 @@
 			"Stats.Speed.z": 1.0,
 			"Stats.ReactionTime": 5,
 			"Stats.PainTolerance": 15,
-			"Detection.SoundRange": 10.0,
+			"Detection.SoundRange": 4.0,
 			"Detection.SoundTolerance": 20.0,
 			"Detection.SightRange": 4.90,
 			"Detection.SightRadius": 4.0,

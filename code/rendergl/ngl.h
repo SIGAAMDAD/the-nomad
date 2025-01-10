@@ -373,6 +373,7 @@ typedef void*(*NGLloadproc)(const char *name);
 	NGL( void*, glMapBufferRange, GLenum target, GLintptr offset, GLsizeiptr length, GLbitfield access ) \
 	NGL( void, glFlushMappedBufferRange, GLenum target, GLintptr offset, GLsizeiptr length ) \
 	NGL( void, glInvalidateBufferData, GLuint buffer ) \
+	NGL( void, glInvalidateBufferSubData, GLuint buffer, GLintptr offset, GLsizeiptr length )
 
 #define NGL_ARB_buffer_storage \
 	NGL( void, glBufferStorage, GLenum target, GLsizeiptr size, const void *data, GLbitfield flags )

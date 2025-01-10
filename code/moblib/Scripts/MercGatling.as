@@ -2,7 +2,8 @@
 
 namespace moblib::Script {
 	float MERC_GATLING_RANGE = 10.0f;
-	const float MERC_GATLING_DAMAGE = 0.05f;
+	float MERC_GATLING_DAMAGE = 0.25f;
+	uint MERC_GATLING_BULLETS_PER_VOLLEY = 8;
 	
 	class MercGatling : MobScript {
 		MercGatling() {
@@ -124,34 +125,39 @@ namespace moblib::Script {
 			switch ( TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" ) ) {
 			case TheNomad::GameSystem::GameDifficulty::Easy:
 				// they have the least experience with firearms, they can't hit a far shot
-				//MERC_SHOTGUN_RANGE = 8.75f;
+				MERC_GATLING_RANGE = 10.75f;
 
 				// they aren't hitting vital spots
-				MERC_SHOTGUN_DAMAGE = 8.5f;
+				MERC_GATLING_DAMAGE = 0.075f;
+
+				MERC_GATLING_BULLETS_PER_VOLLEY = 24;
+
+				// this is only here so that easy mode has a one-shot-kill gatling gunner
+				info.health = 40.0f;
 				break;
 			case TheNomad::GameSystem::GameDifficulty::Normal:
-				//MERC_SHOTGUN_RANGE = 10.0f;
-				//MERC_SHOTGUN_DAMAGE = 15.0f;
 				break;
 			case TheNomad::GameSystem::GameDifficulty::Hard:
-				//MERC_SHOTGUN_RANGE = 14.75f;
-				//MERC_SHOTGUN_DAMAGE = 35.0f;
+				MERC_GATLING_RANGE = 14.75f;
+				MERC_GATLING_DAMAGE = 5.0f;
 
-				info.health = 90.0f;
+				MERC_GATLING_BULLETS_PER_VOLLEY = 8;
 				break;
 			case TheNomad::GameSystem::GameDifficulty::VeryHard:
-				//MERC_SHOTGUN_RANGE = 15.0f;
-				//MERC_SHOTGUN_DAMAGE = 50.0f;
+				MERC_GATLING_RANGE = 16.0f;
+				MERC_GATLING_DAMAGE = 16.0f;
 
-				info.health = 120.0f;
+				MERC_GATLING_BULLETS_PER_VOLLEY = 6;
 				break;
 			case TheNomad::GameSystem::GameDifficulty::Insane:
 				// the elite
 
-				//MERC_GATLING_RANGE = 20.0f;
-				//MERC_GATLING_DAMAGE = 80.0f;
+				MERC_GATLING_RANGE = 20.0f;
 
-				info.health = 160.0f;
+				// let's be realistic, its probably 7.62
+				MERC_GATLING_DAMAGE = 40.0f;
+
+				MERC_GATLING_BULLETS_PER_VOLLEY = 3;
 				break;
 			};
 			m_EntityData.SetHealth( info.health );

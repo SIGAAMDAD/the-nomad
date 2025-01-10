@@ -1316,7 +1316,7 @@ static void R_AllocBackend( void ) {
 	vertBytes = PAD( sizeof( srfVert_t ) * r_maxPolys->i * 4, sizeof(uintptr_t) );
 	polyVertBytes = PAD( sizeof(polyVert_t) * r_maxPolys->i * 4, sizeof(uintptr_t) );
 	polyBytes = PAD( sizeof(srfPoly_t) * r_maxPolys->i, sizeof(uintptr_t) );
-	indexBytes = PAD( sizeof(glIndex_t) * r_maxPolys->i * 6, sizeof(uintptr_t) );
+//	indexBytes = PAD( sizeof(glIndex_t) * r_maxPolys->i * 6, sizeof(uintptr_t) );
 	entityBytes = PAD( sizeof(renderEntityDef_t) * r_maxEntities->i, sizeof(uintptr_t) );
 	dlightBytes = PAD( sizeof(dlight_t) * r_maxDLights->i, sizeof(uintptr_t) );
 
@@ -1325,7 +1325,7 @@ static void R_AllocBackend( void ) {
 	size += PAD( sizeof( srfVert_t ) * r_maxPolys->i * 4, sizeof( uintptr_t ) );
 	size += PAD( sizeof( polyVert_t ) * r_maxPolys->i * 4, sizeof( uintptr_t ) );
 	size += PAD( sizeof( srfPoly_t ) * r_maxPolys->i, sizeof( uintptr_t ) );
-	size += PAD( sizeof( glIndex_t ) * r_maxPolys->i * 6, sizeof( uintptr_t ) );
+//	size += PAD( sizeof( glIndex_t ) * r_maxPolys->i * 6, sizeof( uintptr_t ) );
 	size += PAD( sizeof( renderEntityDef_t ) * r_maxEntities->i, sizeof( uintptr_t ) );
 	size += PAD( sizeof( dlight_t ) * r_maxDLights->i, sizeof( uintptr_t ) );
 
@@ -1333,17 +1333,17 @@ static void R_AllocBackend( void ) {
 	backendData[ 0 ]->verts = (srfVert_t *)( backendData[ 0 ] + 1 );
 	backendData[ 0 ]->polyVerts = (polyVert_t *)( backendData[ 0 ]->verts + r_maxPolys->i * 4 );
 	backendData[ 0 ]->polys = (srfPoly_t *)( backendData[ 0 ]->polyVerts + r_maxPolys->i * 4 );
-	backendData[ 0 ]->indices = (glIndex_t *)( backendData[ 0 ]->polys + r_maxPolys->i );
-	backendData[ 0 ]->entities = (renderEntityDef_t *)( backendData[ 0 ]->indices + r_maxPolys->i * 6 );
+//	backendData[ 0 ]->indices = (glIndex_t *)( backendData[ 0 ]->polys + r_maxPolys->i );
+	backendData[ 0 ]->entities = (renderEntityDef_t *)( backendData[ 0 ]->polys + r_maxPolys->i * 6 );
 	backendData[ 0 ]->dlights = (dlight_t *)( backendData[ 0 ]->entities + r_maxEntities->i );
 
 	if ( !sys_forceSingleThreading->i ) {
 		backendData[ 1 ] = (renderBackendData_t *)ri.Malloc( size );
-		backendData[ 1 ]->verts = (srfVert_t *)( backendData[ 1 ] + 1 );
-		backendData[ 1 ]->polyVerts = (polyVert_t *)( backendData[ 1 ]->verts + r_maxPolys->i * 4 );
+//		backendData[ 1 ]->verts = (srfVert_t *)( backendData[ 1 ] + 1 );
+		backendData[ 1 ]->polyVerts = (polyVert_t *)( backendData[ 1 ] + 1 );
 		backendData[ 1 ]->polys = (srfPoly_t *)( backendData[ 1 ]->polyVerts + r_maxPolys->i * 4 );
-		backendData[ 1 ]->indices = (glIndex_t *)( backendData[ 1 ]->polys + r_maxPolys->i );
-		backendData[ 1 ]->entities = (renderEntityDef_t *)( backendData[ 1 ]->indices + r_maxPolys->i * 6 );
+//		backendData[ 1 ]->indices = (glIndex_t *)( backendData[ 1 ]->polys + r_maxPolys->i );
+		backendData[ 1 ]->entities = (renderEntityDef_t *)( backendData[ 1 ]->polys + r_maxPolys->i * 6 );
 		backendData[ 1 ]->dlights = (dlight_t *)( backendData[ 1 ]->entities + r_maxEntities->i );
 	} else {
 		backendData[ 1 ] = NULL;

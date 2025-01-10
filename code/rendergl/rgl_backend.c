@@ -936,7 +936,7 @@ static const void *RB_DrawImage( const void *data ) {
 		if ( backend.drawBatch.idxOffset ) {
 			RB_FlushBatchBuffer();
 		}
-		RB_SetBatchBuffer( backend.drawBuffer, backendData[ rg.smpFrame ]->verts, sizeof( srfVert_t ),
+		RB_SetBatchBuffer( backend.drawBuffer[ backend.cpuBuffer ], backendData[ rg.smpFrame ]->verts, sizeof( srfVert_t ),
 			backendData[ rg.smpFrame ]->indices, sizeof( glIndex_t ) );
 	}
 	backend.drawBatch.shader = shader;

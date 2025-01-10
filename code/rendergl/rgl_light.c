@@ -192,6 +192,6 @@ void R_ApplyLighting( const dlight_t *dl, shaderLight_t *gpuLight )
 		
 		gpuLight->brightness = dl->brightness;
 		gpuLight->range = dl->range;
-		gpuLight->type = dl->ltype;
+		gpuLight->type = LIGHT_POINT;
 	}
 }

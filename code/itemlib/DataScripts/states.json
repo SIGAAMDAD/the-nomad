@@ -1,6 +1,120 @@
 {
 	"StateInfo": [
 		{
+			"Id": "weapon_equip_plasma_smg_right",
+			"Tics": 0,
+			"BaseNum": "ST_WEAPON_EQUIP",
+			"Entity": "primary_plasma_smg",
+			"NextState": "this",
+			"SpriteOffset": [ 0, 0 ],
+			"Animation": {
+				"TicRate": 0,
+				"FlipFlop": false,
+				"Frames": 0,
+				"Reverse": false
+			}
+		},
+		{
+			"Id": "weapon_idle_firearm_plasma_smg_right",
+			"Tics": 0,
+			"BaseNum": "ST_WEAPON_IDLE",
+			"Entity": "primary_plasma_smg",
+			"NextState": "this",
+			"SpriteOffset": [ 0, 0 ],
+			"Animation": {
+				"TicRate": 0,
+				"FlipFlop": false,
+				"Frames": 0,
+				"Reverse": false
+			}
+		},
+		{
+			"Id": "weapon_reload_plasma_smg_right",
+			"Tics": 800,
+			"BaseNum": "ST_WEAPON_RELOAD",
+			"Entity": "primary_plasma_smg",
+			"NextState": "weapon_idle_firearm_plasma_smg_right",
+			"SpriteOffset": [ 1, 0 ],
+			"Animation": {
+				"TicRate": 0,
+				"FlipFlop": false,
+				"Frames": 0,
+				"Reverse": false
+			}
+		},
+		{
+			"Id": "weapon_use_firearm_plasma_smg_right",
+			"Tics": 500,
+			"BaseNum": "ST_WEAPON_USE",
+			"Entity": "primary_plasma_smg",
+			"NextState": "weapon_idle_firearm_plasma_smg_right",
+			"SpriteOffset": [ 0, 0 ],
+			"Animation": {
+				"TicRate": 0,
+				"FlipFlop": false,
+				"Frames": 0,
+				"Reverse": false
+			}
+		},
+		{
+			"Id": "weapon_equip_plasma_smg_left",
+			"Tics": 0,
+			"BaseNum": "ST_WEAPON_EQUIP",
+			"Entity": "primary_plasma_smg",
+			"NextState": "this",
+			"SpriteOffset": [ 0, 0 ],
+			"Animation": {
+				"TicRate": 0,
+				"FlipFlop": false,
+				"Frames": 0,
+				"Reverse": false
+			}
+		},
+		{
+			"Id": "weapon_idle_firearm_plasma_smg_left",
+			"Tics": 0,
+			"BaseNum": "ST_WEAPON_IDLE",
+			"Entity": "primary_plasma_smg",
+			"NextState": "this",
+			"SpriteOffset": [ 2, 0 ],
+			"Animation": {
+				"TicRate": 0,
+				"FlipFlop": false,
+				"Frames": 0,
+				"Reverse": false
+			}
+		},
+		{
+			"Id": "weapon_reload_plasma_smg_left",
+			"Tics": 800,
+			"BaseNum": "ST_WEAPON_RELOAD",
+			"Entity": "primary_plasma_smg",
+			"NextState": "weapon_idle_firearm_plasma_smg_left",
+			"SpriteOffset": [ 3, 0 ],
+			"Animation": {
+				"TicRate": 0,
+				"FlipFlop": false,
+				"Frames": 0,
+				"Reverse": false
+			}
+		},
+		{
+			"Id": "weapon_use_firearm_plasma_smg_left",
+			"Tics": 500,
+			"BaseNum": "ST_WEAPON_USE",
+			"Entity": "primary_plasma_smg",
+			"NextState": "weapon_idle_firearm_plasma_smg_left",
+			"SpriteOffset": [ 2, 0 ],
+			"Animation": {
+				"TicRate": 0,
+				"FlipFlop": false,
+				"Frames": 0,
+				"Reverse": false
+			}
+		},
+
+
+		{
 			"Id": "weapon_equip_adb_left",
 			"Tics": 0,
 			"BaseNum": "ST_WEAPON_EQUIP",

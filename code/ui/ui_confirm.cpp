@@ -124,7 +124,7 @@ static void ConfirmMenu_Draw( void )
 		if ( text->generic.flags & QMF_OWNERDRAW && text->generic.ownerdraw ) {
 			text->generic.ownerdraw( text );
 		} else {
-			ImGui::TextWrapped( text->text ); // for joysticks
+			UI_DrawText( text->text ); // for joysticks
 		}
 
 		if ( ImGui::IsItemClicked() || ImGui::IsItemActivated() ) {
@@ -181,9 +181,9 @@ void UI_ConfirmMenu( const char *question, void (*draw)( void ), void (*action)(
 	s_confirm->action = action;
 
 	s_confirm->menu.draw = ConfirmMenu_Draw;
-	s_confirm->menu.x = 540 - ( n1 * ui->scale );
+	s_confirm->menu.x = 420 - ( n1 * ui->scale );
 	s_confirm->menu.y = 280 * ui->scale;
-	s_confirm->menu.width = l1 * ui->scale + ui->bias;
+	s_confirm->menu.width = 780 * ui->scale + ui->bias;
 	s_confirm->menu.height = 372 * ui->scale;
 	s_confirm->menu.textFontScale = 1.0f;
 	s_confirm->menu.name = "ConfirmMenu";

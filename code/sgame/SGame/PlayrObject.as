@@ -530,6 +530,7 @@ namespace TheNomad::SGame {
 			m_HudData.ShowStatusBars();
 			
 			m_nHealth -= nAmount;
+			m_nRage += nAmount * 0.01f;
 			m_nDamageMult += nAmount;
 
 			if ( m_nHealth <= 0.0f ) {
@@ -779,16 +780,13 @@ namespace TheNomad::SGame {
 			}
 			if ( m_nFrameDamage > 0.0f ) {
 				m_nRage += m_nFrameDamage * TheNomad::GameSystem::DeltaTic;
-				m_nFrameDamage -= 0.05f * TheNomad::GameSystem::DeltaTic;
-				if ( m_nFrameDamage < 0.0f ) {
-					m_nFrameDamage = 0.0f;
-				}
+				m_nFrameDamage = 0.0f;
 				Flags |= PF_USED_MANA;
 				m_HudData.ShowRageBar();
 			}
 			if ( m_nHealth < 100.0f ) {
-				m_nHealth += 0.005f * TheNomad::GameSystem::DeltaTic;
-				m_nRage -= 0.05f * TheNomad::GameSystem::DeltaTic; // rage is essentially just converted mana
+				m_nHealth += 0.075f * TheNomad::GameSystem::DeltaTic;
+				m_nRage -= 0.5f * TheNomad::GameSystem::DeltaTic; // rage is essentially just converted mana
 				// mana conversion ratio to health is extremely minimal
 
 				Flags |= PF_USED_MANA;

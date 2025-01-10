@@ -265,10 +265,10 @@ void RE_ProcessEntities( void )
 	texIndex = 0.0f;
 
 	static const vec2_t texCoords[4] = {
-		{ 0.0f, 0.0f },
 		{ 1.0f, 0.0f },
 		{ 1.0f, 1.0f },
-		{ 0.0f, 1.0f }
+		{ 0.0f, 1.0f },
+		{ 0.0f, 0.0f }
 	};
 
 	for ( i = 0; i < backend.refdef.numEntities; i++ ) {

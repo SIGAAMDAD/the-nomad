@@ -225,7 +225,7 @@ void R_DrawPolys( void )
 
 	RE_ProcessDLights();
 
-	RB_SetBatchBuffer( backend.drawBuffer, backendData[ 0 ]->verts, sizeof( srfVert_t ),
+	RB_SetBatchBuffer( backend.drawBuffer[ backend.cpuBuffer ], backendData[ 0 ]->verts, sizeof( srfVert_t ),
 		backendData[ 0 ]->indices, sizeof( glIndex_t ) );
 
 	// sort the polys to be more efficient with our shaders

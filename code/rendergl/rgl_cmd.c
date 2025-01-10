@@ -410,7 +410,7 @@ void RE_BeginFrame( stereoFrame_t stereoFrame )
 	backend.refdef.floatTime = backend.refdef.time * 0.001f;
 
 	if ( !rg.world ) {
-		RB_SetBatchBuffer( backend.drawBuffer, backendData[ rg.smpFrame ]->verts, sizeof( srfVert_t ),
+		RB_SetBatchBuffer( backend.drawBuffer[ backend.cpuBuffer ], backendData[ rg.smpFrame ]->verts, sizeof( srfVert_t ),
 			backendData[ rg.smpFrame ]->indices, sizeof( glIndex_t ) );
 	}
 

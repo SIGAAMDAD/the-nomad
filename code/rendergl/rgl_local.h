@@ -1049,7 +1049,7 @@ typedef struct {
 
 	backendCounters_t pc;
 
-	vertexBuffer_t *drawBuffer;
+	vertexBuffer_t *drawBuffer[2];
 
 	renderSceneDef_t refdef;
 	renderEntityDef_t *currentEntity;
@@ -1057,6 +1057,8 @@ typedef struct {
 	batch_t drawBatch;
 
 	int smpFrame;
+	int gpuBuffer;
+	int cpuBuffer;
 } renderBackend_t;
 
 // the renderer front end should never modify glstate_t
@@ -1410,6 +1412,8 @@ extern cvar_t *r_customHeight;
 extern cvar_t *r_glDiagnostics;
 extern cvar_t *r_colorMipLevels;
 
+extern cvar_t *r_enableParticles;
+extern cvar_t *r_gfxDetail;
 extern cvar_t *r_maxPolys;
 extern cvar_t *r_maxEntities;
 extern cvar_t *r_maxDLights;

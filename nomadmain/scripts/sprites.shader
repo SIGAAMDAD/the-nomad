@@ -63,7 +63,7 @@ sprites/mobs/mercenary/gatling_gunner
 	nopicmip
 	{
 		texFilter nearest
-		map textures/sprites/mobs/mercenary/gatling.dds
+		map textures/sprites/mobs/mercenary/gatling.png
 		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
 	}
 }
