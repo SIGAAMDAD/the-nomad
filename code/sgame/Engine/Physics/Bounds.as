@@ -8,6 +8,7 @@ namespace TheNomad::Engine::Physics {
 	// a rewritten version of GameSystem::Bounds, since that version is currently bugged,
 	// and this is probably a better place to stick the class definition
 	//
+	/*
 	class Bounds {
 		Bounds() {
 		}
@@ -275,4 +276,5 @@ namespace TheNomad::Engine::Physics {
 		float m_nWidth = 0.0f;
 		float m_nHeight = 0.0f;
 	};
+	*/
 };

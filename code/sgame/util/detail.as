@@ -555,8 +555,8 @@ namespace TheNomad::Util {
 		float b = 0.0f;
 
 		for ( int i = 0; i < 3; i++ ) {
-			a = abs( bounds.m_Mins[i] );
-			b = abs( bounds.m_Maxs[i] );
+			a = abs( bounds.m_nMins[i] );
+			b = abs( bounds.m_nMaxs[i] );
 			corner[i] = a > b ? a : b;
 		}
 

@@ -7,8 +7,7 @@ namespace TheNomad::Engine::Renderer {
 		}
 
 		void Draw() const {
-			AddEntityToScene( sheetNum, spriteId, renderfx, vec3( 0.0f ), origin, 0, flags, color, shaderTexCoord, 0.0f,
-				radius, rotation, scale );
+			AddEntityToScene( sheetNum, spriteId, origin, TheNomad::GameSystem::DeltaTic, radius, rotation, scale );
 		}
 
 		vec3 origin = vec3( 0.0f );

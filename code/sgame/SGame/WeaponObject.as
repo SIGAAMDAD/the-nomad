@@ -52,7 +52,7 @@ namespace TheNomad::SGame {
 			@m_Owner = @ent;
 			SetUseMode( m_WeaponInfo.defaultMode );
 
-			m_Bounds.Clear();
+			m_Link.m_Bounds.Clear();
 
 			DebugPrint( "Weapon " + m_Link.m_nEntityNumber + " now owned by " + ent.GetEntityNum() + ".\n" );
 		}
@@ -125,7 +125,7 @@ namespace TheNomad::SGame {
 		// AreaOfEffect: does exactly what you think it does
 		//
 		private float AreaOfEffect( float damage ) {
-			TheNomad::Engine::Physics::Bounds bounds;
+			TheNomad::GameSystem::BBox bounds;
 			EntityObject@ activeEnts = EntityManager.GetActiveEnts();
 			EntityObject@ ent = activeEnts.m_Next;
 			const float range = m_AmmoInfo.range / 2;
@@ -346,9 +346,11 @@ namespace TheNomad::SGame {
 		}
 		void Think() override {
 			if ( m_Owner is null ) {
-				m_Bounds.m_nWidth = m_WeaponInfo.size.x;
-				m_Bounds.m_nHeight = m_WeaponInfo.size.y;
-				m_Bounds.MakeBounds( m_Link.m_Origin );
+				m_Link.m_Bounds.m_nWidth = m_WeaponInfo.size.x;
+				m_Link.m_Bounds.m_nHeight = m_WeaponInfo.size.y;
+				m_Link.m_Bounds.MakeBounds( m_Link.m_Origin );
+				// update engine data
+				m_Link.Update();
 				return;
 			}
 
@@ -435,9 +437,9 @@ namespace TheNomad::SGame {
 			}
 
 			m_Link.m_Origin = origin;
-			m_Bounds.m_nWidth = m_WeaponInfo.size.x;
-			m_Bounds.m_nHeight = m_WeaponInfo.size.y;
-			m_Bounds.MakeBounds( origin );
+			m_Link.m_Bounds.m_nWidth = m_WeaponInfo.size.x;
+			m_Link.m_Bounds.m_nHeight = m_WeaponInfo.size.y;
+			m_Link.m_Bounds.MakeBounds( origin );
 
 			@m_SpriteSheet = @m_WeaponInfo.spriteSheet;
 

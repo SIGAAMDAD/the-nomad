@@ -100,7 +100,7 @@ namespace moblib::System {
 			return m_nSquadID;
 		}
 		
-		private TheNomad::Engine::Physics::Bounds m_SquadAABB;
+		private TheNomad::GameSystem::BBox m_SquadAABB;
 		private moblib::Script::MercShotty@[] m_SquadMembers( MAX_SQUAD_SIZE );
 		private moblib::Script::MercShotty@ m_Leader = null;
 		private float m_nMorale = 0.0f;

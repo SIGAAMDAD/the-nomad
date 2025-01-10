@@ -288,14 +288,15 @@ void R_DrawWorld( void )
 	vec3_t pos;
 	vec3_t origin;
 	drawVert_t *vtx;
-	drawVert_t verts[4];
 	vec2_t *xyz;
+	vec3_t origins[4];
 	vec3_t edge1, edge2;
 	vec2_t deltaUV1, deltaUV2;
 	texCoord_t *uv;
 	vec3_t *tangent, *bitangent;
 	vec3_t *normal;
 	float f;
+	const vec2_t scale = { 1.0f, 1.0f };
 	static vec3_t cameraPos;
 	const renderEntityDef_t *refEntity;
 
@@ -322,7 +323,7 @@ void R_DrawWorld( void )
 	xyz = rg.world->xyz;
 	
 	// if we haven't moved at all, we don't need to do any redundant calculations
-	if ( !( ri.Cvar_VariableInteger( "g_paused" ) || VectorCompare( cameraPos, glState.viewData.camera.origin ) ) ) {
+//	if ( !( ri.Cvar_VariableInteger( "g_paused" ) || VectorCompare( cameraPos, glState.viewData.camera.origin ) ) ) {
 		for ( y = 0; y < rg.world->height; y++ ) {
 			for ( x = 0; x < rg.world->width; x++ ) {
 				pos[0] = x;
@@ -330,18 +331,16 @@ void R_DrawWorld( void )
 				pos[2] = 0.0f;
 
 				// convert the local world coordinates to OpenGL screen coordinates
-				R_WorldToGL( verts, pos );
-
-				VectorCopy2( xyz[ 0 ], verts[0].xyz );
-				VectorCopy2( xyz[ 1 ], verts[1].xyz );
-				VectorCopy2( xyz[ 2 ], verts[2].xyz );
-				VectorCopy2( xyz[ 3 ], verts[3].xyz );
-
+				ri.GLM_TransformToGL( pos, origins, scale, 0.0f, glState.viewData.camera.viewProjectionMatrix );
+				VectorCopy2( xyz[0], origins[0] );
+				VectorCopy2( xyz[1], origins[1] );
+				VectorCopy2( xyz[2], origins[2] );
+				VectorCopy2( xyz[3], origins[3] );
 				xyz += 4;
 			}
 		}
-	}
-	VectorCopy( cameraPos, glState.viewData.camera.origin );
+//	}
+//	VectorCopy( cameraPos, glState.viewData.camera.origin );
 
 	backend.drawBatch.idxOffset = rg.world->numIndices;
 	backend.drawBatch.vtxOffset = rg.world->numVertices;

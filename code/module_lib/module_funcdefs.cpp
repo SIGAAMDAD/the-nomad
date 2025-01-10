@@ -47,6 +47,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 void ScriptLib_Register_Sound( void );
 void ScriptLib_Register_Game( void );
+void ScriptLib_Register_Engine( void );
+void ScriptLib_Register_Renderer( void );
 
 //
 // c++ compatible wrappers around angelscript engine function calls
@@ -2105,6 +2107,7 @@ void ModuleLib_Register_Engine( void )
 		Register_VecType<uvec4, unsigned, 2>( "uvec4", "uint" );
 		*/
 
+/*
 		{
 			REGISTER_OBJECT_TYPE( "vec2", vec2, asOBJ_VALUE );
 			
@@ -2356,7 +2359,8 @@ void ModuleLib_Register_Engine( void )
 			g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "uvec4", "uvec4 opDiv( const uvec4& in ) const", asFUNCTION( ModuleLib_DivUVec4Generic ), asCALL_GENERIC );
 			g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "uvec4", "uvec4 opMul( const uvec4& in ) const", asFUNCTION( ModuleLib_MulUVec4Generic ), asCALL_GENERIC );
 		}
-//		ScriptLib_Register_GLM();
+		*/
+		ScriptLib_Register_GLM();
 	}
 
 	SET_NAMESPACE( "ImGui" );
@@ -2513,109 +2517,13 @@ void ModuleLib_Register_Engine( void )
 	
 	SET_NAMESPACE( "TheNomad::Engine" );
 	{ // Engine
-		
-		g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::CvarRegister( const string& in, const string& in, uint, int32& out, float& out, int& out, int& out )",
-			asFUNCTION( ModuleLib_CvarRegisterGeneric ), asCALL_GENERIC );
-		g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::CvarUpdate( string& out, int32& out, float& out, int& out, const int )",
-			asFUNCTION( ModuleLib_CvarUpdateGeneric ), asCALL_GENERIC );
-		g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::CvarSet( const string& in, const string& in )",
-			asFUNCTION( CvarSetValue ), asCALL_GENERIC );
-		g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "int32 TheNomad::Engine::CvarVariableInteger( const string& in )",
-			asFUNCTION( CvarVariableInt ), asCALL_GENERIC );
-		g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "float TheNomad::Engine::CvarVariableFloat( const string& in )",
-			asFUNCTION( CvarVariableFloat ), asCALL_GENERIC );
-		g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "string TheNomad::Engine::CvarVariableString( const string& in )",
-			asFUNCTION( CvarVariableString ), asCALL_GENERIC );
-
-		REGISTER_GLOBAL_FUNCTION( "uint TheNomad::Engine::CmdArgc()", asFUNCTION( CmdArgc ) );
-		REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdArgvFixed( int8[]& in, uint )", asFUNCTION( CmdArgvFixed ) );
-		REGISTER_GLOBAL_FUNCTION( "string TheNomad::Engine::CmdArgv( uint )", asFUNCTION( CmdArgv ) );
-		REGISTER_GLOBAL_FUNCTION( "string TheNomad::Engine::CmdArgs( uint )", asFUNCTION( CmdArgs ) );
-		REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdAddCommand( const string& in )", asFUNCTION( CmdAddCommand ) );
-		REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdRemoveCommand( const string& in )", asFUNCTION( CmdRemoveCommand ) );
-		REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdExecuteCommand( const string& in )", asFUNCTION( CmdExecuteCommand ) );
-
 		REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::GetJoystickAngle( int, float& out, ivec2& out )", asFUNCTION( GetJoystickAngle ) );
 		REGISTER_GLOBAL_FUNCTION( "const ivec2 TheNomad::Engine::GetMousePosition()", asFUNCTION( GetMousePosition ) );
 
 		REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::ProfileBlockBegin( const string& in )", asFUNCTION( ProfileBlockBegin ) );
 		REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::ProfileBlockEnd()", asFUNCTION( ProfileBlockEnd ) );
 
-		REGISTER_ENUM_TYPE( "KeyNum" );
-		REGISTER_ENUM_VALUE( "KeyNum", "A", KEY_A );
-		REGISTER_ENUM_VALUE( "KeyNum", "B", KEY_B );
-		REGISTER_ENUM_VALUE( "KeyNum", "C", KEY_C );
-		REGISTER_ENUM_VALUE( "KeyNum", "D", KEY_D );
-		REGISTER_ENUM_VALUE( "KeyNum", "E", KEY_E );
-		REGISTER_ENUM_VALUE( "KeyNum", "F", KEY_F );
-		REGISTER_ENUM_VALUE( "KeyNum", "G", KEY_G );
-		REGISTER_ENUM_VALUE( "KeyNum", "H", KEY_H );
-		REGISTER_ENUM_VALUE( "KeyNum", "I", KEY_I );
-		REGISTER_ENUM_VALUE( "KeyNum", "J", KEY_J );
-		REGISTER_ENUM_VALUE( "KeyNum", "K", KEY_K );
-		REGISTER_ENUM_VALUE( "KeyNum", "L", KEY_L );
-		REGISTER_ENUM_VALUE( "KeyNum", "M", KEY_M );
-		REGISTER_ENUM_VALUE( "KeyNum", "N", KEY_N );
-		REGISTER_ENUM_VALUE( "KeyNum", "O", KEY_O );
-		REGISTER_ENUM_VALUE( "KeyNum", "P", KEY_P );
-		REGISTER_ENUM_VALUE( "KeyNum", "Q", KEY_Q );
-		REGISTER_ENUM_VALUE( "KeyNum", "R", KEY_R );
-		REGISTER_ENUM_VALUE( "KeyNum", "S", KEY_S );
-		REGISTER_ENUM_VALUE( "KeyNum", "T", KEY_T );
-		REGISTER_ENUM_VALUE( "KeyNum", "U", KEY_U );
-		REGISTER_ENUM_VALUE( "KeyNum", "V", KEY_V );
-		REGISTER_ENUM_VALUE( "KeyNum", "W", KEY_W );
-		REGISTER_ENUM_VALUE( "KeyNum", "X", KEY_X );
-		REGISTER_ENUM_VALUE( "KeyNum", "Y", KEY_Y );
-		REGISTER_ENUM_VALUE( "KeyNum", "Z", KEY_Z );
-		REGISTER_ENUM_VALUE( "KeyNum", "Tab", KEY_TAB );
-		REGISTER_ENUM_VALUE( "KeyNum", "Space", KEY_SPACE );
-		REGISTER_ENUM_VALUE( "KeyNum", "BackSpace", KEY_BACKSPACE );
-		REGISTER_ENUM_VALUE( "KeyNum", "Alt", KEY_ALT );
-		REGISTER_ENUM_VALUE( "KeyNum", "UpArrow", KEY_UPARROW );
-		REGISTER_ENUM_VALUE( "KeyNum", "LeftArrow", KEY_LEFTARROW );
-		REGISTER_ENUM_VALUE( "KeyNum", "DownArrow", KEY_DOWNARROW );
-		REGISTER_ENUM_VALUE( "KeyNum", "RightArrow", KEY_RIGHTARROW );
-		REGISTER_ENUM_VALUE( "KeyNum", "BackSlash", KEY_BACKSLASH );
-		REGISTER_ENUM_VALUE( "KeyNum", "Slash", KEY_SLASH );
-		REGISTER_ENUM_VALUE( "KeyNum", "GamePad_A", KEY_PAD0_A );
-		REGISTER_ENUM_VALUE( "KeyNum", "GamePad_B", KEY_PAD0_B );
-		REGISTER_ENUM_VALUE( "KeyNum", "GamePad_X", KEY_PAD0_X );
-		REGISTER_ENUM_VALUE( "KeyNum", "GamePad_Y", KEY_PAD0_Y );
-		REGISTER_ENUM_VALUE( "KeyNum", "GamePad_Start", KEY_PAD0_START );
-		REGISTER_ENUM_VALUE( "KeyNum", "GamePad_Guide", KEY_PAD0_GUIDE );
-		REGISTER_ENUM_VALUE( "KeyNum", "GamePad_LeftButton", KEY_PAD0_LEFTBUTTON );
-		REGISTER_ENUM_VALUE( "KeyNum", "GamePad_RightButton", KEY_PAD0_RIGHTBUTTON );
-		REGISTER_ENUM_VALUE( "KeyNum", "GamePad_LeftTrigger", KEY_PAD0_LEFTTRIGGER );
-		REGISTER_ENUM_VALUE( "KeyNum", "GamePad_RightTrigger", KEY_PAD0_RIGHTTRIGGER );
-		REGISTER_ENUM_VALUE( "KeyNum", "GamePad_LeftStick_Click", KEY_PAD0_LEFTSTICK_CLICK );
-		REGISTER_ENUM_VALUE( "KeyNum", "GamePad_LeftStick_Up", KEY_PAD0_LEFTSTICK_UP );
-		REGISTER_ENUM_VALUE( "KeyNum", "GamePad_LeftStick_Down", KEY_PAD0_LEFTSTICK_DOWN );
-		REGISTER_ENUM_VALUE( "KeyNum", "GamePad_LeftStick_Left", KEY_PAD0_LEFTSTICK_LEFT );
-		REGISTER_ENUM_VALUE( "KeyNum", "GamePad_LeftStick_Right", KEY_PAD0_LEFTSTICK_RIGHT );
-		REGISTER_ENUM_VALUE( "KeyNum", "GamePad_RightStick_Click", KEY_PAD0_RIGHTSTICK_CLICK );
-		REGISTER_ENUM_VALUE( "KeyNum", "GamePad_RightStick_Up", KEY_PAD0_RIGHTSTICK_UP );
-		REGISTER_ENUM_VALUE( "KeyNum", "GamePad_RightStick_Down", KEY_PAD0_RIGHTSTICK_DOWN );
-		REGISTER_ENUM_VALUE( "KeyNum", "GamePad_RightStick_Left", KEY_PAD0_RIGHTSTICK_LEFT );
-		REGISTER_ENUM_VALUE( "KeyNum", "GamePad_RightStick_Right", KEY_PAD0_RIGHTSTICK_RIGHT );
-		REGISTER_ENUM_VALUE( "KeyNum", "GamePad_DPad_Up", KEY_PAD0_DPAD_UP );
-		REGISTER_ENUM_VALUE( "KeyNum", "GamePad_DPad_Down", KEY_PAD0_DPAD_DOWN );
-		REGISTER_ENUM_VALUE( "KeyNum", "GamePad_DPad_Left", KEY_PAD0_DPAD_LEFT );
-		REGISTER_ENUM_VALUE( "KeyNum", "GamePad_DPad_Right", KEY_PAD0_DPAD_RIGHT );
-		REGISTER_ENUM_VALUE( "KeyNum", "GamePad_Back", KEY_PAD0_BACK );
-		
-		// only the Xbox Elite Controller uses these, just added for those kinds of people...
-		REGISTER_ENUM_VALUE( "KeyNum", "GamePad_Paddle1", KEY_PAD0_PADDLE1 );
-		REGISTER_ENUM_VALUE( "KeyNum", "GamePad_Paddle2", KEY_PAD0_PADDLE2 );
-		REGISTER_ENUM_VALUE( "KeyNum", "GamePad_Paddle3", KEY_PAD0_PADDLE3 );
-		REGISTER_ENUM_VALUE( "KeyNum", "GamePad_Paddle4", KEY_PAD0_PADDLE4 );
-
-		REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::IsAnyKeyDown()", asFUNCTION( KeyAnyDown ) );
-		REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::IsKeyDown( KeyNum )", asFUNCTION( KeyIsDown ) );
-		g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "uint32 TheNomad::Engine::KeyGetKey( const string& in )",
-			asFUNCTION( KeyGetKey ), asCALL_GENERIC );
-		g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "const string TheNomad::Engine::KeyGetBinding( uint32 )",
-			asFUNCTION( KeyGetBinding ), asCALL_GENERIC );
+		ScriptLib_Register_Engine();
 
 		SET_NAMESPACE( "TheNomad::Engine::System" );
 		REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::System::Milliseconds()", asFUNCTION( SysMilliseconds ) );
@@ -2763,6 +2671,7 @@ void ModuleLib_Register_Engine( void )
 			CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterObjectProperty(
 				"TheNomad::Engine::Renderer::GPUConfig", "bool isFullscreen", offsetof( CModuleGPUConfig, gpuConfig ), offsetof( gpuConfig_t, isFullscreen ) ) );
 			
+			/*
 			REGISTER_OBJECT_TYPE( "PolyVert", CModulePolyVert, asOBJ_VALUE );
 
 			REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Engine::Renderer::PolyVert", asBEHAVE_CONSTRUCT, "void f()", WRAP_CON( CModulePolyVert, ( void ) ) );
@@ -2817,6 +2726,9 @@ void ModuleLib_Register_Engine( void )
 			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::LoadWorld( const string& in )", asFUNCTION( LoadWorld ) );
 			g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::Renderer::SetColor( const vec4& in color )", asFUNCTION( ModuleLib_SetColor ), asCALL_GENERIC );
 			g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::Renderer::DrawImage( float, float, float, float, float, float, float, float, int )", asFUNCTION( ModuleLib_DrawImage ), asCALL_GENERIC );
+			*/
+
+			ScriptLib_Register_Renderer();
 
 			RESET_NAMESPACE();
 		}

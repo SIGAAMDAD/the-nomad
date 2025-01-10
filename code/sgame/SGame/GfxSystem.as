@@ -211,7 +211,7 @@ namespace TheNomad::SGame {
 			if ( TheNomad::Engine::CvarVariableInteger( "sgame_EnableParticles" ) == 0 || TheNomad::GameSystem::IsRespawnActive ) {
 				return;
 			}
-			const uint numSmokeClouds = floor( velocity ) * 2;
+			const uint numSmokeClouds = floor( velocity );
 			vec3 vel = vec3( 0.0f );
 			TheNomad::Engine::Renderer::LocalEntity@ ent = null;
 

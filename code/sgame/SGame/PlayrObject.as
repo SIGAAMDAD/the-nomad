@@ -609,9 +609,9 @@ namespace TheNomad::SGame {
 		
 		private float GetGfxDirection() const {
 			if ( m_Facing == 1 ) {
-				return -( m_Bounds.m_nWidth / 2 );
+				return -( m_Link.m_Bounds.m_nWidth / 2 );
 			}
-			return ( m_Bounds.m_nWidth / 2 );
+			return ( m_Link.m_Bounds.m_nWidth / 2 );
 		}
 		
 		//
@@ -665,7 +665,7 @@ namespace TheNomad::SGame {
 		private void ParryThink() {
 			m_ParryBox.m_nWidth = 2.5f + m_nParryBoxWidth;
 			m_ParryBox.m_nHeight = 1.0f;
-			m_ParryBox.MakeBounds( vec3( m_Link.m_Origin.x + ( m_Bounds.m_nWidth / 2.0f ),
+			m_ParryBox.MakeBounds( vec3( m_Link.m_Origin.x + ( m_Link.m_Bounds.m_nWidth / 2.0f ),
 				m_Link.m_Origin.y, m_Link.m_Origin.z ) );
 
 			if ( m_nParryBoxWidth >= 1.5f ) {
@@ -828,10 +828,11 @@ namespace TheNomad::SGame {
 				}
 			}
 
-			m_Bounds.m_nWidth = sgame_PlayerWidth.GetFloat();
-			m_Bounds.m_nHeight = sgame_PlayerHeight.GetFloat();
-			m_Bounds.MakeBounds( m_Link.m_Origin );
-
+			m_Link.m_Bounds.m_nWidth = sgame_PlayerWidth.GetFloat();
+			m_Link.m_Bounds.m_nHeight = sgame_PlayerHeight.GetFloat();
+			m_Link.m_Bounds.MakeBounds( m_Link.m_Origin );
+			// update engine data
+			m_Link.Update();
 			
 			//
 			// check reflex mode
@@ -1012,7 +1013,7 @@ namespace TheNomad::SGame {
 		KeyBind key_Jump;
 		KeyBind key_Melee;
 
-		private TheNomad::Engine::Physics::Bounds m_ParryBox;
+		private TheNomad::GameSystem::BBox m_ParryBox;
 		private float m_nParryBoxWidth = 0.0f;
 
 		InfoSystem::WeaponInfo m_EmptyInfo;

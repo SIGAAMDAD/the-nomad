@@ -34,7 +34,7 @@ namespace TheNomad::SGame {
 			};
 
 			@m_Owner = @ent;
-			m_Bounds.Clear();
+			m_Link.m_Bounds.Clear();
 
 			DebugPrint( "Item " + m_Link.m_nEntityNumber + " now owned by " + ent.GetEntityNum() + ".\n" );
 		}
@@ -69,7 +69,9 @@ namespace TheNomad::SGame {
 			}
 
 			@m_State = @StateManager.GetNullState();
-			m_Bounds.MakeBounds( m_Link.m_Origin );
+			m_Link.m_Bounds.MakeBounds( m_Link.m_Origin );
+			// update engine data
+			m_Link.Update();
 		}
 		void Draw() override {
 			if ( @m_Owner !is null ) {
@@ -95,9 +97,9 @@ namespace TheNomad::SGame {
 			m_hShader = m_Info.iconShader;
 			m_Link.m_nEntityId = id;
 			m_Link.m_Origin = origin;
-			m_Bounds.m_nWidth = m_Info.size.x;
-			m_Bounds.m_nHeight = m_Info.size.y;
-			m_Bounds.MakeBounds( origin );
+			m_Link.m_Bounds.m_nWidth = m_Info.size.x;
+			m_Link.m_Bounds.m_nHeight = m_Info.size.y;
+			m_Link.m_Bounds.MakeBounds( origin );
 
 			@m_State = StateManager.GetNullState();
 

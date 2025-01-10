@@ -23,16 +23,17 @@ namespace TheNomad::GameSystem {
 		RayCast() {
 		}
 
-		void Cast( const vec3& in endDefault = vec3( 0.0f ), bool inDegress = false ) {
+		void Cast( const vec3& in endDefault = vec3( 0.0f ) ) {
 			vec3 end;
-			if ( endDefault != Vec3Origin ) {
+//			TheNomad::GameSystem::CastRay( m_Start, m_Origin, m_nEntityNumber, m_nOwner, m_nOwner2, m_nLength, m_nAngle, m_nSpeed, m_Flags );
+			if ( endDefault != vec3( 0.0f ) ) {
 				end = endDefault;
 			} else {
 				end.x = m_Start.x + ( m_nLength * cos( m_nAngle ) );
 				end.y = m_Start.y + ( m_nLength * sin( m_nAngle ) );
-
 				end.z = m_Start.z * sin( m_nAngle );
 			}
+
 			const float dx = abs( end.x - m_Start.x );
 			const float dy = abs( end.y - m_Start.y );
 			const float sx = m_Start.x < end.x ? 0.5f : -0.5f;
@@ -102,7 +103,8 @@ namespace TheNomad::GameSystem {
 		uint m_nOwner2 = ENTITYNUM_INVALID;
 		float m_nLength = 0.0f;
 		float m_nAngle = 0.0f;
-//	    uint m_Flags = 0; // unused for now
+		float m_nSpeed = 0.5f;
+	    uint m_Flags = 0; // unused for now
 	};
 
 	// constants, its a lot faster just to keep these globals

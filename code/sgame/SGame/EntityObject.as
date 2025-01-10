@@ -89,8 +89,8 @@ namespace TheNomad::SGame {
 		uint GetEntityNum() const {
 			return m_Link.m_nEntityNumber;
 		}
-		TheNomad::Engine::Physics::Bounds& GetBounds() {
-			return m_Bounds;
+		TheNomad::GameSystem::BBox& GetBounds() {
+			return m_Link.m_Bounds;
 		}
 		const TheNomad::GameSystem::LinkEntity& GetLink() const {
 			return m_Link;
@@ -242,7 +242,6 @@ namespace TheNomad::SGame {
 
 		// used for physics in the modules
 		protected TheNomad::Engine::Physics::PhysicsObject m_PhysicsObject;
-		protected TheNomad::Engine::Physics::Bounds m_Bounds;
 
 		// engine data, for physics
 		protected TheNomad::GameSystem::LinkEntity m_Link;

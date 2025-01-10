@@ -51,7 +51,7 @@ namespace moblib::Script {
 			TheNomad::SGame::EntityObject@ activeEnts = @TheNomad::SGame::EntityManager.GetActiveEnts();
 			TheNomad::SGame::EntityObject@ ent = @activeEnts.m_Next;
 
-			TheNomad::Engine::Physics::Bounds bounds;
+			TheNomad::GameSystem::BBox bounds;
 			bounds.m_nWidth = GRUNT_EXPLOSION_RADIUS;
 			bounds.m_nHeight = GRUNT_EXPLOSION_RADIUS;
 			bounds.MakeBounds( m_EntityData.GetOrigin() );
@@ -71,7 +71,7 @@ namespace moblib::Script {
 				return;
 			}
 
-			TheNomad::Engine::Physics::Bounds bounds;
+			TheNomad::GameSystem::BBox bounds;
 			bounds.m_nWidth = GRUNT_HAMMER_RANGE;
 			bounds.m_nHeight = GRUNT_HAMMER_RANGE;
 			bounds.MakeBounds( m_EntityData.GetOrigin() );

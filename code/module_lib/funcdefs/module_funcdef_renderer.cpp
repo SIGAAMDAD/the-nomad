@@ -42,6 +42,11 @@ nhandle_t RegisterSpriteSheet( const string_t *name, asDWORD sheetWidth, asDWORD
 	return re.RegisterSpriteSheet( name->c_str(), sheetWidth, sheetHeight, spriteWidth, spriteHeight );
 }
 
+void LoadWorld( const string_t *name )
+{
+	re.LoadWorld( name->c_str() );
+}
+
 void ScriptLib_Register_Renderer( void )
 {
 	SET_NAMESPACE( "TheNomad::Engine::Renderer" );
@@ -49,12 +54,15 @@ void ScriptLib_Register_Renderer( void )
 	REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::ClearScene()", asFUNCTION( re.ClearScene ), asCALL_CDECL );
 	REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddEntityToScene( int, int, const vec3& in, float, float, float, const vec2& in )",
 		asFUNCTION( AddEntityToScene ), asCALL_CDECL );
-	REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::RenderScene( uint, uint, uint, uint )", asFUNCTION( RenderScene ), asCALL_CDECL );
-	REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddDLightToScene( const vec3& in origin, float, const vec3& in )",
+	REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::RenderScene( uint, uint, uint, uint, uint, uint )", asFUNCTION( RenderScene ), asCALL_CDECL );
+	REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddDLightToScene( const vec3& in, float, float, float, float, float, const vec3& in )",
 		asFUNCTION( re.AddDynamicLightToScene ), asCALL_CDECL );
 	REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::Renderer::RegisterShader( const string& in )", asFUNCTION( RegisterShader ), asCALL_CDECL );
 	REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::Renderer::RegisterSpriteSheet( const string& in, uint, uint, uint, uint )",
 		asFUNCTION( RegisterSpriteSheet ), asCALL_CDECL );
+	REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::LoadWorld( const string& in )", asFUNCTION( LoadWorld ), asCALL_CDECL );
+	REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::DrawImage( float, float, float, float, float, float, float, float, int )",
+		asFUNCTION( re.DrawImage ), asCALL_CDECL );
 
 	RESET_NAMESPACE();
 }

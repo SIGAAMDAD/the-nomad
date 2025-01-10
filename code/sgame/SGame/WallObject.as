@@ -13,12 +13,14 @@ namespace TheNomad::SGame {
 		void Spawn( uint id, const vec3& in origin ) override {
 			m_Link.m_Origin = origin;
 
-			@m_State = @StateManager.GetNullState();
+			@m_State = StateManager.GetNullState();
 		}
 		void Think() override {
-			@m_State = @StateManager.GetNullState();
+			@m_State = StateManager.GetNullState();
 
-			m_Bounds.MakeBounds( m_Link.m_Origin );
+			m_Link.m_Bounds.MakeBounds( m_Link.m_Origin );
+			// update engine data
+			m_Link.Update();
 		}
 		void Draw() override {
 			TheNomad::Engine::Renderer::RenderEntity refEntity;

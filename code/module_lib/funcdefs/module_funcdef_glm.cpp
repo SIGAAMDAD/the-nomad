@@ -85,6 +85,7 @@ static int ScriptLib_CmpVec4( const VectorType *a, const VectorType& b )
 template<typename VectorType>
 static void ScriptLib_Register_GLM_Vec2( void )
 {
+	eastl::fixed_string<char, 128, false> str;
 	const char *name;
 
 	if constexpr ( std::is_same<VectorType, vec2>() ) {
@@ -354,17 +355,17 @@ static void ScriptLib_Register_GLM_Vec4( void )
 
 void ScriptLib_Register_GLM( void )
 {
-	REGISTER_OBJECT_TYPE( "vec2", vec2, asOBJ_VALUE );
-	REGISTER_OBJECT_TYPE( "vec3", vec3, asOBJ_VALUE );
-	REGISTER_OBJECT_TYPE( "vec4", vec4, asOBJ_VALUE );
+	REGISTER_OBJECT_TYPE( "vec2", vec2, asOBJ_VALUE | asOBJ_APP_CLASS_CDAK | asOBJ_POD );
+	REGISTER_OBJECT_TYPE( "vec3", vec3, asOBJ_VALUE | asOBJ_APP_CLASS_CDAK | asOBJ_POD );
+	REGISTER_OBJECT_TYPE( "vec4", vec4, asOBJ_VALUE | asOBJ_APP_CLASS_CDAK | asOBJ_POD );
 
-	REGISTER_OBJECT_TYPE( "uvec2", uvec2, asOBJ_VALUE );
-	REGISTER_OBJECT_TYPE( "uvec3", uvec3, asOBJ_VALUE );
-	REGISTER_OBJECT_TYPE( "uvec4", uvec4, asOBJ_VALUE );
+	REGISTER_OBJECT_TYPE( "uvec2", uvec2, asOBJ_VALUE | asOBJ_APP_CLASS_CDAK | asOBJ_POD );
+	REGISTER_OBJECT_TYPE( "uvec3", uvec3, asOBJ_VALUE | asOBJ_APP_CLASS_CDAK | asOBJ_POD );
+	REGISTER_OBJECT_TYPE( "uvec4", uvec4, asOBJ_VALUE | asOBJ_APP_CLASS_CDAK | asOBJ_POD );
 
-	REGISTER_OBJECT_TYPE( "ivec2", ivec2, asOBJ_VALUE );
-	REGISTER_OBJECT_TYPE( "ivec3", ivec3, asOBJ_VALUE );
-	REGISTER_OBJECT_TYPE( "ivec4", ivec4, asOBJ_VALUE );
+	REGISTER_OBJECT_TYPE( "ivec2", ivec2, asOBJ_VALUE | asOBJ_APP_CLASS_CDAK | asOBJ_POD );
+	REGISTER_OBJECT_TYPE( "ivec3", ivec3, asOBJ_VALUE | asOBJ_APP_CLASS_CDAK | asOBJ_POD );
+	REGISTER_OBJECT_TYPE( "ivec4", ivec4, asOBJ_VALUE | asOBJ_APP_CLASS_CDAK | asOBJ_POD );
 
 	ScriptLib_Register_GLM_Vec2<vec2>();
 	ScriptLib_Register_GLM_Vec2<uvec2>();

@@ -62,6 +62,14 @@ void CModuleLinkEntity::ToLinkEntity( linkEntity_t *ent ) {
 	VectorCopy( ent->origin, m_Origin );
 	VectorCopy( ent->bounds.mins, m_Bounds.mins );
 	VectorCopy( ent->bounds.maxs, m_Bounds.maxs );
+	ent->bounds.mins[0] = m_Bounds.mins[0] / 10.0f;
+	ent->bounds.mins[1] = m_Bounds.mins[1] / 10.0f;
+	ent->bounds.mins[2] = m_Bounds.mins[2] / 10.0f;
+
+	ent->bounds.mins[0] = ent->bounds.mins[0] + m_Bounds.width;
+	ent->bounds.mins[1] = ent->bounds.mins[1] + m_Bounds.height;
+	ent->bounds.mins[2] = ent->bounds.mins[2] + m_Bounds.height;
+
 	ent->id = m_nEntityId;
 	ent->type = m_nEntityType;
 	ent->entityNumber = m_nEntityNumber;
@@ -197,8 +205,8 @@ bool CModuleBoundBox::LineIntersection( const glm::vec3& start, const glm::vec3&
 
 bool CModuleBoundBox::ContainsPoint( const glm::vec3& p ) const
 {
-	if ( p[0] < mins[0] || p[1] < mins[1] || p[2] < mins[2]
-		|| p[0] > maxs[0] || p[1] > maxs[1] || p[2] > maxs[2] )
+	if ( p.x < mins.x || p.y < mins.y || p.z < mins.z
+		|| p.x > maxs.x || p.y > maxs.y || p.z > maxs.z )
 	{
 		return false;
 	}
@@ -274,7 +282,7 @@ void CModuleBoundBox::MakeBounds( const glm::vec3& origin ) {
 
     maxs[0] = origin[0] + width;
     maxs[1] = origin[1] + height;
-    maxs[2] = origin[2] - height;
+    maxs[2] = origin[2] + height;
 }
 
 const bbox_t CModuleBoundBox::ToPOD( void ) const {
@@ -379,13 +387,17 @@ static void GetGPUConfig( CModuleGPUConfig *config )
 	config->versionString = gi.gpuConfig.version_string;
 }
 
-static void CastRay( const glm::vec3& start, glm::vec3& origin, uint32_t& nEntityNumber, float length, float angle, uint32_t flags )
+static void CastRay( const glm::vec3& start, glm::vec3& origin, uint32_t& nEntityNumber, uint32_t nOwner, uint32_t nOwner2,
+	float length, float angle, float speed, uint32_t flags )
 {
 	ray_t ray;
 
 	ray.angle = angle;
 	ray.flags = flags;
 	ray.length = length;
+	ray.speed = speed;
+	ray.ownerNumber = nOwner;
+	ray.ownerNumber2 = nOwner2;
 	VectorCopy( ray.start, start );
 
 	g_world->CastRay( &ray );
@@ -436,15 +448,15 @@ void ScriptLib_Register_Game( void )
 	REGISTER_OBJECT_BEHAVIOUR( "TheNomad::GameSystem::BBox", asBEHAVE_DESTRUCT, "void f()", asFUNCTION( BoundBoxDestruct ), asCALL_CDECL_OBJFIRST );
 	REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::BBox", "float m_nWidth", offsetof( CModuleBoundBox, width ) );
 	REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::BBox", "float m_nHeight", offsetof( CModuleBoundBox, height ) );
-	REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::BBox", "vec3 m_Mins", offsetof( CModuleBoundBox, mins ) );
-	REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::BBox", "vec3 m_Maxs", offsetof( CModuleBoundBox, maxs ) );
+	REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::BBox", "vec3 m_nMins", offsetof( CModuleBoundBox, mins ) );
+	REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::BBox", "vec3 m_nMaxs", offsetof( CModuleBoundBox, maxs ) );
 	REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::BBox", "TheNomad::GameSystem::BBox& opAssign( const TheNomad::GameSystem::BBox& in )",
 		asMETHODPR( CModuleBoundBox, operator=, ( const CModuleBoundBox& ), CModuleBoundBox& ), asCALL_THISCALL );
 	REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::BBox", "void MakeBounds( const vec3& in )",
 		asMETHODPR( CModuleBoundBox, MakeBounds, ( const glm::vec3& ), void ), asCALL_THISCALL );
 	REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::BBox", "bool LineIntersection( const vec3& in, const vec3& in )",
 		asMETHODPR( CModuleBoundBox, LineIntersection, ( const glm::vec3&, const glm::vec3& ) const, bool ), asCALL_THISCALL );
-	REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::BBox", "bool ContainsPoint( const vec3& in )",
+	REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::BBox", "bool IntersectsPoint( const vec3& in )",
 		asMETHODPR( CModuleBoundBox, ContainsPoint, ( const glm::vec3& ) const, bool ), asCALL_THISCALL );
 	REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::BBox", "bool IntersectsSphere( const vec3& in, float )",
 		asMETHODPR( CModuleBoundBox, IntersectsSphere, ( const glm::vec3&, float ) const, bool ), asCALL_THISCALL );
@@ -452,6 +464,8 @@ void ScriptLib_Register_Game( void )
 		asMETHODPR( CModuleBoundBox, IntersectsBounds, ( const CModuleBoundBox& ) const, bool ), asCALL_THISCALL );
 	REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::BBox", "bool RayIntersection( const vec3& in, const vec3& in, float )",
 		asMETHODPR( CModuleBoundBox, RayIntersection, ( const glm::vec3&, const glm::vec3&, float& ) const, bool ), asCALL_THISCALL );
+	REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::BBox", "void Clear()", asMETHODPR( CModuleBoundBox, Clear, ( void ), void ), asCALL_THISCALL );
+	REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::BBox", "void Zero()", asMETHODPR( CModuleBoundBox, Zero, ( void ), void ), asCALL_THISCALL );
 
 	REGISTER_OBJECT_TYPE( "LinkEntity", CModuleLinkEntity, asOBJ_VALUE );
 	REGISTER_OBJECT_BEHAVIOUR( "TheNomad::GameSystem::LinkEntity", asBEHAVE_CONSTRUCT, "void f()", asFUNCTION( LinkEntityConstruct ), asCALL_CDECL_OBJFIRST );
@@ -589,8 +603,8 @@ void ScriptLib_Register_Game( void )
 	REGISTER_ENUM_VALUE( "DirType", "Inside", DIR_NULL );
 	REGISTER_ENUM_VALUE( "DirType", "NumDirs", NUMDIRS );
 
-	REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::CastRay( const vec3& in, vec3& out, uint32& out, float, float, uint32 )", asFUNCTION( CastRay ),
-		asCALL_CDECL );
+	REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::CastRay( const vec3& in, vec3& out, uint32& out, uint, uint, float, float, float, uint32 )",
+		asFUNCTION( CastRay ), asCALL_CDECL );
 	REGISTER_GLOBAL_FUNCTION( "bool TheNomad::GameSystem::CheckWallHit( const vec3& in, TheNomad::GameSystem::DirType )", asFUNCTION( CheckWallHit ),
 		asCALL_CDECL );
 

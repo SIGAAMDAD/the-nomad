@@ -127,9 +127,6 @@ namespace TheNomad::SGame {
 
 				ent.Think();
 
-				// update engine data
-				ent.GetLink().Update();
-
 				ent.SetSoundPosition();
 			}
 		}

@@ -83,7 +83,7 @@ namespace moblib {
 				*/
 				};
 
-				TheNomad::Engine::Physics::Bounds bounds;
+				TheNomad::GameSystem::BBox bounds;
 				bounds.m_nMins = mins;
 				bounds.m_nMaxs = maxs;
 

@@ -118,7 +118,7 @@ namespace TheNomad::Engine::Physics {
 			m_nWaterType = WaterType::None;
 			
 			const vec3 point = m_EntityData.GetOrigin();
-			TheNomad::Engine::Physics::Bounds bounds = m_EntityData.GetBounds();
+			TheNomad::GameSystem::BBox bounds = m_EntityData.GetBounds();
 			uint64 tile = TheNomad::SGame::GetTile( point, bounds );
 			
 			if ( ( tile & SURFACEPARM_WATER ) != 0 || ( tile & SURFACEPARM_LAVA ) != 0 ) {
@@ -238,7 +238,7 @@ namespace TheNomad::Engine::Physics {
 				break;
 			};
 
-			TheNomad::Engine::Physics::Bounds bounds;
+			TheNomad::GameSystem::BBox bounds;
 			bounds.m_nWidth = m_EntityData.GetBounds().m_nWidth;
 			bounds.m_nHeight = m_EntityData.GetBounds().m_nHeight;
 			bounds.MakeBounds( tmp );

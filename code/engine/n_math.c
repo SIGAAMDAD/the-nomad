@@ -896,17 +896,12 @@ qboolean BoundsIntersectSphere( const bbox_t *bounds,
 qboolean BoundsIntersectPoint( const bbox_t *bounds,
 		const vec3_t origin )
 {
-	if ( origin[0] < bounds->maxs[0] ||
-		origin[0] > bounds->mins[0] ||
-		origin[1] < bounds->maxs[1] ||
-		origin[1] > bounds->mins[1] ||
-		origin[2] > bounds->maxs[2] ||
-		origin[2] < bounds->mins[2] )
+	if ( origin[0] < bounds->mins[0] || origin[1] < bounds->mins[1] || origin[2] < bounds->mins[2]
+		|| origin[0] > bounds->mins[0] || origin[1] > bounds->mins[1] || origin[2] > bounds->mins[2] )
 	{
-		return qfalse;
+		return false;
 	}
-
-	return qtrue;
+	return true;
 }
 
 vec_t VectorNormalize( vec3_t v ) {

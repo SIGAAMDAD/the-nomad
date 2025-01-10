@@ -80,6 +80,9 @@ GDR_INLINE void ValidateGlobalVar( const char *func, const char *name, int resul
 	}
 }
 
+void ScriptLib_Register_Game( void );
+void ScriptLib_Register_Renderer( void );
 void ScriptLib_Register_Sound( void );
+void ScriptLib_Register_Engine( void );
 
 #endif

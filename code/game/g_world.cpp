@@ -443,12 +443,18 @@ void CGameWorld::CastRay( ray_t *ray )
 	float err;
 	float e2;
 	vec3_t end;
+	vec3_t p;
 	dirtype_t rayDir;
 	uint64_t i;
 	float angle2;
 	linkEntity_t *it;
+	vec3_t tmp;
 	
 	// calculate the endpoint
+	ray->start[0] /= 10.0f;
+	ray->start[1] /= 10.0f;
+	ray->start[2] /= 10.0f;
+
 	ray->end[0] = ray->start[0] + ( ray->length * cos( ray->angle ) );
 	ray->end[1] = ray->start[1] + ( ray->length * sin( ray->angle ) );
 	ray->end[2] = ray->start[2] * sin( ray->angle );
@@ -460,14 +466,11 @@ void CGameWorld::CastRay( ray_t *ray )
 	err = ( dx > dy ? dx : -dy ) / 2.0f;
 	VectorCopy( ray->origin, ray->start );
 
-	angle2 = ray->angle;
-	if ( ray->ownerNumber2 != ENTITYNUM_INVALID ) {
-		angle2 = RAD2DEG( ray->angle );
-		if ( angle2 < 0.0f ) {
-			angle2 += 360.0f;
-		}
+	angle2 = RAD2DEG( ray->angle );
+	if ( angle2 < 0.0f ) {
+		angle2 += 360.0f;
 	}
-	
+
 	for ( ;; ) {
 		for ( it = m_ActiveEnts.next; it != &m_ActiveEnts; it = it->next ) {
 			if ( it->entityNumber != ray->ownerNumber && it->entityNumber != ray->ownerNumber2
@@ -490,8 +493,8 @@ void CGameWorld::CastRay( ray_t *ray )
 			}
 		}
 
-		if ( ( sy == -ray->speed && ray->origin[1] <= end[1] ) || ( sy == ray->speed && ray->origin[1] >= end[1] )
-			|| ( sx == -ray->speed && ray->origin[0] <= end[0] ) || ( sx == ray->speed && ray->origin[0] >= end[0] ) )
+		if ( ( sy == -ray->speed && ray->origin[1] <= ray->end[1] ) || ( sy == ray->speed && ray->origin[1] >= ray->end[1] )
+			|| ( sx == -ray->speed && ray->origin[0] <= ray->end[0] ) || ( sx == ray->speed && ray->origin[0] >= ray->end[0] ) )
 		{
 			ray->entityNumber = ENTITYNUM_INVALID;
 			return;
